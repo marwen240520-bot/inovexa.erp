@@ -2,8 +2,8 @@
 
 services:
   postgres:
-    image: postgres:15-alpine
-    container_name: postgres-inovexa
+    image: postgres:15
+    container_name: inovexa-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -12,54 +12,40 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - inovexa-network
 
   redis:
-    image: redis:7-alpine
-    container_name: redis-inovexa
+    image: redis:7
+    container_name: inovexa-redis
     ports:
       - "6379:6379"
-    networks:
-      - inovexa-network
+    volumes:
+      - redis_data:/data
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.backend
-    container_name: backend-inovexa
+    container_name: inovexa-backend
     environment:
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres
-      DATABASE_NAME: inovexa_erp
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_SECRET: inovexa_super_secret_key_2025
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/inovexa_erp
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: production-secret-key
     ports:
-      - "3000:3000"
+      - "3001:3001"
     depends_on:
       - postgres
       - redis
-    networks:
-      - inovexa-network
 
   frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile.frontend
-    container_name: frontend-inovexa
+    container_name: inovexa-frontend
     ports:
-      - "80:3000"
+      - "3000:3000"
     depends_on:
       - backend
-    networks:
-      - inovexa-network
 
 volumes:
   postgres_data:
-
-networks:
-  inovexa-network:
-    driver: bridge
+  redis_data:
