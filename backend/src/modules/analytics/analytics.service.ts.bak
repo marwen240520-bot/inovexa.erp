@@ -1,0 +1,54 @@
+﻿import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
+import { Invoice } from '../finance/entities/invoice.entity';
+import { Product } from '../inventory/entities/product.entity';
+
+@Injectable()
+export class AnalyticsService {
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(Invoice)
+    private invoiceRepository: Repository<Invoice>,
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
+  ) {}
+
+  async getUserAnalytics() {
+    const totalUsers = await this.userRepository.count();
+    const activeUsers = await this.userRepository.count({ where: { is_active: true } });
+    const newUsersThisMonth = await this.userRepository
+      .createQueryBuilder('user')
+      .where('EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)')
+      .getCount();
+
+    return { totalUsers, activeUsers, newUsersThisMonth };
+  }
+
+  async getBusinessAnalytics() {
+    const totalRevenue = await this.invoiceRepository
+      .createQueryBuilder('invoice')
+      .select('SUM(invoice.total)', 'total')
+      .where('invoice.status = :status', { status: 'paid' })
+      .getRawOne();
+
+    const totalProducts = await this.productRepository.count();
+    const averageOrderValue = await this.invoiceRepository
+      .createQueryBuilder('invoice')
+      .select('AVG(invoice.total)', 'avg')
+      .getRawOne();
+
+    return {
+      totalRevenue: totalRevenue?.total || 0,
+      totalProducts,
+      averageOrderValue: averageOrderValue?.avg || 0,
+    };
+  }
+
+  async trackEvent(userId: string, event: string, metadata: any) {
+    console.log([ANALYTICS] User  - , metadata);
+    // Ici, envoyer à Mixpanel / Amplitude
+  }
+}

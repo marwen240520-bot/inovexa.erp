@@ -1,0 +1,190 @@
+﻿# Guide développeur - Inovexa-AI ERP
+
+## Architecture
+
+### Backend (NestJS)
+- Framework: NestJS 11
+- ORM: TypeORM
+- Base de données: PostgreSQL
+- Authentification: JWT + 2FA
+- Cache: Redis
+- Paiement: Stripe
+- Emails: SendGrid
+
+### Frontend (Next.js)
+- Framework: Next.js 16
+- Styling: Tailwind CSS
+- State: React Context
+- Graphiques: Recharts
+- Export: XLSX, jsPDF
+
+## Structure du projet
+\\\
+inovexa-erp/
+├── backend/
+│   ├── src/
+│   │   ├── modules/      # Modules métier
+│   │   ├── config/       # Configuration
+│   │   └── common/       # Utilitaires
+│   └── test/             # Tests
+├── frontend/
+│   ├── app/              # Pages
+│   ├── components/       # Composants UI
+│   ├── lib/              # Utilitaires
+│   └── contexts/         # Contextes React
+└── docs/                 # Documentation
+\\\
+
+## Installation locale
+\\\ash
+# Backend
+cd backend
+npm install
+cp .env.example .env
+npm run start:dev
+
+# Frontend
+cd frontend
+npm install
+npm run dev
+\\\
+
+## Variables d'environnement
+\\\env
+# Backend
+DATABASE_URL=postgresql://...
+JWT_SECRET=your_secret
+NODE_ENV=development
+STRIPE_SECRET_KEY=sk_test_...
+SENDGRID_API_KEY=SG...
+REDIS_HOST=localhost
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+\\\
+
+## API Endpoints
+Documentation Swagger: /api/docs
+
+## Déploiement
+\\\ash
+# Backend (Railway)
+cd backend
+railway up
+
+# Frontend (Vercel)
+cd frontend
+vercel --prod
+\\\
+
+## Contribution
+1. Créer une branche
+2. Développer la fonctionnalité
+3. Écrire des tests
+4. Faire une pull request
+
+## Scripts utiles
+\\\ash
+# Tests
+npm run test
+npm run test:e2e
+npm run test:cov
+
+# Build
+npm run build
+
+# Lint
+npm run lint
+\\\
+"@ | Out-File -FilePath "C:\inovexa-erp\docs\developer-guide.md" -Encoding utf8
+
+# API Postman Collection
+@"
+{
+  "info": {
+    "name": "Inovexa-AI ERP API",
+    "version": "1.0.0",
+    "description": "API pour Inovexa-AI ERP"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@test.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@test.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Finance",
+      "item": [
+        {
+          "name": "Get Invoices",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/finance/invoices",
+            "auth": {
+              "type": "bearer",
+              "bearer": ["{{token}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/finance/invoices",
+            "auth": {
+              "type": "bearer",
+              "bearer": ["{{token}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoice_number\": \"INV-001\",\n  \"total\": 1000,\n  \"customer_id\": \"xxx\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/finance/dashboard",
+            "auth": {
+              "type": "bearer",
+              "bearer": ["{{token}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
