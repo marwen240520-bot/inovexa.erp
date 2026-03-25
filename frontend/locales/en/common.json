@@ -1,0 +1,40 @@
+﻿{
+  "common": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "search": "Search",
+    "loading": "Loading..."
+  },
+  "finance": {
+    "invoices": "Invoices",
+    "new_invoice": "New Invoice",
+    "invoice_number": "Invoice Number",
+    "total": "Total",
+    "status": "Status",
+    "paid": "Paid",
+    "pending": "Pending",
+    "overdue": "Overdue"
+  },
+  "inventory": {
+    "products": "Products",
+    "stock": "Stock",
+    "suppliers": "Suppliers",
+    "low_stock": "Low Stock Alert"
+  },
+  "hr": {
+    "employees": "Employees",
+    "leaves": "Leaves",
+    "payroll": "Payroll"
+  },
+  "sales": {
+    "customers": "Customers",
+    "quotes": "Quotes",
+    "orders": "Orders"
+  }
+}
