@@ -1,76 +1,104 @@
-﻿'use client';
-
-import { useAuth } from '@/contexts/AuthContext';
+﻿"use client";
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import api from '@/lib/api';
-import Sidebar from '@/components/layout/Sidebar';
 
-export default function DashboardPage() {
-  const { user, logout, isLoading } = useAuth();
+export default function Dashboard() {
   const router = useRouter();
-  const [stats, setStats] = useState({
-    finance: { totalRevenue: 0, totalInvoices: 0 },
-    inventory: { totalProducts: 0, lowStock: 0 },
-    hr: { totalEmployees: 0, pendingLeaves: 0 },
-    sales: { totalCustomers: 0, conversionRate: 0 }
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ products: 0, invoices: 0, orders: 0 });
 
   useEffect(() => {
-    if (!isLoading && !user) router.push('/auth/login');
-  }, [user, isLoading, router]);
-
-  useEffect(() => {
-    if (user) fetchStats();
-  }, [user]);
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (!token) {
+      router.push('/auth/login');
+      return;
+    }
+    setUser(JSON.parse(userData || '{}'));
+    fetchStats();
+  }, []);
 
   const fetchStats = async () => {
+    const token = localStorage.getItem('token');
     try {
-      const [finance, inventory, hr, sales] = await Promise.all([
-        api.get('/finance/dashboard').then(res => res.data),
-        api.get('/inventory/stock/status').then(res => res.data),
-        api.get('/hr/dashboard').then(res => res.data),
-        api.get('/sales/dashboard').then(res => res.data),
+      const [productsRes, invoicesRes, ordersRes] = await Promise.all([
+        fetch('http://localhost:3001/products', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('http://localhost:3001/invoices', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('http://localhost:3001/orders', { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      setStats({ finance, inventory, hr, sales });
-    } catch (error) { console.error('Error fetching stats:', error); }
+      
+      const products = productsRes.ok ? await productsRes.json() : [];
+      const invoices = invoicesRes.ok ? await invoicesRes.json() : [];
+      const orders = ordersRes.ok ? await ordersRes.json() : [];
+      
+      setStats({
+        products: products.length,
+        invoices: invoices.length,
+        orders: orders.length
+      });
+    } catch(e) { console.error(e); }
+    setLoading(false);
   };
 
-  if (isLoading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><div className="text-white">Chargement...</div></div>;
+  if (loading) return <div style={{ background: '#0a0a0a', minHeight: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Chargement...</div>;
+
   if (!user) return null;
 
-  const modules = [
-    { name: 'Finance', icon: '💰', href: '/dashboard/finance/invoices', stats: stats.finance.totalRevenue?.toLocaleString() + ' DT' },
-    { name: 'Inventory', icon: '📦', href: '/dashboard/inventory/products', stats: stats.inventory.totalProducts + ' produits' },
-    { name: 'HR', icon: '👥', href: '/dashboard/hr/employees', stats: stats.hr.totalEmployees + ' employés' },
-    { name: 'Sales', icon: '📈', href: '/dashboard/sales/customers', stats: stats.sales.totalCustomers + ' clients' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-900 flex">
-      <Sidebar />
-      <div className="ml-64 flex-1 p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <button onClick={logout} className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700">Déconnexion</button>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
+      <div style={{ background: '#111', padding: '20px 32px', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <img src="/logo.png" alt="Inovexa" style={{ width: '40px', height: '40px' }} />
+          <h1 style={{ color: 'white', fontSize: '24px' }}>Inovexa ERP</h1>
+        </div>
+        <div>
+          <span style={{ color: '#e2e8f0', marginRight: '20px' }}>👋 {user.firstName} {user.lastName}</span>
+          <button onClick={() => { localStorage.clear(); router.push('/auth/login'); }} style={{ background: '#c33', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+            Déconnexion
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding: '32px' }}>
+        <h1 style={{ color: 'white', fontSize: '28px', marginBottom: '8px' }}>Tableau de bord</h1>
+        <p style={{ color: '#94a3b8', marginBottom: '32px' }}>Bienvenue {user.firstName} !</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '24px', marginBottom: '40px' }}>
+          <div style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', padding: '24px', borderRadius: '20px', cursor: 'pointer' }} onClick={() => router.push('/dashboard/products')}>
+            <div style={{ fontSize: '32px' }}>📦</div>
+            <div>Produits</div>
+            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.products}</div>
+          </div>
+          <div style={{ background: 'linear-gradient(135deg, #f093fb, #f5576c)', padding: '24px', borderRadius: '20px', cursor: 'pointer' }} onClick={() => router.push('/dashboard/invoices')}>
+            <div style={{ fontSize: '32px' }}>💰</div>
+            <div>Factures</div>
+            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.invoices}</div>
+          </div>
+          <div style={{ background: 'linear-gradient(135deg, #4facfe, #00f2fe)', padding: '24px', borderRadius: '20px', cursor: 'pointer' }} onClick={() => router.push('/dashboard/orders')}>
+            <div style={{ fontSize: '32px' }}>📝</div>
+            <div>Commandes</div>
+            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.orders}</div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6"><p className="text-purple-200 text-sm">Chiffre d'affaires</p><p className="text-3xl font-bold text-white mt-2">{stats.finance.totalRevenue?.toLocaleString()} DT</p></div>
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6"><p className="text-blue-200 text-sm">Produits en stock</p><p className="text-3xl font-bold text-white mt-2">{stats.inventory.totalProducts}</p></div>
-          <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6"><p className="text-green-200 text-sm">Employés</p><p className="text-3xl font-bold text-white mt-2">{stats.hr.totalEmployees}</p></div>
-          <div className="bg-gradient-to-br from-orange-600 to-orange-800 rounded-xl p-6"><p className="text-orange-200 text-sm">Clients</p><p className="text-3xl font-bold text-white mt-2">{stats.sales.totalCustomers}</p></div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {modules.map((module, i) => (
-            <Link key={i} href={module.href} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-purple-500 transition">
-              <div className="text-4xl mb-4">{module.icon}</div>
-              <h4 className="text-lg font-semibold text-white">{module.name}</h4>
-              <p className="text-2xl font-bold text-white mt-2">{module.stats}</p>
+        <div style={{ background: '#111', borderRadius: '20px', padding: '24px', border: '1px solid #222' }}>
+          <h2 style={{ color: 'white', marginBottom: '20px' }}>Accès rapide</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '16px' }}>
+            <Link href="/dashboard/products" style={{ background: '#1e293b', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', color: 'white' }}>
+              📦 Produits
             </Link>
-          ))}
+            <Link href="/dashboard/invoices" style={{ background: '#1e293b', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', color: 'white' }}>
+              💰 Factures
+            </Link>
+            <Link href="/dashboard/orders" style={{ background: '#1e293b', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', color: 'white' }}>
+              📝 Commandes
+            </Link>
+            <Link href="/dashboard/ai" style={{ background: '#1e293b', padding: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', color: 'white' }}>
+              🤖 IA Assistant
+            </Link>
+          </div>
         </div>
       </div>
     </div>

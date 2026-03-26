@@ -1,49 +1,43 @@
 ﻿import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Analytics } from './analytics.entity';
 
 @Injectable()
 export class AnalyticsService {
-  async getDashboardData() {
-    return {
-      totalRevenue: 125000,
-      totalUsers: 150,
-      totalOrders: 450,
-      conversionRate: 3.2,
-    };
+  constructor(
+    @InjectRepository(Analytics)
+    private repository: Repository<Analytics>,
+  ) {}
+
+  async findAll(): Promise<Analytics[]> {
+    return this.repository.find();
   }
 
-  async getFinancialMetrics() {
-    return {
-      revenue: 125000,
-      expenses: 45000,
-      profit: 80000,
-      pendingInvoices: 12,
-    };
+  async findOne(id: string): Promise<Analytics | null> {
+    return this.repository.findOne({ where: { id } });
   }
 
-  async getInventoryMetrics() {
-    return {
-      totalProducts: 1250,
-      lowStock: 8,
-      outOfStock: 3,
-      totalValue: 75000,
-    };
+  async create(data: Partial<Analytics>): Promise<Analytics> {
+    const item = this.repository.create(data);
+    return this.repository.save(item);
   }
 
-  async getHrMetrics() {
-    return {
-      totalEmployees: 45,
-      activeEmployees: 42,
-      onLeave: 3,
-      averageSalary: 38000,
-    };
+  async update(id: string, data: Partial<Analytics>): Promise<Analytics | null> {
+    await this.repository.update(id, data);
+    return this.findOne(id);
   }
 
-  async getSalesMetrics() {
-    return {
-      today: 2500,
-      thisWeek: 18500,
-      thisMonth: 78500,
-      topProduct: 'Laptop Pro',
-    };
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
+  async getStats(): Promise<any> {
+    const items = await this.repository.find();
+    const total = items.length;
+    const active = items.filter(i => i.status === 'active' || i.status === 'paid' || i.status === 'delivered').length;
+    const pending = items.filter(i => i.status === 'pending').length;
+    const totalAmount = items.reduce((sum, i) => sum + (i.amount || 0), 0);
+    return { total, active, pending, totalAmount };
   }
 }

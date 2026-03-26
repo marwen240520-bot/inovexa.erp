@@ -1,75 +1,90 @@
-﻿'use client';
-
+﻿"use client";
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      await login(email, password);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      const res = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.access_token) {
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirection selon le rôle
+        if (data.user.role === 'admin') {
+          console.log('Admin connecté, redirection vers /admin/clients');
+          router.push('/admin/clients');
+        } else {
+          console.log('Utilisateur connecté, redirection vers /dashboard');
+          router.push('/dashboard');
+        }
+      } else {
+        setError(data.message || 'Email ou mot de passe incorrect');
+      }
+    } catch (err) {
+      setError('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-      <div className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl w-96 border border-white/20">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Inovexa-AI</h1>
-          <p className="text-gray-300 mt-2">ERP Intelligent Next-Gen</p>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: '#111', padding: '48px', borderRadius: '32px', width: '450px', border: '1px solid #222' }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <img src="/logo.png" alt="Inovexa" style={{ width: '80px', marginBottom: '20px' }} />
+          <h1 style={{ color: 'white', fontSize: '28px' }}>Inovexa ERP</h1>
+          <p style={{ color: '#94a3b8' }}>Connectez-vous à votre espace</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-2 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-gray-300 mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-white/5 border border-gray-600 text-white focus:outline-none focus:border-purple-500"
-              required
-            />
+        {error && (
+          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', color: '#f87171', padding: '12px', borderRadius: '12px', marginBottom: '24px', textAlign: 'center' }}>
+            {error}
           </div>
+        )}
 
-          <div>
-            <label className="block text-gray-300 mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-white/5 border border-gray-600 text-white focus:outline-none focus:border-purple-500"
-              required
-            />
-          </div>
-
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="marwen2405@gmail.com"
+            style={{ width: '100%', padding: '14px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', color: 'white', marginBottom: '16px' }}
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            style={{ width: '100%', padding: '14px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', color: 'white', marginBottom: '24px' }}
+            required
+          />
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 rounded-lg font-semibold hover:opacity-90 transition"
+            disabled={loading}
+            style={{ width: '100%', padding: '14px', background: '#667eea', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}
           >
-            Login
+            {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
-
-        <p className="text-center text-gray-400 mt-6 text-sm">
-          Don't have an account?{' '}
-          <Link href="/auth/register" className="text-purple-400 hover:text-purple-300">
-            Register
-          </Link>
-        </p>
       </div>
     </div>
   );

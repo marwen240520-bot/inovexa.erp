@@ -1,51 +1,60 @@
-﻿'use client';
-
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import Sidebar from '@/components/layout/Sidebar';
-import toast from 'react-hot-toast';
-import api from '@/lib/api';
+﻿"use client";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/Sidebar';
 
 export default function SettingsPage() {
-  const { user } = useAuth();
-  const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState({ firstName: '', lastName: '', email: '' });
+  const [message, setMessage] = useState('');
 
-  const changePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordData.new !== passwordData.confirm) {
-      toast.error('Les mots de passe ne correspondent pas');
-      return;
-    }
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (!token) router.push('/auth/login');
+    const u = JSON.parse(userData || '{}');
+    setUser(u);
+    setProfile({ firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '' });
+  }, []);
+
+  const saveProfile = async () => {
+    const token = localStorage.getItem('token');
     try {
-      await api.post('/auth/change-password', { current: passwordData.current, new: passwordData.new });
-      toast.success('Mot de passe modifié');
-      setPasswordData({ current: '', new: '', confirm: '' });
-    } catch (error) {
-      toast.error('Erreur lors du changement');
+      await fetch(`http://localhost:3001/users/${user?.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(profile)
+      });
+      setMessage('✅ Profil mis à jour !');
+      setTimeout(() => setMessage(''), 3000);
+      localStorage.setItem('user', JSON.stringify({ ...user, ...profile }));
+    } catch(e) {
+      setMessage('❌ Erreur lors de la mise à jour');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex' }}>
       <Sidebar />
-      <div className="ml-64 flex-1 p-8">
-        <h1 className="text-2xl font-bold text-white mb-6">Paramètres</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-4">Profil</h2>
-            <div className="space-y-4">
-              <div><label className="block text-gray-400 text-sm">Nom</label><p className="text-white">{user?.firstName} {user?.lastName}</p></div>
-              <div><label className="block text-gray-400 text-sm">Email</label><p className="text-white">{user?.email}</p></div>
+      <div style={{ marginLeft: '280px', flex: 1, padding: '32px' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h1 style={{ color: 'white', fontSize: '28px', marginBottom: '32px' }}>⚙️ Paramètres</h1>
+
+          {message && (
+            <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid #10b981', color: '#10b981', padding: '12px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center' }}>
+              {message}
             </div>
-          </div>
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-4">Changer mot de passe</h2>
-            <form onSubmit={changePassword} className="space-y-4">
-              <input type="password" placeholder="Mot de passe actuel" value={passwordData.current} onChange={(e) => setPasswordData({...passwordData, current: e.target.value})} className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white" required />
-              <input type="password" placeholder="Nouveau mot de passe" value={passwordData.new} onChange={(e) => setPasswordData({...passwordData, new: e.target.value})} className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white" required />
-              <input type="password" placeholder="Confirmer" value={passwordData.confirm} onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})} className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white" required />
-              <button type="submit" className="w-full py-2 bg-purple-600 rounded-lg hover:bg-purple-700">Changer</button>
-            </form>
+          )}
+
+          <div style={{ background: '#111', borderRadius: '20px', padding: '24px', border: '1px solid #222', marginBottom: '24px' }}>
+            <h2 style={{ color: 'white', fontSize: '20px', marginBottom: '20px' }}>👤 Mon profil</h2>
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div><label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Prénom</label><input type="text" value={profile.firstName} onChange={e => setProfile({ ...profile, firstName: e.target.value })} style={{ width: '100%', padding: '12px', background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', color: 'white' }} /></div>
+              <div><label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Nom</label><input type="text" value={profile.lastName} onChange={e => setProfile({ ...profile, lastName: e.target.value })} style={{ width: '100%', padding: '12px', background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', color: 'white' }} /></div>
+              <div><label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Email</label><input type="email" value={profile.email} disabled style={{ width: '100%', padding: '12px', background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', color: '#64748b' }} /></div>
+              <button onClick={saveProfile} style={{ background: '#667eea', color: 'white', padding: '12px', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Enregistrer</button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,26 +1,48 @@
 ﻿import { NestFactory } from '@nestjs/core';
 import { AppModule } from './src/app.module';
-import { UsersService } from './src/modules/users/users.service';
-import { InventoryService } from './src/modules/inventory/inventory.service';
-import { HrService } from './src/modules/hr/hr.service';
-import { SalesService } from './src/modules/sales/sales.service';
+import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
-async function bootstrap() {
+async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
-  const usersService = app.get(UsersService);
-  const inventoryService = app.get(InventoryService);
-  const hrService = app.get(HrService);
-  const salesService = app.get(SalesService);
-
-  console.log('Seeding database...');
-
-  // Create demo user
-  const existingUser = await usersService.findOne('demo');
-  if (!existingUser) {
-    console.log('Creating demo user...');
+  const dataSource = app.get(DataSource);
+  
+  const userRepository = dataSource.getRepository('User');
+  
+  // Vérifier si admin existe déjà
+  const existingAdmin = await userRepository.findOne({ where: { email: 'admin@inovexa.com' } });
+  
+  if (!existingAdmin) {
+    // Créer admin
+    const admin = userRepository.create({
+      email: 'admin@inovexa.com',
+      password: await bcrypt.hash('Admin123!', 10),
+      firstName: 'Admin',
+      lastName: 'Inovexa',
+      role: 'admin',
+      isActive: true,
+    });
+    await userRepository.save(admin);
+    console.log('✓ Admin créé: admin@inovexa.com / Admin123!');
   }
-
-  console.log('Seed completed!');
+  
+  // Créer utilisateur test
+  const existingUser = await userRepository.findOne({ where: { email: 'user@inovexa.com' } });
+  if (!existingUser) {
+    const user = userRepository.create({
+      email: 'user@inovexa.com',
+      password: await bcrypt.hash('User123!', 10),
+      firstName: 'Test',
+      lastName: 'User',
+      role: 'user',
+      isActive: true,
+    });
+    await userRepository.save(user);
+    console.log('✓ Utilisateur créé: user@inovexa.com / User123!');
+  }
+  
+  console.log('✅ Données de test créées avec succès !');
   await app.close();
 }
-bootstrap();
+
+seed().catch(console.error);

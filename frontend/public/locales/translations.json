@@ -1,0 +1,23 @@
+﻿{
+  "fr": {
+    "app": { "title": "Inovexa ERP", "subtitle": "Solution de gestion d'entreprise" },
+    "nav": { "dashboard": "Tableau de bord", "clients": "Clients", "products": "Produits", "invoices": "Factures", "orders": "Commandes", "shops": "Magasins", "restaurants": "Restaurants", "ecommerce": "E-commerce", "startups": "Startups", "settings": "Paramètres" },
+    "invoice": { "title": "Facture Tunisienne", "number": "N° Facture", "client": "Client", "matricule": "Matricule Fiscal", "amountHT": "Montant HT", "tva": "TVA", "amountTTC": "Montant TTC", "status": "Statut" },
+    "tva": { "standard": "TVA 19%", "reduced": "TVA 13%", "superReduced": "TVA 7%", "zero": "TVA 0%", "agriculture": "TVA 6% (Agricole)" },
+    "common": { "save": "Enregistrer", "cancel": "Annuler", "delete": "Supprimer", "edit": "Modifier", "search": "Rechercher", "add": "Ajouter" }
+  },
+  "ar": {
+    "app": { "title": "إينوفيكسا ERP", "subtitle": "نظام إدارة المؤسسات" },
+    "nav": { "dashboard": "لوحة التحكم", "clients": "العملاء", "products": "المنتجات", "invoices": "الفواتير", "orders": "الطلبات", "shops": "المتاجر", "restaurants": "المطاعم", "ecommerce": "التجارة الإلكترونية", "startups": "الشركات الناشئة", "settings": "الإعدادات" },
+    "invoice": { "title": "فاتورة تونسية", "number": "رقم الفاتورة", "client": "العميل", "matricule": "الرقم الضريبي", "amountHT": "المبلغ بدون ضريبة", "tva": "الضريبة", "amountTTC": "المبلغ شامل الضريبة", "status": "الحالة" },
+    "tva": { "standard": "ضريبة 19%", "reduced": "ضريبة 13%", "superReduced": "ضريبة 7%", "zero": "ضريبة 0%", "agriculture": "ضريبة 6% (فلاحي)" },
+    "common": { "save": "حفظ", "cancel": "إلغاء", "delete": "حذف", "edit": "تعديل", "search": "بحث", "add": "إضافة" }
+  },
+  "en": {
+    "app": { "title": "Inovexa ERP", "subtitle": "Business Management Solution" },
+    "nav": { "dashboard": "Dashboard", "clients": "Clients", "products": "Products", "invoices": "Invoices", "orders": "Orders", "shops": "Shops", "restaurants": "Restaurants", "ecommerce": "E-commerce", "startups": "Startups", "settings": "Settings" },
+    "invoice": { "title": "Tunisian Invoice", "number": "Invoice No.", "client": "Client", "matricule": "Tax ID", "amountHT": "Amount Excl. Tax", "tva": "VAT", "amountTTC": "Amount Incl. Tax", "status": "Status" },
+    "tva": { "standard": "VAT 19%", "reduced": "VAT 13%", "superReduced": "VAT 7%", "zero": "VAT 0%", "agriculture": "VAT 6% (Agricultural)" },
+    "common": { "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit", "search": "Search", "add": "Add" }
+  }
+}

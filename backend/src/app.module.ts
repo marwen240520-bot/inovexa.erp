@@ -1,46 +1,50 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { FinanceModule } from './modules/finance/finance.module';
-import { InventoryModule } from './modules/inventory/inventory.module';
-import { HrModule } from './modules/hr/hr.module';
-import { SalesModule } from './modules/sales/sales.module';
-import { ProductionModule } from './modules/production/production.module';
-import { LogisticsModule } from './modules/logistics/logistics.module';
-import { AIModule } from './modules/ai/ai.module';
+import { ClientsModule } from './modules/clients/clients.module';
+import { ProductsModule } from './modules/products/products.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
+import { EmployeesModule } from './modules/employees/employees.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { StockMovementsModule } from './modules/stock_movements/stock_movements.module';
+import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { PaymentModule } from './modules/payment/payment.module';
+
+import { HealthController } from './modules/health/health.controller';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get('DATABASE_URL'),
+        type: 'sqlite',
+        database: 'data/inovexa.db',
         autoLoadEntities: true,
-        synchronize: process.env.NODE_ENV !== 'production',
+        synchronize: true,
       }),
       inject: [ConfigService],
     }),
     AuthModule,
     UsersModule,
-    FinanceModule,
-    InventoryModule,
-    HrModule,
-    SalesModule,
-    ProductionModule,
-    LogisticsModule,
-    AIModule,
+    ClientsModule,
+    ProductsModule,
+    InvoicesModule,
+    EmployeesModule,
+    OrdersModule,
+    SuppliersModule,
+    StockMovementsModule,
+    WarehousesModule,
     AnalyticsModule,
-    PaymentModule,
+    
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [],
 })
 export class AppModule {}
+
+
+

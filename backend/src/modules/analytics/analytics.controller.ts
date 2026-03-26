@@ -1,32 +1,45 @@
-﻿import { Controller, Get } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
+import { Analytics } from './analytics.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('analytics')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(private readonly service: AnalyticsService) {}
 
-  @Get('dashboard')
-  getDashboard() {
-    return this.analyticsService.getDashboardData();
+  @Get()
+  findAll() {
+    return this.service.findAll();
   }
 
-  @Get('financial')
-  getFinancialReport() {
-    return this.analyticsService.getFinancialMetrics();
+  @Get('stats')
+  getStats() {
+    return this.service.getStats();
   }
 
-  @Get('inventory')
-  getInventoryReport() {
-    return this.analyticsService.getInventoryMetrics();
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
   }
 
-  @Get('hr')
-  getHrReport() {
-    return this.analyticsService.getHrMetrics();
+  @Post()
+  @Roles('admin')
+  create(@Body() data: Partial<Analytics>) {
+    return this.service.create(data);
   }
 
-  @Get('sales')
-  getSalesReport() {
-    return this.analyticsService.getSalesMetrics();
+  @Put(':id')
+  @Roles('admin')
+  update(@Param('id') id: string, @Body() data: Partial<Analytics>) {
+    return this.service.update(id, data);
+  }
+
+  @Delete(':id')
+  @Roles('admin')
+  delete(@Param('id') id: string) {
+    return this.service.delete(id);
   }
 }

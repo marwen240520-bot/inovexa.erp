@@ -3,7 +3,7 @@
 @Injectable()
 export class EmailService {
   async sendEmail(to: string, subject: string, template: string, data: any) {
-    console.log(`Sending email to ${to}: ${subject}`);
+    console.log(`📧 Email envoyé à ${to}: ${subject}`);
     return { success: true };
   }
 }

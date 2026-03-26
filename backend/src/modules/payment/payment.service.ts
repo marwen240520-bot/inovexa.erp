@@ -3,20 +3,28 @@ import Stripe from 'stripe';
 
 @Injectable()
 export class PaymentService {
-  private stripe: Stripe;
+  private stripe: Stripe | null = null;
 
   constructor() {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
-    if (!stripeKey) {
-      throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    // Si la clé Stripe n'est pas configurée, on utilise un mode mock
+    if (stripeKey && stripeKey !== 'sk_test_dummy_key_for_development') {
+      this.stripe = new Stripe(stripeKey);
+      // Pas besoin de spécifier apiVersion, Stripe utilise la dernière version
+    } else {
+      console.log('⚠️  Mode développement: Stripe est désactivé');
     }
-    // Laisser Stripe utiliser sa version par défaut
-    this.stripe = new Stripe(stripeKey, {
-      // apiVersion est optionnel, Stripe utilise sa version par défaut
-    });
   }
 
   async createPaymentIntent(amount: number, currency: string) {
+    if (!this.stripe) {
+      // Mode mock - retourner un faux payment intent
+      return {
+        clientSecret: 'mock_client_secret_' + Date.now(),
+        paymentIntentId: 'mock_pi_' + Date.now(),
+      };
+    }
+
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount: amount * 100,
       currency: currency,
@@ -32,6 +40,14 @@ export class PaymentService {
   }
 
   async createCheckoutSession(invoiceId: string, amount: number) {
+    if (!this.stripe) {
+      // Mode mock
+      return {
+        url: process.env.FRONTEND_URL + '/payment/success?invoice_id=' + invoiceId,
+        sessionId: 'mock_session_' + Date.now(),
+      };
+    }
+
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -58,6 +74,11 @@ export class PaymentService {
   }
 
   async handleWebhook(signature: string, payload: Buffer): Promise<void> {
+    if (!this.stripe) {
+      console.log('⚠️  Mode mock: Webhook ignoré');
+      return;
+    }
+
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
       throw new Error('STRIPE_WEBHOOK_SECRET is not defined');
