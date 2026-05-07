@@ -1,157 +1,1229 @@
 ﻿"use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAppSettings } from "@/hooks/useAppSettings";
+import { useTheme } from "@/contexts/ThemeContext";
+import ExportButtons from "@/components/ui/ExportButtons";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler
+} from "chart.js";
+import { Bar, Line, Doughnut } from "react-chartjs-2";
 
-export default function AIPage() {
+ChartJS.register(
+  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
+  ArcElement, PointElement, LineElement, Filler
+);
+
+// SVG Icon Components
+const Icon = ({ children, size = 16, style = {} }: { children: React.ReactNode; size?: number; style?: React.CSSProperties }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    {children}
+  </svg>
+);
+
+const IconHome = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></Icon>);
+const IconDashboard = ({ size = 16 }: { size?: number }) => (<Icon size={size}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></Icon>);
+const IconChat = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>);
+const IconPredictions = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M2 20L12 4L22 20" /><path d="M6 14H18" /><path d="M12 8V14" /></Icon>);
+const IconRecommendations = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M12 2a10 10 0 1 0 10 10" /><path d="M12 6v6l4 2" /><path d="M16 21.94A10 10 0 0 0 22 12" /></Icon>);
+const IconAnalytics = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M21 12a9 9 0 1 1-9-9" /><path d="M12 3v9h9" /></Icon>);
+const IconRobot = ({ size = 16 }: { size?: number }) => (<Icon size={size}><rect x="3" y="8" width="18" height="12" rx="3" /><path d="M9 11h.01M15 11h.01" /><path d="M9 15s1 1 3 1 3-1 3-1" /><path d="M12 8V5" /><circle cx="12" cy="4" r="1" /><path d="M3 14h-1M22 14h-1" /></Icon>);
+const IconRevenue = ({ size = 16 }: { size?: number }) => (<Icon size={size}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></Icon>);
+const IconProfit = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></Icon>);
+const IconTrendingUp = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></Icon>);
+const IconTrendingDown = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></Icon>);
+const IconUsers = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></Icon>);
+const IconUser = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Icon>);
+const IconPackage = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></Icon>);
+const IconTrophy = ({ size = 16 }: { size?: number }) => (<Icon size={size}><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" /></Icon>);
+const IconStar = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></Icon>);
+const IconWarning = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></Icon>);
+const IconDanger = ({ size = 16 }: { size?: number }) => (<Icon size={size}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></Icon>);
+const IconInfo = ({ size = 16 }: { size?: number }) => (<Icon size={size}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Icon>);
+const IconCheckCircle = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>);
+const IconSend = ({ size = 16 }: { size?: number }) => (<Icon size={size}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></Icon>);
+const IconRefresh = ({ size = 16 }: { size?: number }) => (<Icon size={size}><path d="M23 4v6h-6" /><path d="M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" /><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" /></Icon>);
+const IconArrowRight = ({ size = 12 }: { size?: number }) => (<Icon size={size}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>);
+const IconShoppingCart = ({ size = 16 }: { size?: number }) => (<Icon size={size}><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></Icon>);
+const IconSpinner = ({ size = 32, color = "#6366f1" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite" }}>
+    <circle cx="12" cy="12" r="10" stroke={color} strokeOpacity="0.2" strokeWidth="3" />
+    <path d="M12 2a10 10 0 0 1 10 10" stroke={color} strokeWidth="3" strokeLinecap="round" />
+  </svg>
+);
+const IconZap = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></Icon>);
+const IconCopy = ({ size = 16 }: { size?: number }) => (<Icon size={size}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>);
+const IconTrash = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>);
+
+const animations = `
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+  @keyframes typing { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+  @keyframes glow { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 70% { box-shadow: 0 0 0 10px rgba(99,102,241,0); } 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); } }
+`;
+
+const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+
+// TRADUCTIONS MULTILANGUES
+const translations = {
+  fr: {
+    // Général
+    dashboard: "Tableau de bord", chat: "Chat IA", forecasts: "Prévisions", recommendations: "Recommandations", analytics: "Analyses",
+    revenue: "Chiffre d'affaires", profit: "Bénéfice net", activeClients: "Clients actifs", products: "Produits",
+    salesEvolution: "Évolution des ventes", profitEvolution: "Évolution du bénéfice", topProducts: "Top produits", topClients: "Top clients",
+    forecastGrowth: "Croissance prévue", projectedRevenue: "CA projeté", projectedProfit: "Bénéfice projeté",
+    threeMonths: "3 mois", sixMonths: "6 mois", twelveMonths: "12 mois",
+    optimistic: "Optimiste", realistic: "Réaliste", pessimistic: "Pessimiste",
+    salesForecast: "Prévisions des ventes", lowStock: "produit(s) en stock faible", outOfStock: "produit(s) en rupture",
+    pendingOrders: "commande(s) en attente", send: "Envoyer", newChat: "Nouveau chat", online: "En ligne",
+    loading: "Chargement...", questionPlaceholder: "Posez votre question", refreshing: "Actualisation...",
+    welcome: "Bonjour", whatCanIDo: "Ce que je peux faire", tryQuestions: "Essayez",
+    askRevenue: "Quel est mon chiffre d'affaires ?", askSummary: "Résumé de mon activité",
+    askTopProducts: "Top produits", askStock: "État du stock", askForecast: "Prévisions",
+    viewStock: "Voir stock", restock: "Réapprovisionner", viewOrders: "Voir commandes",
+    dashboardBtn: "Tableau de bord", aiAssistant: "Assistant IA", aiSubtitle: "Intelligence artificielle pour l'analyse et les prévisions",
+    priorityHigh: "Haute priorité", priorityMedium: "Priorité moyenne", priorityLow: "Priorité faible",
+    orderNow: "Commander maintenant", stockStatus: "État du stock", monthlyDemand: "Demande mensuelle",
+    recommendedStock: "Stock recommandé", urgency: "Urgence", action: "Action",
+    confidence: "Niveau de confiance", highConfidence: "Confiance élevée", mediumConfidence: "Confiance moyenne",
+    upperBound: "Scénario optimiste", lowerBound: "Scénario pessimiste", roi: "Retour sur investissement",
+    backToDashboard: "Retour au tableau de bord", quickActions: "Actions rapides", aiThoughts: "L'IA analyse vos données...",
+    typeMessage: "Tapez votre message...", newMessage: "Nouveau message", copyConversation: "Copier la conversation",
+    clearConversation: "Effacer la conversation", conversationCopied: "Conversation copiée !", conversationCleared: "Conversation effacée",
+    online: "En ligne", offline: "Hors ligne", typing: "en train d'écrire...", aiResponding: "L'IA répond...",
+    suggestedQuestions: "Questions suggérées", askQuestion: "Poser une question", welcomeBack: "Bon retour",
+    totalSales: "Ventes totales", averageTicket: "Ticket moyen", growthRate: "Taux de croissance",
+    profitMargin: "Marge bénéficiaire", totalExpenses: "Dépenses totales", conversionRate: "Taux de conversion",
+    inventoryTurnover: "Rotation stock", productivity: "Productivité par employé"
+  },
+  es: {
+    dashboard: "Tablero", chat: "Chat IA", forecasts: "Previsiones", recommendations: "Recomendaciones", analytics: "Análisis",
+    revenue: "Ingresos", profit: "Beneficio neto", activeClients: "Clientes activos", products: "Productos",
+    salesEvolution: "Evolución de ventas", profitEvolution: "Evolución del beneficio", topProducts: "Top productos", topClients: "Top clientes",
+    forecastGrowth: "Crecimiento previsto", projectedRevenue: "Ingreso proyectado", projectedProfit: "Beneficio proyectado",
+    threeMonths: "3 meses", sixMonths: "6 meses", twelveMonths: "12 meses",
+    optimistic: "Optimista", realistic: "Realista", pessimistic: "Pesimista",
+    salesForecast: "Previsión de ventas", lowStock: "producto(s) con stock bajo", outOfStock: "producto(s) agotado(s)",
+    pendingOrders: "pedido(s) pendiente(s)", send: "Enviar", newChat: "Nuevo chat", online: "En línea",
+    loading: "Cargando...", questionPlaceholder: "Haz tu pregunta", refreshing: "Actualizando...",
+    welcome: "Hola", whatCanIDo: "Lo que puedo hacer", tryQuestions: "Prueba",
+    askRevenue: "¿Cuál es mi facturación?", askSummary: "Resumen de mi actividad",
+    askTopProducts: "Top productos", askStock: "Estado del stock", askForecast: "Previsiones",
+    viewStock: "Ver stock", restock: "Reabastecer", viewOrders: "Ver pedidos",
+    dashboardBtn: "Tablero", aiAssistant: "Asistente IA", aiSubtitle: "Inteligencia artificial para análisis y previsiones",
+    priorityHigh: "Alta prioridad", priorityMedium: "Prioridad media", priorityLow: "Prioridad baja",
+    orderNow: "Pedir ahora", stockStatus: "Estado del stock", monthlyDemand: "Demanda mensual",
+    recommendedStock: "Stock recomendado", urgency: "Urgencia", action: "Acción",
+    confidence: "Nivel de confianza", highConfidence: "Confianza alta", mediumConfidence: "Confianza media",
+    upperBound: "Escenario optimista", lowerBound: "Escenario pesimista", roi: "Retorno de inversión",
+    backToDashboard: "Volver al tablero", quickActions: "Acciones rápidas", aiThoughts: "La IA analiza tus datos...",
+    typeMessage: "Escribe tu mensaje...", newMessage: "Nuevo mensaje", copyConversation: "Copiar conversación",
+    clearConversation: "Borrar conversación", conversationCopied: "¡Conversación copiada!", conversationCleared: "Conversación borrada",
+    online: "En línea", offline: "Desconectado", typing: "escribiendo...", aiResponding: "La IA responde...",
+    suggestedQuestions: "Preguntas sugeridas", askQuestion: "Hacer pregunta", welcomeBack: "Bienvenido",
+    totalSales: "Ventas totales", averageTicket: "Ticket promedio", growthRate: "Tasa de crecimiento",
+    profitMargin: "Margen de beneficio", totalExpenses: "Gastos totales", conversionRate: "Tasa de conversión",
+    inventoryTurnover: "Rotación de stock", productivity: "Productividad por empleado"
+  },
+  en: {
+    dashboard: "Dashboard", chat: "AI Chat", forecasts: "Forecasts", recommendations: "Recommendations", analytics: "Analytics",
+    revenue: "Revenue", profit: "Net profit", activeClients: "Active clients", products: "Products",
+    salesEvolution: "Sales evolution", profitEvolution: "Profit evolution", topProducts: "Top products", topClients: "Top clients",
+    forecastGrowth: "Forecast growth", projectedRevenue: "Projected revenue", projectedProfit: "Projected profit",
+    threeMonths: "3 months", sixMonths: "6 months", twelveMonths: "12 months",
+    optimistic: "Optimistic", realistic: "Realistic", pessimistic: "Pessimistic",
+    salesForecast: "Sales forecast", lowStock: "low stock product(s)", outOfStock: "out of stock product(s)",
+    pendingOrders: "pending order(s)", send: "Send", newChat: "New chat", online: "Online",
+    loading: "Loading...", questionPlaceholder: "Ask your question", refreshing: "Refreshing...",
+    welcome: "Hello", whatCanIDo: "What I can do", tryQuestions: "Try",
+    askRevenue: "What is my revenue?", askSummary: "Summary of my activity",
+    askTopProducts: "Top products", askStock: "Stock status", askForecast: "Forecasts",
+    viewStock: "View stock", restock: "Restock", viewOrders: "View orders",
+    dashboardBtn: "Dashboard", aiAssistant: "AI Assistant", aiSubtitle: "Artificial intelligence for analysis and forecasting",
+    priorityHigh: "High priority", priorityMedium: "Medium priority", priorityLow: "Low priority",
+    orderNow: "Order now", stockStatus: "Stock status", monthlyDemand: "Monthly demand",
+    recommendedStock: "Recommended stock", urgency: "Urgency", action: "Action",
+    confidence: "Confidence level", highConfidence: "High confidence", mediumConfidence: "Medium confidence",
+    upperBound: "Optimistic scenario", lowerBound: "Pessimistic scenario", roi: "Return on investment",
+    backToDashboard: "Back to dashboard", quickActions: "Quick actions", aiThoughts: "AI is analyzing your data...",
+    typeMessage: "Type your message...", newMessage: "New message", copyConversation: "Copy conversation",
+    clearConversation: "Clear conversation", conversationCopied: "Conversation copied!", conversationCleared: "Conversation cleared",
+    online: "Online", offline: "Offline", typing: "typing...", aiResponding: "AI is responding...",
+    suggestedQuestions: "Suggested questions", askQuestion: "Ask a question", welcomeBack: "Welcome back",
+    totalSales: "Total sales", averageTicket: "Average ticket", growthRate: "Growth rate",
+    profitMargin: "Profit margin", totalExpenses: "Total expenses", conversionRate: "Conversion rate",
+    inventoryTurnover: "Inventory turnover", productivity: "Productivity per employee"
+  }
+};
+
+// Données de démonstration
+const DEMO_STATS = {
+  sales: { revenue: 233133, total: 342, average: 681 },
+  purchases: { spent: 98200, total: 156 },
+  products: { total: 48, lowStock: 8, outOfStock: 2, totalValue: 125000 },
+  clients: { total: 128, active: 95 },
+  orders: { total: 267, pending: 8 },
+  employees: { total: 12 }
+};
+
+const DEMO_PRODUCTS = [
+  { name: "iPhone 15 Pro", amount: 45200, sales: 45, growth: 15 },
+  { name: "MacBook Pro", amount: 38400, sales: 32, growth: 22 },
+  { name: "AirPods Pro", amount: 28100, sales: 156, growth: 35 },
+  { name: "iPad Air", amount: 18900, sales: 28, growth: 18 },
+  { name: "Apple Watch", amount: 12400, sales: 42, growth: 12 }
+];
+
+const DEMO_CLIENTS = [
+  { name: "TechCorp Solutions", amount: 125000, orders: 24, growth: 28 },
+  { name: "Innovate SAS", amount: 89400, orders: 18, growth: 15 },
+  { name: "Digital Plus", amount: 67200, orders: 14, growth: 22 },
+  { name: "WebMaster Pro", amount: 45100, orders: 9, growth: 8 },
+  { name: "Cloud Systems", amount: 32800, orders: 7, growth: 19 }
+];
+
+const DEMO_RECOMMENDATIONS = [
+  { productName: "iPhone 15 Pro", currentStock: 8, monthlyDemand: 45, recommendedStock: 80, urgency: "high" },
+  { productName: "MacBook Pro", currentStock: 12, monthlyDemand: 32, recommendedStock: 60, urgency: "medium" },
+  { productName: "AirPods Pro", currentStock: 25, monthlyDemand: 156, recommendedStock: 200, urgency: "high" },
+  { productName: "iPad Air", currentStock: 18, monthlyDemand: 28, recommendedStock: 50, urgency: "medium" },
+  { productName: "Apple Watch", currentStock: 35, monthlyDemand: 42, recommendedStock: 70, urgency: "low" }
+];
+
+export default function IAPage() {
   const router = useRouter();
-  const [message, setMessage] = useState('');
-  const [response, setResponse] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [stats, setStats] = useState({ products: 0, invoices: 0, orders: 0, revenue: 0, employees: 0 });
+  const { language, t: globalT } = useLanguage();
+  const { formatCurrency } = useAppSettings();
+  const { theme } = useTheme();
+  
+  // Utiliser les traductions par langue
+  const t = translations[language as keyof typeof translations] || translations.fr;
+  
+  // Définir responsive après avoir défini theme
+  const isMobile = false; // You can implement mobile detection if needed
+  const responsive = {
+    contentPadding: "20px",
+    cardPadding: "16px",
+    cardRadius: "14px",
+    titleSize: "22px",
+    subtitleSize: "12px",
+    kpiValueSize: "24px",
+    kpiLabelSize: "11px",
+    gapSmall: "12px",
+    gapMedium: "16px",
+    gapLarge: "24px"
+  };
+  
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [salesData, setSalesData] = useState<any[]>([]);
+  const [profitData, setProfitData] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [animateCards, setAnimateCards] = useState(false);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [topClients, setTopClients] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [forecastPeriod, setForecastPeriod] = useState("6months");
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [historicalSales, setHistoricalSales] = useState<number[]>([]);
+  const [selectedScenario, setSelectedScenario] = useState<"optimistic" | "realistic" | "pessimistic">("realistic");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [sidebarMargin, setSidebarMargin] = useState("280px");
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Effet pour la marge de la sidebar
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) router.push('/auth/login');
-    fetchStats();
+    const checkSidebarState = () => {
+      const sidebarCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
+      setSidebarMargin(sidebarCollapsed ? "80px" : "280px");
+    };
+    checkSidebarState();
+    window.addEventListener("storage", checkSidebarState);
+    window.addEventListener("sidebarToggle", checkSidebarState);
+    return () => {
+      window.removeEventListener("storage", checkSidebarState);
+      window.removeEventListener("sidebarToggle", checkSidebarState);
+    };
   }, []);
 
-  const fetchStats = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const endpoints = ['products', 'invoices', 'orders', 'employees'];
-      const newStats = { products: 0, invoices: 0, orders: 0, revenue: 0, employees: 0 };
-      for (const ep of endpoints) {
-        const res = await fetch(`http://localhost:3001/${ep}`, { headers: { Authorization: `Bearer ${token}` } });
-        if (res.ok) {
-          const list = await res.json();
-          newStats[ep] = list.length;
-          if (ep === 'invoices') newStats.revenue = list.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
-        }
-      }
-      setStats(newStats);
-    } catch(e) { console.error(e); }
+  // Authentification
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+    if (!token) router.push("/auth/login");
+    if (userData) setCurrentUser(JSON.parse(userData));
+  }, [router]);
+
+  // Chargement initial
+  useEffect(() => {
+    fetchAllData();
+    refreshIntervalRef.current = setInterval(() => {
+      refreshData();
+    }, 300000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, streamingContent, isTyping]);
+
+  useEffect(() => {
+    setTimeout(() => setAnimateCards(true), 100);
+  }, [stats]);
+
+  const refreshData = async () => {
+    setRefreshing(true);
+    await fetchAllData();
+    setRefreshing(false);
+    setLastRefresh(new Date());
   };
 
-  const getAIResponse = (question) => {
-    const q = question.toLowerCase();
-    
-    if (q.includes('ca') || q.includes('chiffre') || q.includes('revenue') || q.includes('vente')) {
-      return `📊 **Analyse financière**\n\nLe chiffre d'affaires total est de **${stats.revenue}€**.\n\n📈 **Tendances :**\n- Croissance estimée: +12% ce mois\n- Panier moyen: ${(stats.revenue / (stats.orders || 1)).toFixed(2)}€\n- Projection mois prochain: ${Math.round(stats.revenue * 1.12)}€\n\n💡 **Recommandation:** Augmentez vos campagnes marketing pour maintenir la croissance.`;
-    }
-    
-    if (q.includes('produit') || q.includes('stock') || q.includes('inventaire')) {
-      const lowStock = stats.products > 0 ? Math.floor(stats.products * 0.2) : 5;
-      return `📦 **Analyse des stocks**\n\nTotal produits: **${stats.products}**\n\n⚠️ **Alertes stock bas:** ${lowStock} produits nécessitent un réapprovisionnement\n\n📈 **Top produits:**\n1. Laptop Pro (45 unités vendues)\n2. Souris Sans Fil (120 unités)\n3. Clavier Mécanique (78 unités)\n\n💡 **Recommandation:** Réapprovisionnez les produits à forte demande.`;
-    }
-    
-    if (q.includes('employé') || q.includes('rh') || q.includes('personnel')) {
-      return `👔 **Analyse RH**\n\nTotal employés: **${stats.employees}**\n\n📊 **Répartition:**\n- Développeurs: 40%\n- Commercial: 25%\n- Administration: 20%\n- Support: 15%\n\n📈 **Taux d'absentéisme:** 4.2%\n\n💡 **Recommandation:** Organisez une formation pour améliorer les compétences.`;
-    }
-    
-    if (q.includes('facture') || q.includes('paiement')) {
-      const paid = stats.invoices > 0 ? Math.floor(stats.invoices * 0.7) : 0;
-      const pending = stats.invoices - paid;
-      return `💰 **Analyse des factures**\n\nTotal factures: **${stats.invoices}**\n- Payées: ${paid}\n- En attente: ${pending}\n\n📊 **Montant total:** ${stats.revenue}€\n\n⚠️ **Relances à effectuer:** ${pending} factures impayées\n\n💡 **Recommandation:** Envoyez des relances automatiques pour les factures en retard.`;
-    }
-    
-    if (q.includes('prévision') || q.includes('prediction') || q.includes('futur')) {
-      return `🔮 **Prévisions IA**\n\n**Ventes mois prochain:** ${Math.round(stats.revenue * 1.12)}€ (+12%)\n\n**Stock recommandé:**\n- Produits phares: +30%\n- Produits saisonniers: +50%\n\n**Besoin en personnel:** ${Math.ceil(stats.employees * 0.1)} nouveaux employés\n\n💡 **Recommandation:** Préparez votre stock pour la saison à venir.`;
-    }
-    
-    if (q.includes('perform') || q.includes('analyse')) {
-      return `📈 **Analyse de performance**\n\n**Indicateurs clés:**\n- CA total: ${stats.revenue}€\n- Nombre de commandes: ${stats.orders}\n- Panier moyen: ${(stats.revenue / (stats.orders || 1)).toFixed(2)}€\n- Taux de conversion: ${((stats.orders / (stats.invoices || 1)) * 100).toFixed(1)}%\n\n**Note globale:** ⭐⭐⭐⭐ (4.2/5)\n\n💡 **Points à améliorer:** Fidélisation client et réduction des délais de livraison.`;
-    }
-    
-    return `🤖 **Assistant IA Inovexa**\n\nJe suis votre assistant intelligent. Voici ce que je peux faire pour vous :\n\n📊 **Analyses disponibles:**\n• Chiffre d'affaires et finances\n• Gestion des stocks et produits\n• Ressources humaines\n• Factures et paiements\n• Prévisions et prédictions\n• Performance globale\n\n💡 **Exemples de questions:**\n• "Quel est le chiffre d'affaires ?"\n• "Analyse des stocks"\n• "Prévisions pour le mois prochain"\n• "Performance de l'entreprise"\n\nPosez votre question ci-dessous !`;
-  };
-
-  const sendMessage = async () => {
-    if (!message.trim()) return;
+  const fetchAllData = async () => {
+    const token = localStorage.getItem("token");
     setLoading(true);
     
-    setTimeout(() => {
-      const aiResponse = getAIResponse(message);
-      setResponse(aiResponse);
-      setHistory([...history, { user: message, ai: aiResponse, time: new Date().toLocaleTimeString() }]);
-      setMessage('');
+    try {
+      const fetchWithAuth = async (url: string) => {
+        try {
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+          if (!res.ok) return [];
+          const data = await res.json();
+          return Array.isArray(data) ? data : [];
+        } catch (err) {
+          return [];
+        }
+      };
+
+      const [sales, purchases, products, clients, orders, invoices, employees] = await Promise.all([
+        fetchWithAuth("http://localhost:3001/sales"),
+        fetchWithAuth("http://localhost:3001/purchases"),
+        fetchWithAuth("http://localhost:3001/products"),
+        fetchWithAuth("http://localhost:3001/clients"),
+        fetchWithAuth("http://localhost:3001/orders"),
+        fetchWithAuth("http://localhost:3001/invoices"),
+        fetchWithAuth("http://localhost:3001/employees")
+      ]);
+
+      const hasRealData = sales.length > 0 || products.length > 0;
+      
+      const totalRevenue = hasRealData ? sales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0) : DEMO_STATS.sales.revenue;
+      const totalExpenses = hasRealData ? purchases.reduce((sum: number, p: any) => sum + (Number(p.total) || 0), 0) : DEMO_STATS.purchases.spent;
+      const lowStockCount = hasRealData ? products.filter((p: any) => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length : DEMO_STATS.products.lowStock;
+      const outOfStockCount = hasRealData ? products.filter((p: any) => (p.quantity || 0) === 0).length : DEMO_STATS.products.outOfStock;
+      const totalProductsValue = hasRealData ? products.reduce((sum: number, p: any) => sum + ((Number(p.price) || 0) * (Number(p.quantity) || 0)), 0) : DEMO_STATS.products.totalValue;
+      const activeClients = hasRealData ? clients.filter((c: any) => c.status === "active").length : DEMO_STATS.clients.active;
+      const pendingOrders = hasRealData ? orders.filter((o: any) => o.status === "pending").length : DEMO_STATS.orders.pending;
+
+      setStats({
+        sales: { revenue: totalRevenue, total: hasRealData ? sales.length : DEMO_STATS.sales.total, average: hasRealData && sales.length > 0 ? totalRevenue / sales.length : DEMO_STATS.sales.average },
+        purchases: { spent: totalExpenses, total: hasRealData ? purchases.length : DEMO_STATS.purchases.total },
+        products: { total: hasRealData ? products.length : DEMO_STATS.products.total, lowStock: lowStockCount, outOfStock: outOfStockCount, totalValue: totalProductsValue },
+        clients: { total: hasRealData ? clients.length : DEMO_STATS.clients.total, active: activeClients },
+        orders: { total: hasRealData ? orders.length : DEMO_STATS.orders.total, pending: pendingOrders },
+        employees: { total: hasRealData ? employees.length : DEMO_STATS.employees.total }
+      });
+
+      // Alertes
+      const newAlerts = [];
+      if (lowStockCount > 0) newAlerts.push({ type: "warning", icon: IconWarning, message: lowStockCount + " " + t.lowStock, action: { label: t.viewStock, path: "/dashboard/stock" } });
+      if (outOfStockCount > 0) newAlerts.push({ type: "danger", icon: IconDanger, message: outOfStockCount + " " + t.outOfStock, action: { label: t.restock, path: "/dashboard/purchases" } });
+      if (pendingOrders > 0) newAlerts.push({ type: "info", icon: IconInfo, message: pendingOrders + " " + t.pendingOrders, action: { label: t.viewOrders, path: "/dashboard/orders" } });
+      setAlerts(newAlerts);
+
+      // Données mensuelles
+      const monthlySales = Array(12).fill(0);
+      const monthlyProfit = Array(12).fill(0);
+      
+      if (hasRealData) {
+        sales.forEach((s: any) => {
+          if (s.createdAt) {
+            const m = new Date(s.createdAt).getMonth();
+            monthlySales[m] += Number(s.total) || 0;
+            monthlyProfit[m] += Number(s.total) || 0;
+          }
+        });
+        purchases.forEach((p: any) => {
+          if (p.createdAt) {
+            const m = new Date(p.createdAt).getMonth();
+            monthlyProfit[m] -= Number(p.total) || 0;
+          }
+        });
+      } else {
+        const demoData = [12500, 14200, 13800, 15600, 16800, 18200, 19500, 18800, 20200, 21500, 22800, 24500];
+        demoData.forEach((v, i) => {
+          monthlySales[i] = v;
+          monthlyProfit[i] = v * 0.6;
+        });
+      }
+
+      setSalesData(MONTHS.map((m, i) => ({ month: m, sales: monthlySales[i] })));
+      setProfitData(MONTHS.map((m, i) => ({ month: m, profit: monthlyProfit[i] })));
+      setHistoricalSales(monthlySales);
+
+      // Top produits
+      const productSales: Record<string, number> = {};
+      if (hasRealData) {
+        sales.forEach((s: any) => {
+          const name = s.productName || s.product;
+          if (name) productSales[name] = (productSales[name] || 0) + (Number(s.total) || 0);
+        });
+      }
+      const topProductsList = Object.entries(productSales).length > 0 
+        ? Object.entries(productSales).map(([name, amount]) => ({ name, amount, sales: Math.round(amount / 100), growth: Math.floor(Math.random() * 30) + 5 })).sort((a, b) => b.amount - a.amount).slice(0, 5)
+        : DEMO_PRODUCTS;
+      setTopProducts(topProductsList);
+
+      // Top clients
+      const clientSales: Record<string, number> = {};
+      if (hasRealData) {
+        sales.forEach((s: any) => { if (s.clientName) clientSales[s.clientName] = (clientSales[s.clientName] || 0) + (Number(s.total) || 0); });
+      }
+      const topClientsList = Object.entries(clientSales).length > 0
+        ? Object.entries(clientSales).map(([name, amount]) => ({ name, amount, orders: Math.round(amount / 5000), growth: Math.floor(Math.random() * 30) + 5 })).sort((a, b) => b.amount - a.amount).slice(0, 5)
+        : DEMO_CLIENTS;
+      setTopClients(topClientsList);
+
+      // Recommandations
+      const dynamicRecs = hasRealData && products.length > 0
+        ? products.filter((p: any) => (p.quantity || 0) < 30).map((p: any) => ({
+            productName: p.name,
+            currentStock: p.quantity || 0,
+            monthlyDemand: Math.max(5, Math.round((sales.filter((s: any) => (s.productName === p.name || s.product === p.name)).reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) / 3) || 5)),
+            recommendedStock: Math.max(30, Math.round((p.quantity || 0) * 1.5)),
+            urgency: (p.quantity || 0) < 5 ? "high" : (p.quantity || 0) < 15 ? "medium" : "low"
+          })).sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.urgency] - { high: 0, medium: 1, low: 2 }[b.urgency])).slice(0, 10)
+        : DEMO_RECOMMENDATIONS;
+      setRecommendations(dynamicRecs);
+
+      // Prévisions
+      const nonZeroSales = monthlySales.filter(v => v > 0);
+      const avgMonthly = nonZeroSales.length ? nonZeroSales.reduce((a, b) => a + b, 0) / nonZeroSales.length : 15000;
+      const last3Months = monthlySales.slice(-3).filter(v => v > 0);
+      const trend = last3Months.length >= 2 ? ((last3Months[last3Months.length - 1] - last3Months[0]) / last3Months[0]) * 100 : 8.5;
+      const volatility = Math.abs(trend) / 2;
+      
+      setPredictions({
+        revenueForecast: { 
+          growthRate: Math.max(-15, Math.min(35, trend)).toFixed(1), 
+          confidence: Math.min(95, Math.max(65, 85 - volatility)).toFixed(0),
+          trend: trend > 5 ? "up" : trend < -5 ? "down" : "stable",
+          avgMonthly: avgMonthly
+        },
+        roi: (trend * 1.2).toFixed(1),
+        ebitda: (totalRevenue * 0.25).toFixed(0)
+      });
+
+      // Initialiser le chat avec message de bienvenue
+      if (chatMessages.length === 0) {
+        const welcomeMsg = getWelcomeMessage();
+        setChatMessages([{ role: "assistant", content: welcomeMsg, timestamp: new Date(), actions: getWelcomeActions() }]);
+      }
+
+    } catch (error) {
+      console.error("Erreur:", error);
+      setStats(DEMO_STATS);
+      setTopProducts(DEMO_PRODUCTS);
+      setTopClients(DEMO_CLIENTS);
+      setRecommendations(DEMO_RECOMMENDATIONS);
+      setPredictions({ revenueForecast: { growthRate: "8.5", confidence: "82", trend: "up", avgMonthly: 15000 }, roi: "10.2", ebitda: "45000" });
+      
+      const demoMonthlySales = [12500, 14200, 13800, 15600, 16800, 18200, 19500, 18800, 20200, 21500, 22800, 24500];
+      setSalesData(MONTHS.map((m, i) => ({ month: m, sales: demoMonthlySales[i] })));
+      setProfitData(MONTHS.map((m, i) => ({ month: m, profit: demoMonthlySales[i] * 0.6 })));
+      setHistoricalSales(demoMonthlySales);
+      
+      if (chatMessages.length === 0) {
+        const welcomeMsg = getWelcomeMessage();
+        setChatMessages([{ role: "assistant", content: welcomeMsg, timestamp: new Date(), actions: getWelcomeActions() }]);
+      }
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const getWelcomeActions = () => {
+    return [
+      { label: t.askRevenue, icon: IconRevenue, query: t.askRevenue },
+      { label: t.askSummary, icon: IconDashboard, query: t.askSummary },
+      { label: t.askTopProducts, icon: IconTrophy, query: t.askTopProducts },
+      { label: t.askStock, icon: IconPackage, query: t.askStock },
+      { label: t.askForecast, icon: IconPredictions, query: t.askForecast }
+    ];
+  };
+
+  const getForecastData = () => {
+    const multiplier = { optimistic: 1.25, realistic: 1.0, pessimistic: 0.85 }[selectedScenario];
+    let monthsToForecast = 6;
+    if (forecastPeriod === "3months") monthsToForecast = 3;
+    else if (forecastPeriod === "6months") monthsToForecast = 6;
+    else if (forecastPeriod === "12months") monthsToForecast = 12;
+    
+    const lastValues = historicalSales.filter(v => v > 0).slice(-3);
+    const baseValue = lastValues.length ? lastValues.reduce((a, b) => a + b, 0) / lastValues.length : (predictions?.revenueForecast?.avgMonthly || 15000);
+    const growthRate = Number(predictions?.revenueForecast?.growthRate || 8.5) / 100;
+    
+    let forecast = [];
+    let current = baseValue;
+    
+    for (let i = 0; i < monthsToForecast; i++) {
+      const monthlyGrowth = growthRate * multiplier * (1 + (i * 0.03));
+      current = current * (1 + monthlyGrowth);
+      forecast.push(Math.round(current));
+    }
+    return forecast;
+  };
+
+  const getForecastLabels = () => {
+    const monthsToForecast = forecastPeriod === "3months" ? 3 : forecastPeriod === "6months" ? 6 : 12;
+    const labels = [];
+    for (let i = 1; i <= monthsToForecast; i++) {
+      labels.push("M+" + i);
+    }
+    return labels;
+  };
+
+  const getUpperBoundData = () => getForecastData().map(v => Math.round(v * 1.12));
+  const getLowerBoundData = () => getForecastData().map(v => Math.round(v * 0.88));
+
+  // ==================== CHAT IA AMÉLIORÉ ====================
+  
+  const sendMessage = () => {
+    if (!chatInput.trim() || loadingAI) return;
+    const userMessage = chatInput;
+    setChatMessages(prev => [...prev, { role: "user", content: userMessage, timestamp: new Date() }]);
+    setChatInput("");
+    setLoadingAI(true);
+    setIsTyping(true);
+    
+    setTimeout(() => {
+      setIsTyping(false);
+      setIsStreaming(true);
+      setStreamingContent("");
+      
+      const response = generateAIResponse(userMessage);
+      const actions = getContextualActions(userMessage);
+      let fullResponse = "";
+      const words = response.split(/(\s+)/);
+      let index = 0;
+      
+      const interval = setInterval(() => {
+        if (index < words.length) {
+          fullResponse += words[index];
+          setStreamingContent(fullResponse);
+          index++;
+        } else {
+          clearInterval(interval);
+          setChatMessages(prev => [...prev, { role: "assistant", content: fullResponse, timestamp: new Date(), actions }]);
+          setLoadingAI(false);
+          setIsStreaming(false);
+          setStreamingContent("");
+        }
+      }, 15);
     }, 500);
   };
 
-  const questions = [
-    "Quel est le chiffre d'affaires ?",
-    "Analyse des stocks et produits",
-    "Prévisions pour le mois prochain",
-    "Performance de l'entreprise",
-    "Analyse des factures",
-    "Ressources humaines"
+  const generateAIResponse = (question: string): string => {
+    const q = question.toLowerCase();
+    const revenue = stats?.sales?.revenue || 233133;
+    const profit = revenue - (stats?.purchases?.spent || 98200);
+    const growth = predictions?.revenueForecast?.growthRate || 12.5;
+    const confidence = predictions?.revenueForecast?.confidence || 82;
+    const forecastData = getForecastData();
+    const roi = predictions?.roi || 15.2;
+    const ebitda = predictions?.ebitda || 58283;
+    const margin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : "0";
+    
+    if (q.match(/vente|chiffre|ca|revenue|recette|ventas|ingresos|sales/)) {
+      return `📊 **${t.revenue}**\n\n` +
+             `💰 **Total :** ${formatCurrency(revenue)}\n` +
+             `📈 **${t.growthRate} :** +${growth}%\n` +
+             `📦 **${t.totalSales} :** ${stats?.sales?.total || 342}\n` +
+             `🎫 **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 681)}\n\n` +
+             `📊 **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! 🚀" : Number(growth) > 8 ? "Bonne dynamique commerciale 📈" : "Croissance à surveiller ⚠️"}`;
+    }
+    
+    if (q.match(/bénéfice|profit|beneficio|ganancia|marge/)) {
+      return `📈 **${t.profit}**\n\n` +
+             `💰 **${t.profit} :** ${formatCurrency(profit)}\n` +
+             `📊 **${t.profitMargin} :** ${margin}%\n` +
+             `💵 **${t.revenue} :** ${formatCurrency(revenue)}\n` +
+             `💸 **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 98200)}\n` +
+             `🎯 **EBITDA estimé :** ${formatCurrency(Number(ebitda))}\n\n` +
+             `💡 **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! 🎯" : Number(margin) > 15 ? "Bonne marge, optimisez vos coûts 📊" : "Marge à améliorer, analysez vos dépenses ⚠️"}`;
+    }
+    
+    if (q.match(/résumé|synthèse|bilan|rapport|summary|resumen/)) {
+      return `📋 **RAPPORT D'ACTIVITÉ**\n\n` +
+             `💰 **FINANCES**\n` +
+             `• ${t.revenue}: ${formatCurrency(revenue)}\n` +
+             `• ${t.profit}: ${formatCurrency(profit)}\n` +
+             `• ${t.profitMargin}: ${margin}%\n` +
+             `• ${t.growthRate}: +${growth}%\n\n` +
+             `👥 **CLIENTS**\n` +
+             `• Total: ${stats?.clients?.total || 128}\n` +
+             `• ${t.activeClients}: ${stats?.clients?.active || 95}\n` +
+             `• ${t.conversionRate}: ${Math.round((stats?.clients?.active || 95) / (stats?.clients?.total || 128) * 100)}%\n\n` +
+             `📦 **PRODUITS**\n` +
+             `• Catalogue: ${stats?.products?.total || 48} ${t.products}\n` +
+             `• ${t.lowStock}: ${stats?.products?.lowStock || 8}\n` +
+             `• Valeur stock: ${formatCurrency(stats?.products?.totalValue || 125000)}\n` +
+             `• ${t.inventoryTurnover}: ${(revenue / (stats?.products?.totalValue || 125000)).toFixed(1)}x\n\n` +
+             `📋 **COMMANDES**\n` +
+             `• ${t.pendingOrders}: ${stats?.orders?.pending || 8}\n\n` +
+             `🔮 **PRÉVISIONS IA**\n` +
+             `• ${t.projectedRevenue} M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
+             `• ${t.growthRate}: +${growth}%\n` +
+             `• ${t.confidence}: ${confidence}%\n\n` +
+             `💡 **Recommandation :** ${Number(growth) > 10 ? "Capitalisez sur cette dynamique !" : "Optimisez vos processus pour accélérer la croissance"}`;
+    }
+    
+    if (q.match(/top produits|meilleurs produits|best sellers|top productos/)) {
+      let response = `🏆 **${t.topProducts}**\n\n`;
+      topProducts.slice(0, 4).forEach((p, i) => {
+        response += `${i + 1}. **${p.name}**\n` +
+                   `   💰 CA: ${formatCurrency(p.amount)}\n` +
+                   `   📦 Ventes: ${p.sales} unités\n` +
+                   `   📈 Croissance: +${p.growth}%\n\n`;
+      });
+      response += `💡 **Analyse IA** : Ces produits représentent votre cœur de métier. Concentrez vos efforts marketing sur ces références !`;
+      return response;
+    }
+    
+    if (q.match(/top clients|meilleurs clients|best customers|top clientes/)) {
+      let response = `⭐ **${t.topClients}**\n\n`;
+      topClients.slice(0, 4).forEach((c, i) => {
+        response += `${i + 1}. **${c.name}**\n` +
+                   `   💰 Achats: ${formatCurrency(c.amount)}\n` +
+                   `   📦 Commandes: ${c.orders}\n` +
+                   `   📈 Croissance: +${c.growth}%\n\n`;
+      });
+      response += `💡 **Recommandation IA** : Mettez en place un programme de fidélisation premium pour ces clients stratégiques !`;
+      return response;
+    }
+    
+    if (q.match(/stock|inventaire|inventory|estado del stock/)) {
+      const urgentItems = recommendations.filter(r => r.urgency === "high").slice(0, 3);
+      let stockResponse = `📦 **${t.stockStatus}**\n\n` +
+                         `📊 **Vue d'ensemble**\n` +
+                         `• ${t.products} total: ${stats?.products?.total || 48}\n` +
+                         `• ${t.lowStock}: ${stats?.products?.lowStock || 8}\n` +
+                         `• Rupture: ${stats?.products?.outOfStock || 2}\n` +
+                         `• Valeur totale: ${formatCurrency(stats?.products?.totalValue || 125000)}\n` +
+                         `• ${t.inventoryTurnover}: ${(revenue / (stats?.products?.totalValue || 125000)).toFixed(1)}x\n\n` +
+                         `⚠️ **URGENCES RÉAPPROVISIONNEMENT**\n`;
+      if (urgentItems.length) {
+        urgentItems.forEach(i => {
+          stockResponse += `• **${i.productName}** : ${i.currentStock} unités (demande: ${i.monthlyDemand}/mois)\n`;
+        });
+        stockResponse += `\n💡 **Action IA recommandée** : Réapprovisionnez ${urgentItems.length} produit(s) en priorité !`;
+      } else {
+        stockResponse += `✓ Aucune urgence - niveau de stock satisfaisant\n\n💡 **Bravo !** Votre gestion des stocks est optimale.`;
+      }
+      return stockResponse;
+    }
+    
+    if (q.match(/prévision|forecast|tendance|prediction|prevision/)) {
+      return `🔮 **${t.salesForecast}**\n\n` +
+             `📈 **Tendances détectées**\n` +
+             `• ${t.growthRate}: +${growth}%\n` +
+             `• ${t.roi} estimé: ${roi}%\n` +
+             `• EBITDA projeté: ${formatCurrency(Number(ebitda))}\n\n` +
+             `📊 **Projections mensuelles**\n` +
+             `• M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
+             `• M+2: ${formatCurrency(forecastData[1] || 0)}\n` +
+             `• M+3: ${formatCurrency(forecastData[2] || 0)}\n\n` +
+             `🎯 **${t.confidence}**\n` +
+             `• ${t.confidence}: ${confidence}%\n` +
+             `• ${Number(confidence) > 85 ? t.highConfidence : t.mediumConfidence}\n\n` +
+             `💡 **Conseil stratégique IA**\n` +
+             (Number(growth) > 15 ? "📈 Anticipez la forte croissance ! Augmentez vos stocks et renforcez votre équipe commerciale." :
+              Number(growth) > 5 ? "📊 Préparez-vous à une croissance modérée. Maintenez vos investissements." :
+              "⚠️ Soyez prudent sur les investissements. Optimisez vos coûts.");
+    }
+    
+    if (q.match(/aide|help|que faire|commandes|que puis-je/)) {
+      return `🆘 **GUIDE D'UTILISATION**\n\n` +
+             `📋 **Questions possibles**\n` +
+             `• "${t.askRevenue}"\n` +
+             `• "${t.askSummary}"\n` +
+             `• "${t.askTopProducts}"\n` +
+             `• "${t.askStock}"\n` +
+             `• "${t.askForecast}"\n` +
+             `• "Quel est mon ROI ?"\n` +
+             `• "Performance globale"\n\n` +
+             `🎯 **Actions rapides disponibles**\n` +
+             `• 📊 Analyse des ventes\n` +
+             `• 📦 Suivi du stock\n` +
+             `• 🔮 Prévisions financières\n` +
+             `• ⭐ Recommandations produits\n\n` +
+             `💡 **Astuce IA** : Plus votre question est précise, plus la réponse sera pertinente !`;
+    }
+    
+    return `🤖 **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n🔍 **${t.tryQuestions} :**\n` +
+           `• "${t.askRevenue}"\n` +
+           `• "${t.askSummary}"\n` +
+           `• "${t.askTopProducts}"\n` +
+           `• "${t.askStock}"\n` +
+           `• "${t.askForecast}"\n` +
+           `• "Aide" pour plus d'options\n\n💬 Posez votre question en langage naturel, je suis là pour vous aider !`;
+  };
+
+  const getContextualActions = (question: string) => {
+    const q = question.toLowerCase();
+    const actions = [];
+    if (q.match(/produit|stock|inventaire|producto/)) actions.push({ label: t.viewStock, icon: IconPackage, path: "/dashboard/stock" });
+    if (q.match(/client|cliente/)) actions.push({ label: "Voir clients", icon: IconUsers, path: "/dashboard/clients" });
+    if (q.match(/commande|pedido|order/)) actions.push({ label: t.viewOrders, icon: IconShoppingCart, path: "/dashboard/orders" });
+    if (q.match(/prévision|forecast|tendance|prevision/)) actions.push({ label: "Voir prévisions", icon: IconPredictions, path: "/dashboard/ai?tab=forecasts" });
+    if (q.match(/vente|ca|chiffre|ventas|ingresos/)) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
+    if (actions.length === 0) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
+    return actions.slice(0, 4);
+  };
+
+  const getWelcomeMessage = () => {
+    const name = currentUser?.name?.split(' ')[0] || (language === 'fr' ? "utilisateur" : language === 'es' ? "usuario" : "user");
+    const hour = new Date().getHours();
+    let greeting = "";
+    if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
+    else if (language === 'es') greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
+    else greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    
+    return `${greeting} ${name} ! 👋\n\n` +
+           `🤖 **${t.aiAssistant}**\n\n` +
+           `✨ **${t.whatCanIDo} :**\n` +
+           `• 📊 Analyser vos ventes et bénéfices\n` +
+           `• 📦 Vérifier l'état de votre stock\n` +
+           `• ⭐ Identifier vos meilleurs clients et produits\n` +
+           `• 🔮 Générer des prévisions précises\n` +
+           `• 📋 Vous donner un résumé complet\n\n` +
+           `💬 **${t.tryQuestions} :**\n` +
+           `• "${t.askRevenue}"\n` +
+           `• "${t.askSummary}"\n` +
+           `• "${t.askTopProducts}"\n` +
+           `• "${t.askStock}"\n` +
+           `• "${t.askForecast}"\n\n` +
+           `Comment puis-je vous aider aujourd'hui ? 🚀`;
+  };
+
+  const copyConversation = () => {
+    const conversation = chatMessages.map(msg => `${msg.role === "user" ? "👤 " + (language === 'fr' ? "Vous" : language === 'es' ? "Tú" : "You") : "🤖 IA"}: ${msg.content}`).join("\n\n");
+    navigator.clipboard.writeText(conversation);
+    alert(t.conversationCopied);
+  };
+
+  const clearConversation = () => {
+    if (confirm(language === 'fr' ? "Effacer toute la conversation ?" : language === 'es' ? "¿Borrar toda la conversación?" : "Clear entire conversation?")) {
+      setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]);
+      alert(t.conversationCleared);
+    }
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { labels: { color: theme.textSecondary, font: { size: 9 } } },
+      tooltip: { backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.textSecondary, callbacks: { label: (ctx: any) => `${ctx.dataset.label || ''}: ${formatCurrency(ctx.raw || 0)}` } }
+    },
+    scales: { y: { ticks: { color: theme.textSecondary, callback: (value: any) => formatCurrency(value) }, grid: { color: theme.border }, beginAtZero: true }, x: { ticks: { color: theme.textSecondary }, grid: { color: theme.border } } }
+  };
+
+  const salesChartData = { labels: salesData.map(d => d.month), datasets: [{ label: t.salesEvolution, data: salesData.map(d => d.sales), backgroundColor: `${theme.primary}20`, borderColor: theme.primary, borderWidth: 2, fill: true, tension: 0.3 }] };
+  const profitChartData = { labels: profitData.map(d => d.month), datasets: [{ label: t.profitEvolution, data: profitData.map(d => d.profit), backgroundColor: `${theme.accent}20`, borderColor: theme.accent, borderWidth: 2, fill: true, tension: 0.3 }] };
+  const topProductsChartData = { labels: topProducts.map(p => p.name.length > 12 ? p.name.substring(0, 10) + "..." : p.name), datasets: [{ label: t.revenue, data: topProducts.map(p => p.amount), backgroundColor: ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#3b82f6"], borderRadius: 8 }] };
+  const topClientsChartData = { labels: topClients.map(c => c.name.length > 12 ? c.name.substring(0, 10) + "..." : c.name), datasets: [{ label: t.revenue, data: topClients.map(c => c.amount), backgroundColor: ["#10b981", "#f59e0b", "#667eea", "#8b5cf6", "#ef4444"], borderRadius: 8 }] };
+  const forecastChartData = { 
+    labels: getForecastLabels(), 
+    datasets: [
+      { label: t.upperBound, data: getUpperBoundData(), borderColor: "rgba(16,185,129,0.4)", backgroundColor: "rgba(16,185,129,0.05)", borderWidth: 1.5, fill: "+1", tension: 0.3, pointRadius: 0 },
+      { label: t.salesForecast + " (" + (language === 'fr' ? "Réaliste" : language === 'es' ? "Realista" : "Realistic") + ")", data: getForecastData(), borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.25)", borderWidth: 2.5, fill: true, tension: 0.3, pointBackgroundColor: "#f59e0b", pointRadius: 5, pointHoverRadius: 7 },
+      { label: t.lowerBound, data: getLowerBoundData(), borderColor: "rgba(239,68,68,0.4)", backgroundColor: "rgba(239,68,68,0.05)", borderWidth: 1.5, fill: false, tension: 0.3, pointRadius: 0 }
+    ] 
+  };
+
+  const kpiCards = [
+    { Icon: IconRevenue, label: t.revenue, value: formatCurrency(stats?.sales?.revenue || 233133), color: theme.accent, growth: predictions?.revenueForecast?.growthRate || 12.5 },
+    { Icon: IconProfit, label: t.profit, value: formatCurrency((stats?.sales?.revenue || 233133) - (stats?.purchases?.spent || 98200)), color: "#f59e0b", growth: predictions?.roi || 15.2 },
+    { Icon: IconUsers, label: t.activeClients, value: stats?.clients?.active || 95, color: theme.primary, growth: 15.3 },
+    { Icon: IconPackage, label: t.products, value: stats?.products?.total || 48, color: "#10b981", growth: 8.5 }
   ];
 
+  const tabs = [
+    { id: "dashboard", label: t.dashboard, Icon: IconDashboard },
+    { id: "chat", label: t.chat, Icon: IconChat },
+    { id: "forecasts", label: t.forecasts, Icon: IconPredictions },
+    { id: "recommendations", label: t.recommendations, Icon: IconRecommendations },
+    { id: "analytics", label: t.analytics, Icon: IconAnalytics }
+  ];
+
+  const quickSuggestions = [
+    { Icon: IconRevenue, text: t.revenue, query: t.askRevenue, color: theme.accent },
+    { Icon: IconDashboard, text: t.askSummary, query: t.askSummary, color: theme.primary },
+    { Icon: IconTrophy, text: t.topProducts, query: t.askTopProducts, color: "#f59e0b" },
+    { Icon: IconStar, text: t.topClients, query: "Top clients", color: "#8b5cf6" },
+    { Icon: IconPackage, text: t.stockStatus, query: t.askStock, color: "#10b981" },
+    { Icon: IconPredictions, text: t.forecasts, query: t.askForecast, color: "#ec489a" }
+  ];
+
+  if (loading) {
+    return (
+      <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <style>{animations}</style>
+        <div style={{ textAlign: "center" }}>
+          <IconSpinner size={40} color={theme.primary} />
+          <p style={{ color: theme.textSecondary, marginTop: "12px", fontSize: "12px" }}>{t.loading}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex' }}>
+    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+      <style>{animations}</style>
       <Sidebar />
-      <div style={{ marginLeft: '280px', flex: 1, padding: '32px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h1 style={{ color: 'white', fontSize: '28px', marginBottom: '8px' }}>🤖 Assistant IA Professionnel</h1>
-          <p style={{ color: '#94a3b8', marginBottom: '32px' }}>Intelligence artificielle avancée pour l'analyse et les recommandations</p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-            {/* Chat */}
-            <div style={{ background: '#111', borderRadius: '20px', padding: '24px', border: '1px solid #222' }}>
-              <h2 style={{ color: 'white', marginBottom: '20px' }}>💬 Conversation</h2>
-              <div style={{ height: '450px', overflowY: 'auto', marginBottom: '20px', borderBottom: '1px solid #222', paddingBottom: '16px' }}>
-                {history.map((h, i) => (
-                  <div key={i}>
-                    <div style={{ background: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '8px' }}>
-                      <span style={{ color: '#667eea', fontWeight: 'bold' }}>👤 Vous:</span>
-                      <span style={{ color: 'white', marginLeft: '8px' }}>{h.user}</span>
-                    </div>
-                    <div style={{ background: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '16px', whiteSpace: 'pre-wrap' }}>
-                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>🤖 IA:</span>
-                      <span style={{ color: '#94a3b8', marginLeft: '8px' }}>{h.ai}</span>
-                    </div>
-                  </div>
-                ))}
-                {loading && <div style={{ color: '#94a3b8', textAlign: 'center', padding: '20px' }}>L'IA analyse vos données...</div>}
+      <div style={{ flex: 1, marginLeft: sidebarMargin, padding: responsive.contentPadding, background: theme.background, transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          {/* Header */}
+          <div style={{ marginBottom: responsive.gapLarge, animation: "fadeInDown 0.4s ease", opacity: animateCards ? 1 : 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: responsive.gapSmall }}>
+              <div>
+                <h1 style={{ color: theme.text, fontSize: responsive.titleSize, margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", borderRadius: "12px", background: theme.gradient, color: "white", animation: "glow 2s infinite" }}>
+                    <IconRobot size={18} />
+                  </span>
+                  {t.aiAssistant}
+                </h1>
+                <p style={{ color: theme.textSecondary, marginTop: "2px", fontSize: responsive.subtitleSize }}>{t.aiSubtitle}</p>
               </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <input
-                  type="text"
-                  placeholder="Posez votre question..."
-                  value={message}
-                  onChange={e => setMessage(e.target.value)}
-                  onKeyPress={e => e.key === 'Enter' && sendMessage()}
-                  style={{ flex: 1, padding: '12px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', color: 'white' }}
-                />
-                <button onClick={sendMessage} disabled={loading} style={{ padding: '12px 24px', background: '#667eea', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
-                  Envoyer
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <button onClick={refreshData} disabled={refreshing} style={{ display: "flex", alignItems: "center", gap: "6px", background: `${theme.primary}15`, border: `1px solid ${theme.primary}30`, borderRadius: "20px", padding: "6px 12px", cursor: refreshing ? "not-allowed" : "pointer", fontSize: "11px", color: theme.primary }}>
+                  <IconRefresh size={12} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+                  {refreshing ? t.refreshing : "Actualiser"}
                 </button>
+                <ExportButtons data={stats || {}} filename="ia_analytics" />
               </div>
             </div>
-
-            {/* Suggestions */}
-            <div style={{ background: '#111', borderRadius: '20px', padding: '24px', border: '1px solid #222' }}>
-              <h2 style={{ color: 'white', marginBottom: '20px' }}>💡 Suggestions intelligentes</h2>
-              {questions.map((q, i) => (
-                <div
-                  key={i}
-                  onClick={() => { setMessage(q); setTimeout(() => sendMessage(), 100); }}
-                  style={{ background: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '12px', cursor: 'pointer', transition: '0.3s' }}
-                >
-                  <span style={{ color: '#94a3b8' }}>{q}</span>
-                </div>
-              ))}
-            </div>
+            {lastRefresh && !refreshing && (
+              <p style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "8px", textAlign: "right" }}>
+                📊 Dernière actualisation: {lastRefresh.toLocaleTimeString()}
+              </p>
+            )}
           </div>
 
-          {response && !loading && (
-            <div style={{ marginTop: '32px', background: '#111', borderRadius: '20px', padding: '24px', border: '1px solid #222' }}>
-              <h2 style={{ color: 'white', marginBottom: '12px' }}>📌 Dernière analyse</h2>
-              <div style={{ color: '#94a3b8', whiteSpace: 'pre-wrap' }}>{response}</div>
+          {/* Alertes */}
+          {alerts.length > 0 && (
+            <div style={{ marginBottom: responsive.gapMedium, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "10px" }}>
+              {alerts.map((alert, idx) => {
+                const colors: any = { danger: { bg: "rgba(239,68,68,0.1)", border: "#ef4444" }, warning: { bg: "rgba(245,158,11,0.1)", border: "#f59e0b" }, info: { bg: "rgba(59,130,246,0.1)", border: "#3b82f6" } };
+                const c = colors[alert.type] || colors.info;
+                const AlertIconComponent = alert.icon || IconInfo;
+                return (
+                  <div key={idx} style={{ background: c.bg, borderLeft: `3px solid ${c.border}`, padding: "10px 14px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", fontSize: "11px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <AlertIconComponent size={16} />
+                      <span style={{ color: theme.text }}>{alert.message}</span>
+                    </div>
+                    {alert.action && (
+                      <button onClick={() => router.push(alert.action.path)} style={{ background: c.border, color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "4px" }}>
+                        {alert.action.label} <IconArrowRight size={10} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
+
+          {/* KPI Cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: responsive.gapMedium, marginBottom: responsive.gapLarge }}>
+            {kpiCards.map((card, idx) => (
+              <div key={idx} style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.05}s`, transition: "transform 0.2s, box-shadow 0.2s", cursor: "pointer" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <span style={{ fontSize: responsive.kpiLabelSize, color: theme.textSecondary }}>{card.label}</span>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "10px", background: `${card.color}18`, color: card.color }}>
+                    <card.Icon size={14} />
+                  </span>
+                </div>
+                <div style={{ fontSize: responsive.kpiValueSize, color: card.color, fontWeight: "bold" }}>{card.value}</div>
+                <div style={{ fontSize: "9px", color: "#10b981", marginTop: "6px", display: "flex", alignItems: "center", gap: "3px" }}><IconTrendingUp size={10} /> +{card.growth}% vs période préc.</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: "2px", marginBottom: responsive.gapMedium, borderBottom: `1px solid ${theme.border}`, overflowX: "auto" }}>
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: "8px 16px", background: activeTab === tab.id ? theme.primary : "transparent", border: "none", borderRadius: "10px 10px 0 0", color: activeTab === tab.id ? "white" : theme.textSecondary, cursor: "pointer", transition: "all 0.2s", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
+                <tab.Icon size={14} /> {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Dashboard Tab */}
+          {activeTab === "dashboard" && (
+            <div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconTrendingUp size={14} /> {t.salesEvolution}</h3>
+                  <Line data={salesChartData} options={chartOptions} />
+                </div>
+                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconProfit size={14} /> {t.profitEvolution}</h3>
+                  <Line data={profitChartData} options={chartOptions} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconTrophy size={14} /> {t.topProducts}</h3>
+                  <Bar data={topProductsChartData} options={chartOptions} />
+                </div>
+                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconStar size={14} /> {t.topClients}</h3>
+                  <Bar data={topClientsChartData} options={chartOptions} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==================== CHAT IA TAB - AMÉLIORÉ ==================== */}
+          {activeTab === "chat" && (
+            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", height: "580px", overflow: "hidden", boxShadow: "0 8px 25px rgba(0,0,0,0.1)" }}>
+              {/* Header Chat */}
+              <div style={{ padding: "14px 18px", borderBottom: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${theme.surfaceHover}, ${theme.surface})` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "44px", height: "44px", borderRadius: "22px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${theme.primary}40`, animation: "pulse 2s infinite" }}>
+                    <IconRobot size={22} />
+                  </div>
+                  <div>
+                    <div style={{ color: theme.text, fontWeight: "bold", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      {t.aiAssistant}
+                      <span style={{ background: `${theme.accent}25`, color: theme.accent, fontSize: "9px", padding: "2px 8px", borderRadius: "20px", fontWeight: "normal" }}>GPT-4</span>
+                    </div>
+                    <div style={{ color: theme.textSecondary, fontSize: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} /> {t.online}
+                      </span>
+                      <span>•</span>
+                      <span>{chatMessages.length} messages</span>
+                      <span>•</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> Réponses instantanées</span>
+                    </div>
+                  </div>
+                  <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+                    <button onClick={copyConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}35`; e.currentTarget.style.color = theme.primary; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.textSecondary; }}>
+                      <IconCopy size={12} /> {t.copyConversation}
+                    </button>
+                    <button onClick={clearConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}35`; e.currentTarget.style.color = theme.primary; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.textSecondary; }}>
+                      <IconTrash size={12} /> {t.clearConversation}
+                    </button>
+                    <button onClick={() => { setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]); }} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}35`; e.currentTarget.style.color = theme.primary; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.textSecondary; }}>
+                      <IconRefresh size={12} /> {t.newChat}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Messages Container */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "18px", display: "flex", flexDirection: "column", gap: "16px", background: theme.background }}>
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", animation: "slideIn 0.3s ease" }}>
+                    {msg.role !== "user" && (
+                      <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px", flexShrink: 0, boxShadow: `0 2px 8px ${theme.primary}40` }}>
+                        <IconRobot size={18} />
+                      </div>
+                    )}
+                    <div style={{ maxWidth: "75%" }}>
+                      <div style={{ padding: "12px 18px", borderRadius: "20px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: theme.text, fontSize: "13px", lineHeight: "1.5", whiteSpace: "pre-wrap", boxShadow: msg.role === "user" ? `0 2px 10px ${theme.primary}40` : "none" }}>
+                        {msg.content}
+                      </div>
+                      {msg.actions && msg.actions.length > 0 && msg.role !== "user" && (
+                        <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                          {msg.actions.slice(0, 4).map((action: any, ai: number) => (
+                            <button key={ai} onClick={() => action.query ? setChatInput(action.query) : action.path ? router.push(action.path) : null} style={{ background: `${theme.primary}15`, border: "none", borderRadius: "20px", padding: "5px 14px", fontSize: "10px", color: theme.primary, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}30`; e.currentTarget.style.transform = "translateY(-1px)"; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}15`; e.currentTarget.style.transform = "translateY(0)"; }}>
+                              {action.icon && <action.icon size={11} />} {action.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "6px", marginLeft: "8px" }}>
+                        {msg.timestamp?.toLocaleTimeString?.([], { hour: '2-digit', minute: '2-digit' }) || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    {msg.role === "user" && (
+                      <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.surfaceHover, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "12px", flexShrink: 0, border: `1px solid ${theme.border}` }}>
+                        <IconUser size={16} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {isTyping && (
+                  <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>
+                    <div style={{ padding: "12px 20px", borderRadius: "20px", background: theme.surfaceHover, display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ width: "8px", height: "8px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0s" }} />
+                      <span style={{ width: "8px", height: "8px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.15s" }} />
+                      <span style={{ width: "8px", height: "8px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.3s" }} />
+                      <span style={{ fontSize: "11px", color: theme.textSecondary, marginLeft: "4px" }}>{t.aiThoughts}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {isStreaming && streamingContent && (
+                  <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>
+                    <div style={{ padding: "12px 18px", borderRadius: "20px", background: theme.surfaceHover, fontSize: "13px", maxWidth: "75%", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
+                      {streamingContent}<span style={{ display: "inline-block", width: "3px", height: "14px", background: theme.primary, marginLeft: "3px", animation: "blink 1s infinite", verticalAlign: "middle" }} />
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Input Area */}
+              <div style={{ padding: "14px 18px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+                  <textarea 
+                    placeholder={`${t.typeMessage} (Shift+Enter)`}
+                    value={chatInput} 
+                    onChange={e => setChatInput(e.target.value)} 
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} 
+                    rows={1} 
+                    style={{ flex: 1, padding: "10px 16px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "24px", color: theme.text, fontSize: "13px", outline: "none", resize: "none", fontFamily: "inherit", maxHeight: "100px", transition: "all 0.2s" }} 
+                    onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.background = theme.surface; }} 
+                    onBlur={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.surfaceHover; }} 
+                  />
+                  <button 
+                    onClick={sendMessage} 
+                    disabled={loadingAI || !chatInput.trim()} 
+                    style={{ background: (!chatInput.trim() || loadingAI) ? theme.border : theme.gradient, color: "white", border: "none", borderRadius: "24px", padding: "9px 22px", cursor: (!chatInput.trim() || loadingAI) ? "not-allowed" : "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "8px", fontWeight: "500", transition: "all 0.2s" }} 
+                    onMouseEnter={e => { if (chatInput.trim() && !loadingAI) e.currentTarget.style.transform = "scale(1.02)"; }} 
+                    onMouseLeave={e => { if (chatInput.trim() && !loadingAI) e.currentTarget.style.transform = "scale(1)"; }}
+                  >
+                    <IconSend size={14} /> {t.send}
+                  </button>
+                </div>
+                
+                {/* Quick Suggestions */}
+                <div style={{ marginTop: "14px" }}>
+                  <div style={{ fontSize: "10px", color: theme.textSecondary, marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <IconZap size={12} /> {t.quickActions}
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {quickSuggestions.map((s, idx) => (
+                      <button key={idx} onClick={() => setChatInput(s.query)} style={{ background: `${s.color}15`, border: `1px solid ${s.color}25`, borderRadius: "20px", padding: "6px 14px", fontSize: "10px", color: s.color, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = `${s.color}25`; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.background = `${s.color}15`; }}>
+                        <s.Icon size={11} /> {s.text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Forecasts Tab */}
+          {activeTab === "forecasts" && (
+            <div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+                {[
+                  { label: t.forecastGrowth, value: predictions?.revenueForecast?.growthRate + "%", color: "#10b981", icon: IconTrendingUp, sub: "vs période précédente" },
+                  { label: t.projectedRevenue, value: formatCurrency(getForecastData()[0] || 0), color: "#10b981", icon: IconRevenue, sub: "pour le prochain mois" },
+                  { label: t.projectedProfit, value: formatCurrency((getForecastData()[0] || 0) * 0.35), color: "#f59e0b", icon: IconProfit, sub: "estimation à 35% de marge" }
+                ].map((card, idx) => (
+                  <div key={idx} style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, textAlign: "center", border: `1px solid ${theme.border}`, transition: "transform 0.2s, box-shadow 0.2s", animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.1}s` }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: card.color }}><card.icon size={28} /></div>
+                    <div style={{ fontSize: "11px", color: theme.textSecondary }}>{card.label}</div>
+                    <div style={{ fontSize: "22px", color: card.color, fontWeight: "bold" }}>{card.value}</div>
+                    <div style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "5px" }}>{card.sub}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "12px" }}>
+                <div style={{ display: "flex", gap: "6px", background: theme.surface, padding: "5px", borderRadius: "30px", border: `1px solid ${theme.border}` }}>
+                  <button onClick={() => { setForecastPeriod("3months"); }} style={{ padding: "7px 20px", borderRadius: "25px", background: forecastPeriod === "3months" ? theme.primary : "transparent", color: forecastPeriod === "3months" ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: "12px", fontWeight: forecastPeriod === "3months" ? "500" : "normal", transition: "all 0.2s" }}>
+                    {t.threeMonths}
+                  </button>
+                  <button onClick={() => { setForecastPeriod("6months"); }} style={{ padding: "7px 20px", borderRadius: "25px", background: forecastPeriod === "6months" ? theme.primary : "transparent", color: forecastPeriod === "6months" ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: "12px", fontWeight: forecastPeriod === "6months" ? "500" : "normal", transition: "all 0.2s" }}>
+                    {t.sixMonths}
+                  </button>
+                  <button onClick={() => { setForecastPeriod("12months"); }} style={{ padding: "7px 20px", borderRadius: "25px", background: forecastPeriod === "12months" ? theme.primary : "transparent", color: forecastPeriod === "12months" ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: "12px", fontWeight: forecastPeriod === "12months" ? "500" : "normal", transition: "all 0.2s" }}>
+                    {t.twelveMonths}
+                  </button>
+                </div>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  {Object.entries({ optimistic: t.optimistic, realistic: t.realistic, pessimistic: t.pessimistic }).map(([key, label]) => (
+                    <button key={key} onClick={() => setSelectedScenario(key as any)} style={{ padding: "7px 16px", borderRadius: "22px", background: selectedScenario === key ? { optimistic: "#10b981", realistic: "#f59e0b", pessimistic: "#ef4444" }[key] : "transparent", border: `1.5px solid ${key === "optimistic" ? "#10b981" : key === "realistic" ? "#f59e0b" : "#ef4444"}`, color: selectedScenario === key ? "white" : key === "optimistic" ? "#10b981" : key === "realistic" ? "#f59e0b" : "#ef4444", cursor: "pointer", fontSize: "11px", fontWeight: selectedScenario === key ? "500" : "normal", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
+                      {key === "optimistic" ? "📈" : key === "pessimistic" ? "📉" : "📊"} {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+                  <h3 style={{ color: theme.text, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconPredictions size={16} /> {t.salesForecast} — {selectedScenario === "optimistic" ? t.optimistic : selectedScenario === "realistic" ? t.realistic : t.pessimistic}</h3>
+                  <div style={{ fontSize: "11px", color: theme.textSecondary, background: theme.surfaceHover, padding: "4px 12px", borderRadius: "20px" }}>
+                    📊 {t.confidence}: {predictions?.revenueForecast?.confidence || 82}% ({Number(predictions?.revenueForecast?.confidence || 82) > 85 ? t.highConfidence : t.mediumConfidence})
+                  </div>
+                </div>
+                <Line data={forecastChartData} options={chartOptions} />
+                <div style={{ marginTop: "18px", padding: "14px", background: theme.surfaceHover, borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                  <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ display: "inline-block", width: "14px", height: "14px", background: "#f59e0b", borderRadius: "3px" }}></span> <span style={{ fontSize: "11px" }}>{t.salesForecast}</span></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ display: "inline-block", width: "14px", height: "14px", background: "#10b981", borderRadius: "3px", opacity: 0.6 }}></span> <span style={{ fontSize: "11px" }}>{t.upperBound}</span></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ display: "inline-block", width: "14px", height: "14px", background: "#ef4444", borderRadius: "3px", opacity: 0.6 }}></span> <span style={{ fontSize: "11px" }}>{t.lowerBound}</span></div>
+                  </div>
+                  <div style={{ fontSize: "11px", color: theme.textSecondary, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <IconInfo size={12} /> Période: {forecastPeriod === "3months" ? "3 mois" : forecastPeriod === "6months" ? "6 mois" : "12 mois"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recommendations Tab */}
+          {activeTab === "recommendations" && (
+            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+                <h3 style={{ color: theme.text, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconRecommendations size={16} /> {t.recommendations}</h3>
+                <div style={{ fontSize: "10px", color: theme.textSecondary, background: `${theme.accent}15`, padding: "4px 10px", borderRadius: "20px" }}>
+                  🤖 Générées par IA - Basées sur vos données réelles
+                </div>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+                      <th style={{ padding: "12px 8px", textAlign: "left", color: theme.textSecondary }}>Produit</th>
+                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.stockStatus}</th>
+                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.monthlyDemand}</th>
+                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.recommendedStock}</th>
+                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.urgency}</th>
+                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.action}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recommendations.map((rec, idx) => {
+                      const urgencyConfig = rec.urgency === "high" ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "🔴" } : rec.urgency === "medium" ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "🟠" } : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "🟢" };
+                      return (
+                        <tr key={idx} style={{ borderBottom: `1px solid ${theme.surfaceHover}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <td style={{ padding: "12px 8px", color: theme.text, fontWeight: "500" }}>{rec.productName}</td>
+                          <td style={{ padding: "12px 8px", textAlign: "center" }}>
+                            <span style={{ background: rec.currentStock < 10 ? "rgba(239,68,68,0.15)" : rec.currentStock < 20 ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)", color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", padding: "4px 10px", borderRadius: "20px", fontSize: "10px", fontWeight: "500" }}>
+                              {rec.currentStock} unités
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "500" }}>{rec.monthlyDemand} unités/mois</td>
+                          <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "bold" }}>{rec.recommendedStock} unités</td>
+                          <td style={{ padding: "12px 8px", textAlign: "center" }}>
+                            <span style={{ background: urgencyConfig.bg, color: urgencyConfig.color, padding: "4px 12px", borderRadius: "20px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: "500" }}>
+                              {urgencyConfig.icon} {urgencyConfig.text}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 8px", textAlign: "center" }}>
+                            <button onClick={() => router.push("/dashboard/purchases")} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 16px", cursor: "pointer", fontSize: "10px", color: theme.primary, display: "inline-flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = theme.primary; e.currentTarget.style.color = "white"; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.primary; }}>
+                              <IconShoppingCart size={11} /> {t.orderNow}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {recommendations.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px" }}>
+                  <IconCheckCircle size={32} style={{ color: theme.accent, marginBottom: "12px" }} />
+                  <p style={{ color: theme.textSecondary, fontSize: "12px" }}>Aucune recommandation pour le moment. Votre stock est bien géré !</p>
+                </div>
+              )}
+              <div style={{ marginTop: "16px", padding: "12px", background: `${theme.accent}10`, borderRadius: "12px", border: `1px solid ${theme.accent}20` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <IconInfo size={14} style={{ color: theme.accent }} />
+                  <span style={{ fontSize: "11px", color: theme.textSecondary }}>
+                    💡 Les recommandations sont basées sur l'analyse de vos données de vente et du niveau de stock actuel.
+                    Les seuils d'urgence sont calculés automatiquement par l'IA.
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && (
+            <div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px" }}><IconAnalytics size={14} /> Répartition par module</h3>
+                  <div style={{ height: "200px" }}>
+                    <Doughnut data={{ labels: ["Ventes", "Achats", "Produits", "Clients"], datasets: [{ data: [stats?.sales?.revenue || 1, stats?.purchases?.spent || 1, stats?.products?.totalValue || 1, stats?.clients?.total || 1], backgroundColor: ["#10b981", "#ef4444", theme.primary, "#8b5cf6"], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { font: { size: 9 }, color: theme.textSecondary }, position: "bottom" } } }} />
+                  </div>
+                </div>
+                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px" }}><IconTrendingUp size={14} /> {t.salesEvolution}</h3>
+                  <Line data={salesChartData} options={chartOptions} />
+                </div>
+              </div>
+              <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+                <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: "14px" }}><IconDashboard size={14} /> KPIs clés</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+                    <IconPackage size={24} style={{ color: "#10b981" }} />
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#10b981", marginTop: "8px" }}>{(stats?.sales?.revenue / (stats?.products?.totalValue || 1)).toFixed(1)}x</div>
+                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.inventoryTurnover}</div>
+                  </div>
+                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+                    <IconUsers size={24} style={{ color: "#f59e0b" }} />
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#f59e0b", marginTop: "8px" }}>{((stats?.orders?.total || 267) / (stats?.clients?.total || 128) * 100).toFixed(1)}%</div>
+                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.conversionRate}</div>
+                  </div>
+                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+                    <IconTrendingUp size={24} style={{ color: theme.accent }} />
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: theme.accent, marginTop: "8px" }}>{Math.round((stats?.sales?.revenue || 0) / (stats?.employees?.total || 1)).toLocaleString()} €</div>
+                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.productivity}</div>
+                  </div>
+                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+                    <IconStar size={24} style={{ color: "#8b5cf6" }} />
+                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#8b5cf6", marginTop: "8px" }}>{stats?.clients?.active || 95}</div>
+                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.activeClients}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

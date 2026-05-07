@@ -1,39 +1,39 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+﻿import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProductionService } from './production.service';
-import { BOM } from './entities/bom.entity';
-import { WorkOrder } from './entities/work-order.entity';
 
-@Controller('production')
+@Controller('production/orders')
+@UseGuards(JwtAuthGuard)
 export class ProductionController {
-  constructor(private productionService: ProductionService) {}
+  constructor(private readonly productionService: ProductionService) {}
 
-  @Get('bom')
-  findAllBOM() {
-    return this.productionService.findAllBOM();
+  @Get()
+  async findAll(@Request() req: any) {
+    return this.productionService.findAll(req.user.userId);
   }
 
-  @Post('bom')
-  createBOM(@Body() data: Partial<BOM>) {
-    return this.productionService.createBOM(data);
+  @Get(':id')
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    return this.productionService.findOne(parseInt(id), req.user.userId);
   }
 
-  @Get('work-orders')
-  findAllWorkOrders() {
-    return this.productionService.findAllWorkOrders();
+  @Post()
+  async create(@Request() req: any, @Body() body: any) {
+    return this.productionService.create(req.user.userId, body);
   }
 
-  @Post('work-orders')
-  createWorkOrder(@Body() data: Partial<WorkOrder>) {
-    return this.productionService.createWorkOrder(data);
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
+    return this.productionService.updateStatus(parseInt(id), req.user.userId, body.status);
   }
 
-  @Put('work-orders/:id')
-  updateWorkOrder(@Param('id') id: string, @Body() data: Partial<WorkOrder>) {
-    return this.productionService.updateWorkOrder(id, data);
+  @Patch(':id/progress')
+  async updateProgress(@Param('id') id: string, @Request() req: any, @Body() body: { progress: number }) {
+    return this.productionService.updateProgress(parseInt(id), req.user.userId, body.progress);
   }
 
-  @Delete('work-orders/:id')
-  deleteWorkOrder(@Param('id') id: string) {
-    return this.productionService.deleteWorkOrder(id);
+  @Delete(':id')
+  async delete(@Param('id') id: string, @Request() req: any) {
+    return this.productionService.delete(parseInt(id), req.user.userId);
   }
 }

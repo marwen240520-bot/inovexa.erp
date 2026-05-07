@@ -1,63 +1,112 @@
 ﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Customer } from './entities/customer.entity';
-import { Quote } from './entities/quote.entity';
-import { SalesOrder } from './entities/sales-order.entity';
+import { Sale } from './entities/sale.entity';
 
 @Injectable()
 export class SalesService {
   constructor(
-    @InjectRepository(Customer)
-    private customerRepository: Repository<Customer>,
-    @InjectRepository(Quote)
-    private quoteRepository: Repository<Quote>,
-    @InjectRepository(SalesOrder)
-    private orderRepository: Repository<SalesOrder>,
+    @InjectRepository(Sale)
+    private saleRepository: Repository<Sale>,
   ) {}
 
-  async findAllCustomers(): Promise<Customer[]> {
-    return this.customerRepository.find();
-  }
-
-  async findCustomerById(id: string): Promise<Customer> {
-    const customer = await this.customerRepository.findOne({ where: { id } });
-    if (!customer) throw new NotFoundException('Client non trouvé');
-    return customer;
-  }
-
-  async createCustomer(data: Partial<Customer>): Promise<Customer> {
-    const customer = this.customerRepository.create(data);
-    return this.customerRepository.save(customer);
-  }
-
-  async updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
-    await this.findCustomerById(id);
-    await this.customerRepository.update(id, data);
-    return this.findCustomerById(id);
-  }
-
-  async deleteCustomer(id: string): Promise<void> {
-    const customer = await this.findCustomerById(id);
-    await this.customerRepository.remove(customer);
-  }
-
-  async createQuote(data: Partial<Quote>): Promise<Quote> {
-    const quote = this.quoteRepository.create(data);
-    return this.quoteRepository.save(quote);
-  }
-
-  async getSalesStats(): Promise<any> {
-    const totalCustomers = await this.customerRepository.count();
-    const totalQuotes = await this.quoteRepository.count();
-    const acceptedQuotes = await this.quoteRepository.count({ where: { status: 'accepted' } });
-    const totalOrders = await this.orderRepository.count();
+  async findAll(userId: number, period?: string) {
+    console.log('🔍 userId reçu dans service:', userId);
     
-    return {
-      totalCustomers,
-      totalQuotes,
-      conversionRate: totalQuotes > 0 ? (acceptedQuotes / totalQuotes) * 100 : 0,
-      totalOrders,
+    const query = this.saleRepository.createQueryBuilder('sale')
+      .where('sale.userId = :userId', { userId })
+      .orderBy('sale.createdAt', 'DESC');
+    
+    if (period === 'week') {
+      query.andWhere(`sale.createdAt >= NOW() - INTERVAL '7 days'`);
+    } else if (period === 'month') {
+      query.andWhere(`sale.createdAt >= NOW() - INTERVAL '30 days'`);
+    }
+    
+    const result = await query.getMany();
+    console.log('📊 Ventes trouvées pour user', userId, ':', result.length);
+    return result;
+  }
+
+  async findOne(id: number, userId: number) {
+    const sale = await this.saleRepository.findOne({ 
+      where: { id, userId } 
+    });
+    if (!sale) throw new NotFoundException('Vente non trouvée');
+    return sale;
+  }
+
+  async create(userId: number, data: any) {
+    const sale = this.saleRepository.create({ ...data, userId });
+    return this.saleRepository.save(sale);
+  }
+
+  // ⭐ NOUVELLE METHODE: Import multiple
+  async importSales(userId: number, salesData: any[]) {
+    const results = {
+      success: 0,
+      errors: 0,
+      total: salesData.length,
+      errorDetails: []
+    };
+
+    for (const saleData of salesData) {
+      try {
+        // Nettoyer et valider les données
+        const sale = this.saleRepository.create({
+          userId: userId,
+          clientName: saleData.clientName || saleData.client_name || "Client inconnu",
+          productName: saleData.productName || saleData.product_name || "Produit inconnu",
+          quantity: parseInt(saleData.quantity) || 1,
+          unitPrice: parseFloat(saleData.unitPrice || saleData.unit_price || saleData.price) || 0,
+          total: parseFloat(saleData.total) || (parseInt(saleData.quantity) || 1) * (parseFloat(saleData.unitPrice || saleData.price) || 0),
+          status: saleData.status || "pending"
+        });
+        
+        await this.saleRepository.save(sale);
+        results.success++;
+      } catch (error) {
+        results.errors++;
+        results.errorDetails.push({
+          data: saleData,
+          error: error.message
+        });
+        console.error('Erreur import vente:', error.message);
+      }
+    }
+    
+    console.log(`✅ Import terminé: ${results.success} succès, ${results.errors} erreurs`);
+    return results;
+  }
+
+  async update(id: number, userId: number, data: any) {
+    const sale = await this.findOne(id, userId);
+    Object.assign(sale, data);
+    return this.saleRepository.save(sale);
+  }
+
+  async updateStatus(id: number, userId: number, status: string) {
+    const sale = await this.findOne(id, userId);
+    sale.status = status;
+    return this.saleRepository.save(sale);
+  }
+
+  async delete(id: number, userId: number) {
+    await this.findOne(id, userId);
+    await this.saleRepository.delete(id);
+    return { success: true };
+  }
+
+  async getStats(userId: number) {
+    const sales = await this.saleRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' }
+    });
+    const total = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+    return { 
+      total: sales.length, 
+      amount: total, 
+      average: sales.length > 0 ? total / sales.length : 0 
     };
   }
 }

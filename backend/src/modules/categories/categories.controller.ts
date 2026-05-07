@@ -1,45 +1,29 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { CategoriesService } from './categories.service';
-import { Categories } from './categories.entity';
+﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { CategoriesService } from './categories.service';
 
 @Controller('categories')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class CategoriesController {
-  constructor(private readonly service: CategoriesService) {}
+  constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
-  @Get('stats')
-  getStats() {
-    return this.service.getStats();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  async findAll(@Request() req: any) {
+    return this.categoriesService.findAll(req.user.userId);
   }
 
   @Post()
-  @Roles('admin')
-  create(@Body() data: Partial<Categories>) {
-    return this.service.create(data);
+  async create(@Request() req: any, @Body() body: any) {
+    return this.categoriesService.create(req.user.userId, body);
   }
 
   @Put(':id')
-  @Roles('admin')
-  update(@Param('id') id: string, @Body() data: Partial<Categories>) {
-    return this.service.update(id, data);
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    return this.categoriesService.update(parseInt(id), req.user.userId, body);
   }
 
   @Delete(':id')
-  @Roles('admin')
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  async delete(@Param('id') id: string, @Request() req: any) {
+    return this.categoriesService.delete(parseInt(id), req.user.userId);
   }
 }

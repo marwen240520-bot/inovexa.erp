@@ -1,51 +1,39 @@
 ﻿version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
-    container_name: inovexa-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: inovexa_erp
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7
-    container_name: inovexa-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.backend
-    container_name: inovexa-backend
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/inovexa_erp
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: production-secret-key
     ports:
       - "3001:3001"
-    depends_on:
-      - postgres
-      - redis
+    environment:
+      - NODE_ENV=production
+      - DATABASE_PATH=/app/data/inovexa.db
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - backend_data:/app/data
+    restart: always
+    networks:
+      - inovexa-network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.frontend
-    container_name: inovexa-frontend
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3001
     depends_on:
       - backend
+    restart: always
+    networks:
+      - inovexa-network
+
+networks:
+  inovexa-network:
+    driver: bridge
 
 volumes:
-  postgres_data:
-  redis_data:
+  backend_data:

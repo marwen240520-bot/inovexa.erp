@@ -1,24 +1,34 @@
-﻿import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
-export const exportToExcel = (data: any[], fileName: string) => {
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `${fileName}.xlsx`);
+﻿// Fonction d'export simple sans pdfkit
+export const exportToJSON = (data: any, filename: string) => {
+  const dataStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
-export const exportToPDF = (data: any[], fileName: string, columns: string[]) => {
-  const doc = new jsPDF();
-  doc.text(fileName, 14, 10);
-  autoTable(doc, {
-    head: [columns],
-    body: data.map(item => columns.map(col => item[col.toLowerCase()] || '')),
-    startY: 20,
-  });
-  doc.save(`${fileName}.pdf`);
+export const exportToCSV = (data: any[], filename: string) => {
+  if (!data.length) return;
+  
+  const headers = Object.keys(data[0]);
+  const csvRows = [
+    headers.join(","),
+    ...data.map(row => headers.map(header => JSON.stringify(row[header] || "")).join(","))
+  ];
+  
+  const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+export const exportToExcel = async (data: any[], filename: string) => {
+  // Export CSV comme alternative simple
+  exportToCSV(data, filename);
 };

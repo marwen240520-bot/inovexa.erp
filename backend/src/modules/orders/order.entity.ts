@@ -1,30 +1,33 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { Customer } from '../customers/customer.entity';
-import { OrderItem } from '../order_items/order_item.entity';
+﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('orders')
 export class Order {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
-  customerId: string;
+  userId: number;
 
-  @Column()
-  customerName: string;
+  @Column({ nullable: true })
+  clientId: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column({ nullable: true })
+  clientName: string;
+
+  @Column({ nullable: true })
+  productId: number;
+
+  @Column({ nullable: true })
+  productName: string;
+
+  @Column({ default: 1 })
+  quantity: number;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
   total: number;
 
   @Column({ default: 'pending' })
   status: string;
-
-  @ManyToOne(() => Customer, customer => customer.orders)
-  @JoinColumn({ name: 'customerId' })
-  customer: Customer;
-
-  @OneToMany(() => OrderItem, item => item.order)
-  items: OrderItem[];
 
   @CreateDateColumn()
   createdAt: Date;

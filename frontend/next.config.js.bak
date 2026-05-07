@@ -1,0 +1,242 @@
+﻿/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  // swcMinify supprimé - deprecated dans Next.js 16
+  
+  // Transpile packages
+  transpilePackages: [],
+  
+  // Configuration des images
+  images: {
+    unoptimized: true,
+    // domains est déprécié - utiliser uniquement remotePatterns
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'flagcdn.com',
+        pathname: '/**',
+      },
+    ],
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    dangerouslyAllowSVG: true,
+  },
+
+  // Configuration Turbopack (obligatoire pour Next.js 16)
+  turbopack: {
+    // Configuration Turbopack vide pour utiliser les valeurs par défaut
+  },
+
+  // Configuration des en-têtes CSP
+  async headers() {
+    // CSP permissive pour développement - autorise 'unsafe-eval'
+    const cspDirectives = [
+      "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
+      "script-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
+      "style-src * 'unsafe-inline'",
+      "img-src * data: blob: https://flagcdn.com http://localhost:3001",
+      "font-src * data:",
+      "connect-src * data: blob: http://localhost:3001 ws://localhost:3001",
+      "media-src *",
+      "object-src *",
+      "frame-src *",
+      "worker-src * blob:",
+    ];
+    
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: cspDirectives.join('; ')
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
+
+  // Compression des assets
+  compress: true,
+
+  // Génération standalone pour déploiement
+  output: 'standalone',
+
+  // Configuration du webpack (pour fallback quand Turbopack n'est pas utilisé)
+  webpack: (config, { isServer, dev }) => {
+    // Ignorer les avertissements de eval pour les librairies
+    config.module = config.module || {};
+    config.module.exprContextCritical = false;
+    
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            framework: {
+              chunks: 'all',
+              name: 'framework',
+              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-sync-external-store)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            lib: {
+              test(module) {
+                return (
+                  module.size() > 160000 &&
+                  /node_modules[/\\]/.test(module.identifier())
+                );
+              },
+              name(module) {
+                const hash = require('crypto')
+                  .createHash('sha1')
+                  .update(module.identifier())
+                  .digest('hex')
+                  .substring(0, 8);
+                return `chunk-${hash}`;
+              },
+              priority: 30,
+              minChunks: 1,
+              reuseExistingChunk: true,
+            },
+            commons: {
+              name: 'commons',
+              minChunks: 2,
+              priority: 20,
+            },
+            shared: {
+              name(module, chunks) {
+                return `shared-${chunks.map(c => c.name).join('-')}`;
+              },
+              priority: 10,
+              minChunks: 2,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      };
+    }
+
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+
+    return config;
+  },
+
+  // Variables d'environnement exposées au client
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+    NEXT_PUBLIC_APP_NAME: 'Inovexa ERP',
+    NEXT_PUBLIC_APP_VERSION: '2.0.0',
+    NEXT_PUBLIC_APP_DESCRIPTION: 'Solution ERP nouvelle génération',
+  },
+
+  // Génération des ETags
+  generateEtags: true,
+
+  // Timeout pour les pages statiques (en secondes)
+  staticPageGenerationTimeout: 120,
+
+  // Configuration des logs
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+
+  // Désactiver l'indicateur de développement en production
+  devIndicators: {
+    buildActivity: true,
+    buildActivityPosition: 'bottom-right',
+  },
+
+  // Configuration des pages
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  
+  // experimental ES modules - retiré car incompatible avec Turbopack
+  // experimental: {
+  //   esmExternals: 'loose', // <- Supprimé - non supporté par Turbopack
+  // },
+}
+
+module.exports = nextConfig;

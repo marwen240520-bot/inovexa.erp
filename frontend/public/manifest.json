@@ -1,13 +1,22 @@
 ﻿{
-  "name": "Inovexa-AI ERP",
+  "name": "Inovexa ERP",
   "short_name": "Inovexa",
-  "description": "ERP Intelligent Next-Gen",
+  "description": "Solution ERP nouvelle génération",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0c1a",
-  "theme_color": "#8b5cf6",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a",
+  "orientation": "portrait",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

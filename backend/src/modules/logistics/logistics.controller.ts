@@ -1,28 +1,65 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { LogisticsService } from './logistics.service';
-import { Shipment } from './entities/shipment.entity';
 
 @Controller('logistics')
+@UseGuards(JwtAuthGuard)
 export class LogisticsController {
-  constructor(private logisticsService: LogisticsService) {}
+  constructor(private readonly logisticsService: LogisticsService) {}
 
-  @Get('shipments')
-  findAllShipments() {
-    return this.logisticsService.findAllShipments();
+  @Get('client/shipments')
+  async getClientShipments(@Request() req: any) {
+    if (req.user.role !== 'client') {
+      return { error: 'Accès réservé aux clients' };
+    }
+    return this.logisticsService.findAllByClient(req.user.userId);
   }
 
-  @Post('shipments')
-  createShipment(@Body() data: Partial<Shipment>) {
-    return this.logisticsService.createShipment(data);
+  @Get('transporteur/shipments')
+  async getTransporteurShipments(@Request() req: any) {
+    if (req.user.role !== 'transporteur') {
+      return { error: 'Accès réservé aux transporteurs' };
+    }
+    return this.logisticsService.findAllByTransporteur(req.user.userId);
   }
 
-  @Put('shipments/:id')
-  updateShipment(@Param('id') id: string, @Body() data: Partial<Shipment>) {
-    return this.logisticsService.updateShipment(id, data);
+  @Post('client/shipments')
+  async create(@Request() req: any, @Body() body: any) {
+    if (req.user.role !== 'client') {
+      return { error: 'Seuls les clients peuvent créer des expéditions' };
+    }
+    return this.logisticsService.create(req.user.userId, body);
   }
 
-  @Delete('shipments/:id')
-  deleteShipment(@Param('id') id: string) {
-    return this.logisticsService.deleteShipment(id);
+  // ⭐ AJOUTER CET ENDPOINT POUR MODIFIER UNE EXPÉDITION
+  @Put('client/shipments/:id')
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    if (req.user.role !== 'client') {
+      return { error: 'Seuls les clients peuvent modifier leurs expéditions' };
+    }
+    return this.logisticsService.update(parseInt(id), req.user.userId, body);
+  }
+
+  @Patch('client/shipments/:id/status')
+  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
+    return this.logisticsService.updateStatus(parseInt(id), req.user.userId, body.status);
+  }
+
+  @Patch('client/shipments/:id/assign')
+  async assignToTransporteur(@Param('id') id: string, @Request() req: any, @Body() body: { transporteurId: number }) {
+    return this.logisticsService.assignToTransporteur(parseInt(id), req.user.userId, body.transporteurId);
+  }
+
+  @Delete('client/shipments/:id')
+  async delete(@Param('id') id: string, @Request() req: any) {
+    return this.logisticsService.delete(parseInt(id), req.user.userId);
+  }
+
+  @Patch('transporteur/shipments/:id/status')
+  async updateStatusByTransporteur(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
+    if (req.user.role !== 'transporteur') {
+      return { error: 'Accès réservé aux transporteurs' };
+    }
+    return this.logisticsService.updateStatusByTransporteur(parseInt(id), req.user.userId, body.status);
   }
 }

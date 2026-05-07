@@ -1,43 +1,74 @@
-﻿import { Injectable } from '@nestjs/common';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Suppliers } from './suppliers.entity';
+import { Supplier } from './entities/supplier.entity';
 
 @Injectable()
 export class SuppliersService {
   constructor(
-    @InjectRepository(Suppliers)
-    private repository: Repository<Suppliers>,
+    @InjectRepository(Supplier)
+    private supplierRepository: Repository<Supplier>,
   ) {}
 
-  async findAll(): Promise<Suppliers[]> {
-    return this.repository.find();
+  async findAll(userId: number) {
+    return this.supplierRepository.find({ where: { userId } });
   }
 
-  async findOne(id: string): Promise<Suppliers | null> {
-    return this.repository.findOne({ where: { id } });
+  async findOne(id: number, userId: number) {
+    const supplier = await this.supplierRepository.findOne({ where: { id, userId } });
+    if (!supplier) throw new NotFoundException('Fournisseur non trouvé');
+    return supplier;
   }
 
-  async create(data: Partial<Suppliers>): Promise<Suppliers> {
-    const item = this.repository.create(data);
-    return this.repository.save(item);
+  async create(userId: number, data: any) {
+    const supplier = this.supplierRepository.create({ 
+      ...data, 
+      userId,
+      totalPurchases: data.totalPurchases || 0,
+      status: data.status || 'active'
+    });
+    return this.supplierRepository.save(supplier);
   }
 
-  async update(id: string, data: Partial<Suppliers>): Promise<Suppliers | null> {
-    await this.repository.update(id, data);
-    return this.findOne(id);
+  // ⭐ NOUVELLE METHODE: Import multiple
+  async importSuppliers(userId: number, suppliersData: any[]) {
+    let success = 0;
+    let errors = 0;
+
+    for (const supplierData of suppliersData) {
+      try {
+        const supplier = this.supplierRepository.create({
+          userId: userId,
+          name: supplierData.name || supplierData.supplierName || "Fournisseur inconnu",
+          contact: supplierData.contact || supplierData.contactPerson || "",
+          email: supplierData.email || "",
+          phone: supplierData.phone || "",
+          address: supplierData.address || "",
+          totalPurchases: parseFloat(supplierData.totalPurchases) || 0,
+          status: supplierData.status || "active"
+        });
+        
+        await this.supplierRepository.save(supplier);
+        success++;
+      } catch (error) {
+        errors++;
+        console.error('Erreur import fournisseur:', error.message);
+      }
+    }
+    
+    console.log(`✅ Import terminé: ${success} succès, ${errors} erreurs`);
+    return { success, errors, total: suppliersData.length };
   }
 
-  async delete(id: string): Promise<void> {
-    await this.repository.delete(id);
+  async update(id: number, userId: number, data: any) {
+    const supplier = await this.findOne(id, userId);
+    Object.assign(supplier, data);
+    return this.supplierRepository.save(supplier);
   }
 
-  async getStats(): Promise<any> {
-    const items = await this.repository.find();
-    const total = items.length;
-    const active = items.filter(i => i.status === 'active' || i.status === 'paid' || i.status === 'delivered').length;
-    const pending = items.filter(i => i.status === 'pending').length;
-    const totalAmount = items.reduce((sum, i) => sum + (i.amount || 0), 0);
-    return { total, active, pending, totalAmount };
+  async delete(id: number, userId: number) {
+    const supplier = await this.findOne(id, userId);
+    await this.supplierRepository.delete(id);
+    return { success: true };
   }
 }

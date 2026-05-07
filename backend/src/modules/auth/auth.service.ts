@@ -1,9 +1,9 @@
-﻿import { Injectable, UnauthorizedException } from '@nestjs/common';
+﻿import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from '../users/user.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -13,47 +13,80 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(email: string, password: string, firstName: string, lastName: string) {
-    const existing = await this.userRepository.findOne({ where: { email } });
-    if (existing) throw new Error('Email déjà utilisé');
-    
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.userRepository.create({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      role: 'user',
-      isActive: true,
-    });
-    await this.userRepository.save(user);
-    
-    return this.generateTokens(user);
-  }
-
   async login(email: string, password: string) {
     const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) throw new UnauthorizedException('Email ou mot de passe incorrect');
     
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) throw new UnauthorizedException('Email ou mot de passe incorrect');
+    if (!user) {
+      throw new UnauthorizedException('Email ou mot de passe incorrect');
+    }
     
-    return this.generateTokens(user);
-  }
-
-  async generateTokens(user: User) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const access_token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    if (!user.isActive) {
+      throw new UnauthorizedException('Compte désactivé');
+    }
+    
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Email ou mot de passe incorrect');
+    }
+    
+    // Le payload JWT doit contenir 'userId' et 'role'
+    const payload = { userId: user.id, email: user.email, role: user.role };
     
     return {
-      access_token,
+      access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        name: user.name,
         role: user.role,
-      },
+        companyName: user.companyName,
+        subscriptionEnd: user.subscriptionEnd
+      }
+    };
+  }
+
+  async createClientByAdmin(body: {
+    email: string;
+    password: string;
+    name: string;
+    companyName: string;
+    phone?: string;
+    subscriptionDuration: number;
+  }) {
+    const existingUser = await this.userRepository.findOne({ where: { email: body.email } });
+    if (existingUser) {
+      throw new ConflictException('Email déjà utilisé');
+    }
+    
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+    
+    const subscriptionEnd = new Date();
+    subscriptionEnd.setDate(subscriptionEnd.getDate() + body.subscriptionDuration);
+    
+    const user = this.userRepository.create({
+      email: body.email,
+      password: hashedPassword,
+      name: body.name,
+      companyName: body.companyName,
+      phone: body.phone,
+      role: 'client',
+      subscriptionStart: new Date(),
+      subscriptionEnd,
+      isActive: true
+    });
+    
+    await this.userRepository.save(user);
+    
+    return {
+      success: true,
+      message: 'Client créé avec succès',
+      client: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        companyName: user.companyName,
+        subscriptionEnd: user.subscriptionEnd
+      }
     };
   }
 }

@@ -1,25 +1,31 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('products')
 export class Product {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  userId: number;
+
+  @Column({ nullable: true })
+  categoryId: number;
 
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column({ nullable: true })
   sku: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   price: number;
 
-  @Column()
+  @Column({ default: 0 })
   quantity: number;
-
-  @Column({ nullable: true })
-  description: string;
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

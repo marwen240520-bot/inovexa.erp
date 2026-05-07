@@ -1,0 +1,5 @@
+﻿User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Sitemap: https://inovexa.com/sitemap.xml

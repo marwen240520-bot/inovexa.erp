@@ -1,43 +1,39 @@
-﻿import { Injectable } from '@nestjs/common';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Orders } from './orders.entity';
+import { Order } from './entities/order.entity';
 
 @Injectable()
 export class OrdersService {
   constructor(
-    @InjectRepository(Orders)
-    private repository: Repository<Orders>,
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
   ) {}
 
-  async findAll(): Promise<Orders[]> {
-    return this.repository.find();
+  async findAll(userId: number) {
+    return this.orderRepository.find({ where: { userId }, order: { createdAt: 'DESC' } });
   }
 
-  async findOne(id: string): Promise<Orders | null> {
-    return this.repository.findOne({ where: { id } });
+  async findOne(id: number, userId: number) {
+    const order = await this.orderRepository.findOne({ where: { id, userId } });
+    if (!order) throw new NotFoundException('Commande non trouvée');
+    return order;
   }
 
-  async create(data: Partial<Orders>): Promise<Orders> {
-    const item = this.repository.create(data);
-    return this.repository.save(item);
+  async create(userId: number, data: Partial<Order>) {
+    const order = this.orderRepository.create({ ...data, userId });
+    return this.orderRepository.save(order);
   }
 
-  async update(id: string, data: Partial<Orders>): Promise<Orders | null> {
-    await this.repository.update(id, data);
-    return this.findOne(id);
+  async updateStatus(id: number, userId: number, status: string) {
+    const order = await this.findOne(id, userId);
+    order.status = status;
+    return this.orderRepository.save(order);
   }
 
-  async delete(id: string): Promise<void> {
-    await this.repository.delete(id);
-  }
-
-  async getStats(): Promise<any> {
-    const items = await this.repository.find();
-    const total = items.length;
-    const active = items.filter(i => i.status === 'active' || i.status === 'paid' || i.status === 'delivered').length;
-    const pending = items.filter(i => i.status === 'pending').length;
-    const totalAmount = items.reduce((sum, i) => sum + (i.amount || 0), 0);
-    return { total, active, pending, totalAmount };
+  async delete(id: number, userId: number) {
+    const order = await this.findOne(id, userId);
+    await this.orderRepository.delete(id);
+    return { success: true };
   }
 }

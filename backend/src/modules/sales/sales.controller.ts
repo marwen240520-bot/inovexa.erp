@@ -1,44 +1,61 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+﻿import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SalesService } from './sales.service';
-import { Customer } from './entities/customer.entity';
-import { Quote } from './entities/quote.entity';
 
 @Controller('sales')
+@UseGuards(JwtAuthGuard)
 export class SalesController {
-  constructor(private salesService: SalesService) {}
+  constructor(private readonly salesService: SalesService) {}
 
-  @Get('customers')
-  findAllCustomers() {
-    return this.salesService.findAllCustomers();
+  @Get()
+  async findAll(@Request() req: any, @Query('period') period?: string) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    console.log('🔍 userId dans controller:', userId);
+    return this.salesService.findAll(userId, period);
   }
 
-  @Get('customers/:id')
-  findCustomerById(@Param('id') id: string) {
-    return this.salesService.findCustomerById(id);
+  @Get('stats')
+  async getStats(@Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.salesService.getStats(userId);
   }
 
-  @Post('customers')
-  createCustomer(@Body() data: Partial<Customer>) {
-    return this.salesService.createCustomer(data);
+  @Get(':id')
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.salesService.findOne(parseInt(id), userId);
   }
 
-  @Put('customers/:id')
-  updateCustomer(@Param('id') id: string, @Body() data: Partial<Customer>) {
-    return this.salesService.updateCustomer(id, data);
+  @Post()
+  async create(@Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    const saleData = { ...body, userId };
+    return this.salesService.create(userId, saleData);
   }
 
-  @Delete('customers/:id')
-  deleteCustomer(@Param('id') id: string) {
-    return this.salesService.deleteCustomer(id);
+  // ⭐ NOUVEAU: Endpoint pour l'import multiple
+  @Post('import')
+  async importSales(@Request() req: any, @Body() body: { sales: any[] }) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    console.log('📥 Import de', body.sales?.length, 'ventes pour user', userId);
+    return this.salesService.importSales(userId, body.sales || []);
   }
 
-  @Post('quotes')
-  createQuote(@Body() data: Partial<Quote>) {
-    return this.salesService.createQuote(data);
+  @Patch(':id')
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.salesService.update(parseInt(id), userId, body);
   }
 
-  @Get('dashboard')
-  getDashboard() {
-    return this.salesService.getSalesStats();
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.salesService.updateStatus(parseInt(id), userId, body.status);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.salesService.delete(parseInt(id), userId);
   }
 }

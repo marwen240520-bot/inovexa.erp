@@ -1,45 +1,34 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { OrdersService } from './orders.service';
-import { Orders } from './orders.entity';
+﻿import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { OrdersService } from './orders.service';
 
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class OrdersController {
-  constructor(private readonly service: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
-  @Get('stats')
-  getStats() {
-    return this.service.getStats();
+  async findAll(@Request() req: any) {
+    return this.ordersService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    return this.ordersService.findOne(parseInt(id), req.user.userId);
   }
 
   @Post()
-  @Roles('admin')
-  create(@Body() data: Partial<Orders>) {
-    return this.service.create(data);
+  async create(@Request() req: any, @Body() body: any) {
+    return this.ordersService.create(req.user.userId, body);
   }
 
-  @Put(':id')
-  @Roles('admin')
-  update(@Param('id') id: string, @Body() data: Partial<Orders>) {
-    return this.service.update(id, data);
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
+    return this.ordersService.updateStatus(parseInt(id), req.user.userId, body.status);
   }
 
   @Delete(':id')
-  @Roles('admin')
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  async delete(@Param('id') id: string, @Request() req: any) {
+    return this.ordersService.delete(parseInt(id), req.user.userId);
   }
 }

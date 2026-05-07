@@ -1,0 +1,2368 @@
+﻿- Améliorer nos services et votre expérience utilisateur
+- Communiquer avec vous concernant votre compte
+➕ Créer un workflow
+- Gérer votre compte et vous fournir nos services
+➕ Nouveau contact
+➕ Nouvelle tâche
+#{invoice.id}
+#{order.id}
+(p.quantity || 0) === 0).length,
+    totalValue: products.reduce((s, p) => s + ((p.price || 0) * (p.quantity || 0)), 0)
+  };
+
+  if (loading) {
+    return (
+(p.quantity || 0) === 0).length;
+      const totalProductsValue = products.reduce((s, p) => s + ((p.price || 0) * (p.quantity || 0)), 0);
+      const activeClients = clients.filter(c => c.status === "active").length;
+      const pendingOrders = orders.filter(o => o.status === "pending").length;
+      const completedOrders = orders.filter(o => o.status === "completed" || o.status === "delivered").length;
+      const paidInvoices = invoices.filter(i => i.status === "paid").length;
+      const pendingInvoices = invoices.filter(i => i.status !== "paid").length;
+      const totalInvoicesAmount = invoices.reduce((s, i) => s + (i.amount || 0), 0);
+      const activeEmployees = employees.filter(e => e.status === "active").length;
+      const totalPayroll = employees.reduce((s, e) => s + (e.salary || 0), 0);
+      const deliveredShipments = shipments.filter(s => s.status === "delivered").length;
+      const pendingShipments = shipments.filter(s => s.status !== "delivered").length;
+
+      setData({
+        sales: { total: totalSales, count: sales.length, average: sales.length > 0 ? totalSales / sales.length : 0, evolution: 12.5 },
+        purchases: { total: totalPurchases, count: purchases.length, average: purchases.length > 0 ? totalPurchases / purchases.length : 0, evolution: -5.2 },
+        products: { total: products.length, lowStock, outOfStock, totalValue: totalProductsValue },
+        clients: { total: clients.length, active: activeClients, new: Math.floor(clients.length * 0.15), evolution: 8.3 },
+        orders: { total: orders.length, pending: pendingOrders, completed: completedOrders, evolution: 15.2 },
+        invoices: { total: invoices.length, paid: paidInvoices, pending: pendingInvoices, totalAmount: totalInvoicesAmount },
+        employees: { total: employees.length, active: activeEmployees, totalPayroll: totalPayroll },
+        logistics: { total: shipments.length, delivered: deliveredShipments, pending: pendingShipments, onTime: shipments.length > 0 ? (deliveredShipments / shipments.length * 100).toFixed(1) : 0 }
+      });
+
+      // Monthly trends
+      const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+      const monthlySales = Array(12).fill(0);
+      sales.forEach(s => { if (s.createdAt) { const month = new Date(s.createdAt).getMonth(); monthlySales[month] += s.total || 0; } });
+      setTrends(months.map((m, i) => ({ month: m, sales: monthlySales[i] })));
+
+      // Top products
+      const productSales = {};
+      sales.forEach(s => { if (s.productName) productSales[s.productName] = (productSales[s.productName] || 0) + (s.total || 0); });
+      const topProductsList = Object.entries(productSales).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount).slice(0, 5);
+      setTopProducts(topProductsList);
+
+      // Top clients
+      const clientSales = {};
+      sales.forEach(s => { if (s.clientName) clientSales[s.clientName] = (clientSales[s.clientName] || 0) + (s.total || 0); });
+      const topClientsList = Object.entries(clientSales).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount).slice(0, 5);
+      setTopClients(topClientsList);
+
+      // Alerts
+      const newAlerts = [];
+      if (lowStock > 0) newAlerts.push({ type: "warning", message: `${lowStock} produit(s) en stock faible`, module: "products", icon: "⚠️" });
+      if (outOfStock > 0) newAlerts.push({ type: "danger", message: `${outOfStock} produit(s) en rupture de stock`, module: "products", icon: "🚫" });
+      if (pendingOrders > 5) newAlerts.push({ type: "info", message: `${pendingOrders} commandes en attente`, module: "orders", icon: "📝" });
+      if (pendingInvoices > 3) newAlerts.push({ type: "warning", message: `${pendingInvoices} factures impayées`, module: "invoices", icon: "🧾" });
+      setAlerts(newAlerts);
+
+    } catch(e) { console.error(e); }
+    setLoading(false);
+  };
+
+  const modules = [
+    { id: "global", label: "📊 Global", icon: "📊", color: "#667eea" },
+    { id: "sales", label: "💰 Ventes", icon: "💰", color: "#10b981" },
+    { id: "purchases", label: "📥 Achats", icon: "📥", color: "#f59e0b" },
+    { id: "products", label: "📦 Produits", icon: "📦", color: "#3b82f6" },
+    { id: "clients", label: "👥 Clients", icon: "👥", color: "#8b5cf6" },
+    { id: "orders", label: "📝 Commandes", icon: "📝", color: "#667eea" },
+    { id: "invoices", label: "🧾 Factures", icon: "🧾", color: "#10b981" },
+    { id: "employees", label: "👨‍💼 RH", icon: "👨‍💼", color: "#14b8a6" },
+    { id: "logistics", label: "🚚 Logistique", icon: "🚚", color: "#3b82f6" }
+  ];
+
+  if (loading) {
+    return (
+) :
+) : (
+) {
+  return (
+)) :
+))
+            ) : (
+))}
+))}
+              {chatLoading && (
+))}
+              {completedTasks.length === 0 &&
+))}
+              {pendingTasks.length === 0 &&
+))}
+            {suppliers.length === 0 &&
+);
+                    })}
+);
+                  })}
+);
+                })}
+);
+              })}
+);
+            })}
+            {purchaseOrders.length === 0 &&
+);
+  }
+
+  const maxValue = Math.max(...trends.map(t => t.sales), 1);
+
+  return (
+);
+  }
+
+  return (
+)}
+)}
+                    {predictions.seasonality?.winterPeak && (
+)}
+                  {table.status !== 'occupied' && (
+)}
+                  {table.status !== 'reserved' && (
+)}
+              {chatHistory.map((msg, idx) => (
+)}
+            {modal.form.type === 'supplier' && (
+)}
+
+          {!selectedClient && (
+)}
+
+          {/* 4 Cartes KPI */}
+)}
+
+          {/* 4 Cartes KPI Globales */}
+)}
+
+          {/* 4 Cartes statistiques */}
+)}
+
+          {/* 5 Cartes statistiques */}
+)}
+
+          {/* 6 Cartes statistiques */}
+)}
+
+          {/* 8 Cartes statistiques */}
+)}
+
+          {/* Filtres et recherche */}
+)}
+
+          {/* Liste des modules par catégorie */}
+          {selectedClient && (
+)}
+
+          {/* Module Clients */}
+          {activeModule === "clients" && (
+)}
+
+          {/* Module Commandes */}
+          {activeModule === "orders" && (
+)}
+
+          {/* Module Factures */}
+          {activeModule === "invoices" && (
+)}
+
+          {/* Module Logistique */}
+          {activeModule === "logistics" && (
+)}
+
+          {/* Module Produits */}
+          {activeModule === "products" && (
+)}
+
+          {/* Module RH */}
+          {activeModule === "employees" && (
+)}
+
+          {/* Module Ventes */}
+          {activeModule === "sales" && (
+)}
+
+          {/* Onglet Activité */}
+          {activeTab === "activity" && (
+)}
+
+          {/* Onglet Analytics */}
+          {activeTab === "analytics" && (
+)}
+
+          {/* Onglet Chat IA */}
+          {activeTab === "chat" && (
+)}
+
+          {/* Onglet Dépenses */}
+          {activeTab === "expenses" && (
+)}
+
+          {/* Onglet Factures */}
+          {activeTab === "invoices" && (
+)}
+
+          {/* Onglet Prévisions */}
+          {activeTab === "predictions" && (
+)}
+
+          {/* Onglet Recommandations */}
+          {activeTab === "recommendations" && (
+)}
+
+          {/* Onglet Sécurité */}
+          {activeTab === "security" && (
+)}
+
+          {/* Onglets */}
+)}
+
+          {/* Section Langue */}
+)}
+
+          {/* Sélection du client */}
+)}
+
+          {/* Vue Grille */}
+          {viewMode === "grid" && (
+)}
+
+          {categories.map(cat => (
+)}
+
+        {/* Barre d'outils */}
+)}
+
+        {activeTab === 'anomalies' && (
+)}
+
+        {activeTab === 'chat' && (
+)}
+
+        {activeTab === 'orders' && (
+)}
+
+        {activeTab === 'predictions' && predictions?.prediction && (
+)}
+
+        {activeTab === 'suppliers' && (
+)}
+
+        {selectedClient && (
+)}
+
+      {/* Modal Modules */}
+      {modulesModal.open && (
+/mois
+;
+                        })}
+;
+  }
+
+  return (
+;
+
+  const passedInspections = inspections.filter(i => i.result === 'passed');
+  const failedInspections = inspections.filter(i => i.result === 'failed');
+
+  return (
+;
+
+  const pending = tasks.filter(t => t.status !== 'completed');
+  const completed = tasks.filter(t => t.status === 'completed');
+
+  return (
+;
+
+  const pendingTasks = tasks.filter(t => !t.completed);
+  const completedTasks = tasks.filter(t => t.completed);
+
+  return (
+;
+
+  const pendingTasks = tasks.filter(t => t.status !== 'done');
+  const completedTasks = tasks.filter(t => t.status === 'done');
+
+  return (
+;
+
+  const today = appointments.filter(a => new Date(a.date).toDateString() === new Date().toDateString());
+  const upcoming = appointments.filter(a => new Date(a.date) > new Date() && a.status !== 'cancelled');
+  const past = appointments.filter(a => new Date(a.date)
+;
+
+  return (
+;
+}
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [stats, setStats] = useState({
+    totalSales: 0, totalPurchases: 0, totalClients: 0, totalProducts: 0,
+    pendingInvoices: 0, lowStock: 0, activeEmployees: 0, pendingOrders: 0,
+    salesGrowth: 12.5, clientGrowth: 5.2, profitGrowth: 8.3
+  });
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [salesData, setSalesData] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [topClients, setTopClients] = useState([]);
+  const [animateCards, setAnimateCards] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+    if (!token) router.push("/auth/login");
+    if (userData) setUser(JSON.parse(userData));
+    fetchDashboardData();
+    
+    // Animation au chargement
+    setTimeout(() => setAnimateCards(true), 100);
+  }, [selectedPeriod]);
+
+  const fetchDashboardData = async () => {
+    const token = localStorage.getItem("token");
+    setLoading(true);
+    try {
+      const [salesRes, purchasesRes, clientsRes, productsRes, invoicesRes, ordersRes, employeesRes] = await Promise.all([
+        fetch(`http://localhost:3001/sales`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`http://localhost:3001/purchases`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:3001/clients", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:3001/products", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:3001/invoices", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:3001/orders", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:3001/employees", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      let sales = await salesRes.json();
+      let purchases = await purchasesRes.json();
+      let clients = await clientsRes.json();
+      let products = await productsRes.json();
+      let invoices = await invoicesRes.json();
+      let orders = await ordersRes.json();
+      let employees = await employeesRes.json();
+
+      sales = Array.isArray(sales) ? sales : [];
+      purchases = Array.isArray(purchases) ? purchases : [];
+      clients = Array.isArray(clients) ? clients : [];
+      products = Array.isArray(products) ? products : [];
+      invoices = Array.isArray(invoices) ? invoices : [];
+      orders = Array.isArray(orders) ? orders : [];
+      employees = Array.isArray(employees) ? employees : [];
+
+      const totalSales = sales.reduce((s, item) => s + (item.total || 0), 0);
+      const totalPurchases = purchases.reduce((s, item) => s + (item.total || 0), 0);
+      const totalClients = clients.length;
+      const totalProducts = products.length;
+      const pendingInvoices = invoices.filter(i => i.status !== "paid").length;
+      const lowStock = products.filter(p => (p.quantity || 0)
+[button] { const days = prompt("Nombre de jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Prolonger">+Jours
+[button] { localStorage.removeItem('token'); localStorage.removeItem('user'); router.push('/auth/login'); }} style={{ background: '#c33', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+              🚪 Déconnexion
+[button] { setModal({ open: false, form: {} }); }} style={{ flex: 1, padding: '12px', background: '#667eea', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Créer
+[button] {
+                          const newQty = prompt("Nouvelle quantité:", p.quantity || 0);
+                          if (newQty !== null && !isNaN(parseInt(newQty))) {
+                            updateStock(p.id, parseInt(newQty));
+                          }
+                        }} style={{ background: "#667eea", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>
+                          📦 Mettre à jour
+[button] {}} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+[button] {i.status === 'connected' ? '✅ Connecté' : '🔌 Connecter'}
+[button] {loading ? 'Recherche...' : 'Valider'}
+[button] {loading ? t.loading : t.login}
+[button] {modal.editMode ? "Modifier" : "Ajouter"}
+[button] {modal.editMode ? "Modifier" : "Créer"}
+[button] {saving ? "⏳ Sauvegarde..." : "💾 Sauvegarder"}
+[button] {t("common.logout")}
+[button] {t.add}
+[button] Ajouter
+[button] Ajouter au panier
+[button] approveLeave(l.id)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>
+                          Approuver
+[button] cancelSubscription(sub.id)} style={{ width: '100%', padding: '12px', background: '#c33', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                    Annuler l'abonnement
+[button] completeTask(task.id)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Terminer
+[button] Créer
+[button] Créer la commande
+[button] Créer l'employé
+[button] deleteCategory(c.id)} style={{ flex: 1, padding: "8px", background: "#c33", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>🗑️ Supprimer
+[button] deleteClient(client.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Supprimer">🗑️
+[button] deleteClient(client.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteClient(client.id)} style={{ flex: 1, padding: "8px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>🗑️ Suppr
+[button] deleteEmployee(e.id)}
+                          style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                          🗑️ Supprimer
+[button] deleteEmployee(emp.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteInvoice(invoice.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteItem(item.id)} style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>🗑️
+[button] deleteOrder(order.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteOrder(order.id)}
+                        style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}
+                        title="Supprimer"
+                      >
+                        🗑️
+[button] deleteProduct(p.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteProduct(p.id)} style={{ flex: 1, padding: "8px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>🗑️ Suppr
+[button] deletePromotion(promo.id)} style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                    Supprimer
+[button] deletePurchase(purchase.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteSale(sale.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteShipment(shipment.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteSupplier(s.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] deleteTransporteur(t.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+[button] e.currentTarget.style.background = "#764ba2"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "#667eea"}
+                >
+                  Envoyer
+[button] e.currentTarget.style.background = "#764ba2"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "#667eea"}
+              >
+                💾 {t("common.save")}
+[button] e.currentTarget.style.background = "#764ba2"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "#667eea"}
+              >
+                🔑 Changer le mot de passe
+[button] e.currentTarget.style.background = "#ff4444"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "#c33"}
+                >
+                  Se déconnecter de tous les appareils
+[button] Enregistrer
+[button] Envoyer
+[button] evaluateSupplier(s.id, r)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '6px 12px', color: '#94a3b8', cursor: 'pointer' }}>
+                      {r}★
+[button] fileInputRef.current.click()} style={{ background: '#667eea', color: 'white', padding: '12px 32px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              📁 Sélectionner un fichier
+[button] Générer la paie
+[button] Lancer
+[button] markAsPaid(invoice.id)} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>Payée
+[button] navigator.clipboard.writeText(apiKey)} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Copier
+[button] openEditModal(c)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>✏️ Modifier
+[button] openEditModal(client)} style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modifier">✏️
+[button] openEditModal(client)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+[button] openEditModal(client)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>✏️ Modifier
+[button] openEditModal(emp)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+[button] openEditModal(order)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+[button] openEditModal(p)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+[button] openEditModal(p)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>✏️ Modifier
+[button] openEditModal(s)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer", marginRight: "5px" }}>✏️
+[button] openEditModal(shipment)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+[button] openEditModal(t)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer", marginRight: "5px" }}>✏️
+[button] openModulesModal(client)} style={{ background: "#8b5cf6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modules">📦
+[button] Programmer
+[button] receiveOrder(order.id)} style={{ width: '100%', padding: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                      ✅ Réceptionner la commande
+[button] Réessayer
+[button] setActiveTab("expenses")} style={{ padding: "12px 24px", background: activeTab === "expenses" ? "#667eea" : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "expenses" ? "white" : "#94a3b8", cursor: "pointer" }}>📉 Dépenses
+[button] setActiveTab("invoices")} style={{ padding: "12px 24px", background: activeTab === "invoices" ? "#667eea" : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "invoices" ? "white" : "#94a3b8", cursor: "pointer" }}>🧾 Factures
+[button] setActiveTab("overview")} style={{ padding: "12px 24px", background: activeTab === "overview" ? "#667eea" : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "overview" ? "white" : "#94a3b8", cursor: "pointer" }}>📊 Aperçu
+[button] setActiveTab('orders')} style={{ padding: '12px 24px', background: activeTab === 'orders' ? '#667eea' : 'transparent', border: 'none', color: activeTab === 'orders' ? 'white' : '#94a3b8', cursor: 'pointer' }}>
+            📋 Commandes ({purchaseOrders.filter(o => o.status !== 'received').length})
+[button] setActiveTab('suppliers')} style={{ padding: '12px 24px', background: activeTab === 'suppliers' ? '#667eea' : 'transparent', border: 'none', color: activeTab === 'suppliers' ? 'white' : '#94a3b8', cursor: 'pointer' }}>
+            🏭 Fournisseurs ({suppliers.length})
+[button] setActiveTab(tab.id)} 
+                style={{ 
+                  padding: "12px 24px", 
+                  background: activeTab === tab.id ? "#667eea" : "transparent", 
+                  border: "none", 
+                  borderRadius: "12px 12px 0 0", 
+                  color: activeTab === tab.id ? "white" : "#94a3b8", 
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                {tab.label}
+[button] setActiveTab(tab.id)}
+                style={{
+                  padding: "12px 24px",
+                  background: activeTab === tab.id ? "#667eea" : "transparent",
+                  border: "none",
+                  borderRadius: "12px 12px 0 0",
+                  color: activeTab === tab.id ? "white" : "#94a3b8",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                {tab.label}
+[button] setActiveTab(tab.id)}
+              style={{
+                padding: '12px 24px',
+                background: activeTab === tab.id ? '#667eea' : 'transparent',
+                border: 'none',
+                borderRadius: '12px 12px 0 0',
+                color: activeTab === tab.id ? 'white' : '#94a3b8',
+                cursor: 'pointer'
+              }}
+            >
+              {tab.label}
+[button] setActiveTab('whatif')} style={{ padding: '12px 24px', background: activeTab === 'whatif' ? '#667eea' : 'transparent', color: activeTab === 'whatif' ? 'white' : '#94a3b8', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+              🔮 Simulateur "What-If"
+[button] setActiveTab('workflows')} style={{ padding: '12px 24px', background: activeTab === 'workflows' ? '#667eea' : 'transparent', color: activeTab === 'workflows' ? 'white' : '#94a3b8', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+              ⚡ Workflows visuels
+[button] setLang('en')} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "4px 8px", borderRadius: "6px", opacity: lang === 'en' ? 1 : 0.5 }}> EN
+[button] setLang('fr')} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "4px 8px", borderRadius: "6px", opacity: lang === 'fr' ? 1 : 0.5 }}> FR
+[button] setModal({ open: false, form: {} })} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}>✕
+[button] setModal({ open: false, form: {} })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler
+[button] setModal({ open: false, form: {} })} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                Annuler
+[button] setModal({ open: false, form: {} })} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Annuler
+[button] setModal({ open: false, form: {} })}
+                style={btnSecondary}
+              >
+                Annuler
+[button] setModal({ open: false, form: {}, editMode: false, editId: null })} 
+                style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}
+              >
+                Annuler
+[button] setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>
+                Annuler
+[button] setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler
+[button] setModal({ open: true, editMode: false, form: { email: "", password: "", name: "", companyName: "", phone: "", subscriptionDuration: 30 } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, editMode: false, form: { name: "", contact: "", email: "", phone: "", address: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>+ Nouveau fournisseur
+[button] setModal({ open: true, editMode: false, form: { name: "", description: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>
+              + Nouvelle catégorie
+[button] setModal({ open: true, editMode: false, form: { name: "", email: "", phone: "", address: "", status: "active" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, editMode: false, form: { name: "", email: "", phone: "", companyName: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>
+              + Nouveau transporteur
+[button] setModal({ open: true, editMode: false, form: { name: "", email: "", position: "", department: "", salary: 0, phone: "", hireDate: "", status: "active" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, editMode: false, form: { name: "", sku: "", price: 0, quantity: 0 } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, editMode: false, form: { productName: "", quantity: 1, priority: "medium", assignedTo: "", startDate: "", status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, editMode: false, form: { trackingNumber: "", clientName: "", address: "", transporteurId: "", estimatedDelivery: "", status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, form: { brand: '', model: '', plate: '', driver: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau véhicule
+[button] setModal({ open: true, form: { clientName: "", amount: 0, dueDate: "", status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, form: { clientName: "", productName: "", quantity: 1, unitPrice: 0, total: 0, status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>+ Nouvelle vente
+[button] setModal({ open: true, form: { clientName: '', address: '', weight: 0, carrier: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle expédition
+[button] setModal({ open: true, form: { code: '', description: '', discount: 0, validUntil: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle promotion
+[button] setModal({ open: true, form: { name: '', description: '', budget: 0, startDate: '', endDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau projet
+[button] setModal({ open: true, form: { name: '', description: '', price: 0, categoryId: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau plat
+[button] setModal({ open: true, form: { name: '', email: '', password: '', phone: '' } })}
+            style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
+          >
+            + Nouvel employé
+[button] setModal({ open: true, form: { name: '', email: '', phone: '', address: '', company: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau contact
+[button] setModal({ open: true, form: { name: '', email: '', phone: '', birthDate: '', bloodType: '', allergies: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau patient
+[button] setModal({ open: true, form: { name: '', email: '', phone: '', level: '', registrationDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvel étudiant
+[button] setModal({ open: true, form: { name: '', email: '', position: '', department: '', hireDate: '', salary: 0 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvel employé
+[button] setModal({ open: true, form: { name: '', location: '', startDate: '', endDate: '', budget: 0 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau chantier
+[button] setModal({ open: true, form: { name: '', teacher: '', schedule: '', duration: '', credits: 0 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau cours
+[button] setModal({ open: true, form: { name: '', trigger: '', action: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau workflow
+[button] setModal({ open: true, form: { name: '', type: '', budget: 0, startDate: '', endDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle campagne
+[button] setModal({ open: true, form: { name: '', unit: '', quantity: 0, price: 0, supplier: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau matériau
+[button] setModal({ open: true, form: { patientName: '', doctor: '', date: '', time: '', reason: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau rendez-vous
+[button] setModal({ open: true, form: { patientName: '', medication: '', dosage: '', duration: '', doctor: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle prescription
+[button] setModal({ open: true, form: { productName: '', batchNumber: '', inspector: '', result: 'pending' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle inspection
+[button] setModal({ open: true, form: { project: '', description: '', hours: 0, date: '', billable: true } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle entrée
+[button] setModal({ open: true, form: { startDate: '', endDate: '', type: 'vacation', reason: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              Demander un congé
+[button] setModal({ open: true, form: { studentId: '', courseId: '', value: 0, coefficient: 1 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Ajouter une note
+[button] setModal({ open: true, form: { supplierName: "", productName: "", quantity: 1, unitPrice: 0, total: 0, status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+[button] setModal({ open: true, form: { title: '', assignedTo: '', startDate: '', endDate: '', priority: 'medium' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle tâche
+[button] setModal({ open: true, form: { title: '', description: '', priority: 'medium', dueDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle tâche
+[button] setModal({ open: true, form: { title: '', equipment: '', priority: 'medium', scheduledDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle tâche
+[button] setModal({ open: true, form: { trackingNumber: "", clientName: "", address: "", carrier: "Chronopost", estimatedDelivery: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>+ Nouvelle expédition
+[button] setModal({ open: true, form: { type: activeTab === 'orders' ? 'order' : 'supplier' } })} style={{ marginLeft: 'auto', background: '#667eea', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+            + {activeTab === 'orders' ? 'Nouvelle commande' : 'Nouveau fournisseur'}
+[button] setModal({ open: true, form: {} })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>+ Ajouter
+[button] setModal({
+              open: true,
+              form: {
+                name: "",
+                email: "",
+                position: "",
+                salary: 0,
+                hireDate: ""
+              }
+            })
+          }
+          style={addBtn}
+        >
+          + Nouvel employé
+[button] setModulesModal({ open: false, clientId: null, modules: {} })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler
+[button] setNewWorkflow({ ...newWorkflow, actions: [...newWorkflow.actions, { type: a.id }] })} style={{ background: '#1e293b', color: '#94a3b8', padding: '8px 16px', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>+ {a.label}
+[button] setSelectedClient(c)} style={{ background: '#667eea', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', marginRight: '5px', cursor: 'pointer' }}>
+                        📧
+[button] setSelectedClient(null)} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Fermer
+[button] setSelectedDelivery(null)} style={{ width: '100%', padding: '12px', background: '#667eea', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Fermer
+[button] setSelectedPatient(null)} style={{ width: '100%', padding: '12px', background: '#667eea', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Fermer
+[button] setSelectedWarehouse(wh)} style={{ width: '100%', padding: '10px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                  Transférer depuis ce dépôt
+[button] setShowCreator(false)} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Annuler
+[button] setShowCreator(true)} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>+ Nouveau workflow
+[button] setShowPassword(!showPassword)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "18px" }}>{showPassword ? '👁️' : '👁️‍🗨️'}
+[button] setViewMode("grid")} style={{ padding: "8px 16px", background: viewMode === "grid" ? "#667eea" : "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "white", cursor: "pointer" }}>🖼️ Grille
+[button] setViewMode("list")} style={{ padding: "8px 16px", background: viewMode === "list" ? "#667eea" : "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "white", cursor: "pointer" }}>📋 Liste
+[button] Simuler
+[button] Souscrire
+[button] Supprimer
+[button] toggleAllModules(false)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>❌ Tout désactiver
+[button] toggleAllModules(true)} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✅ Tout activer
+[button] toggleEmployee(e.id, e.isActive)}
+                          style={{ 
+                            background: e.isActive ? '#f59e0b' : '#10b981', 
+                            color: 'white', 
+                            border: 'none', 
+                            borderRadius: '8px', 
+                            padding: '6px 12px', 
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          {e.isActive ? '🔒 Désactiver' : '🔓 Activer'}
+[button] toggleStatus(client.id)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title={client.isActive ? "Désactiver" : "Activer"}>{client.isActive ? "🔴" : "🟢"}
+[button] toggleStatus(client.id, client.status)} style={{ 
+                          background: client.status === "active" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+                          color: client.status === "active" ? "#10b981" : "#ef4444",
+                          border: "none", borderRadius: "20px", padding: "4px 12px", cursor: "pointer"
+                        }}>
+                          {client.status === "active" ? "🟢 Actif" : "🔴 Inactif"}
+[button] toggleStatus(client.id, client.status)} style={{ 
+                      background: client.status === "active" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+                      color: client.status === "active" ? "#10b981" : "#ef4444",
+                      border: "none", borderRadius: "20px", padding: "2px 8px", cursor: "pointer", fontSize: "10px"
+                    }}>
+                      {client.status === "active" ? "Actif" : "Inactif"}
+[button] toggleWorkflow(wf.id, wf.active)} style={{ width: '100%', padding: '10px', background: wf.active ? '#f59e0b' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                  {wf.active ? 'Désactiver' : 'Activer'}
+[button] updateStatus(a.id, 'cancelled')} style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>Annuler
+[button] updateStatus(a.id, 'confirmed')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>Confirmer
+[button] updateStatus(task.id, 'completed')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Terminer
+[button] updateStatus(task.id, 'done')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Terminer
+[button] updateTableStatus(table.id, 'free')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Libérer
+[button] updateTableStatus(table.id, 'occupied')} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Occuper
+[button] updateTableStatus(table.id, 'reserved')} style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Réserver
+[label] {t("common.address")}
+[label] {t("common.email")}
+[label] {t("common.email")} *
+[label] {t("common.name")}
+[label] {t("common.name")} *
+[label] {t("common.phone")}
+[label] {t("common.price")} (€) *
+[label] {t("common.quantity")}
+[label] {t("common.status")}
+[label] {t("settings.currencyFormat") || "Format de la devise"}
+[label] {t("settings.dateFormatLabel") || "Format d'affichage des dates"}
+[label] {t("settings.interfaceLanguage") || "Langue de l'interface"}
+[label] {t.email}
+[label] {t.password}
+[label] Adresse *
+[label] Assigné à
+[label] Client *
+[label] Confirmer le nouveau mot de passe
+[label] Date de début
+[label] Date de livraison estimée
+[label] Date d'embauche
+[label] Date fin abonnement
+[label] Département
+[label] Description
+[label] Durée d'abonnement (jours)
+[label] Email *
+[label] Mot de passe *
+[label] N° de suivi *
+[label] Nom *
+[label] Nom complet *
+[label] Nom de la société
+[label] Nom du client *
+[label] Nom du produit *
+[label] Nouveau mot de passe
+[label] Poste *
+[label] Priorité
+[label] Produit *
+[label] Quantité *
+[label] Salaire (€) *
+[label] SKU
+[label] Société
+[label] Statut
+[label] Téléphone
+[label] Total (€) *
+[label] Transporteur
+[label] 👥 Sélectionner un client
+[menu] admin.clients
+[menu] admin.modules
+[menu] common.ai
+[menu] common.analytics
+[menu] common.categories
+[menu] common.clients
+[menu] common.dashboard
+[menu] common.finance
+[menu] common.hr
+[menu] common.invoices
+[menu] common.logistics
+[menu] common.orders
+[menu] common.production
+[menu] common.products
+[menu] common.profile
+[menu] common.purchases
+[menu] common.reports
+[menu] common.sales
+[menu] common.settings
+[menu] common.stock
+[menu] common.suppliers
+[menu] logistics.shipments
+[placeholder] +33 6 12 34 56 78
+[placeholder] ••••••••
+[placeholder] Adresse
+[placeholder] Adresse / Localisation
+[placeholder] Allergies
+[placeholder] Assigné à
+[placeholder] Budget (€)
+[placeholder] Chauffeur
+[placeholder] Code produit
+[placeholder] Code promo
+[placeholder] Coefficient
+[placeholder] Crédits ECTS
+[placeholder] Date
+[placeholder] Date d
+[placeholder] Date de début
+[placeholder] Date de fin
+[placeholder] Date de naissance
+[placeholder] Date début
+[placeholder] Date estimée
+[placeholder] Date fin
+[placeholder] Date prévue
+[placeholder] Département
+[placeholder] Description
+[placeholder] Durée (heures)
+[placeholder] Durée (jours)
+[placeholder] Durée en jours
+[placeholder] Email
+[placeholder] employe@email.com
+[placeholder] Enseignant
+[placeholder] Équipement
+[placeholder] Fournisseur
+[placeholder] Heure
+[placeholder] Heures
+[placeholder] Horaire (ex: Lundi 14h-16h)
+[placeholder] Immatriculation
+[placeholder] Inspecteur
+[placeholder] Jean Dupont
+[placeholder] Marque
+[placeholder] Médecin
+[placeholder] Médecin prescripteur
+[placeholder] Médicament
+[placeholder] Modèle
+[placeholder] Montant (€)
+[placeholder] Mot de passe
+[placeholder] Motif
+[placeholder] N° de suivi
+[placeholder] Niveau (ex: Licence, Master...)
+[placeholder] Nom
+[placeholder] Nom complet
+[placeholder] Nom de l
+[placeholder] Nom de la campagne
+[placeholder] Nom de la société
+[placeholder] Nom du chantier
+[placeholder] Nom du client
+[placeholder] Nom du cours
+[placeholder] Nom du fournisseur
+[placeholder] Nom du matériau
+[placeholder] Nom du patient
+[placeholder] Nom du plat
+[placeholder] Nom du produit
+[placeholder] Nom du projet
+[placeholder] Nom du transporteur
+[placeholder] Nom du workflow
+[placeholder] Note (/20)
+[placeholder] Numéro de lot
+[placeholder] Numéro de suivi
+[placeholder] Personne de contact
+[placeholder] Posez votre question...
+[placeholder] Posologie
+[placeholder] Poste
+[placeholder] Prix
+[placeholder] Prix (€)
+[placeholder] Prix unitaire (€)
+[placeholder] Produit
+[placeholder] Projet
+[placeholder] Quantité
+[placeholder] Réduction (%)
+[placeholder] Salaire
+[placeholder] Scannez un code-barres...
+[placeholder] Société
+[placeholder] Téléphone
+[placeholder] Titre
+[placeholder] Unité (kg, m, L...)
+[placeholder] Votre message...
+[placeholder] 🔍 Rechercher par client ou produit...
+[placeholder] 🔍 Rechercher un client par nom, email ou téléphone...
+[placeholder] 🔍 Rechercher un client...
+[placeholder] 🔍 Rechercher un produit...
+[placeholder] 🔍 Rechercher une catégorie...
+[placeholder] 🔍 Rechercher...
+-{promo.discount}%
+⏱️
+⏰ {c.schedule}
+⏳ À faire ({pending.length})
+⏳ En attente
+⏱️ Nouvelle entrée
+⏱️ Suivi du temps
+= 0 ? "#10b981" : "#ef4444", fontWeight: "bold" }}>{(data.sales.total - data.purchases.total).toLocaleString()} €
+= 0 ? "#10b981" : "#ef4444", marginTop: "8px" }}>
+                    ▲ {Math.abs(card.growth)}% vs période précédente
+= 10 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                          {getAverage(s.id)}/20
+= 10 ? '#10b981' : '#ef4444', marginBottom: '4px' }}>{g.value}/20
+= 4 ? '#10b981' : s.rating >= 3 ? '#f59e0b' : '#ef4444' }}>
+                      {'⭐'.repeat(Math.floor(s.rating || 0))}{s.rating ? ` ${s.rating}/5` : 'Non évalué'}
+= 4 ? 'rgba(16,185,129,0.2)' : s.rating >= 3 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)', padding: '4px 12px', borderRadius: '20px' }}>
+⌨️ Raccourcis: Ctrl+D (Dashboard) | Ctrl+P (Produits) | Ctrl+S (Ventes) | Ctrl+/ (Aide)
+▲ {card.growth}
+▲ +{data.clients.evolution}%
+▲ +{data.sales.evolution}%
+← {t.back}
+← Retour au tableau de bord
+© 2025 Inovexa ERP. Tous droits réservés.
+☀️ Pic été
+☁️
+☁️ Abonnements SaaS
+✏️
+❄️ Pic hiver
+✅ {transporteur?.name || "Assigné"}
+✅ Assigné
+✅ Aucune anomalie détectée
+✅ Contrôle Qualité
+✅ Document analysé
+✅ Gestion des tâches
+✅ Livré
+✅ Livrée
+✅ Livrées
+✅ Livrés
+✅ Nouvelle inspection
+✅ Payées
+✅ Stock élevé (≥10)
+✅ Terminées ({completed.length})
+✅ Terminées ({completedTasks.length})
+✅ Terminés
+❌ Annulée
+❌ Annulées
+❌ Annulés
+⚠️
+⚠️ À faire ({pendingTasks.length})
+⚠️ Alertes stock ({lowStockProducts.length})
+⚠️ Anomalies détectées
+⚠️ Clients à risque
+⚠️ Stock faible (&lt;10)
+⚡ Action
+⚡ Actions rapides
+⚡ Automatisation
+⚡ Workflows Automatisés
+⚙️ {t("common.settings")}
+⭐ Taux de fidélisation
+⭐ Top clients
+0 ? "#f59e0b" : "#10b981" }}>{data.products.lowStock} stock faible
+0 ? '#10b981' : '#ef4444' }}>
+                      {predictions.trend > 0 ? '📈 Hausse' : '📉 Baisse'} ({Math.abs(predictions.trend)}%)
+0 ? '#10b981' : '#ef4444', fontSize: '20px', fontWeight: 'bold' }}>{product.quantity}
+0 ? ((data.sales.total - data.purchases.total) / data.sales.total * 100) : 0, 100)}%`, background: "#10b981", height: "8px", borderRadius: "10px" }}>
+0).length;
+      const outOfStockCount = productsData.filter(p => (p.quantity || 0) === 0).length;
+      
+      setStats({
+        total: productsData.length,
+        value: totalValue,
+        lowStock: lowStockCount,
+        outOfStock: outOfStockCount
+      });
+    } catch(e) { console.error(e); }
+    setLoading(false);
+  };
+
+  const updateStock = async (id, newQuantity) => {
+    if (newQuantity
+0;
+    if (filterStatus === "out") matchesStatus = (p.quantity || 0) === 0;
+    if (filterStatus === "well") matchesStatus = (p.quantity || 0) >= 10;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) {
+    return
+0} onChange={() => {
+                        if (selectedIds.length === filteredClients.length) setSelectedIds([]);
+                        else setSelectedIds(filteredClients.map(c => c.id));
+                      }} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+0} onChange={() => {
+                        if (selectedIds.length === filteredProducts.length) {
+                          setSelectedIds([]);
+                        } else {
+                          setSelectedIds(filteredProducts.map(p => p.id));
+                        }
+                      }} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+0} onChange={() => {
+                      if (selectedIds.length === filteredClients.length) setSelectedIds([]);
+                      else setSelectedIds(filteredClients.map(c => c.id));
+                    }} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+0} onChange={() => {
+                      if (selectedIds.length === filteredEmployees.length) setSelectedIds([]);
+                      else setSelectedIds(filteredEmployees.map(e => e.id));
+                    }} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+0} onChange={() => {
+                      if (selectedIds.length === filteredInvoices.length) setSelectedIds([]);
+                      else setSelectedIds(filteredInvoices.map(i => i.id));
+                    }} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+0} onChange={() => {
+                      if (selectedIds.length === filteredPurchases.length) setSelectedIds([]);
+                      else setSelectedIds(filteredPurchases.map(p => p.id));
+                    }} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+0} onChange={() => {
+                      if (selectedIds.length === filteredShipments.length) setSelectedIds([]);
+                      else setSelectedIds(filteredShipments.map(s => s.id));
+                    }} style={{ width: "18px", height: "18px", cursor: "pointer" }} />
+1. Collecte des informations
+18.2%
+2. Utilisation des informations
+24.5%
+3. Protection des données
+4. Partage des informations
+4.2x/an
+5. Vos droits
+6. Cookies
+7. Contact
+A-
+À temps
+À venir
+A+
+AAAA-MM-JJ (ex: {formatDateExample(new Date())})
+AB-
+AB+
+Abonnement
+Accéder au Dashboard
+Actifs
+Action
+Actions
+Activez ou désactivez les modules pour chaque client
+Actualités, conseils et tendances sur la gestion d'entreprise
+Adresse
+Adresse *
+Ajouter
+Ajouter au panier
+Allergies
+Analyse avancée de vos performances
+Analyse du document en cours...
+Analyse financière et suivi des dépenses
+Analyse prédictive, reporting dynamique et assistant IA conversationnel
+Annulé
+Antécédents médicaux
+approveLeave(l.id)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>
+                          Approuver
+Assigné à
+Assigné à: {order.assignedTo}
+Assigné à: {task.assignedTo}
+Assigner
+assignTransporteur(s.id, parseInt(e.target.value))} style={{ padding: "6px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", color: "white" }}>
+assignTransporteur(shipment.id, parseInt(e.target.value))} style={{ padding: "6px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", color: "white" }}>
+Assistant IA
+Aucun achat trouvé
+Aucun client trouvé
+Aucun contact dans le CRM
+Aucun employé
+Aucun employé pour le moment
+Aucun employé trouvé
+Aucun étudiant
+Aucun fournisseur
+Aucun ordre de fabrication
+Aucun patient
+Aucun produit trouvé
+Aucun projet pour le moment
+Aucun transporteur. Cliquez sur "+ Nouveau transporteur" pour en ajouter.
+Aucune activité récente
+Aucune commande
+Aucune commande pour le moment
+Aucune dépense enregistrée
+Aucune donnée
+Aucune donnée. Cliquez sur "Ajouter" pour commencer.
+Aucune expédition trouvée
+Aucune facture trouvée
+Aucune inspection
+Aucune livraison assignée
+Aucune promotion active
+Aucune recommandation
+Aucune tâche en attente
+Aucune tâche en cours
+Aucune tâche terminée
+Aucune vente trouvée
+Aujourd'hui
+Avancement
+B-
+B+
+Basse
+Basse priorité
+Bienvenue {user?.name}, voici vos informations
+Blog Inovexa
+Bonjour {user?.name}, bienvenue dans votre espace
+Bonjour {user?.name}, bienvenue sur votre tableau de bord
+Bonjour {user?.name}, suivez vos livraisons
+Bonjour {user?.name}, suivez votre production
+Bonjour {user?.name}, vous gérez les commandes de {user?.companyName || 'votre entreprise'}
+Budget
+CA du jour
+CA généré
+cancelSubscription(sub.id)} style={{ width: '100%', padding: '12px', background: '#c33', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                    Annuler l'abonnement
+Catégorie
+Ce qui rend votre ERP unique
+Chargement de l'assistant IA...
+Chargement des analyses...
+Chargement...
+Chauffeur: {v.driver || 'Non assigné'}
+Chiffre d'affaires
+Chronopost
+Client
+Client *
+Client: {r.clientName}
+Client: {stop.clientName}
+Clients
+clients à risque de départ
+Clients actifs
+Cliquez sur "Optimiser les routes" pour générer l'itinéraire optimal
+Code: {promo.code}
+Coefficient
+Commandes
+Commandes aujourd'hui
+completeTask(task.id)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Terminer
+Confiance: {predictions.confidence}%
+Confiance: {predictions.predictions?.[0]?.confidence || 85}%
+Confirmer le nouveau mot de passe
+Conforme
+Connecté
+Connecté depuis {new Date().toLocaleString()}
+Consultez les dossiers médicaux des patients
+Contact
+Contactez-nous pour plus d'informations
+Cours
+Créer
+Créer la commande
+Créer l'employé
+Créer tâche
+Créez des employés qui pourront gérer vos commandes
+Créez et personnalisez vos tableaux de bord
+Date
+Date création
+Date de début
+Date de livraison estimée
+Date de naissance
+Date d'échéance
+Date d'embauche
+Date fin abonnement
+Date inscription
+Date naissance
+Début
+Début: {order.startDate ? new Date(order.startDate).toLocaleDateString() : "-"}
+Découvrez les modules adaptés à chaque secteur d'activité
+deleteCategory(c.id)} style={{ flex: 1, padding: "8px", background: "#c33", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>🗑️ Supprimer
+deleteClient(client.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Supprimer">🗑️
+deleteClient(client.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteClient(client.id)} style={{ flex: 1, padding: "8px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>🗑️ Suppr
+deleteEmployee(e.id)}
+                          style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                          🗑️ Supprimer
+deleteEmployee(emp.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteInvoice(invoice.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteItem(item.id)} style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>🗑️
+deleteOrder(order.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteOrder(order.id)}
+                        style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}
+                        title="Supprimer"
+                      >
+                        🗑️
+deleteProduct(p.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteProduct(p.id)} style={{ flex: 1, padding: "8px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>🗑️ Suppr
+deletePromotion(promo.id)} style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                    Supprimer
+deletePurchase(purchase.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteSale(sale.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteShipment(shipment.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteSupplier(s.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+deleteTransporteur(t.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>🗑️
+Demande mensuelle
+Département
+Dernière mise à jour : 30 mars 2025
+Description
+Déviation: {a.deviation}% • {new Date(a.date).toLocaleDateString()}
+DHL
+Distance totale: {optimizedRoute.totalDistance} km
+Durée
+Durée d'abonnement (jours)
+e.active).length;
+      const pendingOrders = orders.filter(o => o.status === "pending").length;
+
+      setStats({
+        totalSales, totalPurchases, totalClients, totalProducts,
+        pendingInvoices, lowStock, activeEmployees, pendingOrders,
+        salesGrowth: 12.5, clientGrowth: 5.2, profitGrowth: 8.3
+      });
+
+      // Données graphique
+      const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+      const monthlySales = Array(12).fill(0);
+      sales.forEach(s => {
+        if (s.createdAt) {
+          const month = new Date(s.createdAt).getMonth();
+          monthlySales[month] += s.total || 0;
+        }
+      });
+      setSalesData(months.map((m, i) => ({ month: m, sales: monthlySales[i] })));
+
+      // Top produits
+      const productSales = {};
+      sales.forEach(s => {
+        if (s.productName) productSales[s.productName] = (productSales[s.productName] || 0) + (s.total || 0);
+      });
+      const topProductsList = Object.entries(productSales).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
+      setTopProducts(topProductsList.slice(0, 5));
+
+      // Top clients
+      const clientSales = {};
+      sales.forEach(s => {
+        if (s.clientName) clientSales[s.clientName] = (clientSales[s.clientName] || 0) + (s.total || 0);
+      });
+      const topClientsList = Object.entries(clientSales).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
+      setTopClients(topClientsList.slice(0, 5));
+
+      // Activités récentes
+      const recent = [];
+      orders.slice(0, 3).forEach(o => recent.push({ type: "order", data: o, date: o.createdAt }));
+      invoices.slice(0, 3).forEach(i => recent.push({ type: "invoice", data: i, date: i.createdAt }));
+      recent.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setRecentActivities(recent.slice(0, 6));
+
+    } catch(e) { console.error("Erreur:", e); }
+    setLoading(false);
+  };
+
+  const profit = stats.totalSales - stats.totalPurchases;
+  const margin = stats.totalSales > 0 ? (profit / stats.totalSales * 100).toFixed(1) : 0;
+  const maxSales = Math.max(...salesData.map(d => d.sales), 1);
+
+  // Graphiques
+  const salesChartData = {
+    labels: salesData.map(d => d.month),
+    datasets: [{ label: t("common.sales"), data: salesData.map(d => d.sales), backgroundColor: "rgba(102,126,234,0.5)", borderColor: "#667eea", borderWidth: 2, fill: true }]
+  };
+
+  const profitChartData = {
+    labels: salesData.map(d => d.month),
+    datasets: [{ label: "Bénéfice", data: salesData.map(d => d.sales * 0.3), backgroundColor: "rgba(16,185,129,0.5)", borderColor: "#10b981", borderWidth: 2, fill: true }]
+  };
+
+  const topProductsData = {
+    labels: topProducts.map(p => p.name),
+    datasets: [{ data: topProducts.map(p => p.amount), backgroundColor: ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#3b82f6"] }]
+  };
+
+  const quickActions = [
+    { icon: "➕", label: "Nouvelle vente", path: "/dashboard/sales", color: "#10b981" },
+    { icon: "📦", label: "Ajouter produit", path: "/dashboard/stock", color: "#3b82f6" },
+    { icon: "🧾", label: "Nouvelle facture", path: "/dashboard/finance", color: "#f59e0b" },
+    { icon: "👥", label: "Nouveau client", path: "/dashboard/clients", color: "#667eea" },
+    { icon: "📊", label: "Rapports", path: "/dashboard/reports", color: "#a855f7" },
+    { icon: "🤖", label: "Assistant IA", path: "/dashboard/ai", color: "#ec489a" }
+  ];
+
+  if (loading) {
+    return (
+e.currentTarget.style.background = "#1a1a1a"}
+                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                      >
+e.currentTarget.style.background = "#1a1a1a"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                    >
+e.currentTarget.style.background = "#1a1a1a"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+e.currentTarget.style.background = "#764ba2"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "#667eea"}
+                >
+                  Envoyer
+e.currentTarget.style.background = "#764ba2"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "#667eea"}
+              >
+                💾 {t("common.save")}
+e.currentTarget.style.background = "#764ba2"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "#667eea"}
+              >
+                🔑 Changer le mot de passe
+e.currentTarget.style.background = "#ff4444"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "#c33"}
+                >
+                  Se déconnecter de tous les appareils
+e.currentTarget.style.transform = "scale(1.05)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              >
+                {getInitials(user?.name)}
+e.currentTarget.style.transform = "translateX(5px)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "translateX(0)"}
+                >
+e.currentTarget.style.transform = "translateX(5px)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "translateX(0)"}
+              >
+e.currentTarget.style.transform = "translateY(-3px)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+              >
+e.currentTarget.style.transform = "translateY(-5px)"}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                  >
+e.currentTarget.style.transform = "translateY(-5px)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+              >
+e.stopPropagation()}>
+Échéance: {new Date(task.dueDate).toLocaleDateString()}
+Email
+Email *
+Email marketing
+Employé
+Employés
+En attente
+En cours
+En ligne - {chatHistory.length} messages sauvegardés
+En transit
+Enregistrer
+Enregistrez vos heures de travail
+Entrées
+Envoyer
+Envoyer email
+Équipement: {task.equipment}
+ERP
+Erreur globale
+Essayer {cat.name} →
+Étudiant
+evaluateSupplier(s.id, r)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '6px 12px', color: '#94a3b8', cursor: 'pointer' }}>
+                      {r}★
+Évolution
+Exemples: "Quel est mon chiffre d'affaires ?", "Stock faible ?", "Clients actifs ?"
+Expéditions
+Facturable
+Facture #{a.id}
+Facture #{i.id}
+Facture impayée
+Facture, commande, reçu...
+Factures impayées
+FedEx
+fileInputRef.current.click()} style={{ background: '#667eea', color: 'white', padding: '12px 32px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              📁 Sélectionner un fichier
+Fin
+Fin prévue
+Fin: {new Date(order.endDate).toLocaleDateString()}
+Fournisseur
+Générer la paie
+Gérez les cours et programmes
+Gérez les plats de votre restaurant
+Gérez les prescriptions médicales
+Gérez vos abonnements et forfaits
+Gérez vos campagnes marketing
+Gérez vos factures clients
+Gérez vos fournisseurs
+Gérez vos livraisons assignées
+Gérez vos livraisons et transporteurs
+Gérez vos offres promotionnelles
+Gérez vos partenaires de livraison
+Gérez vos rendez-vous médicaux
+Gérez vos stocks sur plusieurs sites
+Gérez vos tâches et plannings
+Gérez vos transactions commerciales
+Gérez vos véhicules et chauffeurs
+Gérez vos workflows automatisés
+Gérez votre carnet d'adresses clients
+Gérez votre catalogue produits
+Gestion administrative du personnel
+Gestion des achats et fournisseurs
+Gestion des Commandes
+Gestion des congés et absences
+Gestion des employés et paie
+Gestion des employés, salaires et statuts
+Gestion des expéditions
+Gestion des expéditions et transporteurs
+Gestion des maintenances préventives et correctives
+Gestion des ordres de fabrication
+Glissez-déposez un document
+Google Ads
+Graphique d'évolution (à venir)
+Groupe sanguin
+Haute
+Haute priorité
+Haute priorité / Urgent
+Heure
+Heures
+Heures facturables
+Heures totales
+ID
+Immatriculation: {v.plate}
+Impact
+Inovexa
+Inovexa ERP
+Inspecteur
+Inspections conformes
+Intelligence artificielle pour l'analyse et les prévisions
+ℹ️ Information
+JJ/MM/AAAA (ex: {formatDateExample(new Date())})
+La déconnexion de tous les appareils est irréversible
+La page que vous cherchez n'existe pas.
+La solution ERP nouvelle génération
+Lancer
+Les employés créés pourront se connecter avec leurs identifiants et auront accès uniquement au module de gestion des commandes.
+            Ils pourront visualiser, créer et modifier les commandes de votre entreprise.
+Lire la suite →
+Livraison #{d.id}
+Livraison estimée
+Livrée
+Livrées
+Logistique & Transport
+Lot
+Marge bénéficiaire
+Marge: {data.sales.total > 0 ? ((data.sales.total - data.purchases.total) / data.sales.total * 100).toFixed(1) : 0}%
+markAsPaid(invoice.id)} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>Payée
+Masse salariale
+Médecin
+Médicament
+Membre depuis
+Mettre à jour stock
+MM/JJ/AAAA (ex: {formatDateExample(new Date())})
+Module en développement - Bientôt disponible
+Modules activés
+Modules ERP par catégorie
+Mois {f.period}
+Mois {p.month}
+Montant
+Montant total
+Mot de passe *
+Motif
+Moyenne
+N° {s.trackingNumber}
+N° de suivi *
+N° Suivi
+navigator.clipboard.writeText(apiKey)} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Copier
+Niveau
+Niveau de confiance: {predictions.confidence * 100}% • Basé sur vos données historiques
+Nom
+Nom *
+Nom complet
+Nom complet *
+Nom de la société
+Nom du client *
+Nom du produit *
+Nombre de ventes
+Non conforme
+Non-conformités
+Note
+Notification push
+Notifications
+Nous collectons les informations que vous nous fournissez directement, telles que votre nom, email, numéro de téléphone, et les informations de votre entreprise lors de la création de votre compte.
+Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles pour protéger vos données contre tout accès non autorisé.
+Nous ne vendons pas vos informations personnelles. Nous ne les partageons qu'avec votre consentement ou si requis par la loi.
+Nous utilisons des cookies pour améliorer votre expérience et analyser l'utilisation de notre site.
+Nouveau CA
+Nouveau client
+Nouveau mot de passe
+Nouveaux clients
+Nouvelle commande
+Numéro de suivi
+O-
+O+
+openEditModal(c)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>✏️ Modifier
+openEditModal(client)} style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modifier">✏️
+openEditModal(client)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+openEditModal(client)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>✏️ Modifier
+openEditModal(emp)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+openEditModal(order)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+openEditModal(p)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+openEditModal(p)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>✏️ Modifier
+openEditModal(s)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer", marginRight: "5px" }}>✏️
+openEditModal(shipment)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✏️
+openEditModal(t)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer", marginRight: "5px" }}>✏️
+openModulesModal(client)} style={{ background: "#8b5cf6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modules">📦
+Optimisation des achats, gestion fournisseurs et réduction des coûts
+Optimisation des stocks, approvisionnements et traçabilité complète multi-dépôts
+Optimisez vos itinéraires de livraison
+Ordres de fabrication
+Organisez et suivez vos tâches quotidiennes
+Organisez vos produits par catégories
+p.id === id);
+      const res = await fetch(`http://localhost:3001/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ...product, quantity: newQuantity })
+      });
+      if (res.ok) {
+        fetchProducts();
+        showMessage("✅ Stock mis à jour avec succès !", "success");
+      } else {
+        showMessage("❌ Erreur lors de la mise à jour", "error");
+      }
+    } catch(e) { 
+      showMessage("❌ Erreur de connexion", "error");
+    }
+  };
+
+  const showMessage = (msg, type) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(""), 3000);
+  };
+
+  const getStockStatus = (quantity) => {
+    if (quantity
+Page non trouvée
+Paie automatisée et DSN
+Panier moyen
+Passés
+Patient
+Payées
+Période
+Personnel
+PO-{order.id}
+Poids
+Politique de confidentialité
+Posez une question sur votre entreprise
+Posologie
+Poste
+Poste *
+Pour toute question concernant cette politique, contactez-nous :
+Prédictions, automatisation et assistant intelligent
+predictions.prediction[i-1].amount ? '#10b981' : '#ef4444' }}>
+                      {p.amount > predictions.prediction[i-1].amount ? '📈 +' : '📉 '}
+                      {Math.abs(((p.amount - predictions.prediction[i-1].amount) / predictions.prediction[i-1].amount) * 100).toFixed(1)}%
+Prévision mois prochain
+Prévue le: {new Date(task.scheduledDate).toLocaleDateString()}
+Priorité
+Priorité moyenne
+Priorité normale
+Prix
+Prix unitaire
+Produit
+Produit *
+Produits
+Programmer
+Progression de production: {stats.productionOrders > 0 ? ((stats.completed / stats.productionOrders) * 100).toFixed(1) : 0}%
+Projet
+Projets en cours
+Promotion
+Quantité
+Quantité *
+Réalisée le: {new Date(task.completedAt).toLocaleDateString()}
+Réapprovisionnement auto
+receiveOrder(order.id)} style={{ width: '100%', padding: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                      ✅ Réceptionner la commande
+Recommandation
+Redirection vers la gestion des clients...
+Réessayer
+Relances automatiques
+Réseaux sociaux
+Résultat
+Retardées
+Retour à l'accueil
+Retour au tableau de bord
+Risques
+Rotation des stocks
+router.push("/dashboard")} style={{ display: "inline-flex", alignItems: "center", gap: "12px", padding: "14px 36px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "white", border: "none", borderRadius: "50px", fontSize: "18px", fontWeight: "600", cursor: "pointer", transition: "all 0.3s ease", boxShadow: "0 5px 20px rgba(102,126,234,0.2)" }}>
+router.push(action.path)} 
+                  style={{ 
+                    background: "#1a1a1a", 
+                    borderRadius: "12px", 
+                    padding: "12px", 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: "12px", 
+                    cursor: "pointer", 
+                    borderLeft: `3px solid ${action.color}`,
+                    transition: "transform 0.2s, background 0.2s"
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = "translateX(5px)"; e.currentTarget.style.background = "#2a2a2a"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = "translateX(0)"; e.currentTarget.style.background = "#1a1a1a"; }}
+                >
+Rupture
+Saisonnalitété
+Salaire
+Salaire (€) *
+Scannez un produit avec votre lecteur de codes-barres
+Se connecter
+Sélectionner
+Sélectionner un client
+Sélectionner un cours
+Sélectionner un déclencheur
+Sélectionner un étudiant
+Sélectionner un fournisseur
+Sélectionner un transporteur
+Sélectionner un type
+Sélectionner une action
+Sélectionner une catégorie
+Sélectionnez un client pour gérer ses modules
+Session actuelle
+setActiveModule(module.id)}
+                style={{
+                  padding: "10px 20px",
+                  background: activeModule === module.id ? module.color : "#1a1a1a",
+                  border: `1px solid ${activeModule === module.id ? module.color : "#333"}`,
+                  borderRadius: "8px",
+                  color: "white",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}
+              >
+setActiveTab("expenses")} style={{ padding: "12px 24px", background: activeTab === "expenses" ? "#667eea" : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "expenses" ? "white" : "#94a3b8", cursor: "pointer" }}>📉 Dépenses
+setActiveTab("invoices")} style={{ padding: "12px 24px", background: activeTab === "invoices" ? "#667eea" : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "invoices" ? "white" : "#94a3b8", cursor: "pointer" }}>🧾 Factures
+setActiveTab("overview")} style={{ padding: "12px 24px", background: activeTab === "overview" ? "#667eea" : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "overview" ? "white" : "#94a3b8", cursor: "pointer" }}>📊 Aperçu
+setActiveTab('orders')} style={{ padding: '12px 24px', background: activeTab === 'orders' ? '#667eea' : 'transparent', border: 'none', color: activeTab === 'orders' ? 'white' : '#94a3b8', cursor: 'pointer' }}>
+            📋 Commandes ({purchaseOrders.filter(o => o.status !== 'received').length})
+setActiveTab('suppliers')} style={{ padding: '12px 24px', background: activeTab === 'suppliers' ? '#667eea' : 'transparent', border: 'none', color: activeTab === 'suppliers' ? 'white' : '#94a3b8', cursor: 'pointer' }}>
+            🏭 Fournisseurs ({suppliers.length})
+setActiveTab(tab.id)} 
+                style={{ 
+                  padding: "12px 24px", 
+                  background: activeTab === tab.id ? "#667eea" : "transparent", 
+                  border: "none", 
+                  borderRadius: "12px 12px 0 0", 
+                  color: activeTab === tab.id ? "white" : "#94a3b8", 
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                {tab.label}
+setActiveTab(tab.id)}
+                style={{
+                  padding: "12px 24px",
+                  background: activeTab === tab.id ? "#667eea" : "transparent",
+                  border: "none",
+                  borderRadius: "12px 12px 0 0",
+                  color: activeTab === tab.id ? "white" : "#94a3b8",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                {tab.label}
+setActiveTab(tab.id)}
+              style={{
+                padding: '12px 24px',
+                background: activeTab === tab.id ? '#667eea' : 'transparent',
+                border: 'none',
+                borderRadius: '12px 12px 0 0',
+                color: activeTab === tab.id ? 'white' : '#94a3b8',
+                cursor: 'pointer'
+              }}
+            >
+              {tab.label}
+setActiveTab('whatif')} style={{ padding: '12px 24px', background: activeTab === 'whatif' ? '#667eea' : 'transparent', color: activeTab === 'whatif' ? 'white' : '#94a3b8', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+              🔮 Simulateur "What-If"
+setActiveTab('workflows')} style={{ padding: '12px 24px', background: activeTab === 'workflows' ? '#667eea' : 'transparent', color: activeTab === 'workflows' ? 'white' : '#94a3b8', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+              ⚡ Workflows visuels
+setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  style={{ flex: 1, padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+                />
+setChatMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                placeholder="Posez votre question..."
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: '#1a1a1a',
+                  border: '1px solid #333',
+                  borderRadius: '12px',
+                  color: 'white'
+                }}
+              />
+setDocumentType(e.target.value)} style={{ padding: '12px', background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', color: 'white', marginBottom: '20px' }}>
+setEmail(e.target.value)} style={{ width: "100%", padding: "14px 16px", background: "#1a1a1a", border: "2px solid #333", borderRadius: "12px", color: "white", fontSize: "16px", outline: "none" }} required />
+setFilterDepartment(e.target.value)} style={{ padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white", minWidth: "150px" }}>
+setFilterPeriod(e.target.value)} style={{ padding: "10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "white" }}>
+setFilters({ dateStart: "", dateEnd: "", status: "", amountMin: "", amountMax: "" })} />
+setFilterStatus(e.target.value)} style={{ padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white", minWidth: "150px" }}>
+setForm({ ...form, companyName: e.target.value })} 
+                  style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} 
+                />
+setForm({ ...form, email: e.target.value })} 
+                  style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} 
+                />
+setForm({ ...form, name: e.target.value })} 
+                  style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} 
+                />
+setForm({ ...form, phone: e.target.value })} 
+                  style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} 
+                />
+setLang('en')} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "4px 8px", borderRadius: "6px", opacity: lang === 'en' ? 1 : 0.5 }}> EN
+setLang('fr')} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "4px 8px", borderRadius: "6px", opacity: lang === 'fr' ? 1 : 0.5 }}> FR
+setLogoError(true)}
+            />
+          ) : (
+setModal({ ...modal, form: { ...modal.form, action: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, address: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, address: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, address: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "20px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, address: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', minHeight: '80px' }} />
+setModal({ ...modal, form: { ...modal.form, allergies: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', minHeight: '80px' }} />
+setModal({ ...modal, form: { ...modal.form, amount: parseFloat(e.target.value) } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, assignedTo: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, assignedTo: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, batchNumber: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, billable: e.target.checked } })} />
+                Facturable
+setModal({ ...modal, form: { ...modal.form, birthDate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, bloodType: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, brand: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, budget: parseFloat(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, budget: parseFloat(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, carrier: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}>
+setModal({ ...modal, form: { ...modal.form, categoryId: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, clientName: e.target.value } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, clientName: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, clientName: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, code: e.target.value.toUpperCase() } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, coefficient: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, company: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, companyName: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, contact: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, courseId: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, credits: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, date: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, department: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, description: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, description: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', minHeight: '80px' }} />
+setModal({ ...modal, form: { ...modal.form, description: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '24px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, description: e.target.value } })}
+                rows="3"
+                style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white", resize: "vertical" }}
+              />
+setModal({ ...modal, form: { ...modal.form, discount: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, doctor: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, doctor: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, dosage: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, driver: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, dueDate: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "20px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, dueDate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, duration: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, email: e.target.value } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, email: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, email: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, email: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, endDate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, endDate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, equipment: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, estimatedDelivery: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, estimatedDelivery: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "20px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, hireDate: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, hours: parseFloat(e.target.value) } })} step="0.5" style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, inspector: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, level: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, location: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, medication: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, model: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, name: e.target.value } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, name: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, name: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, name: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, name: e.target.value } })}
+                style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+              />
+setModal({ ...modal, form: { ...modal.form, password: e.target.value } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, password: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, patientName: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, phone: e.target.value } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, phone: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, phone: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, phone: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, phone: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, plate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, position: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, price: parseFloat(e.target.value) } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, price: parseFloat(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, priority: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}>
+setModal({ ...modal, form: { ...modal.form, priority: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, priority: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, productName: e.target.value } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, productName: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, productName: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, productName: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, project: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, quantity: parseInt(e.target.value) || 1 } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, quantity: parseInt(e.target.value) || 1, total: (modal.form.unitPrice || 0) * (parseInt(e.target.value) || 1) } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, quantity: parseInt(e.target.value) } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, quantity: parseInt(e.target.value) } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, quantity: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, reason: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, registrationDate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, result: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, salary: parseFloat(e.target.value) } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, schedule: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, scheduledDate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, sku: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, startDate: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, startDate: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, status: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}>
+setModal({ ...modal, form: { ...modal.form, studentId: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, subscriptionDuration: parseInt(e.target.value) } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, subscriptionEnd: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, supplier: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, supplierId: parseInt(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, supplierName: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, teacher: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, time: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, title: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, total: parseFloat(e.target.value) } })} 
+                style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} 
+              />
+setModal({ ...modal, form: { ...modal.form, trackingNumber: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, trackingNumber: e.target.value } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, transporteurId: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}>
+setModal({ ...modal, form: { ...modal.form, trigger: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, type: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+setModal({ ...modal, form: { ...modal.form, unit: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, unitPrice: parseFloat(e.target.value) || 0, total: (parseFloat(e.target.value) || 0) * (modal.form.quantity || 1) } })} style={{ width: "100%", padding: "12px", marginBottom: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setModal({ ...modal, form: { ...modal.form, unitPrice: parseFloat(e.target.value) } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, validUntil: e.target.value } })} style={{ width: '100%', padding: '12px', marginBottom: '20px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ ...modal, form: { ...modal.form, value: parseFloat(e.target.value) } })} step="0.5" style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setModal({ open: false, form: {} })} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}>✕
+setModal({ open: false, form: {} })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler
+setModal({ open: false, form: {} })} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                Annuler
+setModal({ open: false, form: {} })} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Annuler
+setModal({ open: false, form: {} })}
+                style={btnSecondary}
+              >
+                Annuler
+setModal({ open: false, form: {}, editMode: false, editId: null })} 
+                style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}
+              >
+                Annuler
+setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>
+                Annuler
+setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler
+setModal({ open: true, editMode: false, form: { email: "", password: "", name: "", companyName: "", phone: "", subscriptionDuration: 30 } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, editMode: false, form: { name: "", contact: "", email: "", phone: "", address: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>+ Nouveau fournisseur
+setModal({ open: true, editMode: false, form: { name: "", description: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>
+              + Nouvelle catégorie
+setModal({ open: true, editMode: false, form: { name: "", email: "", phone: "", address: "", status: "active" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, editMode: false, form: { name: "", email: "", phone: "", companyName: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>
+              + Nouveau transporteur
+setModal({ open: true, editMode: false, form: { name: "", email: "", position: "", department: "", salary: 0, phone: "", hireDate: "", status: "active" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, editMode: false, form: { name: "", sku: "", price: 0, quantity: 0 } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, editMode: false, form: { productName: "", quantity: 1, priority: "medium", assignedTo: "", startDate: "", status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, editMode: false, form: { trackingNumber: "", clientName: "", address: "", transporteurId: "", estimatedDelivery: "", status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, form: { brand: '', model: '', plate: '', driver: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau véhicule
+setModal({ open: true, form: { clientName: "", amount: 0, dueDate: "", status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, form: { clientName: "", productName: "", quantity: 1, unitPrice: 0, total: 0, status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>+ Nouvelle vente
+setModal({ open: true, form: { clientName: '', address: '', weight: 0, carrier: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle expédition
+setModal({ open: true, form: { clientName: '', productName: '', quantity: 1, total: 0 } })}
+            style={{ background: '#667eea', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+setModal({ open: true, form: { code: '', description: '', discount: 0, validUntil: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle promotion
+setModal({ open: true, form: { name: '', description: '', budget: 0, startDate: '', endDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau projet
+setModal({ open: true, form: { name: '', description: '', price: 0, categoryId: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau plat
+setModal({ open: true, form: { name: '', email: '', password: '', phone: '' } })}
+            style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
+          >
+            + Nouvel employé
+setModal({ open: true, form: { name: '', email: '', phone: '', address: '', company: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau contact
+setModal({ open: true, form: { name: '', email: '', phone: '', birthDate: '', bloodType: '', allergies: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau patient
+setModal({ open: true, form: { name: '', email: '', phone: '', level: '', registrationDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvel étudiant
+setModal({ open: true, form: { name: '', email: '', position: '', department: '', hireDate: '', salary: 0 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvel employé
+setModal({ open: true, form: { name: '', location: '', startDate: '', endDate: '', budget: 0 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau chantier
+setModal({ open: true, form: { name: '', teacher: '', schedule: '', duration: '', credits: 0 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau cours
+setModal({ open: true, form: { name: '', trigger: '', action: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau workflow
+setModal({ open: true, form: { name: '', type: '', budget: 0, startDate: '', endDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle campagne
+setModal({ open: true, form: { name: '', unit: '', quantity: 0, price: 0, supplier: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau matériau
+setModal({ open: true, form: { patientName: '', doctor: '', date: '', time: '', reason: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouveau rendez-vous
+setModal({ open: true, form: { patientName: '', medication: '', dosage: '', duration: '', doctor: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle prescription
+setModal({ open: true, form: { productName: '', batchNumber: '', inspector: '', result: 'pending' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle inspection
+setModal({ open: true, form: { project: '', description: '', hours: 0, date: '', billable: true } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle entrée
+setModal({ open: true, form: { startDate: '', endDate: '', type: 'vacation', reason: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              Demander un congé
+setModal({ open: true, form: { studentId: '', courseId: '', value: 0, coefficient: 1 } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Ajouter une note
+setModal({ open: true, form: { supplierName: "", productName: "", quantity: 1, unitPrice: 0, total: 0, status: "pending" } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+                  + {t("common.add")}
+setModal({ open: true, form: { title: '', assignedTo: '', startDate: '', endDate: '', priority: 'medium' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle tâche
+setModal({ open: true, form: { title: '', description: '', priority: 'medium', dueDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle tâche
+setModal({ open: true, form: { title: '', equipment: '', priority: 'medium', scheduledDate: '' } })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+              + Nouvelle tâche
+setModal({ open: true, form: { trackingNumber: "", clientName: "", address: "", carrier: "Chronopost", estimatedDelivery: "" } })} style={{ background: "#667eea", color: "white", padding: "12px 24px", border: "none", borderRadius: "12px", cursor: "pointer" }}>+ Nouvelle expédition
+setModal({ open: true, form: { type: activeTab === 'orders' ? 'order' : 'supplier' } })} style={{ marginLeft: 'auto', background: '#667eea', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+            + {activeTab === 'orders' ? 'Nouvelle commande' : 'Nouveau fournisseur'}
+setModal({ open: true, form: {} })} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>+ Ajouter
+setModal({
+                  ...modal,
+                  form: { ...modal.form, email: e.target.value }
+                })
+              }
+              style={input}
+            />
+setModal({
+                  ...modal,
+                  form: { ...modal.form, hireDate: e.target.value }
+                })
+              }
+              style={input}
+            />
+setModal({
+                  ...modal,
+                  form: { ...modal.form, name: e.target.value }
+                })
+              }
+              style={input}
+            />
+setModal({
+                  ...modal,
+                  form: { ...modal.form, position: e.target.value }
+                })
+              }
+              style={input}
+            />
+setModal({
+                  ...modal,
+                  form: {
+                    ...modal.form,
+                    salary: parseFloat(e.target.value)
+                  }
+                })
+              }
+              style={input}
+            />
+setModal({
+              open: true,
+              form: {
+                name: "",
+                email: "",
+                position: "",
+                salary: 0,
+                hireDate: ""
+              }
+            })
+          }
+          style={addBtn}
+        >
+          + Nouvel employé
+setModulesModal({ open: false, clientId: null, modules: {} })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler
+setNewWorkflow({ ...newWorkflow, actions: [...newWorkflow.actions, { type: a.id }] })} style={{ background: '#1e293b', color: '#94a3b8', padding: '8px 16px', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>+ {a.label}
+setNewWorkflow({ ...newWorkflow, name: e.target.value })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }} />
+setNewWorkflow({ ...newWorkflow, trigger: e.target.value })} style={{ width: '100%', padding: '12px', marginBottom: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white' }}>
+                  {triggers.map(t =>
+setPassword(e.target.value)} style={{ width: "100%", padding: "14px 16px", background: "#1a1a1a", border: "2px solid #333", borderRadius: "12px", color: "white", fontSize: "16px", paddingRight: "45px", outline: "none" }} required />
+setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} 
+                  style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} 
+                />
+setPasswordForm({ ...passwordForm, newPassword: e.target.value })} 
+                  style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} 
+                />
+setPeriod(e.target.value)} style={{ padding: "10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "white" }}>
+setScannedCode(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleScan()}
+              style={{ width: '100%', padding: '16px', fontSize: '18px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', color: 'white', textAlign: 'center' }}
+            />
+setSearchTerm(e.target.value)} style={{ flex: 1, padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setSearchTerm(e.target.value)} style={{ flex: 2, padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setSearchTerm(e.target.value)} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
+setSearchTerm(e.target.value)}
+                style={{ flex: 1, padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+              />
+setSearchTerm(e.target.value)}
+                style={{ flex: 2, padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+              />
+setSearchTerm(e.target.value)}
+              style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+            />
+setSearchTerm(e.target.value)}
+              style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', color: 'white' }}
+            />
+setSelectedClient(c)} style={{ background: '#667eea', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', marginRight: '5px', cursor: 'pointer' }}>
+                        📧
+setSelectedClient(null)} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Fermer
+setSelectedClient(null)}>
+setSelectedDashboard(db)}>
+setSelectedDelivery(d)}>
+setSelectedDelivery(null)} style={{ width: '100%', padding: '12px', background: '#667eea', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Fermer
+setSelectedDelivery(null)}>
+setSelectedIds(ids)} getItemId={(item) => item.id} />
+              {selectedIds.length > 0 && (
+setSelectedIds(ids)}
+                getItemId={(item) => item.id}
+              />
+              {selectedIds.length > 0 && (
+setSelectedPatient(null)} style={{ width: '100%', padding: '12px', background: '#667eea', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Fermer
+setSelectedPatient(null)}>
+setSelectedPatient(p)}>
+setSelectedPeriod(e.target.value)} style={{ padding: "10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "white" }}>
+setSelectedScenario(e.target.value)} style={{ flex: 1, padding: '12px', background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', color: 'white' }}>
+setSelectedTable(table)}>
+setSelectedWarehouse(wh)} style={{ width: '100%', padding: '10px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                  Transférer depuis ce dépôt
+setSettings({ ...settings, currency: e.target.value })}
+                style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+              >
+setSettings({ ...settings, dateFormat: e.target.value })}
+                style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+              >
+setSettings({ ...settings, language: e.target.value })}
+                style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+              >
+setShowCreator(false)} style={{ flex: 1, padding: '12px', background: '#333', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Annuler
+setShowCreator(true)} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>+ Nouveau workflow
+setShowPassword(!showPassword)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "18px" }}>{showPassword ? '👁️' : '👁️‍🗨️'}
+setViewMode("grid")} style={{ padding: "8px 16px", background: viewMode === "grid" ? "#667eea" : "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "white", cursor: "pointer" }}>🖼️ Grille
+setViewMode("list")} style={{ padding: "8px 16px", background: viewMode === "list" ? "#667eea" : "#1a1a1a", border: "1px solid #333", borderRadius: "8px", color: "white", cursor: "pointer" }}>📋 Liste
+Simuler
+SKU
+Société
+Souscrire
+Status
+Statut
+Stock
+Stock actuel
+Stock faible
+Stock recommandé
+Stock total: {products.filter(p => p.warehouseId === wh.id).reduce((s, p) => s + (p.quantity || 0), 0)} unités
+Stock: {p.quantity || 0}
+Suivez et gérez l'ensemble de vos relations clients
+Suivez et gérez vos niveaux de stock
+Suivez l'avancement de vos chantiers
+Suivez l'avancement de vos projets
+Suivez le dossier médical de vos patients
+Suivez le parcours de vos étudiants
+Suivez les résultats des étudiants
+Suivez vos livraisons en temps réel
+Suivez vos stocks de matériaux
+Suivi des inspections et contrôles qualité
+Supprimer
+Table {o.tableNumber || 'À emporter'}
+Table {table.number || table.id}
+Taux conformité
+Taux de conversion
+Téléphone
+Temps estimé: {optimizedRoute.totalTime} min
+Tendance
+Terminé
+Terminés
+Ticket moyen
+toggleAllModules(false)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>❌ Tout désactiver
+toggleAllModules(true)} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }}>✅ Tout activer
+toggleEmployee(e.id, e.isActive)}
+                          style={{ 
+                            background: e.isActive ? '#f59e0b' : '#10b981', 
+                            color: 'white', 
+                            border: 'none', 
+                            borderRadius: '8px', 
+                            padding: '6px 12px', 
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          {e.isActive ? '🔒 Désactiver' : '🔓 Activer'}
+toggleModule(module.id)}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 5px 20px rgba(0,0,0,0.3)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+                      >
+toggleModule(moduleName)} style={{ 
+                    display: "flex", alignItems: "center", justifyContent: "space-between", 
+                    padding: "12px", background: "#1a1a1a", borderRadius: "8px", cursor: "pointer",
+                    border: `1px solid ${isActive ? "#667eea" : "#333"}`,
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "#2a2a2a"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "#1a1a1a"}
+                  >
+toggleStatus(client.id)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title={client.isActive ? "Désactiver" : "Activer"}>{client.isActive ? "🔴" : "🟢"}
+toggleStatus(client.id, client.status)} style={{ 
+                          background: client.status === "active" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+                          color: client.status === "active" ? "#10b981" : "#ef4444",
+                          border: "none", borderRadius: "20px", padding: "4px 12px", cursor: "pointer"
+                        }}>
+                          {client.status === "active" ? "🟢 Actif" : "🔴 Inactif"}
+toggleStatus(client.id, client.status)} style={{ 
+                      background: client.status === "active" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+                      color: client.status === "active" ? "#10b981" : "#ef4444",
+                      border: "none", borderRadius: "20px", padding: "2px 8px", cursor: "pointer", fontSize: "10px"
+                    }}>
+                      {client.status === "active" ? "Actif" : "Inactif"}
+toggleWorkflow(wf.id, wf.active)} style={{ width: '100%', padding: '10px', background: wf.active ? '#f59e0b' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                  {wf.active ? 'Désactiver' : 'Activer'}
+Total
+Total (€) *
+Total brut
+Total clients
+Total commandes
+Total employés:
+Total factures
+Total livraisons
+Total net
+Total produits
+Total Utilisateurs
+Total:
+Transporteur
+Type
+Type: {c.type}
+Une erreur est survenue
+Unité
+updateProgress(site.id, parseInt(e.target.value))} style={{ width: '100%', marginTop: '8px' }} />
+updateStatus(a.id, 'cancelled')} style={{ background: '#c33', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>Annuler
+updateStatus(a.id, 'confirmed')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer' }}>Confirmer
+updateStatus(emp.id, e.target.value)} style={{ background: getStatusColor(emp.status) + "20", color: getStatusColor(emp.status), border: `1px solid ${getStatusColor(emp.status)}`, borderRadius: "8px", padding: "4px 8px", cursor: "pointer" }}>
+updateStatus(order.id, e.target.value)} style={{ background: "#1a1a1a", color: "white", border: "1px solid #333", borderRadius: "8px", padding: "6px 12px", cursor: "pointer" }}>
+updateStatus(order.id, e.target.value)}
+                        style={{ 
+                          background: '#1a1a1a', 
+                          color: getStatusColor(order.status), 
+                          border: `1px solid ${getStatusColor(order.status)}`,
+                          borderRadius: '8px', 
+                          padding: '6px 12px',
+                          cursor: 'pointer'
+                        }}
+                      >
+updateStatus(project.id, e.target.value)}
+                    style={{ background: '#1a1a1a', color: 'white', border: '1px solid #333', borderRadius: '8px', padding: '4px 8px' }}
+                  >
+updateStatus(purchase.id, e.target.value)} style={{ background: getStatusColor(purchase.status) + "20", color: getStatusColor(purchase.status), border: `1px solid ${getStatusColor(purchase.status)}`, borderRadius: "8px", padding: "4px 8px", cursor: "pointer" }}>
+updateStatus(s.id, e.target.value)} style={{ background: "#1a1a1a", color: "white", border: "1px solid #333", borderRadius: "8px", padding: "4px 8px" }}>
+updateStatus(shipment.id, e.target.value)} style={{ background: getStatusColor(shipment.status) + "20", color: getStatusColor(shipment.status), border: `1px solid ${getStatusColor(shipment.status)}`, borderRadius: "8px", padding: "4px 8px", cursor: "pointer" }}>
+updateStatus(task.id, 'completed')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Terminer
+updateStatus(task.id, 'done')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Terminer
+updateTableStatus(table.id, 'free')} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Libérer
+updateTableStatus(table.id, 'occupied')} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Occuper
+updateTableStatus(table.id, 'reserved')} style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                      Réserver
+UPS
+Urgence
+Utilisateurs Actifs
+Valable jusqu'au {new Date(promo.validUntil).toLocaleDateString()}
+Valeur
+Valeur stock
+Valeur totale
+Ventes
+Ventes prévues
+Visualisez et gérez l'occupation de vos tables
+void;
+}) {
+  return (
+void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+Vos informations sont utilisées pour :
+Vous avez le droit d'accéder, de modifier ou de supprimer vos informations personnelles. Contactez-nous à contact@inovexa-ai.com pour toute demande.
+Vue d'ensemble de la plateforme
+Zone de danger
+🆕
+🇪🇸 Español
+🇪🇺 Euro (€)
+🇫🇷 Français
+🇬🇧 English
+🇬🇧 Livre sterling (£)
+🇹🇳 Dinar tunisien (DT)
+🇺🇸 Dollar US ($)
+🌐 {t("settings.language") || "Langue"}
+🌐 Mon espace client
+🍽️ Dashboard Restaurant
+🎯 Marge bénéficiaire
+🎲 Simulation "What-If"
+🏆 Top produits
+🏖️ En congé
+🏗️ Gestion des chantiers
+🏗️ Nouveau chantier
+🏢 {selectedClient.companyName}
+🏢 Tous les départements
+🏭
+🏭 {t("common.production")}
+🏭 Dashboard Industrie
+🏭 Fournisseurs
+🏭 Gestion des matériaux
+🏭 Gestion Multi-dépôts
+🏭 Nouveau matériau
+🏷️
+🏷️ Catégories
+🏷️ Nouvelle promotion
+🏷️ Promotions
+👈
+👑 {t("admin.title")}
+👥
+👥 {t("common.clients")}
+👥 Clients
+👥 Clients actifs
+👥 CRM - Gestion de la Relation Client
+👥 Gestion des employés
+👥 Nouvel employé
+👥 Personnel
+👥 Sélectionner un client
+👨‍⚕️
+👨‍⚕️ Gestion des Patients
+👨‍⚕️ Nouveau patient
+👨‍🎓 Gestion des Étudiants
+👨‍🎓 Nouvel étudiant
+👨‍🏫 {c.teacher}
+👨‍💼
+👨‍💼 {t("common.hr")}
+👨‍💼 Ressources Humaines
+💊 Nouvelle prescription
+💊 Prescriptions
+💡 {settings.language !== language ? (t("settings.languageChangeWarning") || "Nouvelle langue sélectionnée. Enregistrez pour appliquer.") : (t("settings.currentLanguage") || "Langue actuelle: ") + (settings.language === "fr" ? "Français" : settings.language === "en" ? "English" : "Español")}
+💡 Recommandations produits
+💬 +216 22 535 181
+💬 Assistant IA
+💬 Assistant IA Conversationnel
+💰
+💰 {t("common.finance")}
+💰 {t("settings.currency") || "Devise"}
+💰 Chiffre d'affaires
+💰 Nouvelle vente
+💰 Paie & DSN
+💰 Ventes
+💾 {t("common.save")}
+📁
+📁 Gestion des Projets
+📁 Mes projets
+📁 Nouveau projet
+📄 Facture
+📄 Scan IA de documents
+📅
+📅 {t("settings.dateFormat") || "Format de date"}
+📅 Aujourd'hui
+📅 Cette année
+📅 Cette semaine
+📅 Membre depuis {stats.memberSince}
+📅 Nouveau rendez-vous
+📅 Nouvelle tâche
+📅 Planification
+📅 Planning & Congés
+📅 Rendez-vous
+📅 Toutes les périodes
+📆 Ce mois
+📈
+📈 Analytics
+📈 Augmentation des prix +10%
+📈 Bénéfice
+📈 Bénéfice net
+📈 Évolution des effectifs
+📈 Évolution des expéditions
+📈 Évolution des inscriptions
+📈 Évolution des ventes
+📈 Évolution mensuelle
+📈 Évolution Revenus/Dépenses
+📈 Prédiction des ventes
+📈 Prédictions des ventes
+📈 Prédictions IA
+📈 Tendance des ventes
+📉 Baisse des prix -10%
+📉 Dépenses
+📊
+📊 Dashboard PME
+📊 Évolution du bénéfice
+📊 Gestion du Stock
+📊 KPIs
+📊 KPIs clés
+📊 KPIs détaillés
+📊 KPIs stratégiques
+📊 Prévisions sur 6 mois
+📊 Répartition clients
+📊 Répartition des clients
+📊 Répartition des dépenses
+📊 Répartition des priorités
+📊 Répartition des statuts
+📊 Répartition par département
+📊 Répartition par module
+📊 Statistiques
+📊 Statistiques personnelles
+📊 Tableaux de bord personnalisables
+📊 Top produits à réapprovisionner
+📊 Tous les produits
+📊 Tous les statuts
+📊 Valeur du stock
+📋
+📋 Activités récentes
+📋 Carte / Menu
+📋 Commandes du jour
+📋 Dernières livraisons
+📋 Dernières ventes
+📋 Détail des prévisions
+📋 Dossier médical
+📋 Dossiers médicaux
+📋 En cours ({pendingTasks.length})
+📋 Gestion des ' + $page + '
+📋 Nouveau plat
+📍 {site.location}
+📍 Détails de la livraison
+📍 Points de livraison
+📍 Tracking en temps réel
+📎
+📚
+📚 Cours
+📚 Nouveau cours
+📝
+📝 Ajouter une note
+📝 Commande
+📝 Créer {documentType}
+📝 Dernières notes
+📝 Notes et évaluations
+📝 Nouvelle commande
+📞
+📢
+📢 Marketing
+📢 Nouvelle campagne
+📥 {t("common.purchases")}
+📥 Nouvel achat
+📦
+📦 {t("common.products")}
+📦 Expéditions
+📦 Gestion des Modules
+📦 Modules disponibles
+📦 Produit scanné
+📦 Produits
+📦 Produits en stock
+📦 Supply Chain & Stocks
+📦 Total commandes
+📧
+📧 {selectedClient.email}
+📧 contact@inovexa-ai.com
+📧 Envoyer un email
+📭
+📰
+📱
+📱 Scan de codes-barres
+🔄
+🔄 {t("common.reset")}
+🔄 En cours
+🔄 En traitement
+🔄 Rotation stock
+🔌 Intégrations
+🔍
+🔐
+🔐 {t.accountsInfo}
+🔐 Dernière connexion: {stats.lastLogin}
+🔑 API Publique
+🔔 {triggers.find(t => t.id === w.trigger)?.label}
+🔔 Déclencheur
+🔔 Webhooks
+🔧 Maintenance
+🔧 Nouvelle tâche de maintenance
+🔮 Analyse Prédictive
+🔴 Haute
+🔴 Inactif
+🔴 Inactifs
+🗑️
+🗑️ Supprimer ({selectedIds.length})
+🗺️ Itinéraire optimisé
+🗺️ Optimisation des tournées
+🗺️ Optimiser les routes
+😵
+🚀 Innovations Inovexa
+🚚
+🚚 {t("common.logistics")}
+🚚 Dashboard Logistique
+🚚 En transit
+🚚 Mes Expéditions
+🚚 Mes Livraisons
+🚚 Mes Transporteurs
+🚚 Nouvelle expédition
+🚛
+🚛 Gestion de flotte
+🚛 Nouveau véhicule
+🚪
+🚫
+🚫 Rupture (=0)
+🛒 Achats & Approvisionnements
+🟡 Moyenne
+🟢
+🟢 Actif
+🟢 Actifs
+🟢 Basse
+🤔 Réflexion en cours...
+🤖
+🤖 Assistant IA
+🤖 Automatisation
+🤖 Business Intelligence & IA
+🤖 IA Avancée
+🤖 Nouveau workflow
+🧾
+🧾 {t("common.invoices")}
+🧾 Factures impayées
+🧾 Mes factures
+🧾 Nouvelle facture
+🪑 Gestion des Tables

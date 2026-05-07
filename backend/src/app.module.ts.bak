@@ -1,49 +1,28 @@
 ﻿import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { ScheduleModule } from '@nestjs/schedule';
-import { databaseConfig } from './config/database.config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { FinanceModule } from './modules/finance/finance.module';
-import { InventoryModule } from './modules/inventory/inventory.module';
-import { HrModule } from './modules/hr/hr.module';
-import { SalesModule } from './modules/sales/sales.module';
-import { ProductionModule } from './modules/production/production.module';
-import { LogisticsModule } from './modules/logistics/logistics.module';
-import { AIModule } from './modules/ai/ai.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { AuditModule } from './modules/audit/audit.module';
-import { PaymentModule } from './modules/payment/payment.module';
-import { EmailModule } from './modules/email/email.module';
-import { CacheConfigModule } from './modules/cache/cache.module';
-import { BackupService } from './modules/backup/backup.service';
-import { HealthController } from './modules/health/health.controller';
-import { SearchService } from './modules/search/search.service';
+import { HRModule } from './modules/hr/hr.module';
+import { Employee } from './modules/hr/employee.entity';
+import { Department } from './modules/hr/department.entity';
+import { User } from './modules/users/entities/user.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({ useFactory: () => databaseConfig() }),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
-    ScheduleModule.forRoot(),
+    TypeOrmModule.forRoot({
+      type: 'sqlite',
+      database: 'data/inovexa.db',
+      entities: [User, Employee, Department],
+      synchronize: true,
+      logging: false,
+    }),
     AuthModule,
     UsersModule,
-    FinanceModule,
-    InventoryModule,
-    HrModule,
-    SalesModule,
-    ProductionModule,
-    LogisticsModule,
-    AIModule,
-    AnalyticsModule,
-    AuditModule,
-    PaymentModule,
-    EmailModule,
-    CacheConfigModule,
+    HRModule,
   ],
-  controllers: [HealthController],
-  providers: [BackupService, SearchService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

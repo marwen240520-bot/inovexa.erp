@@ -1,45 +1,47 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { SuppliersService } from './suppliers.service';
-import { Suppliers } from './suppliers.entity';
+﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { SuppliersService } from './suppliers.service';
 
 @Controller('suppliers')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class SuppliersController {
-  constructor(private readonly service: SuppliersService) {}
+  constructor(private readonly suppliersService: SuppliersService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
-  @Get('stats')
-  getStats() {
-    return this.service.getStats();
+  async findAll(@Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.suppliersService.findAll(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.suppliersService.findOne(parseInt(id), userId);
   }
 
   @Post()
-  @Roles('admin')
-  create(@Body() data: Partial<Suppliers>) {
-    return this.service.create(data);
+  async create(@Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.suppliersService.create(userId, body);
+  }
+
+  // ⭐ NOUVEAU: Endpoint pour l'import multiple
+  @Post('import')
+  async importSuppliers(@Request() req: any, @Body() body: { suppliers: any[] }) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    console.log('📥 Import de', body.suppliers?.length, 'fournisseurs pour user', userId);
+    return this.suppliersService.importSuppliers(userId, body.suppliers || []);
   }
 
   @Put(':id')
-  @Roles('admin')
-  update(@Param('id') id: string, @Body() data: Partial<Suppliers>) {
-    return this.service.update(id, data);
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.suppliersService.update(parseInt(id), userId, body);
   }
 
   @Delete(':id')
-  @Roles('admin')
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  async delete(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.suppliersService.delete(parseInt(id), userId);
   }
 }

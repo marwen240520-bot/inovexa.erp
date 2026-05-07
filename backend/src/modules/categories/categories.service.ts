@@ -1,43 +1,39 @@
-﻿import { Injectable } from '@nestjs/common';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Categories } from './categories.entity';
+import { Category } from './category.entity';
 
 @Injectable()
 export class CategoriesService {
   constructor(
-    @InjectRepository(Categories)
-    private repository: Repository<Categories>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll(): Promise<Categories[]> {
-    return this.repository.find();
+  async findAll(userId: number) {
+    return this.categoryRepository.find({ where: { userId } });
   }
 
-  async findOne(id: string): Promise<Categories | null> {
-    return this.repository.findOne({ where: { id } });
+  async findOne(id: number, userId: number) {
+    const category = await this.categoryRepository.findOne({ where: { id, userId } });
+    if (!category) throw new NotFoundException('Catégorie non trouvée');
+    return category;
   }
 
-  async create(data: Partial<Categories>): Promise<Categories> {
-    const item = this.repository.create(data);
-    return this.repository.save(item);
+  async create(userId: number, data: any) {
+    const category = this.categoryRepository.create({ ...data, userId });
+    return this.categoryRepository.save(category);
   }
 
-  async update(id: string, data: Partial<Categories>): Promise<Categories | null> {
-    await this.repository.update(id, data);
-    return this.findOne(id);
+  async update(id: number, userId: number, data: any) {
+    const category = await this.findOne(id, userId);
+    Object.assign(category, data);
+    return this.categoryRepository.save(category);
   }
 
-  async delete(id: string): Promise<void> {
-    await this.repository.delete(id);
-  }
-
-  async getStats(): Promise<any> {
-    const items = await this.repository.find();
-    const total = items.length;
-    const active = items.filter(i => i.status === 'active' || i.status === 'paid' || i.status === 'delivered').length;
-    const pending = items.filter(i => i.status === 'pending').length;
-    const totalAmount = items.reduce((sum, i) => sum + (i.amount || 0), 0);
-    return { total, active, pending, totalAmount };
+  async delete(id: number, userId: number) {
+    const category = await this.findOne(id, userId);
+    await this.categoryRepository.delete(id);
+    return { success: true };
   }
 }

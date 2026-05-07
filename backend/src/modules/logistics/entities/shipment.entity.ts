@@ -2,36 +2,44 @@
 
 @Entity('shipments')
 export class Shipment {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  clientId: number;
+
+  @Column({ nullable: true })
+  transporteurId: number;
 
   @Column({ unique: true })
-  shipment_number: string;
+  trackingNumber: string;
+
+  @Column()
+  clientName: string;
+
+  @Column()
+  address: string;
 
   @Column({ nullable: true })
-  order_id: string;
-
-  @Column({ nullable: true })
-  carrier_id: string;
-
-  @Column({ nullable: true })
-  tracking_number: string;
+  carrier: string;
 
   @Column({ default: 'pending' })
   status: string;
 
-  @Column({ type: 'date', nullable: true })
-  shipped_date: Date;
+  @Column({ nullable: true })
+  estimatedDelivery: Date;
 
-  @Column({ type: 'date', nullable: true })
-  delivered_date: Date;
+  // ⭐ NOUVEAU : Montant de la livraison
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  amount: number;
 
-  @Column({ type: 'text', nullable: true })
-  address: string;
+  // ⭐ NOUVEAU : Téléphone du client
+  @Column({ nullable: true, length: 50 })
+  phone: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 }

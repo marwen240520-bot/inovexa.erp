@@ -2,8 +2,8 @@
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ unique: true })
   email: string;
@@ -12,16 +12,31 @@ export class User {
   password: string;
 
   @Column()
-  firstName: string;
+  name: string;
 
-  @Column()
-  lastName: string;
+  @Column({ nullable: true })
+  companyName: string;
 
-  @Column({ default: 'user' })
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ default: 'client' })
   role: string;
+
+  @Column({ nullable: true })
+  subscriptionStart: Date;
+
+  @Column({ nullable: true })
+  subscriptionEnd: Date;
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  modules: string;
+
+  @Column({ nullable: true })
+  profileImage: string;
 
   @CreateDateColumn()
   createdAt: Date;

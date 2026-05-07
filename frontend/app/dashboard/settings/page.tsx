@@ -1,61 +1,422 @@
 ﻿"use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+
+const IconSettings = ({ size = 24, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+);
+
+const IconGlobe = ({ size = 20, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>
+);
+
+const IconCurrency = ({ size = 20, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="1" x2="12" y2="23"/>
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+  </svg>
+);
+
+const IconCalendar = ({ size = 20, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+
+const IconSave = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+  </svg>
+);
+
+const IconReset = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10"/>
+    <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+  </svg>
+);
+
+const IconLogout = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
+
+const IconCheckCircle = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+);
+
+const IconAlertCircle = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
+const IconLoader = ({ size = 40, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+    <line x1="12" y1="2" x2="12" y2="6"/>
+    <line x1="12" y1="18" x2="12" y2="22"/>
+    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+    <line x1="2" y1="12" x2="6" y2="12"/>
+    <line x1="18" y1="12" x2="22" y2="12"/>
+    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+  </svg>
+);
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState({ firstName: '', lastName: '', email: '' });
-  const [message, setMessage] = useState('');
+  const { language, changeLanguage, t } = useLanguage();
+  const { theme } = useTheme();
+  const { isMobile, isTablet, isDesktop } = useResponsive();
+  const [loading, setLoading] = useState(true);
+  const [animateCards, setAnimateCards] = useState(false);
+  const [settings, setSettings] = useState({
+    language: "fr",
+    currency: "eur",
+    dateFormat: "dd/mm/yyyy"
+  });
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
+
+  const containerPadding = isMobile ? "12px" : "32px";
+  const cardPadding = isMobile ? "16px" : "24px";
+  const cardRadius = isMobile ? "16px" : "20px";
+  const sectionMargin = isMobile ? "16px" : "24px";
+  const headerTitleSize = isMobile ? "22px" : "28px";
+  const buttonPadding = isMobile ? "10px" : "14px";
+  const selectPadding = isMobile ? "10px" : "12px";
+  const mainMarginLeft = isMobile ? "0px" : "280px";
+  const iconSize = isMobile ? 18 : 20;
+
+  const flagCodes = { fr: "fr", en: "us", es: "es" };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (!token) router.push('/auth/login');
-    const u = JSON.parse(userData || '{}');
-    setUser(u);
-    setProfile({ firstName: u.firstName || '', lastName: u.lastName || '', email: u.email || '' });
-  }, []);
+    const token = localStorage.getItem("token");
+    if (!token) router.push("/auth/login");
 
-  const saveProfile = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      await fetch(`http://localhost:3001/users/${user?.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(profile)
-      });
-      setMessage('✅ Profil mis à jour !');
-      setTimeout(() => setMessage(''), 3000);
-      localStorage.setItem('user', JSON.stringify({ ...user, ...profile }));
-    } catch(e) {
-      setMessage('❌ Erreur lors de la mise à jour');
+    const savedLanguage = language || localStorage.getItem("language") || "fr";
+    const savedCurrency = localStorage.getItem("currency") || "eur";
+    const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
+
+    setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
+    setLoading(false);
+    setTimeout(() => setAnimateCards(true), 100);
+  }, [language]);
+
+  const saveSettings = async () => {
+    localStorage.setItem("currency", settings.currency);
+    localStorage.setItem("dateFormat", settings.dateFormat);
+    localStorage.setItem("app_currency", settings.currency);
+    localStorage.setItem("app_dateFormat", settings.dateFormat);
+
+    const event = new CustomEvent("settingsChanged", {
+      detail: { currency: settings.currency, dateFormat: settings.dateFormat }
+    });
+    window.dispatchEvent(event);
+
+    if (settings.language !== language) {
+      localStorage.setItem("language", settings.language);
+      await changeLanguage(settings.language);
+      showMessage(t("settings.settingsSaved"), "success");
+      setTimeout(() => window.location.reload(), 500);
+    } else {
+      showMessage(t("settings.settingsSaved"), "success");
     }
   };
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex' }}>
-      <Sidebar />
-      <div style={{ marginLeft: '280px', flex: 1, padding: '32px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ color: 'white', fontSize: '28px', marginBottom: '32px' }}>⚙️ Paramètres</h1>
+  const showMessage = (msg, type) => {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => setMessage(""), 3000);
+  };
 
+  const resetSettings = () => {
+    const defaults = { language: "fr", currency: "eur", dateFormat: "dd/mm/yyyy" };
+    setSettings(defaults);
+    localStorage.setItem("language", "fr");
+    localStorage.setItem("currency", "eur");
+    localStorage.setItem("dateFormat", "dd/mm/yyyy");
+    showMessage(t("settings.settingsReset"), "success");
+  };
+
+  const logout = () => {
+    if (confirm(t("settings.logoutWarning"))) {
+      localStorage.clear();
+      router.push("/");
+    }
+  };
+
+  const formatDateExample = (date) => {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    if (settings.dateFormat === "mm/dd/yyyy") return `${month}/${day}/${year}`;
+    if (settings.dateFormat === "yyyy-mm-dd") return `${year}-${month}-${day}`;
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatCurrency = (amount) => {
+    const symbols = { eur: "€", usd: "$", gbp: "£", tnd: "DT" };
+    return `${amount.toLocaleString()} ${symbols[settings.currency] || "€"}`;
+  };
+
+  const getCurrentLanguageName = () => {
+    switch (settings.language) {
+      case "fr": return "Français";
+      case "en": return "English";
+      case "es": return "Español";
+      default: return "Français";
+    }
+  };
+
+  const animations = `
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  `;
+
+  if (loading) {
+    return (
+      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+            <IconLoader size={isMobile ? 36 : 44} color={theme.primary} />
+          </div>
+          <style>{animations}</style>
+          <p style={{ fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+      <Sidebar />
+      <div style={{ marginLeft: mainMarginLeft, flex: 1, padding: containerPadding, overflowX: "hidden", width: "100%" }}>
+        <div style={{ maxWidth: isMobile ? "100%" : "800px", margin: "0 auto", width: "100%" }}>
+          <style>{animations}</style>
+
+          {/* Header */}
+          <div style={{
+            marginBottom: sectionMargin,
+            animation: "fadeInDown 0.5s ease",
+            opacity: animateCards ? 1 : 0,
+            transform: animateCards ? "translateY(0)" : "translateY(-20px)"
+          }}>
+            <h1 style={{ color: theme.text, fontSize: headerTitleSize, margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+              <IconSettings size={isMobile ? 22 : 28} color={theme.primary} />
+              {t("common.settings")}
+            </h1>
+            <p style={{ color: theme.textSecondary, marginTop: "4px", fontSize: isMobile ? "12px" : "14px" }}>
+              {t("settings.subtitle")}
+            </p>
+          </div>
+
+          {/* Notification */}
           {message && (
-            <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid #10b981', color: '#10b981', padding: '12px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center' }}>
+            <div style={{
+              background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+              border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`,
+              color: messageType === "success" ? "#10b981" : "#f87171",
+              padding: isMobile ? "10px 14px" : "12px 16px",
+              borderRadius: "12px",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              animation: "fadeInUp 0.3s ease",
+              fontSize: isMobile ? "12px" : "14px"
+            }}>
+              {messageType === "success"
+                ? <IconCheckCircle size={16} color="#10b981" />
+                : <IconAlertCircle size={16} color="#f87171" />
+              }
               {message}
             </div>
           )}
 
-          <div style={{ background: '#111', borderRadius: '20px', padding: '24px', border: '1px solid #222', marginBottom: '24px' }}>
-            <h2 style={{ color: 'white', fontSize: '20px', marginBottom: '20px' }}>👤 Mon profil</h2>
-            <div style={{ display: 'grid', gap: '16px' }}>
-              <div><label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Prénom</label><input type="text" value={profile.firstName} onChange={e => setProfile({ ...profile, firstName: e.target.value })} style={{ width: '100%', padding: '12px', background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', color: 'white' }} /></div>
-              <div><label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Nom</label><input type="text" value={profile.lastName} onChange={e => setProfile({ ...profile, lastName: e.target.value })} style={{ width: '100%', padding: '12px', background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', color: 'white' }} /></div>
-              <div><label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Email</label><input type="email" value={profile.email} disabled style={{ width: '100%', padding: '12px', background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', color: '#64748b' }} /></div>
-              <button onClick={saveProfile} style={{ background: '#667eea', color: 'white', padding: '12px', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Enregistrer</button>
+          {/* SECTION LANGUE */}
+          <div style={{
+            background: theme.surface,
+            borderRadius: cardRadius,
+            padding: cardPadding,
+            border: `1px solid ${theme.border}`,
+            marginBottom: sectionMargin,
+            opacity: animateCards ? 1 : 0,
+            transition: "transform 0.3s",
+            animation: "fadeInUp 0.5s ease 0.1s"
+          }}
+            onMouseEnter={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(-3px)")}
+            onMouseLeave={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(0)")}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+              <h3 style={{ color: theme.text, margin: 0, fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <IconGlobe size={iconSize} color={theme.primary} />
+                {t("settings.language")}
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <img
+                  src={`https://flagcdn.com/w40/${flagCodes[settings.language]}.png`}
+                  alt="flag"
+                  style={{ borderRadius: "4px", width: isMobile ? "30px" : "40px", height: isMobile ? "20px" : "auto", boxShadow: "0 0 10px rgba(0,0,0,0.5)" }}
+                />
+                <span style={{ color: theme.accent, fontSize: isMobile ? "12px" : "14px", fontWeight: "bold" }}>
+                  {getCurrentLanguageName()}
+                </span>
+              </div>
+            </div>
+            <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "12px" : "14px" }}>
+              {t("settings.interfaceLanguage")}
+            </label>
+            <select
+              value={settings.language}
+              onChange={(e) => setSettings({ ...settings, language: e.target.value })}
+              style={{ width: "100%", padding: selectPadding, background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", transition: "border-color 0.2s", fontSize: isMobile ? "13px" : "14px" }}
+              onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
+              onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
+            >
+              <option value="fr">FRANÇAIS</option>
+              <option value="en">ENGLISH</option>
+              <option value="es">ESPAÑOL</option>
+            </select>
+            <div style={{ marginTop: "12px", padding: "10px", background: `${theme.primary}15`, borderRadius: "8px", border: `1px solid ${theme.primary}30`, fontSize: isMobile ? "11px" : "12px" }}>
+              <span style={{ color: theme.textSecondary }}>
+                {t("settings.currentLanguage")}: <strong style={{ color: theme.accent }}>{getCurrentLanguageName()}</strong>
+              </span>
             </div>
           </div>
+
+          {/* SECTION DEVISE */}
+          <div style={{
+            background: theme.surface,
+            borderRadius: cardRadius,
+            padding: cardPadding,
+            border: `1px solid ${theme.border}`,
+            marginBottom: sectionMargin,
+            opacity: animateCards ? 1 : 0,
+            transition: "transform 0.3s",
+            animation: "fadeInUp 0.5s ease 0.2s"
+          }}
+            onMouseEnter={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(-3px)")}
+            onMouseLeave={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(0)")}
+          >
+            <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <IconCurrency size={iconSize} color={theme.primary} />
+              {t("settings.currency")}
+            </h3>
+            <select
+              value={settings.currency}
+              onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
+              style={{ width: "100%", padding: selectPadding, background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
+            >
+              <option value="eur">Euro (€)</option>
+              <option value="usd">Dollar US ($)</option>
+              <option value="gbp">Livre sterling (£)</option>
+              <option value="tnd">Dinar tunisien (DT)</option>
+            </select>
+            <div style={{ marginTop: "12px", padding: "12px", background: theme.surfaceHover, borderRadius: "8px", color: theme.accent, fontSize: isMobile ? "12px" : "14px" }}>
+              {t("settings.example")}: <b>{formatCurrency(1000)}</b>
+            </div>
+          </div>
+
+          {/* SECTION FORMAT DATE */}
+          <div style={{
+            background: theme.surface,
+            borderRadius: cardRadius,
+            padding: cardPadding,
+            border: `1px solid ${theme.border}`,
+            marginBottom: sectionMargin,
+            opacity: animateCards ? 1 : 0,
+            transition: "transform 0.3s",
+            animation: "fadeInUp 0.5s ease 0.3s"
+          }}
+            onMouseEnter={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(-3px)")}
+            onMouseLeave={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(0)")}
+          >
+            <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <IconCalendar size={iconSize} color={theme.primary} />
+              {t("settings.dateFormat")}
+            </h3>
+            <select
+              value={settings.dateFormat}
+              onChange={(e) => setSettings({ ...settings, dateFormat: e.target.value })}
+              style={{ width: "100%", padding: selectPadding, background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
+            >
+              <option value="dd/mm/yyyy">DD/MM/YYYY (Ex: {formatDateExample(new Date())})</option>
+              <option value="mm/dd/yyyy">MM/DD/YYYY (Ex: {formatDateExample(new Date())})</option>
+              <option value="yyyy-mm-dd">YYYY-MM-DD (Ex: {formatDateExample(new Date())})</option>
+            </select>
+          </div>
+
+          {/* BOUTONS ACTIONS */}
+          <div style={{
+            display: "flex",
+            gap: isMobile ? "12px" : "16px",
+            marginBottom: sectionMargin,
+            opacity: animateCards ? 1 : 0,
+            animation: "fadeInUp 0.5s ease 0.4s",
+            flexDirection: isMobile ? "column" : "row"
+          }}>
+            <button
+              onClick={saveSettings}
+              style={{ flex: 1, padding: buttonPadding, background: theme.gradient, color: "white", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s", fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+            >
+              <IconSave size={18} color="white" />
+              {t("common.save")}
+            </button>
+            <button
+              onClick={resetSettings}
+              style={{ padding: `${buttonPadding} ${isMobile ? "20px" : "24px"}`, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", transition: "all 0.2s", fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = theme.surface}
+              onMouseLeave={(e) => e.currentTarget.style.background = theme.surfaceHover}
+            >
+              <IconReset size={18} color={theme.text} />
+              {t("common.reset")}
+            </button>
+          </div>
+
+          {/* BOUTON DÉCONNEXION */}
+          <button
+            onClick={logout}
+            style={{ width: "100%", padding: buttonPadding, background: "#c33", color: "white", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s ease", animation: "fadeInUp 0.5s ease 0.45s", opacity: animateCards ? 1 : 0, fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "#ff4444"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "#c33"}
+          >
+            <IconLogout size={18} color="white" />
+            {t("common.logout")}
+          </button>
         </div>
       </div>
     </div>

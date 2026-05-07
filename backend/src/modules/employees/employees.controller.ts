@@ -1,45 +1,47 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { EmployeesService } from './employees.service';
-import { Employees } from './employees.entity';
+﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { EmployeesService } from './employees.service';
 
 @Controller('employees')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class EmployeesController {
-  constructor(private readonly service: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
-  @Get('stats')
-  getStats() {
-    return this.service.getStats();
+  async findAll(@Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.employeesService.findAll(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.employeesService.findOne(parseInt(id), userId);
   }
 
   @Post()
-  @Roles('admin')
-  create(@Body() data: Partial<Employees>) {
-    return this.service.create(data);
+  async create(@Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.employeesService.create(userId, body);
+  }
+
+  // ⭐ AJOUTER L'ENDPOINT D'IMPORT
+  @Post('import')
+  async importEmployees(@Request() req: any, @Body() body: { employees: any[] }) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    console.log('📥 Import de', body.employees?.length, 'employés pour user', userId);
+    return this.employeesService.importEmployees(userId, body.employees || []);
   }
 
   @Put(':id')
-  @Roles('admin')
-  update(@Param('id') id: string, @Body() data: Partial<Employees>) {
-    return this.service.update(id, data);
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.employeesService.update(parseInt(id), userId, body);
   }
 
   @Delete(':id')
-  @Roles('admin')
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  async delete(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.employeesService.delete(parseInt(id), userId);
   }
 }

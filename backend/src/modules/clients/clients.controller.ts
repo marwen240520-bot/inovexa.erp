@@ -1,45 +1,54 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { ClientsService } from './clients.service';
-import { Clients } from './clients.entity';
+﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, Patch } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { ClientsService } from './clients.service';
 
 @Controller('clients')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ClientsController {
-  constructor(private readonly service: ClientsService) {}
+  constructor(private readonly clientsService: ClientsService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
-  @Get('stats')
-  getStats() {
-    return this.service.getStats();
+  async findAll(@Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.clientsService.findAll(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.clientsService.findOne(parseInt(id), userId);
   }
 
   @Post()
-  @Roles('admin')
-  create(@Body() data: Partial<Clients>) {
-    return this.service.create(data);
+  async create(@Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.clientsService.create(userId, body);
+  }
+
+  // ⭐ ENDPOINT POUR L'IMPORT MULTIPLE
+  @Post('import')
+  async importClients(@Request() req: any, @Body() body: { clients: any[] }) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    console.log('📥 Import de', body.clients?.length, 'clients pour user', userId);
+    return this.clientsService.importClients(userId, body.clients || []);
   }
 
   @Put(':id')
-  @Roles('admin')
-  update(@Param('id') id: string, @Body() data: Partial<Clients>) {
-    return this.service.update(id, data);
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.clientsService.update(parseInt(id), userId, body);
+  }
+
+  // ⭐ ENDPOINT POUR LE CHANGEMENT DE STATUT
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.clientsService.updateStatus(parseInt(id), userId, body.status);
   }
 
   @Delete(':id')
-  @Roles('admin')
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  async delete(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    return this.clientsService.delete(parseInt(id), userId);
   }
 }

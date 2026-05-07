@@ -1,0 +1,133 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "marwen2405@gmail.com",
+      "password": "$2b$10$k/3CwoMR6lPFP.btQW4zlOj9q1fFWYp.5Dpd6/DFzm1uJIHNOLom.",
+      "name": "Admin",
+      "role": "admin",
+      "companyName": null,
+      "phone": null,
+      "subscriptionStart": null,
+      "subscriptionEnd": null,
+      "isActive": 1,
+      "createdAt": "2026-04-04 10:22:22",
+      "updatedAt": "2026-04-04 10:22:22"
+    },
+    {
+      "id": 2,
+      "email": "marwen240520@gmail.com",
+      "password": "$2b$10$pW4sCEoroQIsxRTmKN4m6u3S2Em4Z5wnfhe9jEv5grM7PakYsmxqO",
+      "name": "Marwen Hadded",
+      "role": "client",
+      "companyName": "erp ",
+      "phone": "22535181",
+      "subscriptionStart": "2026-04-04 10:23:03.108",
+      "subscriptionEnd": "2026-07-03 10:23:03.108",
+      "isActive": 1,
+      "createdAt": "2026-04-04 10:23:03",
+      "updatedAt": "2026-04-04 21:17:21"
+    },
+    {
+      "id": 3,
+      "email": "marwen2@gmail.com",
+      "password": "$2b$10$CxVDIs.1gQ.lPe7s4qSfDuwsmRaztWrB9oWyPbD38qUY/OH4hWn9q",
+      "name": "Marwen Hadded",
+      "role": "transporteur",
+      "companyName": "erp",
+      "phone": "22535181",
+      "subscriptionStart": null,
+      "subscriptionEnd": null,
+      "isActive": 1,
+      "createdAt": "2026-04-04 17:45:07",
+      "updatedAt": "2026-04-04 17:50:52"
+    }
+  ],
+  "sales": [
+    {
+      "id": 3,
+      "userId": 2,
+      "quantity": 4,
+      "total": 0.12,
+      "createdAt": "2026-04-04 19:36:33",
+      "clientName": "df<",
+      "productName": "fdq",
+      "unitPrice": 0.03,
+      "status": "paid",
+      "updatedAt": "2026-04-04 19:36:33"
+    }
+  ],
+  "purchases": [
+    {
+      "id": 1,
+      "userId": 2,
+      "quantity": 1,
+      "total": 56,
+      "createdAt": "2026-04-04 14:04:08",
+      "supplierName": "fd",
+      "productName": "dfq<",
+      "unitPrice": 56,
+      "status": "pending",
+      "updatedAt": "2026-04-04 14:04:08"
+    }
+  ],
+  "clients": [
+    {
+      "id": 1,
+      "userId": 2,
+      "name": "",
+      "email": "",
+      "phone": "",
+      "address": "",
+      "createdAt": "2026-04-04 14:26:27",
+      "updatedAt": "2026-04-04 14:26:27",
+      "totalSpent": 0,
+      "status": "active"
+    }
+  ],
+  "employees": [
+    {
+      "id": 1,
+      "userId": 2,
+      "name": "qsc",
+      "email": "",
+      "position": "",
+      "department": "",
+      "salary": 0,
+      "phone": null,
+      "status": "active",
+      "createdAt": "2026-04-04 15:03:37",
+      "updatedAt": "2026-04-04 15:04:06",
+      "hireDate": null
+    }
+  ],
+  "shipments": [
+    {
+      "id": 2,
+      "trackingNumber": "dfs<",
+      "clientName": "<fds",
+      "address": "f<d",
+      "carrier": null,
+      "status": "delivered",
+      "estimatedDelivery": "0NaN-aN-aN aN:aN:aN.NaN",
+      "createdAt": "2026-04-04 17:46:31",
+      "updatedAt": "2026-04-04 17:49:43",
+      "clientId": 2,
+      "transporteurId": 3
+    }
+  ],
+  "transporteurs": [
+    {
+      "id": 3,
+      "clientId": 2,
+      "name": "Marwen Hadded",
+      "email": "marwen2@gmail.com",
+      "phone": "22535181",
+      "companyName": "erp",
+      "isActive": 1,
+      "createdAt": "2026-04-04 17:45:07",
+      "updatedAt": "2026-04-04 17:45:07",
+      "userId": 3
+    }
+  ]
+}
