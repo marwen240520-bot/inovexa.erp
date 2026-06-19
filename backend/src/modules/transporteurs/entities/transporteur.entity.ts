@@ -1,5 +1,4 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('transporteurs')
 export class Transporteur {
@@ -12,23 +11,19 @@ export class Transporteur {
   @Column({ nullable: true })
   userId: number;
 
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
-  @Column({ length: 255 })
+  @Column()
   name: string;
 
-  @Column({ length: 255, unique: true })
+  @Column()
   email: string;
 
-  @Column({ nullable: true, length: 50 })
+  @Column({ nullable: true })
   phone: string;
 
-  @Column({ nullable: true, length: 255 })
+  @Column({ nullable: true })
   companyName: string;
 
-  @Column({ nullable: true, length: 500 })
+  @Column({ nullable: true })
   address: string;
 
   @Column({ default: true })

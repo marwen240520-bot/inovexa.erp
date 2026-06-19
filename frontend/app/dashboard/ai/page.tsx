@@ -5,7 +5,6 @@ import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
-import ExportButtons from "@/components/ui/ExportButtons";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,7 +25,7 @@ ChartJS.register(
   ArcElement, PointElement, LineElement, Filler
 );
 
-// SVG Icon Components
+// ==================== SVG ICONS ====================
 const Icon = ({ children, size = 16, style = {} }: { children: React.ReactNode; size?: number; style?: React.CSSProperties }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     {children}
@@ -66,6 +65,8 @@ const IconSpinner = ({ size = 32, color = "#6366f1" }: { size?: number; color?: 
 const IconZap = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></Icon>);
 const IconCopy = ({ size = 16 }: { size?: number }) => (<Icon size={size}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>);
 const IconTrash = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>);
+const IconMenu = ({ size = 24 }: { size?: number }) => (<Icon size={size}><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></Icon>);
+const IconX = ({ size = 24 }: { size?: number }) => (<Icon size={size}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>);
 
 const animations = `
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -77,6 +78,10 @@ const animations = `
   @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
   @keyframes typing { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
   @keyframes glow { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 70% { box-shadow: 0 0 0 10px rgba(99,102,241,0); } 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); } }
+  @media (max-width: 768px) {
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  }
 `;
 
 const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
@@ -84,7 +89,6 @@ const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep
 // TRADUCTIONS MULTILANGUES
 const translations = {
   fr: {
-    // Général
     dashboard: "Tableau de bord", chat: "Chat IA", forecasts: "Prévisions", recommendations: "Recommandations", analytics: "Analyses",
     revenue: "Chiffre d'affaires", profit: "Bénéfice net", activeClients: "Clients actifs", products: "Produits",
     salesEvolution: "Évolution des ventes", profitEvolution: "Évolution du bénéfice", topProducts: "Top produits", topClients: "Top clients",
@@ -107,7 +111,7 @@ const translations = {
     backToDashboard: "Retour au tableau de bord", quickActions: "Actions rapides", aiThoughts: "L'IA analyse vos données...",
     typeMessage: "Tapez votre message...", newMessage: "Nouveau message", copyConversation: "Copier la conversation",
     clearConversation: "Effacer la conversation", conversationCopied: "Conversation copiée !", conversationCleared: "Conversation effacée",
-    online: "En ligne", offline: "Hors ligne", typing: "en train d'écrire...", aiResponding: "L'IA répond...",
+    typing: "en train d'écrire...", aiResponding: "L'IA répond...",
     suggestedQuestions: "Questions suggérées", askQuestion: "Poser une question", welcomeBack: "Bon retour",
     totalSales: "Ventes totales", averageTicket: "Ticket moyen", growthRate: "Taux de croissance",
     profitMargin: "Marge bénéficiaire", totalExpenses: "Dépenses totales", conversionRate: "Taux de conversion",
@@ -136,7 +140,7 @@ const translations = {
     backToDashboard: "Volver al tablero", quickActions: "Acciones rápidas", aiThoughts: "La IA analiza tus datos...",
     typeMessage: "Escribe tu mensaje...", newMessage: "Nuevo mensaje", copyConversation: "Copiar conversación",
     clearConversation: "Borrar conversación", conversationCopied: "¡Conversación copiada!", conversationCleared: "Conversación borrada",
-    online: "En línea", offline: "Desconectado", typing: "escribiendo...", aiResponding: "La IA responde...",
+    typing: "escribiendo...", aiResponding: "La IA responde...",
     suggestedQuestions: "Preguntas sugeridas", askQuestion: "Hacer pregunta", welcomeBack: "Bienvenido",
     totalSales: "Ventas totales", averageTicket: "Ticket promedio", growthRate: "Tasa de crecimiento",
     profitMargin: "Margen de beneficio", totalExpenses: "Gastos totales", conversionRate: "Tasa de conversión",
@@ -165,7 +169,7 @@ const translations = {
     backToDashboard: "Back to dashboard", quickActions: "Quick actions", aiThoughts: "AI is analyzing your data...",
     typeMessage: "Type your message...", newMessage: "New message", copyConversation: "Copy conversation",
     clearConversation: "Clear conversation", conversationCopied: "Conversation copied!", conversationCleared: "Conversation cleared",
-    online: "Online", offline: "Offline", typing: "typing...", aiResponding: "AI is responding...",
+    typing: "typing...", aiResponding: "AI is responding...",
     suggestedQuestions: "Suggested questions", askQuestion: "Ask a question", welcomeBack: "Welcome back",
     totalSales: "Total sales", averageTicket: "Average ticket", growthRate: "Growth rate",
     profitMargin: "Profit margin", totalExpenses: "Total expenses", conversionRate: "Conversion rate",
@@ -173,62 +177,55 @@ const translations = {
   }
 };
 
-// Données de démonstration
-const DEMO_STATS = {
-  sales: { revenue: 233133, total: 342, average: 681 },
-  purchases: { spent: 98200, total: 156 },
-  products: { total: 48, lowStock: 8, outOfStock: 2, totalValue: 125000 },
-  clients: { total: 128, active: 95 },
-  orders: { total: 267, pending: 8 },
-  employees: { total: 12 }
-};
-
-const DEMO_PRODUCTS = [
-  { name: "iPhone 15 Pro", amount: 45200, sales: 45, growth: 15 },
-  { name: "MacBook Pro", amount: 38400, sales: 32, growth: 22 },
-  { name: "AirPods Pro", amount: 28100, sales: 156, growth: 35 },
-  { name: "iPad Air", amount: 18900, sales: 28, growth: 18 },
-  { name: "Apple Watch", amount: 12400, sales: 42, growth: 12 }
-];
-
-const DEMO_CLIENTS = [
-  { name: "TechCorp Solutions", amount: 125000, orders: 24, growth: 28 },
-  { name: "Innovate SAS", amount: 89400, orders: 18, growth: 15 },
-  { name: "Digital Plus", amount: 67200, orders: 14, growth: 22 },
-  { name: "WebMaster Pro", amount: 45100, orders: 9, growth: 8 },
-  { name: "Cloud Systems", amount: 32800, orders: 7, growth: 19 }
-];
-
-const DEMO_RECOMMENDATIONS = [
-  { productName: "iPhone 15 Pro", currentStock: 8, monthlyDemand: 45, recommendedStock: 80, urgency: "high" },
-  { productName: "MacBook Pro", currentStock: 12, monthlyDemand: 32, recommendedStock: 60, urgency: "medium" },
-  { productName: "AirPods Pro", currentStock: 25, monthlyDemand: 156, recommendedStock: 200, urgency: "high" },
-  { productName: "iPad Air", currentStock: 18, monthlyDemand: 28, recommendedStock: 50, urgency: "medium" },
-  { productName: "Apple Watch", currentStock: 35, monthlyDemand: 42, recommendedStock: 70, urgency: "low" }
-];
-
 export default function IAPage() {
   const router = useRouter();
   const { language, t: globalT } = useLanguage();
   const { formatCurrency } = useAppSettings();
   const { theme } = useTheme();
   
-  // Utiliser les traductions par langue
   const t = translations[language as keyof typeof translations] || translations.fr;
   
-  // Définir responsive après avoir défini theme
-  const isMobile = false; // You can implement mobile detection if needed
+  // Détection mobile améliorée
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  
+  // Margin left pour desktop (sidebar fixe)
+  const contentMarginLeft = isMobile ? "0" : "0px";
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    
+    // Détection du clavier mobile
+    const handleResize = () => {
+      if (isMobile) {
+        setKeyboardVisible(window.innerHeight < 500);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isMobile]);
+  
+  // Styles responsifs optimisés
   const responsive = {
-    contentPadding: "20px",
-    cardPadding: "16px",
-    cardRadius: "14px",
-    titleSize: "22px",
-    subtitleSize: "12px",
-    kpiValueSize: "24px",
-    kpiLabelSize: "11px",
-    gapSmall: "12px",
-    gapMedium: "16px",
-    gapLarge: "24px"
+    contentPadding: isMobile ? "12px" : "20px",
+    cardPadding: isMobile ? "12px" : "16px",
+    cardRadius: isMobile ? "12px" : "12px",
+    titleSize: isMobile ? "18px" : "22px",
+    subtitleSize: "11px",
+    kpiValueSize: isMobile ? "16px" : "24px",
+    kpiLabelSize: isMobile ? "9px" : "10px",
+    gapSmall: isMobile ? "8px" : "12px",
+    gapMedium: isMobile ? "12px" : "16px",
+    gapLarge: isMobile ? "16px" : "24px"
   };
   
   const [loading, setLoading] = useState(true);
@@ -252,48 +249,37 @@ export default function IAPage() {
   const [selectedScenario, setSelectedScenario] = useState<"optimistic" | "realistic" | "pessimistic">("realistic");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
-  const [sidebarMargin, setSidebarMargin] = useState("280px");
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Effet pour la marge de la sidebar
+  // Auto-resize textarea pour mobile
   useEffect(() => {
-    const checkSidebarState = () => {
-      const sidebarCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
-      setSidebarMargin(sidebarCollapsed ? "80px" : "280px");
-    };
-    checkSidebarState();
-    window.addEventListener("storage", checkSidebarState);
-    window.addEventListener("sidebarToggle", checkSidebarState);
-    return () => {
-      window.removeEventListener("storage", checkSidebarState);
-      window.removeEventListener("sidebarToggle", checkSidebarState);
-    };
-  }, []);
+    if (textareaRef.current && isMobile) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 80) + 'px';
+    }
+  }, [chatInput, isMobile]);
 
-  // Authentification
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
     if (!token) router.push("/auth/login");
     if (userData) setCurrentUser(JSON.parse(userData));
-  }, [router]);
-
-  // Chargement initial
-  useEffect(() => {
     fetchAllData();
-    refreshIntervalRef.current = setInterval(() => {
-      refreshData();
-    }, 300000);
+    refreshIntervalRef.current = setInterval(() => refreshData(), 300000);
     return () => {
       if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
   }, [chatMessages, streamingContent, isTyping]);
 
   useEffect(() => {
@@ -307,22 +293,23 @@ export default function IAPage() {
     setLastRefresh(new Date());
   };
 
+  const fetchWithAuth = async (url: string) => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  };
+
   const fetchAllData = async () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     
     try {
-      const fetchWithAuth = async (url: string) => {
-        try {
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
-          if (!res.ok) return [];
-          const data = await res.json();
-          return Array.isArray(data) ? data : [];
-        } catch (err) {
-          return [];
-        }
-      };
-
       const [sales, purchases, products, clients, orders, invoices, employees] = await Promise.all([
         fetchWithAuth("http://localhost:3001/sales"),
         fetchWithAuth("http://localhost:3001/purchases"),
@@ -333,102 +320,75 @@ export default function IAPage() {
         fetchWithAuth("http://localhost:3001/employees")
       ]);
 
-      const hasRealData = sales.length > 0 || products.length > 0;
-      
-      const totalRevenue = hasRealData ? sales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0) : DEMO_STATS.sales.revenue;
-      const totalExpenses = hasRealData ? purchases.reduce((sum: number, p: any) => sum + (Number(p.total) || 0), 0) : DEMO_STATS.purchases.spent;
-      const lowStockCount = hasRealData ? products.filter((p: any) => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length : DEMO_STATS.products.lowStock;
-      const outOfStockCount = hasRealData ? products.filter((p: any) => (p.quantity || 0) === 0).length : DEMO_STATS.products.outOfStock;
-      const totalProductsValue = hasRealData ? products.reduce((sum: number, p: any) => sum + ((Number(p.price) || 0) * (Number(p.quantity) || 0)), 0) : DEMO_STATS.products.totalValue;
-      const activeClients = hasRealData ? clients.filter((c: any) => c.status === "active").length : DEMO_STATS.clients.active;
-      const pendingOrders = hasRealData ? orders.filter((o: any) => o.status === "pending").length : DEMO_STATS.orders.pending;
+      const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
+      const totalExpenses = purchases.reduce((sum: number, p: any) => sum + (Number(p.total) || 0), 0);
+      const lowStockCount = products.filter((p: any) => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length;
+      const outOfStockCount = products.filter((p: any) => (p.quantity || 0) === 0).length;
+      const totalProductsValue = products.reduce((sum: number, p: any) => sum + ((Number(p.price) || 0) * (Number(p.quantity) || 0)), 0);
+      const activeClients = clients.filter((c: any) => c.status === "active").length;
+      const pendingOrders = orders.filter((o: any) => o.status === "pending").length;
 
       setStats({
-        sales: { revenue: totalRevenue, total: hasRealData ? sales.length : DEMO_STATS.sales.total, average: hasRealData && sales.length > 0 ? totalRevenue / sales.length : DEMO_STATS.sales.average },
-        purchases: { spent: totalExpenses, total: hasRealData ? purchases.length : DEMO_STATS.purchases.total },
-        products: { total: hasRealData ? products.length : DEMO_STATS.products.total, lowStock: lowStockCount, outOfStock: outOfStockCount, totalValue: totalProductsValue },
-        clients: { total: hasRealData ? clients.length : DEMO_STATS.clients.total, active: activeClients },
-        orders: { total: hasRealData ? orders.length : DEMO_STATS.orders.total, pending: pendingOrders },
-        employees: { total: hasRealData ? employees.length : DEMO_STATS.employees.total }
+        sales: { revenue: totalRevenue, total: sales.length, average: sales.length > 0 ? totalRevenue / sales.length : 0 },
+        purchases: { spent: totalExpenses, total: purchases.length },
+        products: { total: products.length, lowStock: lowStockCount, outOfStock: outOfStockCount, totalValue: totalProductsValue },
+        clients: { total: clients.length, active: activeClients },
+        orders: { total: orders.length, pending: pendingOrders },
+        employees: { total: employees.length }
       });
 
-      // Alertes
-      const newAlerts = [];
-      if (lowStockCount > 0) newAlerts.push({ type: "warning", icon: IconWarning, message: lowStockCount + " " + t.lowStock, action: { label: t.viewStock, path: "/dashboard/stock" } });
-      if (outOfStockCount > 0) newAlerts.push({ type: "danger", icon: IconDanger, message: outOfStockCount + " " + t.outOfStock, action: { label: t.restock, path: "/dashboard/purchases" } });
-      if (pendingOrders > 0) newAlerts.push({ type: "info", icon: IconInfo, message: pendingOrders + " " + t.pendingOrders, action: { label: t.viewOrders, path: "/dashboard/orders" } });
+      const newAlerts: { type: string; icon: ({ size }: { size?: number }) => JSX.Element; message: string; action: { label: string; path: string } }[] = [];
+      if (lowStockCount > 0) newAlerts.push({ type: "warning", icon: IconWarning, message: `${lowStockCount} ${t.lowStock}`, action: { label: t.viewStock, path: "/dashboard/stock" } });
+      if (outOfStockCount > 0) newAlerts.push({ type: "danger", icon: IconDanger, message: `${outOfStockCount} ${t.outOfStock}`, action: { label: t.restock, path: "/dashboard/purchases" } });
+      if (pendingOrders > 0) newAlerts.push({ type: "info", icon: IconInfo, message: `${pendingOrders} ${t.pendingOrders}`, action: { label: t.viewOrders, path: "/dashboard/orders" } });
       setAlerts(newAlerts);
 
-      // Données mensuelles
       const monthlySales = Array(12).fill(0);
       const monthlyProfit = Array(12).fill(0);
-      
-      if (hasRealData) {
-        sales.forEach((s: any) => {
-          if (s.createdAt) {
-            const m = new Date(s.createdAt).getMonth();
-            monthlySales[m] += Number(s.total) || 0;
-            monthlyProfit[m] += Number(s.total) || 0;
-          }
-        });
-        purchases.forEach((p: any) => {
-          if (p.createdAt) {
-            const m = new Date(p.createdAt).getMonth();
-            monthlyProfit[m] -= Number(p.total) || 0;
-          }
-        });
-      } else {
-        const demoData = [12500, 14200, 13800, 15600, 16800, 18200, 19500, 18800, 20200, 21500, 22800, 24500];
-        demoData.forEach((v, i) => {
-          monthlySales[i] = v;
-          monthlyProfit[i] = v * 0.6;
-        });
-      }
+      sales.forEach((s: any) => {
+        if (s.createdAt) {
+          const m = new Date(s.createdAt).getMonth();
+          monthlySales[m] += Number(s.total) || 0;
+          monthlyProfit[m] += Number(s.total) || 0;
+        }
+      });
+      purchases.forEach((p: any) => {
+        if (p.createdAt) {
+          const m = new Date(p.createdAt).getMonth();
+          monthlyProfit[m] -= Number(p.total) || 0;
+        }
+      });
 
       setSalesData(MONTHS.map((m, i) => ({ month: m, sales: monthlySales[i] })));
       setProfitData(MONTHS.map((m, i) => ({ month: m, profit: monthlyProfit[i] })));
       setHistoricalSales(monthlySales);
 
-      // Top produits
       const productSales: Record<string, number> = {};
-      if (hasRealData) {
-        sales.forEach((s: any) => {
-          const name = s.productName || s.product;
-          if (name) productSales[name] = (productSales[name] || 0) + (Number(s.total) || 0);
-        });
-      }
-      const topProductsList = Object.entries(productSales).length > 0 
-        ? Object.entries(productSales).map(([name, amount]) => ({ name, amount, sales: Math.round(amount / 100), growth: Math.floor(Math.random() * 30) + 5 })).sort((a, b) => b.amount - a.amount).slice(0, 5)
-        : DEMO_PRODUCTS;
+      sales.forEach((s: any) => {
+        const name = s.productName || s.product;
+        if (name) productSales[name] = (productSales[name] || 0) + (Number(s.total) || 0);
+      });
+      const topProductsList = Object.entries(productSales).map(([name, amount]) => ({ name, amount, sales: Math.round(amount / 100), growth: 0 })).sort((a, b) => b.amount - a.amount).slice(0, 5);
       setTopProducts(topProductsList);
 
-      // Top clients
       const clientSales: Record<string, number> = {};
-      if (hasRealData) {
-        sales.forEach((s: any) => { if (s.clientName) clientSales[s.clientName] = (clientSales[s.clientName] || 0) + (Number(s.total) || 0); });
-      }
-      const topClientsList = Object.entries(clientSales).length > 0
-        ? Object.entries(clientSales).map(([name, amount]) => ({ name, amount, orders: Math.round(amount / 5000), growth: Math.floor(Math.random() * 30) + 5 })).sort((a, b) => b.amount - a.amount).slice(0, 5)
-        : DEMO_CLIENTS;
+      sales.forEach((s: any) => { if (s.clientName) clientSales[s.clientName] = (clientSales[s.clientName] || 0) + (Number(s.total) || 0); });
+      const topClientsList = Object.entries(clientSales).map(([name, amount]) => ({ name, amount, orders: Math.round(amount / 5000), growth: 0 })).sort((a, b) => b.amount - a.amount).slice(0, 5);
       setTopClients(topClientsList);
 
-      // Recommandations
-      const dynamicRecs = hasRealData && products.length > 0
-        ? products.filter((p: any) => (p.quantity || 0) < 30).map((p: any) => ({
-            productName: p.name,
-            currentStock: p.quantity || 0,
-            monthlyDemand: Math.max(5, Math.round((sales.filter((s: any) => (s.productName === p.name || s.product === p.name)).reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) / 3) || 5)),
-            recommendedStock: Math.max(30, Math.round((p.quantity || 0) * 1.5)),
-            urgency: (p.quantity || 0) < 5 ? "high" : (p.quantity || 0) < 15 ? "medium" : "low"
-          })).sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.urgency] - { high: 0, medium: 1, low: 2 }[b.urgency])).slice(0, 10)
-        : DEMO_RECOMMENDATIONS;
+      const dynamicRecs = products.filter((p: any) => (p.quantity || 0) < 30).map((p: any) => ({
+        productName: p.name,
+        currentStock: p.quantity || 0,
+        monthlyDemand: Math.max(5, Math.round((sales.filter((s: any) => (s.productName === p.name || s.product === p.name)).reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) / 3) || 5)),
+        recommendedStock: Math.max(30, Math.round((p.quantity || 0) * 1.5)),
+        urgency: (p.quantity || 0) < 5 ? "high" : (p.quantity || 0) < 15 ? "medium" : "low"
+      })).sort((a: any, b: any) => (({ high: 0, medium: 1, low: 2 } as Record<string, number>)[a.urgency as string] ?? 0) - (({ high: 0, medium: 1, low: 2 } as Record<string, number>)[b.urgency as string] ?? 0)).slice(0, 10);
       setRecommendations(dynamicRecs);
 
-      // Prévisions
       const nonZeroSales = monthlySales.filter(v => v > 0);
-      const avgMonthly = nonZeroSales.length ? nonZeroSales.reduce((a, b) => a + b, 0) / nonZeroSales.length : 15000;
+      const avgMonthly = nonZeroSales.length ? nonZeroSales.reduce((a, b) => a + b, 0) / nonZeroSales.length : 0;
       const last3Months = monthlySales.slice(-3).filter(v => v > 0);
-      const trend = last3Months.length >= 2 ? ((last3Months[last3Months.length - 1] - last3Months[0]) / last3Months[0]) * 100 : 8.5;
+      const trend = last3Months.length >= 2 ? ((last3Months[last3Months.length - 1] - last3Months[0]) / last3Months[0]) * 100 : 0;
       const volatility = Math.abs(trend) / 2;
       
       setPredictions({
@@ -442,29 +402,13 @@ export default function IAPage() {
         ebitda: (totalRevenue * 0.25).toFixed(0)
       });
 
-      // Initialiser le chat avec message de bienvenue
       if (chatMessages.length === 0) {
-        const welcomeMsg = getWelcomeMessage();
-        setChatMessages([{ role: "assistant", content: welcomeMsg, timestamp: new Date(), actions: getWelcomeActions() }]);
+        setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]);
       }
 
     } catch (error) {
-      console.error("Erreur:", error);
-      setStats(DEMO_STATS);
-      setTopProducts(DEMO_PRODUCTS);
-      setTopClients(DEMO_CLIENTS);
-      setRecommendations(DEMO_RECOMMENDATIONS);
-      setPredictions({ revenueForecast: { growthRate: "8.5", confidence: "82", trend: "up", avgMonthly: 15000 }, roi: "10.2", ebitda: "45000" });
-      
-      const demoMonthlySales = [12500, 14200, 13800, 15600, 16800, 18200, 19500, 18800, 20200, 21500, 22800, 24500];
-      setSalesData(MONTHS.map((m, i) => ({ month: m, sales: demoMonthlySales[i] })));
-      setProfitData(MONTHS.map((m, i) => ({ month: m, profit: demoMonthlySales[i] * 0.6 })));
-      setHistoricalSales(demoMonthlySales);
-      
-      if (chatMessages.length === 0) {
-        const welcomeMsg = getWelcomeMessage();
-        setChatMessages([{ role: "assistant", content: welcomeMsg, timestamp: new Date(), actions: getWelcomeActions() }]);
-      }
+      console.error("Erreur fetch:", error);
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -488,10 +432,10 @@ export default function IAPage() {
     else if (forecastPeriod === "12months") monthsToForecast = 12;
     
     const lastValues = historicalSales.filter(v => v > 0).slice(-3);
-    const baseValue = lastValues.length ? lastValues.reduce((a, b) => a + b, 0) / lastValues.length : (predictions?.revenueForecast?.avgMonthly || 15000);
-    const growthRate = Number(predictions?.revenueForecast?.growthRate || 8.5) / 100;
+    const baseValue = lastValues.length ? lastValues.reduce((a, b) => a + b, 0) / lastValues.length : (predictions?.revenueForecast?.avgMonthly || 0);
+    const growthRate = Number(predictions?.revenueForecast?.growthRate || 0) / 100;
     
-    let forecast = [];
+    let forecast: number[] = [];
     let current = baseValue;
     
     for (let i = 0; i < monthsToForecast; i++) {
@@ -504,18 +448,14 @@ export default function IAPage() {
 
   const getForecastLabels = () => {
     const monthsToForecast = forecastPeriod === "3months" ? 3 : forecastPeriod === "6months" ? 6 : 12;
-    const labels = [];
-    for (let i = 1; i <= monthsToForecast; i++) {
-      labels.push("M+" + i);
-    }
+    const labels: string[] = [];
+    for (let i = 1; i <= monthsToForecast; i++) labels.push("M+" + i);
     return labels;
   };
 
   const getUpperBoundData = () => getForecastData().map(v => Math.round(v * 1.12));
   const getLowerBoundData = () => getForecastData().map(v => Math.round(v * 0.88));
 
-  // ==================== CHAT IA AMÉLIORÉ ====================
-  
   const sendMessage = () => {
     if (!chatInput.trim() || loadingAI) return;
     const userMessage = chatInput;
@@ -547,27 +487,27 @@ export default function IAPage() {
           setIsStreaming(false);
           setStreamingContent("");
         }
-      }, 15);
+      }, isMobile ? 20 : 15);
     }, 500);
   };
 
   const generateAIResponse = (question: string): string => {
     const q = question.toLowerCase();
-    const revenue = stats?.sales?.revenue || 233133;
-    const profit = revenue - (stats?.purchases?.spent || 98200);
-    const growth = predictions?.revenueForecast?.growthRate || 12.5;
-    const confidence = predictions?.revenueForecast?.confidence || 82;
+    const revenue = stats?.sales?.revenue || 0;
+    const profit = revenue - (stats?.purchases?.spent || 0);
+    const growth = predictions?.revenueForecast?.growthRate || 0;
+    const confidence = predictions?.revenueForecast?.confidence || 0;
     const forecastData = getForecastData();
-    const roi = predictions?.roi || 15.2;
-    const ebitda = predictions?.ebitda || 58283;
+    const roi = predictions?.roi || 0;
+    const ebitda = predictions?.ebitda || 0;
     const margin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : "0";
     
     if (q.match(/vente|chiffre|ca|revenue|recette|ventas|ingresos|sales/)) {
       return `📊 **${t.revenue}**\n\n` +
              `💰 **Total :** ${formatCurrency(revenue)}\n` +
              `📈 **${t.growthRate} :** +${growth}%\n` +
-             `📦 **${t.totalSales} :** ${stats?.sales?.total || 342}\n` +
-             `🎫 **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 681)}\n\n` +
+             `📦 **${t.totalSales} :** ${stats?.sales?.total || 0}\n` +
+             `🎫 **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 0)}\n\n` +
              `📊 **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! 🚀" : Number(growth) > 8 ? "Bonne dynamique commerciale 📈" : "Croissance à surveiller ⚠️"}`;
     }
     
@@ -576,7 +516,7 @@ export default function IAPage() {
              `💰 **${t.profit} :** ${formatCurrency(profit)}\n` +
              `📊 **${t.profitMargin} :** ${margin}%\n` +
              `💵 **${t.revenue} :** ${formatCurrency(revenue)}\n` +
-             `💸 **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 98200)}\n` +
+             `💸 **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 0)}\n` +
              `🎯 **EBITDA estimé :** ${formatCurrency(Number(ebitda))}\n\n` +
              `💡 **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! 🎯" : Number(margin) > 15 ? "Bonne marge, optimisez vos coûts 📊" : "Marge à améliorer, analysez vos dépenses ⚠️"}`;
     }
@@ -589,16 +529,16 @@ export default function IAPage() {
              `• ${t.profitMargin}: ${margin}%\n` +
              `• ${t.growthRate}: +${growth}%\n\n` +
              `👥 **CLIENTS**\n` +
-             `• Total: ${stats?.clients?.total || 128}\n` +
-             `• ${t.activeClients}: ${stats?.clients?.active || 95}\n` +
-             `• ${t.conversionRate}: ${Math.round((stats?.clients?.active || 95) / (stats?.clients?.total || 128) * 100)}%\n\n` +
+             `• Total: ${stats?.clients?.total || 0}\n` +
+             `• ${t.activeClients}: ${stats?.clients?.active || 0}\n` +
+             `• ${t.conversionRate}: ${stats?.clients?.total > 0 ? Math.round((stats?.clients?.active || 0) / (stats?.clients?.total || 1) * 100) : 0}%\n\n` +
              `📦 **PRODUITS**\n` +
-             `• Catalogue: ${stats?.products?.total || 48} ${t.products}\n` +
-             `• ${t.lowStock}: ${stats?.products?.lowStock || 8}\n` +
-             `• Valeur stock: ${formatCurrency(stats?.products?.totalValue || 125000)}\n` +
-             `• ${t.inventoryTurnover}: ${(revenue / (stats?.products?.totalValue || 125000)).toFixed(1)}x\n\n` +
+             `• Catalogue: ${stats?.products?.total || 0} ${t.products}\n` +
+             `• ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
+             `• Valeur stock: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
+             `• ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
              `📋 **COMMANDES**\n` +
-             `• ${t.pendingOrders}: ${stats?.orders?.pending || 8}\n\n` +
+             `• ${t.pendingOrders}: ${stats?.orders?.pending || 0}\n\n` +
              `🔮 **PRÉVISIONS IA**\n` +
              `• ${t.projectedRevenue} M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
              `• ${t.growthRate}: +${growth}%\n` +
@@ -611,8 +551,7 @@ export default function IAPage() {
       topProducts.slice(0, 4).forEach((p, i) => {
         response += `${i + 1}. **${p.name}**\n` +
                    `   💰 CA: ${formatCurrency(p.amount)}\n` +
-                   `   📦 Ventes: ${p.sales} unités\n` +
-                   `   📈 Croissance: +${p.growth}%\n\n`;
+                   `   📦 Ventes: ${p.sales} unités\n\n`;
       });
       response += `💡 **Analyse IA** : Ces produits représentent votre cœur de métier. Concentrez vos efforts marketing sur ces références !`;
       return response;
@@ -623,8 +562,7 @@ export default function IAPage() {
       topClients.slice(0, 4).forEach((c, i) => {
         response += `${i + 1}. **${c.name}**\n` +
                    `   💰 Achats: ${formatCurrency(c.amount)}\n` +
-                   `   📦 Commandes: ${c.orders}\n` +
-                   `   📈 Croissance: +${c.growth}%\n\n`;
+                   `   📦 Commandes: ${c.orders}\n\n`;
       });
       response += `💡 **Recommandation IA** : Mettez en place un programme de fidélisation premium pour ces clients stratégiques !`;
       return response;
@@ -634,11 +572,11 @@ export default function IAPage() {
       const urgentItems = recommendations.filter(r => r.urgency === "high").slice(0, 3);
       let stockResponse = `📦 **${t.stockStatus}**\n\n` +
                          `📊 **Vue d'ensemble**\n` +
-                         `• ${t.products} total: ${stats?.products?.total || 48}\n` +
-                         `• ${t.lowStock}: ${stats?.products?.lowStock || 8}\n` +
-                         `• Rupture: ${stats?.products?.outOfStock || 2}\n` +
-                         `• Valeur totale: ${formatCurrency(stats?.products?.totalValue || 125000)}\n` +
-                         `• ${t.inventoryTurnover}: ${(revenue / (stats?.products?.totalValue || 125000)).toFixed(1)}x\n\n` +
+                         `• ${t.products} total: ${stats?.products?.total || 0}\n` +
+                         `• ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
+                         `• Rupture: ${stats?.products?.outOfStock || 0}\n` +
+                         `• Valeur totale: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
+                         `• ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
                          `⚠️ **URGENCES RÉAPPROVISIONNEMENT**\n`;
       if (urgentItems.length) {
         urgentItems.forEach(i => {
@@ -699,7 +637,7 @@ export default function IAPage() {
 
   const getContextualActions = (question: string) => {
     const q = question.toLowerCase();
-    const actions = [];
+    const actions: { label: string; icon: ({ size }: { size?: number }) => JSX.Element; path: string }[] = [];
     if (q.match(/produit|stock|inventaire|producto/)) actions.push({ label: t.viewStock, icon: IconPackage, path: "/dashboard/stock" });
     if (q.match(/client|cliente/)) actions.push({ label: "Voir clients", icon: IconUsers, path: "/dashboard/clients" });
     if (q.match(/commande|pedido|order/)) actions.push({ label: t.viewOrders, icon: IconShoppingCart, path: "/dashboard/orders" });
@@ -716,6 +654,22 @@ export default function IAPage() {
     if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
     else if (language === 'es') greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
     else greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    
+    if (isMobile) {
+      return `${greeting} ${name} ! 👋\n\n` +
+             `🤖 **${t.aiAssistant}**\n\n` +
+             `✨ **${t.whatCanIDo} :**\n` +
+             `• 📊 Analyser ventes\n` +
+             `• 📦 État du stock\n` +
+             `• ⭐ Top produits/clients\n` +
+             `• 🔮 Prévisions\n\n` +
+             `💬 **${t.tryQuestions} :**\n` +
+             `• "${t.askRevenue}"\n` +
+             `• "${t.askSummary}"\n` +
+             `• "${t.askTopProducts}"\n` +
+             `• "${t.askStock}"\n\n` +
+             `Comment puis-je vous aider ? 🚀`;
+    }
     
     return `${greeting} ${name} ! 👋\n\n` +
            `🤖 **${t.aiAssistant}**\n\n` +
@@ -737,13 +691,29 @@ export default function IAPage() {
   const copyConversation = () => {
     const conversation = chatMessages.map(msg => `${msg.role === "user" ? "👤 " + (language === 'fr' ? "Vous" : language === 'es' ? "Tú" : "You") : "🤖 IA"}: ${msg.content}`).join("\n\n");
     navigator.clipboard.writeText(conversation);
-    alert(t.conversationCopied);
+    if (isMobile) {
+      const toast = document.createElement('div');
+      toast.textContent = t.conversationCopied;
+      toast.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${theme.primary};color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10000;animation:fadeInUp 0.3s ease`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    } else {
+      alert(t.conversationCopied);
+    }
   };
 
   const clearConversation = () => {
     if (confirm(language === 'fr' ? "Effacer toute la conversation ?" : language === 'es' ? "¿Borrar toda la conversación?" : "Clear entire conversation?")) {
       setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]);
-      alert(t.conversationCleared);
+      if (isMobile) {
+        const toast = document.createElement('div');
+        toast.textContent = t.conversationCleared;
+        toast.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${theme.primary};color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10000;animation:fadeInUp 0.3s ease`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      } else {
+        alert(t.conversationCleared);
+      }
     }
   };
 
@@ -751,30 +721,75 @@ export default function IAPage() {
     responsive: true,
     maintainAspectRatio: true,
     plugins: {
-      legend: { labels: { color: theme.textSecondary, font: { size: 9 } } },
-      tooltip: { backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.textSecondary, callbacks: { label: (ctx: any) => `${ctx.dataset.label || ''}: ${formatCurrency(ctx.raw || 0)}` } }
+      legend: { 
+        labels: { 
+          color: theme.textSecondary, 
+          font: { size: isMobile ? 8 : 9 },
+          boxWidth: isMobile ? 8 : 10
+        },
+        position: isMobile ? "bottom" as const : "top" as const
+      },
+      tooltip: { 
+        backgroundColor: theme.surface, 
+        titleColor: theme.text, 
+        bodyColor: theme.textSecondary, 
+        callbacks: { 
+          label: (ctx: any) => `${ctx.dataset.label || ''}: ${formatCurrency(ctx.raw || 0)}` 
+        },
+        bodyFont: { size: isMobile ? 10 : 12 },
+        titleFont: { size: isMobile ? 11 : 13 }
+      }
     },
-    scales: { y: { ticks: { color: theme.textSecondary, callback: (value: any) => formatCurrency(value) }, grid: { color: theme.border }, beginAtZero: true }, x: { ticks: { color: theme.textSecondary }, grid: { color: theme.border } } }
+    scales: { 
+      y: { 
+        ticks: { 
+          color: theme.textSecondary, 
+          callback: (value: any) => isMobile ? formatCurrency(value).substring(0, 5) : formatCurrency(value),
+          font: { size: isMobile ? 8 : 10 }
+        }, 
+        grid: { color: theme.border }, 
+        beginAtZero: true 
+      }, 
+      x: { 
+        ticks: { 
+          color: theme.textSecondary, 
+          font: { size: isMobile ? 8 : 10 },
+          maxRotation: isMobile ? 45 : 0,
+          minRotation: isMobile ? 45 : 0
+        }, 
+        grid: { color: theme.border } 
+      } 
+    },
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
+    elements: {
+      point: {
+        radius: isMobile ? 2 : 3,
+        hoverRadius: isMobile ? 4 : 5
+      }
+    }
   };
 
-  const salesChartData = { labels: salesData.map(d => d.month), datasets: [{ label: t.salesEvolution, data: salesData.map(d => d.sales), backgroundColor: `${theme.primary}20`, borderColor: theme.primary, borderWidth: 2, fill: true, tension: 0.3 }] };
-  const profitChartData = { labels: profitData.map(d => d.month), datasets: [{ label: t.profitEvolution, data: profitData.map(d => d.profit), backgroundColor: `${theme.accent}20`, borderColor: theme.accent, borderWidth: 2, fill: true, tension: 0.3 }] };
-  const topProductsChartData = { labels: topProducts.map(p => p.name.length > 12 ? p.name.substring(0, 10) + "..." : p.name), datasets: [{ label: t.revenue, data: topProducts.map(p => p.amount), backgroundColor: ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#3b82f6"], borderRadius: 8 }] };
-  const topClientsChartData = { labels: topClients.map(c => c.name.length > 12 ? c.name.substring(0, 10) + "..." : c.name), datasets: [{ label: t.revenue, data: topClients.map(c => c.amount), backgroundColor: ["#10b981", "#f59e0b", "#667eea", "#8b5cf6", "#ef4444"], borderRadius: 8 }] };
+  const salesChartData = { labels: salesData.map(d => d.month), datasets: [{ label: t.salesEvolution, data: salesData.map(d => d.sales), backgroundColor: `${theme.primary}20`, borderColor: theme.primary, borderWidth: isMobile ? 1.5 : 2, fill: true, tension: 0.3 }] };
+  const profitChartData = { labels: profitData.map(d => d.month), datasets: [{ label: t.profitEvolution, data: profitData.map(d => d.profit), backgroundColor: `${theme.accent}20`, borderColor: theme.accent, borderWidth: isMobile ? 1.5 : 2, fill: true, tension: 0.3 }] };
+  const topProductsChartData = { labels: topProducts.map(p => p.name.length > (isMobile ? 8 : 12) ? p.name.substring(0, isMobile ? 6 : 10) + "..." : p.name), datasets: [{ label: t.revenue, data: topProducts.map(p => p.amount), backgroundColor: ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#3b82f6"], borderRadius: isMobile ? 6 : 8 }] };
+  const topClientsChartData = { labels: topClients.map(c => c.name.length > (isMobile ? 8 : 12) ? c.name.substring(0, isMobile ? 6 : 10) + "..." : c.name), datasets: [{ label: t.revenue, data: topClients.map(c => c.amount), backgroundColor: ["#10b981", "#f59e0b", "#667eea", "#8b5cf6", "#ef4444"], borderRadius: isMobile ? 6 : 8 }] };
   const forecastChartData = { 
     labels: getForecastLabels(), 
     datasets: [
       { label: t.upperBound, data: getUpperBoundData(), borderColor: "rgba(16,185,129,0.4)", backgroundColor: "rgba(16,185,129,0.05)", borderWidth: 1.5, fill: "+1", tension: 0.3, pointRadius: 0 },
-      { label: t.salesForecast + " (" + (language === 'fr' ? "Réaliste" : language === 'es' ? "Realista" : "Realistic") + ")", data: getForecastData(), borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.25)", borderWidth: 2.5, fill: true, tension: 0.3, pointBackgroundColor: "#f59e0b", pointRadius: 5, pointHoverRadius: 7 },
+      { label: t.salesForecast + " (" + (language === 'fr' ? "Réaliste" : language === 'es' ? "Realista" : "Realistic") + ")", data: getForecastData(), borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.25)", borderWidth: isMobile ? 2 : 2.5, fill: true, tension: 0.3, pointBackgroundColor: "#f59e0b", pointRadius: isMobile ? 2 : 5, pointHoverRadius: isMobile ? 4 : 7 },
       { label: t.lowerBound, data: getLowerBoundData(), borderColor: "rgba(239,68,68,0.4)", backgroundColor: "rgba(239,68,68,0.05)", borderWidth: 1.5, fill: false, tension: 0.3, pointRadius: 0 }
     ] 
   };
 
   const kpiCards = [
-    { Icon: IconRevenue, label: t.revenue, value: formatCurrency(stats?.sales?.revenue || 233133), color: theme.accent, growth: predictions?.revenueForecast?.growthRate || 12.5 },
-    { Icon: IconProfit, label: t.profit, value: formatCurrency((stats?.sales?.revenue || 233133) - (stats?.purchases?.spent || 98200)), color: "#f59e0b", growth: predictions?.roi || 15.2 },
-    { Icon: IconUsers, label: t.activeClients, value: stats?.clients?.active || 95, color: theme.primary, growth: 15.3 },
-    { Icon: IconPackage, label: t.products, value: stats?.products?.total || 48, color: "#10b981", growth: 8.5 }
+    { Icon: IconRevenue, label: t.revenue, value: formatCurrency(stats?.sales?.revenue || 0), color: theme.accent, growth: predictions?.revenueForecast?.growthRate || 0 },
+    { Icon: IconProfit, label: t.profit, value: formatCurrency((stats?.sales?.revenue || 0) - (stats?.purchases?.spent || 0)), color: "#f59e0b", growth: predictions?.roi || 0 },
+    { Icon: IconUsers, label: t.activeClients, value: stats?.clients?.active || 0, color: theme.primary, growth: 0 },
+    { Icon: IconPackage, label: t.products, value: stats?.products?.total || 0, color: "#10b981", growth: 0 }
   ];
 
   const tabs = [
@@ -794,66 +809,129 @@ export default function IAPage() {
     { Icon: IconPredictions, text: t.forecasts, query: t.askForecast, color: "#ec489a" }
   ];
 
+  const mobileQuickSuggestions = quickSuggestions.slice(0, 4);
+
   if (loading) {
     return (
       <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{animations}</style>
         <div style={{ textAlign: "center" }}>
-          <IconSpinner size={40} color={theme.primary} />
-          <p style={{ color: theme.textSecondary, marginTop: "12px", fontSize: "12px" }}>{t.loading}</p>
+          <IconSpinner size={isMobile ? 32 : 40} color={theme.primary} />
+          <p style={{ color: theme.textSecondary, marginTop: "12px", fontSize: isMobile ? "11px" : "12px" }}>{t.loading}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: theme.background, display: "flex", overflowX: "hidden" }}>
       <style>{animations}</style>
+      
+      {/* Sidebar */}
       <Sidebar />
-      <div style={{ flex: 1, marginLeft: sidebarMargin, padding: responsive.contentPadding, background: theme.background, transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          {/* Header */}
-          <div style={{ marginBottom: responsive.gapLarge, animation: "fadeInDown 0.4s ease", opacity: animateCards ? 1 : 0 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: responsive.gapSmall }}>
-              <div>
-                <h1 style={{ color: theme.text, fontSize: responsive.titleSize, margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", borderRadius: "12px", background: theme.gradient, color: "white", animation: "glow 2s infinite" }}>
-                    <IconRobot size={18} />
-                  </span>
-                  {t.aiAssistant}
-                </h1>
-                <p style={{ color: theme.textSecondary, marginTop: "2px", fontSize: responsive.subtitleSize }}>{t.aiSubtitle}</p>
-              </div>
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <button onClick={refreshData} disabled={refreshing} style={{ display: "flex", alignItems: "center", gap: "6px", background: `${theme.primary}15`, border: `1px solid ${theme.primary}30`, borderRadius: "20px", padding: "6px 12px", cursor: refreshing ? "not-allowed" : "pointer", fontSize: "11px", color: theme.primary }}>
-                  <IconRefresh size={12} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
-                  {refreshing ? t.refreshing : "Actualiser"}
-                </button>
-                <ExportButtons data={stats || {}} filename="ia_analytics" />
-              </div>
+      
+      <div style={{ 
+        flex: 1, 
+        marginLeft: contentMarginLeft, 
+        paddingTop: responsive.contentPadding,
+        paddingLeft: responsive.contentPadding,
+        paddingRight: responsive.contentPadding,
+        paddingBottom: isMobile ? "70px" : responsive.contentPadding,
+        background: theme.background, 
+        transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        width: "100%",
+        overflowX: "hidden"
+      }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
+          
+          {/* Header Desktop et Mobile unifié */}
+          <div style={{ 
+            marginBottom: responsive.gapLarge, 
+            animation: "fadeInDown 0.4s ease", 
+            opacity: animateCards ? 1 : 0,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? "12px" : "0"
+          }}>
+            <div>
+              <h1 style={{ color: theme.text, fontSize: responsive.titleSize, display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "32px" : "36px", height: isMobile ? "32px" : "36px", borderRadius: "12px", background: theme.gradient, color: "white", animation: "glow 2s infinite" }}>
+                  <IconRobot size={isMobile ? 16 : 18} />
+                </span>
+                {t.aiAssistant}
+              </h1>
+              <p style={{ color: theme.textSecondary, marginTop: "2px", fontSize: isMobile ? "10px" : responsive.subtitleSize }}>{t.aiSubtitle}</p>
             </div>
-            {lastRefresh && !refreshing && (
+            <div style={{ display: "flex", gap: "12px", alignItems: "center", alignSelf: isMobile ? "flex-end" : "auto" }}>
+              <button 
+                onClick={refreshData} 
+                disabled={refreshing} 
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: isMobile ? "4px" : "6px", 
+                  background: `${theme.primary}15`, 
+                  border: `1px solid ${theme.primary}30`, 
+                  borderRadius: "20px", 
+                  padding: isMobile ? "6px 12px" : "6px 12px", 
+                  cursor: refreshing ? "not-allowed" : "pointer", 
+                  fontSize: isMobile ? "10px" : "11px", 
+                  color: theme.primary,
+                  transition: "all 0.2s",
+                  whiteSpace: "nowrap"
+                }}
+              >
+                <span style={{ display: "inline-flex", animation: refreshing ? "spin 1s linear infinite" : "none" }}>
+                  <IconRefresh size={isMobile ? 12 : 12} />
+                </span>
+                {refreshing ? (isMobile ? "..." : t.refreshing) : (isMobile ? "" : "Actualiser")}
+              </button>
+            </div>
+            {lastRefresh && !refreshing && !isMobile && (
               <p style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "8px", textAlign: "right" }}>
                 📊 Dernière actualisation: {lastRefresh.toLocaleTimeString()}
               </p>
             )}
           </div>
+          
+          {lastRefresh && !refreshing && isMobile && (
+            <p style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "-12px", marginBottom: responsive.gapSmall, textAlign: "right" }}>
+              📊 {lastRefresh.toLocaleTimeString()}
+            </p>
+          )}
 
           {/* Alertes */}
           {alerts.length > 0 && (
-            <div style={{ marginBottom: responsive.gapMedium, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "10px" }}>
-              {alerts.map((alert, idx) => {
+            <div style={{ marginBottom: responsive.gapMedium, display: "flex", flexDirection: "column", gap: "8px" }}>
+              {alerts.slice(0, isMobile ? 2 : 3).map((alert, idx) => {
                 const colors: any = { danger: { bg: "rgba(239,68,68,0.1)", border: "#ef4444" }, warning: { bg: "rgba(245,158,11,0.1)", border: "#f59e0b" }, info: { bg: "rgba(59,130,246,0.1)", border: "#3b82f6" } };
                 const c = colors[alert.type] || colors.info;
                 const AlertIconComponent = alert.icon || IconInfo;
                 return (
-                  <div key={idx} style={{ background: c.bg, borderLeft: `3px solid ${c.border}`, padding: "10px 14px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", fontSize: "11px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <AlertIconComponent size={16} />
-                      <span style={{ color: theme.text }}>{alert.message}</span>
+                  <div key={idx} style={{ background: c.bg, borderLeft: `3px solid ${c.border}`, padding: "10px 12px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flexWrap: "wrap", fontSize: "11px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
+                      <AlertIconComponent size={isMobile ? 14 : 16} />
+                      <span style={{ color: theme.text, fontSize: isMobile ? "10px" : "11px" }}>{alert.message}</span>
                     </div>
                     {alert.action && (
-                      <button onClick={() => router.push(alert.action.path)} style={{ background: c.border, color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <button 
+                        onClick={() => router.push(alert.action.path)} 
+                        style={{ 
+                          background: c.border, 
+                          color: "white", 
+                          border: "none", 
+                          borderRadius: "6px", 
+                          padding: isMobile ? "5px 12px" : "4px 10px", 
+                          cursor: "pointer", 
+                          fontSize: "10px", 
+                          display: "flex", 
+                          alignItems: "center", 
+                          gap: "4px",
+                          WebkitTapHighlightColor: "transparent"
+                        }}
+                      >
                         {alert.action.label} <IconArrowRight size={10} />
                       </button>
                     )}
@@ -863,29 +941,54 @@ export default function IAPage() {
             </div>
           )}
 
-          {/* KPI Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: responsive.gapMedium, marginBottom: responsive.gapLarge }}>
+          {/* KPI Cards - grille 2x2 sur mobile */}
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fit, minmax(200px, 1fr))", gap: responsive.gapMedium, marginBottom: responsive.gapLarge }}>
             {kpiCards.map((card, idx) => (
-              <div key={idx} style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.05}s`, transition: "transform 0.2s, box-shadow 0.2s", cursor: "pointer" }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <div 
+                key={idx} 
+                style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.05}s`, transition: "transform 0.2s, box-shadow 0.2s", cursor: "pointer" }}
+                onMouseEnter={e => { if (!isMobile) { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)"; } }}
+                onMouseLeave={e => { if (!isMobile) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; } }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                   <span style={{ fontSize: responsive.kpiLabelSize, color: theme.textSecondary }}>{card.label}</span>
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "10px", background: `${card.color}18`, color: card.color }}>
-                    <card.Icon size={14} />
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "28px" : "32px", height: isMobile ? "28px" : "32px", borderRadius: "10px", background: `${card.color}18`, color: card.color }}>
+                    <card.Icon size={isMobile ? 12 : 14} />
                   </span>
                 </div>
                 <div style={{ fontSize: responsive.kpiValueSize, color: card.color, fontWeight: "bold" }}>{card.value}</div>
-                <div style={{ fontSize: "9px", color: "#10b981", marginTop: "6px", display: "flex", alignItems: "center", gap: "3px" }}><IconTrendingUp size={10} /> +{card.growth}% vs période préc.</div>
+                {!isMobile && (
+                  <div style={{ fontSize: "9px", color: "#10b981", marginTop: "6px", display: "flex", alignItems: "center", gap: "3px" }}><IconTrendingUp size={10} /> +{card.growth}% vs période préc.</div>
+                )}
               </div>
             ))}
           </div>
 
-          {/* Tabs */}
-          <div style={{ display: "flex", gap: "2px", marginBottom: responsive.gapMedium, borderBottom: `1px solid ${theme.border}`, overflowX: "auto" }}>
+          {/* Tabs - scrollable horizontal sur mobile */}
+          <div style={{ display: "flex", gap: "2px", marginBottom: responsive.gapMedium, borderBottom: `1px solid ${theme.border}`, overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scrollbar">
             {tabs.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: "8px 16px", background: activeTab === tab.id ? theme.primary : "transparent", border: "none", borderRadius: "10px 10px 0 0", color: activeTab === tab.id ? "white" : theme.textSecondary, cursor: "pointer", transition: "all 0.2s", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
-                <tab.Icon size={14} /> {tab.label}
+              <button 
+                key={tab.id} 
+                onClick={() => setActiveTab(tab.id)} 
+                style={{ 
+                  padding: isMobile ? "10px 14px" : "8px 16px", 
+                  background: activeTab === tab.id ? theme.primary : "transparent", 
+                  border: "none", 
+                  borderRadius: "10px 10px 0 0", 
+                  color: activeTab === tab.id ? "white" : theme.textSecondary, 
+                  cursor: "pointer", 
+                  transition: "all 0.2s", 
+                  fontSize: isMobile ? "12px" : "12px", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "6px", 
+                  whiteSpace: "nowrap", 
+                  flexShrink: 0,
+                  fontWeight: activeTab === tab.id ? "600" : "400",
+                  WebkitTapHighlightColor: "transparent"
+                }}
+              >
+                <tab.Icon size={isMobile ? 14 : 14} /> {tab.label}
               </button>
             ))}
           </div>
@@ -893,94 +996,142 @@ export default function IAPage() {
           {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconTrendingUp size={14} /> {t.salesEvolution}</h3>
-                  <Line data={salesChartData} options={chartOptions} />
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconTrendingUp size={isMobile ? 12 : 14} /> {t.salesEvolution}</h3>
+                  <div style={{ height: isMobile ? "200px" : "auto" }}>
+                    <Line data={salesChartData} options={{ ...chartOptions, maintainAspectRatio: true, responsive: true }} />
+                  </div>
                 </div>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconProfit size={14} /> {t.profitEvolution}</h3>
-                  <Line data={profitChartData} options={chartOptions} />
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconProfit size={isMobile ? 12 : 14} /> {t.profitEvolution}</h3>
+                  <div style={{ height: isMobile ? "200px" : "auto" }}>
+                    <Line data={profitChartData} options={{ ...chartOptions, maintainAspectRatio: true, responsive: true }} />
+                  </div>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gapMedium }}>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconTrophy size={14} /> {t.topProducts}</h3>
-                  <Bar data={topProductsChartData} options={chartOptions} />
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconTrophy size={isMobile ? 12 : 14} /> {t.topProducts}</h3>
+                  <div style={{ height: isMobile ? "220px" : "auto" }}>
+                    <Bar data={topProductsChartData} options={{ ...chartOptions, maintainAspectRatio: true, responsive: true }} />
+                  </div>
                 </div>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconStar size={14} /> {t.topClients}</h3>
-                  <Bar data={topClientsChartData} options={chartOptions} />
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px", display: "flex", alignItems: "center", gap: "6px" }}><IconStar size={isMobile ? 12 : 14} /> {t.topClients}</h3>
+                  <div style={{ height: isMobile ? "220px" : "auto" }}>
+                    <Bar data={topClientsChartData} options={{ ...chartOptions, maintainAspectRatio: true, responsive: true }} />
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ==================== CHAT IA TAB - AMÉLIORÉ ==================== */}
+          {/* Chat IA Tab */}
           {activeTab === "chat" && (
-            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", height: "580px", overflow: "hidden", boxShadow: "0 8px 25px rgba(0,0,0,0.1)" }}>
-              {/* Header Chat */}
-              <div style={{ padding: "14px 18px", borderBottom: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${theme.surfaceHover}, ${theme.surface})` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "44px", height: "44px", borderRadius: "22px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${theme.primary}40`, animation: "pulse 2s infinite" }}>
-                    <IconRobot size={22} />
-                  </div>
-                  <div>
-                    <div style={{ color: theme.text, fontWeight: "bold", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                      {t.aiAssistant}
-                      <span style={{ background: `${theme.accent}25`, color: theme.accent, fontSize: "9px", padding: "2px 8px", borderRadius: "20px", fontWeight: "normal" }}>GPT-4</span>
+            <div style={{ 
+              background: theme.surface, 
+              borderRadius: responsive.cardRadius, 
+              border: `1px solid ${theme.border}`, 
+              display: "flex", 
+              flexDirection: "column", 
+              height: isMobile 
+                ? (keyboardVisible ? "350px" : "calc(100vh - 140px)") 
+                : "580px", 
+              overflow: "hidden", 
+              boxShadow: "0 8px 25px rgba(0,0,0,0.1)" 
+            }}>
+              {!isMobile && (
+                <div style={{ padding: "14px 18px", borderBottom: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${theme.surfaceHover}, ${theme.surface})` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ width: "44px", height: "44px", borderRadius: "22px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${theme.primary}40`, animation: "pulse 2s infinite" }}>
+                      <IconRobot size={22} />
                     </div>
-                    <div style={{ color: theme.textSecondary, fontSize: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} /> {t.online}
-                      </span>
-                      <span>•</span>
-                      <span>{chatMessages.length} messages</span>
-                      <span>•</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> Réponses instantanées</span>
+                    <div>
+                      <div style={{ color: theme.text, fontWeight: "bold", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                        {t.aiAssistant}
+                        <span style={{ background: `${theme.accent}25`, color: theme.accent, fontSize: "9px", padding: "2px 8px", borderRadius: "20px", fontWeight: "normal" }}>GPT-4</span>
+                      </div>
+                      <div style={{ color: theme.textSecondary, fontSize: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} /> {t.online}
+                        </span>
+                        <span>•</span>
+                        <span>{chatMessages.length} messages</span>
+                        <span>•</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> Réponses instantanées</span>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
-                    <button onClick={copyConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}35`; e.currentTarget.style.color = theme.primary; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.textSecondary; }}>
-                      <IconCopy size={12} /> {t.copyConversation}
-                    </button>
-                    <button onClick={clearConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}35`; e.currentTarget.style.color = theme.primary; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.textSecondary; }}>
-                      <IconTrash size={12} /> {t.clearConversation}
-                    </button>
-                    <button onClick={() => { setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]); }} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}35`; e.currentTarget.style.color = theme.primary; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.textSecondary; }}>
-                      <IconRefresh size={12} /> {t.newChat}
-                    </button>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+                      <button onClick={copyConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }}>
+                        <IconCopy size={12} /> {t.copyConversation}
+                      </button>
+                      <button onClick={clearConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }}>
+                        <IconTrash size={12} /> {t.clearConversation}
+                      </button>
+                      <button onClick={() => { setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]); }} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }}>
+                        <IconRefresh size={12} /> {t.newChat}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Messages Container */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "18px", display: "flex", flexDirection: "column", gap: "16px", background: theme.background }}>
+              <div 
+                ref={chatContainerRef} 
+                style={{ 
+                  flex: 1, 
+                  overflowY: "auto", 
+                  padding: isMobile ? "12px" : "18px", 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  gap: isMobile ? "12px" : "16px", 
+                  background: theme.background,
+                  WebkitOverflowScrolling: "touch"
+                }}
+              >
                 {chatMessages.map((msg, idx) => (
                   <div key={idx} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", animation: "slideIn 0.3s ease" }}>
-                    {msg.role !== "user" && (
+                    {msg.role !== "user" && !isMobile && (
                       <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px", flexShrink: 0, boxShadow: `0 2px 8px ${theme.primary}40` }}>
                         <IconRobot size={18} />
                       </div>
                     )}
-                    <div style={{ maxWidth: "75%" }}>
-                      <div style={{ padding: "12px 18px", borderRadius: "20px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: theme.text, fontSize: "13px", lineHeight: "1.5", whiteSpace: "pre-wrap", boxShadow: msg.role === "user" ? `0 2px 10px ${theme.primary}40` : "none" }}>
+                    <div style={{ maxWidth: isMobile ? "85%" : "75%" }}>
+                      <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: theme.text, fontSize: isMobile ? "12px" : "13px", lineHeight: "1.5", whiteSpace: "pre-wrap", wordBreak: "break-word", boxShadow: msg.role === "user" ? `0 2px 10px ${theme.primary}40` : "none" }}>
                         {msg.content}
                       </div>
                       {msg.actions && msg.actions.length > 0 && msg.role !== "user" && (
-                        <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
-                          {msg.actions.slice(0, 4).map((action: any, ai: number) => (
-                            <button key={ai} onClick={() => action.query ? setChatInput(action.query) : action.path ? router.push(action.path) : null} style={{ background: `${theme.primary}15`, border: "none", borderRadius: "20px", padding: "5px 14px", fontSize: "10px", color: theme.primary, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}30`; e.currentTarget.style.transform = "translateY(-1px)"; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}15`; e.currentTarget.style.transform = "translateY(0)"; }}>
-                              {action.icon && <action.icon size={11} />} {action.label}
+                        <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
+                          {msg.actions.slice(0, isMobile ? 3 : 4).map((action: any, ai: number) => (
+                            <button 
+                              key={ai} 
+                              onClick={() => action.query ? setChatInput(action.query) : action.path ? router.push(action.path) : null} 
+                              style={{ 
+                                background: `${theme.primary}15`, 
+                                border: "none", 
+                                borderRadius: "20px", 
+                                padding: isMobile ? "5px 12px" : "5px 14px", 
+                                fontSize: isMobile ? "10px" : "10px", 
+                                color: theme.primary, 
+                                cursor: "pointer", 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: "6px", 
+                                transition: "all 0.2s",
+                                WebkitTapHighlightColor: "transparent"
+                              }}
+                            >
+                              {action.icon && <action.icon size={isMobile ? 11 : 11} />} {action.label}
                             </button>
                           ))}
                         </div>
                       )}
-                      <div style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "6px", marginLeft: "8px" }}>
+                      <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "4px", marginLeft: isMobile ? "4px" : "8px" }}>
                         {msg.timestamp?.toLocaleTimeString?.([], { hour: '2-digit', minute: '2-digit' }) || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                    {msg.role === "user" && (
+                    {msg.role === "user" && !isMobile && (
                       <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.surfaceHover, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "12px", flexShrink: 0, border: `1px solid ${theme.border}` }}>
                         <IconUser size={16} />
                       </div>
@@ -990,64 +1141,93 @@ export default function IAPage() {
                 
                 {isTyping && (
                   <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>
-                    <div style={{ padding: "12px 20px", borderRadius: "20px", background: theme.surfaceHover, display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{ width: "8px", height: "8px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0s" }} />
-                      <span style={{ width: "8px", height: "8px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.15s" }} />
-                      <span style={{ width: "8px", height: "8px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.3s" }} />
-                      <span style={{ fontSize: "11px", color: theme.textSecondary, marginLeft: "4px" }}>{t.aiThoughts}</span>
+                    {!isMobile && <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>}
+                    <div style={{ padding: isMobile ? "10px 16px" : "12px 20px", borderRadius: "20px", background: theme.surfaceHover, display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ width: "6px", height: "6px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0s" }} />
+                      <span style={{ width: "6px", height: "6px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.15s" }} />
+                      <span style={{ width: "6px", height: "6px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.3s" }} />
+                      <span style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, marginLeft: "4px" }}>{t.aiThoughts}</span>
                     </div>
                   </div>
                 )}
                 
                 {isStreaming && streamingContent && (
                   <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>
-                    <div style={{ padding: "12px 18px", borderRadius: "20px", background: theme.surfaceHover, fontSize: "13px", maxWidth: "75%", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
-                      {streamingContent}<span style={{ display: "inline-block", width: "3px", height: "14px", background: theme.primary, marginLeft: "3px", animation: "blink 1s infinite", verticalAlign: "middle" }} />
+                    {!isMobile && <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>}
+                    <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: theme.surfaceHover, fontSize: isMobile ? "12px" : "13px", maxWidth: isMobile ? "85%" : "75%", lineHeight: "1.5", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      {streamingContent}<span style={{ display: "inline-block", width: "2px", height: "12px", background: theme.primary, marginLeft: "2px", animation: "blink 1s infinite", verticalAlign: "middle" }} />
                     </div>
                   </div>
                 )}
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Input Area */}
-              <div style={{ padding: "14px 18px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
-                <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+              {/* Zone de saisie améliorée pour mobile */}
+              <div style={{ padding: isMobile ? "12px" : "14px 18px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
+                <div style={{ display: "flex", gap: isMobile ? "8px" : "12px", alignItems: "flex-end" }}>
                   <textarea 
-                    placeholder={`${t.typeMessage} (Shift+Enter)`}
+                    ref={textareaRef}
+                    placeholder={t.typeMessage}
                     value={chatInput} 
                     onChange={e => setChatInput(e.target.value)} 
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} 
-                    rows={1} 
-                    style={{ flex: 1, padding: "10px 16px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "24px", color: theme.text, fontSize: "13px", outline: "none", resize: "none", fontFamily: "inherit", maxHeight: "100px", transition: "all 0.2s" }} 
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !isMobile) { e.preventDefault(); sendMessage(); } }} 
+                    rows={isMobile ? 2 : 1} 
+                    style={{ 
+                      flex: 1, 
+                      padding: isMobile ? "10px 14px" : "10px 16px", 
+                      background: theme.surfaceHover, 
+                      border: `1px solid ${theme.border}`, 
+                      borderRadius: "20px", 
+                      color: theme.text, 
+                      fontSize: isMobile ? "14px" : "13px", 
+                      outline: "none", 
+                      resize: "none", 
+                      fontFamily: "inherit", 
+                      maxHeight: isMobile ? "100px" : "100px", 
+                      transition: "all 0.2s",
+                      WebkitAppearance: "none"
+                    }} 
                     onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.background = theme.surface; }} 
                     onBlur={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.surfaceHover; }} 
                   />
                   <button 
                     onClick={sendMessage} 
                     disabled={loadingAI || !chatInput.trim()} 
-                    style={{ background: (!chatInput.trim() || loadingAI) ? theme.border : theme.gradient, color: "white", border: "none", borderRadius: "24px", padding: "9px 22px", cursor: (!chatInput.trim() || loadingAI) ? "not-allowed" : "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "8px", fontWeight: "500", transition: "all 0.2s" }} 
-                    onMouseEnter={e => { if (chatInput.trim() && !loadingAI) e.currentTarget.style.transform = "scale(1.02)"; }} 
-                    onMouseLeave={e => { if (chatInput.trim() && !loadingAI) e.currentTarget.style.transform = "scale(1)"; }}
+                    style={{ 
+                      background: (!chatInput.trim() || loadingAI) ? theme.border : theme.gradient, 
+                      color: "white", 
+                      border: "none", 
+                      borderRadius: "25px", 
+                      padding: isMobile ? "10px 20px" : "9px 22px", 
+                      cursor: (!chatInput.trim() || loadingAI) ? "not-allowed" : "pointer", 
+                      fontSize: isMobile ? "13px" : "13px", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "6px", 
+                      fontWeight: "500", 
+                      transition: "all 0.2s", 
+                      whiteSpace: "nowrap",
+                      WebkitTapHighlightColor: "transparent"
+                    }}
                   >
-                    <IconSend size={14} /> {t.send}
+                    <IconSend size={isMobile ? 14 : 14} /> {t.send}
                   </button>
                 </div>
                 
-                {/* Quick Suggestions */}
-                <div style={{ marginTop: "14px" }}>
-                  <div style={{ fontSize: "10px", color: theme.textSecondary, marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <IconZap size={12} /> {t.quickActions}
+                {!isMobile && (
+                  <div style={{ marginTop: "14px" }}>
+                    <div style={{ fontSize: "10px", color: theme.textSecondary, marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <IconZap size={12} /> {t.quickActions}
+                    </div>
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                      {quickSuggestions.map((s, idx) => (
+                        <button key={idx} onClick={() => setChatInput(s.query)} style={{ background: `${s.color}15`, border: `1px solid ${s.color}25`, borderRadius: "20px", padding: "6px 14px", fontSize: "10px", color: s.color, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "all 0.2s", whiteSpace: "nowrap" }}>
+                          <s.Icon size={11} /> {s.text}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    {quickSuggestions.map((s, idx) => (
-                      <button key={idx} onClick={() => setChatInput(s.query)} style={{ background: `${s.color}15`, border: `1px solid ${s.color}25`, borderRadius: "20px", padding: "6px 14px", fontSize: "10px", color: s.color, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = `${s.color}25`; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.background = `${s.color}15`; }}>
-                        <s.Icon size={11} /> {s.text}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -1055,58 +1235,86 @@ export default function IAPage() {
           {/* Forecasts Tab */}
           {activeTab === "forecasts" && (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
                 {[
-                  { label: t.forecastGrowth, value: predictions?.revenueForecast?.growthRate + "%", color: "#10b981", icon: IconTrendingUp, sub: "vs période précédente" },
-                  { label: t.projectedRevenue, value: formatCurrency(getForecastData()[0] || 0), color: "#10b981", icon: IconRevenue, sub: "pour le prochain mois" },
-                  { label: t.projectedProfit, value: formatCurrency((getForecastData()[0] || 0) * 0.35), color: "#f59e0b", icon: IconProfit, sub: "estimation à 35% de marge" }
+                  { label: t.forecastGrowth, value: predictions?.revenueForecast?.growthRate + "%", color: "#10b981", icon: IconTrendingUp, sub: isMobile ? "vs préc." : "vs période précédente" },
+                  { label: t.projectedRevenue, value: formatCurrency(getForecastData()[0] || 0), color: "#10b981", icon: IconRevenue, sub: isMobile ? "prochain mois" : "pour le prochain mois" },
+                  { label: t.projectedProfit, value: formatCurrency((getForecastData()[0] || 0) * 0.35), color: "#f59e0b", icon: IconProfit, sub: isMobile ? "estimation" : "estimation à 35% de marge" }
                 ].map((card, idx) => (
-                  <div key={idx} style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, textAlign: "center", border: `1px solid ${theme.border}`, transition: "transform 0.2s, box-shadow 0.2s", animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.1}s` }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: card.color }}><card.icon size={28} /></div>
-                    <div style={{ fontSize: "11px", color: theme.textSecondary }}>{card.label}</div>
-                    <div style={{ fontSize: "22px", color: card.color, fontWeight: "bold" }}>{card.value}</div>
-                    <div style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "5px" }}>{card.sub}</div>
+                  <div key={idx} style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, textAlign: "center", border: `1px solid ${theme.border}`, transition: "transform 0.2s, box-shadow 0.2s", animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.1}s` }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: card.color }}><card.icon size={isMobile ? 24 : 28} /></div>
+                    <div style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary }}>{card.label}</div>
+                    <div style={{ fontSize: isMobile ? "18px" : "22px", color: card.color, fontWeight: "bold" }}>{card.value}</div>
+                    <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "5px" }}>{card.sub}</div>
                   </div>
                 ))}
               </div>
               
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "12px" }}>
-                <div style={{ display: "flex", gap: "6px", background: theme.surface, padding: "5px", borderRadius: "30px", border: `1px solid ${theme.border}` }}>
-                  <button onClick={() => { setForecastPeriod("3months"); }} style={{ padding: "7px 20px", borderRadius: "25px", background: forecastPeriod === "3months" ? theme.primary : "transparent", color: forecastPeriod === "3months" ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: "12px", fontWeight: forecastPeriod === "3months" ? "500" : "normal", transition: "all 0.2s" }}>
-                    {t.threeMonths}
-                  </button>
-                  <button onClick={() => { setForecastPeriod("6months"); }} style={{ padding: "7px 20px", borderRadius: "25px", background: forecastPeriod === "6months" ? theme.primary : "transparent", color: forecastPeriod === "6months" ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: "12px", fontWeight: forecastPeriod === "6months" ? "500" : "normal", transition: "all 0.2s" }}>
-                    {t.sixMonths}
-                  </button>
-                  <button onClick={() => { setForecastPeriod("12months"); }} style={{ padding: "7px 20px", borderRadius: "25px", background: forecastPeriod === "12months" ? theme.primary : "transparent", color: forecastPeriod === "12months" ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: "12px", fontWeight: forecastPeriod === "12months" ? "500" : "normal", transition: "all 0.2s" }}>
-                    {t.twelveMonths}
-                  </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "12px", flexDirection: isMobile ? "column" : "row" }}>
+                <div style={{ display: "flex", gap: "6px", background: theme.surface, padding: "5px", borderRadius: "30px", border: `1px solid ${theme.border}`, width: isMobile ? "100%" : "auto", justifyContent: "center" }}>
+                  {["3months", "6months", "12months"].map((period) => (
+                    <button 
+                      key={period} 
+                      onClick={() => setForecastPeriod(period)} 
+                      style={{ 
+                        padding: isMobile ? "7px 16px" : "7px 20px", 
+                        borderRadius: "25px", 
+                        background: forecastPeriod === period ? theme.primary : "transparent", 
+                        color: forecastPeriod === period ? "white" : theme.textSecondary, 
+                        border: "none", 
+                        cursor: "pointer", 
+                        fontSize: isMobile ? "11px" : "12px", 
+                        fontWeight: forecastPeriod === period ? "500" : "normal", 
+                        transition: "all 0.2s",
+                        WebkitTapHighlightColor: "transparent"
+                      }}
+                    >
+                      {period === "3months" ? t.threeMonths : period === "6months" ? t.sixMonths : t.twelveMonths}
+                    </button>
+                  ))}
                 </div>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  {Object.entries({ optimistic: t.optimistic, realistic: t.realistic, pessimistic: t.pessimistic }).map(([key, label]) => (
-                    <button key={key} onClick={() => setSelectedScenario(key as any)} style={{ padding: "7px 16px", borderRadius: "22px", background: selectedScenario === key ? { optimistic: "#10b981", realistic: "#f59e0b", pessimistic: "#ef4444" }[key] : "transparent", border: `1.5px solid ${key === "optimistic" ? "#10b981" : key === "realistic" ? "#f59e0b" : "#ef4444"}`, color: selectedScenario === key ? "white" : key === "optimistic" ? "#10b981" : key === "realistic" ? "#f59e0b" : "#ef4444", cursor: "pointer", fontSize: "11px", fontWeight: selectedScenario === key ? "500" : "normal", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
-                      {key === "optimistic" ? "📈" : key === "pessimistic" ? "📉" : "📊"} {label}
+                <div style={{ display: "flex", gap: "10px", width: isMobile ? "100%" : "auto", justifyContent: "center" }}>
+                  {(Object.entries({ optimistic: t.optimistic, realistic: t.realistic, pessimistic: t.pessimistic }) as [string, string][]).map(([key, label]) => (
+                    <button 
+                      key={key} 
+                      onClick={() => setSelectedScenario(key as any)} 
+                      style={{ 
+                        padding: isMobile ? "6px 14px" : "7px 16px", 
+                        borderRadius: "22px", 
+                        background: selectedScenario === key ? { optimistic: "#10b981", realistic: "#f59e0b", pessimistic: "#ef4444" }[key] : "transparent", 
+                        border: `1.5px solid ${key === "optimistic" ? "#10b981" : key === "realistic" ? "#f59e0b" : "#ef4444"}`, 
+                        color: selectedScenario === key ? "white" : key === "optimistic" ? "#10b981" : key === "realistic" ? "#f59e0b" : "#ef4444", 
+                        cursor: "pointer", 
+                        fontSize: isMobile ? "10px" : "11px", 
+                        fontWeight: selectedScenario === key ? "500" : "normal", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "4px", 
+                        transition: "all 0.2s",
+                        WebkitTapHighlightColor: "transparent"
+                      }}
+                    >
+                      {key === "optimistic" ? "📈" : key === "pessimistic" ? "📉" : "📊"} {isMobile && label.length > 8 ? label.substring(0, 6) : label}
                     </button>
                   ))}
                 </div>
               </div>
               
               <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-                  <h3 style={{ color: theme.text, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconPredictions size={16} /> {t.salesForecast} — {selectedScenario === "optimistic" ? t.optimistic : selectedScenario === "realistic" ? t.realistic : t.pessimistic}</h3>
-                  <div style={{ fontSize: "11px", color: theme.textSecondary, background: theme.surfaceHover, padding: "4px 12px", borderRadius: "20px" }}>
-                    📊 {t.confidence}: {predictions?.revenueForecast?.confidence || 82}% ({Number(predictions?.revenueForecast?.confidence || 82) > 85 ? t.highConfidence : t.mediumConfidence})
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px", flexDirection: isMobile ? "column" : "row" }}>
+                  <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconPredictions size={isMobile ? 14 : 16} /> {t.salesForecast} — {selectedScenario === "optimistic" ? t.optimistic : selectedScenario === "realistic" ? t.realistic : t.pessimistic}</h3>
+                  <div style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, background: theme.surfaceHover, padding: "4px 10px", borderRadius: "20px" }}>
+                    📊 {t.confidence}: {predictions?.revenueForecast?.confidence || 0}%
                   </div>
                 </div>
-                <Line data={forecastChartData} options={chartOptions} />
-                <div style={{ marginTop: "18px", padding: "14px", background: theme.surfaceHover, borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-                  <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ display: "inline-block", width: "14px", height: "14px", background: "#f59e0b", borderRadius: "3px" }}></span> <span style={{ fontSize: "11px" }}>{t.salesForecast}</span></div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ display: "inline-block", width: "14px", height: "14px", background: "#10b981", borderRadius: "3px", opacity: 0.6 }}></span> <span style={{ fontSize: "11px" }}>{t.upperBound}</span></div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ display: "inline-block", width: "14px", height: "14px", background: "#ef4444", borderRadius: "3px", opacity: 0.6 }}></span> <span style={{ fontSize: "11px" }}>{t.lowerBound}</span></div>
-                  </div>
-                  <div style={{ fontSize: "11px", color: theme.textSecondary, display: "flex", alignItems: "center", gap: "6px" }}>
-                    <IconInfo size={12} /> Période: {forecastPeriod === "3months" ? "3 mois" : forecastPeriod === "6months" ? "6 mois" : "12 mois"}
+                <div style={{ height: isMobile ? "230px" : "auto" }}>
+                  <Line data={forecastChartData} options={{ ...chartOptions, maintainAspectRatio: true, responsive: true }} />
+                </div>
+                <div style={{ marginTop: "18px", padding: isMobile ? "10px" : "14px", background: theme.surfaceHover, borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", flexDirection: isMobile ? "column" : "row" }}>
+                  <div style={{ display: "flex", gap: isMobile ? "10px" : "16px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: "#f59e0b", borderRadius: "3px" }}></span> <span style={{ fontSize: isMobile ? "9px" : "11px" }}>{t.salesForecast}</span></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: "#10b981", borderRadius: "3px", opacity: 0.6 }}></span> <span style={{ fontSize: isMobile ? "9px" : "11px" }}>{t.upperBound}</span></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><span style={{ display: "inline-block", width: "12px", height: "12px", background: "#ef4444", borderRadius: "3px", opacity: 0.6 }}></span> <span style={{ fontSize: isMobile ? "9px" : "11px" }}>{t.lowerBound}</span></div>
                   </div>
                 </div>
               </div>
@@ -1117,113 +1325,204 @@ export default function IAPage() {
           {activeTab === "recommendations" && (
             <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-                <h3 style={{ color: theme.text, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconRecommendations size={16} /> {t.recommendations}</h3>
-                <div style={{ fontSize: "10px", color: theme.textSecondary, background: `${theme.accent}15`, padding: "4px 10px", borderRadius: "20px" }}>
-                  🤖 Générées par IA - Basées sur vos données réelles
+                <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconRecommendations size={isMobile ? 14 : 16} /> {t.recommendations}</h3>
+                {!isMobile && (
+                  <div style={{ fontSize: "10px", color: theme.textSecondary, background: `${theme.accent}15`, padding: "4px 10px", borderRadius: "20px" }}>
+                    🤖 Générées par IA
+                  </div>
+                )}
+              </div>
+              
+              {isMobile ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {recommendations.slice(0, 5).map((rec, idx) => {
+                    const urgencyConfig = rec.urgency === "high"
+                      ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "🔴" }
+                      : rec.urgency === "medium"
+                      ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "🟠" }
+                      : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "🟢" };
+                    return (
+                      <div key={idx} style={{ background: theme.surfaceHover, borderRadius: "12px", padding: "12px", border: `1px solid ${theme.border}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                          <span style={{ color: theme.text, fontWeight: "bold", fontSize: "13px", flex: 1 }}>{rec.productName}</span>
+                          <span style={{ background: urgencyConfig.bg, color: urgencyConfig.color, padding: "2px 8px", borderRadius: "12px", fontSize: "9px", display: "flex", alignItems: "center", gap: "3px" }}>
+                            {urgencyConfig.icon} {urgencyConfig.text}
+                          </span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "10px", fontSize: "10px" }}>
+                          <div><span style={{ color: theme.textSecondary }}>Stock:</span> <span style={{ color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", fontWeight: "bold" }}>{rec.currentStock} unités</span></div>
+                          <div><span style={{ color: theme.textSecondary }}>Demande:</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.monthlyDemand}/mois</span></div>
+                          <div><span style={{ color: theme.textSecondary }}>Recommandé:</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.recommendedStock} unités</span></div>
+                        </div>
+                        <button 
+                          onClick={() => router.push("/dashboard/purchases")} 
+                          style={{ 
+                            width: "100%", 
+                            background: theme.primary, 
+                            border: "none", 
+                            borderRadius: "8px", 
+                            padding: "10px", 
+                            cursor: "pointer", 
+                            fontSize: "12px", 
+                            color: "white", 
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center", 
+                            gap: "6px",
+                            WebkitTapHighlightColor: "transparent"
+                          }}
+                        >
+                          <IconShoppingCart size={14} /> {t.orderNow}
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {recommendations.length > 5 && (
+                    <button 
+                      onClick={() => alert(`+${recommendations.length - 5} autres recommandations disponibles`)}
+                      style={{ 
+                        background: "transparent", 
+                        border: `1px solid ${theme.border}`, 
+                        borderRadius: "8px", 
+                        padding: "10px", 
+                        cursor: "pointer", 
+                        fontSize: "11px", 
+                        color: theme.textSecondary,
+                        WebkitTapHighlightColor: "transparent"
+                      }}
+                    >
+                      Voir {recommendations.length - 5} autres produits
+                    </button>
+                  )}
                 </div>
-              </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
-                  <thead>
-                    <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
-                      <th style={{ padding: "12px 8px", textAlign: "left", color: theme.textSecondary }}>Produit</th>
-                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.stockStatus}</th>
-                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.monthlyDemand}</th>
-                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.recommendedStock}</th>
-                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.urgency}</th>
-                      <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.action}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recommendations.map((rec, idx) => {
-                      const urgencyConfig = rec.urgency === "high" ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "🔴" } : rec.urgency === "medium" ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "🟠" } : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "🟢" };
-                      return (
-                        <tr key={idx} style={{ borderBottom: `1px solid ${theme.surfaceHover}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                          <td style={{ padding: "12px 8px", color: theme.text, fontWeight: "500" }}>{rec.productName}</td>
-                          <td style={{ padding: "12px 8px", textAlign: "center" }}>
-                            <span style={{ background: rec.currentStock < 10 ? "rgba(239,68,68,0.15)" : rec.currentStock < 20 ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)", color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", padding: "4px 10px", borderRadius: "20px", fontSize: "10px", fontWeight: "500" }}>
-                              {rec.currentStock} unités
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "500" }}>{rec.monthlyDemand} unités/mois</td>
-                          <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "bold" }}>{rec.recommendedStock} unités</td>
-                          <td style={{ padding: "12px 8px", textAlign: "center" }}>
-                            <span style={{ background: urgencyConfig.bg, color: urgencyConfig.color, padding: "4px 12px", borderRadius: "20px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: "500" }}>
-                              {urgencyConfig.icon} {urgencyConfig.text}
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px 8px", textAlign: "center" }}>
-                            <button onClick={() => router.push("/dashboard/purchases")} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 16px", cursor: "pointer", fontSize: "10px", color: theme.primary, display: "inline-flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = theme.primary; e.currentTarget.style.color = "white"; }} onMouseLeave={e => { e.currentTarget.style.background = `${theme.primary}20`; e.currentTarget.style.color = theme.primary; }}>
-                              <IconShoppingCart size={11} /> {t.orderNow}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {recommendations.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px" }}>
-                  <IconCheckCircle size={32} style={{ color: theme.accent, marginBottom: "12px" }} />
-                  <p style={{ color: theme.textSecondary, fontSize: "12px" }}>Aucune recommandation pour le moment. Votre stock est bien géré !</p>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+                        <th style={{ padding: "12px 8px", textAlign: "left", color: theme.textSecondary }}>Produit</th>
+                        <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.stockStatus}</th>
+                        <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.monthlyDemand}</th>
+                        <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.recommendedStock}</th>
+                        <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.urgency}</th>
+                        <th style={{ padding: "12px 8px", textAlign: "center", color: theme.textSecondary }}>{t.action}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recommendations.map((rec, idx) => {
+                        const urgencyConfig = rec.urgency === "high"
+                          ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "🔴" }
+                          : rec.urgency === "medium"
+                          ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "🟠" }
+                          : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "🟢" };
+                        return (
+                          <tr key={idx} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
+                            <td style={{ padding: "12px 8px", color: theme.text, fontWeight: "500" }}>{rec.productName}</td>
+                            <td style={{ padding: "12px 8px", textAlign: "center" }}>
+                              <span style={{ background: rec.currentStock < 10 ? "rgba(239,68,68,0.15)" : rec.currentStock < 20 ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)", color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", padding: "4px 10px", borderRadius: "20px", fontSize: "10px", fontWeight: "500" }}>
+                                {rec.currentStock} unités
+                              </span>
+                            </td>
+                            <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "500" }}>
+                              {rec.monthlyDemand} unités/mois
+                            </td>
+                            <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "bold" }}>
+                              {rec.recommendedStock} unités
+                            </td>
+                            <td style={{ padding: "12px 8px", textAlign: "center" }}>
+                              <span style={{ background: urgencyConfig.bg, color: urgencyConfig.color, padding: "4px 12px", borderRadius: "20px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: "500" }}>
+                                {urgencyConfig.icon} {urgencyConfig.text}
+                              </span>
+                            </td>
+                            <td style={{ padding: "12px 8px", textAlign: "center" }}>
+                              <button onClick={() => router.push("/dashboard/purchases")} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 16px", cursor: "pointer", fontSize: "10px", color: theme.primary, display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                <IconShoppingCart size={11} /> {t.orderNow}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
-              <div style={{ marginTop: "16px", padding: "12px", background: `${theme.accent}10`, borderRadius: "12px", border: `1px solid ${theme.accent}20` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                  <IconInfo size={14} style={{ color: theme.accent }} />
-                  <span style={{ fontSize: "11px", color: theme.textSecondary }}>
-                    💡 Les recommandations sont basées sur l'analyse de vos données de vente et du niveau de stock actuel.
-                    Les seuils d'urgence sont calculés automatiquement par l'IA.
-                  </span>
+              
+              {recommendations.length === 0 && (
+                <div style={{ textAlign: "center", padding: isMobile ? "30px" : "40px" }}>
+                  <span style={{ display: "inline-flex", color: theme.accent, marginBottom: "12px" }}><IconCheckCircle size={isMobile ? 28 : 32} /></span>
+                  <p style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune recommandation pour le moment. Votre stock est bien géré !</p>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* Analytics Tab */}
           {activeTab === "analytics" && (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px" }}><IconAnalytics size={14} /> Répartition par module</h3>
-                  <div style={{ height: "200px" }}>
-                    <Doughnut data={{ labels: ["Ventes", "Achats", "Produits", "Clients"], datasets: [{ data: [stats?.sales?.revenue || 1, stats?.purchases?.spent || 1, stats?.products?.totalValue || 1, stats?.clients?.total || 1], backgroundColor: ["#10b981", "#ef4444", theme.primary, "#8b5cf6"], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { font: { size: 9 }, color: theme.textSecondary }, position: "bottom" } } }} />
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px" }}><IconAnalytics size={isMobile ? 12 : 14} /> Répartition</h3>
+                  <div style={{ height: isMobile ? "220px" : "200px" }}>
+                    <Doughnut 
+                      data={{ 
+                        labels: isMobile ? ["Ventes", "Achats", "Stock", "Clients"] : ["Ventes", "Achats", "Produits", "Clients"], 
+                        datasets: [{ 
+                          data: [stats?.sales?.revenue || 1, stats?.purchases?.spent || 1, stats?.products?.totalValue || 1, stats?.clients?.total || 1], 
+                          backgroundColor: ["#10b981", "#ef4444", theme.primary, "#8b5cf6"], 
+                          borderWidth: 0 
+                        }] 
+                      }} 
+                      options={{ 
+                        responsive: true, 
+                        maintainAspectRatio: true, 
+                        plugins: { 
+                          legend: { 
+                            labels: { 
+                              font: { size: isMobile ? 9 : 9 }, 
+                              color: theme.textSecondary,
+                              boxWidth: isMobile ? 8 : 10
+                            }, 
+                            position: isMobile ? "bottom" as const : "bottom" as const 
+                          } 
+                        } 
+                      }} 
+                    />
                   </div>
                 </div>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: "13px" }}><IconTrendingUp size={14} /> {t.salesEvolution}</h3>
-                  <Line data={salesChartData} options={chartOptions} />
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px" }}><IconTrendingUp size={isMobile ? 12 : 14} /> {t.salesEvolution}</h3>
+                  <div style={{ height: isMobile ? "220px" : "auto" }}>
+                    <Line data={salesChartData} options={{ ...chartOptions, maintainAspectRatio: true, responsive: true }} />
+                  </div>
                 </div>
               </div>
               <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: "14px" }}><IconDashboard size={14} /> KPIs clés</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
-                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-                    <IconPackage size={24} style={{ color: "#10b981" }} />
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#10b981", marginTop: "8px" }}>{(stats?.sales?.revenue / (stats?.products?.totalValue || 1)).toFixed(1)}x</div>
-                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.inventoryTurnover}</div>
+                <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "12px" : "14px" }}><IconDashboard size={isMobile ? 12 : 14} /> KPIs clés</h3>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "10px" : "16px" }}>
+                  <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
+                    <span style={{ display: "inline-flex", color: "#10b981" }}><IconPackage size={isMobile ? 20 : 24} /></span>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "#10b981", marginTop: "6px" }}>{stats?.sales?.revenue > 0 && stats?.products?.totalValue > 0 ? (stats.sales.revenue / stats.products.totalValue).toFixed(1) : 0}x</div>
+                    <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary }}>{t.inventoryTurnover}</div>
                   </div>
-                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-                    <IconUsers size={24} style={{ color: "#f59e0b" }} />
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#f59e0b", marginTop: "8px" }}>{((stats?.orders?.total || 267) / (stats?.clients?.total || 128) * 100).toFixed(1)}%</div>
-                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.conversionRate}</div>
+                  <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
+                    <span style={{ display: "inline-flex", color: "#f59e0b" }}><IconUsers size={isMobile ? 20 : 24} /></span>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "#f59e0b", marginTop: "6px" }}>{stats?.clients?.total > 0 ? ((stats?.orders?.total || 0) / (stats?.clients?.total || 1) * 100).toFixed(1) : 0}%</div>
+                    <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary }}>{t.conversionRate}</div>
                   </div>
-                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-                    <IconTrendingUp size={24} style={{ color: theme.accent }} />
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: theme.accent, marginTop: "8px" }}>{Math.round((stats?.sales?.revenue || 0) / (stats?.employees?.total || 1)).toLocaleString()} €</div>
-                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.productivity}</div>
+                  <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
+                    <span style={{ display: "inline-flex", color: theme.accent }}><IconTrendingUp size={isMobile ? 20 : 24} /></span>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: theme.accent, marginTop: "6px" }}>{stats?.employees?.total > 0 ? Math.round((stats?.sales?.revenue || 0) / (stats?.employees?.total || 1)).toLocaleString() : 0} €</div>
+                    <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary }}>{t.productivity}</div>
                   </div>
-                  <div style={{ textAlign: "center", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-                    <IconStar size={24} style={{ color: "#8b5cf6" }} />
-                    <div style={{ fontSize: "20px", fontWeight: "bold", color: "#8b5cf6", marginTop: "8px" }}>{stats?.clients?.active || 95}</div>
-                    <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.activeClients}</div>
+                  <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
+                    <span style={{ display: "inline-flex", color: "#8b5cf6" }}><IconStar size={isMobile ? 20 : 24} /></span>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "#8b5cf6", marginTop: "6px" }}>{stats?.clients?.active || 0}</div>
+                    <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary }}>{t.activeClients}</div>
                   </div>
                 </div>
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>

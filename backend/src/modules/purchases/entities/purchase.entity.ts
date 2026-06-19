@@ -8,6 +8,9 @@ export class Purchase {
   @Column()
   userId: number;
 
+  @Column()
+  productId: number;
+
   @Column({ nullable: true })
   supplierName: string;
 

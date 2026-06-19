@@ -1,0 +1,41 @@
+﻿const { Client } = require('pg');
+
+const config = {
+  host: 'localhost',
+  port: 5432,
+  user: 'postgres',
+  password: 'postgres',
+  database: 'inovexa_erp'
+};
+
+async function createProjectsTable() {
+  const client = new Client(config);
+  
+  try {
+    await client.connect();
+    console.log('✅ Connecté à PostgreSQL');
+    
+    // Créer la table projects
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        department VARCHAR(255),
+        budget DECIMAL(10,2) DEFAULT 0,
+        cost DECIMAL(10,2) DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'active',
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Table "projects" créée avec succès');
+    
+    await client.end();
+    
+  } catch (error) {
+    console.error('❌ Erreur:', error.message);
+  }
+}
+
+createProjectsTable();

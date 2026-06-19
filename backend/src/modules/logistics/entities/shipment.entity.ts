@@ -21,21 +21,19 @@ export class Shipment {
   address: string;
 
   @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
   carrier: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  amount: number;
 
   @Column({ default: 'pending' })
   status: string;
 
   @Column({ nullable: true })
   estimatedDelivery: Date;
-
-  // ⭐ NOUVEAU : Montant de la livraison
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  amount: number;
-
-  // ⭐ NOUVEAU : Téléphone du client
-  @Column({ nullable: true, length: 50 })
-  phone: string;
 
   @CreateDateColumn()
   createdAt: Date;

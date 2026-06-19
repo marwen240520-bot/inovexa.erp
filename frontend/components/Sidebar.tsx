@@ -1,6 +1,6 @@
 ﻿"use client";
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, CSSProperties } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -171,6 +171,12 @@ const ICONS: Record<string, JSX.Element> = {
       <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
     </Icon>
   ),
+  menu: (
+    <Icon d="M3 12h18M3 6h18M3 18h18"/>
+  ),
+  close: (
+    <Icon d="M18 6L6 18M6 6l12 12"/>
+  ),
   logout: (
     <Icon>
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -180,32 +186,63 @@ const ICONS: Record<string, JSX.Element> = {
   ),
 };
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  companyName?: string;
+  phone?: string;
+}
+
+interface ThemeColors {
+  background: string;
+  surface: string;
+  primary: string;
+  textSecondary: string;
+  border: string;
+  gradient: string;
+}
+
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useLanguage();
   const { theme, themeId } = useTheme();
 
-  // All hooks must be called at the top level, before any conditional returns
-  const [user, setUser] = useState(null);
-  const [userModules, setUserModules] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [userModules, setUserModules] = useState<Record<string, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
   const [navigationError, setNavigationError] = useState<string | null>(null);
-  const [localTheme, setLocalTheme] = useState(theme);
+  const [localTheme, setLocalTheme] = useState<ThemeColors | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setLocalTheme(theme); }, [theme, themeId]);
 
-  // Mobile detection effect
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(false);
+    };
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  useEffect(() => {
+    if (mobileMoreOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileMoreOpen]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -237,6 +274,10 @@ export default function Sidebar() {
     if (!token) { router.push("/auth/login"); return; }
     try {
       await router.push(path);
+      if (isMobile) {
+        setSidebarOpen(false);
+        setMobileMoreOpen(false);
+      }
       setTimeout(() => setNavigationError(null), 3000);
     } catch (e: any) {
       setNavigationError(`Erreur navigation: ${e.message}`);
@@ -261,7 +302,6 @@ export default function Sidebar() {
   };
 
   const role = user?.role;
-  const ct = localTheme;
 
   const allModules = [
     { id: "dashboard",  path: "/dashboard",            label: "common.dashboard",  iconKey: "dashboard" },
@@ -304,60 +344,136 @@ export default function Sidebar() {
   if (role === "admin") menuItems = adminMenuItems;
   if (role === "transporteur") menuItems = transporteurMenuItems;
 
-  // Enhanced styles with animations and hover effects
-  const styles = {
-    container: {
+  // Styles avec typage correct
+  const defaultStyles: ThemeColors = {
+    background: "#0a0a0a",
+    surface: "#111111",
+    primary: "#667eea",
+    textSecondary: "#94a3b8",
+    border: "#222222",
+    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  };
+
+  const ct = localTheme || defaultStyles;
+
+  // ✅ Correction: Typage explicite des styles avec CSSProperties
+  const styles: Record<string, CSSProperties> = {
+    mobileBottomNav: {
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      background: "rgba(17,17,17,0.97)",
+      backdropFilter: "blur(20px)",
+      borderTop: `1px solid ${ct.primary}26`,
+      borderRadius: "24px 24px 0 0",
+      padding: "0px 8px",
       display: "flex",
-    },
-    errorToast: {
-      position: "fixed" as const,
-      top: "16px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      background: "rgba(239,68,68,0.96)",
-      color: "white",
-      padding: "10px 20px",
-      borderRadius: "10px",
+      justifyContent: "space-around",
+      alignItems: "center",
       zIndex: 1000,
-      fontSize: "13px",
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-      boxShadow: "0 8px 32px rgba(239,68,68,0.25)",
-      backdropFilter: "blur(12px)",
-      border: "1px solid rgba(255,255,255,0.15)",
+      boxShadow: "0 -4px 24px rgba(0,0,0,0.35)",
+    },
+    mobileNavBtn: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "3px",
+      background: "transparent",
+      border: "none",
       cursor: "pointer",
+      padding: "6px 10px",
+      borderRadius: "12px",
+      flex: 1,
+      transition: "all 0.2s ease",
+    },
+    mobileNavLabel: {
+      fontSize: "10px",
+      fontWeight: 400,
+      letterSpacing: "0.01em",
+      lineHeight: 1,
+    },
+    mobileMoreOverlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0,0,0,0.6)",
+      backdropFilter: "blur(6px)",
+      zIndex: 1001,
+    },
+    mobileMoreDrawer: {
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      background: `linear-gradient(180deg, ${ct.surface} 0%, ${ct.background} 100%)`,
+      borderTop: `1px solid ${ct.primary}26`,
+      borderRadius: "24px 24px 0 0",
+      padding: "20px 16px 20px", // ✅ Changé de 90px à 20px pour enlever l'espace vide
+      zIndex: 1002,
+      maxHeight: "75vh",
+      overflowY: "auto",
+    },
+    mobileMoreHeader: {
       display: "flex",
       alignItems: "center",
-      gap: "10px",
-      animation: "slideDown 0.3s ease-out",
+      justifyContent: "space-between",
+      marginBottom: "16px",
+      paddingBottom: "12px",
+      borderBottom: `1px solid ${ct.primary}14`,
+    },
+    mobileMoreTitle: {
+      fontSize: "13px",
+      fontWeight: 600,
+      color: ct.textSecondary,
+      letterSpacing: "0.06em",
+      textTransform: "uppercase" as const,
+    },
+    overlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0,0,0,0.5)",
+      backdropFilter: "blur(4px)",
+      zIndex: 998,
     },
     sidebar: {
-      width: "268px",
+      width: "280px",
       background: `linear-gradient(180deg, ${ct.background} 0%, ${ct.surface} 100%)`,
       borderRight: `1px solid ${ct.primary}18`,
-      position: "fixed" as const,
+      position: "fixed",
       height: "100vh",
-      overflowY: "auto" as const,
-      overflowX: "hidden" as const,
-      zIndex: 100,
+      overflowY: "auto",
+      overflowX: "hidden",
+      zIndex: 1000,
       top: 0,
       left: 0,
       display: "flex",
-      flexDirection: "column" as const,
-      transition: "all 0.3s ease-in-out",
+      flexDirection: "column",
+      transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      transform: "translateX(-100%)",
+      boxShadow: "2px 0 20px rgba(0,0,0,0.1)",
+    },
+    sidebarOpen: { transform: "translateX(0)" },
+    sidebarDesktop: {
+      transform: "translateX(0)",
+      position: "fixed",
     },
     header: {
       padding: "20px 16px 18px",
       borderBottom: `1px solid ${ct.primary}14`,
       background: `linear-gradient(135deg, ${ct.primary}0d 0%, transparent 100%)`,
       flexShrink: 0,
-      transition: "all 0.3s ease",
     },
     logoWrapper: {
       display: "flex",
       alignItems: "center",
       gap: "12px",
       cursor: "pointer",
-      transition: "transform 0.2s ease, opacity 0.2s ease",
     },
     logoImage: {
       width: "60px",
@@ -365,39 +481,15 @@ export default function Sidebar() {
       borderRadius: "10px",
       display: "block",
       flexShrink: 0,
-      transition: "transform 0.2s ease, filter 0.2s ease",
     },
-    logoPlaceholder: {
-      width: "38px",
-      height: "38px",
-      borderRadius: "10px",
-      background: ct.gradient,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-      fontSize: "18px",
-      fontWeight: 700,
-      color: "white",
-      transition: "all 0.2s ease",
-    },
-    brandContainer: {
-      flex: 1,
-      minWidth: 0,
-    },
+    brandContainer: { flex: 1, minWidth: 0 },
     logoTitle: {
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
       fontWeight: 700,
       fontSize: "17px",
       letterSpacing: "-0.02em",
-      background: ct.gradient,
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-      backgroundClip: "text",
-      transition: "opacity 0.2s ease",
+      
     },
     logoRole: {
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
       fontSize: "10px",
       fontWeight: 500,
       letterSpacing: "0.04em",
@@ -406,12 +498,8 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       gap: "5px",
-      transition: "opacity 0.2s ease",
     },
-    nav: {
-      padding: "12px 10px",
-      flex: 1,
-    },
+    nav: { padding: "12px 10px", flex: 1 },
     navItem: {
       display: "flex",
       alignItems: "center",
@@ -421,35 +509,31 @@ export default function Sidebar() {
       cursor: "pointer",
       borderRadius: "10px",
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-      position: "relative" as const,
+      position: "relative",
       overflow: "hidden",
     },
     navLabel: {
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
       fontSize: "13.2px",
       fontWeight: 400,
       letterSpacing: "-0.01em",
       lineHeight: 1,
-      whiteSpace: "nowrap" as const,
-      overflow: "hidden" as const,
-      textOverflow: "ellipsis" as const,
-      transition: "transform 0.2s ease",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     activeIndicator: {
-      position: "absolute" as const,
+      position: "absolute",
       left: 0,
       top: "20%",
       height: "60%",
       width: "3px",
       borderRadius: "0 3px 3px 0",
-      transition: "all 0.2s ease",
     },
     divider: {
       height: "1px",
       margin: "10px 0",
       opacity: 0.5,
       background: `linear-gradient(90deg, transparent, ${ct.primary}30, transparent)`,
-      transition: "opacity 0.2s ease",
     },
     logoutBtn: {
       display: "flex",
@@ -461,58 +545,54 @@ export default function Sidebar() {
       border: "1px solid rgba(239,68,68,0.14)",
       borderRadius: "10px",
       cursor: "pointer",
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
       fontSize: "13.2px",
       fontWeight: 400,
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-      position: "relative" as const,
-      overflow: "hidden",
-    },
-    mobileOverlay: {
-      position: "fixed" as const,
-      inset: 0,
-      background: "rgba(0,0,0,0.55)",
-      backdropFilter: "blur(6px)",
-      zIndex: 99,
-      pointerEvents: "none" as const,
-      transition: "opacity 0.3s ease",
     },
     loadingContainer: {
-      width: "268px",
+      width: "280px",
       background: ct.background,
       height: "100vh",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     },
     spinner: {
       width: "28px",
       height: "28px",
-      border: `2px solid ${ct.border ?? "#e5e7eb"}`,
-      borderTopColor: ct.primary ?? "#6366f1",
+      border: `2px solid ${ct.border}`,
+      borderTopColor: ct.primary,
       borderRadius: "50%",
       animation: "spin 0.8s linear infinite",
     },
+    errorToast: {
+      position: "fixed",
+      top: "16px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      background: "rgba(239,68,68,0.96)",
+      color: "white",
+      padding: "10px 20px",
+      borderRadius: "10px",
+      zIndex: 2000,
+      fontSize: "13px",
+      boxShadow: "0 8px 32px rgba(239,68,68,0.25)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255,255,255,0.15)",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+    },
   };
 
-  const handleMouseEnter = (itemId: string) => {
-    setHoveredItem(itemId);
-  };
+  const handleMouseEnter = (itemId: string) => setHoveredItem(itemId);
+  const handleMouseLeave = () => setHoveredItem(null);
 
-  const handleMouseLeave = () => {
-    setHoveredItem(null);
-  };
-
-  const handleLogoHover = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    target.style.transform = "scale(1.02)";
-  };
-
-  const handleLogoLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    target.style.transform = "scale(1)";
-  };
+  // For mobile bottom nav: show first 3-4 items prominently, rest in "More" drawer
+  const MOBILE_PRIMARY_COUNT = 4;
+  const mobilePrimaryItems = menuItems.slice(0, MOBILE_PRIMARY_COUNT);
+  const mobileMoreItems = menuItems.slice(MOBILE_PRIMARY_COUNT);
 
   const renderNavItem = (item: any) => {
     const isActive = pathname === item.path;
@@ -520,51 +600,26 @@ export default function Sidebar() {
     const label = getLabel(item.label);
     const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
 
-    const getNavItemStyle = () => {
-      let style = { ...styles.navItem };
+    const getNavItemStyle = (): CSSProperties => {
       if (isActive) {
-        style = {
-          ...style,
+        return {
+          ...styles.navItem,
           background: `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)`,
           color: ct.primary,
         };
       } else if (isHovered) {
-        style = {
-          ...style,
+        return {
+          ...styles.navItem,
           background: `${ct.primary}0f`,
           color: ct.primary,
           transform: "translateX(4px)",
         };
-      } else {
-        style = {
-          ...style,
-          background: "transparent",
-          color: ct.textSecondary,
-        };
-      }
-      return style;
-    };
-
-    const getIconStyle = () => {
-      if (isHovered && !isActive) {
-        return {
-          transform: "scale(1.1)",
-          transition: "transform 0.2s ease",
-        };
       }
       return {
-        transition: "transform 0.2s ease",
+        ...styles.navItem,
+        background: "transparent",
+        color: ct.textSecondary,
       };
-    };
-
-    const getLabelStyle = () => {
-      if (isHovered && !isActive) {
-        return {
-          ...styles.navLabel,
-          transform: "translateX(2px)",
-        };
-      }
-      return styles.navLabel;
     };
 
     return (
@@ -575,70 +630,12 @@ export default function Sidebar() {
         onMouseLeave={handleMouseLeave}
         style={getNavItemStyle()}
       >
-        {isActive && (
-          <div style={{ ...styles.activeIndicator, background: ct.primary }} />
-        )}
-        <span style={getIconStyle()}>{icon}</span>
-        <span style={getLabelStyle()}>{label}</span>
+        {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
+        <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
+        <span style={styles.navLabel}>{label}</span>
       </div>
     );
   };
-
-  // Add keyframes for animations
-  useEffect(() => {
-    const styleSheet = document.createElement("style");
-    styleSheet.textContent = `
-      @keyframes slideDown {
-        from {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-        }
-      }
-      
-      @keyframes spin {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      
-      @keyframes pulse {
-        0%, 100% {
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.05);
-        }
-      }
-      
-      @keyframes shimmer {
-        0% {
-          transform: translateX(-100%);
-        }
-        100% {
-          transform: translateX(100%);
-        }
-      }
-      
-      .logo-hover {
-        transition: all 0.3s ease;
-      }
-      
-      .logo-hover:hover {
-        filter: brightness(1.05) contrast(1.05);
-      }
-    `;
-    document.head.appendChild(styleSheet);
-    return () => {
-      document.head.removeChild(styleSheet);
-    };
-  }, []);
 
   if (loading) {
     return (
@@ -648,111 +645,264 @@ export default function Sidebar() {
     );
   }
 
+  if (!mounted) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner} />
+      </div>
+    );
+  }
+
   return (
-    <div style={styles.container}>
-      {/* Error toast */}
+    <>
       {navigationError && (
-        <div
-          onClick={() => setNavigationError(null)}
-          style={styles.errorToast}
-        >
+        <div onClick={() => setNavigationError(null)} style={styles.errorToast}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           {navigationError}
           <span style={{ opacity: 0.6, marginLeft: "4px" }}>✕</span>
         </div>
       )}
 
-      {/* Sidebar */}
-      <div style={styles.sidebar}>
-        {/* Header / Logo */}
-        <div style={styles.header}>
-          <div 
-            style={styles.logoWrapper} 
-            onClick={() => handleNavigation("/dashboard", "Dashboard")}
-            onMouseEnter={handleLogoHover}
-            onMouseLeave={handleLogoLeave}
-            className="logo-hover"
-          >
-            {/* Logo mark */}
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <img
-                src="/logo.png"
-                alt="Logo"
-                style={styles.logoImage}
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-              {/* Online dot - with pulse animation */}
-              <div style={{
-                position: "absolute",
-                bottom: "-1px",
-                right: "-1px",
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: "#22c55e",
-                border: `1.5px solid ${ct.background}`,
-                animation: "pulse 2s ease-in-out infinite",
-              }} />
-            </div>
+      {/* ── MOBILE: bottom tab bar ───────────────────────────── */}
+      {mounted && isMobile && (
+        <>
+          {/* More drawer overlay */}
+          {mobileMoreOpen && (
+            <>
+              <div style={styles.mobileMoreOverlay} onClick={() => setMobileMoreOpen(false)} />
+              <div style={styles.mobileMoreDrawer}>
+                <div style={styles.mobileMoreHeader}>
+                  <span style={styles.mobileMoreTitle}>Menu</span>
+                  <button
+                    onClick={() => setMobileMoreOpen(false)}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: ct.textSecondary, padding: "4px" }}
+                  >
+                    {ICONS.close}
+                  </button>
+                </div>
+                {mobileMoreItems.map((item: any) => {
+                  const isActive = pathname === item.path;
+                  const label = getLabel(item.label);
+                  const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
+                  return (
+                    <div
+                      key={item.path}
+                      onClick={() => handleNavigation(item.path, label)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 14px",
+                        marginBottom: "4px",
+                        borderRadius: "12px",
+                        background: isActive ? `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)` : "transparent",
+                        color: isActive ? ct.primary : ct.textSecondary,
+                        cursor: "pointer",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
+                      <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
+                      <span style={{ fontSize: "14px", fontWeight: isActive ? 600 : 400 }}>{label}</span>
+                    </div>
+                  );
+                })}
+                <div style={styles.divider} />
+                <div
+                  onClick={logout}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px 14px",
+                    borderRadius: "12px",
+                    background: "rgba(239,68,68,0.08)",
+                    color: "#f87171",
+                    cursor: "pointer",
+                    border: "1px solid rgba(239,68,68,0.14)",
+                  }}
+                >
+                  <span style={{ display: "flex", flexShrink: 0 }}>{ICONS.logout}</span>
+                  <span style={{ fontSize: "14px" }}>{getLabel("common.logout")}</span>
+                </div>
+              </div>
+            </>
+          )}
 
-            {/* Brand + role */}
-            <div style={styles.brandContainer}>
-              <div style={styles.logoTitle}>Inovexa ERP</div>
-              <div style={{
-                ...styles.logoRole,
-                color: role === "admin" ? "#f59e0b" : role === "transporteur" ? "#10b981" : ct.primary,
-              }}>
-                {role === "admin" && (
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                )}
-                {role === "admin"
-                  ? getLabel("admin.title")
-                  : role === "transporteur"
-                  ? "Transporteur"
-                  : getLabel("common.profile")}
+          {/* Bottom tab bar */}
+          <div style={styles.mobileBottomNav}>
+            {mobilePrimaryItems.map((item: any) => {
+              const isActive = pathname === item.path;
+              const label = getLabel(item.label);
+              const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => handleNavigation(item.path, label)}
+                  style={{
+                    ...(styles.mobileNavBtn as CSSProperties),
+                    color: isActive ? ct.primary : ct.textSecondary,
+                  }}
+                >
+                  <div style={{
+                    transform: isActive ? "scale(1.1)" : "scale(1)",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "36px",
+                    height: "28px",
+                    borderRadius: "10px",
+                    background: isActive ? `${ct.primary}18` : "transparent",
+                  }}>
+                    {icon}
+                  </div>
+                  <span style={{
+                    ...(styles.mobileNavLabel as CSSProperties),
+                    color: isActive ? ct.primary : ct.textSecondary,
+                    fontWeight: isActive ? 600 : 400,
+                  }}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* "More" button if there are extra items */}
+            {mobileMoreItems.length > 0 && (
+              <button
+                onClick={() => setMobileMoreOpen((p) => !p)}
+                style={{
+                  ...(styles.mobileNavBtn as CSSProperties),
+                  color: mobileMoreOpen ? ct.primary : ct.textSecondary,
+                }}
+              >
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "36px",
+                  height: "28px",
+                  borderRadius: "10px",
+                  background: mobileMoreOpen ? `${ct.primary}18` : "transparent",
+                  transition: "all 0.2s",
+                }}>
+                  {mobileMoreOpen ? ICONS.close : ICONS.menu}
+                </div>
+                <span style={{
+                  ...(styles.mobileNavLabel as CSSProperties),
+                  color: mobileMoreOpen ? ct.primary : ct.textSecondary,
+                  fontWeight: mobileMoreOpen ? 600 : 400,
+                }}>
+                  Plus
+                </span>
+              </button>
+            )}
+
+            {/* Logout tab if there are only a few items and no "More" */}
+            {mobileMoreItems.length === 0 && (
+              <button
+                onClick={logout}
+                style={{
+                  ...(styles.mobileNavBtn as CSSProperties),
+                  color: "#f87171",
+                }}
+              >
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "36px",
+                  height: "28px",
+                  borderRadius: "10px",
+                  background: "rgba(239,68,68,0.08)",
+                  transition: "all 0.2s",
+                }}>
+                  {ICONS.logout}
+                </div>
+                <span style={{ ...(styles.mobileNavLabel as CSSProperties), color: "#f87171" }}>
+                  {getLabel("common.logout")}
+                </span>
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── DESKTOP: fixed sidebar (sans bouton de menu) ───────────────────────────── */}
+      {mounted && !isMobile && (
+        <div style={{ ...styles.sidebar, ...styles.sidebarDesktop }}>
+          <div style={styles.header}>
+            <div
+              style={styles.logoWrapper}
+              onClick={() => handleNavigation("/dashboard", "Dashboard")}
+            >
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  style={styles.logoImage}
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+                <div style={{
+                  position: "absolute",
+                  bottom: "-1px",
+                  right: "-1px",
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#22c55e",
+                  border: `1.5px solid ${ct.background}`,
+                }} />
+              </div>
+
+              <div style={styles.brandContainer}>
+                <div style={styles.logoTitle}>Inovexa ERP</div>
+                <div style={{
+                  ...styles.logoRole,
+                  color: role === "admin" ? "#f59e0b" : role === "transporteur" ? "#10b981" : ct.primary,
+                }}>
+                  {role === "admin" && (
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  )}
+                  {role === "admin"
+                    ? getLabel("admin.title")
+                    : role === "transporteur"
+                    ? "Transporteur"
+                    : getLabel("common.profile")}
+                </div>
               </div>
             </div>
           </div>
+
+          <nav style={styles.nav}>
+            {menuItems.map((item) => renderNavItem(item))}
+            <div style={styles.divider} />
+            <div
+              onClick={logout}
+              style={styles.logoutBtn}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(239,68,68,0.15)";
+                e.currentTarget.style.transform = "translateX(4px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(239,68,68,0.08)";
+                e.currentTarget.style.transform = "translateX(0)";
+              }}
+            >
+              <span style={{ display: "flex", flexShrink: 0 }}>{ICONS.logout}</span>
+              <span>{getLabel("common.logout")}</span>
+            </div>
+          </nav>
         </div>
-
-        {/* Navigation */}
-        <nav style={styles.nav}>
-          {menuItems.map((item) => renderNavItem(item))}
-
-          {/* Divider */}
-          <div style={styles.divider} />
-
-          {/* Logout - with hover effects */}
-          <div 
-            onClick={logout} 
-            style={styles.logoutBtn}
-            onMouseEnter={(e) => {
-              const target = e.currentTarget;
-              target.style.background = "rgba(239,68,68,0.15)";
-              target.style.transform = "translateX(4px)";
-              target.style.borderColor = "rgba(239,68,68,0.25)";
-            }}
-            onMouseLeave={(e) => {
-              const target = e.currentTarget;
-              target.style.background = "rgba(239,68,68,0.08)";
-              target.style.transform = "translateX(0)";
-              target.style.borderColor = "rgba(239,68,68,0.14)";
-            }}
-          >
-            <span style={{ display: "flex", flexShrink: 0, transition: "transform 0.2s ease" }}>{ICONS.logout}</span>
-            <span>{getLabel("common.logout")}</span>
-          </div>
-        </nav>
-      </div>
-
-      {/* Mobile overlay */}
-      {isMobile && <div style={styles.mobileOverlay} />}
-    </div>
+      )}
+    </>
   );
 }

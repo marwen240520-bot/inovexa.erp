@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IaService } from './ia.service';
 
@@ -35,5 +35,10 @@ export class IaController {
   @Get('predictions')
   async getPredictions(@Request() req: any) {
     return this.iaService.getPredictions(req.user.userId);
+  }
+
+  @Get('forecast')
+  async getForecast(@Request() req: any, @Query('period') period?: string, @Query('scenario') scenario?: string) {
+    return this.iaService.getForecast(req.user.userId, period, scenario);
   }
 }

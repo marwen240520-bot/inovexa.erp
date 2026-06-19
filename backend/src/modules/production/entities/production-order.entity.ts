@@ -17,6 +17,9 @@ export class ProductionOrder {
   @Column()
   quantity: number;
 
+  @Column({ default: 0 })
+  completedQuantity: number;
+
   @Column({ default: 'pending' })
   status: string;
 
@@ -28,6 +31,15 @@ export class ProductionOrder {
 
   @Column({ nullable: true })
   endDate: Date;
+
+  @Column({ nullable: true })
+  priority: string;
+
+  @Column({ nullable: true })
+  assignedTo: string;
+
+  @Column({ nullable: true, type: 'text' })
+  notes: string;
 
   @CreateDateColumn()
   createdAt: Date;

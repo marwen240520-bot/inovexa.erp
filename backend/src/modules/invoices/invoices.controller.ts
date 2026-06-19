@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Patch, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InvoicesService } from './invoices.service';
 
@@ -9,80 +9,46 @@ export class InvoicesController {
 
   @Get()
   async findAll(@Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.findAll(userId);
+    return this.invoicesService.findAll(req.user.userId);
   }
 
-  @Get('stats')
-  async getStats(@Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.getStats(userId);
+  @Get(':id')
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    return this.invoicesService.findOne(parseInt(id), req.user.userId);
   }
 
-  // ⭐ RECHERCHE PAR ID (interne - à ne pas exposer dans l'API publique)
-  @Get('id/:id')
-  async findById(@Param('id') id: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.findOne(parseInt(id), userId);
-  }
-
-  // ⭐ RECHERCHE PAR NUMÉRO D'OPÉRATION (API publique)
   @Get('number/:operationNumber')
   async findByOperationNumber(@Param('operationNumber') operationNumber: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.findByOperationNumber(operationNumber, userId);
+    return this.invoicesService.findByOperationNumber(operationNumber, req.user.userId);
   }
 
   @Post()
   async create(@Request() req: any, @Body() body: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.create(userId, body);
+    return this.invoicesService.create(req.user.userId, body);
   }
 
-  @Post('import')
-  async importInvoices(@Request() req: any, @Body() body: { invoices: any[] }) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    console.log('📥 Import de', body.invoices?.length, 'factures pour user', userId);
-    return this.invoicesService.importInvoices(userId, body.invoices || []);
-  }
-
-  // ⭐ MISE À JOUR PAR ID (interne)
   @Put(':id')
   async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.update(parseInt(id), userId, body);
+    return this.invoicesService.update(parseInt(id), req.user.userId, body);
   }
 
-  // ⭐ MARQUER COMME PAYÉE PAR NUMÉRO D'OPÉRATION
-  @Patch('number/:operationNumber/pay')
-  async markAsPaidByNumber(@Param('operationNumber') operationNumber: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.markAsPaidByOperationNumber(operationNumber, userId);
-  }
-
-  // ⭐ MARQUER COMME PAYÉE PAR ID (interne)
   @Patch(':id/pay')
   async markAsPaid(@Param('id') id: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.markAsPaid(parseInt(id), userId);
+    return this.invoicesService.markAsPaid(parseInt(id), req.user.userId);
   }
 
-  @Patch(':id/status')
-  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.updateStatus(parseInt(id), userId, body.status);
+  @Patch('number/:operationNumber/pay')
+  async markAsPaidByOperationNumber(@Param('operationNumber') operationNumber: string, @Request() req: any) {
+    return this.invoicesService.markAsPaidByOperationNumber(operationNumber, req.user.userId);
   }
 
   @Delete(':id')
   async delete(@Param('id') id: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.delete(parseInt(id), userId);
+    return this.invoicesService.delete(parseInt(id), req.user.userId);
   }
 
-  // ⭐ SUPPRESSION PAR NUMÉRO D'OPÉRATION
-  @Delete('number/:operationNumber')
-  async deleteByNumber(@Param('operationNumber') operationNumber: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.invoicesService.deleteByOperationNumber(operationNumber, userId);
+  @Get('stats')
+  async getStats(@Request() req: any) {
+    return this.invoicesService.getStats(req.user.userId);
   }
 }

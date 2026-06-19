@@ -2,7 +2,7 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SuppliersController } from './suppliers.controller';
 import { SuppliersService } from './suppliers.service';
-import { Supplier } from './entities/supplier.entity';
+import { Supplier } from './supplier.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Supplier])],

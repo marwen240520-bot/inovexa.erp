@@ -1,224 +1,740 @@
 ﻿"use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useResponsive } from '@/hooks/useResponsive';
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useResponsive } from "@/hooks/useResponsive";
+
+// Traductions
+const translations = {
+  fr: {
+    backToHome: "Retour à l'accueil",
+    signIn: "Connectez-vous à votre espace",
+    email: "Email",
+    password: "Mot de passe",
+    login: "Se connecter",
+    loggingIn: "Connexion...",
+    invalidCredentials: "Email ou mot de passe incorrect",
+    serverError: "Erreur de connexion au serveur",
+    emailPlaceholder: "exemple@inovexa.com",
+    passwordPlaceholder: "Mot de passe"
+  },
+  en: {
+    backToHome: "Back to home",
+    signIn: "Sign in to your workspace",
+    email: "Email",
+    password: "Password",
+    login: "Sign in",
+    loggingIn: "Signing in...",
+    invalidCredentials: "Invalid email or password",
+    serverError: "Connection error",
+    emailPlaceholder: "example@inovexa.com",
+    passwordPlaceholder: "Password"
+  },
+  es: {
+    backToHome: "Volver al inicio",
+    signIn: "Inicia sesión en tu espacio",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    login: "Iniciar sesión",
+    loggingIn: "Iniciando sesión...",
+    invalidCredentials: "Correo o contraseña incorrectos",
+    serverError: "Error de conexión",
+    emailPlaceholder: "ejemplo@inovexa.com",
+    passwordPlaceholder: "Contraseña"
+  }
+};
 
 export default function LoginPage() {
   const router = useRouter();
-  const { language, changeLanguage } = useLanguage();
+  const { language } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const t = translations[language as keyof typeof translations] || translations.fr;
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
-  const flagCodes: { [key: string]: string } = {
-    en: "us",
-    fr: "fr",
-    es: "es"
-  };
+  const isSmallScreen = isMobile || isTablet;
 
-  const getLoginText = () => {
-    switch(language) {
-      case 'fr': return { email: "Email", password: "Mot de passe", login: "Se connecter", loading: "Connexion...", back: "Retour à l'accueil", error: "Identifiants incorrects", serverError: "Erreur serveur", accountsInfo: "Accès restreint aux administrateurs", welcome: "Bienvenue", subtitle: "Accédez à votre espace INOVEXA" };
-      case 'es': return { email: "Email", password: "Contraseña", login: "Conectarse", loading: "Cargando...", back: "Volver", error: "Credenciales incorrectas", serverError: "Error del servidor", accountsInfo: "Acceso restringido a administradores", welcome: "Bienvenido", subtitle: "Acceda a su espace INOVEXA" };
-      default: return { email: "Email", password: "Password", login: "Sign In", loading: "Loading...", back: "Back Home", error: "Invalid credentials", serverError: "Server error", accountsInfo: "Admin access only", welcome: "Welcome", subtitle: "Access your INOVEXA space" };
-    }
-  };
-
-  const t = getLoginText();
+  // Particules lumineuses
+  const particles = useMemo(() => {
+    return Array.from({ length: isMobile ? 10 : 20 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      duration: `${8 + Math.random() * 15}s`,
+      delay: `${Math.random() * 5}s`,
+      size: `${1 + Math.random() * 3}px`
+    }));
+  }, [isMobile]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
+
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:3001/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
+
       const data = await res.json();
+
       if (res.ok) {
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
         
-        // ⭐ CORRECTION: Redirection selon le rôle
-        if (data.user.role === 'admin') {
-          router.push('/admin');
-        } else if (data.user.role === 'transporteur') {
-          router.push('/transporteur/dashboard');
+        if (data.user.role === "admin") {
+          router.push("/admin/clients");
+        } else if (data.user.role === "transporteur") {
+          router.push("/transporteur/shipments");
         } else {
-          router.push('/dashboard');
+          router.push("/dashboard");
         }
       } else {
-        setError(t.error);
+        setError(data.message || t.invalidCredentials);
       }
-    } catch { 
-      setError(t.serverError); 
-    }
-    finally { 
-      setLoading(false); 
+    } catch (err) {
+      console.error("Erreur:", err);
+      setError(t.serverError);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      background: "#050507", 
+    <div className="root-container" style={{ 
+      background: "#000000",
       display: "flex", 
-      alignItems: "center", 
-      justifyContent: "center", 
-      position: "relative", 
+      flexDirection: isSmallScreen ? "column" : "row",
       overflow: "hidden",
-      fontFamily: "'Inter', sans-serif"
+      fontFamily: "'Inter', sans-serif",
+      position: "relative",
     }}>
       
-      {/* --- BACKGROUND EFFECTS --- */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-        backgroundImage: `linear-gradient(rgba(102, 126, 234, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(102, 126, 234, 0.03) 1px, transparent 1px)`,
-        backgroundSize: "40px 40px",
-        zIndex: 1
-      }} />
-
-      {[...Array(12)].map((_, i) => (
-        <div key={i} className="particle" style={{
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-          animationDelay: `${Math.random() * 5}s`,
-          animationDuration: `${15 + Math.random() * 10}s`
+      {/* PARTICULES LUMINEUSES */}
+      {particles.map((p) => (
+        <div key={p.id} className="particle" style={{
+          position: "absolute",
+          left: p.left,
+          top: p.top,
+          width: p.size,
+          height: p.size,
+          background: "rgba(168, 85, 247, 0.6)",
+          borderRadius: "50%",
+          boxShadow: "0 0 8px rgba(168, 85, 247, 0.8)",
+          animation: `floatParticle ${p.duration} linear infinite`,
+          animationDelay: p.delay,
+          zIndex: 1
         }} />
       ))}
 
-      {/* --- SÉLECTEUR DE LANGUE --- */}
-      <div style={{ position: "fixed", top: "20px", right: "20px", zIndex: 100 }}>
-        <button
-          onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-          className="glass-btn"
-          style={{
-            display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px",
-            background: "rgba(255, 255, 255, 0.05)", backdropFilter: "blur(12px)",
-            border: "1px solid rgba(102, 126, 234, 0.3)", borderRadius: "25px",
-            color: "white", cursor: "pointer", fontSize: "11px", fontWeight: "700"
-          }}
-        >
-          <img src={`https://flagcdn.com/w20/${flagCodes[language]}.png`} width="16" alt={language} />
-          <span>{language.toUpperCase()}</span>
-        </button>
+      <div className="ambient-glow" />
 
-        {showLanguageMenu && (
+      {/* ── MOBILE LAYOUT ── */}
+      {isSmallScreen ? (
+        <div style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 10,
+          padding: "0",
+          minHeight: "100dvh",
+        }}>
+
+          {/* TOP SAFE-AREA SPACER + HEADER */}
           <div style={{
-            position: "absolute", top: "40px", right: 0, background: "rgba(10, 10, 12, 0.95)",
-            border: "1px solid rgba(118, 75, 162, 0.3)", borderRadius: "10px",
-            minWidth: "130px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.8)",
-            animation: "slideIn 0.2s ease-out"
+            padding: "env(safe-area-inset-top, 20px) 24px 0",
+            paddingTop: "max(env(safe-area-inset-top, 20px), 20px)",
           }}>
-            {Object.keys(flagCodes).map((lang) => (
-              <button key={lang} onClick={() => { changeLanguage(lang); setShowLanguageMenu(false); }}
-                style={{
-                  display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 15px",
-                  background: language === lang ? "rgba(102, 126, 234, 0.15)" : "transparent",
-                  border: "none", color: "white", cursor: "pointer", fontSize: "12px", textAlign: "left"
-                }}>
-                <img src={`https://flagcdn.com/w20/${flagCodes[lang]}.png`} width="18" alt={lang} />
-                {lang === 'en' ? 'English' : lang === 'fr' ? 'Français' : 'Español'}
-              </button>
-            ))}
+            {/* Back link — top left */}
+            <Link href="/" style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              color: "rgba(255,255,255,0.4)",
+              fontSize: "13px",
+              textDecoration: "none",
+              padding: "10px 0",
+              WebkitTapHighlightColor: "transparent",
+            }}>
+              <span style={{ fontSize: "16px" }}>←</span>
+              <span>{t.backToHome}</span>
+            </Link>
           </div>
-        )}
-      </div>
 
-      {/* --- LOGIN CARD --- */}
-      <div className="login-card" style={{ 
-        background: "rgba(13, 13, 18, 0.8)", 
-        backdropFilter: "blur(25px)", 
-        borderRadius: "24px", 
-        padding: isMobile ? "30px 20px" : "40px",
-        width: isMobile ? "85%" : "360px",
-        border: "1px solid rgba(118, 75, 162, 0.3)", 
-        boxShadow: "0 20px 50px -15px rgba(0, 0, 0, 0.7)", 
-        zIndex: 10,
-        position: "relative"
-      }}>
-        
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent)" }} />
+          {/* SCROLLABLE CONTENT AREA */}
+          <div style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: "32px 24px",
+            paddingBottom: "max(env(safe-area-inset-bottom, 24px), 40px)",
+            overflowY: "auto",
+          }}>
 
-        <Link href="/" style={{ textDecoration: "none", color: "#667eea", fontSize: "10px", fontWeight: "800", letterSpacing: "1px", display: "inline-block" }}>
-          ← {t.back.toUpperCase()}
-        </Link>
-
-        <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <img src="/logo.png" alt="Logo" style={{ width: "170px", filter: "drop-shadow(0 0 12px rgba(102, 126, 234, 0.4))"}} />
-          <h1 style={{ color: "white", fontSize: "24px", fontWeight: "900", letterSpacing: "-1px", marginBottom: "8px" }}>{t.welcome}</h1>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px" }}>{t.subtitle}</p>
-        </div>
-
-        {error && <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid #ef4444", color: "#f87171", padding: "10px", borderRadius: "10px", marginBottom: "18px", fontSize: "11px", textAlign: "center" }}>{error}</div>}
-
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: "18px" }}>
-            <label style={{ color: "rgba(255,255,255,0.4)", display: "block", marginBottom: "8px", fontSize: "9px", fontWeight: "800", letterSpacing: "1px" }}>{t.email.toUpperCase()}</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} 
-              style={{ width: "100%", padding: "13px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", color: "white", outline: "none", boxSizing: "border-box", fontSize: "13px", transition: "0.3s" }} 
-              onFocus={(e) => e.target.style.borderColor = "#667eea"}
-              onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-              required 
-            />
-          </div>
-          
-          <div style={{ marginBottom: "25px" }}>
-            <label style={{ color: "rgba(255,255,255,0.4)", display: "block", marginBottom: "8px", fontSize: "9px", fontWeight: "800", letterSpacing: "1px" }}>{t.password.toUpperCase()}</label>
-            <div style={{ position: "relative" }}>
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
-                style={{ width: "100%", padding: "13px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", color: "white", outline: "none", boxSizing: "border-box", fontSize: "13px" }} 
-                required 
+            {/* LOGO BLOCK */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "36px",
+            }}>
+              <img 
+                src="/logo.png" 
+                alt="Inovexa Logo" 
+                style={{ 
+                  width: "52px",
+                  height: "auto", 
+                  filter: "drop-shadow(0 0 12px rgba(138,43,226,0.7))" 
+                }} 
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: "16px" }}>
-                {showPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
+              <div>
+                <h2 style={{ 
+                  color: "white", 
+                  fontSize: "22px", 
+                  fontWeight: "300", 
+                  margin: 0, 
+                  letterSpacing: "2px",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                }}>
+                  <span style={{ fontWeight: "800" }}>INOV</span>EXA
+                </h2>
+                <div className="erp-text-glow" style={{ 
+                  background: "linear-gradient(90deg, #A855F7, #6366F1)",
+                  WebkitBackgroundClip: "text", 
+                  WebkitTextFillColor: "transparent",
+                  fontSize: "11px", 
+                  fontWeight: "700", 
+                  letterSpacing: "7px", 
+                  marginTop: "3px",
+                  textTransform: "uppercase"
+                }}>ERP</div>
+              </div>
             </div>
-          </div>
-          
-          <button type="submit" disabled={loading} className="btn-login" style={{
-            width: "100%", padding: "15px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white", border: "none", borderRadius: "12px", fontSize: "14px", fontWeight: "900", cursor: "pointer",
-            boxShadow: "0 8px 20px rgba(102, 126, 234, 0.3)", transition: "0.4s"
-          }}>
-            {loading ? t.loading : t.login.toUpperCase()}
-          </button>
-        </form>
 
-        <div style={{ marginTop: "25px", padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", textAlign: "center", margin: 0 }}>
-            🛡️ {t.accountsInfo}
-          </p>
+            {/* TITLE */}
+            <div style={{ marginBottom: "32px" }}>
+              <h1 style={{ 
+                fontSize: "32px",
+                color: "white", 
+                fontWeight: "800", 
+                lineHeight: "1.15",
+                letterSpacing: "-1px",
+                margin: 0,
+              }}>
+                {t.signIn}
+              </h1>
+              {/* Decorative accent line */}
+              <div style={{
+                marginTop: "12px",
+                width: "48px",
+                height: "3px",
+                background: "linear-gradient(90deg, #A855F7, #6366F1)",
+                borderRadius: "2px",
+              }} />
+            </div>
+
+            {/* GLASS CARD WRAPPER */}
+            <div style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(168, 85, 247, 0.12)",
+              borderRadius: "20px",
+              padding: "28px 24px",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+            }}>
+
+              {/* ERROR */}
+              {error && (
+                <div style={{ 
+                  background: "rgba(239,68,68,0.08)", 
+                  border: "1px solid rgba(239,68,68,0.25)", 
+                  color: "#f87171", 
+                  padding: "12px 14px", 
+                  borderRadius: "12px", 
+                  marginBottom: "20px", 
+                  fontSize: "13px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}>
+                  <span style={{ fontSize: "15px" }}>⚠</span>
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} style={{ width: "100%" }}>
+                {/* EMAIL */}
+                <div style={{ marginBottom: "18px" }}>
+                  <label style={{ 
+                    color: "rgba(255,255,255,0.6)", 
+                    display: "block", 
+                    marginBottom: "8px", 
+                    fontSize: "12px", 
+                    fontWeight: "600",
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                  }}>
+                    {t.email}
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t.emailPlaceholder}
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    inputMode="email"
+                    style={{ 
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "16px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(138, 43, 226, 0.2)", 
+                      borderRadius: "12px", 
+                      color: "white",
+                      fontSize: "16px", /* Prevents iOS zoom */
+                      transition: "all 0.25s ease",
+                      WebkitAppearance: "none",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#A855F7";
+                      e.currentTarget.style.background = "rgba(168, 85, 247, 0.07)";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168, 85, 247, 0.1)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(138, 43, 226, 0.2)";
+                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                    required
+                  />
+                </div>
+
+                {/* PASSWORD */}
+                <div style={{ marginBottom: "26px" }}>
+                  <label style={{ 
+                    color: "rgba(255,255,255,0.6)", 
+                    display: "block", 
+                    marginBottom: "8px", 
+                    fontSize: "12px", 
+                    fontWeight: "600",
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                  }}>
+                    {t.password}
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t.passwordPlaceholder}
+                    autoComplete="current-password"
+                    style={{ 
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "16px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(138, 43, 226, 0.2)", 
+                      borderRadius: "12px", 
+                      color: "white",
+                      fontSize: "16px", /* Prevents iOS zoom */
+                      transition: "all 0.25s ease",
+                      WebkitAppearance: "none",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#A855F7";
+                      e.currentTarget.style.background = "rgba(168, 85, 247, 0.07)";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168, 85, 247, 0.1)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(138, 43, 226, 0.2)";
+                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                    required
+                  />
+                </div>
+
+                {/* SUBMIT BUTTON */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="cta-button-shimmer"
+                  style={{
+                    width: "100%",
+                    padding: "18px",
+                    fontSize: "16px",
+                    borderRadius: "14px",
+                    position: "relative",
+                    zIndex: 2,
+                    overflow: "hidden",
+                    border: "none",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    color: "white",
+                    fontWeight: "700",
+                    background: loading
+                      ? "rgba(168, 85, 247, 0.4)"
+                      : "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
+                    boxShadow: loading ? "none" : "0 8px 24px rgba(168, 85, 247, 0.35)",
+                    transition: "all 0.25s ease",
+                    letterSpacing: "0.3px",
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "manipulation",
+                  }}
+                >
+                  <span style={{ position: "relative", zIndex: 3, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    {loading && (
+                      <span className="spinner" style={{
+                        width: "16px", height: "16px",
+                        border: "2px solid rgba(255,255,255,0.3)",
+                        borderTopColor: "white",
+                        borderRadius: "50%",
+                        display: "inline-block",
+                      }} />
+                    )}
+                    {loading ? t.loggingIn : t.login}
+                  </span>
+                  {!loading && <div className="shimmer-effect" />}
+                </button>
+              </form>
+            </div>
+
+            {/* FOOTER */}
+            <p style={{ 
+              marginTop: "28px", 
+              color: "rgba(255,255,255,0.18)", 
+              fontSize: "10px", 
+              fontWeight: "600",
+              textAlign: "center",
+              letterSpacing: "1px",
+            }}>
+              © 2026 INOVEXA. TOUS DROITS RÉSERVÉS
+            </p>
+          </div>
         </div>
-      </div>
+
+      ) : (
+        /* ── DESKTOP LAYOUT ── */
+        <>
+          {/* CÔTÉ GAUCHE - FORMULAIRE */}
+          <div style={{ 
+            width: "49.5%",
+            padding: "0 0 0 20px", 
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            zIndex: 10
+          }}>
+            
+            {/* LOGO ET TEXTE */}
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
+              <div style={{ marginTop: "2px" }}> 
+                <img 
+                  src="/logo.png" 
+                  alt="Inovexa Logo" 
+                  style={{ 
+                    width: "126px",
+                    height: "auto", 
+                    filter: "drop-shadow(0 0 15px rgba(138,43,226,0.6))" 
+                  }} 
+                />
+              </div>
+              <div>
+                <h2 style={{ 
+                  color: "white", 
+                  fontSize: "28px", 
+                  fontWeight: "300", 
+                  margin: 0, 
+                  letterSpacing: "2px",
+                  textTransform: "uppercase"
+                }}>
+                  <span style={{ fontWeight: "800" }}>INOV</span>EXA
+                </h2>
+                <div className="erp-text-glow" style={{ 
+                  background: "linear-gradient(90deg, #A855F7, #6366F1)",
+                  WebkitBackgroundClip: "text", 
+                  WebkitTextFillColor: "transparent",
+                  fontSize: "14px", 
+                  fontWeight: "600", 
+                  letterSpacing: "8px", 
+                  marginTop: "1px",
+                  textTransform: "uppercase"
+                }}>ERP</div>
+              </div>
+            </div>
+
+            {/* TITRE DE CONNEXION */}
+            <h1 style={{ 
+              fontSize: "42px",
+              color: "white", 
+              fontWeight: "800", 
+              lineHeight: "1.2",
+              marginBottom: "30px",
+              letterSpacing: "-1.5px",
+              marginTop: "20px"
+            }}>
+              {t.signIn}
+            </h1>
+
+            {/* FORMULAIRE */}
+            {error && (
+              <div style={{ 
+                background: "rgba(239,68,68,0.1)", 
+                border: "1px solid rgba(239,68,68,0.2)", 
+                color: "#f87171", 
+                padding: "12px", 
+                borderRadius: "12px", 
+                marginBottom: "20px", 
+                fontSize: "13px" 
+              }}>
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} style={{ maxWidth: "495px", width: "100%" }}>
+              <div style={{ marginBottom: "22px" }}>
+                <label style={{ color: "rgba(255,255,255,0.7)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
+                  {t.email}
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t.emailPlaceholder}
+                  autoComplete="email"
+                  style={{ 
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "15.4px",
+                    background: "rgba(26, 26, 26, 0.8)",
+                    border: "1px solid rgba(138, 43, 226, 0.2)", 
+                    borderRadius: "12px", 
+                    color: "white",
+                    fontSize: "15.4px",
+                    transition: "all 0.3s ease",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#A855F7";
+                    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(168, 85, 247, 0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(138, 43, 226, 0.2)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: "30.8px" }}>
+                <label style={{ color: "rgba(255,255,255,0.7)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
+                  {t.password}
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.passwordPlaceholder}
+                  autoComplete="current-password"
+                  style={{ 
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "15.4px",
+                    background: "rgba(26, 26, 26, 0.8)",
+                    border: "1px solid rgba(138, 43, 226, 0.2)", 
+                    borderRadius: "12px", 
+                    color: "white",
+                    fontSize: "15.4px",
+                    transition: "all 0.3s ease",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#A855F7";
+                    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(168, 85, 247, 0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(138, 43, 226, 0.2)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="cta-button-shimmer"
+                style={{
+                  width: "100%",
+                  padding: "17.6px",
+                  fontSize: "16.5px",
+                  borderRadius: "12px",
+                  position: "relative",
+                  zIndex: 2,
+                  overflow: "hidden",
+                  border: "none",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  color: "white",
+                  fontWeight: "700",
+                  background: "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
+                  boxShadow: "0 10px 30px rgba(168, 85, 247, 0.3)",
+                  opacity: loading ? 0.7 : 1
+                }}
+              >
+                <span style={{ position: "relative", zIndex: 3 }}>
+                  {loading ? t.loggingIn : t.login}
+                </span>
+                <div className="shimmer-effect"></div>
+              </button>
+            </form>
+
+            <div style={{ marginTop: "33px" }}>
+              <Link href="/" style={{ 
+                display: "inline-flex", 
+                alignItems: "center", 
+                gap: "8px",
+                color: "rgba(255,255,255,0.5)", 
+                fontSize: "14.3px",
+                textDecoration: "none",
+                transition: "all 0.3s ease"
+              }}>
+                <span style={{ fontSize: "17.6px" }}>←</span>
+                <span>{t.backToHome}</span>
+              </Link>
+            </div>
+
+            <p style={{ marginTop: "55px", color: "rgba(255,255,255,0.2)", fontSize: "11px", fontWeight: "600" }}>
+              © 2026 INOVEXA. TOUS DROITS RÉSERVÉS
+            </p>
+          </div>
+
+          {/* CÔTÉ DROIT - IMAGE */}
+          <div style={{ 
+            width: "50.5%",
+            position: "relative",
+            height: "100vh",
+            background: "#000000"
+          }}>
+            <div style={{
+              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+              width: "80%", height: "80%", background: "radial-gradient(circle, rgba(138, 43, 226, 0.2) 0%, transparent 70%)",
+              filter: "blur(60px)", zIndex: 1
+            }} />
+
+            <img 
+              src="/1.png" 
+              alt="Inovexa Futuristic" 
+              style={{ 
+                width: "100%", height: "100%", objectFit: "cover",
+                filter: "brightness(0.9) contrast(1.05)",
+                maskImage: "linear-gradient(to right, transparent 0%, black 15%)",
+                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%)",
+                zIndex: 2, position: "relative"
+              }}
+            />
+            
+            <div style={{ 
+              position: "absolute", top: 0, left: 0, width: "100px", 
+              background: "linear-gradient(90deg, #000000 0%, transparent 100%)", 
+              height: "100%", zIndex: 3 
+            }} />
+          </div>
+        </>
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        @keyframes pulseGlow { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
-        
-        .particle {
-          position: absolute; width: 1.5px; height: 1.5px; background: white; border-radius: 50%; opacity: 0.2;
-          animation: floatParticle linear infinite; z-index: 1;
-        }
-        @keyframes floatParticle {
-          0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-          20% { opacity: 0.4; }
-          100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        .erp-text-glow {
+          animation: textPulse 3s ease-in-out infinite;
         }
 
-        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5); filter: brightness(1.1); }
-        .btn-login:active { transform: translateY(0); }
-        .glass-btn:hover { background: rgba(255, 255, 255, 0.1) !important; border-color: #667eea !important; }
+        @keyframes textPulse {
+          0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.3)); }
+          50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6)); }
+        }
+
+        .cta-button-shimmer {
+          animation: buttonPulse 2s infinite;
+          transition: all 0.3s ease;
+          position: relative;
+        }
+
+        @keyframes buttonPulse {
+          0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); }
+          70% { box-shadow: 0 0 0 15px rgba(168, 85, 247, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+        }
+
+        .shimmer-effect {
+          position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          animation: shimmer 2.5s infinite;
+        }
+
+        @keyframes shimmer { 
+          0% { left: -100%; } 
+          100% { left: 100%; } 
+        }
+
+        .cta-button-shimmer:hover { 
+          transform: translateY(-2px); 
+          filter: brightness(1.1); 
+        }
+
+        .cta-button-shimmer:active {
+          transform: translateY(0px);
+          filter: brightness(0.95);
+        }
+
+        .ambient-glow {
+          position: absolute; width: 100%; height: 100%;
+          background: radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.08), transparent 40%);
+          z-index: 0;
+        }
+
+        @keyframes floatParticle {
+          0% { transform: translateY(0) translateX(0); opacity: 0; }
+          15% { opacity: 1; }
+          100% { transform: translateY(-80vh) translateX(30px); opacity: 0; }
+        }
+
+        .particle {
+          pointer-events: none;
+        }
+
+        .root-container {
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+          animation: spin 0.8s linear infinite;
+        }
+
+        input::placeholder {
+          color: rgba(255, 255, 255, 0.2);
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+          -webkit-text-fill-color: white;
+          -webkit-box-shadow: 0 0 0px 1000px rgba(26, 26, 26, 0.95) inset;
+          transition: background-color 5000s ease-in-out 0s;
+        }
       ` }} />
     </div>
   );

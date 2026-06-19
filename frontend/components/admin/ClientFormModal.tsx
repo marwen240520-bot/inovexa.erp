@@ -1,7 +1,40 @@
 ﻿"use client";
 import { useState } from 'react';
 
-const ERP_TYPES = [
+// Définition des types
+interface ClientFormData {
+  name: string;
+  companyName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phone: string;
+  erpType: string;
+  subscriptionDuration: number;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+interface ERPSolution {
+  value: string;
+  label: string;
+  description: string;
+  color: string;
+  modules: string[];
+}
+
+interface DurationOption {
+  value: number;
+  label: string;
+  price: string;
+}
+
+const ERP_TYPES: ERPSolution[] = [
   { 
     value: 'pme', 
     label: '🏪 PME (Petites et Moyennes Entreprises)', 
@@ -46,7 +79,7 @@ const ERP_TYPES = [
   }
 ];
 
-const DURATION_OPTIONS = [
+const DURATION_OPTIONS: DurationOption[] = [
   { value: 7, label: '7 jours (1 semaine)', price: '50 €' },
   { value: 30, label: '30 jours (1 mois)', price: '150 €' },
   { value: 90, label: '90 jours (3 mois)', price: '400 €' },
@@ -54,8 +87,15 @@ const DURATION_OPTIONS = [
   { value: 365, label: '365 jours (1 an)', price: '1200 €' }
 ];
 
-export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }) {
-  const [form, setForm] = useState({
+interface ClientFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: ClientFormData) => void;
+  loading: boolean;
+}
+
+export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: ClientFormModalProps) {
+  const [form, setForm] = useState<ClientFormData>({
     name: '',
     companyName: '',
     email: '',
@@ -65,30 +105,26 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }) 
     erpType: 'pme',
     subscriptionDuration: 30
   });
-  const [errors, setErrors] = useState({});
-  const [passwordMatch, setPasswordMatch] = useState(true);
-  const [selectedErp, setSelectedErp] = useState(ERP_TYPES[0]);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [selectedErp, setSelectedErp] = useState<ERPSolution>(ERP_TYPES[0]);
 
   if (!isOpen) return null;
 
-  const handleErpChange = (value) => {
+  const handleErpChange = (value: string) => {
     setForm({ ...form, erpType: value });
     setSelectedErp(ERP_TYPES.find(e => e.value === value) || ERP_TYPES[0]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
-    const newErrors = {};
+    const newErrors: FormErrors = {};
     if (!form.name) newErrors.name = 'Nom requis';
     if (!form.email) newErrors.email = 'Email requis';
     if (!form.password) newErrors.password = 'Mot de passe requis';
     if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
-      setPasswordMatch(false);
-    } else {
-      setPasswordMatch(true);
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -242,13 +278,13 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }) 
                     width: '100%',
                     padding: '12px 16px',
                     background: '#1a1a1a',
-                    border: `1px solid ${!passwordMatch ? '#ef4444' : '#333'}`,
+                    border: `1px solid ${errors.confirmPassword ? '#ef4444' : '#333'}`,
                     borderRadius: '12px',
                     color: 'white',
                     fontSize: '14px'
                   }}
                 />
-                {!passwordMatch && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>Les mots de passe ne correspondent pas</p>}
+                {errors.confirmPassword && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.confirmPassword}</p>}
               </div>
             </div>
 
@@ -276,7 +312,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }) 
             <h3 style={{ color: 'white', fontSize: '16px', marginBottom: '16px' }}>🏢 Type d'ERP</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '16px' }}>
-              {ERP_TYPES.map(erp => (
+              {ERP_TYPES.map((erp) => (
                 <div
                   key={erp.value}
                   onClick={() => handleErpChange(erp.value)}
@@ -293,7 +329,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }) 
                   <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>{erp.label}</div>
                   <div style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '8px' }}>{erp.description}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                    {erp.modules.slice(0, 2).map(mod => (
+                    {erp.modules.slice(0, 2).map((mod) => (
                       <span key={mod} style={{ background: '#333', color: '#94a3b8', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>{mod}</span>
                     ))}
                   </div>
@@ -310,7 +346,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }) 
             }}>
               <p style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '12px' }}>📋 Modules inclus :</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {selectedErp.modules.map(mod => (
+                {selectedErp.modules.map((mod) => (
                   <span key={mod} style={{ background: `rgba(${parseInt(selectedErp.color.slice(1,3), 16)}, ${parseInt(selectedErp.color.slice(3,5), 16)}, ${parseInt(selectedErp.color.slice(5,7), 16)}, 0.2)`, color: selectedErp.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>
                     {mod}
                   </span>
@@ -324,7 +360,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }) 
             <h3 style={{ color: 'white', fontSize: '16px', marginBottom: '16px' }}>📅 Durée d'abonnement</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '16px' }}>
-              {DURATION_OPTIONS.map(dur => (
+              {DURATION_OPTIONS.map((dur) => (
                 <div
                   key={dur.value}
                   onClick={() => setForm({ ...form, subscriptionDuration: dur.value })}

@@ -8,33 +8,27 @@ const config = {
   database: 'inovexa_erp'
 };
 
-async function addProfileImageColumn() {
+async function addColumn() {
   const client = new Client(config);
-  
   try {
     await client.connect();
     console.log('✅ Connecté à PostgreSQL');
     
-    // Vérifier si la colonne existe déjà
-    const checkColumn = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'users' AND column_name = 'profileImage'
+    await client.query(`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+          WHERE table_name='users' AND column_name='profileimage') THEN 
+          ALTER TABLE users ADD COLUMN "profileImage" TEXT;
+        END IF;
+      END $$;
     `);
-    
-    if (checkColumn.rows.length === 0) {
-      // Ajouter la colonne profileImage
-      await client.query(`ALTER TABLE users ADD COLUMN "profileImage" VARCHAR(255)`);
-      console.log('✅ Colonne "profileImage" ajoutée avec succès');
-    } else {
-      console.log('✅ La colonne "profileImage" existe déjà');
-    }
+    console.log('✅ Colonne profileImage ajoutée');
     
     await client.end();
-    
   } catch (error) {
     console.error('❌ Erreur:', error.message);
   }
 }
 
-addProfileImageColumn();
+addColumn();

@@ -78,13 +78,18 @@ export function useResponsive(): ResponsiveState {
 
 // Hook supplémentaire pour détecter si l'appareil est tactile
 export function useIsTouchDevice(): boolean {
-  const [isTouch, setIsTouch] = useState(false);
+  const [isTouch, setIsTouch] = useState<boolean>(false);
 
   useEffect(() => {
     const checkTouch = () => {
-      setIsTouch(('ontouchstart' in window) || 
-        (navigator.maxTouchPoints > 0) || 
-        ('msMaxTouchPoints' in navigator && navigator['msMaxTouchPoints'] > 0));
+      // ✅ Correction: Vérification correcte des propriétés tactiles
+      const hasTouch = (
+        'ontouchstart' in window ||
+        (navigator.maxTouchPoints !== undefined && navigator.maxTouchPoints > 0) ||
+        // ✅ Correction: Utilisation de 'in' operator pour éviter l'erreur TypeScript
+        ('msMaxTouchPoints' in navigator && (navigator as any).msMaxTouchPoints > 0)
+      );
+      setIsTouch(hasTouch);
     };
     
     checkTouch();
@@ -96,9 +101,11 @@ export function useIsTouchDevice(): boolean {
 // Hook pour détecter la direction du scroll
 export function useScrollDirection() {
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
-  const [scrollY, setScrollY] = useState(0);
+  const [scrollY, setScrollY] = useState<number>(0);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     let lastScrollY = window.scrollY;
     
     const updateScrollDirection = () => {
@@ -130,6 +137,8 @@ export function useWindowSize() {
   });
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
@@ -144,4 +153,42 @@ export function useWindowSize() {
   }, []);
 
   return windowSize;
+}
+
+// Hook supplémentaire pour détecter la préférence de réduction de mouvement
+export function usePrefersReducedMotion(): boolean {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  return prefersReducedMotion;
+}
+
+// Hook pour détecter le thème système (clair/sombre)
+export function usePrefersColorScheme(): 'light' | 'dark' | null {
+  const [colorScheme, setColorScheme] = useState<'light' | 'dark' | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setColorScheme(mediaQuery.matches ? 'dark' : 'light');
+    
+    const handler = (e: MediaQueryListEvent) => setColorScheme(e.matches ? 'dark' : 'light');
+    mediaQuery.addEventListener('change', handler);
+    
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  return colorScheme;
 }

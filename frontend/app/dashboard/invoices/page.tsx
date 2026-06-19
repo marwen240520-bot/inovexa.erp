@@ -485,7 +485,7 @@ const animations = `
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @media print {
     .no-print { display: none !important; }
-    .print-area { margin: 0; padding: 0; }
+    .print-area { ; padding: 0; }
     body { background: white; }
   }
 `;
@@ -496,6 +496,7 @@ export default function InvoicesPage() {
   const { formatCurrency } = useAppSettings();
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
+  const contentMarginLeft = isMobile ? "0" : "0px";
   const t = translations[language as keyof typeof translations] || translations.fr;
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -913,9 +914,9 @@ export default function InvoicesPage() {
             <title>Facture ${invoice.reference}</title>
             <meta charset="UTF-8">
             <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
+              * { ; padding: 0; box-sizing: border-box; }
               body { font-family: Arial, Helvetica, sans-serif; background: white; padding: 40px; color: #000; }
-              .invoice-container { max-width: 900px; margin: 0 auto; }
+              .invoice-container { max-width: 900px; auto; }
               .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #667eea; }
               .company-info { display: flex; align-items: center; gap: 15px; }
               .logo-img { width: 150px; height: 150px; object-fit: contain; }
@@ -1172,15 +1173,14 @@ export default function InvoicesPage() {
   return (
     <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
       <Sidebar />
-      <div style={{ marginLeft: isMobile ? "0px" : "280px", flex: 1, padding: isMobile ? "10px" : "16px", overflowX: "hidden", background: theme.background }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
+<div style={{ marginLeft: contentMarginLeft, flex: 1, padding: isMobile ? "10px" : "16px", paddingBottom: isMobile ? "70px" : "24px", overflowX: "hidden", background: theme.background }}>        <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
           {/* Header */}
           <div style={{ marginBottom: sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
               <div>
-                <h1 style={{ color: theme.text, fontSize: headerTitleSize, margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                <h1 style={{ color: theme.text, fontSize: headerTitleSize, display: "flex", alignItems: "center", gap: "8px" }}>
                   <Icons.Invoice size={isMobile ? 20 : 26} color={theme.primary} />
                   {t.title}
                 </h1>
@@ -1248,7 +1248,7 @@ export default function InvoicesPage() {
           {showFilters && (
             <div style={{ background: theme.surface, borderRadius: "10px", padding: "10px", marginBottom: "12px", border: `1px solid ${theme.border}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "6px" }}>
-                <h4 style={{ color: theme.text, margin: 0, fontSize: "10px", display: "flex", alignItems: "center", gap: "4px" }}>
+                <h4 style={{ color: theme.text, fontSize: "10px", display: "flex", alignItems: "center", gap: "4px" }}>
                   <Icons.Filter size={11} color={theme.text} />
                   {t.filters}
                 </h4>
@@ -1782,12 +1782,12 @@ export default function InvoicesPage() {
                       <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                         <img src="/logo.png" alt="Logo" style={{ width: "150px", height: "150px", objectFit: "contain" }} onError={(e) => (e.currentTarget.style.display = "none")} />
                         <div>
-                          <h1 style={{ color: "#667eea", fontSize: "26px", margin: 0 }}>INOVEXA ERP</h1>
+                          <h1 style={{ color: "#667eea", fontSize: "26px", }}>INOVEXA ERP</h1>
                           <p style={{ color: "#333", fontSize: "12px", marginTop: "5px" }}>Solution ERP</p>
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <h2 style={{ color: "#667eea", fontSize: "30px", margin: 0 }}>{t.invoice}</h2>
+                        <h2 style={{ color: "#667eea", fontSize: "30px", }}>{t.invoice}</h2>
                         <div style={{ background: viewInvoice.status === "paid" ? "#10b981" : viewInvoice.status === "pending" ? "#f59e0b" : "#ef4444", color: "white", padding: "4px 14px", borderRadius: "20px", fontSize: "11px", display: "inline-block", marginTop: "8px" }}>
                           {viewInvoice.status === "paid" ? "PAYÉE" : viewInvoice.status === "pending" ? "EN ATTENTE" : "EN RETARD"}
                         </div>
@@ -1889,3 +1889,4 @@ export default function InvoicesPage() {
     </div>
   );
 }
+

@@ -96,7 +96,10 @@ export default function SettingsPage() {
   const router = useRouter();
   const { language, changeLanguage, t } = useLanguage();
   const { theme } = useTheme();
-  const { isMobile, isTablet, isDesktop } = useResponsive();
+  const { isMobile } = useResponsive();
+
+  const contentMarginLeft = isMobile ? "0" : "0px";
+
   const [loading, setLoading] = useState(true);
   const [animateCards, setAnimateCards] = useState(false);
   const [settings, setSettings] = useState({
@@ -107,14 +110,13 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
 
-  const containerPadding = isMobile ? "12px" : "32px";
-  const cardPadding = isMobile ? "16px" : "24px";
+  const containerPadding = isMobile ? "16px" : "32px";
+  const cardPadding = isMobile ? "20px" : "24px";
   const cardRadius = isMobile ? "16px" : "20px";
-  const sectionMargin = isMobile ? "16px" : "24px";
+  const sectionMargin = isMobile ? "20px" : "24px";
   const headerTitleSize = isMobile ? "22px" : "28px";
-  const buttonPadding = isMobile ? "10px" : "14px";
-  const selectPadding = isMobile ? "10px" : "12px";
-  const mainMarginLeft = isMobile ? "0px" : "280px";
+  const buttonPadding = isMobile ? "12px" : "14px";
+  const selectPadding = isMobile ? "12px" : "12px";
   const iconSize = isMobile ? 18 : 20;
 
   const flagCodes = { fr: "fr", en: "us", es: "es" };
@@ -123,14 +125,14 @@ export default function SettingsPage() {
     const token = localStorage.getItem("token");
     if (!token) router.push("/auth/login");
 
-    const savedLanguage = language || localStorage.getItem("language") || "fr";
+    const savedLanguage = localStorage.getItem("language") || "fr";
     const savedCurrency = localStorage.getItem("currency") || "eur";
     const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
 
     setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
     setLoading(false);
     setTimeout(() => setAnimateCards(true), 100);
-  }, [language]);
+  }, []);
 
   const saveSettings = async () => {
     localStorage.setItem("currency", settings.currency);
@@ -147,7 +149,6 @@ export default function SettingsPage() {
       localStorage.setItem("language", settings.language);
       await changeLanguage(settings.language);
       showMessage(t("settings.settingsSaved"), "success");
-      setTimeout(() => window.location.reload(), 500);
     } else {
       showMessage(t("settings.settingsSaved"), "success");
     }
@@ -165,6 +166,11 @@ export default function SettingsPage() {
     localStorage.setItem("language", "fr");
     localStorage.setItem("currency", "eur");
     localStorage.setItem("dateFormat", "dd/mm/yyyy");
+    
+    if (language !== "fr") {
+      changeLanguage("fr");
+    }
+    
     showMessage(t("settings.settingsReset"), "success");
   };
 
@@ -220,10 +226,20 @@ export default function SettingsPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+      <style>{animations}</style>
+      
       <Sidebar />
-      <div style={{ marginLeft: mainMarginLeft, flex: 1, padding: containerPadding, overflowX: "hidden", width: "100%" }}>
+      
+      <div style={{ 
+        marginLeft: contentMarginLeft,
+        flex: 1, 
+        padding: containerPadding,
+        paddingBottom: isMobile ? "70px" : containerPadding,
+        overflowX: "hidden",
+        width: "100%",
+        transition: "margin-left 0.3s ease"
+      }}>
         <div style={{ maxWidth: isMobile ? "100%" : "800px", margin: "0 auto", width: "100%" }}>
-          <style>{animations}</style>
 
           {/* Header */}
           <div style={{
@@ -232,7 +248,7 @@ export default function SettingsPage() {
             opacity: animateCards ? 1 : 0,
             transform: animateCards ? "translateY(0)" : "translateY(-20px)"
           }}>
-            <h1 style={{ color: theme.text, fontSize: headerTitleSize, margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+            <h1 style={{ color: theme.text, fontSize: headerTitleSize, display: "flex", alignItems: "center", gap: "10px" }}>
               <IconSettings size={isMobile ? 22 : 28} color={theme.primary} />
               {t("common.settings")}
             </h1>
@@ -249,7 +265,7 @@ export default function SettingsPage() {
               color: messageType === "success" ? "#10b981" : "#f87171",
               padding: isMobile ? "10px 14px" : "12px 16px",
               borderRadius: "12px",
-              marginBottom: "16px",
+              marginBottom: "20px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -273,14 +289,14 @@ export default function SettingsPage() {
             border: `1px solid ${theme.border}`,
             marginBottom: sectionMargin,
             opacity: animateCards ? 1 : 0,
-            transition: "transform 0.3s",
-            animation: "fadeInUp 0.5s ease 0.1s"
+            transition: "transform 0.3s, box-shadow 0.3s",
+            animation: "fadeInUp 0.5s ease 0.1s both"
           }}
             onMouseEnter={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(-3px)")}
             onMouseLeave={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(0)")}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-              <h3 style={{ color: theme.text, margin: 0, fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <h3 style={{ color: theme.text, fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
                 <IconGlobe size={iconSize} color={theme.primary} />
                 {t("settings.language")}
               </h3>
@@ -324,8 +340,8 @@ export default function SettingsPage() {
             border: `1px solid ${theme.border}`,
             marginBottom: sectionMargin,
             opacity: animateCards ? 1 : 0,
-            transition: "transform 0.3s",
-            animation: "fadeInUp 0.5s ease 0.2s"
+            transition: "transform 0.3s, box-shadow 0.3s",
+            animation: "fadeInUp 0.5s ease 0.2s both"
           }}
             onMouseEnter={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(-3px)")}
             onMouseLeave={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(0)")}
@@ -357,8 +373,8 @@ export default function SettingsPage() {
             border: `1px solid ${theme.border}`,
             marginBottom: sectionMargin,
             opacity: animateCards ? 1 : 0,
-            transition: "transform 0.3s",
-            animation: "fadeInUp 0.5s ease 0.3s"
+            transition: "transform 0.3s, box-shadow 0.3s",
+            animation: "fadeInUp 0.5s ease 0.3s both"
           }}
             onMouseEnter={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(-3px)")}
             onMouseLeave={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(0)")}
@@ -384,23 +400,58 @@ export default function SettingsPage() {
             gap: isMobile ? "12px" : "16px",
             marginBottom: sectionMargin,
             opacity: animateCards ? 1 : 0,
-            animation: "fadeInUp 0.5s ease 0.4s",
+            animation: "fadeInUp 0.5s ease 0.4s both",
             flexDirection: isMobile ? "column" : "row"
           }}>
             <button
               onClick={saveSettings}
-              style={{ flex: 1, padding: buttonPadding, background: theme.gradient, color: "white", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s", fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              style={{ 
+                flex: 1, 
+                padding: buttonPadding, 
+                background: theme.gradient, 
+                color: "white", 
+                border: "none", 
+                borderRadius: "10px", 
+                fontWeight: "bold", 
+                cursor: "pointer", 
+                transition: "all 0.2s", 
+                fontSize: isMobile ? "14px" : "16px", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                gap: "8px",
+                WebkitTapHighlightColor: "transparent"
+              }}
               onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
               onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+              onTouchStart={(e) => e.currentTarget.style.opacity = "0.8"}
+              onTouchEnd={(e) => e.currentTarget.style.opacity = "1"}
             >
               <IconSave size={18} color="white" />
               {t("common.save")}
             </button>
             <button
               onClick={resetSettings}
-              style={{ padding: `${buttonPadding} ${isMobile ? "20px" : "24px"}`, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", transition: "all 0.2s", fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              style={{ 
+                flex: 1, 
+                padding: buttonPadding, 
+                background: theme.surfaceHover, 
+                color: theme.text, 
+                border: `1px solid ${theme.border}`, 
+                borderRadius: "10px", 
+                cursor: "pointer", 
+                transition: "all 0.2s", 
+                fontSize: isMobile ? "14px" : "16px", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                gap: "8px",
+                WebkitTapHighlightColor: "transparent"
+              }}
               onMouseEnter={(e) => e.currentTarget.style.background = theme.surface}
               onMouseLeave={(e) => e.currentTarget.style.background = theme.surfaceHover}
+              onTouchStart={(e) => e.currentTarget.style.opacity = "0.8"}
+              onTouchEnd={(e) => e.currentTarget.style.opacity = "1"}
             >
               <IconReset size={18} color={theme.text} />
               {t("common.reset")}
@@ -410,9 +461,29 @@ export default function SettingsPage() {
           {/* BOUTON DÉCONNEXION */}
           <button
             onClick={logout}
-            style={{ width: "100%", padding: buttonPadding, background: "#c33", color: "white", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s ease", animation: "fadeInUp 0.5s ease 0.45s", opacity: animateCards ? 1 : 0, fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+            style={{ 
+              width: "100%", 
+              padding: buttonPadding, 
+              background: "#c33", 
+              color: "white", 
+              border: "none", 
+              borderRadius: "10px", 
+              fontWeight: "bold", 
+              cursor: "pointer", 
+              transition: "all 0.2s ease", 
+              animation: "fadeInUp 0.5s ease 0.45s both", 
+              opacity: animateCards ? 1 : 0, 
+              fontSize: isMobile ? "14px" : "16px", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              gap: "8px",
+              WebkitTapHighlightColor: "transparent"
+            }}
             onMouseEnter={(e) => e.currentTarget.style.background = "#ff4444"}
             onMouseLeave={(e) => e.currentTarget.style.background = "#c33"}
+            onTouchStart={(e) => e.currentTarget.style.opacity = "0.8"}
+            onTouchEnd={(e) => e.currentTarget.style.opacity = "1"}
           >
             <IconLogout size={18} color="white" />
             {t("common.logout")}

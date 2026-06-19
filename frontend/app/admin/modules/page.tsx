@@ -251,18 +251,36 @@ const categoryIcons: Record<string, JSX.Element> = {
   ),
 };
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Client {
+  id: number;
+  name: string;
+  email: string;
+  companyName?: string;
+}
+
+interface Module {
+  id: string;
+  name: string;
+  icon: JSX.Element;
+  description: string;
+  category: string;
+  enabled: boolean;
+}
+
 export default function AdminModulesPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [modules, setModules] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("success");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [animateCards, setAnimateCards] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [animateCards, setAnimateCards] = useState<boolean>(false);
 
   // Liste de tous les modules disponibles
   const allModules = [
@@ -312,7 +330,7 @@ export default function AdminModulesPage() {
     setLoading(false);
   };
 
-  const loadClientModules = async (clientId) => {
+  const loadClientModules = async (clientId: number) => {
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`http://localhost:3001/users/${clientId}/modules`, {
@@ -331,13 +349,13 @@ export default function AdminModulesPage() {
     } catch(e) { console.error(e); }
   };
 
-  const toggleModule = (moduleId) => {
+  const toggleModule = (moduleId: string) => {
     setModules(modules.map(m =>
       m.id === moduleId ? { ...m, enabled: !m.enabled } : m
     ));
   };
 
-  const toggleAllModules = (enabled) => {
+  const toggleAllModules = (enabled: boolean) => {
     setModules(modules.map(m => ({ ...m, enabled })));
   };
 
@@ -365,13 +383,13 @@ export default function AdminModulesPage() {
     setSaving(false);
   };
 
-  const showMessage = (msg, type) => {
+  const showMessage = (msg: string, type: "success" | "error") => {
     setMessage(msg);
     setMessageType(type);
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const onClientChange = (client) => {
+  const onClientChange = (client: Client) => {
     setSelectedClient(client);
     loadClientModules(client.id);
   };
@@ -386,7 +404,7 @@ export default function AdminModulesPage() {
   const progress = totalModules > 0 ? (enabledCount / totalModules) * 100 : 0;
 
   // Grouper les modules par catégorie
-  const groupedModules = modules.reduce((acc, module) => {
+  const groupedModules = modules.reduce((acc: Record<string, Module[]>, module) => {
     if (!acc[module.category]) acc[module.category] = [];
     acc[module.category].push(module);
     return acc;
@@ -563,7 +581,7 @@ export default function AdminModulesPage() {
                     {categoryNames[category]?.label || category}
                   </h2>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "16px" }}>
-                    {(categoryModules as typeof allModules).map((module, idx) => (
+                    {(categoryModules as Module[]).map((module, idx) => (
                       <div
                         key={module.id}
                         style={{

@@ -13,33 +13,66 @@ export class TransporteurService {
     private transporteurRepository: Repository<Transporteur>,
   ) {}
 
-  async getMyShipments(transporteurId: number) {
-    // Récupérer l'ID utilisateur du transporteur
+  async getMyShipments(userId: number) {
+    console.log('=== getMyShipments called ===');
+    console.log('userId received:', userId);
+    
+    // D'abord, trouver le transporteur associé à cet utilisateur
     const transporteur = await this.transporteurRepository.findOne({
-      where: { userId: transporteurId }
+      where: { userId: userId }
     });
     
     if (!transporteur) {
+      console.log('No transporteur found for userId:', userId);
       return [];
     }
     
-    return this.shipmentRepository.find({ 
-      where: { transporteurId: transporteur.id }
+    console.log('Found transporteur:', transporteur.id, transporteur.name);
+    
+    // Ensuite, récupérer les livraisons pour ce transporteur
+    const shipments = await this.shipmentRepository.find({
+      where: { transporteurId: transporteur.id },
+      order: { createdAt: 'DESC' }
     });
+    
+    console.log('Shipments found:', shipments.length);
+    return shipments;
   }
 
-  async updateShipmentStatus(id: number, transporteurUserId: number, status: string) {
-    // Récupérer le transporteur par son userId
+  async getStats(userId: number) {
     const transporteur = await this.transporteurRepository.findOne({
-      where: { userId: transporteurUserId }
+      where: { userId: userId }
+    });
+    
+    if (!transporteur) {
+      return { total: 0, pending: 0, inTransit: 0, delivered: 0, cancelled: 0 };
+    }
+    
+    const shipments = await this.shipmentRepository.find({
+      where: { transporteurId: transporteur.id }
+    });
+    
+    const total = shipments.length;
+    const pending = shipments.filter(s => s.status === 'pending').length;
+    const inTransit = shipments.filter(s => s.status === 'in_transit').length;
+    const delivered = shipments.filter(s => s.status === 'delivered').length;
+    const cancelled = shipments.filter(s => s.status === 'cancelled').length;
+
+    return { total, pending, inTransit, delivered, cancelled };
+  }
+
+  async updateShipmentStatus(id: number, userId: number, status: string) {
+    // Trouver le transporteur
+    const transporteur = await this.transporteurRepository.findOne({
+      where: { userId: userId }
     });
     
     if (!transporteur) {
       throw new NotFoundException('Transporteur non trouvé');
     }
     
-    const shipment = await this.shipmentRepository.findOne({ 
-      where: { id, transporteurId: transporteur.id }
+    const shipment = await this.shipmentRepository.findOne({
+      where: { id: id, transporteurId: transporteur.id }
     });
     
     if (!shipment) {
@@ -48,32 +81,5 @@ export class TransporteurService {
     
     shipment.status = status;
     return this.shipmentRepository.save(shipment);
-  }
-
-  async getStats(transporteurUserId: number) {
-    const transporteur = await this.transporteurRepository.findOne({
-      where: { userId: transporteurUserId }
-    });
-    
-    if (!transporteur) {
-      return { total: 0, pending: 0, inTransit: 0, delivered: 0, cancelled: 0 };
-    }
-    
-    const shipments = await this.shipmentRepository.find({ 
-      where: { transporteurId: transporteur.id }
-    });
-    
-    const pending = shipments.filter(s => s.status === 'pending').length;
-    const inTransit = shipments.filter(s => s.status === 'in_transit').length;
-    const delivered = shipments.filter(s => s.status === 'delivered').length;
-    const cancelled = shipments.filter(s => s.status === 'cancelled').length;
-    
-    return { 
-      total: shipments.length, 
-      pending, 
-      inTransit, 
-      delivered, 
-      cancelled 
-    };
   }
 }

@@ -29,7 +29,6 @@ export class AuthService {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
     
-    // Le payload JWT doit contenir 'userId' et 'role'
     const payload = { userId: user.id, email: user.email, role: user.role };
     
     return {
@@ -39,8 +38,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        companyName: user.companyName,
-        subscriptionEnd: user.subscriptionEnd
+        companyName: user.companyName
       }
     };
   }
@@ -51,7 +49,6 @@ export class AuthService {
     name: string;
     companyName: string;
     phone?: string;
-    subscriptionDuration: number;
   }) {
     const existingUser = await this.userRepository.findOne({ where: { email: body.email } });
     if (existingUser) {
@@ -60,18 +57,13 @@ export class AuthService {
     
     const hashedPassword = await bcrypt.hash(body.password, 10);
     
-    const subscriptionEnd = new Date();
-    subscriptionEnd.setDate(subscriptionEnd.getDate() + body.subscriptionDuration);
-    
     const user = this.userRepository.create({
       email: body.email,
       password: hashedPassword,
       name: body.name,
       companyName: body.companyName,
-      phone: body.phone,
+      phone: body.phone || '',
       role: 'client',
-      subscriptionStart: new Date(),
-      subscriptionEnd,
       isActive: true
     });
     
@@ -84,8 +76,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
-        companyName: user.companyName,
-        subscriptionEnd: user.subscriptionEnd
+        companyName: user.companyName
       }
     };
   }

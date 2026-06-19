@@ -20,7 +20,7 @@ import {
   Filler,
   RadialLinearScale
 } from "chart.js";
-import { Line, Doughnut, Bar, Radar } from "react-chartjs-2";
+import { Line, Doughnut, Bar } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
@@ -648,7 +648,8 @@ const Icon = {
   Close: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>),
   Delete: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>),
   Filter: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>),
-  Search: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>)
+  Search: ({ style = undefined as React.CSSProperties | undefined } = {}) => (<svg width="14" height="14" style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>),
+  Menu: () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>)
 };
 
 const animations = `
@@ -786,13 +787,13 @@ const Modal = ({ open, onClose, title, children, theme, isMobile }: any) => {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
       <div style={{
-        background: theme.surface, padding: "28px", borderRadius: "28px",
-        width: isMobile ? "95%" : "500px", maxHeight: "88vh", overflowY: "auto",
+        background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: isMobile ? "20px" : "28px",
+        width: isMobile ? "95%" : "500px", maxHeight: isMobile ? "85vh" : "88vh", overflowY: "auto",
         border: `1px solid ${theme.border}`, boxShadow: "0 32px 80px rgba(0,0,0,0.4)",
         animation: "scaleIn 0.2s ease"
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-          <h2 style={{ color: theme.text, fontSize: "20px", fontWeight: "700", margin: 0 }}>{title}</h2>
+          <h2 style={{ color: theme.text, fontSize: isMobile ? "18px" : "20px", fontWeight: "700", }}>{title}</h2>
           <button onClick={onClose} style={{ background: theme.surfaceHover, border: "none", color: theme.textSecondary, cursor: "pointer", padding: "8px", borderRadius: "10px", display: "flex" }}>
             <Icon.Close />
           </button>
@@ -818,7 +819,7 @@ const FormField = ({ as: Tag = "input", theme, style = {}, ...props }: any) => (
 );
 
 // ─── ACTION BUTTON ─────────────────────────────────────────────────────────────
-const ActionButton = ({ icon, label, onClick, color, theme }: any) => {
+const ActionButton = ({ icon, label, onClick, color, theme, isMobile }: any) => {
   const [hovered, setHovered] = useState(false);
   return (
     <button
@@ -829,9 +830,16 @@ const ActionButton = ({ icon, label, onClick, color, theme }: any) => {
         background: hovered ? color : `${color}18`,
         color: hovered ? "white" : color,
         border: `1px solid ${color}40`,
-        padding: "10px 20px", borderRadius: "12px", cursor: "pointer",
-        fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center",
-        gap: "8px", transition: "all 0.2s", transform: hovered ? "translateY(-2px)" : "translateY(0)",
+        padding: isMobile ? "8px 16px" : "10px 20px",
+        borderRadius: "12px",
+        cursor: "pointer",
+        fontSize: isMobile ? "12px" : "13px",
+        fontWeight: "600",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        transition: "all 0.2s",
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
         boxShadow: hovered ? `0 8px 20px ${color}40` : "none"
       }}
     >
@@ -852,8 +860,8 @@ const FilterBar = ({ t, theme, isMobile, selectedPeriod, setSelectedPeriod, sele
           onClick={() => setShowFilters(!showFilters)}
           style={{
             display: "flex", alignItems: "center", gap: "6px",
-            padding: "8px 16px", background: theme.surface, border: `1px solid ${theme.border}`,
-            borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: "13px"
+            padding: isMobile ? "6px 12px" : "8px 16px", background: theme.surface, border: `1px solid ${theme.border}`,
+            borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "11px" : "13px"
           }}
         >
           <Icon.Filter />
@@ -866,10 +874,10 @@ const FilterBar = ({ t, theme, isMobile, selectedPeriod, setSelectedPeriod, sele
               key={period}
               onClick={() => setSelectedPeriod(period)}
               style={{
-                padding: "6px 14px", borderRadius: "8px", border: "none",
+                padding: isMobile ? "4px 10px" : "6px 14px", borderRadius: "8px", border: "none",
                 background: selectedPeriod === period ? theme.primary : "transparent",
                 color: selectedPeriod === period ? "white" : theme.textSecondary,
-                cursor: "pointer", fontSize: "12px", fontWeight: "500",
+                cursor: "pointer", fontSize: isMobile ? "10px" : "12px", fontWeight: "500",
                 transition: "all 0.2s"
               }}
             >
@@ -881,19 +889,19 @@ const FilterBar = ({ t, theme, isMobile, selectedPeriod, setSelectedPeriod, sele
         <select
           value={selectedYear}
           onChange={e => setSelectedYear(parseInt(e.target.value))}
-          style={{ padding: "8px 14px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: "13px" }}
+          style={{ padding: isMobile ? "6px 10px" : "8px 14px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "11px" : "13px" }}
         >
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
       
       {showFilters && (
-        <div style={{ marginTop: "12px", padding: "16px", background: theme.surfaceHover, borderRadius: "12px", display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ marginTop: "12px", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px", display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
           {selectedPeriod === "month" && (
             <select
               value={selectedMonth}
               onChange={e => setSelectedMonth(parseInt(e.target.value))}
-              style={{ padding: "8px 14px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text }}
+              style={{ padding: isMobile ? "6px 10px" : "8px 14px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "11px" : "13px" }}
             >
               {months.map((m: string, i: number) => <option key={i} value={i}>{m}</option>)}
             </select>
@@ -902,7 +910,7 @@ const FilterBar = ({ t, theme, isMobile, selectedPeriod, setSelectedPeriod, sele
             <select
               value={selectedQuarter}
               onChange={e => setSelectedQuarter(parseInt(e.target.value))}
-              style={{ padding: "8px 14px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text }}
+              style={{ padding: isMobile ? "6px 10px" : "8px 14px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "11px" : "13px" }}
             >
               <option value={0}>{t.common.quarterShort}1</option>
               <option value={1}>{t.common.quarterShort}2</option>
@@ -926,6 +934,15 @@ export default function FinancePage() {
   const t = translations[language as keyof typeof translations]?.finance || translations.fr.finance;
   const tCommon = translations[language as keyof typeof translations]?.common || translations.fr.common;
 
+  // Dimensions responsives
+  const contentMarginLeft = isMobile ? "0" : "0px";
+  const contentPadding = isMobile ? "12px" : "28px";
+  const headerPadding = isMobile ? "16px" : "26px";
+  const cardGap = isMobile ? "12px" : "20px";
+  const tableMinWidth = isMobile ? "650px" : "100%";
+  const chartHeight = isMobile ? "200px" : "250px";
+  const chartHeightSmall = isMobile ? "150px" : "180px";
+
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedPeriod, setSelectedPeriod] = useState("month");
@@ -943,6 +960,7 @@ export default function FinancePage() {
   const [clients, setClients] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
 
   const [expenses, setExpenses] = useState<any[]>([]);
   const [budgets, setBudgets] = useState<any[]>([]);
@@ -1011,12 +1029,12 @@ export default function FinancePage() {
       group.forEach((cat: any) => {
         allCategories.push({
           ...cat,
-          label: t[cat.labelKey] || cat.labelKey
+          label: tCommon[cat.labelKey] || cat.labelKey
         });
       });
     });
     return allCategories;
-  }, [t]);
+  }, [tCommon]);
 
   const getPaymentMethods = useCallback(() => {
     return paymentMethods.map(m => ({
@@ -1085,7 +1103,7 @@ export default function FinancePage() {
           return Array.isArray(data) ? data : def;
         } catch { return def; }
       };
-      const [sd, pd, id, prd, cd, supp, emp] = await Promise.all([
+      const [sd, pd, id, prd, cd, supp, emp, proj] = await Promise.all([
         fw("http://localhost:3001/sales"),
         fw("http://localhost:3001/purchases"),
         fw("http://localhost:3001/invoices"),
@@ -1093,10 +1111,10 @@ export default function FinancePage() {
         fw("http://localhost:3001/clients"),
         fw("http://localhost:3001/suppliers"),
         fw("http://localhost:3001/employees"),
-       
+        fw("http://localhost:3001/projects")
       ]);
       setSales(sd); setPurchases(pd); setInvoices(id); setProducts(prd);
-      setClients(cd); setSuppliers(supp); setEmployees(emp);
+      setClients(cd); setSuppliers(supp); setEmployees(emp); setProjects(proj);
       await calculateAllFinancialStats(sd, pd, id, prd, emp, cd, supp);
     } catch (err) {
       console.error(err);
@@ -1197,6 +1215,7 @@ export default function FinancePage() {
       operationalExpenses, administrativeExpenses, financialExpenses,
       ebitda, depreciation: totalExpenses * 0.1, ebit, interest: financialExpenses, ebt, tax, netProfit, netMargin,
       totalAssets, currentAssets, fixedAssets,
+
       totalLiabilities, currentLiabilities, longTermLiabilities, equity,
       cashBalance, cashflowIn, cashflowOut, netCashflow, forecastCashBalance, cashflowWarning,
       accountsReceivable, accountsPayable,
@@ -1216,6 +1235,7 @@ export default function FinancePage() {
     calculateCashflowAnalysis(salesData, expenses, purchasesData);
     calculateCashflowProjection(cashBalance, cashflowIn, cashflowOut);
     calculateBudgetVsActual(revenue, totalExpenses, netProfit);
+    calculateDepartmentPerformance(projects);
     calculateFinancialRatiosList(currentRatio, quickRatio, netMargin, roi, roe, debtToEquity);
   };
 
@@ -1287,7 +1307,7 @@ export default function FinancePage() {
 
   const calculateCashflowProjection = (cb = 0, cin = 0, cout = 0) => {
     const avg = (cin - cout) / 12;
-    const proj = [];
+    const proj: { month: string; balance: number; status: string }[] = [];
     for (let i = 1; i <= 6; i++) {
       const bal = cb + avg * i;
       proj.push({ month: `${tCommon.monthPlus}${i}`, balance: bal, status: bal >= 50000 ? tCommon.excellent : bal >= 10000 ? tCommon.good : bal >= 0 ? tCommon.warning : tCommon.critical });
@@ -1375,83 +1395,90 @@ export default function FinancePage() {
 
   const showMessage = (msg: string, type: string) => { setMessage(msg); setMessageType(type); setTimeout(() => setMessage(""), 4000); };
 
-  // ─── FONCTION DE NORMALISATION POUR L'EXPORTATION ─────────────────────────────
-  const normalizeDataForExport = useCallback((data: any[]): any[] => {
-    if (!data || !Array.isArray(data)) return [];
-    
-    return data.map(item => {
-      if (item.category && item.items && Array.isArray(item.items)) {
-        const flatItem: any = { _categorie: item.category };
-        item.items.forEach((subItem: any) => {
-          if (subItem.label && subItem.value !== undefined) {
-            flatItem[subItem.label] = subItem.value;
-          }
-        });
-        return flatItem;
-      }
-      if (item.month && (item.inflow !== undefined || item.outflow !== undefined)) {
-        return {
-          month: item.month,
-          inflow: item.inflow,
-          outflow: item.outflow,
-          net: item.net
-        };
-      }
-      if (item.name && item.value !== undefined) {
-        return {
-          name: item.name,
-          value: item.value,
-          target: item.target,
-          status: item.status,
-          description: item.description
-        };
-      }
-      return item;
-    });
-  }, []);
-
-  // Données pour l'exportation - SUPPRIMÉ car le bouton d'exportation est retiré
-  // Les fonctions d'export sont conservées uniquement pour la compatibilité du code
-  const getExportDataForTab = useCallback(() => {
-    return [];
-  }, []);
-
-  const getExportFilename = useCallback(() => {
-    return `finance_${selectedYear}`;
-  }, [selectedYear]);
-
   // Chart config
+  const tooltipBase = {
+    backgroundColor: theme.surface,
+    titleColor: theme.text,
+    bodyColor: theme.textSecondary,
+    borderColor: theme.border,
+    borderWidth: 1,
+    padding: 12,
+    cornerRadius: 10,
+    displayColors: true,
+    boxWidth: 10,
+    boxHeight: 10,
+    boxPadding: 4,
+    titleFont: { size: isMobile ? 11 : 13, weight: "bold" as const },
+    bodyFont: { size: isMobile ? 10 : 12 },
+  };
+
   const chartBase = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
+    animation: { duration: 600, easing: "easeInOutQuart" as const },
     plugins: {
-      legend: { labels: { color: theme.textSecondary, font: { size: 12 } } },
+      legend: {
+        labels: {
+          color: theme.textSecondary,
+          font: { size: isMobile ? 10 : 12 },
+          boxWidth: 10,
+          boxHeight: 10,
+          padding: isMobile ? 10 : 16,
+          usePointStyle: true,
+          pointStyle: "circle",
+        },
+        position: "top" as const,
+      },
       tooltip: {
-        backgroundColor: theme.surface,
-        titleColor: theme.text,
-        bodyColor: theme.textSecondary,
-        borderColor: theme.border,
-        borderWidth: 1,
-        callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${formatCurrency(ctx.raw)}` }
+        ...tooltipBase,
+        callbacks: { label: (ctx: any) => `  ${ctx.dataset.label}: ${formatCurrency(ctx.raw)}` }
       }
     },
     scales: {
-      y: { ticks: { color: theme.textSecondary }, grid: { color: `${theme.border}60` }, beginAtZero: true },
-      x: { ticks: { color: theme.textSecondary }, grid: { color: `${theme.border}30` } }
+      y: {
+        ticks: {
+          color: theme.textSecondary,
+          font: { size: isMobile ? 9 : 11 },
+          maxTicksLimit: 5,
+          callback: (v: any) => formatCurrency(v).replace(/\s/g, ""),
+        },
+        grid: { color: `${theme.border}40`, drawBorder: false },
+        border: { display: false },
+        beginAtZero: true,
+      },
+      x: {
+        ticks: { color: theme.textSecondary, font: { size: isMobile ? 9 : 11 }, maxRotation: 0 },
+        grid: { display: false },
+        border: { display: false },
+      }
     }
   };
 
   const pieOpts = {
-    responsive: true, maintainAspectRatio: true,
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 700, easing: "easeInOutQuart" as const },
+    cutout: "62%",
     plugins: {
-      legend: { labels: { color: theme.textSecondary, font: { size: 11 } }, position: "bottom" as const },
+      legend: {
+        labels: {
+          color: theme.textSecondary,
+          font: { size: isMobile ? 9 : 11 },
+          boxWidth: 10,
+          boxHeight: 10,
+          padding: isMobile ? 8 : 14,
+          usePointStyle: true,
+          pointStyle: "circle",
+        },
+        position: "right" as const,
+      },
       tooltip: {
-        backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.textSecondary,
+        ...tooltipBase,
         callbacks: {
           label: (ctx: any) => {
-            const total = Object.values(expensesByCategory).reduce((a: any, b: any) => a + b, 0) as number;
+            const total = (ctx.dataset.data as number[]).reduce((a, b) => a + b, 0);
             const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : "0";
-            return `${ctx.label}: ${formatCurrency(ctx.raw)} (${pct}%)`;
+            return `  ${ctx.label}: ${formatCurrency(ctx.raw)} (${pct}%)`;
           }
         }
       }
@@ -1463,43 +1490,225 @@ export default function FinancePage() {
   const revenueExpensesChart = {
     labels: trends.map(t => t.month),
     datasets: [
-      { label: t.revenue, data: trends.map(t => t.revenue), backgroundColor: `${theme.accent}18`, borderColor: theme.accent, borderWidth: 2, fill: true, tension: 0.4 },
-      { label: tCommon.expenses, data: trends.map(t => t.expenses), backgroundColor: "#ef444418", borderColor: "#ef4444", borderWidth: 2, fill: true, tension: 0.4 }
+      {
+        label: t.revenue,
+        data: trends.map(t => t.revenue),
+        backgroundColor: `${theme.accent}22`,
+        borderColor: theme.accent,
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.45,
+        pointBackgroundColor: theme.accent,
+        pointRadius: isMobile ? 3 : 4,
+        pointHoverRadius: isMobile ? 5 : 7,
+        pointBorderWidth: 2,
+        pointBorderColor: theme.surface,
+      },
+      {
+        label: tCommon.expenses,
+        data: trends.map(t => t.expenses),
+        backgroundColor: "#ef444422",
+        borderColor: "#ef4444",
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.45,
+        pointBackgroundColor: "#ef4444",
+        pointRadius: isMobile ? 3 : 4,
+        pointHoverRadius: isMobile ? 5 : 7,
+        pointBorderWidth: 2,
+        pointBorderColor: theme.surface,
+      }
     ]
   };
 
   const profitChart = {
     labels: profitLossData.map(p => p.month),
     datasets: [
-      { label: t.revenue, data: profitLossData.map(p => p.revenue), backgroundColor: "#3b82f618", borderColor: "#3b82f6", borderWidth: 2, fill: true, tension: 0.4 },
-      { label: t.grossMargin, data: profitLossData.map(p => p.grossProfit), backgroundColor: "#10b98118", borderColor: "#10b981", borderWidth: 2, fill: true, tension: 0.4 },
-      { label: t.profit, data: profitLossData.map(p => p.netProfit), backgroundColor: "#fff7001d", borderColor: "#b9b310", borderWidth: 2, fill: true, tension: 0.4 }
+      {
+        label: t.revenue,
+        data: profitLossData.map(p => p.revenue),
+        backgroundColor: "#3b82f620",
+        borderColor: "#3b82f6",
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.45,
+        pointBackgroundColor: "#3b82f6",
+        pointRadius: isMobile ? 3 : 4,
+        pointHoverRadius: isMobile ? 5 : 7,
+        pointBorderWidth: 2,
+        pointBorderColor: theme.surface,
+      },
+      {
+        label: t.grossMargin,
+        data: profitLossData.map(p => p.grossProfit),
+        backgroundColor: "#10b98120",
+        borderColor: "#10b981",
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.45,
+        pointBackgroundColor: "#10b981",
+        pointRadius: isMobile ? 3 : 4,
+        pointHoverRadius: isMobile ? 5 : 7,
+        pointBorderWidth: 2,
+        pointBorderColor: theme.surface,
+      },
+      {
+        label: t.profit,
+        data: profitLossData.map(p => p.netProfit),
+        backgroundColor: "#f59e0b20",
+        borderColor: "#f59e0b",
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.45,
+        pointBackgroundColor: "#f59e0b",
+        pointRadius: isMobile ? 3 : 4,
+        pointHoverRadius: isMobile ? 5 : 7,
+        pointBorderWidth: 2,
+        pointBorderColor: theme.surface,
+      }
     ]
   };
 
   const balanceSheetChart = {
     labels: balanceSheetData.map(b => b.category),
-    datasets: [{ label: tCommon.amount, data: balanceSheetData.map(b => b.amount), backgroundColor: balanceSheetData.map(b => b.color), borderRadius: 8, borderSkipped: false }]
+    datasets: [{
+      label: tCommon.amount,
+      data: balanceSheetData.map(b => b.amount),
+      backgroundColor: balanceSheetData.map(b => b.color + "cc"),
+      borderColor: balanceSheetData.map(b => b.color),
+      borderWidth: 1.5,
+      borderRadius: 10,
+      borderSkipped: false,
+    }]
   };
 
   const cashflowChart = {
     labels: cashflowData.map(c => c.month),
     datasets: [
-      { label: tCommon.cashIn, data: cashflowData.map(c => c.inflow), backgroundColor: "#10b981cc", borderRadius: 6 },
-      { label: tCommon.cashOut, data: cashflowData.map(c => c.outflow), backgroundColor: "#ef4444cc", borderRadius: 6 }
+      {
+        label: tCommon.cashIn,
+        data: cashflowData.map(c => c.inflow),
+        backgroundColor: "#10b981bb",
+        borderColor: "#10b981",
+        borderWidth: 1.5,
+        borderRadius: 8,
+        borderSkipped: false,
+      },
+      {
+        label: tCommon.cashOut,
+        data: cashflowData.map(c => c.outflow),
+        backgroundColor: "#ef4444bb",
+        borderColor: "#ef4444",
+        borderWidth: 1.5,
+        borderRadius: 8,
+        borderSkipped: false,
+      }
     ]
   };
 
   const cashflowProjChart = {
     labels: cashflowProjection.map(c => c.month),
-    datasets: [{ label: tCommon.forecast, data: cashflowProjection.map(c => c.balance), borderColor: theme.accent, backgroundColor: `${theme.accent}20`, fill: true, tension: 0.4 }]
+    datasets: [{
+      label: tCommon.forecast,
+      data: cashflowProjection.map(c => c.balance),
+      borderColor: theme.accent,
+      backgroundColor: `${theme.accent}25`,
+      fill: true,
+      tension: 0.45,
+      pointBackgroundColor: cashflowProjection.map(c =>
+        c.status === "excellent" ? "#10b981" : c.status === "good" ? "#f59e0b" : "#ef4444"
+      ),
+      pointRadius: isMobile ? 4 : 6,
+      pointHoverRadius: isMobile ? 6 : 9,
+      pointBorderWidth: 2,
+      pointBorderColor: theme.surface,
+      borderWidth: 2.5,
+    }]
   };
 
-  const expensesPieData = { labels: Object.keys(expensesByCategory), datasets: [{ data: Object.values(expensesByCategory), backgroundColor: PIE_COLORS, borderWidth: 0 }] };
-  const expensesGroupData = { labels: Object.keys(expensesByGroup).map(g => t[g + "Expenses"] || g), datasets: [{ data: Object.values(expensesByGroup), backgroundColor: ["#3b82f6", "#f59e0b", "#ec4899", "#64748b"], borderWidth: 0 }] };
-  const budgetChart = { labels: budgetVsActual.map(b => b.category), datasets: [{ label: tCommon.budget, data: budgetVsActual.map(b => b.budget), backgroundColor: "#3b82f6cc", borderRadius: 6 }, { label: tCommon.actual, data: budgetVsActual.map(b => b.actual), backgroundColor: "#10b981cc", borderRadius: 6 }] };
-  const agingChart = { labels: [`${tCommon.current}`, "1-30 j", "31-60 j", ">60 j"], datasets: [{ data: [agingReport[0], agingReport[30], agingReport[60], agingReport[90]], backgroundColor: ["#10b981", "#f59e0b", "#f97316", "#ef4444"], borderRadius: 6 }] };
-  const departmentChart = { labels: departmentPerformance.map(d => d.name), datasets: [{ label: t.revenue, data: departmentPerformance.map(d => d.revenue), backgroundColor: "#3b82f6cc", borderRadius: 6 }, { label: t.profit, data: departmentPerformance.map(d => d.profit), backgroundColor: "#10b981cc", borderRadius: 6 }] };
+  const expensesPieData = {
+    labels: Object.keys(expensesByCategory),
+    datasets: [{
+      data: Object.values(expensesByCategory),
+      backgroundColor: PIE_COLORS,
+      borderWidth: 2,
+      borderColor: theme.surface,
+      hoverBorderWidth: 3,
+      hoverOffset: 8,
+    }]
+  };
+
+  const expensesGroupData = {
+    labels: Object.keys(expensesByGroup).map(g => t[g + "Expenses"] || g),
+    datasets: [{
+      data: Object.values(expensesByGroup),
+      backgroundColor: ["#3b82f6", "#f59e0b", "#ec4899", "#64748b"],
+      borderWidth: 2,
+      borderColor: theme.surface,
+      hoverBorderWidth: 3,
+      hoverOffset: 8,
+    }]
+  };
+
+  const budgetChart = {
+    labels: budgetVsActual.map(b => b.category),
+    datasets: [
+      {
+        label: tCommon.budget,
+        data: budgetVsActual.map(b => b.budget),
+        backgroundColor: "#3b82f6bb",
+        borderColor: "#3b82f6",
+        borderWidth: 1.5,
+        borderRadius: 8,
+        borderSkipped: false,
+      },
+      {
+        label: tCommon.actual,
+        data: budgetVsActual.map(b => b.actual),
+        backgroundColor: "#10b981bb",
+        borderColor: "#10b981",
+        borderWidth: 1.5,
+        borderRadius: 8,
+        borderSkipped: false,
+      }
+    ]
+  };
+
+  const agingChart = {
+    labels: [`${tCommon.current}`, "1-30 j", "31-60 j", ">60 j"],
+    datasets: [{
+      data: [agingReport[0], agingReport[30], agingReport[60], agingReport[90]],
+      backgroundColor: ["#10b981bb", "#f59e0bbb", "#f97316bb", "#ef4444bb"],
+      borderColor: ["#10b981", "#f59e0b", "#f97316", "#ef4444"],
+      borderWidth: 1.5,
+      borderRadius: 10,
+      borderSkipped: false,
+    }]
+  };
+
+  const departmentChart = {
+    labels: departmentPerformance.map(d => d.name),
+    datasets: [
+      {
+        label: t.revenue,
+        data: departmentPerformance.map(d => d.revenue),
+        backgroundColor: "#3b82f6bb",
+        borderColor: "#3b82f6",
+        borderWidth: 1.5,
+        borderRadius: 8,
+        borderSkipped: false,
+      },
+      {
+        label: t.profit,
+        data: departmentPerformance.map(d => d.profit),
+        backgroundColor: "#10b981bb",
+        borderColor: "#10b981",
+        borderWidth: 1.5,
+        borderRadius: 8,
+        borderSkipped: false,
+      }
+    ]
+  };
   
   const ratiosBarChart = {
     labels: financialRatios.map(r => r.name),
@@ -1507,16 +1716,24 @@ export default function FinancePage() {
       {
         label: tCommon.performance,
         data: financialRatios.map(r => r.value),
-        backgroundColor: financialRatios.map(r => r.status === "good" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4444"),
+        backgroundColor: financialRatios.map(r =>
+          r.status === "good" ? "#10b981bb" : r.status === "warning" ? "#f59e0bbb" : "#ef4444bb"
+        ),
+        borderColor: financialRatios.map(r =>
+          r.status === "good" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4444"
+        ),
+        borderWidth: 1.5,
         borderRadius: 8,
-        borderWidth: 0
+        borderSkipped: false,
       },
       {
         label: tCommon.target,
         data: financialRatios.map(r => r.target),
-        backgroundColor: "#3b82f660",
+        backgroundColor: "#3b82f650",
+        borderColor: "#3b82f6",
+        borderWidth: 1,
         borderRadius: 8,
-        borderWidth: 0
+        borderSkipped: false,
       }
     ]
   };
@@ -1525,16 +1742,25 @@ export default function FinancePage() {
     ...chartBase,
     indexAxis: 'y' as const,
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
+    plugins: {
+      ...chartBase.plugins,
+      legend: {
+        ...chartBase.plugins.legend,
+        position: "top" as const,
+      }
+    },
     scales: {
       x: { 
-        ticks: { color: theme.textSecondary }, 
-        grid: { color: `${theme.border}60` },
-        title: { display: true, text: `% / ${tCommon.value}` }
+        ticks: { color: theme.textSecondary, font: { size: isMobile ? 9 : 11 }, maxTicksLimit: 5 }, 
+        grid: { color: `${theme.border}40`, drawBorder: false },
+        border: { display: false },
+        title: { display: !isMobile, text: `% / ${tCommon.value}`, color: theme.textSecondary, font: { size: 11 } }
       },
       y: { 
-        ticks: { color: theme.textSecondary }, 
-        grid: { display: false }
+        ticks: { color: theme.textSecondary, font: { size: isMobile ? 9 : 11 } }, 
+        grid: { display: false },
+        border: { display: false },
       }
     }
   };
@@ -1566,8 +1792,8 @@ export default function FinancePage() {
       <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{animations}</style>
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: "48px", height: "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ color: theme.textSecondary, fontSize: "14px" }}>{tCommon.loading}</p>
+          <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{tCommon.loading}</p>
         </div>
       </div>
     );
@@ -1575,35 +1801,58 @@ export default function FinancePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+      {/* Sidebar - Fixed */}
       <Sidebar />
-      <div style={{ marginLeft: isMobile ? 0 : "280px", flex: 1, padding: isMobile ? "16px" : "28px", background: theme.background }}>
-        <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
+
+      {/* Contenu principal */}
+      <div style={{ 
+        marginLeft: contentMarginLeft, 
+        flex: 1, 
+        padding: isMobile ? "0" : contentPadding,
+        paddingBottom: isMobile ? "70px" : "24px",
+        width: isMobile ? "100%" : "auto",
+        overflowX: "hidden"
+      }}>
+        <div style={{ maxWidth: "1600px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
           {/* HEADER */}
-          <div style={{ marginBottom: "28px", animation: "fadeInDown 0.5s ease" }}>
+          <div style={{
+            marginBottom: isMobile ? "0" : "28px",
+            animation: "fadeInDown 0.5s ease",
+            ...(isMobile ? { position: "sticky", top: 0, zIndex: 100 } : {})
+          }}>
             <div style={{
-              background: theme.surface, borderRadius: "22px", padding: isMobile ? "20px" : "26px",
-              border: `1px solid ${theme.border}`, position: "relative", overflow: "hidden"
+              background: theme.surface,
+              borderRadius: isMobile ? "0" : "22px",
+              padding: headerPadding,
+              border: isMobile ? "none" : `1px solid ${theme.border}`,
+              borderBottom: isMobile ? `1px solid ${theme.border}` : undefined,
+              position: "relative", overflow: "hidden",
+              boxShadow: isMobile ? "0 2px 16px rgba(0,0,0,0.10)" : "none"
             }}>
               <div style={{ position: "absolute", top: -60, right: -60, width: "220px", height: "220px", background: `radial-gradient(circle, ${theme.primary}12, transparent 70%)`, borderRadius: "50%", pointerEvents: "none" }} />
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "20px", position: "relative" }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
-                    <div style={{ width: "50px", height: "50px", background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`, borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
+                    <div style={{ width: isMobile ? "40px" : "50px", height: isMobile ? "40px" : "50px", background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`, borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
                       <Icon.BarChart />
                     </div>
                     <div>
-                      <h1 style={{ color: theme.text, fontSize: isMobile ? "22px" : "26px", margin: 0, fontWeight: "700", letterSpacing: "-0.5px" }}>{t.title}</h1>
-                      <p style={{ color: theme.textSecondary, marginTop: "3px", fontSize: "12px" }}>{t.subtitle}</p>
+                      <h1 style={{ color: theme.text, fontSize: isMobile ? "20px" : "26px", fontWeight: "700", letterSpacing: "-0.5px" }}>{t.title}</h1>
+                      <p style={{ color: theme.textSecondary, marginTop: "3px", fontSize: isMobile ? "10px" : "12px" }}>{t.subtitle}</p>
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <StatBadge
                       icon={<Icon.Calendar />}
-                      value={selectedPeriod === "month" ? `${months[selectedMonth]} ${selectedYear}` : selectedPeriod === "quarter" ? `${tCommon.quarter} ${selectedQuarter + 1} ${selectedYear}` : `${tCommon.year} ${selectedYear}`}
+                      value={selectedPeriod === "month" 
+                        ? (isMobile ? shortMonths[selectedMonth] : `${months[selectedMonth]} ${selectedYear}`)
+                        : selectedPeriod === "quarter" 
+                          ? `${tCommon.quarterShort}${selectedQuarter + 1} ${selectedYear}` 
+                          : `${selectedYear}`}
                       label=""
                       theme={theme}
                     />
@@ -1611,7 +1860,7 @@ export default function FinancePage() {
                     {stats.cashflowWarning && (
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(239,68,68,0.12)", padding: "7px 14px", borderRadius: "20px", animation: "pulse 2s infinite" }}>
                         <Icon.Alert />
-                        <span style={{ fontSize: "12px", color: "#ef4444", fontWeight: "600" }}>{tCommon.cashAlert}</span>
+                        <span style={{ fontSize: isMobile ? "10px" : "12px", color: "#ef4444", fontWeight: "600" }}>{tCommon.cashAlert}</span>
                       </div>
                     )}
                   </div>
@@ -1621,23 +1870,21 @@ export default function FinancePage() {
                   <button
                     onClick={refreshData}
                     disabled={refreshing}
-                    style={{ padding: "9px 16px", background: `${theme.primary}18`, border: `1px solid ${theme.primary}40`, borderRadius: "10px", color: theme.primary, cursor: refreshing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "7px", fontSize: "13px", fontWeight: "600", opacity: refreshing ? 0.6 : 1, transition: "all 0.2s" }}
+                    style={{ padding: isMobile ? "6px 12px" : "9px 16px", background: `${theme.primary}18`, border: `1px solid ${theme.primary}40`, borderRadius: "10px", color: theme.primary, cursor: refreshing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "11px" : "13px", fontWeight: "600", opacity: refreshing ? 0.6 : 1, transition: "all 0.2s" }}
                   >
                     <span style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none", display: "inline-flex" }}>
                       <Icon.Refresh />
                     </span>
                     {refreshing ? tCommon.sync + "…" : tCommon.refresh}
                   </button>
-
-                  {/* BOUTON D'EXPORTATION SUPPRIMÉ DÉFINITIVEMENT */}
                 </div>
               </div>
 
               {/* ACTIONS RAPIDES */}
               <div style={{ marginTop: "20px", display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "flex-start", paddingTop: "16px", borderTop: `1px solid ${theme.border}` }}>
-                <ActionButton icon={<Icon.Plus />} label={t.addExpense} onClick={() => setExpenseModalOpen(true)} color={theme.primary} theme={theme} />
-                <ActionButton icon={<Icon.Target />} label={t.setBudget} onClick={() => setBudgetModalOpen(true)} color={theme.accent} theme={theme} />
-                <ActionButton icon={<Icon.Bank />} label={t.addAccount} onClick={() => setBankModalOpen(true)} color="#8b5cf6" theme={theme} />
+                <ActionButton icon={<Icon.Plus />} label={t.addExpense} onClick={() => setExpenseModalOpen(true)} color={theme.primary} theme={theme} isMobile={isMobile} />
+                <ActionButton icon={<Icon.Target />} label={t.setBudget} onClick={() => setBudgetModalOpen(true)} color={theme.accent} theme={theme} isMobile={isMobile} />
+                <ActionButton icon={<Icon.Bank />} label={t.addAccount} onClick={() => setBankModalOpen(true)} color="#8b5cf6" theme={theme} isMobile={isMobile} />
               </div>
 
               {/* FILTERS */}
@@ -1660,16 +1907,16 @@ export default function FinancePage() {
              
               {/* Search bar */}
               <div style={{ marginTop: "16px", position: "relative" }}>
-                <Icon.Search size={15} color={theme.textSecondary} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+                <Icon.Search style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
                 <input
                   type="text"
                   placeholder={`${tCommon.search}...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{
-                    width: "100%", padding: "10px 12px 10px 36px",
+                    width: "100%", padding: isMobile ? "8px 10px 8px 32px" : "10px 12px 10px 36px",
                     background: theme.surfaceHover, border: `1px solid ${theme.border}`,
-                    borderRadius: "12px", color: theme.text, fontSize: "13px",
+                    borderRadius: "12px", color: theme.text, fontSize: isMobile ? "12px" : "13px",
                     outline: "none", transition: "border-color 0.2s"
                   }}
                   onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
@@ -1678,7 +1925,7 @@ export default function FinancePage() {
               </div>
 
               {/* Health bar */}
-              <div style={{ marginTop: "20px", display: "flex", gap: "24px", flexWrap: "wrap" }}>
+              <div style={{ marginTop: "20px", display: "flex", gap: "16px", flexWrap: "wrap" }}>
                 {[
                   { label: tCommon.situation, value: stats.netProfit >= 0 ? `${tCommon.profitable} ✓` : `${tCommon.loss} ✗`, color: stats.netProfit >= 0 ? "#10b981" : "#ef4444" },
                   { label: `${tCommon.forecast} ${tCommon.monthPlus}3`, value: formatCurrency(cashflowProjection[2]?.balance || 0), color: (cashflowProjection[2]?.balance || 0) >= 10000 ? "#10b981" : "#ef4444" },
@@ -1686,42 +1933,45 @@ export default function FinancePage() {
                   { label: tCommon.healthScore, value: `${Math.min(100, Math.round(stats.currentRatio * 30 + Math.max(0, stats.netMargin) * 2))}/100`, color: theme.accent }
                 ].map((item, i) => (
                   <div key={i}>
-                    <div style={{ color: theme.textSecondary, fontSize: "11px", marginBottom: "2px" }}>{item.label}</div>
-                    <div style={{ color: item.color, fontWeight: "700", fontSize: "14px" }}>{item.value}</div>
+                    <div style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", marginBottom: "2px" }}>{item.label}</div>
+                    <div style={{ color: item.color, fontWeight: "700", fontSize: isMobile ? "12px" : "14px" }}>{item.value}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
+          {/* SCROLLABLE CONTENT (mobile padding wrapper) */}
+          <div style={{ padding: isMobile ? "16px 12px" : "0", marginTop: isMobile ? "0" : "0" }}>
+
           {/* MESSAGE */}
           {message && (
-            <div style={{ background: messageType === "success" ? "#10b98115" : "#ef444415", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#ef4444", padding: "13px 20px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "500", animation: "slideIn 0.3s ease" }}>
+            <div style={{ background: messageType === "success" ? "#10b98115" : "#ef444415", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#ef4444", padding: isMobile ? "10px" : "13px 20px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", fontSize: isMobile ? "12px" : "14px", fontWeight: "500", animation: "slideIn 0.3s ease" }}>
               {messageType === "success" ? <Icon.CheckCircle /> : <Icon.Alert />}
               {message}
             </div>
           )}
 
           {/* KPI GRID */}
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "150px" : "190px"}, 1fr))`, gap: "14px", marginBottom: "28px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "150px" : "190px"}, 1fr))`, gap: cardGap, marginBottom: "28px" }}>
             {kpiCards.map((card, idx) => (
               <KpiCard key={idx} {...card} index={idx} theme={theme} isMobile={isMobile} />
             ))}
           </div>
 
           {/* TABS */}
-          <div style={{ display: "flex", gap: "2px", marginBottom: "24px", borderBottom: `2px solid ${theme.border}`, overflowX: "auto", paddingBottom: "0" }}>
+          <div style={{ display: "flex", gap: "2px", marginBottom: "24px", borderBottom: `2px solid ${theme.border}`, overflowX: "auto", paddingBottom: "0", WebkitOverflowScrolling: "touch" }}>
             {tabsList.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  padding: "11px 20px", background: "transparent", border: "none",
+                  padding: isMobile ? "8px 12px" : "11px 20px", background: "transparent", border: "none",
                   borderBottom: activeTab === tab.id ? `2px solid ${theme.primary}` : "2px solid transparent",
                   marginBottom: "-2px",
                   color: activeTab === tab.id ? theme.primary : theme.textSecondary,
                   cursor: "pointer", transition: "all 0.2s", fontWeight: activeTab === tab.id ? "600" : "500",
-                  fontSize: isMobile ? "11px" : "13px", display: "flex", alignItems: "center", gap: "7px",
+                  fontSize: isMobile ? "10px" : "13px", display: "flex", alignItems: "center", gap: "5px",
                   whiteSpace: "nowrap"
                 }}
               >
@@ -1736,12 +1986,16 @@ export default function FinancePage() {
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
                 <SectionCard title={<><Icon.TrendUp /> {t.revenue} & {tCommon.expenses}</>} theme={theme}>
-                  <Line data={revenueExpensesChart} options={chartBase} />
+                  <div style={{ height: chartHeight, position: "relative" }}>
+                    <Line data={revenueExpensesChart} options={chartBase} />
+                  </div>
                 </SectionCard>
                 <SectionCard title={<><Icon.BarChart /> {tCommon.expenseDistribution}</>} theme={theme}>
                   {Object.values(expensesByCategory).some(v => v > 0)
-                    ? <Doughnut data={expensesPieData} options={pieOpts} />
-                    : <div style={{ textAlign: "center", padding: "60px", color: theme.textSecondary, fontSize: "14px" }}>{tCommon.noData}</div>
+                    ? <div style={{ height: chartHeight, position: "relative" }}>
+                        <Doughnut data={expensesPieData} options={pieOpts} />
+                      </div>
+                    : <div style={{ textAlign: "center", padding: "40px", color: theme.textSecondary }}>{tCommon.noData}</div>
                   }
                 </SectionCard>
               </div>
@@ -1753,10 +2007,10 @@ export default function FinancePage() {
                   { icon: <Icon.Overdue />, label: t.overdue, value: formatCurrency(stats.overdueAmount), color: "#f59e0b" },
                   { icon: <Icon.ROI />, label: t.roi, value: `${stats.roi.toFixed(1)}%`, color: "#06b6d4" }
                 ].map((item, i) => (
-                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "18px", textAlign: "center", border: `1px solid ${theme.border}` }}>
-                    <div style={{ width: "38px", height: "38px", borderRadius: "12px", background: `${item.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", color: item.color }}>{item.icon}</div>
-                    <div style={{ fontSize: "20px", fontWeight: "700", color: item.color }}>{item.value}</div>
-                    <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "4px" }}>{item.label}</div>
+                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "16px", textAlign: "center", border: `1px solid ${theme.border}` }}>
+                    <div style={{ width: isMobile ? "32px" : "38px", height: isMobile ? "32px" : "38px", borderRadius: "12px", background: `${item.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", color: item.color }}>{item.icon}</div>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "700", color: item.color }}>{item.value}</div>
+                    <div style={{ fontSize: isMobile ? "9px" : "11px", color: theme.textSecondary, marginTop: "4px" }}>{item.label}</div>
                   </div>
                 ))}
               </div>
@@ -1766,12 +2020,12 @@ export default function FinancePage() {
                   {topClients.length === 0
                     ? <div style={{ textAlign: "center", padding: "40px", color: theme.textSecondary }}>{tCommon.noData}</div>
                     : topClients.map((c, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <div style={{ width: "26px", height: "26px", borderRadius: "8px", background: `${theme.primary}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "700", color: theme.primary }}>{i + 1}</div>
-                          <span style={{ fontSize: "13px", color: theme.text }}>{c.name}</span>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div style={{ width: "24px", height: "24px", borderRadius: "8px", background: `${theme.primary}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", color: theme.primary }}>{i + 1}</div>
+                          <span style={{ fontSize: isMobile ? "11px" : "13px", color: theme.text, wordBreak: "break-word" }}>{c.name}</span>
                         </div>
-                        <span style={{ color: theme.accent, fontWeight: "700", fontSize: "13px" }}>{formatCurrency(c.amount)}</span>
+                        <span style={{ color: theme.accent, fontWeight: "700", fontSize: isMobile ? "11px" : "13px" }}>{formatCurrency(c.amount)}</span>
                       </div>
                     ))
                   }
@@ -1780,12 +2034,12 @@ export default function FinancePage() {
                   {topProducts.length === 0
                     ? <div style={{ textAlign: "center", padding: "40px", color: theme.textSecondary }}>{tCommon.noData}</div>
                     : topProducts.map((p, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <div style={{ width: "26px", height: "26px", borderRadius: "8px", background: `${theme.accent}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "700", color: theme.accent }}>{i + 1}</div>
-                          <span style={{ fontSize: "13px", color: theme.text }}>{p.name}</span>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div style={{ width: "24px", height: "24px", borderRadius: "8px", background: `${theme.accent}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", color: theme.accent }}>{i + 1}</div>
+                          <span style={{ fontSize: isMobile ? "11px" : "13px", color: theme.text, wordBreak: "break-word" }}>{p.name}</span>
                         </div>
-                        <span style={{ color: theme.accent, fontWeight: "700", fontSize: "13px" }}>{formatCurrency(p.amount)}</span>
+                        <span style={{ color: theme.accent, fontWeight: "700", fontSize: isMobile ? "11px" : "13px" }}>{formatCurrency(p.amount)}</span>
                       </div>
                     ))
                   }
@@ -1793,7 +2047,9 @@ export default function FinancePage() {
               </div>
 
               <SectionCard title={<><Icon.TrendUp /> {tCommon.detailedProfitEvolution}</>} theme={theme}>
-                <Line data={profitChart} options={chartBase} />
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Line data={profitChart} options={chartBase} />
+                </div>
               </SectionCard>
             </div>
           )}
@@ -1802,7 +2058,7 @@ export default function FinancePage() {
           {activeTab === "income" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <SectionCard theme={theme} style={{ marginBottom: "20px" }}>
-                <h3 style={{ color: theme.text, marginBottom: "20px", fontSize: "17px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
+                <h3 style={{ color: theme.text, marginBottom: "20px", fontSize: isMobile ? "15px" : "17px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
                   <Icon.Income /> {t.income}
                 </h3>
                 {[
@@ -1819,20 +2075,22 @@ export default function FinancePage() {
                   { label: tCommon.ebt, value: formatCurrency(stats.ebt), bold: true, color: stats.ebt >= 0 ? "#10b981" : "#ef4444" },
                   { label: `└ ${tCommon.incomeTax}`, value: `− ${formatCurrency(stats.tax)}`, indent: true, muted: true },
                 ].map((row, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", paddingLeft: row.indent ? "20px" : "0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                    <span style={{ fontSize: "14px", color: row.muted ? theme.textSecondary : theme.text, fontWeight: row.bold ? "600" : "400" }}>{row.label}</span>
-                    <span style={{ fontSize: "14px", fontWeight: row.bold ? "700" : "400", color: row.color || (row.muted ? theme.textSecondary : theme.text) }}>{row.value}</span>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", paddingLeft: row.indent ? "16px" : "0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
+                    <span style={{ fontSize: isMobile ? "11px" : "14px", color: row.muted ? theme.textSecondary : theme.text, fontWeight: row.bold ? "600" : "400" }}>{row.label}</span>
+                    <span style={{ fontSize: isMobile ? "11px" : "14px", fontWeight: row.bold ? "700" : "400", color: row.color || (row.muted ? theme.textSecondary : theme.text) }}>{row.value}</span>
                   </div>
                 ))}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", marginTop: "12px", background: stats.netProfit >= 0 ? "#10b98112" : "#ef444412", borderRadius: "14px", border: `1px solid ${stats.netProfit >= 0 ? "#10b981" : "#ef4444"}30` }}>
-                  <span style={{ fontWeight: "700", fontSize: "16px", color: theme.text }}>{t.profit.toUpperCase()}</span>
-                  <span style={{ fontWeight: "800", fontSize: "20px", color: stats.netProfit >= 0 ? "#10b981" : "#ef4444" }}>
-                    {formatCurrency(stats.netProfit)} <span style={{ fontSize: "14px" }}>({stats.netMargin.toFixed(1)}%)</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", marginTop: "12px", background: stats.netProfit >= 0 ? "#10b98112" : "#ef444412", borderRadius: "14px", border: `1px solid ${stats.netProfit >= 0 ? "#10b981" : "#ef4444"}30` }}>
+                  <span style={{ fontWeight: "700", fontSize: isMobile ? "14px" : "16px", color: theme.text }}>{t.profit.toUpperCase()}</span>
+                  <span style={{ fontWeight: "800", fontSize: isMobile ? "16px" : "20px", color: stats.netProfit >= 0 ? "#10b981" : "#ef4444" }}>
+                    {formatCurrency(stats.netProfit)} <span style={{ fontSize: isMobile ? "10px" : "14px" }}>({stats.netMargin.toFixed(1)}%)</span>
                   </span>
                 </div>
               </SectionCard>
               <SectionCard title={<><Icon.TrendUp /> {tCommon.monthlyEvolution}</>} theme={theme}>
-                <Line data={profitChart} options={chartBase} />
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Line data={profitChart} options={chartBase} />
+                </div>
               </SectionCard>
             </div>
           )}
@@ -1842,7 +2100,7 @@ export default function FinancePage() {
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
                 <SectionCard theme={theme}>
-                  <h3 style={{ color: theme.text, marginBottom: "18px", fontSize: "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "14px" : "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
                     <Icon.TrendUp /> {tCommon.assets}
                   </h3>
                   {[
@@ -1853,14 +2111,14 @@ export default function FinancePage() {
                     { label: tCommon.fixedAssets, value: formatCurrency(stats.fixedAssets), bold: true },
                     { label: tCommon.totalAssets, value: formatCurrency(stats.totalAssets), bold: true, color: theme.accent, big: true },
                   ].map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", paddingLeft: r.indent ? "16px" : "0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                      <span style={{ fontSize: r.big ? "15px" : "13px", color: r.bold ? theme.text : theme.textSecondary, fontWeight: r.bold ? "600" : "400" }}>{r.label}</span>
-                      <span style={{ fontSize: r.big ? "15px" : "13px", fontWeight: r.bold ? "700" : "400", color: r.color || (r.bold ? theme.text : theme.textSecondary) }}>{r.value}</span>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", paddingLeft: r.indent ? "12px" : "0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
+                      <span style={{ fontSize: r.big ? (isMobile ? "13px" : "15px") : (isMobile ? "11px" : "13px"), color: r.bold ? theme.text : theme.textSecondary, fontWeight: r.bold ? "600" : "400" }}>{r.label}</span>
+                      <span style={{ fontSize: r.big ? (isMobile ? "13px" : "15px") : (isMobile ? "11px" : "13px"), fontWeight: r.bold ? "700" : "400", color: r.color || (r.bold ? theme.text : theme.textSecondary) }}>{r.value}</span>
                     </div>
                   ))}
                 </SectionCard>
                 <SectionCard theme={theme}>
-                  <h3 style={{ color: theme.text, marginBottom: "18px", fontSize: "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "14px" : "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
                     <Icon.Scale /> {tCommon.liabilities}
                   </h3>
                   {[
@@ -1873,15 +2131,17 @@ export default function FinancePage() {
                     { label: t.equity, value: formatCurrency(stats.equity), bold: true, color: "#10b981" },
                     { label: tCommon.totalAssets, value: formatCurrency(stats.totalAssets), bold: true, color: theme.accent, big: true },
                   ].map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", paddingLeft: r.indent ? "16px" : "0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                      <span style={{ fontSize: r.big ? "15px" : "13px", color: r.bold ? theme.text : theme.textSecondary, fontWeight: r.bold ? "600" : "400" }}>{r.label}</span>
-                      <span style={{ fontSize: r.big ? "15px" : "13px", fontWeight: r.bold ? "700" : "400", color: r.color || (r.bold ? theme.text : theme.textSecondary) }}>{r.value}</span>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", paddingLeft: r.indent ? "12px" : "0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
+                      <span style={{ fontSize: r.big ? (isMobile ? "13px" : "15px") : (isMobile ? "11px" : "13px"), color: r.bold ? theme.text : theme.textSecondary, fontWeight: r.bold ? "600" : "400" }}>{r.label}</span>
+                      <span style={{ fontSize: r.big ? (isMobile ? "13px" : "15px") : (isMobile ? "11px" : "13px"), fontWeight: r.bold ? "700" : "400", color: r.color || (r.bold ? theme.text : theme.textSecondary) }}>{r.value}</span>
                     </div>
                   ))}
                 </SectionCard>
               </div>
               <SectionCard title={<><Icon.BarChart /> {tCommon.balanceSheetStructure}</>} theme={theme}>
-                <Bar data={balanceSheetChart} options={chartBase} />
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Bar data={balanceSheetChart} options={chartBase} />
+                </div>
               </SectionCard>
             </div>
           )}
@@ -1895,24 +2155,28 @@ export default function FinancePage() {
                   { icon: <Icon.Cashflow />, label: t.netCashflow, value: formatCurrency(stats.netCashflow), color: stats.netCashflow >= 0 ? "#10b981" : "#ef4444" },
                   { icon: <Icon.TrendUp />, label: `${tCommon.forecast} ${tCommon.monthPlus}3`, value: formatCurrency(cashflowProjection[2]?.balance || 0), color: (cashflowProjection[2]?.balance || 0) >= 0 ? "#10b981" : "#ef4444" }
                 ].map((c, i) => (
-                  <div key={i} style={{ background: theme.surface, borderRadius: "20px", padding: "26px", textAlign: "center", border: `1px solid ${theme.border}` }}>
-                    <div style={{ width: "46px", height: "46px", borderRadius: "14px", background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", color: c.color }}>{c.icon}</div>
-                    <div style={{ fontSize: "28px", color: c.color, fontWeight: "800", letterSpacing: "-1px" }}>{c.value}</div>
-                    <div style={{ fontSize: "13px", color: theme.textSecondary, marginTop: "6px" }}>{c.label}</div>
+                  <div key={i} style={{ background: theme.surface, borderRadius: "20px", padding: isMobile ? "16px" : "26px", textAlign: "center", border: `1px solid ${theme.border}` }}>
+                    <div style={{ width: isMobile ? "36px" : "46px", height: isMobile ? "36px" : "46px", borderRadius: "14px", background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", color: c.color }}>{c.icon}</div>
+                    <div style={{ fontSize: isMobile ? "20px" : "28px", color: c.color, fontWeight: "800", letterSpacing: "-1px" }}>{c.value}</div>
+                    <div style={{ fontSize: isMobile ? "11px" : "13px", color: theme.textSecondary, marginTop: "4px" }}>{c.label}</div>
                   </div>
                 ))}
               </div>
               <SectionCard title={<><Icon.Cashflow /> {tCommon.monthlyCashflow}</>} theme={theme} style={{ marginBottom: "20px" }}>
-                <Bar data={cashflowChart} options={chartBase} />
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Bar data={cashflowChart} options={chartBase} />
+                </div>
               </SectionCard>
               <SectionCard title={<><Icon.TrendUp /> {tCommon.sixMonthForecast}</>} theme={theme}>
-                <Line data={cashflowProjChart} options={chartBase} />
-                <div style={{ marginTop: "20px", display: "grid", gridTemplateColumns: `repeat(${isMobile ? 2 : 6}, 1fr)`, gap: "10px" }}>
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Line data={cashflowProjChart} options={chartBase} />
+                </div>
+                <div style={{ marginTop: "20px", display: "grid", gridTemplateColumns: `repeat(${isMobile ? 2 : 6}, 1fr)`, gap: "8px" }}>
                   {cashflowProjection.map((p, i) => (
-                    <div key={i} style={{ textAlign: "center", padding: "12px 8px", background: theme.surfaceHover, borderRadius: "12px" }}>
-                      <div style={{ fontSize: "12px", fontWeight: "700", color: theme.text }}>{p.month}</div>
-                      <div style={{ fontSize: "13px", color: p.status === "excellent" ? "#10b981" : p.status === "good" ? "#f59e0b" : "#ef4444", fontWeight: "700", marginTop: "4px" }}>{formatCurrency(p.balance)}</div>
-                      <div style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "3px" }}>{p.status === "excellent" ? `🟢 ${tCommon.healthy}` : p.status === "good" ? `🟡 ${tCommon.okay}` : `🔴 ${tCommon.critical}`}</div>
+                    <div key={i} style={{ textAlign: "center", padding: "8px", background: theme.surfaceHover, borderRadius: "10px" }}>
+                      <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "700", color: theme.text }}>{p.month}</div>
+                      <div style={{ fontSize: isMobile ? "10px" : "13px", color: p.status === "excellent" ? "#10b981" : p.status === "good" ? "#f59e0b" : "#ef4444", fontWeight: "700", marginTop: "2px" }}>{formatCurrency(p.balance)}</div>
+                      <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "2px" }}>{p.status === "excellent" ? `🟢 ${tCommon.healthy}` : p.status === "good" ? `🟡 ${tCommon.okay}` : `🔴 ${tCommon.critical}`}</div>
                     </div>
                   ))}
                 </div>
@@ -1929,95 +2193,91 @@ export default function FinancePage() {
                   { icon: <Icon.Invoice />, label: t.administrativeExpenses, value: formatCurrency(stats.administrativeExpenses), color: "#8b5cf6" },
                   { icon: <Icon.Bank />, label: t.financialExpenses, value: formatCurrency(stats.financialExpenses), color: "#ef4444" }
                 ].map((c, i) => (
-                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "18px", textAlign: "center", border: `1px solid ${theme.border}` }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", color: c.color }}>{c.icon}</div>
-                    <div style={{ fontSize: "20px", fontWeight: "700", color: c.color }}>{c.value}</div>
-                    <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "4px" }}>{c.label}</div>
+                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "16px", textAlign: "center", border: `1px solid ${theme.border}` }}>
+                    <div style={{ width: isMobile ? "32px" : "40px", height: isMobile ? "32px" : "40px", borderRadius: "12px", background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", color: c.color }}>{c.icon}</div>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "700", color: c.color }}>{c.value}</div>
+                    <div style={{ fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary, marginTop: "4px" }}>{c.label}</div>
                   </div>
                 ))}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
                 <SectionCard title={<><Icon.BarChart /> {tCommon.byCategory}</>} theme={theme}>
-                  <Doughnut data={expensesPieData} options={pieOpts} />
+                  <div style={{ height: chartHeightSmall, position: "relative" }}>
+                    <Doughnut data={expensesPieData} options={pieOpts} />
+                  </div>
                 </SectionCard>
                 <SectionCard title={<><Icon.BarChart /> {tCommon.byFamily}</>} theme={theme}>
-                  <Doughnut data={expensesGroupData} options={pieOpts} />
+                  <div style={{ height: chartHeightSmall, position: "relative" }}>
+                    <Doughnut data={expensesGroupData} options={pieOpts} />
+                  </div>
                 </SectionCard>
               </div>
 
               <SectionCard title={<><Icon.Invoice /> {tCommon.transactions}</>} theme={theme} style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "680px" }}>
-                  <thead>
-                    <tr style={{ borderBottom: `2px solid ${theme.border}` }}>
-                      {[tCommon.date_label, tCommon.category, tCommon.amountHT, tCommon.vat, tCommon.amountIncVat, tCommon.supplier_label, tCommon.paymentMethod, ""].map((h, i) => (
-                        <th key={i} style={{ padding: "10px 12px", textAlign: i >= 2 && i <= 4 ? "right" : "left", fontSize: "12px", fontWeight: "600", color: theme.textSecondary, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {expenses.filter(e => {
-                      if (!e.date) return false;
-                      const d = new Date(e.date);
-                      if (selectedPeriod === "month") return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-                      if (selectedPeriod === "quarter") return Math.floor(d.getMonth() / 3) === selectedQuarter && d.getFullYear() === selectedYear;
-                      if (selectedPeriod === "year") return d.getFullYear() === selectedYear;
-                      return true;
-                    }).filter(e => {
-                      if (!searchTerm) return true;
-                      const cat = getExpenseCategories().find(c => c.value === e.category);
-                      return (e.description || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             (e.vendor || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             (cat?.label || "").toLowerCase().includes(searchTerm.toLowerCase());
-                    }).slice(0, 50).map((exp, i) => {
-                      const cat = getExpenseCategories().find(c => c.value === exp.category);
-                      return (
-                        <tr
-                          key={i}
-                          style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}
-                          onMouseEnter={e => (e.currentTarget.style.background = theme.surfaceHover)}
-                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                        >
-                          <td style={{ padding: "12px", fontSize: "12px", color: theme.textSecondary }}>
-                            {new Date(exp.date).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
-                          </td>
-                          <td style={{ padding: "12px" }}>
-                            <span style={{ background: `${cat?.color || "#64748b"}18`, color: cat?.color || "#64748b", padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "600" }}>
-                              {cat?.icon} {cat?.label || "—"}
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px", textAlign: "right", fontSize: "13px" }}>
-                            {formatCurrency(exp.amountHT || exp.amount / 1.2)}
-                          </td>
-                          <td style={{ padding: "12px", textAlign: "right", fontSize: "13px", color: theme.textSecondary }}>
-                            {formatCurrency(exp.taxAmount || exp.amount * 0.2)}
-                          </td>
-                          <td style={{ padding: "12px", textAlign: "right", fontSize: "13px", color: "#ef4444", fontWeight: "700" }}>
-                            {formatCurrency(exp.amount)}
-                          </td>
-                          <td style={{ padding: "12px", fontSize: "13px" }}>
-                            {exp.vendor || "—"}
-                          </td>
-                          <td style={{ padding: "12px", fontSize: "12px", color: theme.textSecondary }}>
-                            {getPaymentMethods().find(p => p.value === exp.paymentMethod)?.icon}
-                          </td>
-                          <td style={{ padding: "12px" }}>
-                            <button
-                              onClick={() => deleteExpense(exp.id)}
-                              style={{ background: "#ef444418", border: "none", color: "#ef4444", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", display: "flex", transition: "background 0.15s" }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "#ef444430")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "#ef444418")}
-                            >
-                              <Icon.Delete />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: tableMinWidth }}>
+                    <thead>
+                      <tr style={{ borderBottom: `2px solid ${theme.border}` }}>
+                        {[tCommon.date_label, tCommon.category, tCommon.amountHT, tCommon.vat, tCommon.amountIncVat, tCommon.supplier_label, tCommon.paymentMethod, ""].map((h, i) => (
+                          <th key={i} style={{ padding: "8px 10px", textAlign: i >= 2 && i <= 4 ? "right" : "left", fontSize: isMobile ? "10px" : "12px", fontWeight: "600", color: theme.textSecondary, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                        ))}
+                       </tr>
+                    </thead>
+                    <tbody>
+                      {expenses.filter(e => {
+                        if (!e.date) return false;
+                        const d = new Date(e.date);
+                        if (selectedPeriod === "month") return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+                        if (selectedPeriod === "quarter") return Math.floor(d.getMonth() / 3) === selectedQuarter && d.getFullYear() === selectedYear;
+                        if (selectedPeriod === "year") return d.getFullYear() === selectedYear;
+                        return true;
+                      }).filter(e => {
+                        if (!searchTerm) return true;
+                        const cat = getExpenseCategories().find(c => c.value === e.category);
+                        return (e.description || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               (e.vendor || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               (cat?.label || "").toLowerCase().includes(searchTerm.toLowerCase());
+                      }).slice(0, 50).map((exp, i) => {
+                        const cat = getExpenseCategories().find(c => c.value === exp.category);
+                        return (
+                          <tr key={i} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }} onMouseEnter={e => (e.currentTarget.style.background = theme.surfaceHover)} onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>
+                              {new Date(exp.date).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
+                            </td>
+                            <td style={{ padding: "8px 10px" }}>
+                              <span style={{ background: `${cat?.color || "#64748b"}18`, color: cat?.color || "#64748b", padding: "2px 6px", borderRadius: "16px", fontSize: isMobile ? "9px" : "11px", fontWeight: "600" }}>
+                                {cat?.icon} {cat?.label || "—"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "10px" : "13px" }}>
+                              {formatCurrency(exp.amountHT || exp.amount / 1.2)}
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "10px" : "13px", color: theme.textSecondary }}>
+                              {formatCurrency(exp.taxAmount || exp.amount * 0.2)}
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "10px" : "13px", color: "#ef4444", fontWeight: "700" }}>
+                              {formatCurrency(exp.amount)}
+                            </td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>
+                              {exp.vendor || "—"}
+                            </td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>
+                              {getPaymentMethods().find(p => p.value === exp.paymentMethod)?.icon}
+                            </td>
+                            <td style={{ padding: "8px 10px" }}>
+                              <button onClick={() => deleteExpense(exp.id)} style={{ background: "#ef444418", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px 6px", borderRadius: "6px", display: "flex", transition: "background 0.15s" }}>
+                                <Icon.Delete />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
                 {expenses.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "60px", color: theme.textSecondary }}>{tCommon.noData}</div>
+                  <div style={{ textAlign: "center", padding: "40px", color: theme.textSecondary }}>{tCommon.noData}</div>
                 )}
               </SectionCard>
             </div>
@@ -2032,53 +2292,57 @@ export default function FinancePage() {
                   { icon: <Icon.Invoice />, label: tCommon.unpaidInvoices, value: String(stats.pendingInvoices), color: "#f59e0b" },
                   { icon: <Icon.Overdue />, label: t.overdue, value: formatCurrency(stats.overdueAmount), color: "#ef4444" }
                 ].map((c, i) => (
-                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "20px", textAlign: "center", border: `1px solid ${theme.border}` }}>
-                    <div style={{ width: "42px", height: "42px", borderRadius: "13px", background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", color: c.color }}>{c.icon}</div>
-                    <div style={{ fontSize: "24px", fontWeight: "700", color: c.color }}>{c.value}</div>
-                    <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "4px" }}>{c.label}</div>
+                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "16px", textAlign: "center", border: `1px solid ${theme.border}` }}>
+                    <div style={{ width: isMobile ? "32px" : "42px", height: isMobile ? "32px" : "42px", borderRadius: "13px", background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", color: c.color }}>{c.icon}</div>
+                    <div style={{ fontSize: isMobile ? "18px" : "24px", fontWeight: "700", color: c.color }}>{c.value}</div>
+                    <div style={{ fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary, marginTop: "4px" }}>{c.label}</div>
                   </div>
                 ))}
               </div>
               <SectionCard title={<><Icon.BarChart /> {tCommon.agingSchedule}</>} theme={theme} style={{ marginBottom: "20px" }}>
-                <Bar data={agingChart} options={{ ...chartBase, plugins: { ...chartBase.plugins, legend: { display: false } } }} />
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Bar data={agingChart} options={{ ...chartBase, plugins: { ...chartBase.plugins, legend: { display: false } } }} />
+                </div>
               </SectionCard>
 
               <SectionCard title={<><Icon.Invoice /> {tCommon.customerInvoices}</>} theme={theme} style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
-                  <thead>
-                    <tr style={{ borderBottom: `2px solid ${theme.border}` }}>
-                      {[tCommon.reference, tCommon.client, tCommon.amount, tCommon.status, tCommon.dueDate, tCommon.delay].map((h, i) => (
-                        <th key={i} style={{ padding: "10px 12px", textAlign: i === 2 ? "right" : "left", fontSize: "12px", fontWeight: "600", color: theme.textSecondary, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoices.filter(inv => {
-                      if (!searchTerm) return true;
-                      return (inv.reference || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             (inv.clientName || "").toLowerCase().includes(searchTerm.toLowerCase());
-                    }).slice(0, 50).map((inv, i) => {
-                      const isOverdue = inv.status !== "paid" && inv.dueDate && new Date(inv.dueDate) < new Date();
-                      const daysOverdue = inv.dueDate ? Math.floor((Date.now() - new Date(inv.dueDate).getTime()) / 86400000) : 0;
-                      return (
-                        <tr key={i} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                          <td style={{ padding: "12px", fontSize: "13px", color: theme.textSecondary }}>{inv.reference || "—"}</td>
-                          <td style={{ padding: "12px", fontSize: "13px" }}>{inv.clientName || "—"}</td>
-                          <td style={{ padding: "12px", textAlign: "right", fontSize: "13px", fontWeight: "700", color: theme.accent }}>{formatCurrency(inv.amount)}</td>
-                          <td style={{ padding: "12px" }}>
-                            <span style={{ background: inv.status === "paid" ? "#10b98120" : isOverdue ? "#ef444420" : "#f59e0b20", color: inv.status === "paid" ? "#10b981" : isOverdue ? "#ef4444" : "#f59e0b", padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "600" }}>
-                              {inv.status === "paid" ? tCommon.paid : isOverdue ? tCommon.overdue : tCommon.pending}
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px", fontSize: "12px", color: theme.textSecondary }}>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "—"}</td>
-                          <td style={{ padding: "12px", fontSize: "12px", color: isOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isOverdue ? "600" : "400" }}>{isOverdue ? `${daysOverdue}${tCommon.days}` : "—"}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `2px solid ${theme.border}` }}>
+                        {[tCommon.reference, tCommon.client, tCommon.amount, tCommon.status, tCommon.dueDate, tCommon.delay].map((h, i) => (
+                          <th key={i} style={{ padding: "8px 10px", textAlign: i === 2 ? "right" : "left", fontSize: isMobile ? "10px" : "12px", fontWeight: "600", color: theme.textSecondary, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                        ))}
+                       </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.filter(inv => {
+                        if (!searchTerm) return true;
+                        return (inv.reference || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               (inv.clientName || "").toLowerCase().includes(searchTerm.toLowerCase());
+                      }).slice(0, 50).map((inv, i) => {
+                        const isOverdue = inv.status !== "paid" && inv.dueDate && new Date(inv.dueDate) < new Date();
+                        const daysOverdue = inv.dueDate ? Math.floor((Date.now() - new Date(inv.dueDate).getTime()) / 86400000) : 0;
+                        return (
+                          <tr key={i} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px", color: theme.textSecondary }}>{inv.reference || "—"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>{inv.clientName || "—"}</td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "11px" : "13px", fontWeight: "700", color: theme.accent }}>{formatCurrency(inv.amount)}</td>
+                            <td style={{ padding: "8px 10px" }}>
+                              <span style={{ background: inv.status === "paid" ? "#10b98120" : isOverdue ? "#ef444420" : "#f59e0b20", color: inv.status === "paid" ? "#10b981" : isOverdue ? "#ef4444" : "#f59e0b", padding: "2px 6px", borderRadius: "16px", fontSize: isMobile ? "9px" : "11px", fontWeight: "600" }}>
+                                {inv.status === "paid" ? tCommon.paid : isOverdue ? tCommon.overdue : tCommon.pending}
+                              </span>
+                            </td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "—"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: isOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isOverdue ? "600" : "400" }}>{isOverdue ? `${daysOverdue}${tCommon.days}` : "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
                 {invoices.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "60px", color: theme.textSecondary }}>{tCommon.noData}</div>
+                  <div style={{ textAlign: "center", padding: "40px", color: theme.textSecondary }}>{tCommon.noData}</div>
                 )}
               </SectionCard>
             </div>
@@ -2089,25 +2353,29 @@ export default function FinancePage() {
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "14px", marginBottom: "20px" }}>
                 {budgetVsActual.map((item, i) => (
-                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "20px", border: `1px solid ${theme.border}` }}>
-                    <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "6px" }}>{item.category} {selectedYear}</div>
-                    <div style={{ fontSize: "24px", fontWeight: "700", color: theme.text }}>{formatCurrency(item.budget)}</div>
-                    <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "6px" }}>{tCommon.actual}: {formatCurrency(item.actual)}</div>
-                    <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "16px", border: `1px solid ${theme.border}` }}>
+                    <div style={{ fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary, marginBottom: "4px" }}>{item.category} {selectedYear}</div>
+                    <div style={{ fontSize: isMobile ? "18px" : "24px", fontWeight: "700", color: theme.text }}>{formatCurrency(item.budget)}</div>
+                    <div style={{ fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary, marginTop: "4px" }}>{tCommon.actual}: {formatCurrency(item.actual)}</div>
+                    <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
                       <span style={{ color: item.variance >= 0 ? "#10b981" : "#ef4444" }}>
                         {item.variance >= 0 ? <Icon.TrendUp /> : <Icon.TrendDown />}
                       </span>
-                      <span style={{ fontSize: "13px", fontWeight: "700", color: item.variance >= 0 ? "#10b981" : "#ef4444" }}>{item.variancePercent.toFixed(1)}%</span>
+                      <span style={{ fontSize: isMobile ? "11px" : "13px", fontWeight: "700", color: item.variance >= 0 ? "#10b981" : "#ef4444" }}>{item.variancePercent.toFixed(1)}%</span>
                     </div>
                   </div>
                 ))}
               </div>
               <SectionCard title={<><Icon.Target /> {tCommon.budgetVsActual}</>} theme={theme} style={{ marginBottom: "20px" }}>
-                <Bar data={budgetChart} options={chartBase} />
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Bar data={budgetChart} options={chartBase} />
+                </div>
               </SectionCard>
               <SectionCard title={<><Icon.BarChart /> {tCommon.departmentPerformance}</>} theme={theme}>
                 {departmentPerformance.length > 0
-                  ? <Bar data={departmentChart} options={chartBase} />
+                  ? <div style={{ height: chartHeightSmall, position: "relative" }}>
+                      <Bar data={departmentChart} options={chartBase} />
+                    </div>
                   : <div style={{ textAlign: "center", padding: "40px", color: theme.textSecondary }}>{tCommon.noData}</div>
                 }
               </SectionCard>
@@ -2117,23 +2385,26 @@ export default function FinancePage() {
           {/* RATIOS & KPIs */}
           {activeTab === "ratios" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
-              <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "140px" : "180px"}, 1fr))`, gap: "14px", marginBottom: "20px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "130px" : "180px"}, 1fr))`, gap: "14px", marginBottom: "20px" }}>
                 {financialRatios.map((r, i) => (
-                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "20px", textAlign: "center", border: `1px solid ${r.status === "good" ? "#10b98130" : r.status === "warning" ? "#f59e0b30" : "#ef444430"}` }}>
-                    <div style={{ fontSize: "22px", marginBottom: "8px" }}>{r.status === "good" ? "🟢" : r.status === "warning" ? "🟡" : "🔴"}</div>
-                    <div style={{ fontSize: "26px", fontWeight: "800", color: r.status === "good" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4444", letterSpacing: "-1px" }}>{r.value.toFixed(1)}</div>
-                    <div style={{ fontSize: "12px", fontWeight: "600", color: theme.text, marginTop: "4px" }}>{r.name}</div>
-                    <div style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "3px" }}>{tCommon.target}: {r.target}{r.name.includes(t.currentRatio) ? "" : "%"}</div>
-                    <div style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "6px", opacity: 0.7 }}>{r.description}</div>
+                  <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "16px", textAlign: "center", border: `1px solid ${r.status === "good" ? "#10b98130" : r.status === "warning" ? "#f59e0b30" : "#ef444430"}` }}>
+                    <div style={{ fontSize: isMobile ? "18px" : "22px", marginBottom: "4px" }}>{r.status === "good" ? "🟢" : r.status === "warning" ? "🟡" : "🔴"}</div>
+                    <div style={{ fontSize: isMobile ? "20px" : "26px", fontWeight: "800", color: r.status === "good" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4444", letterSpacing: "-1px" }}>{r.value.toFixed(1)}</div>
+                    <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "600", color: theme.text, marginTop: "4px" }}>{r.name}</div>
+                    <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary, marginTop: "2px" }}>{tCommon.target}: {r.target}{r.name.includes(t.currentRatio) ? "" : "%"}</div>
+                    <div style={{ fontSize: isMobile ? "7px" : "9px", color: theme.textSecondary, marginTop: "4px", opacity: 0.7, wordBreak: "break-word" }}>{r.description}</div>
                   </div>
                 ))}
               </div>
               <SectionCard title={<><Icon.Ratios /> {tCommon.performanceRadar}</>} theme={theme}>
-                <Bar data={ratiosBarChart} options={ratiosBarOptions} />
+                <div style={{ height: chartHeightSmall, position: "relative" }}>
+                  <Bar data={ratiosBarChart} options={ratiosBarOptions} />
+                </div>
               </SectionCard>
             </div>
           )}
 
+          </div>{/* end mobile padding wrapper */}
         </div>
       </div>
 
@@ -2157,10 +2428,10 @@ export default function FinancePage() {
           {getPaymentMethods().map(p => <option key={p.value} value={p.value}>{p.icon} {p.label}</option>)}
         </FormField>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={addExpense} style={{ flex: 1, padding: "13px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <button onClick={addExpense} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             <Icon.Save /> {tCommon.save}
           </button>
-          <button onClick={() => setExpenseModalOpen(false)} style={{ flex: 1, padding: "13px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: "14px" }}>
+          <button onClick={() => setExpenseModalOpen(false)} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
             {tCommon.cancel}
           </button>
         </div>
@@ -2177,10 +2448,10 @@ export default function FinancePage() {
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </FormField>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={addBudget} style={{ flex: 1, padding: "13px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <button onClick={addBudget} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             <Icon.Save /> {tCommon.save}
           </button>
-          <button onClick={() => setBudgetModalOpen(false)} style={{ flex: 1, padding: "13px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: "14px" }}>
+          <button onClick={() => setBudgetModalOpen(false)} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
             {tCommon.cancel}
           </button>
         </div>
@@ -2193,10 +2464,10 @@ export default function FinancePage() {
         </FormField>
         <FormField type="number" placeholder={`${tCommon.initialBalance} (${currencySymbol})`} theme={theme} value={bankForm.balance} onChange={(e: any) => setBankForm({ ...bankForm, balance: e.target.value })} style={{ marginBottom: "22px" }} />
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={addBankAccount} style={{ flex: 1, padding: "13px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <button onClick={addBankAccount} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             <Icon.Save /> {tCommon.add}
           </button>
-          <button onClick={() => setBankModalOpen(false)} style={{ flex: 1, padding: "13px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: "14px" }}>
+          <button onClick={() => setBankModalOpen(false)} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
             {tCommon.cancel}
           </button>
         </div>

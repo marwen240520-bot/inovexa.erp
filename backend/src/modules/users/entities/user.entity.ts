@@ -1,4 +1,4 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+﻿import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -23,11 +23,11 @@ export class User {
   @Column({ default: 'client' })
   role: string;
 
-  @Column({ nullable: true })
-  subscriptionStart: Date;
+  @Column({ type: 'text', nullable: true })
+  subscriptionStart: string;
 
-  @Column({ nullable: true })
-  subscriptionEnd: Date;
+  @Column({ type: 'text', nullable: true })
+  subscriptionEnd: string;
 
   @Column({ default: true })
   isActive: boolean;
@@ -35,12 +35,18 @@ export class User {
   @Column({ type: 'text', nullable: true })
   modules: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
+  theme: string;
+
+  @Column({ type: 'text', nullable: true })
   profileImage: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({ type: 'text', nullable: true })
+  hireDate: string;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Column({ type: 'text', nullable: true })
+  createdAt: string;
+
+  @Column({ type: 'text', nullable: true })
+  updatedAt: string;
 }

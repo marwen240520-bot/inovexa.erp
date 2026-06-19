@@ -9,13 +9,7 @@ export class Order {
   userId: number;
 
   @Column({ nullable: true })
-  clientId: number;
-
-  @Column({ nullable: true })
   clientName: string;
-
-  @Column({ nullable: true })
-  productId: number;
 
   @Column({ nullable: true })
   productName: string;

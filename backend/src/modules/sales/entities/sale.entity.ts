@@ -8,6 +8,9 @@ export class Sale {
   @Column()
   userId: number;
 
+  @Column()
+  productId: number;
+
   @Column({ nullable: true })
   clientName: string;
 

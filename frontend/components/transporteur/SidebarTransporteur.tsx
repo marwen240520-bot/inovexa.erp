@@ -3,14 +3,21 @@ import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: string;
+  color: string;
+}
+
 export default function SidebarTransporteur() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useLanguage();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
-  const [logoError, setLogoError] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<boolean>(false);
 
   useEffect(() => {
     const savedState = localStorage.getItem("sidebar_transporteur_open");
@@ -34,7 +41,7 @@ export default function SidebarTransporteur() {
     localStorage.setItem("sidebar_transporteur_open", newState.toString());
   };
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { path: "/transporteur/dashboard", label: t("transporteur.dashboard.title") || "Tableau de bord", icon: "📊", color: "#667eea" },
     { path: "/transporteur/shipments", label: t("transporteur.shipments.title") || "Mes livraisons", icon: "📦", color: "#10b981" },
     { path: "/transporteur/profile", label: t("transporteur.profile.title") || "Mon profil", icon: "👤", color: "#94a3b8" },
@@ -329,7 +336,7 @@ export default function SidebarTransporteur() {
           >
             <span style={{ fontSize: "20px", transition: "transform 0.2s" }}>🚪</span>
             {sidebarOpen && (
-              <span style={{ fontSize: "14px", fontWeight: "500" }}>{t("common.logout")}</span>
+              <span style={{ fontSize: "14px", fontWeight: "500" }}>{t("common.logout") || "Déconnexion"}</span>
             )}
           </div>
         </nav>

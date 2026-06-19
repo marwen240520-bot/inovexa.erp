@@ -3,9 +3,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+interface MenuItem {
+  name: string;
+  href: string;
+  icon: string;
+  current: boolean;
+}
+
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState<boolean>(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -16,7 +23,7 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { name: 'Accueil', href: '/', icon: '🏠', current: pathname === '/' },
     { name: 'Catégories', href: '/categories', icon: '🏷️', current: pathname === '/categories' },
     { name: 'Fonctionnalités', href: '/#features', icon: '📦', current: false },
@@ -25,7 +32,7 @@ export function Navbar() {
     { name: 'Contact', href: '/#contact', icon: '📞', current: false },
   ];
 
-  const scrollToSection = (e, href) => {
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     if (href === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -39,6 +46,24 @@ export function Navbar() {
       window.location.href = href;
     }
     setMobileMenuOpen(false);
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>, isCurrent: boolean) => {
+    if (!isCurrent) {
+      e.currentTarget.style.color = '#667eea';
+    }
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>, isCurrent: boolean) => {
+    e.currentTarget.style.color = isCurrent ? '#667eea' : '#94a3b8';
+  };
+
+  const handleButtonMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.currentTarget.style.background = '#764ba2';
+  };
+
+  const handleButtonMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.currentTarget.style.background = '#667eea';
   };
 
   return (
@@ -74,10 +99,11 @@ export function Navbar() {
                 transition: 'color 0.2s',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                cursor: 'pointer'
               }}
-              onMouseEnter={(e) => e.target.style.color = '#667eea'}
-              onMouseLeave={(e) => e.target.style.color = item.current ? '#667eea' : '#94a3b8'}
+              onMouseEnter={(e) => handleMouseEnter(e, item.current)}
+              onMouseLeave={(e) => handleMouseLeave(e, item.current)}
             >
               <span>{item.icon}</span>
               {item.name}
@@ -95,8 +121,8 @@ export function Navbar() {
               fontWeight: '500',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#764ba2'}
-            onMouseLeave={(e) => e.target.style.background = '#667eea'}
+            onMouseEnter={handleButtonMouseEnter}
+            onMouseLeave={handleButtonMouseLeave}
           >
             Se connecter
           </Link>
@@ -140,7 +166,8 @@ export function Navbar() {
                 padding: '8px 0',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                cursor: 'pointer'
               }}
             >
               <span>{item.icon}</span>

@@ -23,58 +23,14 @@ export class ClientsService {
     return client;
   }
 
-  async create(userId: number, data: any) {
-    const client = this.clientRepository.create({
-      ...data,
-      userId,
-      totalSpent: data.totalSpent || 0,
-      status: data.status || 'active'
-    });
+  async create(userId: number, data: Partial<Client>) {
+    const client = this.clientRepository.create({ ...data, userId });
     return this.clientRepository.save(client);
   }
 
-  // ⭐ METHODE D'IMPORT MULTIPLE
-  async importClients(userId: number, clientsData: any[]) {
-    let success = 0;
-    let errors = 0;
-    const errorDetails = [];
-
-    for (const clientData of clientsData) {
-      try {
-        // Nettoyer et valider les données
-        const client = this.clientRepository.create({
-          userId: userId,
-          name: clientData.name || clientData.clientName || "Client inconnu",
-          email: clientData.email,
-          phone: clientData.phone || "",
-          address: clientData.address || "",
-          totalSpent: parseFloat(clientData.totalSpent) || 0,
-          status: clientData.status || "active"
-        });
-        
-        await this.clientRepository.save(client);
-        success++;
-      } catch (error) {
-        errors++;
-        errorDetails.push({
-          data: clientData,
-          error: error.message
-        });
-        console.error('Erreur import client:', error.message);
-      }
-    }
-    
-    console.log(`✅ Import terminé: ${success} succès, ${errors} erreurs`);
-    return { success, errors, total: clientsData.length, errorDetails };
-  }
-
-  async update(id: number, userId: number, data: any) {
+  async update(id: number, userId: number, data: Partial<Client>) {
     const client = await this.findOne(id, userId);
-    Object.assign(client, {
-      ...data,
-      totalSpent: data.totalSpent !== undefined ? data.totalSpent : client.totalSpent,
-      status: data.status || client.status
-    });
+    Object.assign(client, data);
     return this.clientRepository.save(client);
   }
 
@@ -82,6 +38,23 @@ export class ClientsService {
     const client = await this.findOne(id, userId);
     client.status = status;
     return this.clientRepository.save(client);
+  }
+
+  async importClients(userId: number, clients: any[]) {
+    let success = 0;
+    let errors = 0;
+    
+    for (const client of clients) {
+      try {
+        const newClient = this.clientRepository.create({ ...client, userId });
+        await this.clientRepository.save(newClient);
+        success++;
+      } catch(e) {
+        errors++;
+      }
+    }
+    
+    return { success, errors, total: clients.length };
   }
 
   async delete(id: number, userId: number) {
@@ -92,12 +65,11 @@ export class ClientsService {
 
   async getStats(userId: number) {
     const clients = await this.findAll(userId);
-    const totalSpent = clients.reduce((sum, c) => sum + (Number(c.totalSpent) || 0), 0);
-    return {
-      total: clients.length,
-      active: clients.filter(c => c.status === 'active').length,
-      inactive: clients.filter(c => c.status === 'inactive').length,
-      totalSpent: totalSpent
-    };
+    const total = clients.length;
+    const active = clients.filter(c => c.status === 'active').length;
+    const inactive = clients.filter(c => c.status === 'inactive').length;
+    const totalSpent = clients.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
+    
+    return { total, active, inactive, totalSpent };
   }
 }

@@ -23,11 +23,6 @@ const Icons = {
       <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
     </svg>
   ),
-  Bell: ({ size = 15 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-    </svg>
-  ),
   Shield: ({ size = 15 }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -78,14 +73,27 @@ export default function TransporteurSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
     language: language,
-    dateFormat: "dd/mm/yyyy",
-    notifications: true,
-    emailNotifications: true
+    dateFormat: "dd/mm/yyyy"
   });
-  const [passwordForm, setPasswordForm] = useState({ newPassword: "", confirmPassword: "" });
+  const [passwordForm, setPasswordForm] = useState({ 
+    oldPassword: "", 
+    newPassword: "", 
+    confirmPassword: "" 
+  });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Détecter mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const getTranslation = (key) => {
     const directTranslations = {
@@ -93,16 +101,15 @@ export default function TransporteurSettingsPage() {
       'transporteur.settings.subtitle': { fr: 'Personnalisez votre expérience', en: 'Customize your experience', es: 'Personalice su experiencia' },
       'transporteur.settings.language': { fr: 'Langue', en: 'Language', es: 'Idioma' },
       'transporteur.settings.date_format': { fr: 'Format de date', en: 'Date format', es: 'Formato de fecha' },
-      'transporteur.settings.notifications': { fr: 'Notifications', en: 'Notifications', es: 'Notificaciones' },
-      'transporteur.settings.enable_notifications': { fr: 'Activer les notifications', en: 'Enable notifications', es: 'Activar notificaciones' },
-      'transporteur.settings.email_notifications': { fr: 'Notifications par email', en: 'Email notifications', es: 'Notificaciones por correo' },
       'transporteur.settings.change_password': { fr: 'Changer le mot de passe', en: 'Change password', es: 'Cambiar contraseña' },
       'transporteur.settings.change_password_btn': { fr: 'Changer le mot de passe', en: 'Change password', es: 'Cambiar contraseña' },
+      'transporteur.settings.old_password': { fr: 'Ancien mot de passe', en: 'Old password', es: 'Contraseña anterior' },
       'transporteur.settings.new_password': { fr: 'Nouveau mot de passe', en: 'New password', es: 'Nueva contraseña' },
       'transporteur.settings.confirm_password': { fr: 'Confirmer le mot de passe', en: 'Confirm password', es: 'Confirmar contraseña' },
       'transporteur.settings.password_min_length': { fr: 'Minimum 6 caractères', en: 'Minimum 6 characters', es: 'Mínimo 6 caracteres' },
       'transporteur.settings.password_too_short': { fr: 'Le mot de passe doit contenir au moins 6 caractères', en: 'Password must be at least 6 characters', es: 'La contraseña debe tener al menos 6 caracteres' },
       'transporteur.settings.password_mismatch': { fr: 'Les mots de passe ne correspondent pas', en: 'Passwords do not match', es: 'Las contraseñas no coinciden' },
+      'transporteur.settings.old_password_incorrect': { fr: 'Ancien mot de passe incorrect', en: 'Old password is incorrect', es: 'Contraseña anterior incorrecta' },
       'transporteur.settings.password_changed': { fr: 'Mot de passe changé avec succès', en: 'Password changed successfully', es: 'Contraseña cambiada con éxito' },
       'transporteur.settings.date_format_saved': { fr: 'Format de date enregistré', en: 'Date format saved', es: 'Formato de fecha guardado' },
       'transporteur.settings.preferences_saved': { fr: 'Préférences enregistrées', en: 'Preferences saved', es: 'Preferencias guardadas' },
@@ -134,9 +141,7 @@ export default function TransporteurSettingsPage() {
     const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
     setSettings({
       language: savedLanguage,
-      dateFormat: savedDateFormat,
-      notifications: localStorage.getItem("notifications") !== "false",
-      emailNotifications: localStorage.getItem("emailNotifications") !== "false"
+      dateFormat: savedDateFormat
     });
     setLoading(false);
     setTimeout(() => setAnimateCards(true), 100);
@@ -157,26 +162,51 @@ export default function TransporteurSettingsPage() {
     localStorage.setItem("language", lang);
     setSettings(prev => ({ ...prev, language: lang }));
     showMessage(getTranslation("transporteur.settings.language_changed"), "success");
-    setTimeout(() => window.location.reload(), 1000);
   };
 
   const changePassword = async () => {
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) { showMessage(getTranslation("transporteur.settings.password_mismatch"), "error"); return; }
-    if (passwordForm.newPassword.length < 6) { showMessage(getTranslation("transporteur.settings.password_too_short"), "error"); return; }
+    if (!passwordForm.oldPassword) {
+      showMessage(getTranslation("transporteur.settings.old_password"), "error");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) { 
+      showMessage(getTranslation("transporteur.settings.password_mismatch"), "error"); 
+      return; 
+    }
+    if (passwordForm.newPassword.length < 6) { 
+      showMessage(getTranslation("transporteur.settings.password_too_short"), "error"); 
+      return; 
+    }
     const token = localStorage.getItem("token");
     try {
       const res = await fetch("http://localhost:3001/users/change-password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ newPassword: passwordForm.newPassword })
+        body: JSON.stringify({ 
+          oldPassword: passwordForm.oldPassword, 
+          newPassword: passwordForm.newPassword 
+        })
       });
-      if (res.ok) { setPasswordForm({ newPassword: "", confirmPassword: "" }); showMessage(getTranslation("transporteur.settings.password_changed"), "success"); }
-      else { showMessage(getTranslation("common.error"), "error"); }
-    } catch(e) { showMessage(getTranslation("common.error"), "error"); }
+      const data = await res.json();
+      if (res.ok) { 
+        setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); 
+        showMessage(getTranslation("transporteur.settings.password_changed"), "success"); 
+      } else { 
+        const errorMsg = data.message || getTranslation("common.error");
+        if (errorMsg.includes("incorrect") || errorMsg.includes("Invalid")) {
+          showMessage(getTranslation("transporteur.settings.old_password_incorrect"), "error");
+        } else {
+          showMessage(errorMsg, "error");
+        }
+      }
+    } catch(e) { 
+      showMessage(getTranslation("common.error"), "error"); 
+    }
   };
 
   const showMessage = (msg, type) => {
-    setMessage(msg); setMessageType(type);
+    setMessage(msg); 
+    setMessageType(type);
     setTimeout(() => setMessage(""), 3000);
   };
 
@@ -196,16 +226,15 @@ export default function TransporteurSettingsPage() {
     return 'Español';
   };
 
-  // Tailles réduites de 10%
-  const sectionPadding = "22px";
-  const sectionMarginBottom = "22px";
-  const titleFontSize = "22px";
-  const inputPadding = "13px";
-  const buttonPadding = "13px";
-  const checkboxSize = "16px";
-  const logoutButtonPadding = "13px";
-  const fontSizeSmall = "12px";
-  const fontSizeExtraSmall = "10px";
+  // Styles responsives
+  const sectionPadding = isMobile ? "18px" : "22px";
+  const sectionMarginBottom = isMobile ? "16px" : "22px";
+  const titleFontSize = isMobile ? "18px" : "22px";
+  const inputPadding = isMobile ? "11px" : "13px";
+  const buttonPadding = isMobile ? "11px" : "13px";
+  const logoutButtonPadding = isMobile ? "11px" : "13px";
+  const fontSizeSmall = isMobile ? "11px" : "12px";
+  const fontSizeExtraSmall = isMobile ? "9px" : "10px";
 
   const sectionStyle = {
     background: "#111",
@@ -214,7 +243,7 @@ export default function TransporteurSettingsPage() {
     border: "1px solid #222",
     marginBottom: sectionMarginBottom,
     opacity: animateCards ? 1 : 0,
-    transition: "transform 0.3s",
+    transition: !isMobile ? "transform 0.3s" : "none",
   };
 
   if (loading) {
@@ -222,7 +251,7 @@ export default function TransporteurSettingsPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#0a0a0a" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div style={{ textAlign: "center" }}>
-          <Icons.Spinner size={43} />
+          <Icons.Spinner size={isMobile ? 35 : 43} />
           <p style={{ color: "#94a3b8", marginTop: "14px", fontSize: fontSizeSmall }}>{getTranslation("common.loading")}</p>
         </div>
       </div>
@@ -230,26 +259,58 @@ export default function TransporteurSettingsPage() {
   }
 
   return (
-    <div style={{ padding: "22px", background: "#0a0a0a", minHeight: "100vh" }}>
+    <div style={{ 
+      padding: isMobile ? "16px" : "22px", 
+      background: "#0a0a0a", 
+      minHeight: "100vh",
+      paddingBottom: isMobile ? "80px" : "22px"
+    }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media (max-width: 768px) {
+          .language-buttons { flex-wrap: wrap !important; }
+          .language-buttons button { flex: 1 !important; min-width: 100px !important; }
+        }
+        
+        @media (max-width: 480px) {
+          .language-buttons button { min-width: 80px !important; padding: 8px 12px !important; }
+        }
       `}</style>
 
       {/* Header */}
-      <div style={{ marginBottom: "22px", animation: animateCards ? "fadeInDown 0.5s ease" : "none", opacity: animateCards ? 1 : 0 }}>
+      <div style={{ 
+        marginBottom: isMobile ? "16px" : "22px", 
+        animation: animateCards ? "fadeInDown 0.5s ease" : "none", 
+        opacity: animateCards ? 1 : 0 
+      }}>
         <h1 style={{ color: "white", fontSize: titleFontSize, marginBottom: "7px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ color: "#667eea" }}><Icons.Settings size={22} /></span>
+          <span style={{ color: "#667eea" }}><Icons.Settings size={isMobile ? 18 : 22} /></span>
           {getTranslation("transporteur.settings.title")}
         </h1>
-        <p style={{ color: "#94a3b8", marginBottom: "22px", fontSize: fontSizeSmall }}>{getTranslation("transporteur.settings.subtitle")}</p>
+        <p style={{ color: "#94a3b8", marginBottom: "16px", fontSize: fontSizeSmall }}>{getTranslation("transporteur.settings.subtitle")}</p>
       </div>
 
       {/* Message */}
       {message && (
-        <div style={{ background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#f87171", padding: "11px 16px", borderRadius: "11px", marginBottom: "18px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: fontSizeSmall, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-          {messageType === "success" ? <Icons.CheckSmall size={14} /> : <Icons.XCircle size={14} />}
+        <div style={{ 
+          background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", 
+          border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, 
+          color: messageType === "success" ? "#10b981" : "#f87171", 
+          padding: isMobile ? "10px 14px" : "11px 16px", 
+          borderRadius: "11px", 
+          marginBottom: "16px", 
+          textAlign: "center", 
+          animation: "fadeInUp 0.3s ease", 
+          fontSize: fontSizeSmall, 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          gap: "8px" 
+        }}>
+          {messageType === "success" ? <Icons.CheckSmall size={isMobile ? 12 : 14} /> : <Icons.XCircle size={isMobile ? 12 : 14} />}
           {message}
         </div>
       )}
@@ -257,29 +318,43 @@ export default function TransporteurSettingsPage() {
       {/* Section Langue */}
       <div
         style={{ ...sectionStyle, animation: animateCards ? "fadeInUp 0.5s ease 0.1s" : "none" }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-        onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+        onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(-3px)"; }}
+        onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(0)"; }}
       >
-        <h3 style={{ color: "white", marginBottom: "18px", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "#667eea" }}><Icons.Globe size={15} /></span>
+        <h3 style={{ color: "white", marginBottom: "16px", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ color: "#667eea" }}><Icons.Globe size={isMobile ? 13 : 15} /></span>
           {getTranslation("transporteur.settings.language")}
         </h3>
-        <div style={{ display: "flex", gap: "11px", flexWrap: "wrap" }}>
+        <div className="language-buttons" style={{ display: "flex", gap: "11px", flexWrap: "wrap" }}>
           {["fr", "en", "es"].map(lang => (
             <button
               key={lang}
               onClick={() => handleLanguageChange(lang)}
-              style={{ padding: "9px 22px", background: language === lang ? "#667eea" : "#1a1a1a", border: `1px solid ${language === lang ? "#667eea" : "#333"}`, borderRadius: "7px", color: "white", cursor: "pointer", fontWeight: language === lang ? "600" : "400", transition: "all 0.2s", fontSize: fontSizeSmall, display: "flex", alignItems: "center", gap: "6px" }}
+              style={{ 
+                padding: isMobile ? "8px 16px" : "9px 22px", 
+                background: settings.language === lang ? "#667eea" : "#1a1a1a", 
+                border: `1px solid ${settings.language === lang ? "#667eea" : "#333"}`, 
+                borderRadius: "7px", 
+                color: "white", 
+                cursor: "pointer", 
+                fontWeight: settings.language === lang ? "600" : "400", 
+                transition: "all 0.2s", 
+                fontSize: fontSizeSmall, 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                gap: "6px",
+                flex: isMobile ? "1" : "auto"
+              }}
             >
-              {language === lang && <Icons.Check size={12} />}
+              {settings.language === lang && <Icons.Check size={isMobile ? 11 : 12} />}
               {getLanguageButtonText(lang)}
             </button>
           ))}
         </div>
-        <div style={{ marginTop: "11px", padding: "7px 11px", background: "#1a1a1a", borderRadius: "7px", display: "flex", alignItems: "center", gap: "6px" }}>
-          {language !== settings.language && <Icons.AlertTriangle size={11} />}
+        <div style={{ marginTop: "11px", padding: "7px 11px", background: "#1a1a1a", borderRadius: "7px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
           <span style={{ color: "#94a3b8", fontSize: fontSizeExtraSmall }}>
-            {getTranslation("transporteur.settings.current_language")}: {language === "fr" ? "Français" : language === "en" ? "English" : "Español"}
+            {getTranslation("transporteur.settings.current_language")}: {settings.language === "fr" ? "Français" : settings.language === "en" ? "English" : "Español"}
           </span>
         </div>
       </div>
@@ -287,11 +362,11 @@ export default function TransporteurSettingsPage() {
       {/* Section Format de date */}
       <div
         style={{ ...sectionStyle, animation: animateCards ? "fadeInUp 0.5s ease 0.2s" : "none" }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-        onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+        onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(-3px)"; }}
+        onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(0)"; }}
       >
-        <h3 style={{ color: "white", marginBottom: "18px", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "#667eea" }}><Icons.Calendar size={15} /></span>
+        <h3 style={{ color: "white", marginBottom: "16px", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ color: "#667eea" }}><Icons.Calendar size={isMobile ? 13 : 15} /></span>
           {getTranslation("transporteur.settings.date_format")}
         </h3>
         <select
@@ -309,45 +384,24 @@ export default function TransporteurSettingsPage() {
         </div>
       </div>
 
-      {/* Section Notifications */}
+      {/* Section Mot de passe avec ancien mot de passe */}
       <div
         style={{ ...sectionStyle, animation: animateCards ? "fadeInUp 0.5s ease 0.3s" : "none" }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-        onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+        onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(-3px)"; }}
+        onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(0)"; }}
       >
-        <h3 style={{ color: "white", marginBottom: "18px", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "#667eea" }}><Icons.Bell size={15} /></span>
-          {getTranslation("transporteur.settings.notifications")}
-        </h3>
-        {[
-          { key: "notifications", label: getTranslation("transporteur.settings.enable_notifications") },
-          { key: "emailNotifications", label: getTranslation("transporteur.settings.email_notifications") },
-        ].map((item, i) => (
-          <div key={item.key} style={{ marginBottom: i === 0 ? "11px" : "0" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "11px", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={settings[item.key]}
-                onChange={(e) => { setSettings({ ...settings, [item.key]: e.target.checked }); savePreference(item.key, e.target.checked); }}
-                style={{ width: checkboxSize, height: checkboxSize, cursor: "pointer", accentColor: "#667eea" }}
-              />
-              <span style={{ color: "#94a3b8", fontSize: fontSizeSmall }}>{item.label}</span>
-            </label>
-          </div>
-        ))}
-      </div>
-
-      {/* Section Mot de passe */}
-      <div
-        style={{ ...sectionStyle, animation: animateCards ? "fadeInUp 0.5s ease 0.4s" : "none" }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-        onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-      >
-        <h3 style={{ color: "white", marginBottom: "18px", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "#667eea" }}><Icons.Shield size={15} /></span>
+        <h3 style={{ color: "white", marginBottom: "16px", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ color: "#667eea" }}><Icons.Shield size={isMobile ? 13 : 15} /></span>
           {getTranslation("transporteur.settings.change_password")}
         </h3>
         <div style={{ marginBottom: "11px" }}>
+          <input
+            type="password"
+            placeholder={getTranslation("transporteur.settings.old_password")}
+            value={passwordForm.oldPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+            style={{ width: "100%", padding: inputPadding, background: "#1a1a1a", border: "1px solid #333", borderRadius: "9px", color: "white", marginBottom: "11px", fontSize: fontSizeSmall, boxSizing: "border-box" }}
+          />
           <input
             type="password"
             placeholder={getTranslation("transporteur.settings.new_password")}
@@ -370,16 +424,22 @@ export default function TransporteurSettingsPage() {
           onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
           onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
         >
-          <Icons.Key size={14} /> {getTranslation("transporteur.settings.change_password_btn")}
+          <Icons.Key size={isMobile ? 12 : 14} /> {getTranslation("transporteur.settings.change_password_btn")}
         </button>
       </div>
 
       {/* Déconnexion */}
-      <div style={{ display: "flex", gap: "14px", animation: animateCards ? "fadeInUp 0.5s ease 0.5s" : "none", opacity: animateCards ? 1 : 0 }}>
+      <div style={{ 
+        display: "flex", 
+        gap: "14px", 
+        animation: animateCards ? "fadeInUp 0.5s ease 0.4s" : "none", 
+        opacity: animateCards ? 1 : 0,
+        marginBottom: isMobile ? "20px" : "0"
+      }}>
         <button
           onClick={() => {
             if (confirm(getTranslation("common.logoutWarning"))) {
-              ["token", "user", "language", "dateFormat", "notifications", "emailNotifications"].forEach(k => localStorage.removeItem(k));
+              ["token", "user", "language", "dateFormat"].forEach(k => localStorage.removeItem(k));
               router.push("/");
             }
           }}
@@ -387,7 +447,7 @@ export default function TransporteurSettingsPage() {
           onMouseEnter={(e) => e.currentTarget.style.background = "#ef4444"}
           onMouseLeave={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.8)"}
         >
-          <Icons.LogOut size={14} /> {getTranslation("common.logout")}
+          <Icons.LogOut size={isMobile ? 12 : 14} /> {getTranslation("common.logout")}
         </button>
       </div>
     </div>

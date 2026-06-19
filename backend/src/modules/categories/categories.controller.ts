@@ -12,6 +12,11 @@ export class CategoriesController {
     return this.categoriesService.findAll(req.user.userId);
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    return this.categoriesService.findOne(parseInt(id), req.user.userId);
+  }
+
   @Post()
   async create(@Request() req: any, @Body() body: any) {
     return this.categoriesService.create(req.user.userId, body);

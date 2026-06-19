@@ -27,6 +27,12 @@ ChartJS.register(
   ArcElement, PointElement, LineElement, Filler
 );
 
+// ─── TYPES ───────────────────────────────────────────────────────────────────
+type SalesDataPoint = { month: string; sales: number };
+type ProfitDataPoint = { month: string; profit: number };
+type TopItem = { name: string; amount: number };
+type Activity = { type: string; data: any; date: any };
+
 // ─── SVG ICONS ───────────────────────────────────────────────────────────────
 const Icons = {
   Sun: () => (
@@ -242,7 +248,6 @@ const Icons = {
   ),
 };
 
-// Helper to render icon with style
 const Icon = ({ name, size = "1em", color = "currentColor", style = {} }: { name: keyof typeof Icons; size?: string; color?: string; style?: React.CSSProperties }) => {
   const Comp = Icons[name];
   return (
@@ -257,9 +262,9 @@ export default function DashboardPage() {
   const { t, language } = useLanguage();
   const { formatCurrency, formatDateTime } = useAppSettings();
   const { theme } = useTheme();
-  const { isMobile, isTablet, isDesktop, orientation } = useResponsive();
-  const [user, setUser] = useState(null);
-  const [profileImage, setProfileImage] = useState(null);
+  const { isMobile, isTablet, isDesktop } = useResponsive();
+  const [user, setUser] = useState<any>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("month");
@@ -268,21 +273,24 @@ export default function DashboardPage() {
     pendingInvoices: 0, lowStock: 0, activeEmployees: 0, pendingOrders: 0,
     salesGrowth: 0, clientGrowth: 0, profitGrowth: 0
   });
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [salesData, setSalesData] = useState([]);
-  const [profitData, setProfitData] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
-  const [topClients, setTopClients] = useState([]);
+  // ── FIX: typed state arrays (was never[]) ──────────────────────────────────
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
+  const [profitData, setProfitData] = useState<ProfitDataPoint[]>([]);
+  const [topProducts, setTopProducts] = useState<TopItem[]>([]);
+  const [topClients, setTopClients] = useState<TopItem[]>([]);
+  // ── FIX: typed hover state (was null → never accepts number) ──────────────
   const [animateCards, setAnimateCards] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState(null);
-  const [hoveredAction, setHoveredAction] = useState(null);
-  const [hoveredActivity, setHoveredActivity] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [hoveredAction, setHoveredAction] = useState<number | null>(null);
+  const [hoveredActivity, setHoveredActivity] = useState<number | null>(null);
   const [refreshTime, setRefreshTime] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [rawSales, setRawSales] = useState([]);
-  const [rawPurchases, setRawPurchases] = useState([]);
+  const [rawSales, setRawSales] = useState<any[]>([]);
+  const [rawPurchases, setRawPurchases] = useState<any[]>([]);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [imageError, setImageError] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const getTempTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
@@ -296,21 +304,38 @@ export default function DashboardPage() {
     return translated !== key ? translated : key;
   };
 
-  const headerTitleSize = isMobile ? "20px" : "24px";
-  const headerEmojiSize = isMobile ? "24px" : "28px";
-  const headerNameSize = isMobile ? "16px" : "20px";
-  const dateSize = isMobile ? "10px" : "12px";
-  const kpiValueSize = isMobile ? "24px" : "28px";
-  const kpiLabelSize = isMobile ? "10px" : "11px";
-  const kpiIconSize = isMobile ? "20px" : "24px";
-  const chartHeight = isMobile ? "200px" : "250px";
-  const profileImageSize = isMobile ? "50px" : "75px";
-  const profileImageRadius = isMobile ? "18px" : "25px";
-  const companyFontSize = isMobile ? "8px" : "9px";
-  const cardPadding = isMobile ? "12px" : "16px";
-  const cardRadius = isMobile ? "14px" : "16px";
-  const gridGap = isMobile ? "12px" : "16px";
-  const sectionMargin = isMobile ? "20px" : "24px";
+  const getResponsiveStyle = () => {
+    if (isMobile) {
+      return {
+        headerTitleSize: "18px", headerEmojiSize: "20px", headerNameSize: "14px",
+        dateSize: "9px", kpiValueSize: "20px", kpiLabelSize: "9px", kpiIconSize: "18px",
+        chartHeight: "180px", profileImageSize: "40px", profileImageRadius: "12px",
+        companyFontSize: "7px", cardPadding: "10px", cardRadius: "12px",
+        gridGap: "10px", sectionMargin: "16px", secondaryCardPadding: "8px",
+        secondaryCardValueSize: "16px"
+      };
+    } else if (isTablet) {
+      return {
+        headerTitleSize: "22px", headerEmojiSize: "24px", headerNameSize: "18px",
+        dateSize: "11px", kpiValueSize: "24px", kpiLabelSize: "10px", kpiIconSize: "22px",
+        chartHeight: "220px", profileImageSize: "60px", profileImageRadius: "20px",
+        companyFontSize: "8px", cardPadding: "14px", cardRadius: "14px",
+        gridGap: "14px", sectionMargin: "20px", secondaryCardPadding: "10px",
+        secondaryCardValueSize: "20px"
+      };
+    } else {
+      return {
+        headerTitleSize: "24px", headerEmojiSize: "28px", headerNameSize: "20px",
+        dateSize: "12px", kpiValueSize: "28px", kpiLabelSize: "11px", kpiIconSize: "24px",
+        chartHeight: "250px", profileImageSize: "75px", profileImageRadius: "25px",
+        companyFontSize: "9px", cardPadding: "16px", cardRadius: "16px",
+        gridGap: "16px", sectionMargin: "24px", secondaryCardPadding: "12px",
+        secondaryCardValueSize: "22px"
+      };
+    }
+  };
+
+  const responsive = getResponsiveStyle();
 
   const loadUserFromBackend = async () => {
     const token = localStorage.getItem("token");
@@ -358,7 +383,9 @@ export default function DashboardPage() {
   const getCurrentDate = () => {
     const now = new Date();
     const locale = getLocale();
-    const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+    const options: Intl.DateTimeFormatOptions = isMobile ? 
+      { weekday: "short", day: "numeric", month: "short" } : 
+      { weekday: "long", year: "numeric", month: "long", day: "numeric" };
     let dateStr = now.toLocaleDateString(locale, options);
     if (language === 'fr' && dateStr) dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
     return dateStr;
@@ -378,26 +405,31 @@ export default function DashboardPage() {
     return t("dashboard.goodEvening") || "Bonsoir";
   };
 
-  const getPeriodOptions = () => [
-    { value: "day",     label: language === 'fr' ? "Jour"      : language === 'es' ? "Día"       : "Day",     icon: "DayIcon"     as keyof typeof Icons },
-    { value: "week",    label: language === 'fr' ? "Semaine"   : language === 'es' ? "Semana"    : "Week",    icon: "WeekIcon"    as keyof typeof Icons },
-    { value: "month",   label: language === 'fr' ? "Mois"      : language === 'es' ? "Mes"       : "Month",   icon: "MonthIcon"   as keyof typeof Icons },
-    { value: "quarter", label: language === 'fr' ? "Trimestre" : language === 'es' ? "Trimestre" : "Quarter", icon: "QuarterIcon" as keyof typeof Icons },
-    { value: "year",    label: language === 'fr' ? "Année"     : language === 'es' ? "Año"       : "Year",    icon: "YearIcon"    as keyof typeof Icons }
+  // ── FIX: explicit return type so icon field is keyof typeof Icons ──────────
+  const getPeriodOptions = (): { value: string; label: string; icon: keyof typeof Icons }[] => [
+    { value: "day",     label: language === 'fr' ? "Jour"      : language === 'es' ? "Día"       : "Day",     icon: "DayIcon"     },
+    { value: "week",    label: language === 'fr' ? "Semaine"   : language === 'es' ? "Semana"    : "Week",    icon: "WeekIcon"    },
+    { value: "month",   label: language === 'fr' ? "Mois"      : language === 'es' ? "Mes"       : "Month",   icon: "MonthIcon"   },
+    { value: "quarter", label: language === 'fr' ? "Trimestre" : language === 'es' ? "Trimestre" : "Quarter", icon: "QuarterIcon" },
+    { value: "year",    label: language === 'fr' ? "Année"     : language === 'es' ? "Año"       : "Year",    icon: "YearIcon"    }
   ];
 
   const periodOptions = getPeriodOptions();
 
-  const getPeriodLabels = (period) => {
+  const getPeriodLabels = (period: string) => {
     const now = new Date();
     const currentYear = now.getFullYear();
     if (period === "day") {
-      const labels = [];
+      const labels: string[] = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(); date.setDate(now.getDate() - i);
-        const day = date.toLocaleDateString(getLocale(), { weekday: 'short' });
-        const dayNum = date.getDate();
-        labels.push(isMobile ? `${day.substring(0, 1)}${dayNum}` : `${day} ${dayNum}`);
+        if (isMobile) {
+          labels.push(date.toLocaleDateString(getLocale(), { weekday: 'short' }).substring(0, 1) + date.getDate());
+        } else {
+          const day = date.toLocaleDateString(getLocale(), { weekday: 'short' });
+          const dayNum = date.getDate();
+          labels.push(`${day} ${dayNum}`);
+        }
       }
       return labels;
     } else if (period === "week") {
@@ -409,42 +441,133 @@ export default function DashboardPage() {
     } else if (period === "quarter") {
       return [`T1`, `T2`, `T3`, `T4`];
     } else {
-      const labels = [];
+      const labels: string[] = [];
       for (let i = 4; i >= 0; i--) labels.push(`${currentYear - i}`);
       return labels;
     }
   };
 
-  const aggregateDataByPeriod = (sales, purchases, period) => {
+  const aggregateDataByPeriod = (sales: any[], purchases: any[], period: string) => {
     const now = new Date();
     const currentYear = now.getFullYear();
-    let salesMap = new Map();
-    let profitMap = new Map();
+    const salesMap = new Map<any, number>();
+    const profitMap = new Map<any, number>();
+
     if (period === "day") {
       for (let i = 6; i >= 0; i--) {
         const date = new Date(); date.setDate(now.getDate() - i);
         const key = date.toISOString().split('T')[0];
         salesMap.set(key, 0); profitMap.set(key, 0);
       }
-      sales.forEach(s => { if (s.createdAt) { const date = new Date(s.createdAt); const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24)); if (daysDiff >= 0 && daysDiff <= 6) { const key = date.toISOString().split('T')[0]; salesMap.set(key, (salesMap.get(key) || 0) + (parseFloat(s.total) || 0)); profitMap.set(key, (profitMap.get(key) || 0) + (parseFloat(s.total) || 0)); } } });
-      purchases.forEach(p => { if (p.createdAt) { const date = new Date(p.createdAt); const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24)); if (daysDiff >= 0 && daysDiff <= 6) { const key = date.toISOString().split('T')[0]; profitMap.set(key, (profitMap.get(key) || 0) - (parseFloat(p.total) || 0)); } } });
+      sales.forEach(s => {
+        if (s.createdAt) {
+          const date = new Date(s.createdAt);
+          const daysDiff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 6) {
+            const key = date.toISOString().split('T')[0];
+            salesMap.set(key, (salesMap.get(key) || 0) + (parseFloat(s.total) || 0));
+            profitMap.set(key, (profitMap.get(key) || 0) + (parseFloat(s.total) || 0));
+          }
+        }
+      });
+      purchases.forEach(p => {
+        if (p.createdAt) {
+          const date = new Date(p.createdAt);
+          const daysDiff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 6) {
+            const key = date.toISOString().split('T')[0];
+            profitMap.set(key, (profitMap.get(key) || 0) - (parseFloat(p.total) || 0));
+          }
+        }
+      });
     } else if (period === "week") {
       for (let i = 3; i >= 0; i--) { const key = `S${4 - i}`; salesMap.set(key, 0); profitMap.set(key, 0); }
-      sales.forEach(s => { if (s.createdAt) { const date = new Date(s.createdAt); const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24)); if (daysDiff >= 0 && daysDiff <= 27) { const weekIndex = Math.floor(daysDiff / 7); const key = `S${4 - weekIndex}`; salesMap.set(key, (salesMap.get(key) || 0) + (parseFloat(s.total) || 0)); profitMap.set(key, (profitMap.get(key) || 0) + (parseFloat(s.total) || 0)); } } });
-      purchases.forEach(p => { if (p.createdAt) { const date = new Date(p.createdAt); const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24)); if (daysDiff >= 0 && daysDiff <= 27) { const weekIndex = Math.floor(daysDiff / 7); const key = `S${4 - weekIndex}`; profitMap.set(key, (profitMap.get(key) || 0) - (parseFloat(p.total) || 0)); } } });
+      sales.forEach(s => {
+        if (s.createdAt) {
+          const date = new Date(s.createdAt);
+          const daysDiff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 27) {
+            const weekIndex = Math.floor(daysDiff / 7);
+            const key = `S${4 - weekIndex}`;
+            salesMap.set(key, (salesMap.get(key) || 0) + (parseFloat(s.total) || 0));
+            profitMap.set(key, (profitMap.get(key) || 0) + (parseFloat(s.total) || 0));
+          }
+        }
+      });
+      purchases.forEach(p => {
+        if (p.createdAt) {
+          const date = new Date(p.createdAt);
+          const daysDiff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 27) {
+            const weekIndex = Math.floor(daysDiff / 7);
+            const key = `S${4 - weekIndex}`;
+            profitMap.set(key, (profitMap.get(key) || 0) - (parseFloat(p.total) || 0));
+          }
+        }
+      });
     } else if (period === "month") {
       for (let i = 0; i < 12; i++) { salesMap.set(i, 0); profitMap.set(i, 0); }
-      sales.forEach(s => { if (s.createdAt) { const date = new Date(s.createdAt); if (date.getFullYear() === currentYear) { const month = date.getMonth(); salesMap.set(month, (salesMap.get(month) || 0) + (parseFloat(s.total) || 0)); profitMap.set(month, (profitMap.get(month) || 0) + (parseFloat(s.total) || 0)); } } });
-      purchases.forEach(p => { if (p.createdAt) { const date = new Date(p.createdAt); if (date.getFullYear() === currentYear) { const month = date.getMonth(); profitMap.set(month, (profitMap.get(month) || 0) - (parseFloat(p.total) || 0)); } } });
+      sales.forEach(s => {
+        if (s.createdAt) {
+          const date = new Date(s.createdAt);
+          if (date.getFullYear() === currentYear) {
+            const month = date.getMonth();
+            salesMap.set(month, (salesMap.get(month) || 0) + (parseFloat(s.total) || 0));
+            profitMap.set(month, (profitMap.get(month) || 0) + (parseFloat(s.total) || 0));
+          }
+        }
+      });
+      purchases.forEach(p => {
+        if (p.createdAt) {
+          const date = new Date(p.createdAt);
+          if (date.getFullYear() === currentYear) {
+            const month = date.getMonth();
+            profitMap.set(month, (profitMap.get(month) || 0) - (parseFloat(p.total) || 0));
+          }
+        }
+      });
     } else if (period === "quarter") {
       for (let i = 0; i < 4; i++) { salesMap.set(i, 0); profitMap.set(i, 0); }
-      sales.forEach(s => { if (s.createdAt) { const date = new Date(s.createdAt); if (date.getFullYear() === currentYear) { const quarter = Math.floor(date.getMonth() / 3); salesMap.set(quarter, (salesMap.get(quarter) || 0) + (parseFloat(s.total) || 0)); profitMap.set(quarter, (profitMap.get(quarter) || 0) + (parseFloat(s.total) || 0)); } } });
-      purchases.forEach(p => { if (p.createdAt) { const date = new Date(p.createdAt); if (date.getFullYear() === currentYear) { const quarter = Math.floor(date.getMonth() / 3); profitMap.set(quarter, (profitMap.get(quarter) || 0) - (parseFloat(p.total) || 0)); } } });
+      sales.forEach(s => {
+        if (s.createdAt) {
+          const date = new Date(s.createdAt);
+          if (date.getFullYear() === currentYear) {
+            const quarter = Math.floor(date.getMonth() / 3);
+            salesMap.set(quarter, (salesMap.get(quarter) || 0) + (parseFloat(s.total) || 0));
+            profitMap.set(quarter, (profitMap.get(quarter) || 0) + (parseFloat(s.total) || 0));
+          }
+        }
+      });
+      purchases.forEach(p => {
+        if (p.createdAt) {
+          const date = new Date(p.createdAt);
+          if (date.getFullYear() === currentYear) {
+            const quarter = Math.floor(date.getMonth() / 3);
+            profitMap.set(quarter, (profitMap.get(quarter) || 0) - (parseFloat(p.total) || 0));
+          }
+        }
+      });
     } else {
       for (let i = currentYear - 4; i <= currentYear; i++) { salesMap.set(i, 0); profitMap.set(i, 0); }
-      sales.forEach(s => { if (s.createdAt) { const year = new Date(s.createdAt).getFullYear(); if (year >= currentYear - 4 && year <= currentYear) { salesMap.set(year, (salesMap.get(year) || 0) + (parseFloat(s.total) || 0)); profitMap.set(year, (profitMap.get(year) || 0) + (parseFloat(s.total) || 0)); } } });
-      purchases.forEach(p => { if (p.createdAt) { const year = new Date(p.createdAt).getFullYear(); if (year >= currentYear - 4 && year <= currentYear) { profitMap.set(year, (profitMap.get(year) || 0) - (parseFloat(p.total) || 0)); } } });
+      sales.forEach(s => {
+        if (s.createdAt) {
+          const year = new Date(s.createdAt).getFullYear();
+          if (year >= currentYear - 4 && year <= currentYear) {
+            salesMap.set(year, (salesMap.get(year) || 0) + (parseFloat(s.total) || 0));
+            profitMap.set(year, (profitMap.get(year) || 0) + (parseFloat(s.total) || 0));
+          }
+        }
+      });
+      purchases.forEach(p => {
+        if (p.createdAt) {
+          const year = new Date(p.createdAt).getFullYear();
+          if (year >= currentYear - 4 && year <= currentYear) {
+            profitMap.set(year, (profitMap.get(year) || 0) - (parseFloat(p.total) || 0));
+          }
+        }
+      });
     }
+
     const labels = getPeriodLabels(period);
     const salesValues = Array.from(salesMap.values());
     const profitValues = Array.from(profitMap.values());
@@ -494,6 +617,7 @@ export default function DashboardPage() {
         fetch("http://localhost:3001/orders", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("http://localhost:3001/employees", { headers: { Authorization: `Bearer ${token}` } })
       ]);
+
       let sales = await salesRes.json();
       let purchases = await purchasesRes.json();
       let clients = await clientsRes.json();
@@ -501,6 +625,7 @@ export default function DashboardPage() {
       let invoices = await invoicesRes.json();
       let orders = await ordersRes.json();
       let employees = await employeesRes.json();
+
       sales = Array.isArray(sales) ? sales : [];
       purchases = Array.isArray(purchases) ? purchases : [];
       clients = Array.isArray(clients) ? clients : [];
@@ -508,41 +633,104 @@ export default function DashboardPage() {
       invoices = Array.isArray(invoices) ? invoices : [];
       orders = Array.isArray(orders) ? orders : [];
       employees = Array.isArray(employees) ? employees : [];
+
       setRawSales(sales); setRawPurchases(purchases);
-      const totalSales = sales.reduce((s, item) => s + (parseFloat(item.total) || 0), 0);
-      const totalPurchases = purchases.reduce((s, item) => s + (parseFloat(item.total) || 0), 0);
+
+      const totalSales = sales.reduce((s: number, item: any) => s + (parseFloat(item.total) || 0), 0);
+      const totalPurchases = purchases.reduce((s: number, item: any) => s + (parseFloat(item.total) || 0), 0);
       const totalClients = clients.length;
       const totalProducts = products.length;
-      const pendingInvoices = invoices.filter(i => i.status !== "paid").length;
-      const lowStock = products.filter(p => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length;
-      const activeEmployees = employees.filter(e => e.status === "active").length;
-      const pendingOrders = orders.filter(o => o.status === "pending").length;
-      const now = new Date(); const currentYear = now.getFullYear(); const currentMonth = now.getMonth();
+      const pendingInvoices = invoices.filter((i: any) => i.status !== "paid").length;
+      const lowStock = products.filter((p: any) => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length;
+      const activeEmployees = employees.filter((e: any) => e.status === "active").length;
+      const pendingOrders = orders.filter((o: any) => o.status === "pending").length;
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
       let lastMonthYear = currentYear; let lastMonth = currentMonth - 1;
       if (lastMonth < 0) { lastMonth = 11; lastMonthYear = currentYear - 1; }
-      let currentMonthSales = 0; let lastMonthSalesTotal = 0; let currentMonthProfit = 0; let lastMonthProfitTotal = 0; let currentMonthNewClients = 0; let lastMonthNewClients = 0;
-      sales.forEach(s => { if (s.createdAt) { const date = new Date(s.createdAt); if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthSales += parseFloat(s.total) || 0; } if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthSalesTotal += parseFloat(s.total) || 0; } } });
-      purchases.forEach(p => { if (p.createdAt) { const date = new Date(p.createdAt); if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthProfit -= parseFloat(p.total) || 0; } if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthProfitTotal -= parseFloat(p.total) || 0; } } });
-      sales.forEach(s => { if (s.createdAt) { const date = new Date(s.createdAt); if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthProfit += parseFloat(s.total) || 0; } if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthProfitTotal += parseFloat(s.total) || 0; } } });
-      clients.forEach(c => { if (c.createdAt) { const date = new Date(c.createdAt); if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthNewClients++; } if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthNewClients++; } } });
-      const salesGrowth = lastMonthSalesTotal > 0 ? ((currentMonthSales - lastMonthSalesTotal) / lastMonthSalesTotal * 100).toFixed(1) : (currentMonthSales > 0 ? 100 : 0);
-      const profitGrowth = lastMonthProfitTotal > 0 ? ((currentMonthProfit - lastMonthProfitTotal) / lastMonthProfitTotal * 100).toFixed(1) : (currentMonthProfit > 0 ? 100 : 0);
-      const clientGrowth = lastMonthNewClients > 0 ? ((currentMonthNewClients - lastMonthNewClients) / lastMonthNewClients * 100).toFixed(1) : (currentMonthNewClients > 0 ? 100 : 0);
-      setStats({ totalSales, totalPurchases, totalClients, totalProducts, pendingInvoices, lowStock, activeEmployees, pendingOrders, salesGrowth: parseFloat(salesGrowth), clientGrowth: parseFloat(clientGrowth), profitGrowth: parseFloat(profitGrowth) });
+
+      let currentMonthSales = 0; let lastMonthSalesTotal = 0;
+      let currentMonthProfit = 0; let lastMonthProfitTotal = 0;
+      let currentMonthNewClients = 0; let lastMonthNewClients = 0;
+
+      sales.forEach((s: any) => {
+        if (s.createdAt) {
+          const date = new Date(s.createdAt);
+          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthSales += parseFloat(s.total) || 0; }
+          if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthSalesTotal += parseFloat(s.total) || 0; }
+        }
+      });
+      purchases.forEach((p: any) => {
+        if (p.createdAt) {
+          const date = new Date(p.createdAt);
+          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthProfit -= parseFloat(p.total) || 0; }
+          if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthProfitTotal -= parseFloat(p.total) || 0; }
+        }
+      });
+      sales.forEach((s: any) => {
+        if (s.createdAt) {
+          const date = new Date(s.createdAt);
+          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthProfit += parseFloat(s.total) || 0; }
+          if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthProfitTotal += parseFloat(s.total) || 0; }
+        }
+      });
+      clients.forEach((c: any) => {
+        if (c.createdAt) {
+          const date = new Date(c.createdAt);
+          if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) { currentMonthNewClients++; }
+          if (date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear) { lastMonthNewClients++; }
+        }
+      });
+
+      // ── FIX: all growth values are numbers (parseFloat eliminates string | 0 | 100) ──
+      const salesGrowth = lastMonthSalesTotal > 0
+        ? parseFloat(((currentMonthSales - lastMonthSalesTotal) / lastMonthSalesTotal * 100).toFixed(1))
+        : currentMonthSales > 0 ? 100 : 0;
+      const profitGrowth = lastMonthProfitTotal > 0
+        ? parseFloat(((currentMonthProfit - lastMonthProfitTotal) / lastMonthProfitTotal * 100).toFixed(1))
+        : currentMonthProfit > 0 ? 100 : 0;
+      const clientGrowth = lastMonthNewClients > 0
+        ? parseFloat(((currentMonthNewClients - lastMonthNewClients) / lastMonthNewClients * 100).toFixed(1))
+        : currentMonthNewClients > 0 ? 100 : 0;
+
+      setStats({ totalSales, totalPurchases, totalClients, totalProducts, pendingInvoices, lowStock, activeEmployees, pendingOrders, salesGrowth, clientGrowth, profitGrowth });
+
       const { labels, salesValues, profitValues } = aggregateDataByPeriod(sales, purchases, "month");
       setSalesData(labels.map((label, i) => ({ month: label, sales: salesValues[i] })));
       setProfitData(labels.map((label, i) => ({ month: label, profit: profitValues[i] })));
-      const productSales = {};
-      sales.forEach(s => { if (s.productName) productSales[s.productName] = (productSales[s.productName] || 0) + (parseFloat(s.total) || 0); });
-      setTopProducts(Object.entries(productSales).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount).slice(0, 5));
-      const clientSales = {};
-      sales.forEach(s => { if (s.clientName) clientSales[s.clientName] = (clientSales[s.clientName] || 0) + (parseFloat(s.total) || 0); });
-      setTopClients(Object.entries(clientSales).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount).slice(0, 5));
-      const recent = [];
-      orders.slice(0, 5).forEach(o => recent.push({ type: "order", data: o, date: o.createdAt }));
-      invoices.slice(0, 5).forEach(i => recent.push({ type: "invoice", data: i, date: i.createdAt }));
-      recent.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      // ── FIX: cast Object.entries values to number ──────────────────────────
+      const productSales: Record<string, number> = {};
+      sales.forEach((s: any) => {
+        if (s.productName) productSales[s.productName] = (productSales[s.productName] || 0) + (parseFloat(s.total) || 0);
+      });
+      setTopProducts(
+        Object.entries(productSales)
+          .map(([name, amount]) => ({ name, amount: amount as number }))
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 5)
+      );
+
+      const clientSales: Record<string, number> = {};
+      sales.forEach((s: any) => {
+        if (s.clientName) clientSales[s.clientName] = (clientSales[s.clientName] || 0) + (parseFloat(s.total) || 0);
+      });
+      setTopClients(
+        Object.entries(clientSales)
+          .map(([name, amount]) => ({ name, amount: amount as number }))
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 5)
+      );
+
+      // ── FIX: typed Activity array ──────────────────────────────────────────
+      const recent: Activity[] = [];
+      orders.slice(0, 5).forEach((o: any) => recent.push({ type: "order", data: o, date: o.createdAt }));
+      invoices.slice(0, 5).forEach((i: any) => recent.push({ type: "invoice", data: i, date: i.createdAt }));
+      recent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setRecentActivities(recent.slice(0, 8));
+
     } catch(e) { console.error("Erreur:", e); }
     setLoading(false);
   };
@@ -550,7 +738,7 @@ export default function DashboardPage() {
   const profit = stats.totalSales - stats.totalPurchases;
   const margin = stats.totalSales > 0 ? (profit / stats.totalSales * 100).toFixed(1) : 0;
 
-  const getInitials = (name) => {
+  const getInitials = (name: string) => {
     if (!name) return "?";
     return name.charAt(0).toUpperCase();
   };
@@ -558,35 +746,59 @@ export default function DashboardPage() {
   const chartOptions = {
     responsive: true, maintainAspectRatio: true,
     plugins: {
-      legend: { labels: { color: theme.textSecondary, font: { size: isMobile ? 8 : 10 }, usePointStyle: true, pointStyle: "circle" }, position: "bottom" as const },
-      tooltip: { backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.textSecondary, borderColor: theme.primary, borderWidth: 1, callbacks: { label: function(context: TooltipItem<"line">) { return `${context.dataset.label || ''}: ${formatCurrency(context.raw as number)}`; } } }
+      legend: { labels: { color: theme.textSecondary, font: { size: isMobile ? 7 : isTablet ? 9 : 10 }, usePointStyle: true, pointStyle: "circle" as const, boxWidth: isMobile ? 6 : 8 }, position: "bottom" as const },
+      tooltip: {
+        backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.textSecondary,
+        borderColor: theme.primary, borderWidth: 1, bodyFont: { size: isMobile ? 10 : 12 }, titleFont: { size: isMobile ? 11 : 13 },
+        callbacks: { label: function(context: TooltipItem<"line">) { return `${context.dataset.label || ''}: ${formatCurrency(context.raw as number)}`; } }
+      }
     },
     scales: {
-      y: { ticks: { color: theme.textSecondary, font: { size: isMobile ? 8 : 10 } }, grid: { color: theme.border }, beginAtZero: true },
-      x: { ticks: { color: theme.textSecondary, font: { size: isMobile ? 8 : 10 } }, grid: { color: theme.border } }
+      y: { ticks: { color: theme.textSecondary, font: { size: isMobile ? 7 : isTablet ? 8 : 10 } }, grid: { color: theme.border }, beginAtZero: true },
+      x: { ticks: { color: theme.textSecondary, font: { size: isMobile ? 7 : isTablet ? 8 : 10 }, maxRotation: isMobile ? 45 : 0 }, grid: { color: theme.border } }
     },
     interaction: { mode: 'index' as const, intersect: false },
-    elements: { line: { tension: 0.4 } }
+    elements: { line: { tension: 0.4, borderWidth: isMobile ? 1.5 : 2 } }
   };
 
   const doughnutOptions = {
     responsive: true, maintainAspectRatio: true,
     plugins: {
-      legend: { labels: { color: theme.textSecondary, font: { size: isMobile ? 8 : 9 } }, position: "bottom" as const },
-      tooltip: { backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.textSecondary, borderColor: theme.primary, borderWidth: 1,
-        callbacks: { label: function(context: any) { const label = context.label || ''; const value = context.raw || 0; const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0); const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0; return `${label}: ${formatCurrency(value)} (${percentage}%)`; } }
+      legend: { labels: { color: theme.textSecondary, font: { size: isMobile ? 7 : isTablet ? 8 : 9 }, boxWidth: isMobile ? 6 : 8 }, position: "bottom" as const },
+      tooltip: {
+        backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.textSecondary,
+        borderColor: theme.primary, borderWidth: 1, bodyFont: { size: isMobile ? 10 : 12 }, titleFont: { size: isMobile ? 11 : 13 },
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+          }
+        }
       }
     },
-    cutout: '60%', hover: { mode: 'index' as const, intersect: false }
+    cutout: isMobile ? '55%' : '60%'
   };
 
   const salesChartData = {
     labels: salesData.map(d => d.month),
-    datasets: [{ label: t("dashboard.revenue"), data: salesData.map(d => d.sales), backgroundColor: `${theme.primary}20`, borderColor: theme.primary, borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: theme.primary, pointBorderColor: theme.text, pointRadius: isMobile ? 1 : 2, pointHoverRadius: isMobile ? 3 : 4 }]
+    datasets: [{
+      label: t("dashboard.revenue"), data: salesData.map(d => d.sales),
+      backgroundColor: `${theme.primary}20`, borderColor: theme.primary, borderWidth: isMobile ? 1.5 : 2,
+      fill: true, tension: 0.4, pointBackgroundColor: theme.primary, pointBorderColor: theme.text,
+      pointRadius: isMobile ? 1 : 2, pointHoverRadius: isMobile ? 3 : 4
+    }]
   };
   const profitChartData = {
     labels: profitData.map(d => d.month),
-    datasets: [{ label: t("dashboard.profit"), data: profitData.map(d => d.profit), backgroundColor: `${theme.accent}20`, borderColor: theme.accent, borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: theme.accent, pointBorderColor: theme.text, pointRadius: isMobile ? 1 : 2, pointHoverRadius: isMobile ? 3 : 4 }]
+    datasets: [{
+      label: t("dashboard.profit"), data: profitData.map(d => d.profit),
+      backgroundColor: `${theme.accent}20`, borderColor: theme.accent, borderWidth: isMobile ? 1.5 : 2,
+      fill: true, tension: 0.4, pointBackgroundColor: theme.accent, pointBorderColor: theme.text,
+      pointRadius: isMobile ? 1 : 2, pointHoverRadius: isMobile ? 3 : 4
+    }]
   };
   const topProductsData = {
     labels: topProducts.map(p => p.name.length > (isMobile ? 8 : 12) ? p.name.substring(0, isMobile ? 6 : 12) + "..." : p.name),
@@ -594,12 +806,12 @@ export default function DashboardPage() {
   };
 
   const quickActions = [
-    { icon: "PlusCircle" as keyof typeof Icons, label: t("dashboard.newSale"), path: "/dashboard/sales", color: "#10b981", bgColor: `${theme.primary}15`, shortcut: isMobile ? "" : "Alt+S" },
-    { icon: "Package" as keyof typeof Icons, label: t("dashboard.addProduct"), path: "/dashboard/products", color: "#3b82f6", bgColor: `${theme.secondary}15`, shortcut: isMobile ? "" : "Alt+P" },
-    { icon: "Users" as keyof typeof Icons, label: t("dashboard.newClient"), path: "/dashboard/clients", color: "#667eea", bgColor: `${theme.primary}15`, shortcut: isMobile ? "" : "Alt+C" },
-    { icon: "BarChart2" as keyof typeof Icons, label: t("dashboard.reports"), path: "/dashboard/reports", color: "#a855f7", bgColor: `${theme.secondary}15`, shortcut: isMobile ? "" : "Alt+R" },
-    { icon: "User" as keyof typeof Icons, label: getTempTranslation("dashboard.profile"), path: "/dashboard/profile", color: "#f59e0b", bgColor: `${theme.accent}15`, shortcut: isMobile ? "" : "Alt+U" },
-    { icon: "Settings" as keyof typeof Icons, label: getTempTranslation("dashboard.settings"), path: "/dashboard/settings", color: "#ec489a", bgColor: `${theme.accent}15`, shortcut: isMobile ? "" : "Alt+G" }
+    { icon: "PlusCircle" as keyof typeof Icons, label: t("dashboard.newSale"), path: "/dashboard/sales", color: "#10b981", bgColor: `${theme.primary}15` },
+    { icon: "Package" as keyof typeof Icons, label: t("dashboard.addProduct"), path: "/dashboard/products", color: "#3b82f6", bgColor: `${theme.secondary}15` },
+    { icon: "Users" as keyof typeof Icons, label: t("dashboard.newClient"), path: "/dashboard/clients", color: "#667eea", bgColor: `${theme.primary}15` },
+    { icon: "BarChart2" as keyof typeof Icons, label: t("dashboard.reports"), path: "/dashboard/reports", color: "#a855f7", bgColor: `${theme.secondary}15` },
+    { icon: "User" as keyof typeof Icons, label: getTempTranslation("dashboard.profile"), path: "/dashboard/profile", color: "#f59e0b", bgColor: `${theme.accent}15` },
+    { icon: "Settings" as keyof typeof Icons, label: getTempTranslation("dashboard.settings"), path: "/dashboard/settings", color: "#ec489a", bgColor: `${theme.accent}15` }
   ];
 
   const kpiCards = [
@@ -617,7 +829,11 @@ export default function DashboardPage() {
     { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
   ];
 
-  const mainContainerStyle = { flex: 1, margin: isMobile ? "0px" : "6px", marginLeft: isMobile ? "0px" : "280px", padding: isMobile ? "12px" : "16px", width: "100%", minHeight: "100vh", overflowX: "hidden" as const, background: theme.background };
+  const mainContainerStyle = { 
+    flex: 1, margin: isMobile ? "0" : "6px", marginLeft: isMobile ? "0" : "0", 
+    padding: isMobile ? "10px" : "16px", paddingBottom: isMobile ? "70px" : "16px",
+    width: "100%", minHeight: "100vh", overflowX: "hidden" as const, background: theme.background 
+  };
   const innerContainerStyle = { maxWidth: isMobile ? "100%" : "1400px", margin: "0 auto", width: "100%" };
 
   if (loading) {
@@ -633,7 +849,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, margin: 0, padding: 0 }}>
+    <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0 }}>
       <Sidebar />
       <div style={mainContainerStyle}>
         <div style={innerContainerStyle}>
@@ -642,58 +858,89 @@ export default function DashboardPage() {
             @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
             @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
             @keyframes slideIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
-            .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; position: relative; overflow: hidden; background: ${theme.surface}; border: 1px solid ${theme.border}; border-radius: ${cardRadius}; }
-            .card-hover::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); transition: left 0.5s ease; }
+            @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+            .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; position: relative; overflow: hidden; background: ${theme.surface}; border: 1px solid ${theme.border}; border-radius: ${responsive.cardRadius}; }
+            .card-hover::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); transition: left 0.5s ease; pointer-events: none; }
             .card-hover:hover::after { left: 100%; }
-            .card-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); border-color: ${theme.primary}; }
+            .card-hover:active { transform: scale(0.98); }
+            @media (hover: hover) {
+              .card-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); border-color: ${theme.primary}; }
+            }
             .action-item { transition: all 0.25s ease; cursor: pointer; position: relative; overflow: hidden; border-radius: 10px; }
-            .action-item::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transition: left 0.4s ease; }
-            .action-item:hover::before { left: 100%; }
-            .action-item:hover { transform: translateX(5px); filter: brightness(1.05); }
+            .action-item::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transition: left 0.4s ease; pointer-events: none; }
+            @media (hover: hover) {
+              .action-item:hover::before { left: 100%; }
+              .action-item:hover { transform: translateX(5px); filter: brightness(1.05); }
+            }
+            .action-item:active { transform: scale(0.98); }
             .activity-item { transition: all 0.25s ease; cursor: pointer; }
-            .activity-item:hover { transform: translateX(5px); background: ${theme.surfaceHover} !important; }
+            @media (hover: hover) {
+              .activity-item:hover { transform: translateX(5px); background: ${theme.surfaceHover} !important; }
+            }
+            .activity-item:active { transform: scale(0.98); }
             .trend-up { color: #10b981; }
             .trend-down { color: #ef4444; }
             .greeting-text { background: linear-gradient(135deg, ${theme.primary}, ${theme.secondary}); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-            .profile-menu { animation: fadeInDown 0.2s ease; background: ${theme.surface}; border: 1px solid ${theme.border}; }
-            .period-selector { transition: all 0.2s ease; }
-            .period-selector:hover { background: rgba(102,126,234,0.2); }
-            @media (max-width: 768px) { .card-hover:hover { transform: translateY(-2px); } .action-item:hover { transform: translateX(3px); } }
+            .profile-menu { animation: fadeInDown 0.2s ease; background: ${theme.surface}; border: 1px solid ${theme.border}; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+            .period-selector { transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
+            .period-selector:active { transform: scale(0.95); }
+            @media (max-width: 768px) { 
+              .card-hover:active { transform: scale(0.98); } 
+              .action-item:active { transform: scale(0.98); }
+              * { -webkit-tap-highlight-color: transparent; }
+            }
+            @media (hover: hover) and (max-width: 768px) {
+              .card-hover:hover { transform: translateY(-2px); }
+              .action-item:hover { transform: translateX(3px); }
+            }
+            .no-touch-scroll { -webkit-overflow-scrolling: touch; }
           `}</style>
 
           {/* Header */}
-          <div style={{ marginBottom: sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0, transform: animateCards ? "translateY(0)" : "translateY(-20px)" }}>
+          <div style={{ marginBottom: responsive.sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
-              <div>
-                <h1 style={{ color: theme.text, fontSize: headerTitleSize, margin: 0, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                  <Icon name={getWeatherIcon()} size={headerEmojiSize} color={theme.primary} />
-                  <span style={{ fontSize: headerNameSize }}>{getGreeting()}, <span className="greeting-text">{user?.name?.split(' ')[0] || "Utilisateur"}</span> !</span>
+              <div style={{ flex: 1, minWidth: isMobile ? "180px" : "auto" }}>
+                <h1 style={{ color: theme.text, fontSize: responsive.headerTitleSize, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                  <Icon name={getWeatherIcon()} size={responsive.headerEmojiSize} color={theme.primary} />
+                  <span style={{ fontSize: responsive.headerNameSize }}>
+                    {getGreeting()}, <span className="greeting-text">{user?.name?.split(' ')[0] || "Utilisateur"}</span> !
+                  </span>
                 </h1>
-                <p style={{ color: theme.textSecondary, marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", fontSize: dateSize }}>
+                <p style={{ color: theme.textSecondary, marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", fontSize: responsive.dateSize }}>
                   <Icon name="Calendar" size="0.9em" />
                   {getCurrentDate()}
-                  <span style={{ marginLeft: "6px", fontSize: isMobile ? "8px" : "10px", color: "#666", display: "flex", alignItems: "center", gap: "3px" }}>
-                    <Icon name="Clock" size="0.8em" /> {t("common.lastUpdate") || "Dernière mise à jour"}: {refreshTime}
-                  </span>
+                  {!isMobile && (
+                    <span style={{ marginLeft: "6px", fontSize: responsive.dateSize, color: "#666", display: "flex", alignItems: "center", gap: "3px" }}>
+                      <Icon name="Clock" size="0.8em" /> {t("common.lastUpdate") || "Dernière mise à jour"}: {refreshTime}
+                    </span>
+                  )}
                 </p>
               </div>
 
               {/* Image de profil */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                 <div style={{ position: "relative" }}>
-                  <div onClick={() => setShowProfileMenu(!showProfileMenu)} style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)" }}>
+                  <div 
+                    onClick={() => setShowProfileMenu(!showProfileMenu)} 
+                    style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)", WebkitTapHighlightColor: "transparent" }}
+                  >
                     {profileImage && !imageError ? (
-                      <img src={`http://localhost:3001${profileImage}?t=${imageTimestamp}`} alt="Profile" style={{ width: profileImageSize, height: profileImageSize, borderRadius: profileImageRadius, objectFit: "cover", border: `2px solid ${theme.primary}`, boxShadow: `0 4px 15px ${theme.primary}80` }}
-                        onError={() => { setImageError(true); refreshUserData(); }} loading="lazy" />
+                      <img 
+                        src={`http://localhost:3001${profileImage}?t=${imageTimestamp}`} 
+                        alt="Profile" 
+                        style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover", border: `2px solid ${theme.primary}`, boxShadow: `0 4px 15px ${theme.primary}80` }}
+                        onError={() => { setImageError(true); refreshUserData(); }} 
+                        loading="lazy" 
+                      />
                     ) : (
-                      <div style={{ width: isMobile ? "40px" : "50px", height: isMobile ? "40px" : "50px", borderRadius: isMobile ? "15px" : "25px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "white", border: `2px solid ${theme.primary}`, boxShadow: `0 4px 15px ${theme.primary}80` }}>
+                      <div style={{ width: isMobile ? "40px" : responsive.profileImageSize, height: isMobile ? "40px" : responsive.profileImageSize, borderRadius: isMobile ? "12px" : responsive.profileImageRadius, background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "white", border: `2px solid ${theme.primary}`, boxShadow: `0 4px 15px ${theme.primary}80` }}>
                         {getInitials(user?.name)}
                       </div>
                     )}
                   </div>
 
                   {showProfileMenu && (
-                    <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "180px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
+                    <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
                       <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
                         {profileImage && !imageError ? (
                           <img src={`http://localhost:3001${profileImage}?t=${imageTimestamp}`} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
@@ -701,43 +948,40 @@ export default function DashboardPage() {
                           <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
                         )}
                         <div>
-                          <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "12px" : "13px" }}>{user?.name}</div>
-                          <div style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "10px" }}>{user?.email}</div>
+                          <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "11px" : "13px" }}>{user?.name}</div>
+                          <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px" }}>{user?.email}</div>
                         </div>
                       </div>
-                      <div onClick={() => { router.push("/dashboard/profile"); setShowProfileMenu(false); setTimeout(() => refreshUserData(), 500); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div onClick={() => { router.push("/dashboard/profile"); setShowProfileMenu(false); setTimeout(() => refreshUserData(), 500); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
                         <Icon name="User" size="0.9em" /> {getTempTranslation("common.profile")}
                       </div>
-                      <div onClick={() => { router.push("/dashboard/settings"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div onClick={() => { router.push("/dashboard/settings"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
                         <Icon name="Settings" size="0.9em" /> {getTempTranslation("common.settings")}
                       </div>
                       <div style={{ height: "1px", background: theme.border }} />
-                      <div onClick={() => { localStorage.clear(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div onClick={() => { localStorage.clear(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
                         <Icon name="LogOut" size="0.9em" color="#f87171" /> {t("common.logout")}
                       </div>
                     </div>
                   )}
                 </div>
-
-                
               </div>
             </div>
           </div>
 
           {/* 4 Cartes KPI */}
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "160px" : "200px"}, 1fr))`, gap: gridGap, marginBottom: sectionMargin }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {kpiCards.map((card, idx) => (
-              <div key={idx} className="card-hover" style={{ padding: cardPadding, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: cardRadius, animation: `fadeInUp 0.5s ease ${idx * 0.1}s`, opacity: animateCards ? 1 : 0 }}
-                onMouseEnter={() => setHoveredCard(idx)} onMouseLeave={() => setHoveredCard(null)} onClick={() => router.push(card.link)}>
+              <div key={idx} className="card-hover" style={{ padding: responsive.cardPadding, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: responsive.cardRadius, animation: `fadeInUp 0.5s ease ${idx * 0.1}s`, opacity: animateCards ? 1 : 0 }} onMouseEnter={() => setHoveredCard(idx)} onMouseLeave={() => setHoveredCard(null)} onClick={() => router.push(card.link)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                  <span style={{ fontSize: isMobile ? "9px" : "11px", color: theme.textSecondary, textTransform: "uppercase", letterSpacing: "0.5px" }}>{card.label}</span>
+                  <span style={{ fontSize: responsive.kpiLabelSize, color: theme.textSecondary, textTransform: "uppercase", letterSpacing: "0.5px" }}>{card.label}</span>
                   <span style={{ transition: "transform 0.3s ease", transform: hoveredCard === idx ? "scale(1.1) rotate(5deg)" : "scale(1)", display: "inline-flex" }}>
-                    <Icon name={card.icon} size={kpiIconSize} color={card.color} />
+                    <Icon name={card.icon} size={responsive.kpiIconSize} color={card.color} />
                   </span>
                 </div>
-                <div style={{ fontSize: kpiValueSize, color: card.color, fontWeight: "bold" }}>{card.value}</div>
+                <div style={{ fontSize: responsive.kpiValueSize, color: card.color, fontWeight: "bold", wordBreak: "break-word" }}>{card.value}</div>
                 {card.growth !== 0 && (
-                  <div style={{ fontSize: isMobile ? "9px" : "10px", color: card.growth >= 0 ? "#10b981" : "#ef4444", marginTop: "6px", display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+                  <div style={{ fontSize: isMobile ? "8px" : responsive.kpiLabelSize, color: card.growth >= 0 ? "#10b981" : "#ef4444", marginTop: "6px", display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
                     <span className={card.trend === "up" ? "trend-up" : card.trend === "down" ? "trend-down" : ""} style={{ display: "flex", alignItems: "center", gap: "2px" }}>
                       <Icon name={card.growth >= 0 ? "TrendingUp" : "TrendingDown"} size="0.9em" /> {Math.abs(card.growth)}%
                     </span>
@@ -749,24 +993,23 @@ export default function DashboardPage() {
           </div>
 
           {/* 5 Cartes secondaires */}
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "100px" : "140px"}, 1fr))`, gap: isMobile ? "8px" : "12px", marginBottom: sectionMargin }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "100px" : "140px"}, 1fr))`, gap: isMobile ? "8px" : responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {secondaryCards.map((card, idx) => (
-              <div key={idx} className="card-hover" style={{ padding: isMobile ? "10px" : "12px", textAlign: "center", animation: `fadeInUp 0.5s ease ${0.4 + idx * 0.05}s`, opacity: animateCards ? 1 : 0 }}>
+              <div key={idx} className="card-hover" style={{ padding: responsive.secondaryCardPadding, textAlign: "center", animation: `fadeInUp 0.5s ease ${0.4 + idx * 0.05}s`, opacity: animateCards ? 1 : 0 }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
-                  <Icon name={card.icon} size={isMobile ? "20px" : "24px"} color={card.color} />
+                  <Icon name={card.icon} size={responsive.kpiIconSize} color={card.color} />
                 </div>
-                <div style={{ fontSize: isMobile ? "18px" : "22px", color: card.color, fontWeight: "bold" }}>{card.value}</div>
-                <div style={{ fontSize: isMobile ? "9px" : "10px", color: theme.textSecondary, marginTop: "4px" }}>{card.label}</div>
+                <div style={{ fontSize: responsive.secondaryCardValueSize, color: card.color, fontWeight: "bold" }}>{card.value}</div>
+                <div style={{ fontSize: responsive.kpiLabelSize, color: theme.textSecondary, marginTop: "4px", lineHeight: "1.3" }}>{card.label}</div>
               </div>
             ))}
           </div>
 
           {/* Sélecteur de période */}
-          <div style={{ marginBottom: isMobile ? "8px" : "12px", display: "flex", justifyContent: "flex-end" }}>
-            <div style={{ display: "flex", gap: "4px", background: theme.surface, padding: "4px", borderRadius: "32px", border: `1px solid ${theme.border}`, flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ marginBottom: isMobile ? "12px" : responsive.sectionMargin, display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: "4px", background: theme.surface, padding: "4px", borderRadius: "32px", border: `1px solid ${theme.border}`, flexWrap: "wrap", justifyContent: "center", width: isMobile ? "100%" : "auto" }}>
               {periodOptions.map((option) => (
-                <button key={option.value} onClick={() => setSelectedPeriod(option.value)} className="period-selector"
-                  style={{ padding: isMobile ? "4px 10px" : "6px 16px", borderRadius: "28px", background: selectedPeriod === option.value ? theme.primary : "transparent", color: selectedPeriod === option.value ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: isMobile ? "9px" : "11px", fontWeight: selectedPeriod === option.value ? "500" : "normal", display: "flex", alignItems: "center", gap: "3px", transition: "all 0.2s" }}>
+                <button key={option.value} onClick={() => setSelectedPeriod(option.value)} className="period-selector" style={{ padding: isMobile ? "6px 12px" : "6px 16px", borderRadius: "28px", background: selectedPeriod === option.value ? theme.primary : "transparent", color: selectedPeriod === option.value ? "white" : theme.textSecondary, border: "none", cursor: "pointer", fontSize: isMobile ? "10px" : "11px", fontWeight: selectedPeriod === option.value ? "500" : "normal", display: "flex", alignItems: "center", gap: "3px", transition: "all 0.2s", flex: isMobile ? "1" : "auto", justifyContent: "center" }}>
                   <Icon name={option.icon} size={isMobile ? "10px" : "12px"} color={selectedPeriod === option.value ? "white" : theme.textSecondary} />
                   <span>{option.label}</span>
                 </button>
@@ -775,12 +1018,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Graphiques */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: gridGap, marginBottom: sectionMargin }}>
-            <div style={{ background: theme.surface, borderRadius: cardRadius, padding: cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
+            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
-                <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+                <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                   <Icon name="TrendingUp" size="1em" color={theme.primary} /> {t("dashboard.salesEvolution")}
                 </h3>
                 <div style={{ background: theme.surfaceHover, padding: "2px 8px", borderRadius: "16px", fontSize: isMobile ? "9px" : "10px", color: stats.salesGrowth >= 0 ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", gap: "3px" }}>
@@ -788,16 +1029,14 @@ export default function DashboardPage() {
                 </div>
               </div>
               {salesData.length > 0 && salesData.some(d => d.sales > 0) ? (
-                <div style={{ height: chartHeight }}><Line data={salesChartData} options={chartOptions} /></div>
+                <div style={{ height: responsive.chartHeight }}><Line data={salesChartData} options={chartOptions} /></div>
               ) : (
-                <div style={{ height: chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
+                <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
-            <div style={{ background: theme.surface, borderRadius: cardRadius, padding: cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
-                <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+                <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                   <Icon name="DollarSign" size="1em" color={theme.accent} /> {t("dashboard.profitEvolution") || "Évolution du bénéfice"}
                 </h3>
                 <div style={{ background: theme.surfaceHover, padding: "2px 8px", borderRadius: "16px", fontSize: isMobile ? "9px" : "10px", color: stats.profitGrowth >= 0 ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", gap: "3px" }}>
@@ -805,70 +1044,66 @@ export default function DashboardPage() {
                 </div>
               </div>
               {profitData.length > 0 && profitData.some(d => d.profit !== 0) ? (
-                <div style={{ height: chartHeight }}><Line data={profitChartData} options={chartOptions} /></div>
+                <div style={{ height: responsive.chartHeight }}><Line data={profitChartData} options={chartOptions} /></div>
               ) : (
-                <div style={{ height: chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
+                <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
           </div>
 
           {/* Top produits + Top clients */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: gridGap, marginBottom: sectionMargin }}>
-            <div style={{ background: theme.surface, borderRadius: cardRadius, padding: cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
+            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Icon name="Trophy" size="1em" color="#f59e0b" /> {t("dashboard.topProducts")}
               </h3>
               {topProducts.length > 0 ? (
-                <div style={{ height: isMobile ? "180px" : "220px" }}><Doughnut data={topProductsData} options={doughnutOptions} /></div>
+                <div style={{ height: isMobile ? "200px" : "220px" }}><Doughnut data={topProductsData} options={doughnutOptions} /></div>
               ) : <p style={{ textAlign: "center", padding: "30px", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>{t("dashboard.topProductsEmpty")}</p>}
             </div>
-            <div style={{ background: theme.surface, borderRadius: cardRadius, padding: cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Icon name="Star" size="1em" color="#f59e0b" /> {t("dashboard.topClients")}
               </h3>
-              {topClients.length > 0 ? topClients.map((c, idx) => (
-                <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${theme.border}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "transform 0.2s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = "translateX(5px)"}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = "translateX(0)"}>
-                  <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "12px" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: isMobile ? "16px" : "18px", height: isMobile ? "16px" : "18px", background: `${theme.primary}20`, borderRadius: "4px", marginRight: "6px", fontSize: isMobile ? "9px" : "10px" }}>{idx + 1}</span>
-                    {c.name.length > (isMobile ? 12 : 15) ? c.name.substring(0, isMobile ? 10 : 12) + "..." : c.name}
-                  </span>
-                  <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "11px" : "12px" }}>{formatCurrency(c.amount)}</span>
+              {topClients.length > 0 ? (
+                <div style={{ maxHeight: isMobile ? "200px" : "220px", overflowY: "auto" }}>
+                  {topClients.map((c, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${theme.border}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "transform 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateX(5px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateX(0)"}>
+                      <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: isMobile ? "16px" : "18px", height: isMobile ? "16px" : "18px", background: `${theme.primary}20`, borderRadius: "4px", fontSize: isMobile ? "9px" : "10px" }}>{idx + 1}</span>
+                        <span style={{ wordBreak: "break-word" }}>{c.name.length > (isMobile ? 15 : 20) ? c.name.substring(0, isMobile ? 12 : 17) + "..." : c.name}</span>
+                      </span>
+                      <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "11px" : "12px", marginLeft: "8px" }}>{formatCurrency(c.amount)}</span>
+                    </div>
+                  ))}
                 </div>
-              )) : <p style={{ textAlign: "center", padding: "30px", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>{t("dashboard.topClientsEmpty")}</p>}
+              ) : <p style={{ textAlign: "center", padding: "30px", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>{t("dashboard.topClientsEmpty")}</p>}
             </div>
           </div>
 
           {/* KPIs stratégiques */}
-          <div style={{ background: theme.surface, borderRadius: cardRadius, padding: cardPadding, border: `1px solid ${theme.border}`, marginBottom: sectionMargin, transition: "transform 0.3s" }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-            onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+          <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, marginBottom: responsive.sectionMargin, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
             <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Icon name="BarChart2" size="1em" color={theme.primary} /> {t("dashboard.strategicKpis")}
             </h3>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? "12px" : "16px" }}>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
                     <Icon name="Target" size="0.9em" color={theme.accent} /> {t("dashboard.profitMargin")}
                   </span>
-                  <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "10px" : "11px" }}>{margin}%</span>
+                  <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "9px" : "11px" }}>{margin}%</span>
                 </div>
                 <div style={{ background: theme.surfaceHover, borderRadius: "8px", height: "4px", overflow: "hidden" }}>
-                  <div style={{ width: `${Math.min(parseFloat(margin), 100)}%`, background: `linear-gradient(90deg, ${theme.accent}, #059669)`, height: "4px", borderRadius: "8px", transition: "width 0.5s" }}></div>
+                  <div style={{ width: `${Math.min(parseFloat(String(margin)), 100)}%`, background: `linear-gradient(90deg, ${theme.accent}, #059669)`, height: "4px", borderRadius: "8px", transition: "width 0.5s" }}></div>
                 </div>
               </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
                     <Icon name="RefreshCw" size="0.9em" color="#f59e0b" /> {t("dashboard.inventoryTurnover")}
                   </span>
-                  <span style={{ color: "#f59e0b", fontWeight: "bold", fontSize: isMobile ? "10px" : "11px" }}>{stats.totalProducts > 0 ? (stats.totalSales / stats.totalProducts / 100).toFixed(1) : 0}x</span>
+                  <span style={{ color: "#f59e0b", fontWeight: "bold", fontSize: isMobile ? "9px" : "11px" }}>{stats.totalProducts > 0 ? (stats.totalSales / stats.totalProducts / 100).toFixed(1) : 0}x</span>
                 </div>
                 <div style={{ background: theme.surfaceHover, borderRadius: "8px", height: "4px", overflow: "hidden" }}>
                   <div style={{ width: `${Math.min((stats.totalSales / (stats.totalProducts * 1000 || 1)) * 100, 100)}%`, background: "linear-gradient(90deg, #f59e0b, #d97706)", height: "4px", borderRadius: "8px", transition: "width 0.5s" }}></div>
@@ -876,10 +1111,10 @@ export default function DashboardPage() {
               </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
                     <Icon name="Star" size="0.9em" color={theme.primary} /> {t("dashboard.loyaltyRate")}
                   </span>
-                  <span style={{ color: theme.primary, fontWeight: "bold", fontSize: isMobile ? "10px" : "11px" }}>{stats.totalClients > 0 ? ((stats.totalClients - (stats.pendingOrders || 0)) / stats.totalClients * 100).toFixed(1) : 0}%</span>
+                  <span style={{ color: theme.primary, fontWeight: "bold", fontSize: isMobile ? "9px" : "11px" }}>{stats.totalClients > 0 ? ((stats.totalClients - (stats.pendingOrders || 0)) / stats.totalClients * 100).toFixed(1) : 0}%</span>
                 </div>
                 <div style={{ background: theme.surfaceHover, borderRadius: "8px", height: "4px", overflow: "hidden" }}>
                   <div style={{ width: `${Math.min(((stats.totalClients - (stats.pendingOrders || 0)) / (stats.totalClients || 1)) * 100, 100)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})`, height: "4px", borderRadius: "8px", transition: "width 0.5s" }}></div>
@@ -889,27 +1124,20 @@ export default function DashboardPage() {
           </div>
 
           {/* Actions rapides */}
-          <div style={{ background: theme.surface, borderRadius: cardRadius, padding: cardPadding, border: `1px solid ${theme.border}`, marginBottom: sectionMargin }}>
+          <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, marginBottom: responsive.sectionMargin }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
-              <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+              <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Icon name="Zap" size="1em" color="#f59e0b" /> {t("dashboard.quickActions")}
               </h3>
-              {!isMobile && (
-                <span style={{ fontSize: "9px", color: "#666", display: "flex", alignItems: "center", gap: "3px" }}>
-                  <Icon name="Lightbulb" size="0.9em" color="#666" /> Raccourcis clavier disponibles
-                </span>
-              )}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? "140px" : "170px"}, 1fr))`, gap: "8px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fill, minmax(${isMobile ? "140px" : "170px"}, 1fr))`, gap: "8px" }}>
               {quickActions.map((action, idx) => (
-                <div key={action.label} onClick={() => router.push(action.path)} className="action-item" style={{ background: action.bgColor, padding: isMobile ? "8px" : "10px", display: "flex", alignItems: "center", gap: "8px", borderLeft: `3px solid ${action.color}`, transition: "all 0.25s ease" }}
-                  onMouseEnter={() => setHoveredAction(idx)} onMouseLeave={() => setHoveredAction(null)}>
+                <div key={action.label} onClick={() => router.push(action.path)} className="action-item" style={{ background: action.bgColor, padding: isMobile ? "8px" : "10px", display: "flex", alignItems: "center", gap: "8px", borderLeft: `3px solid ${action.color}`, transition: "all 0.25s ease", WebkitTapHighlightColor: "transparent" }} onMouseEnter={() => setHoveredAction(idx)} onMouseLeave={() => setHoveredAction(null)}>
                   <div style={{ width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", display: "flex", alignItems: "center", justifyContent: "center", background: `${action.color}20`, borderRadius: "8px", transition: "transform 0.2s", transform: hoveredAction === idx ? "scale(1.1)" : "scale(1)" }}>
                     <Icon name={action.icon} size={isMobile ? "16px" : "18px"} color={action.color} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: theme.text, fontSize: isMobile ? "11px" : "12px", fontWeight: "500" }}>{action.label}</div>
-                    {action.shortcut && <div style={{ color: "#666", fontSize: "8px", marginTop: "2px" }}>{action.shortcut}</div>}
                   </div>
                 </div>
               ))}
@@ -917,25 +1145,26 @@ export default function DashboardPage() {
           </div>
 
           {/* Activités récentes */}
-          <div style={{ background: theme.surface, borderRadius: cardRadius, padding: cardPadding, border: `1px solid ${theme.border}` }}>
+          <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
             <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Icon name="Activity" size="1em" color={theme.primary} /> {t("dashboard.recentActivities")}
             </h3>
             {recentActivities.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {recentActivities.map((activity, idx) => {
-                  const typeLabel = activity.type === "order" ? (language === 'fr' ? "Commande" : language === 'es' ? "Pedido" : "Order") : (language === 'fr' ? "Facture" : language === 'es' ? "Factura" : "Invoice");
+                {recentActivities.slice(0, isMobile ? 5 : 8).map((activity, idx) => {
+                  const typeLabel = activity.type === "order"
+                    ? (language === 'fr' ? "Commande" : language === 'es' ? "Pedido" : "Order")
+                    : (language === 'fr' ? "Facture" : language === 'es' ? "Factura" : "Invoice");
                   const typeIcon: keyof typeof Icons = activity.type === "order" ? "ClipboardList" : "Receipt";
                   const typeColor = activity.type === "order" ? "#f59e0b" : theme.primary;
                   return (
-                    <div key={idx} className="activity-item" style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", padding: isMobile ? "8px" : "10px", background: theme.surfaceHover, borderRadius: "10px", borderLeft: `3px solid ${typeColor}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "all 0.25s ease" }}
-                      onMouseEnter={() => setHoveredActivity(idx)} onMouseLeave={() => setHoveredActivity(null)} onClick={() => router.push(activity.type === "order" ? "/dashboard/orders" : "/dashboard/invoices")}>
+                    <div key={idx} className="activity-item" style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", padding: isMobile ? "8px" : "10px", background: theme.surfaceHover, borderRadius: "10px", borderLeft: `3px solid ${typeColor}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "all 0.25s ease", WebkitTapHighlightColor: "transparent" }} onMouseEnter={() => setHoveredActivity(idx)} onMouseLeave={() => setHoveredActivity(null)} onClick={() => router.push(activity.type === "order" ? "/dashboard/orders" : "/dashboard/invoices")}>
                       <div style={{ width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", display: "flex", alignItems: "center", justifyContent: "center", background: `${typeColor}20`, borderRadius: "8px", transition: "transform 0.2s", transform: hoveredActivity === idx ? "scale(1.1)" : "scale(1)" }}>
                         <Icon name={typeIcon} size={isMobile ? "16px" : "18px"} color={typeColor} />
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ color: theme.text, fontSize: isMobile ? "11px" : "12px", fontWeight: "500" }}>{typeLabel} #{activity.data.id}</div>
-                        <div style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "10px", marginTop: "2px" }}>{formatDateTime(activity.date)}</div>
+                        <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px", marginTop: "2px" }}>{formatDateTime(activity.date)}</div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", transition: "transform 0.2s", transform: hoveredActivity === idx ? "translateX(5px)" : "translateX(0)", color: typeColor }}>
                         <Icon name="ArrowRight" size={isMobile ? "14px" : "16px"} color={typeColor} />
@@ -948,19 +1177,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Footer */}
-          <div style={{ marginTop: sectionMargin, textAlign: "center", padding: "10px", borderTop: `1px solid ${theme.border}`, fontSize: isMobile ? "9px" : "10px", color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
+          <div style={{ marginTop: responsive.sectionMargin, textAlign: "center", padding: isMobile ? "12px" : "10px", borderTop: `1px solid ${theme.border}`, fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <Icon name="Keyboard" size="0.9em" /> {t("dashboard.shortcuts")}
+              <Icon name="Clock" size="0.9em" /> {t("common.lastUpdate") || "Dernière mise à jour"}: {refreshTime}
             </span>
-            {!isMobile && (
-              <span style={{ marginLeft: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
-                <Icon name="MousePointer" size="0.9em" /> Cliquez sur les cartes pour naviguer
-              </span>
-            )}
           </div>
-
         </div>
       </div>
     </div>
   );
 }
+

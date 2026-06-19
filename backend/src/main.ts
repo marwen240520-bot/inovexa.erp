@@ -1,23 +1,12 @@
 ﻿import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
-  // ⭐ SERVIR LES FICHIERS STATIQUES - AJOUTER CETTE LIGNE
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: '/uploads/',
-  });
-  
-  app.enableCors({
-    origin: 'http://localhost:3000',
-    credentials: true,
-  });
-  
+  const app = await NestFactory.create(AppModule);
+  app.enableCors();
+  app.useGlobalPipes(new ValidationPipe());
   await app.listen(3001);
-  console.log('🚀 Server running on http://localhost:3001');
-  console.log('📁 Uploads directory:', join(process.cwd(), 'uploads'));
+  console.log(`🚀 Application is running on: http://localhost:3001`);
 }
 bootstrap();

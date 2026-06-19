@@ -9,18 +9,11 @@ export class TransporteurController {
 
   @Get('shipments')
   async getMyShipments(@Request() req: any) {
+    // Vérifier que l'utilisateur est bien un transporteur
     if (req.user.role !== 'transporteur') {
       return { error: 'Accès non autorisé' };
     }
     return this.transporteurService.getMyShipments(req.user.userId);
-  }
-
-  @Patch('shipments/:id/status')
-  async updateShipmentStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
-    if (req.user.role !== 'transporteur') {
-      return { error: 'Accès non autorisé' };
-    }
-    return this.transporteurService.updateShipmentStatus(parseInt(id), req.user.userId, body.status);
   }
 
   @Get('stats')
@@ -29,5 +22,21 @@ export class TransporteurController {
       return { error: 'Accès non autorisé' };
     }
     return this.transporteurService.getStats(req.user.userId);
+  }
+
+  @Patch('shipments/:id/status')
+  async updateShipmentStatus(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { status: string }
+  ) {
+    if (req.user.role !== 'transporteur') {
+      return { error: 'Accès non autorisé' };
+    }
+    return this.transporteurService.updateShipmentStatus(
+      parseInt(id),
+      req.user.userId,
+      body.status
+    );
   }
 }

@@ -1,7 +1,7 @@
 ﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Supplier } from './entities/supplier.entity';
+import { Supplier } from './supplier.entity';
 
 @Injectable()
 export class SuppliersService {
@@ -20,47 +20,12 @@ export class SuppliersService {
     return supplier;
   }
 
-  async create(userId: number, data: any) {
-    const supplier = this.supplierRepository.create({ 
-      ...data, 
-      userId,
-      totalPurchases: data.totalPurchases || 0,
-      status: data.status || 'active'
-    });
+  async create(userId: number, data: Partial<Supplier>) {
+    const supplier = this.supplierRepository.create({ ...data, userId });
     return this.supplierRepository.save(supplier);
   }
 
-  // ⭐ NOUVELLE METHODE: Import multiple
-  async importSuppliers(userId: number, suppliersData: any[]) {
-    let success = 0;
-    let errors = 0;
-
-    for (const supplierData of suppliersData) {
-      try {
-        const supplier = this.supplierRepository.create({
-          userId: userId,
-          name: supplierData.name || supplierData.supplierName || "Fournisseur inconnu",
-          contact: supplierData.contact || supplierData.contactPerson || "",
-          email: supplierData.email || "",
-          phone: supplierData.phone || "",
-          address: supplierData.address || "",
-          totalPurchases: parseFloat(supplierData.totalPurchases) || 0,
-          status: supplierData.status || "active"
-        });
-        
-        await this.supplierRepository.save(supplier);
-        success++;
-      } catch (error) {
-        errors++;
-        console.error('Erreur import fournisseur:', error.message);
-      }
-    }
-    
-    console.log(`✅ Import terminé: ${success} succès, ${errors} erreurs`);
-    return { success, errors, total: suppliersData.length };
-  }
-
-  async update(id: number, userId: number, data: any) {
+  async update(id: number, userId: number, data: Partial<Supplier>) {
     const supplier = await this.findOne(id, userId);
     Object.assign(supplier, data);
     return this.supplierRepository.save(supplier);
@@ -70,5 +35,13 @@ export class SuppliersService {
     const supplier = await this.findOne(id, userId);
     await this.supplierRepository.delete(id);
     return { success: true };
+  }
+
+  async getStats(userId: number) {
+    const suppliers = await this.findAll(userId);
+    const active = suppliers.filter(s => s.status === 'active').length;
+    const totalPurchases = suppliers.reduce((sum, s) => sum + (s.totalPurchases || 0), 0);
+    
+    return { total: suppliers.length, active, totalPurchases };
   }
 }

@@ -1,111 +1,203 @@
-﻿/** @type {import('next').NextConfig} */
+﻿// ============================================================
+//  next.config.js — Inovexa ERP v2.0.0
+//  Production-grade Next.js configuration
+//  Last updated: 2025
+// ============================================================
+
+'use strict';
+
+const crypto = require('crypto');
+
+// ─────────────────────────────────────────────
+//  Environment helpers
+// ─────────────────────────────────────────────
+const IS_DEV       = process.env.NODE_ENV === 'development';
+const IS_PROD      = process.env.NODE_ENV === 'production';
+const API_URL      = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_HOST     = (() => { try { return new URL(API_URL).host; }     catch { return 'localhost:3001'; } })();
+const API_PROTOCOL = (() => { try { return new URL(API_URL).protocol; } catch { return 'http:'; } })();
+const API_WS       = API_PROTOCOL === 'https:' ? `wss://${API_HOST}` : `ws://${API_HOST}`;
+const API_ORIGIN   = `${API_PROTOCOL}//${API_HOST}`;
+
+// ─────────────────────────────────────────────
+//  Content Security Policy builder
+// ─────────────────────────────────────────────
+function buildCSP() {
+  const directives = {
+    'default-src': ["'self'"],
+
+    // unsafe-eval only in development (required for HMR / Fast Refresh)
+    'script-src': IS_DEV
+      ? ["'self'", "'unsafe-eval'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com']
+      : ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
+
+    'style-src':   ["'self'", "'unsafe-inline'"],
+    'img-src':     ["'self'", 'data:', 'blob:', 'https://flagcdn.com', API_ORIGIN],
+    'font-src':    ["'self'", 'data:'],
+    'connect-src': ["'self'", 'data:', 'blob:', API_ORIGIN, API_WS],
+    'media-src':   ["'self'"],
+    'object-src':  ["'none'"],
+    'frame-src':   ["'self'"],
+    'worker-src':  ["'self'", 'blob:'],
+    'base-uri':    ["'self'"],
+    'form-action': ["'self'"],
+
+    // Force HTTPS for all sub-resources in production
+    ...(IS_PROD ? { 'upgrade-insecure-requests': [] } : {}),
+  };
+
+  return Object.entries(directives)
+    .map(([key, vals]) => (vals.length ? `${key} ${vals.join(' ')}` : key))
+    .join('; ');
+}
+
+// ─────────────────────────────────────────────
+//  Security headers (applied to every route)
+// ─────────────────────────────────────────────
+const SECURITY_HEADERS = [
+  { key: 'Content-Security-Policy', value: buildCSP() },
+  { key: 'X-DNS-Prefetch-Control',  value: 'on' },
+  { key: 'X-Content-Type-Options',  value: 'nosniff' },
+  { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
+  { key: 'X-XSS-Protection',        value: '1; mode=block' },
+  { key: 'Referrer-Policy',         value: 'strict-origin-when-cross-origin' },
+  {
+    key:   'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  },
+  // HSTS — production only (2 years, include subdomains)
+  ...(IS_PROD
+    ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]
+    : []),
+];
+
+// ─────────────────────────────────────────────
+//  Next.js config
+// ─────────────────────────────────────────────
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  
-  // Transpile packages
-  transpilePackages: [],
-  
-  // Configuration des images
-  images: {
-    unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3001',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'flagcdn.com',
-        pathname: '/**',
-      },
-    ],
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    dangerouslyAllowSVG: true,
+
+  // ── Core ──────────────────────────────────────────────────
+  reactStrictMode:             true,
+  compress:                    true,
+  output:                      'standalone',
+  generateEtags:               true,
+  staticPageGenerationTimeout: 120,
+  pageExtensions:              ['tsx', 'ts', 'jsx', 'js'],
+  transpilePackages:           [],
+
+  // ── Public env variables ──────────────────────────────────
+  env: {
+    NEXT_PUBLIC_API_URL:         API_URL,
+    NEXT_PUBLIC_APP_NAME:        'Inovexa ERP',
+    NEXT_PUBLIC_APP_VERSION:     '2.0.0',
+    NEXT_PUBLIC_APP_DESCRIPTION: 'Solution ERP nouvelle génération',
   },
 
-  // Configuration webpack pour Chart.js
-  webpack: (config, { isServer, dev }) => {
-    config.module = config.module || {};
-    config.module.exprContextCritical = false;
-    
-    // Optimisations pour Chart.js
+  // ── Image optimisation ────────────────────────────────────
+  images: {
+    formats:          ['image/avif', 'image/webp'],
+    deviceSizes:      [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes:       [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL:  IS_PROD ? 3600 : 60,
+    dangerouslyAllowSVG:   true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      // Dynamic: backend API (reads from NEXT_PUBLIC_API_URL)
+      {
+        protocol: /** @type {any} */ (API_PROTOCOL.replace(':', '')),
+        hostname: API_HOST.split(':')[0],
+        ...(API_HOST.includes(':') ? { port: API_HOST.split(':')[1] } : {}),
+        pathname: '/uploads/**',
+      },
+      // Local dev frontend
+      { protocol: 'http', hostname: 'localhost', port: '3000', pathname: '/**' },
+      // Country flags CDN
+      { protocol: 'https', hostname: 'flagcdn.com', pathname: '/**' },
+    ],
+  },
+
+  // ── Webpack ───────────────────────────────────────────────
+  webpack(config, { isServer, dev }) {
+    // Suppress dynamic-require critical warnings (e.g. chart.js internals)
+    config.module = { ...config.module, exprContextCritical: false };
+
+    // Source maps:
+    //   production  → disabled (no eval, smallest output)
+    //   development → cheap-module-source-map (no eval, fast rebuilds)
+    config.devtool = dev ? 'cheap-module-source-map' : false;
+
+    // Node.js built-in polyfills for the browser bundle
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
+        fs:     false,
+        net:    false,
+        tls:    false,
+        path:   false,
+        os:     false,
+        crypto: false,
       };
-      
-      // Ignorer les avertissements spécifiques à Chart.js
-      config.ignoreWarnings = [
-        { module: /node_modules\/chart\.js/ },
-        { message: /eval/ },
-      ];
     }
-    
+
+    // Production client-side bundle splitting
     if (!dev && !isServer) {
       config.optimization = {
         ...config.optimization,
+        moduleIds: 'deterministic', // stable hashes across builds
+        chunkIds:  'deterministic',
         splitChunks: {
-          chunks: 'all',
+          chunks:             'all',
+          maxInitialRequests: 25,
+          minSize:            20_000,
           cacheGroups: {
-            default: false,
-            vendors: false,
+            // Disable webpack defaults
+            default:  false,
+            vendors:  false,
+
+            // React core — highest priority, cached longest
             framework: {
-              chunks: 'all',
-              name: 'framework',
-              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-sync-external-store)[\\/]/,
+              chunks:   'all',
+              name:     'framework',
+              test:     /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-sync-external-store)[\\/]/,
               priority: 40,
-              enforce: true,
+              enforce:  true,
             },
+
+            // Chart.js — large, isolated chunk (lazy-loaded per page)
             chartjs: {
-              test: /[\\/]node_modules[\\/](chart\.js|react-chartjs-2)[\\/]/,
-              name: 'chartjs-vendor',
-              priority: 35,
+              test:               /[\\/]node_modules[\\/](chart\.js|react-chartjs-2)[\\/]/,
+              name:               'vendor-chartjs',
+              priority:           35,
               reuseExistingChunk: true,
             },
+
+            // Other large vendors (> 160 kB) — content-hashed names
             lib: {
               test(module) {
                 return (
-                  module.size() > 160000 &&
+                  module.size() > 160_000 &&
                   /node_modules[/\\]/.test(module.identifier())
                 );
               },
               name(module) {
-                const hash = require('crypto')
+                const hash = crypto
                   .createHash('sha1')
                   .update(module.identifier())
                   .digest('hex')
                   .substring(0, 8);
-                return `chunk-${hash}`;
+                return `vendor-${hash}`;
               },
-              priority: 30,
-              minChunks: 1,
+              priority:           30,
+              minChunks:          1,
               reuseExistingChunk: true,
             },
+
+            // Shared application code (used by ≥ 2 pages)
             commons: {
-              name: 'commons',
+              name:      'commons',
               minChunks: 2,
-              priority: 20,
-            },
-            shared: {
-              name(module, chunks) {
-                return `shared-${chunks.map(c => c.name).join('-')}`;
-              },
-              priority: 10,
-              minChunks: 2,
-              reuseExistingChunk: true,
+              priority:  20,
             },
           },
         },
@@ -115,134 +207,72 @@ const nextConfig = {
     return config;
   },
 
-  // ✅ Configuration CSP CORRIGÉE pour Chart.js
+  // ── HTTP headers ──────────────────────────────────────────
   async headers() {
-    const cspDirectives = [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://flagcdn.com http://localhost:3001",
-      "font-src 'self' data:",
-      "connect-src 'self' data: blob: http://localhost:3001 ws://localhost:3001 https://*.tld",
-      "media-src 'self'",
-      "object-src 'none'",
-      "frame-src 'self'",
-      "worker-src 'self' blob:",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ];
-    
     return [
+      // Security headers on every route
       {
-        source: '/:path*',
+        source:  '/:path*',
+        headers: SECURITY_HEADERS,
+      },
+
+      // Static assets — immutable, 1 year
+      {
+        source:  '/_next/static/:path*',
         headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: cspDirectives.join('; ')
-          },
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
-          },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+
+      // Public images / fonts — 30 days with SWR
       {
-        source: '/_next/static/:path*',
+        source:  '/images/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' },
         ],
       },
+
+      // PWA manifest — 1 day
       {
-        source: '/manifest.json',
+        source:  '/manifest.json',
         headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/manifest+json; charset=utf-8',
-          },
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
+          { key: 'Content-Type',  value: 'application/manifest+json; charset=utf-8' },
+          { key: 'Cache-Control', value: 'public, max-age=86400' },
         ],
       },
+
+      // Service worker — never cache
       {
-        source: '/sw.js',
+        source:  '/sw.js',
         headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/javascript; charset=utf-8',
-          },
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
-          },
+          { key: 'Content-Type',  value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Pragma',        value: 'no-cache' },
         ],
       },
+
+      // API routes — no caching
       {
-        source: '/fonts/:path*',
+        source:  '/api/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
         ],
       },
     ];
   },
 
-  // Compression des assets
-  compress: true,
-
-  // Génération standalone pour déploiement
-  output: 'standalone',
-
-  // Variables d'environnement exposées au client
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
-    NEXT_PUBLIC_APP_NAME: 'Inovexa ERP',
-    NEXT_PUBLIC_APP_VERSION: '2.0.0',
-    NEXT_PUBLIC_APP_DESCRIPTION: 'Solution ERP nouvelle génération',
+  // ── Redirects (add permanent redirects here) ─────────────
+  async redirects() {
+    return [
+      // Example: enforce HTTPS (if not handled by reverse proxy / CDN)
+      // {
+      //   source:      '/:path*',
+      //   has:         [{ type: 'header', key: 'x-forwarded-proto', value: 'http' }],
+      //   destination: 'https://yourdomain.com/:path*',
+      //   permanent:   true,
+      // },
+    ];
   },
-
-  // Génération des ETags
-  generateEtags: true,
-
-  // Timeout pour les pages statiques (en secondes)
-  staticPageGenerationTimeout: 120,
-
-  // Configuration des logs
-  onDemandEntries: {
-    maxInactiveAge: 25 * 1000,
-    pagesBufferLength: 2,
-  },
-
-  // Désactiver l'indicateur de développement en production
-  devIndicators: {
-    buildActivity: true,
-    buildActivityPosition: 'bottom-right',
-  },
-
-  // Configuration des pages
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-}
+};
 
 module.exports = nextConfig;

@@ -1,0 +1,236 @@
+﻿{
+  "fr": {
+    "common": {
+      "dashboard": "Tableau de bord",
+      "products": "Produits",
+      "categories": "Catégories",
+      "stock": "Stock",
+      "sales": "Ventes",
+      "purchases": "Achats",
+      "orders": "Commandes",
+      "clients": "Clients",
+      "suppliers": "Fournisseurs",
+      "invoices": "Factures",
+      "hr": "Ressources Humaines",
+      "finance": "Finance",
+      "logistics": "Logistique",
+      "production": "Production",
+      "ai": "Assistant IA",
+      "reports": "Rapports",
+      "analytics": "Analytics",
+      "profile": "Mon Profil",
+      "settings": "Paramètres",
+      "logout": "Déconnexion",
+      "logoutWarning": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "loading": "Chargement...",
+      "lastUpdate": "Dernière mise à jour"
+    },
+    "admin": {
+      "title": "Administrateur",
+      "clients": "Gestion des clients",
+      "modules": "Gestion des modules"
+    },
+    "transporteur": {
+      "dashboard": {
+        "title": "Tableau de bord"
+      },
+      "shipments": {
+        "title": "Mes livraisons"
+      },
+      "profile": {
+        "title": "Mon profil"
+      },
+      "settings": {
+        "title": "Paramètres"
+      }
+    },
+    "dashboard": {
+      "goodMorning": "Bonjour",
+      "goodAfternoon": "Bon après-midi",
+      "goodEvening": "Bonsoir",
+      "revenue": "Chiffre d'affaires",
+      "profit": "Bénéfice",
+      "activeClients": "Clients actifs",
+      "products": "Produits",
+      "pendingInvoices": "Factures en attente",
+      "lowStock": "Stock faible",
+      "activeEmployees": "Employés actifs",
+      "pendingOrders": "Commandes en attente",
+      "purchases": "Achats",
+      "salesEvolution": "Évolution des ventes",
+      "profitEvolution": "Évolution du bénéfice",
+      "topProducts": "Top produits",
+      "topProductsEmpty": "Aucune donnée de produit",
+      "topClients": "Top clients",
+      "topClientsEmpty": "Aucune donnée client",
+      "strategicKpis": "KPIs stratégiques",
+      "profitMargin": "Marge bénéficiaire",
+      "inventoryTurnover": "Rotation des stocks",
+      "loyaltyRate": "Taux de fidélité",
+      "quickActions": "Actions rapides",
+      "newSale": "Nouvelle vente",
+      "addProduct": "Ajouter un produit",
+      "newClient": "Nouveau client",
+      "reports": "Rapports",
+      "recentActivities": "Activités récentes",
+      "recentActivitiesEmpty": "Aucune activité récente",
+      "vsPreviousPeriod": "vs période précédente"
+    }
+  },
+  "en": {
+    "common": {
+      "dashboard": "Dashboard",
+      "products": "Products",
+      "categories": "Categories",
+      "stock": "Stock",
+      "sales": "Sales",
+      "purchases": "Purchases",
+      "orders": "Orders",
+      "clients": "Clients",
+      "suppliers": "Suppliers",
+      "invoices": "Invoices",
+      "hr": "Human Resources",
+      "finance": "Finance",
+      "logistics": "Logistics",
+      "production": "Production",
+      "ai": "AI Assistant",
+      "reports": "Reports",
+      "analytics": "Analytics",
+      "profile": "My Profile",
+      "settings": "Settings",
+      "logout": "Logout",
+      "logoutWarning": "Are you sure you want to logout?",
+      "loading": "Loading...",
+      "lastUpdate": "Last update"
+    },
+    "admin": {
+      "title": "Administrator",
+      "clients": "Client Management",
+      "modules": "Module Management"
+    },
+    "transporteur": {
+      "dashboard": {
+        "title": "Dashboard"
+      },
+      "shipments": {
+        "title": "My deliveries"
+      },
+      "profile": {
+        "title": "My profile"
+      },
+      "settings": {
+        "title": "Settings"
+      }
+    },
+    "dashboard": {
+      "goodMorning": "Good morning",
+      "goodAfternoon": "Good afternoon",
+      "goodEvening": "Good evening",
+      "revenue": "Revenue",
+      "profit": "Profit",
+      "activeClients": "Active clients",
+      "products": "Products",
+      "pendingInvoices": "Pending invoices",
+      "lowStock": "Low stock",
+      "activeEmployees": "Active employees",
+      "pendingOrders": "Pending orders",
+      "purchases": "Purchases",
+      "salesEvolution": "Sales evolution",
+      "profitEvolution": "Profit evolution",
+      "topProducts": "Top products",
+      "topProductsEmpty": "No product data",
+      "topClients": "Top clients",
+      "topClientsEmpty": "No client data",
+      "strategicKpis": "Strategic KPIs",
+      "profitMargin": "Profit margin",
+      "inventoryTurnover": "Inventory turnover",
+      "loyaltyRate": "Loyalty rate",
+      "quickActions": "Quick actions",
+      "newSale": "New sale",
+      "addProduct": "Add product",
+      "newClient": "New client",
+      "reports": "Reports",
+      "recentActivities": "Recent activities",
+      "recentActivitiesEmpty": "No recent activities",
+      "vsPreviousPeriod": "vs previous period"
+    }
+  },
+  "es": {
+    "common": {
+      "dashboard": "Tablero",
+      "products": "Productos",
+      "categories": "Categorías",
+      "stock": "Inventario",
+      "sales": "Ventas",
+      "purchases": "Compras",
+      "orders": "Pedidos",
+      "clients": "Clientes",
+      "suppliers": "Proveedores",
+      "invoices": "Facturas",
+      "hr": "Recursos Humanos",
+      "finance": "Finanzas",
+      "logistics": "Logística",
+      "production": "Producción",
+      "ai": "Asistente IA",
+      "reports": "Informes",
+      "analytics": "Analítica",
+      "profile": "Mi Perfil",
+      "settings": "Configuración",
+      "logout": "Cerrar sesión",
+      "logoutWarning": "¿Estás seguro de que quieres cerrar sesión?",
+      "loading": "Cargando...",
+      "lastUpdate": "Última actualización"
+    },
+    "admin": {
+      "title": "Administrador",
+      "clients": "Gestión de clientes",
+      "modules": "Gestión de módulos"
+    },
+    "transporteur": {
+      "dashboard": {
+        "title": "Tablero"
+      },
+      "shipments": {
+        "title": "Mis entregas"
+      },
+      "profile": {
+        "title": "Mi perfil"
+      },
+      "settings": {
+        "title": "Configuración"
+      }
+    },
+    "dashboard": {
+      "goodMorning": "Buenos días",
+      "goodAfternoon": "Buenas tardes",
+      "goodEvening": "Buenas noches",
+      "revenue": "Ingresos",
+      "profit": "Beneficio",
+      "activeClients": "Clientes activos",
+      "products": "Productos",
+      "pendingInvoices": "Facturas pendientes",
+      "lowStock": "Stock bajo",
+      "activeEmployees": "Empleados activos",
+      "pendingOrders": "Pedidos pendientes",
+      "purchases": "Compras",
+      "salesEvolution": "Evolución de ventas",
+      "profitEvolution": "Evolución del beneficio",
+      "topProducts": "Top productos",
+      "topProductsEmpty": "Sin datos de productos",
+      "topClients": "Top clientes",
+      "topClientsEmpty": "Sin datos de clientes",
+      "strategicKpis": "KPIs estratégicos",
+      "profitMargin": "Margen de beneficio",
+      "inventoryTurnover": "Rotación de inventario",
+      "loyaltyRate": "Tasa de fidelidad",
+      "quickActions": "Acciones rápidas",
+      "newSale": "Nueva venta",
+      "addProduct": "Añadir producto",
+      "newClient": "Nuevo cliente",
+      "reports": "Informes",
+      "recentActivities": "Actividades recientes",
+      "recentActivitiesEmpty": "Sin actividades recientes",
+      "vsPreviousPeriod": "vs período anterior"
+    }
+  }
+}

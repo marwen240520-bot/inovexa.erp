@@ -17,7 +17,6 @@ import { AdminModule } from './modules/admin/admin.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { ExportModule } from './modules/export/export.module';
 import { SearchModule } from './modules/search/search.module';
-import { RfmModule } from './modules/rfm/rfm.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
@@ -25,6 +24,22 @@ import { ProductionModule } from './modules/production/production.module';
 import { TransporteurModule } from './modules/transporteur/transporteur.module';
 import { TransporteursModule } from './modules/transporteurs/transporteurs.module';
 import { IaModule } from './modules/ia/ia.module';
+
+import { User } from './modules/users/entities/user.entity';
+import { Product } from './modules/products/product.entity';
+import { Client } from './modules/clients/entities/client.entity';
+import { Category } from './modules/categories/category.entity';
+import { Supplier } from './modules/suppliers/supplier.entity';
+import { Order } from './modules/orders/entities/order.entity';
+import { Invoice } from './modules/invoices/entities/invoice.entity';
+import { Sale } from './modules/sales/entities/sale.entity';
+import { Purchase } from './modules/purchases/entities/purchase.entity';
+import { Employee } from './modules/employees/entities/employee.entity';
+import { Expense } from './modules/expenses/entities/expense.entity';
+import { Shipment } from './modules/logistics/entities/shipment.entity';
+import { ProductionOrder } from './modules/production/entities/production-order.entity';
+import { Transporteur } from './modules/transporteurs/entities/transporteur.entity';
+import { IaChat } from './modules/ia/entities/ia-chat.entity';
 
 @Module({
   imports: [
@@ -35,8 +50,8 @@ import { IaModule } from './modules/ia/ia.module';
       username: 'postgres',
       password: 'postgres',
       database: 'inovexa_erp',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: false, // Important: false car les tables sont déjà créées
+      entities: [User, Product, Client, Category, Supplier, Order, Invoice, Sale, Purchase, Employee, Expense, Shipment, ProductionOrder, Transporteur, IaChat],
+      synchronize: false,
       logging: false,
     }),
     AuthModule,
@@ -54,7 +69,6 @@ import { IaModule } from './modules/ia/ia.module';
     CustomersModule,
     ExportModule,
     SearchModule,
-    RfmModule,
     EmployeesModule,
     ExpensesModule,
     LogisticsModule,
@@ -67,3 +81,4 @@ import { IaModule } from './modules/ia/ia.module';
   providers: [AppService],
 })
 export class AppModule {}
+

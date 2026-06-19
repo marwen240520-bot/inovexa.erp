@@ -1,28 +1,46 @@
 ﻿import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { HRModule } from './modules/hr/hr.module';
-import { Employee } from './modules/hr/employee.entity';
-import { Department } from './modules/hr/department.entity';
-import { User } from './modules/users/entities/user.entity';
+// import { CompaniesModule } from './modules/companies/companies.module';
+// import { FinanceModule } from './modules/finance/finance.module';
+// import { InventoryModule } from './modules/inventory/inventory.module';
+import { ProductionModule } from './modules/production/production.module';
+// import { HrModule } from './modules/hr/hr.module';
+import { SalesModule } from './modules/sales/sales.module';
+// import { PurchasingModule } from './modules/purchasing/purchasing.module';
+import { LogisticsModule } from './modules/logistics/logistics.module';
+// import { AnalyticsModule } from './modules/analytics/analytics.module';
+// import { AiModule } from './modules/ai/ai.module';
+// import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
-  imports: [
+  import {     ProductsModule } from './products/products.module';
+import {     InvoicesModule } from './invoices/invoices.module';
+  
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'data/inovexa.db',
-      entities: [User, Employee, Department],
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'inovexa_erp',
+      autoLoadEntities: true,
       synchronize: true,
-      logging: false,
     }),
     AuthModule,
     UsersModule,
-    HRModule,
+    // CompaniesModule,
+    // FinanceModule,
+    // InventoryModule,
+    ProductionModule,
+    // HrModule,
+    SalesModule,
+    // PurchasingModule,
+    LogisticsModule,
+    // AnalyticsModule,
+    // AiModule,
+    // SettingsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useTheme, THEMES } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 
 // ==================== SVG ICONS ====================
 const Icons = {
@@ -60,8 +62,8 @@ const Icons = {
       <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
     </svg>
   ),
-  User: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  User: ({ size = 16 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
     </svg>
   ),
@@ -144,12 +146,6 @@ const Icons = {
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
     </svg>
   ),
-  Hourglass: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/>
-      <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
-    </svg>
-  ),
   CheckCircle: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
@@ -170,87 +166,36 @@ const Icons = {
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
     </svg>
   ),
-};
-
-// ==================== THÈMES DISPONIBLES ====================
-const THEMES = {
-  dark: {
-    id: "dark",
-    name: "Sombre",
-    nameEn: "Dark",
-    nameEs: "Oscuro",
-    primary: "#667eea",
-    primaryRgb: "102, 126, 234",
-    secondary: "#764ba2",
-    accent: "#10b981",
-    background: "#0a0a0a",
-    surface: "#111111",
-    surfaceHover: "#1a1a1a",
-    text: "#ffffff",
-    textSecondary: "#94a3b8",
-    border: "#222222",
-    borderHover: "#333333",
-    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    Icon: Icons.Moon
-  },
-  blue: {
-    id: "blue",
-    name: "Bleu Océan",
-    nameEn: "Ocean Blue",
-    nameEs: "Azul Océano",
-    primary: "#0284c7",
-    primaryRgb: "2, 132, 199",
-    secondary: "#0369a1",
-    accent: "#0ea5e9",
-    background: "#082f49",
-    surface: "#0f172a",
-    surfaceHover: "#1e293b",
-    text: "#f8fafc",
-    textSecondary: "#94a3b8",
-    border: "#334155",
-    borderHover: "#475569",
-    gradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-    Icon: Icons.Waves
-  },
-  sunset: {
-    id: "sunset",
-    name: "Coucher de Soleil",
-    nameEn: "Sunset",
-    nameEs: "Atardecer",
-    primary: "#ea580c",
-    primaryRgb: "234, 88, 12",
-    secondary: "#f97316",
-    accent: "#fb923c",
-    background: "#1c1917",
-    surface: "#292524",
-    surfaceHover: "#3f3e3d",
-    text: "#fff7ed",
-    textSecondary: "#fdba74",
-    border: "#44403c",
-    borderHover: "#57534e",
-    gradient: "linear-gradient(135deg, #ea580c 0%, #f97316 100%)",
-    Icon: Icons.Sunset
-  }
+  Menu: ({ size = 24 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  ),
 };
 
 export default function ProfilePage() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const { formatCurrency } = useAppSettings();
-  const [user, setUser] = useState(null);
+  const { theme: globalTheme, themeId: globalThemeId, setTheme: setGlobalTheme } = useTheme();
+  const { isMobile } = useResponsive();
+
+  const contentMarginLeft = isMobile ? "0" : "0px";
+
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
   const [form, setForm] = useState({ name: "", email: "", phone: "", companyName: "" });
-  const [passwordForm, setPasswordForm] = useState({ newPassword: "", confirmPassword: "" });
+  const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
-  const fileInputRef = useRef(null);
-  const [currentTheme, setCurrentTheme] = useState("dark");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -259,47 +204,55 @@ export default function ProfilePage() {
     lastLogin: new Date().toLocaleString()
   });
 
+  // Fermer le menu quand on clique en dehors
   useEffect(() => {
-    const savedTheme = localStorage.getItem("app_theme");
-    if (savedTheme && THEMES[savedTheme]) {
-      setCurrentTheme(savedTheme);
-    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setShowThemeMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const theme = THEMES[currentTheme];
-    if (theme) {
-      document.documentElement.style.setProperty('--theme-primary', theme.primary);
-      document.documentElement.style.setProperty('--theme-primary-rgb', theme.primaryRgb);
-      document.documentElement.style.setProperty('--theme-secondary', theme.secondary);
-      document.documentElement.style.setProperty('--theme-accent', theme.accent);
-      document.documentElement.style.setProperty('--theme-background', theme.background);
-      document.documentElement.style.setProperty('--theme-surface', theme.surface);
-      document.documentElement.style.setProperty('--theme-surface-hover', theme.surfaceHover);
-      document.documentElement.style.setProperty('--theme-text', theme.text);
-      document.documentElement.style.setProperty('--theme-text-secondary', theme.textSecondary);
-      document.documentElement.style.setProperty('--theme-border', theme.border);
-      document.documentElement.style.setProperty('--theme-border-hover', theme.borderHover);
-      document.documentElement.style.setProperty('--theme-gradient', theme.gradient);
-    }
-  }, [currentTheme]);
+  const currentTheme = globalTheme;
+  const currentThemeId = globalThemeId;
 
-  const changeTheme = (themeId) => {
-    setCurrentTheme(themeId);
-    localStorage.setItem("app_theme", themeId);
+  const themeTranslations = {
+    fr: { themeChanged: "Thème changé", chooseTheme: "Choisir un thème" },
+    en: { themeChanged: "Theme changed", chooseTheme: "Choose a theme" },
+    es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" }
+  };
+  const themeT = themeTranslations[language as keyof typeof themeTranslations] || themeTranslations.fr;
+
+  const changeTheme = (themeId: string) => {
+    setGlobalTheme(themeId);
     setShowThemeMenu(false);
-    showMessage(`✅ ${t("settings.themeChanged") || "Thème changé"} : ${getThemeName(themeId)}`, "success");
-    setTimeout(() => window.location.reload(), 300);
+    showMessage(`${themeT.themeChanged}`, "success");
   };
 
-  const getThemeName = (themeId) => {
-    const theme = THEMES[themeId];
-    if (language === 'fr') return theme.name;
-    if (language === 'es') return theme.nameEs;
-    return theme.nameEn;
+  const getThemeName = (themeId: string) => {
+    const themesMap: Record<string, Record<string, string>> = {
+      dark: { fr: "Sombre", en: "Dark", es: "Oscuro" },
+      light: { fr: "Clair", en: "Light", es: "Claro" },
+      lightPremium: { fr: "Premium Clair", en: "Premium Light", es: "Premium Claro" },
+      blue: { fr: "Bleu Océan", en: "Ocean Blue", es: "Azul Océano" },
+      purple: { fr: "Violet", en: "Purple", es: "Púrpura" },
+      green: { fr: "Forêt", en: "Forest", es: "Bosque" },
+      sunset: { fr: "Coucher de Soleil", en: "Sunset", es: "Atardecer" },
+      rose: { fr: "Rose", en: "Rose", es: "Rosa" }
+    };
+    return themesMap[themeId]?.[language as keyof typeof themesMap.dark] || themeId;
   };
 
-  const getCurrentThemeObject = () => THEMES[currentTheme] || THEMES.dark;
+  const getThemeIcon = (themeId: string) => {
+    const icons: Record<string, JSX.Element> = {
+      dark: <Icons.Moon />,
+      blue: <Icons.Waves />,
+      sunset: <Icons.Sunset />,
+    };
+    return icons[themeId] || <Icons.Moon />;
+  };
 
   const loadUserFromBackend = async () => {
     const token = localStorage.getItem("token");
@@ -408,13 +361,15 @@ export default function ProfilePage() {
     } catch(e) { showMessage(t("common.error"), "error"); }
   };
 
-  const optimizeImage = (file, maxWidth = 400, maxHeight = 400, quality = 0.95) => {
-    return new Promise((resolve, reject) => {
+  const optimizeImage = (file: File, maxWidth = 400, maxHeight = 400, quality = 0.95) => {
+    return new Promise<File>((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
-        img.src = event.target.result;
+        const result = event.target?.result;
+        if (typeof result !== 'string') { reject(new Error('Invalid file')); return; }
+        img.src = result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let width = img.width, height = img.height;
@@ -422,9 +377,11 @@ export default function ProfilePage() {
           if (height > maxHeight) { width = (width * maxHeight) / height; height = maxHeight; }
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('Failed to get canvas context')); return; }
           ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
           canvas.toBlob((blob) => {
+            if (!blob) { reject(new Error('Failed to create blob')); return; }
             resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' }));
           }, 'image/jpeg', quality);
         };
@@ -472,18 +429,38 @@ export default function ProfilePage() {
   };
 
   const changePassword = async () => {
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) { showMessage(t("profile.passwordMismatch"), "error"); return; }
-    if (passwordForm.newPassword.length < 6) { showMessage(t("profile.passwordMinLength"), "error"); return; }
+    if (!passwordForm.oldPassword) {
+      showMessage(t("profile.oldPasswordRequired") || "Veuillez entrer votre mot de passe actuel", "error");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showMessage(t("profile.passwordMismatch"), "error");
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      showMessage(t("profile.passwordMinLength"), "error");
+      return;
+    }
     const token = localStorage.getItem("token");
     try {
       const res = await fetch("http://localhost:3001/users/change-password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ newPassword: passwordForm.newPassword })
+        body: JSON.stringify({
+          oldPassword: passwordForm.oldPassword,
+          newPassword: passwordForm.newPassword
+        })
       });
-      if (res.ok) { setPasswordForm({ newPassword: "", confirmPassword: "" }); showMessage(t("profile.passwordChanged"), "success"); }
-      else { const err = await res.json(); showMessage(err.message || t("common.error"), "error"); }
-    } catch(e) { showMessage(t("common.error"), "error"); }
+      if (res.ok) {
+        setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+        showMessage(t("profile.passwordChanged"), "success");
+      } else {
+        const err = await res.json();
+        showMessage(err.message || t("common.error"), "error");
+      }
+    } catch(e) {
+      showMessage(t("common.error"), "error");
+    }
   };
 
   const logoutAllDevices = async () => {
@@ -520,7 +497,12 @@ export default function ProfilePage() {
     return t("profile.client");
   };
 
-  const currentThemeObj = getCurrentThemeObject();
+  const responsive = {
+    contentPadding: isMobile ? "16px" : "32px",
+    cardPadding: isMobile ? "20px" : "32px",
+    avatarSize: isMobile ? "80px" : "100px",
+    titleSize: isMobile ? "24px" : "32px"
+  };
 
   const animations = `
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -529,50 +511,161 @@ export default function ProfilePage() {
     @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
   `;
 
-  const statsCards = [
-    { Icon: Icons.TrendingUp, label: t("profile.revenueGenerated"), value: formatCurrency(stats.totalSales), color: currentThemeObj.accent },
-    { Icon: Icons.ClipboardList, label: t("common.orders"), value: stats.totalOrders, color: currentThemeObj.primary },
-    { Icon: Icons.Users, label: t("common.clients"), value: stats.totalClients, color: currentThemeObj.secondary }
-  ];
-
   if (loading) {
     return (
-      <div style={{ background: currentThemeObj.background, minHeight: "100vh", color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: currentTheme.background, minHeight: "100vh", color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{animations}</style>
         <div style={{ textAlign: "center" }}>
-          <Icons.Spinner color={currentThemeObj.primary} size={48} />
-          <p style={{ marginTop: "16px", color: currentThemeObj.textSecondary }}>{t("common.loading")}</p>
+          <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
+          <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: currentThemeObj.background, display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: currentTheme.background, display: "flex" }}>
+      <style>{animations}</style>
+      
       <Sidebar />
-      <div style={{ marginLeft: "280px", flex: 1, padding: "32px" }}>
+      
+      <div style={{ 
+        marginLeft: contentMarginLeft,
+        flex: 1, 
+        padding: isMobile ? `${responsive.contentPadding} ${responsive.contentPadding} 80px ${responsive.contentPadding}` : responsive.contentPadding,
+        paddingTop: isMobile ? "12px" : responsive.contentPadding,
+        paddingBottom: isMobile ? "70px" : responsive.contentPadding
+      }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-          <style>{animations}</style>
 
-          {/* Header avec image de profil */}
-          <div style={{ marginBottom: "32px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0, transform: animateCards ? "translateY(0)" : "translateY(-20px)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
+          {/* Header */}
+          <div style={{ 
+            marginBottom: isMobile ? "24px" : "32px", 
+            animation: "fadeInDown 0.5s ease", 
+            opacity: animateCards ? 1 : 0,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? "16px" : "0"
+          }}>
+            <div>
+              <h1 style={{ color: currentTheme.text, fontSize: responsive.titleSize, display: "flex", alignItems: "center", gap: "10px" }}>
+                <Icons.User size={isMobile ? 24 : 28} />
+                {t("common.profile")}
+              </h1>
+              <p style={{ color: currentTheme.textSecondary, marginTop: "4px", fontSize: isMobile ? "12px" : "14px" }}>
+              </p>
+            </div>
+            
+            {/* Bouton Thème - Version corrigée pour mobile */}
+            <div style={{ position: "relative" }} ref={themeMenuRef}>
+             <button
+  onClick={() => setShowThemeMenu(!showThemeMenu)}
+  style={{ 
+    display: "flex", 
+    alignItems: "center", 
+    justifyContent: "center",
+    marginRight: "0px",  // ← COLLE À DROITE
+    
+    gap: isMobile ? "4px" : "8px",  // Réduire l'espace
+    padding: isMobile ? "6px 10px" : "8px 16px",  // ← Plus petit sur mobile
+    width: isMobile ? "160px" : "210px",  // ← CHANGE ICI (160px au lieu de 210px)
+    maxWidth: isMobile ? "90vw" : "none",  // ← Pour éviter de dépasser l'écran
+    background: currentTheme.surface, 
+    border: `1px solid ${currentTheme.border}`, 
+    borderRadius: "30px", 
+    color: currentTheme.text, 
+    cursor: "pointer", 
+    fontSize: isMobile ? "11px" : "13px",  // Police plus petite sur mobile
+    whiteSpace: "nowrap"
+
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = currentTheme.surfaceHover}
+                onMouseLeave={(e) => e.currentTarget.style.background = currentTheme.surface}
+              >
+                <span style={{ color: currentTheme.primary, display: "flex", alignItems: "center" }}>{getThemeIcon(currentThemeId)}</span>
+                {!isMobile && <span>{getThemeName(currentThemeId)}</span>}
+                <Icons.ChevronDown />
+              </button>
+
+              {showThemeMenu && (
+                <div style={{ 
+                  position: "absolute", 
+                  top: "calc(100% + 8px)", 
+                  right: isMobile ? "-10px" : "0",
+                  left: isMobile ? "-10px" : "auto",
+                  background: currentTheme.surface, 
+                  border: `1px solid ${currentTheme.border}`, 
+                  borderRadius: "16px", 
+                  padding: "8px", 
+                  minWidth: isMobile ? "calc(100% + 20px)" : "210px", 
+                  zIndex: 100, 
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.3)", 
+                  animation: "fadeInUp 0.2s ease",
+                  maxHeight: "400px",
+                  overflowY: "auto"
+                }}>
+                  <div style={{ padding: "8px 12px", borderBottom: `1px solid ${currentTheme.border}`, marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Icons.Palette />
+                    <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>
+                      {themeT.chooseTheme}
+                    </span>
+                  </div>
+                  {Object.keys(THEMES).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => changeTheme(key)}
+                      style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "12px", 
+                        width: "100%", 
+                        padding: isMobile ? "8px 10px" : "10px 12px", 
+                        background: currentThemeId === key ? `${currentTheme.primary}20` : "transparent", 
+                        border: "none", 
+                        borderRadius: "10px", 
+                        color: currentTheme.text, 
+                        cursor: "pointer", 
+                        transition: "all 0.2s", 
+                        marginBottom: "2px",
+                        textAlign: "left"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = currentTheme.surfaceHover}
+                      onMouseLeave={(e) => e.currentTarget.style.background = currentThemeId === key ? `${currentTheme.primary}20` : "transparent"}
+                    >
+                      <span style={{ color: THEMES[key]?.primary, fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center" }}>{getThemeIcon(key)}</span>
+                      <div style={{ flex: 1, textAlign: "left" }}>
+                        <div style={{ fontSize: isMobile ? "12px" : "13px", fontWeight: currentThemeId === key ? "bold" : "normal" }}>{getThemeName(key)}</div>
+                        <div style={{ width: "100%", height: "3px", background: THEMES[key]?.gradient, borderRadius: "3px", marginTop: "4px" }} />
+                      </div>
+                      {currentThemeId === key && <span style={{ color: currentTheme.primary, display: "flex", alignItems: "center" }}><Icons.Check /></span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Avatar section */}
+          <div style={{ marginBottom: isMobile ? "24px" : "32px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
+            <div className="profile-header" style={{ display: "flex", alignItems: isMobile ? "center" : "center", gap: isMobile ? "20px" : "24px", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
               
               {/* Avatar */}
-              <div style={{ position: "relative", cursor: "pointer" }} onClick={handleImageClick}>
+              <div className="profile-avatar-section" style={{ position: "relative", cursor: "pointer" }} onClick={handleImageClick}>
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/jpeg,image/png" style={{ display: "none" }} />
                 {profileImage ? (
                   <img
                     src={`http://localhost:3001${profileImage}?t=${imageTimestamp}`}
                     alt="Profile"
-                    style={{ width: "100px", height: "100px", borderRadius: "50px", objectFit: "cover", objectPosition: "center", border: `3px solid ${currentThemeObj.primary}`, transition: "transform 0.3s, box-shadow 0.3s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = `0 0 20px ${currentThemeObj.primary}80`; }}
+                    style={{ width: responsive.avatarSize, height: responsive.avatarSize, borderRadius: "50%", objectFit: "cover", objectPosition: "center", border: `3px solid ${currentTheme.primary}`, transition: "transform 0.3s, box-shadow 0.3s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = `0 0 20px ${currentTheme.primary}80`; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
                     onError={() => setProfileImage(null)}
                   />
                 ) : (
                   <div
-                    style={{ width: "100px", height: "100px", borderRadius: "50px", background: `linear-gradient(135deg, ${getRandomColor()} 0%, #764ba2 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "48px", color: "white", transition: "transform 0.3s", cursor: "pointer" }}
+                    style={{ width: responsive.avatarSize, height: responsive.avatarSize, borderRadius: "50%", background: `linear-gradient(135deg, ${getRandomColor()} 0%, #764ba2 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "36px" : "48px", color: "white", transition: "transform 0.3s", cursor: "pointer" }}
                     onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
                     onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
                   >
@@ -582,7 +675,7 @@ export default function ProfilePage() {
 
                 {/* Camera badge */}
                 <div
-                  style={{ position: "absolute", bottom: "0", right: "0", background: currentThemeObj.primary, borderRadius: "50%", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${currentThemeObj.background}`, cursor: "pointer", transition: "transform 0.2s", color: "white" }}
+                  style={{ position: "absolute", bottom: "0", right: "0", background: currentTheme.primary, borderRadius: "50%", width: isMobile ? "24px" : "28px", height: isMobile ? "24px" : "28px", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${currentTheme.background}`, cursor: "pointer", transition: "transform 0.2s", color: "white" }}
                   onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
                   onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
                 >
@@ -590,23 +683,23 @@ export default function ProfilePage() {
                 </div>
 
                 {uploadingImage && (
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(0,0,0,0.7)", borderRadius: "50px", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(0,0,0,0.7)", borderRadius: "50%", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Icons.Spinner color="white" size={24} />
                   </div>
                 )}
               </div>
 
               {/* Infos utilisateur */}
-              <div>
-                <h1 style={{ color: currentThemeObj.text, fontSize: "32px", margin: 0 }}>{user?.name}</h1>
-                <p style={{ color: currentThemeObj.textSecondary, margin: "4px 0 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ textAlign: isMobile ? "center" : "left" }}>
+                <h2 style={{ color: currentTheme.text, fontSize: isMobile ? "20px" : "24px", marginBottom: "4px" }}>{user?.name}</h2>
+                <p style={{ color: currentTheme.textSecondary, margin: "4px 0 0 0", display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: "6px", fontSize: isMobile ? "13px" : "14px" }}>
                   {getRoleIcon(user?.role)} {getRoleText(user?.role)}
                 </p>
-                <div style={{ display: "flex", gap: "16px", marginTop: "8px", flexWrap: "wrap" }}>
-                  <span style={{ color: "#666", fontSize: "12px", display: "flex", alignItems: "center", gap: "5px" }}>
+                <div style={{ display: "flex", gap: "16px", marginTop: "8px", flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start" }}>
+                  <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
                     <Icons.Calendar /> {t("profile.memberSince")} {stats.memberSince}
                   </span>
-                  <span style={{ color: "#666", fontSize: "12px", display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
                     <Icons.Lock /> {t("profile.lastLogin")}: {stats.lastLogin}
                   </span>
                 </div>
@@ -614,97 +707,35 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Stats cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "32px" }}>
-            {statsCards.map((card, idx) => (
-              <div
-                key={idx}
-                style={{ background: currentThemeObj.surface, borderRadius: "16px", padding: "20px", textAlign: "center", border: `1px solid ${currentThemeObj.border}`, animation: `fadeInUp 0.5s ease ${0.1 + idx * 0.1}s`, opacity: animateCards ? 1 : 0, transition: "transform 0.3s", cursor: "pointer" }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-                onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-              >
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px", color: card.color }}>
-                  <card.Icon />
-                </div>
-                <div style={{ fontSize: "28px", color: card.color, fontWeight: "bold" }}>{card.value}</div>
-                <div style={{ fontSize: "12px", color: currentThemeObj.textSecondary }}>{card.label}</div>
-              </div>
-            ))}
-          </div>
-
           {/* Message */}
           {message && (
-            <div style={{ background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#f87171", padding: "12px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", animation: "fadeInUp 0.3s ease", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <div style={{ background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#f87171", padding: "12px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", animation: "fadeInUp 0.3s ease", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "12px" : "14px" }}>
               {messageType === "success" ? <Icons.CheckCircle /> : <Icons.XCircle />}
               {message}
             </div>
           )}
 
-          {/* Tabs + Theme selector */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "24px", borderBottom: `1px solid ${currentThemeObj.border}`, animation: `fadeInUp 0.5s ease 0.3s`, opacity: animateCards ? 1 : 0 }}>
-            
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
-              {[
-                { id: "info", label: t("profile.personalInfo"), Icon: Icons.FileText },
-                { id: "security", label: t("profile.security"), Icon: Icons.ShieldLock },
-                { id: "activity", label: t("profile.activity"), Icon: Icons.BarChart2 },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  style={{ padding: "12px 20px", background: activeTab === tab.id ? currentThemeObj.primary : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === tab.id ? "white" : currentThemeObj.textSecondary, cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "7px", fontSize: "14px" }}
-                >
-                  <tab.Icon /> {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Theme selector */}
-            <div style={{ position: "relative" }}>
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: `1px solid ${currentTheme.border}`, overflowX: "auto", WebkitOverflowScrolling: "touch", animation: `fadeInUp 0.5s ease 0.3s`, opacity: animateCards ? 1 : 0 }}>
+            {[
+              { id: "info", label: t("profile.personalInfo"), Icon: Icons.FileText },
+              { id: "security", label: t("profile.security"), Icon: Icons.ShieldLock },
+              { id: "activity", label: t("profile.activity"), Icon: Icons.BarChart2 },
+            ].map(tab => (
               <button
-                onClick={() => setShowThemeMenu(!showThemeMenu)}
-                style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", background: currentThemeObj.surface, border: `1px solid ${currentThemeObj.border}`, borderRadius: "12px", color: currentThemeObj.text, cursor: "pointer", transition: "all 0.2s" }}
-                onMouseEnter={(e) => e.currentTarget.style.background = currentThemeObj.surfaceHover}
-                onMouseLeave={(e) => e.currentTarget.style.background = currentThemeObj.surface}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{ padding: isMobile ? "10px 16px" : "12px 20px", background: activeTab === tab.id ? currentTheme.primary : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === tab.id ? "white" : currentTheme.textSecondary, cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "12px" : "14px", whiteSpace: "nowrap" }}
               >
-                <span style={{ color: currentThemeObj.primary }}><currentThemeObj.Icon /></span>
-                <span style={{ fontSize: "13px" }}>{getThemeName(currentTheme)}</span>
-                <Icons.ChevronDown />
+                <tab.Icon /> {!isMobile && tab.label}
+                {isMobile && (tab.id === "info" ? "Info" : tab.id === "security" ? "Sécurité" : "Activité")}
               </button>
-
-              {showThemeMenu && (
-                <div style={{ position: "absolute", top: "45px", right: "0", background: currentThemeObj.surface, border: `1px solid ${currentThemeObj.border}`, borderRadius: "16px", padding: "8px", minWidth: "210px", zIndex: 100, boxShadow: "0 10px 30px rgba(0,0,0,0.3)", animation: "fadeInUp 0.2s ease" }}>
-                  <div style={{ padding: "8px 12px", borderBottom: `1px solid ${currentThemeObj.border}`, marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Icons.Palette />
-                    <span style={{ color: currentThemeObj.textSecondary, fontSize: "12px" }}>
-                      {language === 'fr' ? "Choisir un thème" : language === 'es' ? "Elegir un tema" : "Choose a theme"}
-                    </span>
-                  </div>
-                  {Object.entries(THEMES).map(([key, theme]) => (
-                    <button
-                      key={key}
-                      onClick={() => changeTheme(key)}
-                      style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%", padding: "10px 12px", background: currentTheme === key ? `${currentThemeObj.primary}20` : "transparent", border: "none", borderRadius: "10px", color: currentThemeObj.text, cursor: "pointer", transition: "all 0.2s", marginBottom: "2px" }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = currentThemeObj.surfaceHover}
-                      onMouseLeave={(e) => e.currentTarget.style.background = currentTheme === key ? `${currentThemeObj.primary}20` : "transparent"}
-                    >
-                      <span style={{ color: theme.primary }}><theme.Icon /></span>
-                      <div style={{ flex: 1, textAlign: "left" }}>
-                        <div style={{ fontSize: "13px", fontWeight: currentTheme === key ? "bold" : "normal" }}>{getThemeName(key)}</div>
-                        <div style={{ width: "100%", height: "3px", background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})`, borderRadius: "3px", marginTop: "4px" }} />
-                      </div>
-                      {currentTheme === key && <span style={{ color: currentThemeObj.primary }}><Icons.Check /></span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            ))}
           </div>
 
           {/* Tab: Info */}
           {activeTab === "info" && (
-            <div style={{ background: currentThemeObj.surface, borderRadius: "20px", padding: "32px", border: `1px solid ${currentThemeObj.border}`, animation: "fadeInUp 0.3s ease" }}>
+            <div style={{ background: currentTheme.surface, borderRadius: "20px", padding: responsive.cardPadding, border: `1px solid ${currentTheme.border}`, animation: "fadeInUp 0.3s ease" }}>
               {[
                 { label: t("common.name"), key: "name", type: "text" },
                 { label: t("common.email"), key: "email", type: "email" },
@@ -712,18 +743,18 @@ export default function ProfilePage() {
                 { label: t("profile.company"), key: "companyName", type: "text" },
               ].map(field => (
                 <div key={field.key} style={{ marginBottom: "20px" }}>
-                  <label style={{ color: currentThemeObj.textSecondary, display: "block", marginBottom: "8px", fontSize: "14px" }}>{field.label}</label>
+                  <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{field.label}</label>
                   <input
                     type={field.type}
                     value={form[field.key]}
                     onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-                    style={{ width: "100%", padding: "12px", background: currentThemeObj.surfaceHover, border: `1px solid ${currentThemeObj.border}`, borderRadius: "10px", color: currentThemeObj.text, boxSizing: "border-box", outline: "none", fontSize: "14px" }}
+                    style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", outline: "none", fontSize: isMobile ? "13px" : "14px" }}
                   />
                 </div>
               ))}
               <button
                 onClick={updateProfile}
-                style={{ width: "100%", padding: "12px", background: currentThemeObj.gradient, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "15px", fontWeight: "500" }}
+                style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "14px" : "15px", fontWeight: "500" }}
               >
                 <Icons.Save /> {t("common.save")}
               </button>
@@ -732,33 +763,49 @@ export default function ProfilePage() {
 
           {/* Tab: Security */}
           {activeTab === "security" && (
-            <div style={{ background: currentThemeObj.surface, borderRadius: "20px", padding: "32px", border: `1px solid ${currentThemeObj.border}`, animation: "fadeInUp 0.3s ease" }}>
+            <div style={{ background: currentTheme.surface, borderRadius: "20px", padding: responsive.cardPadding, border: `1px solid ${currentTheme.border}`, animation: "fadeInUp 0.3s ease" }}>
+              
+              {/* Ancien mot de passe */}
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ color: currentThemeObj.textSecondary, display: "block", marginBottom: "8px", fontSize: "14px" }}>{t("profile.newPassword")}</label>
-                <input type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} style={{ width: "100%", padding: "12px", background: currentThemeObj.surfaceHover, border: `1px solid ${currentThemeObj.border}`, borderRadius: "10px", color: currentThemeObj.text, boxSizing: "border-box" }} />
+                <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>
+                  {t("profile.oldPassword") || "Ancien mot de passe"}
+                </label>
+                <input 
+                  type="password" 
+                  value={passwordForm.oldPassword} 
+                  onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })} 
+                  style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", fontSize: isMobile ? "13px" : "14px" }} 
+                />
               </div>
+              
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{t("profile.newPassword")}</label>
+                <input type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", fontSize: isMobile ? "13px" : "14px" }} />
+              </div>
+              
               <div style={{ marginBottom: "24px" }}>
-                <label style={{ color: currentThemeObj.textSecondary, display: "block", marginBottom: "8px", fontSize: "14px" }}>{t("profile.confirmPassword")}</label>
-                <input type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} style={{ width: "100%", padding: "12px", background: currentThemeObj.surfaceHover, border: `1px solid ${currentThemeObj.border}`, borderRadius: "10px", color: currentThemeObj.text, boxSizing: "border-box" }} />
+                <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{t("profile.confirmPassword")}</label>
+                <input type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", fontSize: isMobile ? "13px" : "14px" }} />
               </div>
+              
               <button
                 onClick={changePassword}
-                style={{ width: "100%", padding: "12px", background: currentThemeObj.gradient, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "15px", fontWeight: "500" }}
+                style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "14px" : "15px", fontWeight: "500" }}
               >
                 <Icons.Key /> {t("profile.changePassword")}
               </button>
 
               <div style={{ marginTop: "32px", padding: "20px", background: "rgba(239,68,68,0.08)", borderRadius: "12px", border: "1px solid rgba(239,68,68,0.4)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
                   <Icons.AlertTriangle />
                   <div>
-                    <div style={{ color: "#f87171", fontWeight: "bold", fontSize: "15px" }}>{t("profile.dangerZone")}</div>
-                    <div style={{ color: currentThemeObj.textSecondary, fontSize: "12px", marginTop: "2px" }}>{t("profile.logoutAllWarning")}</div>
+                    <div style={{ color: "#f87171", fontWeight: "bold", fontSize: isMobile ? "14px" : "15px" }}>{t("profile.dangerZone")}</div>
+                    <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "11px" : "12px", marginTop: "2px" }}>{t("profile.logoutAllWarning")}</div>
                   </div>
                 </div>
                 <button
                   onClick={logoutAllDevices}
-                  style={{ width: "100%", padding: "10px", background: "#b91c1c", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "14px", fontWeight: "500" }}
+                  style={{ width: "100%", padding: isMobile ? "8px" : "10px", background: "#b91c1c", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "13px" : "14px", fontWeight: "500" }}
                 >
                   <Icons.LogOut /> {t("profile.logoutAllDevices")}
                 </button>
@@ -768,37 +815,37 @@ export default function ProfilePage() {
 
           {/* Tab: Activity */}
           {activeTab === "activity" && (
-            <div style={{ background: currentThemeObj.surface, borderRadius: "20px", padding: "32px", border: `1px solid ${currentThemeObj.border}`, animation: "fadeInUp 0.3s ease" }}>
-              <h3 style={{ color: currentThemeObj.text, marginBottom: "20px", fontSize: "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ background: currentTheme.surface, borderRadius: "20px", padding: responsive.cardPadding, border: `1px solid ${currentTheme.border}`, animation: "fadeInUp 0.3s ease" }}>
+              <h3 style={{ color: currentTheme.text, marginBottom: "20px", fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
                 <Icons.BarChart2 /> {t("profile.personalStats")}
               </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
+              <div className="activity-stats" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
                 {[
-                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: t("profile.revenueGenerated"), color: currentThemeObj.accent },
-                  { Icon: Icons.ClipboardList, value: stats.totalOrders, label: t("common.orders"), color: currentThemeObj.primary },
-                  { Icon: Icons.Users, value: stats.totalClients, label: t("common.clients"), color: currentThemeObj.secondary },
+                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: t("profile.revenueGenerated"), color: currentTheme.accent },
+                  { Icon: Icons.ClipboardList, value: stats.totalOrders, label: t("common.orders"), color: currentTheme.primary },
+                  { Icon: Icons.Users, value: stats.totalClients, label: t("common.clients"), color: currentTheme.secondary },
                   { Icon: Icons.Clock, value: stats.memberSince, label: t("profile.memberSince"), color: "#f59e0b" },
                 ].map((item, i) => (
-                  <div key={i} style={{ padding: "16px", background: currentThemeObj.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
+                  <div key={i} style={{ padding: isMobile ? "12px" : "16px", background: currentTheme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: item.color }}><item.Icon /></div>
-                    <div style={{ fontSize: "22px", color: item.color, fontWeight: "bold" }}>{item.value}</div>
-                    <div style={{ fontSize: "11px", color: currentThemeObj.textSecondary, marginTop: "4px" }}>{item.label}</div>
+                    <div style={{ fontSize: isMobile ? "18px" : "22px", color: item.color, fontWeight: "bold" }}>{item.value}</div>
+                    <div style={{ fontSize: isMobile ? "10px" : "11px", color: currentTheme.textSecondary, marginTop: "4px" }}>{item.label}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ padding: "16px", background: currentThemeObj.surfaceHover, borderRadius: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                  <span style={{ color: currentThemeObj.primary }}><Icons.Shield /></span>
+              <div style={{ padding: "16px", background: currentTheme.surfaceHover, borderRadius: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px", flexWrap: "wrap" }}>
+                  <span style={{ color: currentTheme.primary }}><Icons.Shield /></span>
                   <div>
-                    <div style={{ color: currentThemeObj.text, fontWeight: "bold" }}>{t("profile.currentSession")}</div>
-                    <div style={{ color: currentThemeObj.textSecondary, fontSize: "12px" }}>
+                    <div style={{ color: currentTheme.text, fontWeight: "bold", fontSize: isMobile ? "13px" : "14px" }}>{t("profile.currentSession")}</div>
+                    <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px" }}>
                       {t("profile.connectedSince")} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
                     </div>
                   </div>
                 </div>
-                <div style={{ height: "4px", background: currentThemeObj.border, borderRadius: "2px", marginTop: "8px" }}>
-                  <div style={{ width: "100%", height: "4px", background: currentThemeObj.accent, borderRadius: "2px" }} />
+                <div style={{ height: "4px", background: currentTheme.border, borderRadius: "2px", marginTop: "8px" }}>
+                  <div style={{ width: "100%", height: "4px", background: currentTheme.accent, borderRadius: "2px" }} />
                 </div>
               </div>
             </div>

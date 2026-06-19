@@ -12,53 +12,42 @@ export class LogisticsService {
 
   async findAllByClient(clientId: number) {
     return this.shipmentRepository.find({ 
-      where: { clientId },
+      where: { clientId: clientId },
       order: { createdAt: 'DESC' }
     });
   }
 
   async findAllByTransporteur(transporteurId: number) {
-    console.log(`🔍 Recherche expéditions pour transporteur: ${transporteurId}`);
-    
-    const shipments = await this.shipmentRepository.find({ 
-      where: { transporteurId },
+    return this.shipmentRepository.find({ 
+      where: { transporteurId: transporteurId },
       order: { createdAt: 'DESC' }
     });
-    
-    console.log(`📦 ${shipments.length} expédition(s) trouvée(s) pour le transporteur ${transporteurId}`);
-    
-    return shipments;
   }
 
   async findOne(id: number, clientId: number) {
-    const shipment = await this.shipmentRepository.findOne({ where: { id, clientId } });
+    const shipment = await this.shipmentRepository.findOne({ where: { id: id, clientId: clientId } });
     if (!shipment) throw new NotFoundException('Expédition non trouvée');
     return shipment;
   }
 
   async create(clientId: number, data: any) {
-    if (data.trackingNumber) {
-      const existing = await this.shipmentRepository.findOne({ 
-        where: { trackingNumber: data.trackingNumber } 
-      });
-      if (existing) throw new ConflictException('Ce numéro de suivi existe déjà');
-    }
+    const existing = await this.shipmentRepository.findOne({ 
+      where: { trackingNumber: data.trackingNumber } 
+    });
+    if (existing) throw new ConflictException('Ce numéro de suivi existe déjà');
     
-    // ⭐ AJOUTER amount et phone dans la création
-    const cleanData = {
+    const shipment = this.shipmentRepository.create({
       clientId: clientId,
-      trackingNumber: data.trackingNumber || `TRK${Date.now()}`,
-      clientName: data.clientName || "",
-      address: data.address || "",
-      carrier: data.carrier || "Standard",
-      status: data.status || "pending",
-      estimatedDelivery: data.estimatedDelivery && data.estimatedDelivery !== "" ? new Date(data.estimatedDelivery) : null,
-      transporteurId: data.transporteurId ? parseInt(data.transporteurId) : null,
-      amount: data.amount ? parseFloat(data.amount) : 0,
-      phone: data.phone || ""
-    };
+      trackingNumber: data.trackingNumber,
+      clientName: data.clientName,
+      address: data.address,
+      phone: data.phone || null,
+      amount: data.amount || 0,
+      transporteurId: data.transporteurId || null,
+      estimatedDelivery: data.estimatedDelivery || null,
+      status: data.status || 'pending'
+    });
     
-    const shipment = this.shipmentRepository.create(cleanData);
     return this.shipmentRepository.save(shipment);
   }
 
@@ -75,40 +64,26 @@ export class LogisticsService {
   }
 
   async updateStatusByTransporteur(id: number, transporteurId: number, status: string) {
-    console.log(`🔄 Mise à jour statut expédition ${id} par transporteur ${transporteurId} -> ${status}`);
-    
     const shipment = await this.shipmentRepository.findOne({ 
-      where: { id, transporteurId } 
+      where: { id: id, transporteurId: transporteurId } 
     });
-    
     if (!shipment) throw new NotFoundException('Expédition non trouvée ou non assignée');
-    
     shipment.status = status;
-    const updated = await this.shipmentRepository.save(shipment);
-    console.log(`✅ Statut mis à jour: ${updated.status}`);
-    
-    return updated;
+    return this.shipmentRepository.save(shipment);
   }
 
-  // ⭐ CORRECTION: Ajouter amount et phone dans la mise à jour
   async update(id: number, clientId: number, data: any) {
     const shipment = await this.findOne(id, clientId);
     
-    const updateData: any = {};
-    if (data.trackingNumber) updateData.trackingNumber = data.trackingNumber;
-    if (data.clientName) updateData.clientName = data.clientName;
-    if (data.address) updateData.address = data.address;
-    if (data.carrier) updateData.carrier = data.carrier;
-    if (data.status) updateData.status = data.status;
-    if (data.transporteurId !== undefined) updateData.transporteurId = data.transporteurId;
-    if (data.estimatedDelivery && data.estimatedDelivery !== "") {
-      updateData.estimatedDelivery = new Date(data.estimatedDelivery);
-    }
-    // ⭐ AJOUTER amount et phone
-    if (data.amount !== undefined) updateData.amount = parseFloat(data.amount);
-    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.trackingNumber !== undefined) shipment.trackingNumber = data.trackingNumber;
+    if (data.clientName !== undefined) shipment.clientName = data.clientName;
+    if (data.address !== undefined) shipment.address = data.address;
+    if (data.phone !== undefined) shipment.phone = data.phone;
+    if (data.amount !== undefined) shipment.amount = data.amount;
+    if (data.transporteurId !== undefined) shipment.transporteurId = data.transporteurId;
+    if (data.estimatedDelivery !== undefined) shipment.estimatedDelivery = data.estimatedDelivery;
+    if (data.status !== undefined) shipment.status = data.status;
     
-    Object.assign(shipment, updateData);
     return this.shipmentRepository.save(shipment);
   }
 

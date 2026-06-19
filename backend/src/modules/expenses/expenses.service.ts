@@ -11,10 +11,7 @@ export class ExpensesService {
   ) {}
 
   async findAll(userId: number) {
-    return this.expenseRepository.find({ 
-      where: { userId },
-      order: { date: 'DESC' }
-    });
+    return this.expenseRepository.find({ where: { userId }, order: { date: 'DESC' } });
   }
 
   async create(userId: number, data: Partial<Expense>) {

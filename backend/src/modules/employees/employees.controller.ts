@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EmployeesService } from './employees.service';
 
@@ -9,39 +9,41 @@ export class EmployeesController {
 
   @Get()
   async findAll(@Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.employeesService.findAll(userId);
+    return this.employeesService.findAll(req.user.userId);
+  }
+
+  @Get('stats')
+  async getStats(@Request() req: any) {
+    return this.employeesService.getStats(req.user.userId);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.employeesService.findOne(parseInt(id), userId);
+    return this.employeesService.findOne(parseInt(id), req.user.userId);
   }
 
   @Post()
   async create(@Request() req: any, @Body() body: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.employeesService.create(userId, body);
-  }
-
-  // ⭐ AJOUTER L'ENDPOINT D'IMPORT
-  @Post('import')
-  async importEmployees(@Request() req: any, @Body() body: { employees: any[] }) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    console.log('📥 Import de', body.employees?.length, 'employés pour user', userId);
-    return this.employeesService.importEmployees(userId, body.employees || []);
+    return this.employeesService.create(req.user.userId, body);
   }
 
   @Put(':id')
   async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.employeesService.update(parseInt(id), userId, body);
+    return this.employeesService.update(parseInt(id), req.user.userId, body);
+  }
+
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
+    return this.employeesService.updateStatus(parseInt(id), req.user.userId, body.status);
   }
 
   @Delete(':id')
   async delete(@Param('id') id: string, @Request() req: any) {
-    const userId = req.user?.userId || req.user?.id || req.user?.sub;
-    return this.employeesService.delete(parseInt(id), userId);
+    return this.employeesService.delete(parseInt(id), req.user.userId);
+  }
+
+  @Post('import')
+  async importEmployees(@Request() req: any, @Body() body: { employees: any[] }) {
+    return this.employeesService.importEmployees(req.user.userId, body.employees);
   }
 }

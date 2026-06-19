@@ -114,24 +114,53 @@ const IconSave = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+// ── Types ──────────────────────────────────────────────────
+interface Category {
+  id: number | string;
+  name: string;
+  description?: string;
+  productCount?: number;
+  [key: string]: any;
+}
+
+interface Product {
+  id: number | string;
+  name: string;
+  categoryId?: number | string;
+  quantity?: number;
+  price?: number | string;
+  sku?: string;
+  [key: string]: any;
+}
+
+interface ModalState {
+  open: boolean;
+  form: { name?: string; description?: string; [key: string]: any };
+  editMode: boolean;
+  editId?: number | string | null;
+}
+
 // ── Page principale ────────────────────────────────────────
 export default function CategoriesPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState({ open: false, form: {}, editMode: false, editId: null });
+  const [modal, setModal] = useState<ModalState>({ open: false, form: {}, editMode: false, editId: null });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [searchTerm, setSearchTerm] = useState("");
   const [animateCards, setAnimateCards] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [categoryProducts, setCategoryProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [viewMode, setViewMode] = useState("grid");
+
+  // Margin left pour desktop (sidebar fixe)
+  const contentMarginLeft = isMobile ? "0" : "0px";
 
   // Traduction directe pour totalProducts
   const getTotalProductsLabel = () => {
@@ -312,14 +341,21 @@ export default function CategoriesPage() {
   return (
     <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
       <Sidebar />
-      <div style={{ marginLeft: isMobile ? "0px" : "280px", flex: 1, padding: isMobile ? "12px" : "24px", overflowX: "hidden", background: theme.background }}>
+      <div style={{ 
+        marginLeft: contentMarginLeft, 
+        flex: 1, 
+        padding: isMobile ? "12px" : "24px", 
+        paddingBottom: isMobile ? "70px" : "24px",
+        overflowX: "hidden", 
+        background: theme.background 
+      }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
           {/* ── Header ── */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: sectionMargin, flexWrap: "wrap", gap: "16px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0, transform: animateCards ? "translateY(0)" : "translateY(-20px)" }}>
             <div>
-              <h1 style={{ color: theme.text, fontSize: headerTitleSize, margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+              <h1 style={{ color: theme.text, fontSize: headerTitleSize, display: "flex", alignItems: "center", gap: "10px" }}>
                 <IconTag size={isMobile ? 22 : 28} />
                 {t("common.categories")}
               </h1>
@@ -484,7 +520,7 @@ export default function CategoriesPage() {
                           <span style={{ color: theme.accent, fontSize: isMobile ? "9px" : "10px", fontWeight: "bold" }}>{c.productCount}</span>
                         </div>
                         <div style={{ background: theme.surfaceHover, borderRadius: "10px", height: "4px", overflow: "hidden" }}>
-                          <div style={{ width: `${Math.min((c.productCount / 50) * 100, 100)}%`, background: theme.accent, height: "4px", borderRadius: "10px", transition: "width 0.5s" }} />
+                          <div style={{ width: `${Math.min(((c.productCount ?? 0) / 50) * 100, 100)}%`, background: theme.accent, height: "4px", borderRadius: "10px", transition: "width 0.5s" }} />
                         </div>
                       </div>
                     )}
@@ -584,7 +620,7 @@ export default function CategoriesPage() {
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: "20px", borderRadius: "24px", width: productsModalWidth, maxWidth: "95%", maxHeight: "80vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
-              <h2 style={{ color: theme.text, margin: 0, fontSize: isMobile ? "16px" : "20px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <h2 style={{ color: theme.text, fontSize: isMobile ? "16px" : "20px", display: "flex", alignItems: "center", gap: "8px" }}>
                 <IconBox size={isMobile ? 16 : 20} />
                 {t("categories.productsIn")} "{selectedCategory.name}"
               </h2>

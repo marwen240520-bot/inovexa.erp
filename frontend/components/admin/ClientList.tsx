@@ -1,6 +1,23 @@
 ﻿"use client";
 
-const ERP_TYPES = {
+interface Client {
+  id: number;
+  name: string;
+  email: string;
+  companyName?: string;
+  phone?: string;
+  erpType: string;
+  isActive: boolean;
+  subscriptionEnd: string | null;
+  status?: string;
+}
+
+interface ERPType {
+  label: string;
+  color: string;
+}
+
+const ERP_TYPES: Record<string, ERPType> = {
   pme: { label: '🏪 PME', color: '#10b981' },
   commerce: { label: '🛍️ Commerce', color: '#f59e0b' },
   restaurant: { label: '🍽️ Restaurant', color: '#ef4444' },
@@ -9,11 +26,27 @@ const ERP_TYPES = {
   service: { label: '🧑‍💼 Services', color: '#ec489a' }
 };
 
-export default function ClientList({ clients, onExtend, onToggle, onDelete }) {
-  const getStatusColor = (status, isActive, subscriptionEnd) => {
+interface ClientListProps {
+  clients: Client[];
+  onExtend: (id: number, days: number) => void;
+  onToggle: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+export default function ClientList({ clients, onExtend, onToggle, onDelete }: ClientListProps) {
+  const getStatusColor = (status: string | undefined, isActive: boolean, subscriptionEnd: string | null) => {
     if (!isActive) return { bg: '#333', color: '#94a3b8', text: 'Inactif' };
-    if (new Date(subscriptionEnd) < new Date()) return { bg: '#ef444420', color: '#ef4444', text: 'Expiré' };
+    if (subscriptionEnd && new Date(subscriptionEnd) < new Date()) return { bg: '#ef444420', color: '#ef4444', text: 'Expiré' };
     return { bg: '#10b98120', color: '#10b981', text: 'Actif' };
+  };
+
+  const getDaysLeft = (subscriptionEnd: string | null): number | null => {
+    if (!subscriptionEnd) return null;
+    const endDate = new Date(subscriptionEnd);
+    const now = new Date();
+    if (endDate < now) return null;
+    const diffTime = endDate.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   return (
@@ -31,10 +64,10 @@ export default function ClientList({ clients, onExtend, onToggle, onDelete }) {
           </tr>
         </thead>
         <tbody>
-          {clients.map(c => {
+          {clients.map((c) => {
             const status = getStatusColor(c.status, c.isActive, c.subscriptionEnd);
-            const isExpired = new Date(c.subscriptionEnd) < new Date();
-            const daysLeft = Math.ceil((new Date(c.subscriptionEnd) - new Date()) / (1000 * 60 * 60 * 24));
+            const isExpired = c.subscriptionEnd ? new Date(c.subscriptionEnd) < new Date() : false;
+            const daysLeft = getDaysLeft(c.subscriptionEnd);
             
             return (
               <tr key={c.id} style={{ borderBottom: '1px solid #1a1a1a', transition: 'background 0.2s' }}>
@@ -47,8 +80,8 @@ export default function ClientList({ clients, onExtend, onToggle, onDelete }) {
                 <td style={{ padding: '16px 12px', color: '#94a3b8' }}>{c.companyName || '-'}</td>
                 <td style={{ padding: '16px 12px' }}>
                   <span style={{
-                    background: `${ERP_TYPES[c.erpType]?.color}20`,
-                    color: ERP_TYPES[c.erpType]?.color,
+                    background: `${ERP_TYPES[c.erpType]?.color || '#667eea'}20`,
+                    color: ERP_TYPES[c.erpType]?.color || '#667eea',
                     padding: '4px 12px',
                     borderRadius: '20px',
                     fontSize: '12px',
@@ -66,9 +99,9 @@ export default function ClientList({ clients, onExtend, onToggle, onDelete }) {
                 <td style={{ padding: '16px 12px', textAlign: 'center' }}>
                   <div>
                     <div style={{ color: isExpired ? '#ef4444' : '#10b981', fontSize: '14px', fontWeight: '500' }}>
-                      {new Date(c.subscriptionEnd).toLocaleDateString()}
+                      {c.subscriptionEnd ? new Date(c.subscriptionEnd).toLocaleDateString() : '-'}
                     </div>
-                    {!isExpired && daysLeft > 0 && (
+                    {!isExpired && daysLeft !== null && daysLeft > 0 && (
                       <div style={{ color: '#666', fontSize: '11px' }}>{daysLeft} jours restants</div>
                     )}
                   </div>

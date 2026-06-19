@@ -20,16 +20,15 @@ export class Client {
   @Column({ nullable: true })
   address: string;
 
-  // ⭐ AJOUTER ces colonnes manquantes
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ default: 0, type: 'decimal', precision: 10, scale: 2 })
   totalSpent: number;
 
   @Column({ default: 'active' })
   status: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updatedAt: Date;
 }

@@ -1,0 +1,1 @@
+"export default function Home() {\n  return (\n    <div className=\"min-h-screen flex items-center justify-center\">\n      <h1 className=\"text-4xl font-bold\">Inovexa-AI ERP</h1>\n    </div>\n  )\n}" 

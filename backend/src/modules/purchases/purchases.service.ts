@@ -1,27 +1,39 @@
 ﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Purchase } from './entities/purchase.entity';
+import { Product } from '../products/product.entity';
 
 @Injectable()
 export class PurchasesService {
   constructor(
     @InjectRepository(Purchase)
     private purchaseRepository: Repository<Purchase>,
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
   ) {}
 
   async findAll(userId: number, period?: string) {
-    const query = this.purchaseRepository.createQueryBuilder('purchase')
-      .where('purchase.userId = :userId', { userId })
-      .orderBy('purchase.createdAt', 'DESC');
+    let where: any = { userId };
     
     if (period === 'week') {
-      query.andWhere(`purchase.createdAt >= NOW() - INTERVAL '7 days'`);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+      where.createdAt = Between(startDate, new Date());
     } else if (period === 'month') {
-      query.andWhere(`purchase.createdAt >= NOW() - INTERVAL '30 days'`);
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1);
+      where.createdAt = Between(startDate, new Date());
+    } else if (period === 'year') {
+      const startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 1);
+      where.createdAt = Between(startDate, new Date());
     }
     
-    return query.getMany();
+    return this.purchaseRepository.find({ 
+      where, 
+      order: { createdAt: 'DESC' }
+    });
   }
 
   async findOne(id: number, userId: number) {
@@ -31,43 +43,28 @@ export class PurchasesService {
   }
 
   async create(userId: number, data: any) {
-    const purchase = this.purchaseRepository.create({ ...data, userId });
-    return this.purchaseRepository.save(purchase);
-  }
-
-  // ⭐ NOUVELLE METHODE: Import multiple
-  async importPurchases(userId: number, purchasesData: any[]) {
-    let success = 0;
-    let errors = 0;
-
-    for (const purchaseData of purchasesData) {
-      try {
-        const purchase = this.purchaseRepository.create({
-          userId: userId,
-          supplierName: purchaseData.supplierName || purchaseData.supplier_name || "Fournisseur inconnu",
-          productName: purchaseData.productName || purchaseData.product_name || "Produit inconnu",
-          quantity: parseInt(purchaseData.quantity) || 1,
-          unitPrice: parseFloat(purchaseData.unitPrice || purchaseData.unit_price || purchaseData.price) || 0,
-          total: parseFloat(purchaseData.total) || (parseInt(purchaseData.quantity) || 1) * (parseFloat(purchaseData.unitPrice || purchaseData.price) || 0),
-          status: purchaseData.status || "pending"
-        });
-        
-        await this.purchaseRepository.save(purchase);
-        success++;
-      } catch (error) {
-        errors++;
-        console.error('Erreur import achat:', error.message);
-      }
+    const product = await this.productRepository.findOne({ 
+      where: { id: data.productId, userId } 
+    });
+    
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé');
     }
     
-    console.log(`✅ Import terminé: ${success} succès, ${errors} erreurs`);
-    return { success, errors, total: purchasesData.length };
-  }
-
-  async update(id: number, userId: number, data: any) {
-    const purchase = await this.findOne(id, userId);
-    Object.assign(purchase, data);
-    return this.purchaseRepository.save(purchase);
+    product.quantity = (product.quantity || 0) + (data.quantity || 0);
+    await this.productRepository.save(product);
+    
+    const purchase = this.purchaseRepository.create({ 
+      ...data, 
+      userId,
+      total: (data.unitPrice || 0) * (data.quantity || 1)
+    });
+    const savedPurchase = await this.purchaseRepository.save(purchase);
+    
+    return {
+      ...savedPurchase,
+      newStock: product.quantity
+    };
   }
 
   async updateStatus(id: number, userId: number, status: string) {
@@ -76,21 +73,63 @@ export class PurchasesService {
     return this.purchaseRepository.save(purchase);
   }
 
+  async importPurchases(userId: number, purchases: any[]) {
+    let success = 0;
+    let errors = 0;
+    
+    for (const purchase of purchases) {
+      try {
+        const product = await this.productRepository.findOne({ 
+          where: { id: purchase.productId, userId } 
+        });
+        
+        if (!product) {
+          errors++;
+          continue;
+        }
+        
+        product.quantity = (product.quantity || 0) + (purchase.quantity || 0);
+        await this.productRepository.save(product);
+        
+        const newPurchase = this.purchaseRepository.create({
+          ...purchase,
+          userId,
+          total: (purchase.unitPrice || 0) * (purchase.quantity || 1)
+        });
+        await this.purchaseRepository.save(newPurchase);
+        success++;
+      } catch(e) {
+        errors++;
+      }
+    }
+    
+    return { success, errors, total: purchases.length };
+  }
+
   async delete(id: number, userId: number) {
-    await this.findOne(id, userId);
+    const purchase = await this.findOne(id, userId);
+    
+    const product = await this.productRepository.findOne({ 
+      where: { id: purchase.productId, userId } 
+    });
+    
+    if (product) {
+      product.quantity = (product.quantity || 0) - (purchase.quantity || 0);
+      await this.productRepository.save(product);
+    }
+    
     await this.purchaseRepository.delete(id);
-    return { success: true };
+    return { success: true, message: 'Achat supprimé, stock diminué' };
   }
 
   async getStats(userId: number) {
     const purchases = await this.findAll(userId);
-    const total = purchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-    return { 
-      total, 
-      count: purchases.length, 
-      average: purchases.length > 0 ? total / purchases.length : 0,
-      pending: purchases.filter(p => p.status === 'pending').length,
-      delivered: purchases.filter(p => p.status === 'delivered').length
-    };
+    const total = purchases.length;
+    const totalAmount = purchases.reduce((sum, p) => sum + (p.total || 0), 0);
+    const average = total > 0 ? totalAmount / total : 0;
+    const pending = purchases.filter(p => p.status === 'pending').length;
+    const delivered = purchases.filter(p => p.status === 'delivered').length;
+    
+    return { total, amount: totalAmount, average, pending, delivered };
   }
 }

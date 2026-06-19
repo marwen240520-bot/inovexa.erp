@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 
 // ── SVG Icon Components ────────────────────────────────────────────────────────
 
@@ -190,6 +191,18 @@ const REPORT_ICONS = {
   logistics: IconTruck,
 };
 
+const animations = `
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+  @media (max-width: 768px) {
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  }
+`;
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
@@ -197,29 +210,42 @@ export default function ReportsPage() {
   const { t, language } = useLanguage();
   const { formatCurrency } = useAppSettings();
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(false);
+  const { isMobile } = useResponsive();
+
+  // Margin left pour desktop (sidebar fixe)
+  const contentMarginLeft = isMobile ? "0" : "0px";
+
+  const [animateCards, setAnimateCards] = useState(true);
   const [reportType, setReportType] = useState("sales");
   const [reportFormat, setReportFormat] = useState("json");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
-  const [reportData, setReportData] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [activeTab, setActiveTab] = useState("generate");
-  const [savedReports, setSavedReports] = useState([]);
-  const [animateCards, setAnimateCards] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [hoveredReport, setHoveredReport] = useState(null);
-  const [hoveredType, setHoveredType] = useState(null);
+  const [savedReports, setSavedReports] = useState<any[]>([]);
+  const [reportData, setReportData] = useState<any>(null);
+  const [hoveredReport, setHoveredReport] = useState<number | null>(null);
+  const [hoveredType, setHoveredType] = useState<string | null>(null);
+
+  // Responsive styles
+  const responsive = {
+    contentPadding: isMobile ? "16px" : "32px",
+    cardPadding: isMobile ? "20px" : "24px",
+    cardRadius: "16px",
+    titleSize: isMobile ? "24px" : "28px",
+    gapMedium: isMobile ? "16px" : "24px",
+    gapLarge: isMobile ? "20px" : "32px"
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    if (!token) router.push("/auth/login");
-    if (userData) setCurrentUser(JSON.parse(userData));
+    if (!token) {
+      router.push("/auth/login");
+      return;
+    }
     fetchSavedReports();
-    setTimeout(() => setAnimateCards(true), 100);
-  }, []);
+  }, [router]);
 
   const fetchSavedReports = async () => {
     const token = localStorage.getItem("token");
@@ -240,7 +266,7 @@ export default function ReportsPage() {
     const token = localStorage.getItem("token");
     try {
       let url = "";
-      let response = null;
+      let response: Response | null = null;
 
       switch (reportType) {
         case "sales":
@@ -342,20 +368,20 @@ export default function ReportsPage() {
     setGenerating(false);
   };
 
-  const downloadJSON = (data, type) => {
+  const downloadJSON = (data: any, type: string) => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `rapport_${type}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url);
   };
 
-  const downloadCSV = (data, type) => {
+  const downloadCSV = (data: any, type: string) => {
     let csv = "";
     const items = data.items || [];
     if (items.length > 0) {
       const headers = Object.keys(items[0]);
       csv = headers.join(",") + "\n";
       for (const row of items) {
-        csv += headers.map(h => { let v=row[h]; if(v===undefined||v===null)v=""; if(typeof v==="string")v=v.replace(/"/g,'""'); if(typeof v==="object")v=JSON.stringify(v); return `"${v}"`; }).join(",") + "\n";
+        csv += headers.map((h: string) => { let v=row[h]; if(v===undefined||v===null)v=""; if(typeof v==="string")v=v.replace(/"/g,'""'); if(typeof v==="object")v=JSON.stringify(v); return `"${v}"`; }).join(",") + "\n";
       }
     } else if (data.revenue !== undefined) {
       csv = `${t("reports.indicator")},${t("reports.value")}\n${t("reports.revenue")},${data.revenue}\n${t("reports.expenses")},${data.expenses}\n${t("reports.profit")},${data.profit}\n${t("reports.margin")},${data.margin}%\n`;
@@ -366,16 +392,10 @@ export default function ReportsPage() {
     const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `rapport_${type}_${new Date().toISOString().slice(0,19)}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
-  const showMessage = (msg, type) => {
-    setMessage(msg); setMessageType(type); setTimeout(() => setMessage(""), 3000);
+  const showMessage = (msg: string, type: string) => {
+    setMessage(msg); setMessageType(type);
+    setTimeout(() => setMessage(""), 3000);
   };
-
-  const animations = `
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
-  `;
 
   const reportTypes = [
     { id: "sales",     label: t("reports.salesReport"),     Icon: IconDollarSign,  color: theme.accent,  description: t("reports.salesDesc") },
@@ -391,40 +411,36 @@ export default function ReportsPage() {
   const currentReport = reportTypes.find(r => r.id === reportType);
   const CurrentReportIcon = currentReport?.Icon || IconBarChart;
 
-  // Message icon helper
-  const MessageIcon = messageType === "success" ? IconCheckCircle : messageType === "error" ? IconAlertTriangle : IconAlertTriangle;
+  const MessageIcon = messageType === "success" ? IconCheckCircle : IconAlertTriangle;
   const messageColor = messageType === "success" ? theme.accent : messageType === "error" ? "#ef4444" : "#f59e0b";
 
-  if (loading) {
-    return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ animation: "spin 1s linear infinite", display: "inline-block", marginBottom: "16px" }}>
-            <IconLoader size={48} color={theme.primary} />
-          </div>
-          <p>{t("common.loading")}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: theme.background, display: "flex", overflowX: "hidden" }}>
+      <style>{animations}</style>
+
+      {/* Sidebar - comme sur les autres pages */}
       <Sidebar />
-      <div style={{ marginLeft: "280px", flex: 1, padding: "32px" }}>
+
+      <div style={{
+        marginLeft: contentMarginLeft,
+        flex: 1,
+        paddingTop: responsive.contentPadding,
+        paddingLeft: responsive.contentPadding,
+        paddingRight: responsive.contentPadding,
+        paddingBottom: isMobile ? "70px" : responsive.contentPadding,
+        background: theme.background
+      }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <style>{animations}</style>
 
           {/* ── Header ── */}
-          <div style={{ marginBottom: "32px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0, transform: animateCards ? "translateY(0)" : "translateY(-20px)" }}>
+          <div style={{ marginBottom: responsive.gapLarge, animation: "fadeInDown 0.5s ease" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
               <div>
-                <h1 style={{ color: theme.text, fontSize: "28px", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
-                  <IconFileText size={28} color={theme.primary} />
+                <h1 style={{ color: theme.text, fontSize: responsive.titleSize, display: "flex", alignItems: "center", gap: "10px" }}>
+                  <IconFileText size={isMobile ? 24 : 28} color={theme.primary} />
                   {t("common.reports")}
                 </h1>
-                <p style={{ color: theme.textSecondary, marginTop: "4px" }}>{t("reports.subtitle")}</p>
+                <p style={{ color: theme.textSecondary, marginTop: "4px", fontSize: isMobile ? "12px" : "14px" }}>{t("reports.subtitle")}</p>
               </div>
               <div style={{ display: "flex", gap: "12px" }}>
                 <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -434,9 +450,7 @@ export default function ReportsPage() {
                   <select
                     value={reportFormat}
                     onChange={(e) => setReportFormat(e.target.value)}
-                    style={{ padding: "10px 16px 10px 36px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, cursor: "pointer", outline: "none", appearance: "none" }}
-                    onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
-                    onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
+                    style={{ padding: "10px 16px 10px 36px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, cursor: "pointer", outline: "none", appearance: "none", fontSize: isMobile ? "13px" : "14px" }}
                   >
                     <option value="json">JSON</option>
                     <option value="csv">CSV</option>
@@ -454,20 +468,33 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* ── Tabs ── */}
-          <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: `1px solid ${theme.border}`, overflowX: "auto", animation: "fadeInUp 0.5s ease 0.2s", opacity: animateCards ? 1 : 0 }}>
+          {/* ── Tabs (scrollable on mobile) ── */}
+          <div style={{
+            display: "flex", gap: "8px", marginBottom: "24px", borderBottom: `1px solid ${theme.border}`,
+            overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none"
+          }} className="hide-scrollbar">
             <button
               onClick={() => setActiveTab("generate")}
-              style={{ padding: "12px 24px", background: activeTab === "generate" ? theme.primary : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "generate" ? "white" : theme.textSecondary, cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "8px" }}
+              style={{
+                padding: isMobile ? "10px 20px" : "12px 24px", background: activeTab === "generate" ? theme.primary : "transparent",
+                border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "generate" ? "white" : theme.textSecondary,
+                cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "6px",
+                whiteSpace: "nowrap", fontSize: isMobile ? "13px" : "14px", WebkitTapHighlightColor: "transparent"
+              }}
             >
-              <IconBarChart size={16} color={activeTab === "generate" ? "white" : theme.textSecondary} />
+              <IconBarChart size={isMobile ? 14 : 16} color={activeTab === "generate" ? "white" : theme.textSecondary} />
               {t("reports.generate")}
             </button>
             <button
               onClick={() => setActiveTab("saved")}
-              style={{ padding: "12px 24px", background: activeTab === "saved" ? theme.primary : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "saved" ? "white" : theme.textSecondary, cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "8px" }}
+              style={{
+                padding: isMobile ? "10px 20px" : "12px 24px", background: activeTab === "saved" ? theme.primary : "transparent",
+                border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "saved" ? "white" : theme.textSecondary,
+                cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "6px",
+                whiteSpace: "nowrap", fontSize: isMobile ? "13px" : "14px", WebkitTapHighlightColor: "transparent"
+              }}
             >
-              <IconFolder size={16} color={activeTab === "saved" ? "white" : theme.textSecondary} />
+              <IconFolder size={isMobile ? 14 : 16} color={activeTab === "saved" ? "white" : theme.textSecondary} />
               {t("reports.savedReports")}
             </button>
           </div>
@@ -475,22 +502,22 @@ export default function ReportsPage() {
           {/* ── Generate Tab ── */}
           {activeTab === "generate" && (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", marginBottom: "32px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
 
                 {/* Configuration card */}
                 <div
-                  style={{ background: theme.surface, borderRadius: "20px", padding: "24px", border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                  style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.2s" }}
+                  onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(-3px)" }}
+                  onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(0)" }}
                 >
-                  <h2 style={{ color: theme.text, fontSize: "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <IconSettings size={20} color={theme.primary} />
+                  <h2 style={{ color: theme.text, fontSize: isMobile ? "18px" : "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <IconSettings size={isMobile ? 18 : 20} color={theme.primary} />
                     {t("reports.configuration")}
                   </h2>
 
                   <div style={{ marginBottom: "20px" }}>
-                    <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px" }}>{t("reports.reportType")}</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                    <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "12px" : "13px" }}>{t("reports.reportType")}</label>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", gap: "8px" }}>
                       {reportTypes.map((type) => {
                         const TypeIcon = type.Icon;
                         const isActive = reportType === type.id;
@@ -501,12 +528,16 @@ export default function ReportsPage() {
                             onClick={() => setReportType(type.id)}
                             onMouseEnter={() => setHoveredType(type.id)}
                             onMouseLeave={() => setHoveredType(null)}
-                            style={{ padding: "12px", background: isActive ? type.color : (isHovered ? theme.surfaceHover : theme.surface), border: `1px solid ${isActive ? "transparent" : theme.border}`, borderRadius: "8px", color: isActive ? "white" : theme.textSecondary, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}
+                            style={{
+                              padding: isMobile ? "10px" : "12px", background: isActive ? type.color : (isHovered ? theme.surfaceHover : theme.surface),
+                              border: `1px solid ${isActive ? "transparent" : theme.border}`, borderRadius: "10px", color: isActive ? "white" : theme.textSecondary,
+                              cursor: "pointer", textAlign: "center", transition: "all 0.2s", WebkitTapHighlightColor: "transparent"
+                            }}
                           >
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
-                              <TypeIcon size={22} color={isActive ? "white" : type.color} />
+                              <TypeIcon size={isMobile ? 20 : 22} color={isActive ? "white" : type.color} />
                             </div>
-                            <div style={{ fontSize: "11px" }}>{type.label}</div>
+                            <div style={{ fontSize: isMobile ? "10px" : "11px" }}>{type.label}</div>
                           </button>
                         );
                       })}
@@ -514,17 +545,30 @@ export default function ReportsPage() {
                   </div>
 
                   <div style={{ marginBottom: "20px" }}>
-                    <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px" }}>
+                    <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "12px" : "13px" }}>
                       {t("reports.dateRange")} ({t("reports.optional")})
                     </label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                      <input type="date" value={dateRange.start} onChange={(e) => setDateRange({ start: e.target.value, end: dateRange.end })}
-                        style={{ padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, transition: "border-color 0.2s" }}
+                      <input
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) => setDateRange({ start: e.target.value, end: dateRange.end })}
+                        style={{
+                          padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px",
+                          color: theme.text, transition: "border-color 0.2s", fontSize: isMobile ? "13px" : "14px",
+                          WebkitAppearance: "none"
+                        }}
                         onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
                         onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
                       />
-                      <input type="date" value={dateRange.end} onChange={(e) => setDateRange({ start: dateRange.start, end: e.target.value })}
-                        style={{ padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text }}
+                      <input
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) => setDateRange({ start: dateRange.start, end: e.target.value })}
+                        style={{
+                          padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px",
+                          color: theme.text, fontSize: isMobile ? "13px" : "14px", WebkitAppearance: "none"
+                        }}
                       />
                     </div>
                   </div>
@@ -532,7 +576,13 @@ export default function ReportsPage() {
                   <button
                     onClick={generateReport}
                     disabled={generating}
-                    style={{ width: "100%", padding: "14px", background: theme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: generating ? "not-allowed" : "pointer", opacity: generating ? 0.7 : 1, fontWeight: "bold", transition: "opacity 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}
+                    style={{
+                      width: "100%", padding: isMobile ? "14px" : "14px", background: theme.gradient, color: "white",
+                      border: "none", borderRadius: "12px", cursor: generating ? "not-allowed" : "pointer",
+                      opacity: generating ? 0.7 : 1, fontWeight: "bold", transition: "opacity 0.2s",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                      fontSize: isMobile ? "14px" : "15px", WebkitTapHighlightColor: "transparent"
+                    }}
                   >
                     {generating
                       ? (<><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}><IconLoader size={18} color="white" /></span>{t("reports.generating")}</>)
@@ -542,85 +592,115 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Information card */}
-                <div
-                  style={{ background: theme.surface, borderRadius: "20px", padding: "24px", border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-                >
-                  <h2 style={{ color: theme.text, fontSize: "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <IconInfo size={20} color={theme.primary} />
-                    {t("reports.information")}
-                  </h2>
+                {!isMobile && (
+                  <div
+                    style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                  >
+                    <h2 style={{ color: theme.text, fontSize: "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                      <IconInfo size={20} color={theme.primary} />
+                      {t("reports.information")}
+                    </h2>
 
-                  <div style={{ marginBottom: "16px", padding: "24px 16px", background: theme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
-                      <CurrentReportIcon size={48} color={currentReport?.color || theme.primary} />
+                    <div style={{ marginBottom: "16px", padding: "24px 16px", background: theme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+                        <CurrentReportIcon size={48} color={currentReport?.color || theme.primary} />
+                      </div>
+                      <div style={{ color: theme.text, fontWeight: "bold", marginBottom: "4px" }}>{currentReport?.label || t("reports.report")}</div>
+                      <div style={{ color: theme.textSecondary, fontSize: "12px" }}>{currentReport?.description || ""}</div>
                     </div>
-                    <div style={{ color: theme.text, fontWeight: "bold", marginBottom: "4px" }}>{currentReport?.label || t("reports.report")}</div>
-                    <div style={{ color: theme.textSecondary, fontSize: "12px" }}>{currentReport?.description || ""}</div>
+
+                    <div style={{ padding: "16px", background: `${theme.primary}10`, borderRadius: "12px", border: `1px solid ${theme.primary}30` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                        <IconLightbulb size={20} color={theme.primary} />
+                        <span style={{ color: theme.text, fontSize: "14px" }}>{t("reports.tip")}</span>
+                      </div>
+                      <p style={{ color: theme.textSecondary, fontSize: "12px" }}>
+                        {t("reports.tipMessage")}
+                      </p>
+                    </div>
                   </div>
+                )}
+              </div>
 
-                  <div style={{ padding: "16px", background: `${theme.primary}10`, borderRadius: "12px", border: `1px solid ${theme.primary}30` }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                      <IconLightbulb size={20} color={theme.primary} />
-                      <span style={{ color: theme.text, fontSize: "14px" }}>{t("reports.tip")}</span>
+              {/* Mobile info card - simplified */}
+              {isMobile && (
+                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: "16px", border: `1px solid ${theme.border}`, marginTop: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <CurrentReportIcon size={32} color={currentReport?.color || theme.primary} />
+                    <div>
+                      <div style={{ color: theme.text, fontWeight: "bold", fontSize: "13px" }}>{currentReport?.label || t("reports.report")}</div>
+                      <div style={{ color: theme.textSecondary, fontSize: "10px" }}>{currentReport?.description?.substring(0, 60) || ""}</div>
                     </div>
-                    <p style={{ color: theme.textSecondary, fontSize: "12px", margin: 0 }}>
-                      {t("reports.tipMessage")}
-                    </p>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* ── Saved Reports Tab ── */}
           {activeTab === "saved" && (
-            <div style={{ background: theme.surface, borderRadius: "20px", padding: "24px", border: `1px solid ${theme.border}`, animation: "fadeInUp 0.5s ease 0.2s", opacity: animateCards ? 1 : 0 }}>
-              <h2 style={{ color: theme.text, fontSize: "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                <IconFolder size={20} color={theme.primary} />
+            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, animation: "fadeInUp 0.5s ease" }}>
+              <h2 style={{ color: theme.text, fontSize: isMobile ? "18px" : "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                <IconFolder size={isMobile ? 18 : 20} color={theme.primary} />
                 {t("reports.savedReports")}
               </h2>
               {savedReports.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {savedReports.map((report, idx) => {
-                    const ReportTypeIcon = REPORT_ICONS[report.type] || IconFileText;
+                  {savedReports.slice(0, isMobile ? 10 : 20).map((report, idx) => {
+                    const ReportTypeIcon = REPORT_ICONS[report.type as keyof typeof REPORT_ICONS] || IconFileText;
                     return (
                       <div
                         key={idx}
                         onMouseEnter={() => setHoveredReport(idx)}
                         onMouseLeave={() => setHoveredReport(null)}
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: hoveredReport === idx ? theme.surfaceHover : theme.surface, borderRadius: "12px", transition: "all 0.2s", transform: hoveredReport === idx ? "translateX(5px)" : "translateX(0)", border: `1px solid ${hoveredReport === idx ? theme.primary : "transparent"}` }}
+                        style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center", padding: isMobile ? "14px" : "16px",
+                          background: hoveredReport === idx ? theme.surfaceHover : theme.surface, borderRadius: "12px",
+                          transition: "all 0.2s", transform: hoveredReport === idx ? "translateX(5px)" : "translateX(0)",
+                          border: `1px solid ${hoveredReport === idx ? theme.primary : "transparent"}`
+                        }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <ReportTypeIcon size={20} color={theme.primary} />
-                          <div>
-                            <div style={{ color: theme.text, fontWeight: "bold" }}>{report.name}</div>
-                            <div style={{ color: theme.textSecondary, fontSize: "11px", display: "flex", alignItems: "center", gap: "4px" }}>
-                              <IconClock size={11} color={theme.textSecondary} />
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                          <ReportTypeIcon size={isMobile ? 18 : 20} color={theme.primary} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "13px" : "14px" }}>{report.name}</div>
+                            <div style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+                              <IconClock size={isMobile ? 10 : 11} color={theme.textSecondary} />
                               {t("reports.createdOn")} {new Date(report.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
                             </div>
                           </div>
                         </div>
                         <button
-                          style={{ background: theme.gradient, color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", transition: "opacity 0.2s", display: "flex", alignItems: "center", gap: "6px" }}
+                          style={{
+                            background: theme.gradient, color: "white", border: "none", borderRadius: "8px",
+                            padding: isMobile ? "8px 14px" : "8px 16px", cursor: "pointer", transition: "opacity 0.2s",
+                            display: "flex", alignItems: "center", gap: "6px", fontSize: isMobile ? "12px" : "13px",
+                            WebkitTapHighlightColor: "transparent"
+                          }}
                           onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
                           onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                         >
-                          <IconDownload size={14} color="white" />
-                          {t("reports.download")}
+                          <IconDownload size={isMobile ? 12 : 14} color="white" />
+                          {!isMobile && t("reports.download")}
                         </button>
                       </div>
                     );
                   })}
+                  {savedReports.length > 10 && isMobile && (
+                    <div style={{ textAlign: "center", padding: "12px", color: theme.textSecondary, fontSize: "11px" }}>
+                      +{savedReports.length - 10} autres rapports
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div style={{ textAlign: "center", padding: "60px" }}>
+                <div style={{ textAlign: "center", padding: isMobile ? "40px" : "60px" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px", opacity: 0.4 }}>
-                    <IconFolder size={64} color={theme.textSecondary} />
+                    <IconFolder size={isMobile ? 48 : 64} color={theme.textSecondary} />
                   </div>
-                  <p style={{ color: theme.textSecondary }}>{t("reports.noSavedReports")}</p>
-                  <p style={{ color: "#666", fontSize: "12px" }}>{t("reports.noSavedReportsMessage")}</p>
+                  <p style={{ color: theme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("reports.noSavedReports")}</p>
+                  <p style={{ color: "#666", fontSize: isMobile ? "11px" : "12px" }}>{t("reports.noSavedReportsMessage")}</p>
                 </div>
               )}
             </div>

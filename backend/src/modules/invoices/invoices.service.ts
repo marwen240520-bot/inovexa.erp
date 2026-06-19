@@ -10,11 +10,30 @@ export class InvoicesService {
     private invoiceRepository: Repository<Invoice>,
   ) {}
 
+  private getValidDate(date: any): Date | null {
+    if (!date) return null;
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      return d;
+    } catch {
+      return null;
+    }
+  }
+
   async findAll(userId: number) {
     return this.invoiceRepository.find({ 
       where: { userId },
       order: { createdAt: 'DESC' }
     });
+  }
+
+  async findByOperationNumber(operationNumber: string, userId: number) {
+    const invoice = await this.invoiceRepository.findOne({ 
+      where: { operationNumber, userId } 
+    });
+    if (!invoice) throw new NotFoundException('Facture non trouvée');
+    return invoice;
   }
 
   async findOne(id: number, userId: number) {
@@ -23,201 +42,60 @@ export class InvoicesService {
     return invoice;
   }
 
-  async findByOperationNumber(operationNumber: string, userId: number) {
-    const invoice = await this.invoiceRepository.findOne({ where: { operationNumber, userId } });
-    if (!invoice) throw new NotFoundException(`Facture avec le numéro ${operationNumber} non trouvée`);
-    return invoice;
-  }
-
   async create(userId: number, data: any) {
-    const subtotal = Math.max(0, Number(data.subtotal) || Number(data.amount) || 0);
-    const taxRate = Math.max(0, Math.min(100, Number(data.taxRate) || 20));
-    const taxAmount = (subtotal * taxRate) / 100;
-    const amount = subtotal + taxAmount;
-    
-    let dueDate = null;
-    if (data.dueDate && data.dueDate !== "" && data.dueDate !== "undefined" && data.dueDate !== "null") {
-      const parsedDate = new Date(data.dueDate);
-      if (!isNaN(parsedDate.getTime())) {
-        dueDate = parsedDate;
-      }
-    }
-    
-    let operationNumber = data.operationNumber;
-    if (!operationNumber) {
-      const year = new Date().getFullYear();
-      const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
-      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-      operationNumber = `INV-${year}${month}-${random}`;
-    }
-    
-    // ⭐ Traitement des items
-    let items = [];
-    if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-      items = data.items.map(item => ({
-        description: item.description || "",
-        quantity: Number(item.quantity) || 1,
-        unitPriceHT: Number(item.unitPriceHT) || 0,
-        totalHT: Number(item.totalHT) || (Number(item.quantity) * Number(item.unitPriceHT)),
-        totalTTC: Number(item.totalTTC) || (Number(item.quantity) * Number(item.unitPriceHT) * (1 + taxRate / 100))
-      }));
-    } else {
-      // Fallback pour compatibilité
-      items = [{
-        description: data.description || "Prestation",
-        quantity: 1,
-        unitPriceHT: subtotal,
-        totalHT: subtotal,
-        totalTTC: amount
-      }];
-    }
+    const dueDate = this.getValidDate(data.dueDate);
     
     const invoice = this.invoiceRepository.create({
       userId,
-      reference: data.reference || `FACT-${Date.now()}`,
-      operationNumber: operationNumber,
+      operationNumber: data.operationNumber,
+      reference: data.reference,
       type: data.type || 'debit',
-      clientName: data.type === 'debit' ? (data.clientName || data.partyName || "") : null,
-      supplierName: data.type === 'credit' ? (data.supplierName || data.partyName || "") : null,
-      description: data.description || null,
-      subtotal: subtotal,
-      amount: amount,
-      taxRate: taxRate,
-      taxAmount: taxAmount,
-      status: data.status || "pending",
+      clientId: data.clientId || null,
+      supplierId: data.supplierId || null,
+      clientName: data.clientName || '',
+      supplierName: data.supplierName || '',
+      clientEmail: data.clientEmail || '',
+      clientAddress: data.clientAddress || '',
+      clientPhone: data.clientPhone || '',
+      clientSiret: data.clientSiret || '',
+      description: data.description || '',
+      items: data.items || [],
+      subtotalHT: data.subtotalHT || 0,
+      amount: data.amount || 0,
+      taxRate: data.taxRate || 20,
+      taxAmount: data.taxAmount || 0,
       dueDate: dueDate,
-      items: items // ⭐ Sauvegarde des items
+      paymentTerms: data.paymentTerms || 'Net 30',
+      notes: data.notes || '',
+      status: data.status || 'pending',
     });
     
     return this.invoiceRepository.save(invoice);
-  }
-
-  async importInvoices(userId: number, invoicesData: any[]) {
-    let success = 0;
-    let errors = 0;
-
-    for (const invoiceData of invoicesData) {
-      try {
-        const subtotal = Math.max(0, Number(invoiceData.amount) || Number(invoiceData.subtotal) || 0);
-        const taxRate = Math.max(0, Math.min(100, Number(invoiceData.taxRate) || 20));
-        const taxAmount = (subtotal * taxRate) / 100;
-        const total = subtotal + taxAmount;
-        
-        const year = new Date().getFullYear();
-        const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
-        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-        const operationNumber = `INV-${year}${month}-${random}`;
-        
-        let dueDate = null;
-        if (invoiceData.dueDate && invoiceData.dueDate !== "") {
-          const parsedDate = new Date(invoiceData.dueDate);
-          if (!isNaN(parsedDate.getTime())) {
-            dueDate = parsedDate;
-          }
-        }
-        
-        // ⭐ Traitement des items pour l'import
-        let items = [];
-        if (invoiceData.items && Array.isArray(invoiceData.items) && invoiceData.items.length > 0) {
-          items = invoiceData.items.map(item => ({
-            description: item.description || "",
-            quantity: Number(item.quantity) || 1,
-            unitPriceHT: Number(item.unitPriceHT) || 0,
-            totalHT: Number(item.totalHT) || (Number(item.quantity) * Number(item.unitPriceHT)),
-            totalTTC: Number(item.totalTTC) || (Number(item.quantity) * Number(item.unitPriceHT) * (1 + taxRate / 100))
-          }));
-        } else {
-          items = [{
-            description: invoiceData.description || "Prestation",
-            quantity: 1,
-            unitPriceHT: subtotal,
-            totalHT: subtotal,
-            totalTTC: total
-          }];
-        }
-        
-        const invoice = this.invoiceRepository.create({
-          userId: userId,
-          reference: invoiceData.reference || `FACT-${Date.now()}-${success}`,
-          operationNumber: invoiceData.operationNumber || operationNumber,
-          type: invoiceData.type || "debit",
-          clientName: invoiceData.type === "debit" ? (invoiceData.clientName || invoiceData.partyName || "") : null,
-          supplierName: invoiceData.type === "credit" ? (invoiceData.supplierName || invoiceData.partyName || "") : null,
-          description: invoiceData.description || "",
-          subtotal: subtotal,
-          amount: total,
-          taxRate: taxRate,
-          taxAmount: taxAmount,
-          status: invoiceData.status || "pending",
-          dueDate: dueDate,
-          items: items
-        });
-        
-        await this.invoiceRepository.save(invoice);
-        success++;
-      } catch (error) {
-        errors++;
-        console.error('Erreur import facture:', error.message);
-      }
-    }
-    
-    console.log(`✅ Import terminé: ${success} succès, ${errors} erreurs`);
-    return { success, errors, total: invoicesData.length };
   }
 
   async update(id: number, userId: number, data: any) {
     const invoice = await this.findOne(id, userId);
     
     if (data.reference !== undefined) invoice.reference = data.reference;
-    if (data.operationNumber !== undefined) invoice.operationNumber = data.operationNumber;
     if (data.type !== undefined) invoice.type = data.type;
-    
-    if (data.type === 'debit') {
-      invoice.clientName = data.clientName || "";
-      invoice.supplierName = null;
-    } else if (data.type === 'credit') {
-      invoice.supplierName = data.supplierName || "";
-      invoice.clientName = null;
-    }
-    
+    if (data.clientId !== undefined) invoice.clientId = data.clientId;
+    if (data.supplierId !== undefined) invoice.supplierId = data.supplierId;
+    if (data.clientName !== undefined) invoice.clientName = data.clientName;
+    if (data.supplierName !== undefined) invoice.supplierName = data.supplierName;
+    if (data.clientEmail !== undefined) invoice.clientEmail = data.clientEmail;
+    if (data.clientAddress !== undefined) invoice.clientAddress = data.clientAddress;
+    if (data.clientPhone !== undefined) invoice.clientPhone = data.clientPhone;
+    if (data.clientSiret !== undefined) invoice.clientSiret = data.clientSiret;
     if (data.description !== undefined) invoice.description = data.description;
-    
-    if (data.subtotal !== undefined) {
-      invoice.subtotal = Math.max(0, Number(data.subtotal));
-    }
-    if (data.taxRate !== undefined) {
-      invoice.taxRate = Math.max(0, Math.min(100, Number(data.taxRate)));
-    }
+    if (data.items !== undefined) invoice.items = data.items;
+    if (data.subtotalHT !== undefined) invoice.subtotalHT = data.subtotalHT;
+    if (data.amount !== undefined) invoice.amount = data.amount;
+    if (data.taxRate !== undefined) invoice.taxRate = data.taxRate;
+    if (data.taxAmount !== undefined) invoice.taxAmount = data.taxAmount;
+    if (data.dueDate !== undefined) invoice.dueDate = this.getValidDate(data.dueDate);
+    if (data.paymentTerms !== undefined) invoice.paymentTerms = data.paymentTerms;
+    if (data.notes !== undefined) invoice.notes = data.notes;
     if (data.status !== undefined) invoice.status = data.status;
-    
-    // ⭐ Mise à jour des items
-    if (data.items !== undefined && Array.isArray(data.items)) {
-      const taxRate = invoice.taxRate;
-      invoice.items = data.items.map(item => ({
-        description: item.description || "",
-        quantity: Number(item.quantity) || 1,
-        unitPriceHT: Number(item.unitPriceHT) || 0,
-        totalHT: Number(item.totalHT) || (Number(item.quantity) * Number(item.unitPriceHT)),
-        totalTTC: Number(item.totalTTC) || (Number(item.quantity) * Number(item.unitPriceHT) * (1 + taxRate / 100))
-      }));
-    }
-    
-    // Recalculer automatiquement
-    invoice.taxAmount = (invoice.subtotal * invoice.taxRate) / 100;
-    invoice.amount = invoice.subtotal + invoice.taxAmount;
-    
-    if (data.dueDate !== undefined) {
-      if (data.dueDate && data.dueDate !== "" && data.dueDate !== "undefined" && data.dueDate !== "null") {
-        const parsedDate = new Date(data.dueDate);
-        if (!isNaN(parsedDate.getTime())) {
-          invoice.dueDate = parsedDate;
-        } else {
-          invoice.dueDate = null;
-        }
-      } else {
-        invoice.dueDate = null;
-      }
-    }
     
     return this.invoiceRepository.save(invoice);
   }
@@ -234,26 +112,14 @@ export class InvoicesService {
     return this.invoiceRepository.save(invoice);
   }
 
-  async updateStatus(id: number, userId: number, status: string) {
-    const invoice = await this.findOne(id, userId);
-    invoice.status = status;
-    return this.invoiceRepository.save(invoice);
-  }
-
   async delete(id: number, userId: number) {
     const invoice = await this.findOne(id, userId);
     await this.invoiceRepository.delete(id);
     return { success: true };
   }
 
-  async deleteByOperationNumber(operationNumber: string, userId: number) {
-    const invoice = await this.findByOperationNumber(operationNumber, userId);
-    await this.invoiceRepository.delete(invoice.id);
-    return { success: true };
-  }
-
   async getStats(userId: number) {
-    const invoices = await this.invoiceRepository.find({ where: { userId } });
+    const invoices = await this.findAll(userId);
     const total = invoices.length;
     const paid = invoices.filter(i => i.status === 'paid').length;
     const pending = invoices.filter(i => i.status !== 'paid').length;
@@ -263,10 +129,42 @@ export class InvoicesService {
     const debitTotal = invoices.filter(i => i.type === 'debit').reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     const creditTotal = invoices.filter(i => i.type === 'credit').reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const currentQuarter = Math.floor(currentMonth / 3);
+    
+    const monthlyTotal = invoices.filter(i => {
+      if (!i.createdAt) return false;
+      const date = new Date(i.createdAt);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    }).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    
+    const quarterlyTotal = invoices.filter(i => {
+      if (!i.createdAt) return false;
+      const date = new Date(i.createdAt);
+      return Math.floor(date.getMonth() / 3) === currentQuarter && date.getFullYear() === currentYear;
+    }).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    
+    const yearlyTotal = invoices.filter(i => {
+      if (!i.createdAt) return false;
+      const date = new Date(i.createdAt);
+      return date.getFullYear() === currentYear;
+    }).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    
     return { 
-      total, paid, pending, 
-      totalAmount, paidAmount, pendingAmount: totalAmount - paidAmount,
-      totalTax, debitTotal, creditTotal
+      total, 
+      paid, 
+      pending, 
+      totalAmount, 
+      paidAmount,
+      pendingAmount: totalAmount - paidAmount,
+      totalTax, 
+      debitTotal, 
+      creditTotal,
+      monthlyTotal,
+      quarterlyTotal,
+      yearlyTotal
     };
   }
 }

@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProductionService } from './production.service';
 
@@ -20,6 +20,11 @@ export class ProductionController {
   @Post()
   async create(@Request() req: any, @Body() body: any) {
     return this.productionService.create(req.user.userId, body);
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    return this.productionService.update(parseInt(id), req.user.userId, body);
   }
 
   @Patch(':id/status')

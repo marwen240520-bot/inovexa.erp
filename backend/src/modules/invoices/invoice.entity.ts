@@ -17,6 +17,9 @@ export class Invoice {
   @Column('decimal', { precision: 10, scale: 2 })
   amount: number;
 
+  @Column({ nullable: true })
+  reference: string;
+
   @Column({ default: 'pending' })
   status: string;
 

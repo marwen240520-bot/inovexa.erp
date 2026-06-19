@@ -13,9 +13,10 @@ async function createCategoriesTable() {
   
   try {
     await client.connect();
-    console.log('✅ Connecté à PostgreSQL');
+    console.log('✅ Connecté à PostgreSQL\n');
     
     // Créer la table categories
+    console.log('📋 Création table Categories...');
     await client.query(`
       CREATE TABLE IF NOT EXISTS categories (
         id SERIAL PRIMARY KEY,
@@ -26,23 +27,31 @@ async function createCategoriesTable() {
         "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ Table categories créée');
+    console.log('  ✅ table categories créée');
     
     // Ajouter quelques catégories par défaut
-    await client.query(`
-      INSERT INTO categories ("userId", name, description)
-      VALUES 
-        (1, 'Électronique', 'Produits électroniques'),
-        (1, 'Vêtements', 'Mode et accessoires'),
-        (1, 'Maison', 'Décoration et mobilier'),
-        (1, 'Sports', 'Équipements sportifs'),
-        (1, 'Livres', 'Livres et magazines')
-      ON CONFLICT DO NOTHING
-    `);
-    console.log('✅ Catégories par défaut ajoutées');
+    console.log('\n📋 Ajout de catégories par défaut...');
+    
+    const defaultCategories = [
+      { name: 'Électronique', description: 'Produits électroniques' },
+      { name: 'Vêtements', description: 'Mode et accessoires' },
+      { name: 'Maison', description: 'Décoration et mobilier' },
+      { name: 'Sports', description: 'Articles de sport' },
+      { name: 'Livres', description: 'Livres et magazines' }
+    ];
+    
+    for (const cat of defaultCategories) {
+      await client.query(`
+        INSERT INTO categories (name, description, "userId")
+        VALUES ($1, $2, $3)
+        ON CONFLICT (id) DO NOTHING
+      `, [cat.name, cat.description, 1]);
+    }
+    console.log('  ✅ catégories par défaut ajoutées');
+    
+    console.log('\n✅ Table categories prête !');
     
     await client.end();
-    console.log('✅ Table categories prête');
     
   } catch (error) {
     console.error('❌ Erreur:', error.message);

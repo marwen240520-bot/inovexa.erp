@@ -1,4 +1,4 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+﻿import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('employees')
 export class Employee {
@@ -20,21 +20,21 @@ export class Employee {
   @Column({ nullable: true })
   department: string;
 
-  @Column({ default: 0, type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   salary: number;
 
   @Column({ nullable: true })
   phone: string;
 
-  @Column({ nullable: true })
-  hireDate: Date;
+  @Column({ type: 'text', nullable: true })
+  hireDate: string;
 
   @Column({ default: 'active' })
   status: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({ type: 'text', nullable: true })
+  createdAt: string;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Column({ type: 'text', nullable: true })
+  updatedAt: string;
 }
