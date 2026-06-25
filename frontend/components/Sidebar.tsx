@@ -259,7 +259,7 @@ export default function Sidebar() {
 
   const fetchUserModules = async (userId: string, token: string) => {
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/users/${userId}/modules`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/modules`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setUserModules(await res.json());
