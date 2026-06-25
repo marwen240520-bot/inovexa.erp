@@ -265,7 +265,7 @@ export default function SalesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } });
       let data = await res.json();
       data = Array.isArray(data) ? data : [];
       setAllSales(data);
@@ -301,7 +301,7 @@ export default function SalesPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       console.log("?? Produits charg�s:", data);
       setProducts(Array.isArray(data) ? data : []);
@@ -311,7 +311,7 @@ export default function SalesPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch(e) { console.error(e); }
@@ -321,7 +321,7 @@ export default function SalesPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales/import", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ sales: data })
@@ -382,7 +382,7 @@ export default function SalesPage() {
     console.log("?? Donn�es envoy�es au backend:", formData);
 
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 

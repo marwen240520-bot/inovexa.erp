@@ -251,7 +251,7 @@ export default function TransporteurShipmentsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/transporteur/shipments", { 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/shipments`, { 
         headers: { Authorization: "Bearer " + token } 
       });
       if (res.status === 401) { 

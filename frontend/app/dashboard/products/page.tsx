@@ -240,7 +240,7 @@ export default function ProductsPage() {
   const fetchCategories = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/categories", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setCategories(Array.isArray(data) ? data : []);
       await fetchProducts();
@@ -254,7 +254,7 @@ export default function ProductsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error("Erreur chargement produits:", e); }
@@ -271,7 +271,7 @@ export default function ProductsPage() {
         categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
       };
 
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
@@ -374,7 +374,7 @@ export default function ProductsPage() {
     const token = localStorage.getItem("token");
     try {
       const productsWithZeroStock = data.map(p => ({ ...p, quantity: 0 }));
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products/import", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/import`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 

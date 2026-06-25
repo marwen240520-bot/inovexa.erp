@@ -310,7 +310,7 @@ export default function LogisticsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/logistics/client/shipments", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/client/shipments`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data = await res.json();
@@ -335,7 +335,7 @@ export default function LogisticsPage() {
   const fetchTransporteurs = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/transporteurs", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteurs`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -397,7 +397,7 @@ export default function LogisticsPage() {
     }
 
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/transporteurs", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteurs`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -490,7 +490,7 @@ export default function LogisticsPage() {
   const createShipment = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/logistics/client/shipments", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/client/shipments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)

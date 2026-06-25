@@ -311,13 +311,13 @@ export default function IAPage() {
     
     try {
       const [sales, purchases, products, clients, orders, invoices, employees] = await Promise.all([
-        fetchWithAuth("${process.env.NEXT_PUBLIC_API_URL}/sales"),
-        fetchWithAuth("${process.env.NEXT_PUBLIC_API_URL}/purchases"),
-        fetchWithAuth("${process.env.NEXT_PUBLIC_API_URL}/products"),
-        fetchWithAuth("${process.env.NEXT_PUBLIC_API_URL}/clients"),
-        fetchWithAuth("${process.env.NEXT_PUBLIC_API_URL}/orders"),
-        fetchWithAuth("${process.env.NEXT_PUBLIC_API_URL}/invoices"),
-        fetchWithAuth("${process.env.NEXT_PUBLIC_API_URL}/employees")
+        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/sales`),
+        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/purchases`),
+        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/products`),
+        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/clients`),
+        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/orders`),
+        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/invoices`),
+        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/employees`)
       ]);
 
       const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);

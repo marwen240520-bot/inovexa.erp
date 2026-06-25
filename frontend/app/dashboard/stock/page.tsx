@@ -372,19 +372,19 @@ export default function StockPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const productsRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", {
+      const productsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const productsData = await productsRes.json();
       const productsList: Product[] = Array.isArray(productsData) ? productsData : [];
 
-      const salesRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", {
+      const salesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       let salesData = await salesRes.json();
       let salesList: Sale[] = Array.isArray(salesData) ? salesData : [];
 
-      const purchasesRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/purchases", {
+      const purchasesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       let purchasesData = await purchasesRes.json();

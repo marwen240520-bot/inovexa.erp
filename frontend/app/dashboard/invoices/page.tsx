@@ -555,7 +555,7 @@ export default function InvoicesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/invoices", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data = await res.json();
@@ -615,7 +615,7 @@ export default function InvoicesPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -624,7 +624,7 @@ export default function InvoicesPage() {
   const fetchSuppliers = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/suppliers", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setSuppliers(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -698,7 +698,7 @@ export default function InvoicesPage() {
     setLoading(true);
     try {
       for (const invoice of data) {
-        await fetch("${process.env.NEXT_PUBLIC_API_URL}/invoices", {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(invoice)
@@ -733,7 +733,7 @@ export default function InvoicesPage() {
       const taxAmount = calculateTaxAmount(subtotalHT, taxRate);
       const totalTTC = calculateTotalTTC(subtotalHT, taxRate);
       const operationNumber = generateOperationNumber();
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/invoices", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({

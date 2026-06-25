@@ -98,7 +98,7 @@ export default function AdminClientsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/admin/clients", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data: Client[] = await res.json();
@@ -112,7 +112,7 @@ export default function AdminClientsPage() {
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/admin/stats", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -159,7 +159,7 @@ export default function AdminClientsPage() {
   const fetchRegistrationsHistory = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/admin/registrations-history", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/registrations-history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -177,7 +177,7 @@ export default function AdminClientsPage() {
   const createClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/admin/clients", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)

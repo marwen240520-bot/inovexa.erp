@@ -297,10 +297,10 @@ export default function TransporteurDashboard() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const shipmentsRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/transporteur/shipments", { 
+      const shipmentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/shipments`, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
-      const statsRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/transporteur/stats", { 
+      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/stats`, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
       

@@ -341,7 +341,7 @@ export default function DashboardPage() {
     const token = localStorage.getItem("token");
     if (!token) return null;
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/users/profile", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -611,11 +611,11 @@ export default function DashboardPage() {
       const [salesRes, purchasesRes, clientsRes, productsRes, invoicesRes, ordersRes, employeesRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/invoices", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/orders", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/employees", { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       let sales = await salesRes.json();

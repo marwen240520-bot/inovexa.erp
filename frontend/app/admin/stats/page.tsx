@@ -32,7 +32,7 @@ export default function AdminStatsPage() {
 
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "${process.env.NEXT_PUBLIC_API_URL}";
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || `${process.env.NEXT_PUBLIC_API_URL}`;
     
     try {
       const res = await fetch(`${API_URL}/admin/stats`, {

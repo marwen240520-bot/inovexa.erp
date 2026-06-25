@@ -221,7 +221,7 @@ export default function CategoriesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/categories", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       const categoriesData = Array.isArray(data) ? data : [];
       setCategories(categoriesData.map(cat => ({ ...cat, productCount: getProductCountForCategory(cat.id) })));
@@ -232,7 +232,7 @@ export default function CategoriesPage() {
   const fetchAllProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error(e); }
@@ -241,7 +241,7 @@ export default function CategoriesPage() {
   const createCategory = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/categories", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)

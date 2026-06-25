@@ -257,7 +257,7 @@ export default function OrdersPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/orders", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data: Order[] = await res.json();
@@ -295,7 +295,7 @@ export default function OrdersPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, { headers: { Authorization: `Bearer ${token}` } });
       const data: Client[] = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -304,7 +304,7 @@ export default function OrdersPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
       const data: Product[] = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -313,7 +313,7 @@ export default function OrdersPage() {
   const createOrder = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/orders", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)

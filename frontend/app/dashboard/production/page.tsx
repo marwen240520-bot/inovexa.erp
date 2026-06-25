@@ -162,7 +162,7 @@ export default function ProductionPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/production/orders", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       let data: ProductionOrder[] = await res.json();
@@ -188,7 +188,7 @@ export default function ProductionPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -208,7 +208,7 @@ export default function ProductionPage() {
         return;
       }
 
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/production/orders", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({

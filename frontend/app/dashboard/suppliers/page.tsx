@@ -291,7 +291,7 @@ export default function SuppliersPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/suppliers", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data = await res.json();
@@ -313,7 +313,7 @@ export default function SuppliersPage() {
   const createSupplier = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/suppliers", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -424,7 +424,7 @@ export default function SuppliersPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/suppliers/import", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ suppliers: data })

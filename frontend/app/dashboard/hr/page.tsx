@@ -355,7 +355,7 @@ export default function HRPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/employees", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees`, { headers: { Authorization: `Bearer ${token}` } });
       let data: Employee[] = await res.json();
       data = Array.isArray(data) ? data : [];
       setEmployees(data);
@@ -374,7 +374,7 @@ export default function HRPage() {
   const fetchDepartments = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/departments", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments`, { headers: { Authorization: `Bearer ${token}` } });
       const data: Department[] = await res.json();
       setDepartments(Array.isArray(data) ? data : []);
       setStats(prev => ({ ...prev, departments: Array.isArray(data) ? data.length : 0 }));
@@ -384,7 +384,7 @@ export default function HRPage() {
   const createEmployee = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/employees", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -472,7 +472,7 @@ export default function HRPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/employees/import", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ employees: data })

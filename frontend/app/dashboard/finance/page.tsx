@@ -1104,14 +1104,14 @@ export default function FinancePage() {
         } catch { return def; }
       };
       const [sd, pd, id, prd, cd, supp, emp, proj] = await Promise.all([
-        fw("${process.env.NEXT_PUBLIC_API_URL}/sales"),
-        fw("${process.env.NEXT_PUBLIC_API_URL}/purchases"),
-        fw("${process.env.NEXT_PUBLIC_API_URL}/invoices"),
-        fw("${process.env.NEXT_PUBLIC_API_URL}/products"),
-        fw("${process.env.NEXT_PUBLIC_API_URL}/clients"),
-        fw("${process.env.NEXT_PUBLIC_API_URL}/suppliers"),
-        fw("${process.env.NEXT_PUBLIC_API_URL}/employees"),
-        fw("${process.env.NEXT_PUBLIC_API_URL}/projects")
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/sales`),
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/purchases`),
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/invoices`),
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/products`),
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/clients`),
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/suppliers`),
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/employees`),
+        fw(`${process.env.NEXT_PUBLIC_API_URL}/projects`)
       ]);
       setSales(sd); setPurchases(pd); setInvoices(id); setProducts(prd);
       setClients(cd); setSuppliers(supp); setEmployees(emp); setProjects(proj);

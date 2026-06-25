@@ -309,7 +309,7 @@ export default function TransporteurProfilePage() {
   const fetchUserData = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/users/profile", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -358,7 +358,7 @@ export default function TransporteurProfilePage() {
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/transporteur/stats", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -372,7 +372,7 @@ export default function TransporteurProfilePage() {
     const token = localStorage.getItem("token");
     setSaving(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/users/profile", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),

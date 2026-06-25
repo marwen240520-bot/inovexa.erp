@@ -744,13 +744,13 @@ export default function AnalyticsPage() {
     setLoading(true);
     try {
       const [salesRes, productsRes, clientsRes, ordersRes, invoicesRes, employeesRes, shipmentsRes] = await Promise.all([
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/orders", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/invoices", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/employees", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${process.env.NEXT_PUBLIC_API_URL}/logistics/shipments", { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/shipments`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       let sales = await salesRes.json();

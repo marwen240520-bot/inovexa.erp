@@ -252,7 +252,7 @@ export default function ClientsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       let data = await res.json();
@@ -274,7 +274,7 @@ export default function ClientsPage() {
   const createClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -376,7 +376,7 @@ export default function ClientsPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients/import", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ clients: data }),

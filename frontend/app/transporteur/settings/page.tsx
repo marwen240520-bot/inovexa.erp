@@ -179,7 +179,7 @@ export default function TransporteurSettingsPage() {
     }
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/users/change-password", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/change-password`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
