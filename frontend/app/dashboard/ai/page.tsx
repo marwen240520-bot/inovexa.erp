@@ -311,13 +311,13 @@ export default function IAPage() {
     
     try {
       const [sales, purchases, products, clients, orders, invoices, employees] = await Promise.all([
-        fetchWithAuth("http://localhost:3001/sales"),
-        fetchWithAuth("http://localhost:3001/purchases"),
-        fetchWithAuth("http://localhost:3001/products"),
-        fetchWithAuth("http://localhost:3001/clients"),
-        fetchWithAuth("http://localhost:3001/orders"),
-        fetchWithAuth("http://localhost:3001/invoices"),
-        fetchWithAuth("http://localhost:3001/employees")
+        fetchWithAuth("https://api-inovexa.ngrok.app/sales"),
+        fetchWithAuth("https://api-inovexa.ngrok.app/purchases"),
+        fetchWithAuth("https://api-inovexa.ngrok.app/products"),
+        fetchWithAuth("https://api-inovexa.ngrok.app/clients"),
+        fetchWithAuth("https://api-inovexa.ngrok.app/orders"),
+        fetchWithAuth("https://api-inovexa.ngrok.app/invoices"),
+        fetchWithAuth("https://api-inovexa.ngrok.app/employees")
       ]);
 
       const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
@@ -503,86 +503,86 @@ export default function IAPage() {
     const margin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : "0";
     
     if (q.match(/vente|chiffre|ca|revenue|recette|ventas|ingresos|sales/)) {
-      return `📊 **${t.revenue}**\n\n` +
-             `💰 **Total :** ${formatCurrency(revenue)}\n` +
-             `📈 **${t.growthRate} :** +${growth}%\n` +
-             `📦 **${t.totalSales} :** ${stats?.sales?.total || 0}\n` +
-             `🎫 **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 0)}\n\n` +
-             `📊 **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! 🚀" : Number(growth) > 8 ? "Bonne dynamique commerciale 📈" : "Croissance à surveiller ⚠️"}`;
+      return ` **${t.revenue}**\n\n` +
+             ` **Total :** ${formatCurrency(revenue)}\n` +
+             ` **${t.growthRate} :** +${growth}%\n` +
+             ` **${t.totalSales} :** ${stats?.sales?.total || 0}\n` +
+             ` **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 0)}\n\n` +
+             ` **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! 🚀" : Number(growth) > 8 ? "Bonne dynamique commerciale 📈" : "Croissance à surveiller ⚠️"}`;
     }
     
     if (q.match(/bénéfice|profit|beneficio|ganancia|marge/)) {
-      return `📈 **${t.profit}**\n\n` +
-             `💰 **${t.profit} :** ${formatCurrency(profit)}\n` +
-             `📊 **${t.profitMargin} :** ${margin}%\n` +
-             `💵 **${t.revenue} :** ${formatCurrency(revenue)}\n` +
-             `💸 **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 0)}\n` +
-             `🎯 **EBITDA estimé :** ${formatCurrency(Number(ebitda))}\n\n` +
-             `💡 **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! 🎯" : Number(margin) > 15 ? "Bonne marge, optimisez vos coûts 📊" : "Marge à améliorer, analysez vos dépenses ⚠️"}`;
+      return ` **${t.profit}**\n\n` +
+             ` **${t.profit} :** ${formatCurrency(profit)}\n` +
+             ` **${t.profitMargin} :** ${margin}%\n` +
+             ` **${t.revenue} :** ${formatCurrency(revenue)}\n` +
+             ` **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 0)}\n` +
+             ` **EBITDA estimé :** ${formatCurrency(Number(ebitda))}\n\n` +
+             ` **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! 🎯" : Number(margin) > 15 ? "Bonne marge, optimisez vos coûts 📊" : "Marge à améliorer, analysez vos dépenses ⚠️"}`;
     }
     
     if (q.match(/résumé|synthèse|bilan|rapport|summary|resumen/)) {
-      return `📋 **RAPPORT D'ACTIVITÉ**\n\n` +
-             `💰 **FINANCES**\n` +
+      return ` **RAPPORT D'ACTIVITÉ**\n\n` +
+             ` **FINANCES**\n` +
              `• ${t.revenue}: ${formatCurrency(revenue)}\n` +
              `• ${t.profit}: ${formatCurrency(profit)}\n` +
              `• ${t.profitMargin}: ${margin}%\n` +
              `• ${t.growthRate}: +${growth}%\n\n` +
-             `👥 **CLIENTS**\n` +
+             ` **CLIENTS**\n` +
              `• Total: ${stats?.clients?.total || 0}\n` +
              `• ${t.activeClients}: ${stats?.clients?.active || 0}\n` +
              `• ${t.conversionRate}: ${stats?.clients?.total > 0 ? Math.round((stats?.clients?.active || 0) / (stats?.clients?.total || 1) * 100) : 0}%\n\n` +
-             `📦 **PRODUITS**\n` +
+             ` **PRODUITS**\n` +
              `• Catalogue: ${stats?.products?.total || 0} ${t.products}\n` +
              `• ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
              `• Valeur stock: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
              `• ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
-             `📋 **COMMANDES**\n` +
+             ` **COMMANDES**\n` +
              `• ${t.pendingOrders}: ${stats?.orders?.pending || 0}\n\n` +
-             `🔮 **PRÉVISIONS IA**\n` +
+             ` **PRÉVISIONS IA**\n` +
              `• ${t.projectedRevenue} M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
              `• ${t.growthRate}: +${growth}%\n` +
              `• ${t.confidence}: ${confidence}%\n\n` +
-             `💡 **Recommandation :** ${Number(growth) > 10 ? "Capitalisez sur cette dynamique !" : "Optimisez vos processus pour accélérer la croissance"}`;
+             ` **Recommandation :** ${Number(growth) > 10 ? "Capitalisez sur cette dynamique !" : "Optimisez vos processus pour accélérer la croissance"}`;
     }
     
     if (q.match(/top produits|meilleurs produits|best sellers|top productos/)) {
-      let response = `🏆 **${t.topProducts}**\n\n`;
+      let response = ` **${t.topProducts}**\n\n`;
       topProducts.slice(0, 4).forEach((p, i) => {
         response += `${i + 1}. **${p.name}**\n` +
-                   `   💰 CA: ${formatCurrency(p.amount)}\n` +
-                   `   📦 Ventes: ${p.sales} unités\n\n`;
+                   `    CA: ${formatCurrency(p.amount)}\n` +
+                   `    Ventes: ${p.sales} unités\n\n`;
       });
-      response += `💡 **Analyse IA** : Ces produits représentent votre cœur de métier. Concentrez vos efforts marketing sur ces références !`;
+      response += ` **Analyse IA** : Ces produits représentent votre cœur de métier. Concentrez vos efforts marketing sur ces références !`;
       return response;
     }
     
     if (q.match(/top clients|meilleurs clients|best customers|top clientes/)) {
-      let response = `⭐ **${t.topClients}**\n\n`;
+      let response = ` **${t.topClients}**\n\n`;
       topClients.slice(0, 4).forEach((c, i) => {
         response += `${i + 1}. **${c.name}**\n` +
-                   `   💰 Achats: ${formatCurrency(c.amount)}\n` +
-                   `   📦 Commandes: ${c.orders}\n\n`;
+                   `    Achats: ${formatCurrency(c.amount)}\n` +
+                   `    Commandes: ${c.orders}\n\n`;
       });
-      response += `💡 **Recommandation IA** : Mettez en place un programme de fidélisation premium pour ces clients stratégiques !`;
+      response += ` **Recommandation IA** : Mettez en place un programme de fidélisation premium pour ces clients stratégiques !`;
       return response;
     }
     
     if (q.match(/stock|inventaire|inventory|estado del stock/)) {
       const urgentItems = recommendations.filter(r => r.urgency === "high").slice(0, 3);
-      let stockResponse = `📦 **${t.stockStatus}**\n\n` +
-                         `📊 **Vue d'ensemble**\n` +
+      let stockResponse = ` **${t.stockStatus}**\n\n` +
+                         ` **Vue d'ensemble**\n` +
                          `• ${t.products} total: ${stats?.products?.total || 0}\n` +
                          `• ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
                          `• Rupture: ${stats?.products?.outOfStock || 0}\n` +
                          `• Valeur totale: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
                          `• ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
-                         `⚠️ **URGENCES RÉAPPROVISIONNEMENT**\n`;
+                         ` **URGENCES RÉAPPROVISIONNEMENT**\n`;
       if (urgentItems.length) {
         urgentItems.forEach(i => {
           stockResponse += `• **${i.productName}** : ${i.currentStock} unités (demande: ${i.monthlyDemand}/mois)\n`;
         });
-        stockResponse += `\n💡 **Action IA recommandée** : Réapprovisionnez ${urgentItems.length} produit(s) en priorité !`;
+        stockResponse += `\n **Action IA recommandée** : Réapprovisionnez ${urgentItems.length} produit(s) en priorité !`;
       } else {
         stockResponse += `✓ Aucune urgence - niveau de stock satisfaisant\n\n💡 **Bravo !** Votre gestion des stocks est optimale.`;
       }
@@ -590,27 +590,27 @@ export default function IAPage() {
     }
     
     if (q.match(/prévision|forecast|tendance|prediction|prevision/)) {
-      return `🔮 **${t.salesForecast}**\n\n` +
-             `📈 **Tendances détectées**\n` +
+      return ` **${t.salesForecast}**\n\n` +
+             ` **Tendances détectées**\n` +
              `• ${t.growthRate}: +${growth}%\n` +
              `• ${t.roi} estimé: ${roi}%\n` +
              `• EBITDA projeté: ${formatCurrency(Number(ebitda))}\n\n` +
-             `📊 **Projections mensuelles**\n` +
+             ` **Projections mensuelles**\n` +
              `• M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
              `• M+2: ${formatCurrency(forecastData[1] || 0)}\n` +
              `• M+3: ${formatCurrency(forecastData[2] || 0)}\n\n` +
-             `🎯 **${t.confidence}**\n` +
+             ` **${t.confidence}**\n` +
              `• ${t.confidence}: ${confidence}%\n` +
              `• ${Number(confidence) > 85 ? t.highConfidence : t.mediumConfidence}\n\n` +
-             `💡 **Conseil stratégique IA**\n` +
-             (Number(growth) > 15 ? "📈 Anticipez la forte croissance ! Augmentez vos stocks et renforcez votre équipe commerciale." :
-              Number(growth) > 5 ? "📊 Préparez-vous à une croissance modérée. Maintenez vos investissements." :
-              "⚠️ Soyez prudent sur les investissements. Optimisez vos coûts.");
+             ` **Conseil stratégique IA**\n` +
+             (Number(growth) > 15 ? " Anticipez la forte croissance ! Augmentez vos stocks et renforcez votre équipe commerciale." :
+              Number(growth) > 5 ? " Préparez-vous à une croissance modérée. Maintenez vos investissements." :
+              " Soyez prudent sur les investissements. Optimisez vos coûts.");
     }
     
     if (q.match(/aide|help|que faire|commandes|que puis-je/)) {
-      return `🆘 **GUIDE D'UTILISATION**\n\n` +
-             `📋 **Questions possibles**\n` +
+      return ` **GUIDE D'UTILISATION**\n\n` +
+             ` **Questions possibles**\n` +
              `• "${t.askRevenue}"\n` +
              `• "${t.askSummary}"\n` +
              `• "${t.askTopProducts}"\n` +
@@ -618,15 +618,15 @@ export default function IAPage() {
              `• "${t.askForecast}"\n` +
              `• "Quel est mon ROI ?"\n` +
              `• "Performance globale"\n\n` +
-             `🎯 **Actions rapides disponibles**\n` +
-             `• 📊 Analyse des ventes\n` +
-             `• 📦 Suivi du stock\n` +
-             `• 🔮 Prévisions financières\n` +
-             `• ⭐ Recommandations produits\n\n` +
-             `💡 **Astuce IA** : Plus votre question est précise, plus la réponse sera pertinente !`;
+             ` **Actions rapides disponibles**\n` +
+             `•  Analyse des ventes\n` +
+             `•  Suivi du stock\n` +
+             `•  Prévisions financières\n` +
+             `•  Recommandations produits\n\n` +
+             ` **Astuce IA** : Plus votre question est précise, plus la réponse sera pertinente !`;
     }
     
-    return `🤖 **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n🔍 **${t.tryQuestions} :**\n` +
+    return ` **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n🔍 **${t.tryQuestions} :**\n` +
            `• "${t.askRevenue}"\n` +
            `• "${t.askSummary}"\n` +
            `• "${t.askTopProducts}"\n` +
@@ -657,35 +657,35 @@ export default function IAPage() {
     
     if (isMobile) {
       return `${greeting} ${name} ! 👋\n\n` +
-             `🤖 **${t.aiAssistant}**\n\n` +
-             `✨ **${t.whatCanIDo} :**\n` +
-             `• 📊 Analyser ventes\n` +
-             `• 📦 État du stock\n` +
-             `• ⭐ Top produits/clients\n` +
-             `• 🔮 Prévisions\n\n` +
-             `💬 **${t.tryQuestions} :**\n` +
+             ` **${t.aiAssistant}**\n\n` +
+             ` **${t.whatCanIDo} :**\n` +
+             `•  Analyser ventes\n` +
+             `•  État du stock\n` +
+             `•  Top produits/clients\n` +
+             `•  Prévisions\n\n` +
+             ` **${t.tryQuestions} :**\n` +
              `• "${t.askRevenue}"\n` +
              `• "${t.askSummary}"\n` +
              `• "${t.askTopProducts}"\n` +
              `• "${t.askStock}"\n\n` +
-             `Comment puis-je vous aider ? 🚀`;
+             `Comment puis-je vous aider ? `;
     }
     
     return `${greeting} ${name} ! 👋\n\n` +
-           `🤖 **${t.aiAssistant}**\n\n` +
-           `✨ **${t.whatCanIDo} :**\n` +
-           `• 📊 Analyser vos ventes et bénéfices\n` +
-           `• 📦 Vérifier l'état de votre stock\n` +
-           `• ⭐ Identifier vos meilleurs clients et produits\n` +
-           `• 🔮 Générer des prévisions précises\n` +
-           `• 📋 Vous donner un résumé complet\n\n` +
-           `💬 **${t.tryQuestions} :**\n` +
+           ` **${t.aiAssistant}**\n\n` +
+           ` **${t.whatCanIDo} :**\n` +
+           `•  Analyser vos ventes et bénéfices\n` +
+           `•  Vérifier l'état de votre stock\n` +
+           `•  Identifier vos meilleurs clients et produits\n` +
+           `•  Générer des prévisions précises\n` +
+           `•  Vous donner un résumé complet\n\n` +
+           ` **${t.tryQuestions} :**\n` +
            `• "${t.askRevenue}"\n` +
            `• "${t.askSummary}"\n` +
            `• "${t.askTopProducts}"\n` +
            `• "${t.askStock}"\n` +
            `• "${t.askForecast}"\n\n` +
-           `Comment puis-je vous aider aujourd'hui ? 🚀`;
+           `Comment puis-je vous aider aujourd'hui ? `;
   };
 
   const copyConversation = () => {

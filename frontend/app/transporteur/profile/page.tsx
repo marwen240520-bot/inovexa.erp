@@ -309,7 +309,7 @@ export default function TransporteurProfilePage() {
   const fetchUserData = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/users/profile", {
+      const res = await fetch("https://api-inovexa.ngrok.app/users/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -358,7 +358,7 @@ export default function TransporteurProfilePage() {
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/transporteur/stats", {
+      const res = await fetch("https://api-inovexa.ngrok.app/transporteur/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -372,7 +372,7 @@ export default function TransporteurProfilePage() {
     const token = localStorage.getItem("token");
     setSaving(true);
     try {
-      const res = await fetch("http://localhost:3001/users/profile", {
+      const res = await fetch("https://api-inovexa.ngrok.app/users/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),

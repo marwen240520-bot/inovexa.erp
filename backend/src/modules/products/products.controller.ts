@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProductsService } from './products.service';
 
@@ -8,17 +8,8 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  async findAll(@Request() req: any, @Query('search') search?: string) {
-    // Si un terme de recherche est fourni, on cherche, sinon on retourne tout
-    if (search) {
-      return this.productsService.search(req.user.userId, search);
-    }
+  async findAll(@Request() req: any) {
     return this.productsService.findAll(req.user.userId);
-  }
-
-  @Get('stats')
-  async getStats(@Request() req: any) {
-    return this.productsService.getStats(req.user.userId);
   }
 
   @Get(':id')

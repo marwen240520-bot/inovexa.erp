@@ -291,7 +291,7 @@ export default function SuppliersPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/suppliers", {
+      const res = await fetch("https://api-inovexa.ngrok.app/suppliers", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data = await res.json();
@@ -313,7 +313,7 @@ export default function SuppliersPage() {
   const createSupplier = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/suppliers", {
+      const res = await fetch("https://api-inovexa.ngrok.app/suppliers", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -336,7 +336,7 @@ export default function SuppliersPage() {
   const updateSupplier = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/suppliers/${modal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/suppliers/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -359,7 +359,7 @@ export default function SuppliersPage() {
   const deleteSupplier = async (id: string) => {
     if (confirm(t("suppliers.confirmDelete") || "Supprimer ce fournisseur ?")) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/suppliers/${id}`, {
+      await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -374,7 +374,7 @@ export default function SuppliersPage() {
     if (confirm(`${t("suppliers.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} fournisseur(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/suppliers/${id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -390,7 +390,7 @@ export default function SuppliersPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`http://localhost:3001/suppliers/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -403,7 +403,7 @@ export default function SuppliersPage() {
       } else {
         const supplier = suppliers.find(s => s.id === id);
         if (supplier) {
-          const putRes = await fetch(`http://localhost:3001/suppliers/${id}`, {
+          const putRes = await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...supplier, status: newStatus })
@@ -424,7 +424,7 @@ export default function SuppliersPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/suppliers/import", {
+      const res = await fetch("https://api-inovexa.ngrok.app/suppliers/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ suppliers: data })

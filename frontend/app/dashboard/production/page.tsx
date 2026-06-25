@@ -162,7 +162,7 @@ export default function ProductionPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/production/orders", {
+      const res = await fetch("https://api-inovexa.ngrok.app/production/orders", {
         headers: { Authorization: `Bearer ${token}` },
       });
       let data: ProductionOrder[] = await res.json();
@@ -188,7 +188,7 @@ export default function ProductionPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/products", {
+      const res = await fetch("https://api-inovexa.ngrok.app/products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -208,7 +208,7 @@ export default function ProductionPage() {
         return;
       }
 
-      const res = await fetch("http://localhost:3001/production/orders", {
+      const res = await fetch("https://api-inovexa.ngrok.app/production/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -247,7 +247,7 @@ export default function ProductionPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost:3001/production/orders/${modal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/production/orders/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -275,7 +275,7 @@ export default function ProductionPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`http://localhost:3001/production/orders/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status }),
@@ -298,7 +298,7 @@ export default function ProductionPage() {
     const token = localStorage.getItem("token");
     setUpdatingProgress(id);
     try {
-      const res = await fetch(`http://localhost:3001/production/orders/${id}/progress`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}/progress`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ progress }),
@@ -320,7 +320,7 @@ export default function ProductionPage() {
   const deleteOrder = async (id: number) => {
     if (confirm(t("production.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/production/orders/${id}`, {
+      await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -336,7 +336,7 @@ export default function ProductionPage() {
     if (confirm(t("production.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/production/orders/${id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });

@@ -1,4 +1,5 @@
 ﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 import { Category } from '../categories/category.entity';
 
 @Entity('products')
@@ -6,7 +7,7 @@ export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true, default: 1 })
   userId: number;
 
   @Column({ nullable: true })
@@ -15,10 +16,10 @@ export class Product {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
+  @Column()
   sku: string;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
   @Column({ default: 0 })
@@ -29,6 +30,10 @@ export class Product {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 
   @ManyToOne(() => Category)
   @JoinColumn({ name: 'categoryId' })

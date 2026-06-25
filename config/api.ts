@@ -1,6 +1,6 @@
 ﻿// config/api.ts
 // ⚠️ Utilise directement le backend sur le port 3001
-export const API_BASE_URL = 'http://localhost:3001/api';
+export const API_BASE_URL = 'https://api-inovexa.ngrok.app/api';
 
 export const endpoints = {
   login: `${API_BASE_URL}/auth/login`,

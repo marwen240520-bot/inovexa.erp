@@ -257,7 +257,7 @@ export default function OrdersPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/orders", {
+      const res = await fetch("https://api-inovexa.ngrok.app/orders", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data: Order[] = await res.json();
@@ -295,7 +295,7 @@ export default function OrdersPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } });
       const data: Client[] = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -304,7 +304,7 @@ export default function OrdersPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
       const data: Product[] = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -313,7 +313,7 @@ export default function OrdersPage() {
   const createOrder = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/orders", {
+      const res = await fetch("https://api-inovexa.ngrok.app/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -334,7 +334,7 @@ export default function OrdersPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`http://localhost:3001/orders/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/orders/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -345,7 +345,7 @@ export default function OrdersPage() {
       } else {
         const order = allOrders.find(o => o.id === id);
         if (order) {
-          const putRes = await fetch(`http://localhost:3001/orders/${id}`, {
+          const putRes = await fetch(`https://api-inovexa.ngrok.app/orders/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...order, status: newStatus })
@@ -371,7 +371,7 @@ export default function OrdersPage() {
   const deleteOrder = async (id: number) => {
     if (confirm(t("orders.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/orders/${id}`, {
+      await fetch(`https://api-inovexa.ngrok.app/orders/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -386,7 +386,7 @@ export default function OrdersPage() {
     if (confirm(t("orders.confirmBulkDelete")?.replace("{count}", String(selectedIds.length)) || `Supprimer ${selectedIds.length} commande(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/orders/${id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/orders/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });

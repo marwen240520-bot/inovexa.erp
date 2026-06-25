@@ -30,22 +30,23 @@ interface Sale {
 }
 
 interface Product {
-  id: string | number;
+  id: number;
   name: string;
   price: number;
   quantity: number;
 }
 
 interface Client {
-  id: string | number;
+  id: number;
   name: string;
   email?: string;
   phone?: string;
 }
 
 interface SaleForm {
-  clientId?: string | number;
+  clientId?: number;
   clientName?: string;
+  productId?: number;
   productName?: string;
   quantity?: number;
   unitPrice?: number;
@@ -132,7 +133,7 @@ const IconTrash = ({ size = 13, color = "currentColor", style }: IconProps) => (
 
 const IconEdit = ({ size = 13, color = "currentColor", style }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M11 4H4a2 2 0 0 1-2 2v14a2 2 0 0 1 2 2h14a2 2 0 0 1 2-2v-7"/>
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
   </svg>
 );
@@ -214,7 +215,17 @@ export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<ModalState>({ open: false, form: {} });
+  const [modal, setModal] = useState<ModalState>({ 
+    open: false, 
+    form: { 
+      status: "pending", 
+      quantity: 1,
+      productId: undefined,
+      clientId: undefined,
+      unitPrice: 0,
+      total: 0
+    } 
+  });
   const [editModal, setEditModal] = useState<EditModalState>({ open: false, sale: null, status: "" });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
@@ -254,7 +265,7 @@ export default function SalesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/sales", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/sales", { headers: { Authorization: `Bearer ${token}` } });
       let data = await res.json();
       data = Array.isArray(data) ? data : [];
       setAllSales(data);
@@ -290,16 +301,17 @@ export default function SalesPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
+      console.log("📦 Produits chargés:", data);
       setProducts(Array.isArray(data) ? data : []);
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("❌ Erreur chargement produits:", e); }
   };
 
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch(e) { console.error(e); }
@@ -309,7 +321,7 @@ export default function SalesPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/sales/import", {
+      const res = await fetch("https://api-inovexa.ngrok.app/sales/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ sales: data })
@@ -324,33 +336,85 @@ export default function SalesPage() {
   };
 
   const createSale = async () => {
+    console.log("🔍 Formulaire avant création:", modal.form);
+
+    if (!modal.form.productId) {
+      showMessage("Veuillez sélectionner un produit", "error");
+      return;
+    }
+
+    if (!modal.form.quantity || modal.form.quantity <= 0) {
+      showMessage("La quantité doit être supérieure à 0", "error");
+      return;
+    }
+
+    if (!modal.form.unitPrice || modal.form.unitPrice <= 0) {
+      showMessage("Le prix unitaire doit être supérieur à 0", "error");
+      return;
+    }
+
     const token = localStorage.getItem("token");
-    // Si un client est sélectionné, utiliser son nom
-    const finalForm = {
-      ...modal.form,
-      clientName: selectedClient ? selectedClient.name : modal.form.clientName,
+    
+    const productId = typeof modal.form.productId === 'string' 
+      ? parseInt(modal.form.productId) 
+      : modal.form.productId;
+
+    const product = products.find(p => p.id === productId);
+    if (!product) {
+      showMessage("Produit non trouvé", "error");
+      return;
+    }
+
+    if (product.quantity < (modal.form.quantity || 0)) {
+      showMessage(`Stock insuffisant. Disponible: ${product.quantity}`, "error");
+      return;
+    }
+
+    const formData = {
+      productId: productId,
+      quantity: modal.form.quantity || 1,
+      unitPrice: modal.form.unitPrice || 0,
+      clientName: modal.form.clientName || "",
+      productName: product.name,
+      status: modal.form.status || "pending"
     };
+
+    console.log("📦 Données envoyées au backend:", formData);
+
     try {
-      const res = await fetch("http://localhost:3001/sales", {
+      const res = await fetch("https://api-inovexa.ngrok.app/sales", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(finalForm)
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(formData)
       });
+
+      const result = await res.json();
+      console.log("📥 Réponse du backend:", result);
+
       if (res.ok) {
-        setModal({ open: false, form: {} });
+        setModal({ open: false, form: { status: "pending", quantity: 1, productId: undefined, clientId: undefined, unitPrice: 0, total: 0 } });
         setSelectedProduct(null);
         setSelectedClient(null);
-        fetchSales();
-        showMessage(t("sales.saleCreated"), "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch(e) { showMessage(t("common.error"), "error"); }
+        await fetchSales();
+        await fetchProducts();
+        showMessage("Vente créée avec succès !", "success");
+      } else {
+        showMessage(result.message || "Erreur lors de la création de la vente", "error");
+      }
+    } catch(e) {
+      console.error("❌ Erreur lors de la création:", e);
+      showMessage("Erreur de connexion au serveur", "error");
+    }
   };
 
   const updateSaleStatus = async (id: string | number, newStatus: string) => {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`http://localhost:3001/sales/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/sales/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -370,7 +434,7 @@ export default function SalesPage() {
   const deleteSale = async (id: string | number) => {
     if (confirm(t("sales.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(`https://api-inovexa.ngrok.app/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       fetchSales();
       showMessage(t("sales.saleDeleted"), "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
@@ -382,7 +446,7 @@ export default function SalesPage() {
     if (confirm((t("sales.confirmBulkDelete") || "Supprimer {count} vente(s) ?").replace("{count}", String(selectedIds.length)))) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`https://api-inovexa.ngrok.app/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       }
       fetchSales();
       setSelectedIds([]);
@@ -409,20 +473,137 @@ export default function SalesPage() {
     return status;
   };
 
-  const handleProductSelect = (productId: string) => {
-    const product = products.find(p => p.id === parseInt(productId));
+  // ✅ HANDLE PRODUCT SELECT - VERSION CORRIGÉE
+  const handleProductSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    console.log("🔄 Produit sélectionné - valeur brute:", value);
+    
+    if (!value || value === "") {
+      setSelectedProduct(null);
+      setModal(prev => ({
+        ...prev,
+        form: {
+          ...prev.form,
+          productId: undefined,
+          productName: "",
+          unitPrice: 0,
+          total: 0
+        }
+      }));
+      return;
+    }
+    
+    const productId = parseInt(value, 10);
+    console.log("🔄 ID produit converti:", productId);
+    
+    const product = products.find(p => p.id === productId);
+    console.log("🔄 Produit trouvé:", product);
+    
     if (product) {
       setSelectedProduct(product);
-      setModal({ ...modal, form: { ...modal.form, productName: product.name, unitPrice: product.price, total: (modal.form.quantity || 1) * product.price } });
+      const quantity = modal.form.quantity || 1;
+      const unitPrice = product.price || 0;
+      
+      setModal(prev => ({
+        ...prev,
+        form: {
+          ...prev.form,
+          productId: product.id,
+          productName: product.name,
+          unitPrice: unitPrice,
+          total: quantity * unitPrice
+        }
+      }));
+    } else {
+      setSelectedProduct(null);
+      setModal(prev => ({
+        ...prev,
+        form: {
+          ...prev.form,
+          productId: undefined,
+          productName: "",
+          unitPrice: 0,
+          total: 0
+        }
+      }));
     }
   };
 
-  const handleClientSelect = (clientId: string) => {
-    const client = clients.find(c => c.id === parseInt(clientId));
+  // ✅ HANDLE CLIENT SELECT - VERSION CORRIGÉE
+  const handleClientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    console.log("🔄 Client sélectionné - valeur brute:", value);
+    
+    if (!value || value === "") {
+      setSelectedClient(null);
+      setModal(prev => ({
+        ...prev,
+        form: {
+          ...prev.form,
+          clientId: undefined,
+          clientName: ""
+        }
+      }));
+      return;
+    }
+    
+    const clientId = parseInt(value, 10);
+    const client = clients.find(c => c.id === clientId);
+    console.log("🔄 Client trouvé:", client);
+    
     if (client) {
       setSelectedClient(client);
-      setModal({ ...modal, form: { ...modal.form, clientName: client.name, clientId: client.id } });
+      setModal(prev => ({
+        ...prev,
+        form: {
+          ...prev.form,
+          clientId: client.id,
+          clientName: client.name
+        }
+      }));
+    } else {
+      setSelectedClient(null);
+      setModal(prev => ({
+        ...prev,
+        form: {
+          ...prev.form,
+          clientId: undefined,
+          clientName: ""
+        }
+      }));
     }
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const quantity = parseInt(e.target.value) || 1;
+    const price = modal.form.unitPrice || 0;
+    
+    if (selectedProduct && quantity > selectedProduct.quantity) {
+      showMessage(`Stock disponible: ${selectedProduct.quantity}`, "error");
+    }
+    
+    setModal(prev => ({
+      ...prev,
+      form: {
+        ...prev.form,
+        quantity: quantity,
+        total: quantity * price
+      }
+    }));
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const price = parseFloat(e.target.value) || 0;
+    const quantity = modal.form.quantity || 1;
+    
+    setModal(prev => ({
+      ...prev,
+      form: {
+        ...prev.form,
+        unitPrice: price,
+        total: quantity * price
+      }
+    }));
   };
 
   const openEditStatusModal = (sale: Sale) => {
@@ -444,38 +625,19 @@ export default function SalesPage() {
       label: t("sales.totalSales"),
       value: stats.total,
       color: theme.primary,
-      bg: `${theme.primary}15`,
-      border: `${theme.primary}30`,
     },
     {
       icon: <IconCurrencyDollar size={isMobile ? 22 : 28} color={theme.accent} />,
       label: t("dashboard.revenue"),
       value: formatCurrency(stats.amount),
       color: theme.accent,
-      bg: `${theme.accent}15`,
-      border: `${theme.accent}30`,
     },
     {
       icon: <IconTrendingUp size={isMobile ? 22 : 28} color="#f59e0b" />,
       label: t("sales.averageSale"),
       value: formatCurrency(Math.round(stats.average)),
       color: "#f59e0b",
-      bg: "#f59e0b15",
-      border: "#f59e0b30",
     }
-  ];
-
-  const periodOptions = [
-    { value: "all", label: t("sales.allPeriods") },
-    { value: "week", label: t("sales.thisWeek") },
-    { value: "month", label: t("sales.thisMonth") }
-  ];
-
-  const statusOptions = [
-    { value: "all", label: t("sales.allStatus") },
-    { value: "paid", label: t("sales.paid") },
-    { value: "pending", label: t("sales.pending") },
-    { value: "cancelled", label: t("sales.cancelled") }
   ];
 
   if (loading) {
@@ -535,7 +697,19 @@ export default function SalesPage() {
               </div>
 
               <button
-                onClick={() => setModal({ open: true, form: { clientName: "", productName: "", quantity: 1, unitPrice: 0, total: 0, status: "pending" } })}
+                onClick={() => setModal({ 
+                  open: true, 
+                  form: { 
+                    clientName: "", 
+                    productName: "", 
+                    quantity: 1, 
+                    unitPrice: 0, 
+                    total: 0, 
+                    status: "pending",
+                    productId: undefined,
+                    clientId: undefined
+                  } 
+                })}
                 style={{
                   background: theme.gradient,
                   color: "white",
@@ -555,10 +729,6 @@ export default function SalesPage() {
                   WebkitTapHighlightColor: "transparent",
                   transition: "opacity 0.2s, transform 0.2s",
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.88"}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-                onTouchStart={(e) => e.currentTarget.style.transform = "scale(0.97)"}
-                onTouchEnd={(e) => e.currentTarget.style.transform = "scale(1)"}
               >
                 <IconPlus size={15} color="white" />
                 {t("sales.addSale")}
@@ -578,12 +748,7 @@ export default function SalesPage() {
               textAlign: "center",
               animation: "fadeInUp 0.3s ease",
               fontSize: isMobile ? "12px" : "14px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
             }}>
-              {messageType === "success" ? <IconCheckCircle size={16} color="#10b981" /> : <IconXCircle size={16} color="#f87171" />}
               {message}
             </div>
           )}
@@ -602,44 +767,23 @@ export default function SalesPage() {
                   background: theme.surface,
                   borderRadius: cardRadius,
                   padding: isMobile ? "14px 10px" : "20px",
-                  border: `1px solid ${card.border}`,
+                  border: `1px solid ${theme.border}`,
                   animation: `cardPop 0.45s ease ${0.05 + idx * 0.08}s both`,
                   display: "flex",
-                  flexDirection: "column",
-                  alignItems: isMobile ? "center" : "flex-start",
-                  gap: isMobile ? "6px" : "10px",
+                  flexDirection: isMobile ? "column" : "row",
+                  alignItems: "center",
+                  gap: isMobile ? "6px" : "12px",
                   position: "relative",
                   overflow: "hidden",
                   cursor: "default",
                   transition: "transform 0.25s, box-shadow 0.25s",
                 }}
-                onMouseEnter={(e) => {
-                  if (!isMobile) {
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow = `0 8px 24px ${card.color}20`;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
               >
-                <div style={{
-                  position: "absolute",
-                  top: isMobile ? "-14px" : "-20px",
-                  right: isMobile ? "-14px" : "-20px",
-                  width: isMobile ? "52px" : "80px",
-                  height: isMobile ? "52px" : "80px",
-                  borderRadius: "50%",
-                  background: card.bg,
-                  pointerEvents: "none",
-                }} />
-
                 <div style={{
                   width: isMobile ? "36px" : "44px",
                   height: isMobile ? "36px" : "44px",
                   borderRadius: isMobile ? "10px" : "12px",
-                  background: card.bg,
+                  background: `${card.color}15`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -654,16 +798,14 @@ export default function SalesPage() {
                     color: card.color,
                     fontWeight: "700",
                     lineHeight: 1.1,
-                    letterSpacing: "-0.02em",
                   }}>
                     {card.value}
                   </div>
                   <div style={{
                     fontSize: isMobile ? "9px" : "12px",
                     color: theme.textSecondary,
-                    marginTop: "3px",
+                    marginTop: "2px",
                     fontWeight: "500",
-                    lineHeight: 1.2,
                   }}>
                     {card.label}
                   </div>
@@ -683,20 +825,23 @@ export default function SalesPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{ width: "100%", padding: "10px 12px 10px 36px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px", boxSizing: "border-box", transition: "border-color 0.2s" }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
-                  onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
                 />
               </div>
               <div style={{ position: "relative", minWidth: isMobile ? "100%" : "160px" }}>
                 <IconCalendar size={14} color={theme.textSecondary} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                 <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)} style={{ width: "100%", padding: "10px 12px 10px 32px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", appearance: "none" }}>
-                  {periodOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  <option value="all">{t("sales.allPeriods")}</option>
+                  <option value="week">{t("sales.thisWeek")}</option>
+                  <option value="month">{t("sales.thisMonth")}</option>
                 </select>
               </div>
               <div style={{ position: "relative", minWidth: isMobile ? "100%" : "150px" }}>
                 <IconFilter size={13} color={theme.textSecondary} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                 <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ width: "100%", padding: "10px 12px 10px 30px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px", appearance: "none" }}>
-                  {statusOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  <option value="all">{t("sales.allStatus")}</option>
+                  <option value="paid">{t("sales.paid")}</option>
+                  <option value="pending">{t("sales.pending")}</option>
+                  <option value="cancelled">{t("sales.cancelled")}</option>
                 </select>
               </div>
             </div>
@@ -717,11 +862,7 @@ export default function SalesPage() {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "6px",
-                    WebkitTapHighlightColor: "transparent",
-                    transition: "opacity 0.2s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                 >
                   <IconTrash size={13} color="white" />
                   {t("common.delete")} ({selectedIds.length})
@@ -753,14 +894,12 @@ export default function SalesPage() {
                     <tr
                       key={sale.id}
                       style={{ borderBottom: `1px solid ${theme.surfaceHover}`, transition: "background 0.2s", animation: `slideIn 0.3s ease ${idx * 0.03}s` }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                     >
                       <td style={{ padding: "10px", textAlign: "center" }}>
                         <input type="checkbox" checked={selectedIds.includes(sale.id)} onChange={() => { if (selectedIds.includes(sale.id)) setSelectedIds(selectedIds.filter(id => id !== sale.id)); else setSelectedIds([...selectedIds, sale.id]); }} style={{ width: "16px", height: "16px", cursor: "pointer" }} />
                       </td>
-                      <td style={{ padding: "10px", color: theme.text, fontSize: tableFontSize }}>{sale.clientName?.length > (isMobile ? 15 : 20) ? sale.clientName.substring(0, isMobile ? 12 : 17) + "..." : sale.clientName || "-"}</td>
-                      <td style={{ padding: "10px", color: theme.textSecondary, fontSize: tableFontSize }}>{sale.productName?.length > (isMobile ? 15 : 20) ? sale.productName.substring(0, isMobile ? 12 : 17) + "..." : sale.productName || "-"}</td>
+                      <td style={{ padding: "10px", color: theme.text, fontSize: tableFontSize }}>{sale.clientName || "-"}</td>
+                      <td style={{ padding: "10px", color: theme.textSecondary, fontSize: tableFontSize }}>{sale.productName || "-"}</td>
                       <td style={{ padding: "10px", textAlign: "right", color: theme.textSecondary, fontSize: tableFontSize }}>{sale.quantity || 1}</td>
                       <td style={{ padding: "10px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize }}>{formatCurrency(parseFloat(String(sale.total)))}</td>
                       <td style={{ padding: "10px", textAlign: "center" }}>
@@ -778,10 +917,7 @@ export default function SalesPage() {
                             cursor: "pointer",
                             border: "none",
                             transition: "all 0.2s",
-                            WebkitTapHighlightColor: "transparent",
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.05)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                         >
                           <StatusIcon status={sale.status} size={isMobile ? 10 : 12} />
                           {!isMobile && getStatusText(sale.status)}
@@ -806,11 +942,8 @@ export default function SalesPage() {
                               alignItems: "center",
                               justifyContent: "center",
                               transition: "all 0.2s",
-                              WebkitTapHighlightColor: "transparent",
                               flexShrink: 0,
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = "#3b82f6"; e.currentTarget.style.color = "white"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = "#3b82f620"; e.currentTarget.style.color = "#3b82f6"; }}
                           >
                             <IconEdit size={isMobile ? 13 : 12} color="currentColor" />
                           </button>
@@ -829,11 +962,8 @@ export default function SalesPage() {
                               alignItems: "center",
                               justifyContent: "center",
                               transition: "all 0.2s",
-                              WebkitTapHighlightColor: "transparent",
                               flexShrink: 0,
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "white"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = "#ef444420"; e.currentTarget.style.color = "#ef4444"; }}
                           >
                             <IconTrash size={isMobile ? 13 : 12} color="currentColor" />
                           </button>
@@ -854,7 +984,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* ── Modal — New Sale with Client Select ── */}
+      {/* ── Modal — New Sale ── */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "90vh", overflowY: "auto" }}>
@@ -863,30 +993,21 @@ export default function SalesPage() {
               {t("sales.addSale")}
             </h2>
 
-            {/* Client Selection - DYNAMIQUE AVEC LISTE DES CLIENTS */}
+            {/* Client Selection */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.client")} *</label>
-              <div style={{ display: "flex", gap: "8px", flexDirection: isMobile ? "column" : "row" }}>
-                <select 
-                  onChange={(e) => handleClientSelect(e.target.value)} 
-                  style={{ flex: 2, padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }} 
-                  defaultValue=""
-                >
-                  <option value="" disabled>{t("sales.selectClient") || "Sélectionner un client"}</option>
-                  {clients.map((c) => (
-                    <option key={String(c.id)} value={String(c.id)}>
-                      {c.name} {c.email ? `(${c.email})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <input 
-                  type="text" 
-                  placeholder={t("sales.clientName")} 
-                  value={modal.form.clientName || ""} 
-                  onChange={(e) => setModal({ ...modal, form: { ...modal.form, clientName: e.target.value } })}
-                  style={{ flex: 1, padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px" }} 
-                />
-              </div>
+              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.client")}</label>
+              <select 
+                onChange={handleClientSelect}
+                value={modal.form.clientId ? String(modal.form.clientId) : ""}
+                style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
+              >
+                <option value="">{t("sales.selectClient") || "Sélectionner un client"}</option>
+                {clients.map((c) => (
+                  <option key={String(c.id)} value={String(c.id)}>
+                    {c.name} {c.email ? `(${c.email})` : ""}
+                  </option>
+                ))}
+              </select>
               {selectedClient && (
                 <div style={{ marginTop: "6px", fontSize: isMobile ? "10px" : "11px", color: theme.accent, display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconCheckCircle size={12} color={theme.accent} />
@@ -895,20 +1016,52 @@ export default function SalesPage() {
               )}
             </div>
 
-            {/* Product Selection */}
+            {/* Product Selection - CORRIGÉE */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.product")} *</label>
-              <div style={{ display: "flex", gap: "8px", flexDirection: isMobile ? "column" : "row" }}>
-                <select onChange={(e) => handleProductSelect(e.target.value)} style={{ flex: 2, padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }} defaultValue="">
-                  <option value="" disabled>{t("sales.selectProduct")}</option>
-                  {products.map((p) => <option key={String(p.id)} value={String(p.id)}>{p.name} - {formatCurrency(p.price)}</option>)}
-                </select>
-                <input type="text" placeholder={t("sales.productName")} value={modal.form.productName || ""} onChange={(e) => setModal({ ...modal, form: { ...modal.form, productName: e.target.value } })} style={{ flex: 1, padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px" }} />
-              </div>
+              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+                {t("common.product")} *
+              </label>
+              <select 
+                onChange={handleProductSelect}
+                value={modal.form.productId ? String(modal.form.productId) : ""}
+                style={{ 
+                  width: "100%", 
+                  padding: "10px 12px", 
+                  background: theme.surfaceHover, 
+                  border: `1px solid ${theme.border}`, 
+                  borderRadius: "10px", 
+                  color: theme.text, 
+                  cursor: "pointer", 
+                  fontSize: isMobile ? "13px" : "14px" 
+                }}
+              >
+                <option value="">{t("sales.selectProduct")}</option>
+                {products.map((p) => (
+                  <option key={String(p.id)} value={String(p.id)}>
+                    {p.name} - {formatCurrency(p.price)} (Stock: {p.quantity})
+                  </option>
+                ))}
+              </select>
               {selectedProduct && (
-                <div style={{ marginTop: "6px", fontSize: isMobile ? "10px" : "11px", color: theme.accent, display: "flex", alignItems: "center", gap: "4px" }}>
-                  <IconCheckCircle size={12} color={theme.accent} />
+                <div style={{ 
+                  marginTop: "6px", 
+                  fontSize: isMobile ? "10px" : "11px", 
+                  color: selectedProduct.quantity >= (modal.form.quantity || 0) ? theme.accent : "#ef4444", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "4px" 
+                }}>
+                  {selectedProduct.quantity >= (modal.form.quantity || 0) ? (
+                    <IconCheckCircle size={12} color={theme.accent} />
+                  ) : (
+                    <IconXCircle size={12} color="#ef4444" />
+                  )}
                   {t("sales.productSelected")}: {selectedProduct.name} (Stock: {selectedProduct.quantity})
+                  {selectedProduct.quantity < (modal.form.quantity || 0) && (
+                    <span style={{ color: "#ef4444", fontWeight: "bold" }}>
+                      {" "}- Stock insuffisant!
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -916,17 +1069,30 @@ export default function SalesPage() {
             <div style={{ display: "flex", gap: "12px", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
               <div style={{ flex: 1 }}>
                 <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.quantity")} *</label>
-                <input type="number" value={modal.form.quantity || 1} onChange={(e) => setModal({ ...modal, form: { ...modal.form, quantity: parseInt(e.target.value) || 1, total: (modal.form.unitPrice || 0) * (parseInt(e.target.value) || 1) } })} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px", boxSizing: "border-box" }} />
+                <input 
+                  type="number" 
+                  min="1"
+                  value={modal.form.quantity || 1} 
+                  onChange={handleQuantityChange} 
+                  style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px", boxSizing: "border-box" }} 
+                />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.price")} *</label>
-                <input type="number" step="0.01" value={modal.form.unitPrice || 0} onChange={(e) => setModal({ ...modal, form: { ...modal.form, unitPrice: parseFloat(e.target.value) || 0, total: (parseFloat(e.target.value) || 0) * (modal.form.quantity || 1) } })} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px", boxSizing: "border-box" }} />
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0.01"
+                  value={modal.form.unitPrice || 0} 
+                  onChange={handlePriceChange} 
+                  style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px", boxSizing: "border-box" }} 
+                />
               </div>
             </div>
 
             <div style={{ marginBottom: "16px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.status")}</label>
-              <select value={modal.form.status || "pending"} onChange={(e) => setModal({ ...modal, form: { ...modal.form, status: e.target.value } })} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}>
+              <select value={modal.form.status || "pending"} onChange={(e) => setModal(prev => ({ ...prev, form: { ...prev.form, status: e.target.value } }))} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}>
                 <option value="pending">{t("sales.pending")}</option>
                 <option value="paid">{t("sales.paid")}</option>
                 <option value="cancelled">{t("sales.cancelled")}</option>
@@ -956,13 +1122,26 @@ export default function SalesPage() {
                   justifyContent: "center",
                   gap: "6px",
                   minHeight: "44px",
-                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 <IconSave size={14} color="white" /> {t("common.save")}
               </button>
               <button
-                onClick={() => { setModal({ open: false, form: {} }); setSelectedProduct(null); setSelectedClient(null); }}
+                onClick={() => { 
+                  setModal({ 
+                    open: false, 
+                    form: { 
+                      status: "pending", 
+                      quantity: 1,
+                      productId: undefined,
+                      clientId: undefined,
+                      unitPrice: 0,
+                      total: 0
+                    } 
+                  }); 
+                  setSelectedProduct(null); 
+                  setSelectedClient(null); 
+                }}
                 style={{
                   flex: 1,
                   padding: "12px",
@@ -974,7 +1153,6 @@ export default function SalesPage() {
                   fontSize: isMobile ? "13px" : "14px",
                   fontWeight: "500",
                   minHeight: "44px",
-                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 {t("common.cancel")}
@@ -994,16 +1172,18 @@ export default function SalesPage() {
             </h2>
 
             <div style={{ background: theme.surfaceHover, padding: "14px", borderRadius: "12px", marginBottom: "16px" }}>
-              {[
-                { label: t("common.client"), value: editModal.sale.clientName || "-", color: theme.text },
-                { label: t("common.product"), value: editModal.sale.productName || "-", color: theme.text },
-                { label: t("common.amount"), value: formatCurrency(parseFloat(String(editModal.sale.total))), color: theme.accent },
-              ].map((row, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: i < 2 ? "8px" : 0, gap: "8px" }}>
-                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "13px" }}>{row.label}</span>
-                  <span style={{ color: row.color, fontWeight: row.color === theme.accent ? "bold" : "normal", fontSize: isMobile ? "11px" : "13px", textAlign: "right" }}>{row.value}</span>
-                </div>
-              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                <span style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "13px" }}>{t("common.client")}</span>
+                <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "13px" }}>{editModal.sale.clientName || "-"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                <span style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "13px" }}>{t("common.product")}</span>
+                <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "13px" }}>{editModal.sale.productName || "-"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "13px" }}>{t("common.amount")}</span>
+                <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "11px" : "13px" }}>{formatCurrency(parseFloat(String(editModal.sale.total)))}</span>
+              </div>
             </div>
 
             <div style={{ marginBottom: "20px" }}>
@@ -1039,7 +1219,6 @@ export default function SalesPage() {
                   justifyContent: "center",
                   gap: "6px",
                   minHeight: "44px",
-                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 {updatingStatus === editModal.sale.id
@@ -1059,7 +1238,6 @@ export default function SalesPage() {
                   fontSize: isMobile ? "13px" : "14px",
                   fontWeight: "500",
                   minHeight: "44px",
-                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 {t("common.cancel")}

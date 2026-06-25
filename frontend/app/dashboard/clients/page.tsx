@@ -252,7 +252,7 @@ export default function ClientsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/clients", {
+      const res = await fetch("https://api-inovexa.ngrok.app/clients", {
         headers: { Authorization: `Bearer ${token}` },
       });
       let data = await res.json();
@@ -274,7 +274,7 @@ export default function ClientsPage() {
   const createClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/clients", {
+      const res = await fetch("https://api-inovexa.ngrok.app/clients", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -294,7 +294,7 @@ export default function ClientsPage() {
   const updateClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/clients/${modal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/clients/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -314,7 +314,7 @@ export default function ClientsPage() {
   const deleteClient = async (id: string) => {
     if (confirm(t("clients.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/clients/${id}`, {
+      await fetch(`https://api-inovexa.ngrok.app/clients/${id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
       fetchClients();
@@ -331,7 +331,7 @@ export default function ClientsPage() {
     )) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/clients/${id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/clients/${id}`, {
           method: "DELETE", headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -346,7 +346,7 @@ export default function ClientsPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`http://localhost:3001/clients/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/clients/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
@@ -357,7 +357,7 @@ export default function ClientsPage() {
       } else {
         const client = clients.find((c) => c.id === id);
         if (client) {
-          const putRes = await fetch(`http://localhost:3001/clients/${id}`, {
+          const putRes = await fetch(`https://api-inovexa.ngrok.app/clients/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...client, status: newStatus }),
@@ -376,7 +376,7 @@ export default function ClientsPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/clients/import", {
+      const res = await fetch("https://api-inovexa.ngrok.app/clients/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ clients: data }),

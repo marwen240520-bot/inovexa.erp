@@ -179,7 +179,7 @@ export default function TransporteurSettingsPage() {
     }
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/users/change-password", {
+      const res = await fetch("https://api-inovexa.ngrok.app/users/change-password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 

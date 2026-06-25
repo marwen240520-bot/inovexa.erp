@@ -1,4 +1,5 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Product } from '../../products/product.entity';
 
 @Entity('purchases')
 export class Purchase {
@@ -8,14 +9,14 @@ export class Purchase {
   @Column()
   userId: number;
 
-  @Column()
+  @Column({ nullable: false })
   productId: number;
 
   @Column({ nullable: true })
-  supplierName: string;
+  productName: string;
 
   @Column({ nullable: true })
-  productName: string;
+  supplierName: string;
 
   @Column({ default: 1 })
   quantity: number;
@@ -32,6 +33,7 @@ export class Purchase {
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @ManyToOne(() => Product)
+  @JoinColumn({ name: 'productId' })
+  product: Product;
 }

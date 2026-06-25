@@ -1,0 +1,33 @@
+048ce6a | Tue Jun 23 19:44:16 2026 | Correction déploiement Vercel/Render
+722357d | Tue Jun 23 19:31:42 2026 | Configuration PostgreSQL + Déploiement Render/Vercel
+84ef41f | Sat Jun 20 13:27:12 2026 | Fix: CSP et API URL - configuration globale
+ce78b68 | Sat Jun 20 13:09:46 2026 | Fix: correction URL API pour production
+6ce8c24 | Sat Jun 20 12:56:36 2026 | Feat: API client complet et unifié
+81cf815 | Sat Jun 20 12:45:23 2026 | Fix: API_URL par défaut pour production
+ea0719d | Sat Jun 20 12:34:42 2026 | Fix: API centralisée et correction CSP
+8029d2e | Sat Jun 20 12:13:19 2026 | Fix: correction CSP et configuration API pour production
+b700d34 | Sat Jun 20 12:01:33 2026 | Fix: API URL, CSP et gestion des erreurs pour Render
+53c58b2 | Sat Jun 20 11:54:32 2026 | Fix: URL API pour Render
+f545515 | Sat Jun 20 11:48:31 2026 | Fix: correction URL API et configuration centralisée
+a721b7e | Sat Jun 20 11:37:52 2026 | Fix: correction URL API pour Render
+e5d75b5 | Sat Jun 20 11:28:37 2026 | Fix: remplacer localhost par Render pour toutes les API
+3238e53 | Sat Jun 20 11:15:07 2026 | Fix: configuration production (API URL, Sidebar, env)
+545d4fc | Sat Jun 20 11:05:19 2026 | Fix: remplacer localhost:3001 par Render API URL
+6315496 | Sat Jun 20 10:54:37 2026 | fix: simplify tsconfig for Render compatibility
+0da7754 | Sat Jun 20 10:53:34 2026 | fix: replace baseUrl with paths for compatibility
+b8a936a | Sat Jun 20 10:48:57 2026 | Fix: ajout ignoreDeprecations dans tsconfig
+d88dde5 | Sat Jun 20 10:45:05 2026 | Fix: ajout ignoreDeprecations dans tsconfig
+764b8e9 | Sat Jun 20 10:40:31 2026 | Fix: API URL pour production
+4585d57 | Sat Jun 20 10:26:42 2026 | Fix: correction des erreurs TypeScript (imports et tsconfig)
+7804c31 | Sat Jun 20 10:26:27 2026 | Fix: configuration DB avec variables d'environnement pour Render
+f1626bc | Sat Jun 20 10:15:04 2026 | Fix: résolution des conflits et correction build pour Render
+ae49911 | Sat Jun 20 09:15:52 2026 | save current work
+cded3f0 | Sat Jun 20 09:08:43 2026 | Fix login API URL
+5deacb2 | Fri Jun 19 23:22:04 2026 | Use environment variable for API URL in login
+cfa1511 | Fri Jun 19 22:38:03 2026 | Refactor app.module.ts to include module imports
+ff33fee | Fri Jun 19 22:37:36 2026 | Update app.module.ts
+9bea43e | Fri Jun 19 22:35:19 2026 | fix typeorm render config
+6d16e5f | Fri Jun 19 22:31:51 2026 | Update app.module.ts
+0557c51 | Fri Jun 19 22:22:43 2026 | Revise .env.example with backend and frontend settings
+e672251 | Fri Jun 19 20:53:29 2026 | remove invalid vercel config
+e3ad2e6 | Fri Jun 19 20:23:33 2026 | Production ready

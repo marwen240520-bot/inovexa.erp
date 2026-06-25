@@ -96,6 +96,10 @@ export default function HomePage(): React.ReactElement {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
+  const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false]);
+  const [heroVisible, setHeroVisible] = useState<boolean>(false);
+  const [subtitleVisible, setSubtitleVisible] = useState<boolean>(false);
+  const [badgeVisible, setBadgeVisible] = useState<boolean>(false);
 
   const isCompact: boolean = isMobile || isTablet;
 
@@ -128,6 +132,18 @@ export default function HomePage(): React.ReactElement {
     return (): void => { document.removeEventListener("click", handler); };
   }, [showLanguageMenu]);
 
+  // ─── Text animation triggers ────────────────────────────────────────────────
+  useEffect((): (() => void) | undefined => {
+    if (isLoading) return;
+    const t1 = setTimeout(() => setBadgeVisible(true), 100);
+    const t2 = setTimeout(() => setHeroVisible(true), 300);
+    const t3 = setTimeout(() => setSubtitleVisible(true), 600);
+    const cardTimers = [0, 1, 2, 3].map((i) =>
+      setTimeout(() => setVisibleCards((prev) => { const next = [...prev]; next[i] = true; return next; }), 800 + i * 120)
+    );
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); cardTimers.forEach(clearTimeout); };
+  }, [isLoading]);
+
   const handleLanguageChange = (lang: string): void => {
     changeLanguage(lang);
     setShowLanguageMenu(false);
@@ -136,7 +152,7 @@ export default function HomePage(): React.ReactElement {
   const getTranslations = (): any => {
     const translations: any = {
       fr: {
-        title: React.createElement(React.Fragment, null, "L'avenir de la ", React.createElement("span", { style: { color: "#A855F7" } }, "gestion d'entreprise"), " commence ici."),
+        title: React.createElement(React.Fragment, null, "L'avenir de la ", React.createElement("span", { className: "hero-word-glow" }, "gestion d'entreprise"), " commence ici."),
         subtitle: "INOVEXA",
         button: "Accéder au Dashboard",
         login: "Commencer maintenant",
@@ -151,7 +167,7 @@ export default function HomePage(): React.ReactElement {
         ]
       },
       es: {
-        title: React.createElement(React.Fragment, null, "El futuro de la ", React.createElement("span", { style: { color: "#A855F7" } }, "gestión empresarial"), " comienza aquí."),
+        title: React.createElement(React.Fragment, null, "El futuro de la ", React.createElement("span", { className: "hero-word-glow" }, "gestión empresarial"), " comienza aquí."),
         subtitle: "INOVEXA",
         button: "Panel de Control",
         login: "Empezar ahora",
@@ -166,7 +182,7 @@ export default function HomePage(): React.ReactElement {
         ]
       },
       en: {
-        title: React.createElement(React.Fragment, null, "The future of ", React.createElement("span", { style: { color: "#A855F7" } }, "business management"), " starts here."),
+        title: React.createElement(React.Fragment, null, "The future of ", React.createElement("span", { className: "hero-word-glow" }, "business management"), " starts here."),
         subtitle: "INOVEXA",
         button: "Go to Dashboard",
         login: "Get Started Now",
@@ -289,9 +305,9 @@ export default function HomePage(): React.ReactElement {
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
-      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px" } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px", opacity: badgeVisible ? 1 : 0, transform: badgeVisible ? "translateY(0)" : "translateY(-18px)", transition: "opacity 0.6s ease, transform 0.6s ease" } },
         React.createElement("img", {
-          src: "/logo.png",
+          src: "/images/logo.png",
           alt: "Inovexa Logo",
           style: { width: isMobile ? "90px" : "105px", height: "auto", filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))" }
         }),
@@ -302,16 +318,16 @@ export default function HomePage(): React.ReactElement {
           React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "12px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase" } }, "ERP")
         )
       ),
-      React.createElement("h1", { style: { fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px", color: "white", fontWeight: "900", lineHeight: "1.1", marginBottom: "28px", letterSpacing: "-1.5px", textShadow: "0 0 30px rgba(168, 85, 247, 0.15)" } }, text.title),
+      React.createElement("h1", { style: { fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px", color: "white", fontWeight: "900", lineHeight: "1.1", marginBottom: "28px", letterSpacing: "-1.5px", textShadow: "0 0 30px rgba(168, 85, 247, 0.15)", opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(28px)", transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)" } }, text.title),
       React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: "36px", maxWidth: "460px" } },
         text.features.map((f: { title: string }, i: number) => {
-          return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "16px", background: "rgba(168, 85, 247, 0.06)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)" } },
+          return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "16px", background: "rgba(168, 85, 247, 0.06)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
             React.createElement("div", { style: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
             React.createElement("span", { style: { color: "rgba(255,255,255,0.85)", fontSize: isMobile ? "9px" : "10px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title)
           );
         })
       ),
-      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", opacity: subtitleVisible ? 1 : 0, transform: subtitleVisible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.65s ease, transform 0.65s ease" } },
         React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
           React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
             React.createElement("span", { style: { position: "relative", zIndex: 2 } }, isLoggedIn ? text.button : text.login),
@@ -346,7 +362,7 @@ export default function HomePage(): React.ReactElement {
     },
       React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "80%", background: "radial-gradient(circle, rgba(138, 43, 226, 0.22) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 1, pointerEvents: "none" } }),
       React.createElement("img", {
-        src: "/1.png",
+        src: "/images/1.png",
         alt: "Inovexa Dashboard",
         style: {
           width: "100%", height: "100%", objectFit: "cover",
@@ -373,6 +389,9 @@ export default function HomePage(): React.ReactElement {
       @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
       .ambient-glow { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.09), transparent 42%); z-index: 0; pointer-events: none; }
       @keyframes floatParticle { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: 1; } 100% { transform: translateY(-85vh) translateX(25px); opacity: 0; } }
+      .hero-word-glow { display: inline-block; animation: wordGlow 3.5s ease-in-out infinite; background: linear-gradient(135deg, #C084FC 0%, #818CF8 50%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: wordGlow 3.5s ease-in-out infinite, gradientShift 4s ease infinite; }
+      @keyframes wordGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(168,85,247,0.4)); } 50% { filter: drop-shadow(0 0 22px rgba(168,85,247,0.85)) drop-shadow(0 0 40px rgba(99,102,241,0.4)); } }
+      @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
       @media (max-width: 640px) { .cta-button-shimmer { width: 100%; justify-content: center; } }
     ` } })
   );

@@ -744,13 +744,13 @@ export default function AnalyticsPage() {
     setLoading(true);
     try {
       const [salesRes, productsRes, clientsRes, ordersRes, invoicesRes, employeesRes, shipmentsRes] = await Promise.all([
-        fetch("http://localhost:3001/sales", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/products", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/clients", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/orders", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/invoices", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/employees", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/logistics/shipments", { headers: { Authorization: `Bearer ${token}` } })
+        fetch("https://api-inovexa.ngrok.app/sales", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/orders", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/invoices", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/employees", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/logistics/shipments", { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       let sales = await salesRes.json();

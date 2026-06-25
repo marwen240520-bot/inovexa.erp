@@ -355,7 +355,7 @@ export default function HRPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/employees", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/employees", { headers: { Authorization: `Bearer ${token}` } });
       let data: Employee[] = await res.json();
       data = Array.isArray(data) ? data : [];
       setEmployees(data);
@@ -374,7 +374,7 @@ export default function HRPage() {
   const fetchDepartments = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/departments", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/departments", { headers: { Authorization: `Bearer ${token}` } });
       const data: Department[] = await res.json();
       setDepartments(Array.isArray(data) ? data : []);
       setStats(prev => ({ ...prev, departments: Array.isArray(data) ? data.length : 0 }));
@@ -384,7 +384,7 @@ export default function HRPage() {
   const createEmployee = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/employees", {
+      const res = await fetch("https://api-inovexa.ngrok.app/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -400,7 +400,7 @@ export default function HRPage() {
   const updateEmployee = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/employees/${modal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/employees/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -417,7 +417,7 @@ export default function HRPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`http://localhost:3001/employees/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/employees/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status })
@@ -429,7 +429,7 @@ export default function HRPage() {
       } else {
         const employee = employees.find(e => e.id === id);
         if (employee) {
-          const putRes = await fetch(`http://localhost:3001/employees/${id}`, {
+          const putRes = await fetch(`https://api-inovexa.ngrok.app/employees/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...employee, status })
@@ -448,7 +448,7 @@ export default function HRPage() {
   const deleteEmployee = async (id: number) => {
     if (confirm(t("hr.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(`https://api-inovexa.ngrok.app/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       fetchEmployees();
       showMessage(t("hr.employeeDeleted"), "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
@@ -460,7 +460,7 @@ export default function HRPage() {
     if (confirm(t("hr.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`https://api-inovexa.ngrok.app/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       }
       fetchEmployees();
       setSelectedIds([]);
@@ -472,7 +472,7 @@ export default function HRPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/employees/import", {
+      const res = await fetch("https://api-inovexa.ngrok.app/employees/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ employees: data })

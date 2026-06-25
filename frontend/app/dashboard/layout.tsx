@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useState, useEffect } from "react";
@@ -42,7 +42,7 @@ export default function DashboardLayout({
         background: "#0a0a0a",
       }}
     >
-      {/* ── Sidebar desktop fixe ── */}
+      {/* â”€â”€ Sidebar desktop fixe â”€â”€ */}
       {!isMobile && (
         <div
           style={{
@@ -60,7 +60,7 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* ── Sidebar mobile overlay ── */}
+      {/* â”€â”€ Sidebar mobile overlay â”€â”€ */}
       {isMobile && sidebarOpen && (
         <>
           <div
@@ -88,7 +88,7 @@ export default function DashboardLayout({
         </>
       )}
 
-      {/* ── Contenu principal ── */}
+      {/* â”€â”€ Contenu principal â”€â”€ */}
       <div
         style={{
           flex: 1,

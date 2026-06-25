@@ -1104,14 +1104,14 @@ export default function FinancePage() {
         } catch { return def; }
       };
       const [sd, pd, id, prd, cd, supp, emp, proj] = await Promise.all([
-        fw("http://localhost:3001/sales"),
-        fw("http://localhost:3001/purchases"),
-        fw("http://localhost:3001/invoices"),
-        fw("http://localhost:3001/products"),
-        fw("http://localhost:3001/clients"),
-        fw("http://localhost:3001/suppliers"),
-        fw("http://localhost:3001/employees"),
-        fw("http://localhost:3001/projects")
+        fw("https://api-inovexa.ngrok.app/sales"),
+        fw("https://api-inovexa.ngrok.app/purchases"),
+        fw("https://api-inovexa.ngrok.app/invoices"),
+        fw("https://api-inovexa.ngrok.app/products"),
+        fw("https://api-inovexa.ngrok.app/clients"),
+        fw("https://api-inovexa.ngrok.app/suppliers"),
+        fw("https://api-inovexa.ngrok.app/employees"),
+        fw("https://api-inovexa.ngrok.app/projects")
       ]);
       setSales(sd); setPurchases(pd); setInvoices(id); setProducts(prd);
       setClients(cd); setSuppliers(supp); setEmployees(emp); setProjects(proj);

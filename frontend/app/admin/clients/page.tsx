@@ -98,7 +98,7 @@ export default function AdminClientsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/admin/clients", {
+      const res = await fetch("https://api-inovexa.ngrok.app/admin/clients", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data: Client[] = await res.json();
@@ -112,7 +112,7 @@ export default function AdminClientsPage() {
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/admin/stats", {
+      const res = await fetch("https://api-inovexa.ngrok.app/admin/stats", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -159,7 +159,7 @@ export default function AdminClientsPage() {
   const fetchRegistrationsHistory = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/admin/registrations-history", {
+      const res = await fetch("https://api-inovexa.ngrok.app/admin/registrations-history", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -177,7 +177,7 @@ export default function AdminClientsPage() {
   const createClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/admin/clients", {
+      const res = await fetch("https://api-inovexa.ngrok.app/admin/clients", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -198,7 +198,7 @@ export default function AdminClientsPage() {
   const updateClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/admin/clients/${modal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/admin/clients/${modal.editId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -223,7 +223,7 @@ export default function AdminClientsPage() {
   const updateModules = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/admin/clients/${modulesModal.clientId}/modules`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/admin/clients/${modulesModal.clientId}/modules`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ modules: modulesModal.modules })
@@ -241,7 +241,7 @@ export default function AdminClientsPage() {
   const extendSubscription = async (id: number, days: number) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/admin/clients/${id}/extend`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/admin/clients/${id}/extend`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ days })
@@ -255,7 +255,7 @@ export default function AdminClientsPage() {
 
   const toggleStatus = async (id: number) => {
     const token = localStorage.getItem("token");
-    await fetch(`http://localhost:3001/admin/clients/${id}/toggle`, {
+    await fetch(`https://api-inovexa.ngrok.app/admin/clients/${id}/toggle`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -267,7 +267,7 @@ export default function AdminClientsPage() {
   const deleteClient = async (id: number) => {
     if (confirm("Supprimer ce client ?")) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/admin/clients/${id}`, {
+      await fetch(`https://api-inovexa.ngrok.app/admin/clients/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -283,7 +283,7 @@ export default function AdminClientsPage() {
     if (confirm(`Supprimer ${selectedIds.length} client(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/admin/clients/${id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/admin/clients/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });

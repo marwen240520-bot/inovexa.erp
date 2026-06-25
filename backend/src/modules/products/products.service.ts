@@ -1,6 +1,7 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿// products.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Product } from './product.entity';
 
 @Injectable()
@@ -11,21 +12,8 @@ export class ProductsService {
   ) {}
 
   async findAll(userId: number) {
-    return this.productRepository.find({ 
-      where: { userId }, 
-      order: { createdAt: 'DESC' } 
-    });
-  }
-
-  async search(userId: number, searchTerm: string) {
-    if (!searchTerm) {
-      return this.findAll(userId);
-    }
     return this.productRepository.find({
-      where: [
-        { userId, name: Like(`%${searchTerm}%`) },
-        { userId, sku: Like(`%${searchTerm}%`) }
-      ],
+      where: { userId },
       order: { createdAt: 'DESC' }
     });
   }
@@ -36,14 +24,26 @@ export class ProductsService {
     return product;
   }
 
-  async create(userId: number, data: Partial<Product>) {
-    const product = this.productRepository.create({ ...data, userId });
+  async create(userId: number, data: any) {
+    // ✅ SUPPRIMER quantity du traitement
+    // Laisser la base de données utiliser la valeur par défaut (0)
+    const productData = {
+      name: data.name,
+      sku: data.sku || '',
+      price: parseFloat(data.price) || 0,
+      categoryId: data.categoryId || null,
+      userId: userId
+    };
+    
+    const product = this.productRepository.create(productData);
     return this.productRepository.save(product);
   }
 
-  async update(id: number, userId: number, data: Partial<Product>) {
+  async update(id: number, userId: number, data: any) {
     const product = await this.findOne(id, userId);
-    Object.assign(product, data);
+    // ✅ SUPPRIMER quantity des données de mise à jour
+    const { quantity, ...updateData } = data;
+    Object.assign(product, updateData);
     return this.productRepository.save(product);
   }
 
@@ -51,14 +51,5 @@ export class ProductsService {
     const product = await this.findOne(id, userId);
     await this.productRepository.delete(id);
     return { success: true };
-  }
-
-  async getStats(userId: number) {
-    const products = await this.findAll(userId);
-    const totalValue = products.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 0)), 0);
-    const lowStock = products.filter(p => (p.quantity || 0) < 10).length;
-    const outOfStock = products.filter(p => (p.quantity || 0) === 0).length;
-    
-    return { total: products.length, totalValue, lowStock, outOfStock };
   }
 }

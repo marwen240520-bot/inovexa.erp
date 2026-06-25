@@ -17,7 +17,7 @@ export default function LoginPage() {
     setError("");
 
     // 🔴 IMPORTANT: Appel direct au backend sur le port 3001
-    const API_URL = "http://localhost:3001/api";
+    const API_URL = "https://api-inovexa.ngrok.app/api";
 
     try {
       const response = await fetch(`${API_URL}/auth/login`, {

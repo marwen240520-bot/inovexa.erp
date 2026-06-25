@@ -221,7 +221,7 @@ export default function CategoriesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/categories", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/categories", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       const categoriesData = Array.isArray(data) ? data : [];
       setCategories(categoriesData.map(cat => ({ ...cat, productCount: getProductCountForCategory(cat.id) })));
@@ -232,7 +232,7 @@ export default function CategoriesPage() {
   const fetchAllProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error(e); }
@@ -241,7 +241,7 @@ export default function CategoriesPage() {
   const createCategory = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/categories", {
+      const res = await fetch("https://api-inovexa.ngrok.app/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -260,7 +260,7 @@ export default function CategoriesPage() {
   const updateCategory = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/categories/${modal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/categories/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -280,7 +280,7 @@ export default function CategoriesPage() {
     if (hasProducts) { showMessage(t("categories.cannotDelete"), "error"); return; }
     if (confirm(t("categories.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3001/categories/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`https://api-inovexa.ngrok.app/categories/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { await fetchCategories(); showMessage(t("categories.categoryDeleted"), "success"); }
       else {
         const error = await res.json();

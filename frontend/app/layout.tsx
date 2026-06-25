@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Inovexa-ERP ",
   description: "Gestion complète pour votre entreprise",
   icons: {
-    icon: "public/logo.png",
+    icon: "/images/logo.png",
   },
 };
 

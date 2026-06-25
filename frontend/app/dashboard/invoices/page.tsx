@@ -555,7 +555,7 @@ export default function InvoicesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/invoices", {
+      const res = await fetch("https://api-inovexa.ngrok.app/invoices", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data = await res.json();
@@ -615,7 +615,7 @@ export default function InvoicesPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -624,7 +624,7 @@ export default function InvoicesPage() {
   const fetchSuppliers = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/suppliers", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/suppliers", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setSuppliers(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -698,7 +698,7 @@ export default function InvoicesPage() {
     setLoading(true);
     try {
       for (const invoice of data) {
-        await fetch("http://localhost:3001/invoices", {
+        await fetch("https://api-inovexa.ngrok.app/invoices", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(invoice)
@@ -733,7 +733,7 @@ export default function InvoicesPage() {
       const taxAmount = calculateTaxAmount(subtotalHT, taxRate);
       const totalTTC = calculateTotalTTC(subtotalHT, taxRate);
       const operationNumber = generateOperationNumber();
-      const res = await fetch("http://localhost:3001/invoices", {
+      const res = await fetch("https://api-inovexa.ngrok.app/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -795,7 +795,7 @@ export default function InvoicesPage() {
       const totalTTC = calculateTotalTTC(subtotalHT, taxRate);
       const invoiceToUpdate = invoices.find(inv => inv.operationNumber === editOperationNumber);
       if (!invoiceToUpdate) { showMessage("Facture non trouvée", "error"); return; }
-      const res = await fetch(`http://localhost:3001/invoices/${invoiceToUpdate.id}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/invoices/${invoiceToUpdate.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -840,7 +840,7 @@ export default function InvoicesPage() {
   const markAsPaid = async (operationNumber: string) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/invoices/number/${operationNumber}/pay`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/invoices/number/${operationNumber}/pay`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -850,7 +850,7 @@ export default function InvoicesPage() {
       } else {
         const invoice = invoices.find(inv => inv.operationNumber === operationNumber);
         if (invoice) {
-          const fallbackRes = await fetch(`http://localhost:3001/invoices/${invoice.id}/pay`, {
+          const fallbackRes = await fetch(`https://api-inovexa.ngrok.app/invoices/${invoice.id}/pay`, {
             method: "PATCH",
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -865,7 +865,7 @@ export default function InvoicesPage() {
       const token = localStorage.getItem("token");
       const invoice = invoices.find(inv => inv.operationNumber === operationNumber);
       if (invoice) {
-        await fetch(`http://localhost:3001/invoices/${invoice.id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/invoices/${invoice.id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -883,7 +883,7 @@ export default function InvoicesPage() {
       for (const operationNumber of selectedOperationNumbers) {
         const invoice = invoices.find(inv => inv.operationNumber === operationNumber);
         if (invoice) {
-          await fetch(`http://localhost:3001/invoices/${invoice.id}`, {
+          await fetch(`https://api-inovexa.ngrok.app/invoices/${invoice.id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` }
           });

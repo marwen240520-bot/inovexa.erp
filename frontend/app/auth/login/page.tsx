@@ -76,12 +76,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:3001/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
+      const baseURL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
 
+const res = await fetch(`${baseURL}/auth/login`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password })
+});
       const data = await res.json();
 
       if (res.ok) {
@@ -186,7 +187,7 @@ export default function LoginPage() {
               marginBottom: "36px",
             }}>
               <img 
-                src="/logo.png" 
+                src="/images/logo.png" 
                 alt="Inovexa Logo" 
                 style={{ 
                   width: "52px",
@@ -300,7 +301,7 @@ export default function LoginPage() {
                       border: "1px solid rgba(138, 43, 226, 0.2)", 
                       borderRadius: "12px", 
                       color: "white",
-                      fontSize: "16px", /* Prevents iOS zoom */
+                      fontSize: "16px",
                       transition: "all 0.25s ease",
                       WebkitAppearance: "none",
                       outline: "none",
@@ -346,7 +347,7 @@ export default function LoginPage() {
                       border: "1px solid rgba(138, 43, 226, 0.2)", 
                       borderRadius: "12px", 
                       color: "white",
-                      fontSize: "16px", /* Prevents iOS zoom */
+                      fontSize: "16px",
                       transition: "all 0.25s ease",
                       WebkitAppearance: "none",
                       outline: "none",
@@ -440,7 +441,7 @@ export default function LoginPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
               <div style={{ marginTop: "2px" }}> 
                 <img 
-                  src="/logo.png" 
+                  src="/images/logo.png" 
                   alt="Inovexa Logo" 
                   style={{ 
                     width: "126px",
@@ -632,7 +633,7 @@ export default function LoginPage() {
             }} />
 
             <img 
-              src="/1.png" 
+              src="/images/1.png" 
               alt="Inovexa Futuristic" 
               style={{ 
                 width: "100%", height: "100%", objectFit: "cover",

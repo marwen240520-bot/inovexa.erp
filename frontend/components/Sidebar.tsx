@@ -259,7 +259,7 @@ export default function Sidebar() {
 
   const fetchUserModules = async (userId: string, token: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/users/${userId}/modules`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/users/${userId}/modules`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setUserModules(await res.json());
@@ -316,8 +316,7 @@ export default function Sidebar() {
     { id: "invoices",   path: "/dashboard/invoices",   label: "common.invoices",   iconKey: "invoices" },
     { id: "hr",         path: "/dashboard/hr",         label: "common.hr",         iconKey: "hr" },
     { id: "finance",    path: "/dashboard/finance",    label: "common.finance",    iconKey: "finance" },
-    { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" },
-    { id: "production", path: "/dashboard/production", label: "common.production", iconKey: "production" },
+    { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" }, 
     { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },
     { id: "reports",    path: "/dashboard/reports",    label: "common.reports",    iconKey: "reports" },
     { id: "analytics",  path: "/dashboard/analytics",  label: "common.analytics",  iconKey: "analytics" },
@@ -844,7 +843,7 @@ export default function Sidebar() {
             >
               <div style={{ position: "relative", flexShrink: 0 }}>
                 <img
-                  src="/logo.png"
+                  src="public/logo.png"
                   alt="Logo"
                   style={styles.logoImage}
                   onError={(e) => { e.currentTarget.style.display = "none"; }}

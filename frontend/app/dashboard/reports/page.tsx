@@ -87,15 +87,6 @@ const IconBriefcase = ({ size = 24, color = "currentColor" }) => (
   </svg>
 );
 
-const IconTruck = ({ size = 24, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="3" width="15" height="13"/>
-    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-    <circle cx="5.5" cy="18.5" r="2.5"/>
-    <circle cx="18.5" cy="18.5" r="2.5"/>
-  </svg>
-);
-
 const IconSettings = ({ size = 20, color = "currentColor" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3"/>
@@ -179,6 +170,12 @@ const IconCSV = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
+const IconChevronDown = ({ size = 16, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
+
 // Report type → icon map
 const REPORT_ICONS = {
   sales: IconDollarSign,
@@ -188,7 +185,6 @@ const REPORT_ICONS = {
   financial: IconTrendingUp,
   products: IconTag,
   employees: IconBriefcase,
-  logistics: IconTruck,
 };
 
 const animations = `
@@ -197,10 +193,12 @@ const animations = `
   @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
   @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
   @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
-  @media (max-width: 768px) {
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  }
+  @keyframes shimmer { 0%{opacity:.6} 50%{opacity:1} 100%{opacity:.6} }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .report-type-btn:active { transform: scale(0.96) !important; }
+  .tab-btn:active { opacity: 0.8; }
+  .generate-btn:active { transform: scale(0.98) !important; }
 `;
 
 // ── Main Component ─────────────────────────────────────────────────────────────
@@ -212,10 +210,8 @@ export default function ReportsPage() {
   const { theme } = useTheme();
   const { isMobile } = useResponsive();
 
-  // Margin left pour desktop (sidebar fixe)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
-  const [animateCards, setAnimateCards] = useState(true);
   const [reportType, setReportType] = useState("sales");
   const [reportFormat, setReportFormat] = useState("json");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
@@ -224,123 +220,101 @@ export default function ReportsPage() {
   const [messageType, setMessageType] = useState("success");
   const [activeTab, setActiveTab] = useState("generate");
   const [savedReports, setSavedReports] = useState<any[]>([]);
-  const [reportData, setReportData] = useState<any>(null);
   const [hoveredReport, setHoveredReport] = useState<number | null>(null);
   const [hoveredType, setHoveredType] = useState<string | null>(null);
+  // Mobile: show/hide date section
+  const [showDates, setShowDates] = useState(false);
 
-  // Responsive styles
   const responsive = {
-    contentPadding: isMobile ? "16px" : "32px",
-    cardPadding: isMobile ? "20px" : "24px",
+    contentPadding: isMobile ? "12px" : "32px",
+    cardPadding: isMobile ? "16px" : "24px",
     cardRadius: "16px",
-    titleSize: isMobile ? "24px" : "28px",
-    gapMedium: isMobile ? "16px" : "24px",
-    gapLarge: isMobile ? "20px" : "32px"
+    titleSize: isMobile ? "20px" : "28px",
+    gapMedium: isMobile ? "12px" : "24px",
+    gapLarge: isMobile ? "16px" : "32px",
   };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/auth/login");
-      return;
-    }
+    if (!token) { router.push("/auth/login"); return; }
     fetchSavedReports();
   }, [router]);
 
   const fetchSavedReports = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/reports/saved", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/saved`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
         setSavedReports(Array.isArray(data) ? data : []);
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const fetchRealData = async () => {
     const token = localStorage.getItem("token");
+    const API = process.env.NEXT_PUBLIC_API_URL;
     try {
-      let url = "";
-      let response: Response | null = null;
-
       switch (reportType) {
-        case "sales":
-          url = "http://localhost:3001/sales";
-          response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          let sales = await response.json();
+        case "sales": {
+          const res = await fetch(`${API}/sales`, { headers: { Authorization: `Bearer ${token}` } });
+          let sales = await res.json();
           sales = Array.isArray(sales) ? sales : [];
-          let filteredSales = [...sales];
-          if (dateRange.start) filteredSales = filteredSales.filter(s => new Date(s.createdAt) >= new Date(dateRange.start));
-          if (dateRange.end) { const e = new Date(dateRange.end); e.setHours(23,59,59); filteredSales = filteredSales.filter(s => new Date(s.createdAt) <= e); }
-          const totalSales = filteredSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-          return { type:"sales", generatedAt:new Date().toISOString(), total:totalSales, count:filteredSales.length, average: filteredSales.length>0?totalSales/filteredSales.length:0, items:filteredSales.map(s=>({id:s.id,clientName:s.clientName,productName:s.productName,quantity:s.quantity,total:s.total,status:s.status,createdAt:s.createdAt})) };
-
-        case "purchases":
-          url = "http://localhost:3001/purchases";
-          response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          let purchases = await response.json();
+          if (dateRange.start) sales = sales.filter((s: any) => new Date(s.createdAt) >= new Date(dateRange.start));
+          if (dateRange.end) { const e = new Date(dateRange.end); e.setHours(23,59,59); sales = sales.filter((s: any) => new Date(s.createdAt) <= e); }
+          const total = sales.reduce((s: number, x: any) => s + (Number(x.total) || 0), 0);
+          return { type: "sales", generatedAt: new Date().toISOString(), total, count: sales.length, average: sales.length > 0 ? total / sales.length : 0, items: sales.map((s: any) => ({ id: s.id, clientName: s.clientName, productName: s.productName, quantity: s.quantity, total: s.total, status: s.status, createdAt: s.createdAt })) };
+        }
+        case "purchases": {
+          const res = await fetch(`${API}/purchases`, { headers: { Authorization: `Bearer ${token}` } });
+          let purchases = await res.json();
           purchases = Array.isArray(purchases) ? purchases : [];
-          let filteredPurchases = [...purchases];
-          if (dateRange.start) filteredPurchases = filteredPurchases.filter(p => new Date(p.createdAt) >= new Date(dateRange.start));
-          if (dateRange.end) { const e = new Date(dateRange.end); e.setHours(23,59,59); filteredPurchases = filteredPurchases.filter(p => new Date(p.createdAt) <= e); }
-          const totalPurchases = filteredPurchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-          return { type:"purchases", generatedAt:new Date().toISOString(), total:totalPurchases, count:filteredPurchases.length, average:filteredPurchases.length>0?totalPurchases/filteredPurchases.length:0, items:filteredPurchases.map(p=>({id:p.id,supplierName:p.supplierName,productName:p.productName,quantity:p.quantity,total:p.total,createdAt:p.createdAt})) };
-
-        case "clients":
-          url = "http://localhost:3001/clients";
-          response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          let clients = await response.json();
+          if (dateRange.start) purchases = purchases.filter((p: any) => new Date(p.createdAt) >= new Date(dateRange.start));
+          if (dateRange.end) { const e = new Date(dateRange.end); e.setHours(23,59,59); purchases = purchases.filter((p: any) => new Date(p.createdAt) <= e); }
+          const total = purchases.reduce((s: number, x: any) => s + (Number(x.total) || 0), 0);
+          return { type: "purchases", generatedAt: new Date().toISOString(), total, count: purchases.length, average: purchases.length > 0 ? total / purchases.length : 0, items: purchases.map((p: any) => ({ id: p.id, supplierName: p.supplierName, productName: p.productName, quantity: p.quantity, total: p.total, createdAt: p.createdAt })) };
+        }
+        case "clients": {
+          const res = await fetch(`${API}/clients`, { headers: { Authorization: `Bearer ${token}` } });
+          let clients = await res.json();
           clients = Array.isArray(clients) ? clients : [];
-          return { type:"clients", generatedAt:new Date().toISOString(), total:clients.length, items:clients.map(c=>({id:c.id,name:c.name,email:c.email,phone:c.phone,address:c.address,totalSpent:c.totalSpent||0,status:c.status||"active",createdAt:c.createdAt})) };
-
-        case "products":
-          url = "http://localhost:3001/products";
-          response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          let products = await response.json();
+          return { type: "clients", generatedAt: new Date().toISOString(), total: clients.length, items: clients.map((c: any) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, address: c.address, totalSpent: c.totalSpent || 0, status: c.status || "active", createdAt: c.createdAt })) };
+        }
+        case "products": {
+          const res = await fetch(`${API}/products`, { headers: { Authorization: `Bearer ${token}` } });
+          let products = await res.json();
           products = Array.isArray(products) ? products : [];
-          return { type:"products", generatedAt:new Date().toISOString(), total:products.length, lowStock:products.filter(p=>(p.quantity||0)<10&&(p.quantity||0)>0).length, outOfStock:products.filter(p=>(p.quantity||0)===0).length, totalValue:products.reduce((sum,p)=>sum+((Number(p.price)||0)*(Number(p.quantity)||0)),0), items:products.map(p=>({id:p.id,name:p.name,sku:p.sku,price:p.price,quantity:p.quantity,value:(Number(p.price)||0)*(Number(p.quantity)||0)})) };
-
-        case "inventory":
-          url = "http://localhost:3001/products";
-          response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          let inventory = await response.json();
-          inventory = Array.isArray(inventory) ? inventory : [];
-          return { type:"inventory", generatedAt:new Date().toISOString(), totalProducts:inventory.length, lowStock:inventory.filter(p=>(p.quantity||0)<10&&(p.quantity||0)>0).length, outOfStock:inventory.filter(p=>(p.quantity||0)===0).length, totalValue:inventory.reduce((sum,p)=>sum+((Number(p.price)||0)*(Number(p.quantity)||0)),0), items:inventory.map(p=>({id:p.id,name:p.name,sku:p.sku,price:p.price,quantity:p.quantity,value:(Number(p.price)||0)*(Number(p.quantity)||0)})) };
-
-        case "financial":
-          const [salesRes, purchasesRes] = await Promise.all([
-            fetch("http://localhost:3001/sales", { headers: { Authorization: `Bearer ${token}` } }),
-            fetch("http://localhost:3001/purchases", { headers: { Authorization: `Bearer ${token}` } }),
+          return { type: "products", generatedAt: new Date().toISOString(), total: products.length, lowStock: products.filter((p: any) => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length, outOfStock: products.filter((p: any) => (p.quantity || 0) === 0).length, totalValue: products.reduce((s: number, p: any) => s + (Number(p.price) || 0) * (Number(p.quantity) || 0), 0), items: products.map((p: any) => ({ id: p.id, name: p.name, sku: p.sku, price: p.price, quantity: p.quantity, value: (Number(p.price) || 0) * (Number(p.quantity) || 0) })) };
+        }
+        case "inventory": {
+          const res = await fetch(`${API}/products`, { headers: { Authorization: `Bearer ${token}` } });
+          let inv = await res.json();
+          inv = Array.isArray(inv) ? inv : [];
+          return { type: "inventory", generatedAt: new Date().toISOString(), totalProducts: inv.length, lowStock: inv.filter((p: any) => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length, outOfStock: inv.filter((p: any) => (p.quantity || 0) === 0).length, totalValue: inv.reduce((s: number, p: any) => s + (Number(p.price) || 0) * (Number(p.quantity) || 0), 0), items: inv.map((p: any) => ({ id: p.id, name: p.name, sku: p.sku, price: p.price, quantity: p.quantity, value: (Number(p.price) || 0) * (Number(p.quantity) || 0) })) };
+        }
+        case "financial": {
+          const [sRes, pRes] = await Promise.all([
+            fetch(`${API}/sales`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`${API}/purchases`, { headers: { Authorization: `Bearer ${token}` } }),
           ]);
-          let allSales = await salesRes.json(); let allPurchases = await purchasesRes.json();
-          allSales = Array.isArray(allSales)?allSales:[]; allPurchases = Array.isArray(allPurchases)?allPurchases:[];
-          let fS=[...allSales],fP=[...allPurchases];
-          if (dateRange.start) { const d=new Date(dateRange.start); fS=fS.filter(s=>new Date(s.createdAt)>=d); fP=fP.filter(p=>new Date(p.createdAt)>=d); }
-          if (dateRange.end) { const d=new Date(dateRange.end); d.setHours(23,59,59); fS=fS.filter(s=>new Date(s.createdAt)<=d); fP=fP.filter(p=>new Date(p.createdAt)<=d); }
-          const revenue=fS.reduce((s,x)=>s+(Number(x.total)||0),0), expenses=fP.reduce((s,x)=>s+(Number(x.total)||0),0), profit=revenue-expenses;
-          return { type:"financial", generatedAt:new Date().toISOString(), revenue, expenses, profit, margin:revenue>0?parseFloat((profit/revenue*100).toFixed(1)):0 };
-
-        case "employees":
-          url = "http://localhost:3001/employees";
-          response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          let employees = await response.json();
-          employees = Array.isArray(employees)?employees:[];
-          const totalSalary=employees.reduce((s,e)=>s+(Number(e.salary)||0),0);
-          return { type:"employees", generatedAt:new Date().toISOString(), total:employees.length, totalSalary, averageSalary:employees.length>0?totalSalary/employees.length:0, items:employees.map(e=>({id:e.id,name:e.name,position:e.position,department:e.department,salary:e.salary,status:e.status,hireDate:e.hireDate})) };
-
-        case "logistics":
-          url = "http://localhost:3001/logistics/shipments";
-          response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          let shipments = await response.json();
-          shipments = Array.isArray(shipments)?shipments:[];
-          const delivered=shipments.filter(s=>s.status==="delivered").length, pending=shipments.filter(s=>s.status==="pending").length;
-          return { type:"logistics", generatedAt:new Date().toISOString(), total:shipments.length, delivered, pending, onTimeRate:shipments.length>0?parseFloat((delivered/shipments.length*100).toFixed(1)):0, items:shipments.map(s=>({id:s.id,trackingNumber:s.trackingNumber,clientName:s.clientName,address:s.address,status:s.status,carrier:s.carrier,estimatedDelivery:s.estimatedDelivery})) };
-
+          let allSales = await sRes.json(); let allPurchases = await pRes.json();
+          allSales = Array.isArray(allSales) ? allSales : []; allPurchases = Array.isArray(allPurchases) ? allPurchases : [];
+          if (dateRange.start) { const d = new Date(dateRange.start); allSales = allSales.filter((s: any) => new Date(s.createdAt) >= d); allPurchases = allPurchases.filter((p: any) => new Date(p.createdAt) >= d); }
+          if (dateRange.end) { const d = new Date(dateRange.end); d.setHours(23,59,59); allSales = allSales.filter((s: any) => new Date(s.createdAt) <= d); allPurchases = allPurchases.filter((p: any) => new Date(p.createdAt) <= d); }
+          const revenue = allSales.reduce((s: number, x: any) => s + (Number(x.total) || 0), 0);
+          const expenses = allPurchases.reduce((s: number, x: any) => s + (Number(x.total) || 0), 0);
+          const profit = revenue - expenses;
+          return { type: "financial", generatedAt: new Date().toISOString(), revenue, expenses, profit, margin: revenue > 0 ? parseFloat((profit / revenue * 100).toFixed(1)) : 0 };
+        }
+        case "employees": {
+          const res = await fetch(`${API}/employees`, { headers: { Authorization: `Bearer ${token}` } });
+          let employees = await res.json();
+          employees = Array.isArray(employees) ? employees : [];
+          const totalSalary = employees.reduce((s: number, e: any) => s + (Number(e.salary) || 0), 0);
+          return { type: "employees", generatedAt: new Date().toISOString(), total: employees.length, totalSalary, averageSalary: employees.length > 0 ? totalSalary / employees.length : 0, items: employees.map((e: any) => ({ id: e.id, name: e.name, position: e.position, department: e.department, salary: e.salary, status: e.status, hireDate: e.hireDate })) };
+        }
         default:
           return { type: reportType, generatedAt: new Date().toISOString(), items: [] };
       }
@@ -355,7 +329,6 @@ export default function ReportsPage() {
     try {
       const realData = await fetchRealData();
       if (realData && (realData.items?.length > 0 || realData.revenue !== undefined)) {
-        setReportData(realData);
         if (reportFormat === "json") { downloadJSON(realData, reportType); showMessage(t("reports.reportExported"), "success"); }
         else if (reportFormat === "csv") { downloadCSV(realData, reportType); showMessage(t("reports.reportExported"), "success"); }
       } else {
@@ -371,7 +344,7 @@ export default function ReportsPage() {
   const downloadJSON = (data: any, type: string) => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `rapport_${type}_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url);
+    const a = document.createElement("a"); a.href = url; a.download = `rapport_${type}_${new Date().toISOString().slice(0, 19)}.json`; a.click(); URL.revokeObjectURL(url);
   };
 
   const downloadCSV = (data: any, type: string) => {
@@ -381,7 +354,7 @@ export default function ReportsPage() {
       const headers = Object.keys(items[0]);
       csv = headers.join(",") + "\n";
       for (const row of items) {
-        csv += headers.map((h: string) => { let v=row[h]; if(v===undefined||v===null)v=""; if(typeof v==="string")v=v.replace(/"/g,'""'); if(typeof v==="object")v=JSON.stringify(v); return `"${v}"`; }).join(",") + "\n";
+        csv += headers.map((h: string) => { let v = row[h]; if (v === undefined || v === null) v = ""; if (typeof v === "string") v = v.replace(/"/g, '""'); if (typeof v === "object") v = JSON.stringify(v); return `"${v}"`; }).join(",") + "\n";
       }
     } else if (data.revenue !== undefined) {
       csv = `${t("reports.indicator")},${t("reports.value")}\n${t("reports.revenue")},${data.revenue}\n${t("reports.expenses")},${data.expenses}\n${t("reports.profit")},${data.profit}\n${t("reports.margin")},${data.margin}%\n`;
@@ -389,322 +362,428 @@ export default function ReportsPage() {
       csv = `${t("reports.indicator")},${t("reports.value")}\n${t("reports.total")},0\n`;
     }
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `rapport_${type}_${new Date().toISOString().slice(0,19)}.csv`; a.click(); URL.revokeObjectURL(url);
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `rapport_${type}_${new Date().toISOString().slice(0, 19)}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
   const showMessage = (msg: string, type: string) => {
     setMessage(msg); setMessageType(type);
-    setTimeout(() => setMessage(""), 3000);
+    setTimeout(() => setMessage(""), 3500);
   };
 
   const reportTypes = [
-    { id: "sales",     label: t("reports.salesReport"),     Icon: IconDollarSign,  color: theme.accent,  description: t("reports.salesDesc") },
+    { id: "sales",     label: t("reports.salesReport"),     Icon: IconDollarSign,   color: theme.accent,  description: t("reports.salesDesc") },
     { id: "purchases", label: t("reports.purchasesReport"), Icon: IconShoppingCart, color: "#f59e0b",     description: t("reports.purchasesDesc") },
     { id: "inventory", label: t("reports.inventoryReport"), Icon: IconBox,          color: "#3b82f6",     description: t("reports.inventoryDesc") },
     { id: "clients",   label: t("reports.clientsReport"),   Icon: IconUsers,        color: "#8b5cf6",     description: t("reports.clientsDesc") },
     { id: "financial", label: t("reports.financialReport"), Icon: IconTrendingUp,   color: theme.accent,  description: t("reports.financialDesc") },
     { id: "products",  label: t("reports.productsReport"),  Icon: IconTag,          color: "#ec4899",     description: t("reports.productsDesc") },
     { id: "employees", label: t("reports.employeesReport"), Icon: IconBriefcase,    color: "#14b8a6",     description: t("reports.employeesDesc") },
-    { id: "logistics", label: t("reports.logisticsReport"), Icon: IconTruck,        color: "#3b82f6",     description: t("reports.logisticsDesc") },
   ];
 
   const currentReport = reportTypes.find(r => r.id === reportType);
   const CurrentReportIcon = currentReport?.Icon || IconBarChart;
-
   const MessageIcon = messageType === "success" ? IconCheckCircle : IconAlertTriangle;
   const messageColor = messageType === "success" ? theme.accent : messageType === "error" ? "#ef4444" : "#f59e0b";
+
+  const dateHasValue = dateRange.start || dateRange.end;
 
   return (
     <div style={{ minHeight: "100vh", background: theme.background, display: "flex", overflowX: "hidden" }}>
       <style>{animations}</style>
 
-      {/* Sidebar - comme sur les autres pages */}
       <Sidebar />
 
       <div style={{
         marginLeft: contentMarginLeft,
         flex: 1,
-        paddingTop: responsive.contentPadding,
+        paddingTop: isMobile ? "16px" : "32px",
         paddingLeft: responsive.contentPadding,
         paddingRight: responsive.contentPadding,
-        paddingBottom: isMobile ? "70px" : responsive.contentPadding,
-        background: theme.background
+        paddingBottom: isMobile ? "88px" : "32px",
+        background: theme.background,
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
           {/* ── Header ── */}
           <div style={{ marginBottom: responsive.gapLarge, animation: "fadeInDown 0.5s ease" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
               <div>
-                <h1 style={{ color: theme.text, fontSize: responsive.titleSize, display: "flex", alignItems: "center", gap: "10px" }}>
-                  <IconFileText size={isMobile ? 24 : 28} color={theme.primary} />
+                <h1 style={{ color: theme.text, fontSize: responsive.titleSize, margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <IconFileText size={isMobile ? 22 : 28} color={theme.primary} />
                   {t("common.reports")}
                 </h1>
-                <p style={{ color: theme.textSecondary, marginTop: "4px", fontSize: isMobile ? "12px" : "14px" }}>{t("reports.subtitle")}</p>
+                <p style={{ color: theme.textSecondary, marginTop: "4px", fontSize: isMobile ? "11px" : "14px" }}>
+                  {t("reports.subtitle")}
+                </p>
               </div>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <span style={{ position: "absolute", left: "12px", pointerEvents: "none" }}>
-                    {reportFormat === "json" ? <IconJSON size={16} color={theme.textSecondary} /> : <IconCSV size={16} color={theme.textSecondary} />}
-                  </span>
-                  <select
-                    value={reportFormat}
-                    onChange={(e) => setReportFormat(e.target.value)}
-                    style={{ padding: "10px 16px 10px 36px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, cursor: "pointer", outline: "none", appearance: "none", fontSize: isMobile ? "13px" : "14px" }}
-                  >
-                    <option value="json">JSON</option>
-                    <option value="csv">CSV</option>
-                  </select>
-                </div>
+
+              {/* Format selector */}
+              <div style={{ position: "relative", display: "flex", alignItems: "center", flexShrink: 0 }}>
+                <span style={{ position: "absolute", left: "10px", pointerEvents: "none", zIndex: 1 }}>
+                  {reportFormat === "json"
+                    ? <IconJSON size={14} color={theme.textSecondary} />
+                    : <IconCSV size={14} color={theme.textSecondary} />
+                  }
+                </span>
+                <span style={{ position: "absolute", right: "8px", pointerEvents: "none", zIndex: 1 }}>
+                  <IconChevronDown size={14} color={theme.textSecondary} />
+                </span>
+                <select
+                  value={reportFormat}
+                  onChange={(e) => setReportFormat(e.target.value)}
+                  style={{
+                    padding: isMobile ? "9px 28px 9px 30px" : "10px 32px 10px 34px",
+                    background: theme.surface, border: `1px solid ${theme.border}`,
+                    borderRadius: "10px", color: theme.text, cursor: "pointer",
+                    outline: "none", appearance: "none", WebkitAppearance: "none",
+                    fontSize: isMobile ? "12px" : "14px", fontWeight: "500",
+                  }}
+                >
+                  <option value="json">JSON</option>
+                  <option value="csv">CSV</option>
+                </select>
               </div>
             </div>
           </div>
 
-          {/* ── Notification Message ── */}
+          {/* ── Notification ── */}
           {message && (
-            <div style={{ background: `${messageColor}15`, border: `1px solid ${messageColor}`, color: messageColor, padding: "12px 16px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", animation: "fadeInUp 0.3s ease" }}>
-              <MessageIcon size={18} color={messageColor} />
+            <div style={{
+              background: `${messageColor}18`, border: `1px solid ${messageColor}50`,
+              color: messageColor, padding: "12px 16px", borderRadius: "12px",
+              marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px",
+              animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "13px" : "14px",
+            }}>
+              <MessageIcon size={16} color={messageColor} />
               {message}
             </div>
           )}
 
-          {/* ── Tabs (scrollable on mobile) ── */}
+          {/* ── Tabs ── */}
           <div style={{
-            display: "flex", gap: "8px", marginBottom: "24px", borderBottom: `1px solid ${theme.border}`,
-            overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none"
+            display: "flex", gap: "4px", marginBottom: "20px",
+            borderBottom: `1px solid ${theme.border}`,
+            overflowX: "auto", WebkitOverflowScrolling: "touch",
           }} className="hide-scrollbar">
-            <button
-              onClick={() => setActiveTab("generate")}
-              style={{
-                padding: isMobile ? "10px 20px" : "12px 24px", background: activeTab === "generate" ? theme.primary : "transparent",
-                border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "generate" ? "white" : theme.textSecondary,
-                cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "6px",
-                whiteSpace: "nowrap", fontSize: isMobile ? "13px" : "14px", WebkitTapHighlightColor: "transparent"
-              }}
-            >
-              <IconBarChart size={isMobile ? 14 : 16} color={activeTab === "generate" ? "white" : theme.textSecondary} />
-              {t("reports.generate")}
-            </button>
-            <button
-              onClick={() => setActiveTab("saved")}
-              style={{
-                padding: isMobile ? "10px 20px" : "12px 24px", background: activeTab === "saved" ? theme.primary : "transparent",
-                border: "none", borderRadius: "12px 12px 0 0", color: activeTab === "saved" ? "white" : theme.textSecondary,
-                cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "6px",
-                whiteSpace: "nowrap", fontSize: isMobile ? "13px" : "14px", WebkitTapHighlightColor: "transparent"
-              }}
-            >
-              <IconFolder size={isMobile ? 14 : 16} color={activeTab === "saved" ? "white" : theme.textSecondary} />
-              {t("reports.savedReports")}
-            </button>
+            {[
+              { id: "generate", label: t("reports.generate"), Icon: IconBarChart },
+              { id: "saved",    label: t("reports.savedReports"), Icon: IconFolder },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                className="tab-btn"
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: isMobile ? "10px 18px" : "12px 24px",
+                  background: activeTab === tab.id ? theme.primary : "transparent",
+                  border: "none", borderRadius: "10px 10px 0 0",
+                  color: activeTab === tab.id ? "white" : theme.textSecondary,
+                  cursor: "pointer", transition: "all 0.2s",
+                  display: "flex", alignItems: "center", gap: "6px",
+                  whiteSpace: "nowrap", fontSize: isMobile ? "12px" : "14px",
+                  fontWeight: activeTab === tab.id ? "600" : "400",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                <tab.Icon size={isMobile ? 13 : 15} color={activeTab === tab.id ? "white" : theme.textSecondary} />
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           {/* ── Generate Tab ── */}
           {activeTab === "generate" && (
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
+            <div style={{ animation: "fadeInUp 0.4s ease" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: responsive.gapMedium }}>
 
-                {/* Configuration card */}
-                <div
-                  style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.2s" }}
-                  onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(-3px)" }}
-                  onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.transform = "translateY(0)" }}
-                >
-                  <h2 style={{ color: theme.text, fontSize: isMobile ? "18px" : "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <IconSettings size={isMobile ? 18 : 20} color={theme.primary} />
+                {/* ── Config Card ── */}
+                <div style={{
+                  background: theme.surface, borderRadius: responsive.cardRadius,
+                  padding: responsive.cardPadding, border: `1px solid ${theme.border}`,
+                }}>
+                  <h2 style={{ color: theme.text, fontSize: isMobile ? "16px" : "20px", marginBottom: "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <IconSettings size={isMobile ? 16 : 20} color={theme.primary} />
                     {t("reports.configuration")}
                   </h2>
 
-                  <div style={{ marginBottom: "20px" }}>
-                    <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "12px" : "13px" }}>{t("reports.reportType")}</label>
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", gap: "8px" }}>
+                  {/* Report type grid */}
+                  <div style={{ marginBottom: "18px" }}>
+                    <label style={{ color: theme.textSecondary, display: "block", marginBottom: "10px", fontSize: isMobile ? "11px" : "13px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {t("reports.reportType")}
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(4, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "6px" : "8px" }}>
                       {reportTypes.map((type) => {
                         const TypeIcon = type.Icon;
                         const isActive = reportType === type.id;
-                        const isHovered = hoveredType === type.id;
                         return (
                           <button
                             key={type.id}
+                            className="report-type-btn"
                             onClick={() => setReportType(type.id)}
                             onMouseEnter={() => setHoveredType(type.id)}
                             onMouseLeave={() => setHoveredType(null)}
                             style={{
-                              padding: isMobile ? "10px" : "12px", background: isActive ? type.color : (isHovered ? theme.surfaceHover : theme.surface),
-                              border: `1px solid ${isActive ? "transparent" : theme.border}`, borderRadius: "10px", color: isActive ? "white" : theme.textSecondary,
-                              cursor: "pointer", textAlign: "center", transition: "all 0.2s", WebkitTapHighlightColor: "transparent"
+                              padding: isMobile ? "10px 4px" : "14px 8px",
+                              background: isActive
+                                ? `${type.color}18`
+                                : hoveredType === type.id ? theme.surfaceHover : "transparent",
+                              border: `1.5px solid ${isActive ? type.color : theme.border}`,
+                              borderRadius: "10px",
+                              color: isActive ? type.color : theme.textSecondary,
+                              cursor: "pointer", textAlign: "center",
+                              transition: "all 0.2s",
+                              WebkitTapHighlightColor: "transparent",
+                              display: "flex", flexDirection: "column", alignItems: "center", gap: isMobile ? "5px" : "6px",
                             }}
                           >
-                            <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
-                              <TypeIcon size={isMobile ? 20 : 22} color={isActive ? "white" : type.color} />
-                            </div>
-                            <div style={{ fontSize: isMobile ? "10px" : "11px" }}>{type.label}</div>
+                            <TypeIcon size={isMobile ? 18 : 20} color={isActive ? type.color : theme.textSecondary} />
+                            <span style={{ fontSize: isMobile ? "9px" : "10px", lineHeight: 1.2, fontWeight: isActive ? "600" : "400" }}>
+                              {type.label}
+                            </span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: "20px" }}>
-                    <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "12px" : "13px" }}>
-                      {t("reports.dateRange")} ({t("reports.optional")})
-                    </label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                      <input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange({ start: e.target.value, end: dateRange.end })}
-                        style={{
-                          padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px",
-                          color: theme.text, transition: "border-color 0.2s", fontSize: isMobile ? "13px" : "14px",
-                          WebkitAppearance: "none"
-                        }}
-                        onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
-                        onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
-                      />
-                      <input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange({ start: dateRange.start, end: e.target.value })}
-                        style={{
-                          padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px",
-                          color: theme.text, fontSize: isMobile ? "13px" : "14px", WebkitAppearance: "none"
-                        }}
-                      />
+                  {/* Mobile: current selection indicator */}
+                  {isMobile && (
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: "10px",
+                      padding: "10px 14px", background: `${currentReport?.color || theme.primary}12`,
+                      borderRadius: "10px", marginBottom: "14px",
+                      border: `1px solid ${currentReport?.color || theme.primary}30`,
+                    }}>
+                      <CurrentReportIcon size={20} color={currentReport?.color || theme.primary} />
+                      <div>
+                        <div style={{ color: theme.text, fontSize: "13px", fontWeight: "600" }}>{currentReport?.label}</div>
+                        <div style={{ color: theme.textSecondary, fontSize: "10px" }}>{currentReport?.description?.substring(0, 55) || ""}{(currentReport?.description?.length || 0) > 55 ? "…" : ""}</div>
+                      </div>
                     </div>
+                  )}
+
+                  {/* Date range — collapsible on mobile */}
+                  <div style={{ marginBottom: "18px" }}>
+                    <button
+                      onClick={() => isMobile && setShowDates(v => !v)}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", background: "transparent", border: "none", padding: 0, cursor: isMobile ? "pointer" : "default",
+                        WebkitTapHighlightColor: "transparent", marginBottom: showDates || !isMobile ? "10px" : "0",
+                      }}
+                    >
+                      <label style={{
+                        color: theme.textSecondary, fontSize: isMobile ? "11px" : "13px",
+                        fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.05em",
+                        cursor: "inherit", display: "flex", alignItems: "center", gap: "6px",
+                      }}>
+                        {t("reports.dateRange")}
+                        {dateHasValue && (
+                          <span style={{
+                            background: theme.primary, color: "white", borderRadius: "20px",
+                            padding: "1px 7px", fontSize: "9px", fontWeight: "700",
+                          }}>✓</span>
+                        )}
+                        <span style={{ color: theme.textSecondary, fontWeight: "400", fontSize: isMobile ? "10px" : "12px" }}>
+                          ({t("reports.optional")})
+                        </span>
+                      </label>
+                      {isMobile && (
+                        <span style={{ transition: "transform 0.2s", transform: showDates ? "rotate(180deg)" : "rotate(0deg)", display: "flex" }}>
+                          <IconChevronDown size={16} color={theme.textSecondary} />
+                        </span>
+                      )}
+                    </button>
+
+                    {(!isMobile || showDates) && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", animation: isMobile ? "fadeInDown 0.2s ease" : undefined }}>
+                        <div>
+                          <label style={{ fontSize: "10px", color: theme.textSecondary, display: "block", marginBottom: "4px" }}>
+                            {language === "fr" ? "Début" : "Start"}
+                          </label>
+                          <input
+                            type="date"
+                            value={dateRange.start}
+                            onChange={(e) => setDateRange(d => ({ ...d, start: e.target.value }))}
+                            style={{
+                              width: "100%", padding: isMobile ? "10px" : "12px",
+                              background: theme.surfaceHover, border: `1px solid ${theme.border}`,
+                              borderRadius: "10px", color: theme.text,
+                              fontSize: isMobile ? "12px" : "14px", WebkitAppearance: "none",
+                              boxSizing: "border-box",
+                            }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
+                            onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: "10px", color: theme.textSecondary, display: "block", marginBottom: "4px" }}>
+                            {language === "fr" ? "Fin" : "End"}
+                          </label>
+                          <input
+                            type="date"
+                            value={dateRange.end}
+                            onChange={(e) => setDateRange(d => ({ ...d, end: e.target.value }))}
+                            style={{
+                              width: "100%", padding: isMobile ? "10px" : "12px",
+                              background: theme.surfaceHover, border: `1px solid ${theme.border}`,
+                              borderRadius: "10px", color: theme.text,
+                              fontSize: isMobile ? "12px" : "14px", WebkitAppearance: "none",
+                              boxSizing: "border-box",
+                            }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
+                            onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Generate button */}
                   <button
+                    className="generate-btn"
                     onClick={generateReport}
                     disabled={generating}
                     style={{
-                      width: "100%", padding: isMobile ? "14px" : "14px", background: theme.gradient, color: "white",
-                      border: "none", borderRadius: "12px", cursor: generating ? "not-allowed" : "pointer",
-                      opacity: generating ? 0.7 : 1, fontWeight: "bold", transition: "opacity 0.2s",
+                      width: "100%", padding: isMobile ? "15px" : "14px",
+                      background: theme.gradient, color: "white",
+                      border: "none", borderRadius: "12px",
+                      cursor: generating ? "not-allowed" : "pointer",
+                      opacity: generating ? 0.75 : 1, fontWeight: "700",
+                      transition: "opacity 0.2s, transform 0.15s",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                      fontSize: isMobile ? "14px" : "15px", WebkitTapHighlightColor: "transparent"
+                      fontSize: isMobile ? "15px" : "15px",
+                      WebkitTapHighlightColor: "transparent",
+                      boxShadow: generating ? "none" : `0 4px 16px ${theme.primary}40`,
                     }}
                   >
-                    {generating
-                      ? (<><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}><IconLoader size={18} color="white" /></span>{t("reports.generating")}</>)
-                      : (<><IconBarChart size={18} color="white" />{t("reports.generate")}</>)
-                    }
+                    {generating ? (
+                      <>
+                        <span style={{ animation: "spin 1s linear infinite", display: "inline-flex" }}>
+                          <IconLoader size={18} color="white" />
+                        </span>
+                        {t("reports.generating")}
+                      </>
+                    ) : (
+                      <>
+                        <IconDownload size={18} color="white" />
+                        {t("reports.generate")} · {reportFormat.toUpperCase()}
+                      </>
+                    )}
                   </button>
                 </div>
 
-                {/* Information card */}
+                {/* ── Info Card (desktop only) ── */}
                 {!isMobile && (
-                  <div
-                    style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                  <div style={{
+                    background: theme.surface, borderRadius: responsive.cardRadius,
+                    padding: responsive.cardPadding, border: `1px solid ${theme.border}`,
+                    transition: "transform 0.3s",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
                   >
                     <h2 style={{ color: theme.text, fontSize: "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
                       <IconInfo size={20} color={theme.primary} />
                       {t("reports.information")}
                     </h2>
-
-                    <div style={{ marginBottom: "16px", padding: "24px 16px", background: theme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
-                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
-                        <CurrentReportIcon size={48} color={currentReport?.color || theme.primary} />
+                    <div style={{ marginBottom: "16px", padding: "28px 16px", background: theme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px" }}>
+                        <CurrentReportIcon size={52} color={currentReport?.color || theme.primary} />
                       </div>
-                      <div style={{ color: theme.text, fontWeight: "bold", marginBottom: "4px" }}>{currentReport?.label || t("reports.report")}</div>
-                      <div style={{ color: theme.textSecondary, fontSize: "12px" }}>{currentReport?.description || ""}</div>
+                      <div style={{ color: theme.text, fontWeight: "bold", marginBottom: "6px", fontSize: "16px" }}>{currentReport?.label || t("reports.report")}</div>
+                      <div style={{ color: theme.textSecondary, fontSize: "13px" }}>{currentReport?.description || ""}</div>
                     </div>
-
                     <div style={{ padding: "16px", background: `${theme.primary}10`, borderRadius: "12px", border: `1px solid ${theme.primary}30` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                        <IconLightbulb size={20} color={theme.primary} />
-                        <span style={{ color: theme.text, fontSize: "14px" }}>{t("reports.tip")}</span>
+                        <IconLightbulb size={18} color={theme.primary} />
+                        <span style={{ color: theme.text, fontSize: "14px", fontWeight: "600" }}>{t("reports.tip")}</span>
                       </div>
-                      <p style={{ color: theme.textSecondary, fontSize: "12px" }}>
-                        {t("reports.tipMessage")}
-                      </p>
+                      <p style={{ color: theme.textSecondary, fontSize: "12px", margin: 0 }}>{t("reports.tipMessage")}</p>
                     </div>
                   </div>
                 )}
               </div>
-
-              {/* Mobile info card - simplified */}
-              {isMobile && (
-                <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: "16px", border: `1px solid ${theme.border}`, marginTop: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <CurrentReportIcon size={32} color={currentReport?.color || theme.primary} />
-                    <div>
-                      <div style={{ color: theme.text, fontWeight: "bold", fontSize: "13px" }}>{currentReport?.label || t("reports.report")}</div>
-                      <div style={{ color: theme.textSecondary, fontSize: "10px" }}>{currentReport?.description?.substring(0, 60) || ""}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
           {/* ── Saved Reports Tab ── */}
           {activeTab === "saved" && (
-            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, animation: "fadeInUp 0.5s ease" }}>
-              <h2 style={{ color: theme.text, fontSize: isMobile ? "18px" : "20px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                <IconFolder size={isMobile ? 18 : 20} color={theme.primary} />
+            <div style={{
+              background: theme.surface, borderRadius: responsive.cardRadius,
+              padding: responsive.cardPadding, border: `1px solid ${theme.border}`,
+              animation: "fadeInUp 0.4s ease",
+            }}>
+              <h2 style={{ color: theme.text, fontSize: isMobile ? "16px" : "20px", marginBottom: "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <IconFolder size={isMobile ? 16 : 20} color={theme.primary} />
                 {t("reports.savedReports")}
               </h2>
+
               {savedReports.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {savedReports.slice(0, isMobile ? 10 : 20).map((report, idx) => {
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {savedReports.slice(0, 20).map((report, idx) => {
                     const ReportTypeIcon = REPORT_ICONS[report.type as keyof typeof REPORT_ICONS] || IconFileText;
+                    const isHovered = hoveredReport === idx;
                     return (
                       <div
                         key={idx}
                         onMouseEnter={() => setHoveredReport(idx)}
                         onMouseLeave={() => setHoveredReport(null)}
                         style={{
-                          display: "flex", justifyContent: "space-between", alignItems: "center", padding: isMobile ? "14px" : "16px",
-                          background: hoveredReport === idx ? theme.surfaceHover : theme.surface, borderRadius: "12px",
-                          transition: "all 0.2s", transform: hoveredReport === idx ? "translateX(5px)" : "translateX(0)",
-                          border: `1px solid ${hoveredReport === idx ? theme.primary : "transparent"}`
+                          display: "flex", justifyContent: "space-between", alignItems: "center",
+                          padding: isMobile ? "12px 14px" : "14px 16px",
+                          background: isHovered ? theme.surfaceHover : `${theme.border}30`,
+                          borderRadius: "12px", transition: "all 0.2s",
+                          border: `1px solid ${isHovered ? theme.primary + "50" : "transparent"}`,
+                          transform: isHovered && !isMobile ? "translateX(4px)" : "none",
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
-                          <ReportTypeIcon size={isMobile ? 18 : 20} color={theme.primary} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "13px" : "14px" }}>{report.name}</div>
-                            <div style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
-                              <IconClock size={isMobile ? 10 : 11} color={theme.textSecondary} />
-                              {t("reports.createdOn")} {new Date(report.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            width: isMobile ? "34px" : "38px", height: isMobile ? "34px" : "38px",
+                            borderRadius: "10px", background: `${theme.primary}15`,
+                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          }}>
+                            <ReportTypeIcon size={isMobile ? 16 : 18} color={theme.primary} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: theme.text, fontWeight: "600", fontSize: isMobile ? "13px" : "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {report.name}
+                            </div>
+                            <div style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
+                              <IconClock size={10} color={theme.textSecondary} />
+                              {new Date(report.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
                             </div>
                           </div>
                         </div>
                         <button
                           style={{
-                            background: theme.gradient, color: "white", border: "none", borderRadius: "8px",
-                            padding: isMobile ? "8px 14px" : "8px 16px", cursor: "pointer", transition: "opacity 0.2s",
-                            display: "flex", alignItems: "center", gap: "6px", fontSize: isMobile ? "12px" : "13px",
-                            WebkitTapHighlightColor: "transparent"
+                            background: theme.gradient, color: "white", border: "none",
+                            borderRadius: "8px", padding: isMobile ? "8px 12px" : "8px 16px",
+                            cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
+                            fontSize: isMobile ? "12px" : "13px", fontWeight: "600", flexShrink: 0,
+                            WebkitTapHighlightColor: "transparent",
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
-                          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                         >
-                          <IconDownload size={isMobile ? 12 : 14} color="white" />
+                          <IconDownload size={13} color="white" />
                           {!isMobile && t("reports.download")}
                         </button>
                       </div>
                     );
                   })}
-                  {savedReports.length > 10 && isMobile && (
-                    <div style={{ textAlign: "center", padding: "12px", color: theme.textSecondary, fontSize: "11px" }}>
-                      +{savedReports.length - 10} autres rapports
-                    </div>
-                  )}
                 </div>
               ) : (
-                <div style={{ textAlign: "center", padding: isMobile ? "40px" : "60px" }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px", opacity: 0.4 }}>
+                <div style={{ textAlign: "center", padding: isMobile ? "48px 16px" : "64px 16px" }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px", opacity: 0.3 }}>
                     <IconFolder size={isMobile ? 48 : 64} color={theme.textSecondary} />
                   </div>
-                  <p style={{ color: theme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("reports.noSavedReports")}</p>
-                  <p style={{ color: "#666", fontSize: isMobile ? "11px" : "12px" }}>{t("reports.noSavedReportsMessage")}</p>
+                  <p style={{ color: theme.textSecondary, fontSize: isMobile ? "13px" : "14px", margin: "0 0 6px" }}>{t("reports.noSavedReports")}</p>
+                  <p style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px", margin: 0, opacity: 0.6 }}>{t("reports.noSavedReportsMessage")}</p>
                 </div>
               )}
             </div>
           )}
+
         </div>
       </div>
     </div>

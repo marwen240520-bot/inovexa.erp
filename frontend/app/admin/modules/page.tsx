@@ -317,7 +317,7 @@ export default function AdminModulesPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/admin/clients", {
+      const res = await fetch("https://api-inovexa.ngrok.app/admin/clients", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -333,7 +333,7 @@ export default function AdminModulesPage() {
   const loadClientModules = async (clientId: number) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/users/${clientId}/modules`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/users/${clientId}/modules`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -367,7 +367,7 @@ export default function AdminModulesPage() {
     modules.forEach(m => { modulesConfig[m.id] = m.enabled; });
 
     try {
-      const res = await fetch(`http://localhost:3001/admin/clients/${selectedClient.id}/modules`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/admin/clients/${selectedClient.id}/modules`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ modules: modulesConfig })

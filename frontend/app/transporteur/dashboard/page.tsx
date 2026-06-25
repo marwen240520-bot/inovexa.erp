@@ -297,10 +297,10 @@ export default function TransporteurDashboard() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const shipmentsRes = await fetch("http://localhost:3001/transporteur/shipments", { 
+      const shipmentsRes = await fetch("https://api-inovexa.ngrok.app/transporteur/shipments", { 
         headers: { Authorization: `Bearer ${token}` } 
       });
-      const statsRes = await fetch("http://localhost:3001/transporteur/stats", { 
+      const statsRes = await fetch("https://api-inovexa.ngrok.app/transporteur/stats", { 
         headers: { Authorization: `Bearer ${token}` } 
       });
       
@@ -418,7 +418,7 @@ export default function TransporteurDashboard() {
   const updateStatus = async (id: number, newStatus: string) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:3001/transporteur/shipments/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/transporteur/shipments/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })

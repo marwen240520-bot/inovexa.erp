@@ -13,7 +13,7 @@ const crypto = require('crypto');
 // ─────────────────────────────────────────────
 const IS_DEV       = process.env.NODE_ENV === 'development';
 const IS_PROD      = process.env.NODE_ENV === 'production';
-const API_URL      = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL      = process.env.NEXT_PUBLIC_API_URL || 'https://api-inovexa.ngrok.app';
 const API_HOST     = (() => { try { return new URL(API_URL).host; }     catch { return 'localhost:3001'; } })();
 const API_PROTOCOL = (() => { try { return new URL(API_URL).protocol; } catch { return 'http:'; } })();
 const API_WS       = API_PROTOCOL === 'https:' ? `wss://${API_HOST}` : `ws://${API_HOST}`;

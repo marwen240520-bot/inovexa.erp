@@ -310,7 +310,7 @@ export default function LogisticsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/logistics/client/shipments", {
+      const res = await fetch("https://api-inovexa.ngrok.app/logistics/client/shipments", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data = await res.json();
@@ -335,7 +335,7 @@ export default function LogisticsPage() {
   const fetchTransporteurs = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/transporteurs", {
+      const res = await fetch("https://api-inovexa.ngrok.app/transporteurs", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -397,7 +397,7 @@ export default function LogisticsPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:3001/transporteurs", {
+      const res = await fetch("https://api-inovexa.ngrok.app/transporteurs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -449,7 +449,7 @@ export default function LogisticsPage() {
         updateData.password = carrierModal.form.password;
       }
 
-      const res = await fetch(`http://localhost:3001/transporteurs/${carrierModal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/transporteurs/${carrierModal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(updateData)
@@ -472,7 +472,7 @@ export default function LogisticsPage() {
   const deleteTransporteur = async (id: number) => {
     if (confirm(t("logistics.confirmDeleteCarrier"))) {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3001/transporteurs/${id}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/transporteurs/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -490,7 +490,7 @@ export default function LogisticsPage() {
   const createShipment = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/logistics/client/shipments", {
+      const res = await fetch("https://api-inovexa.ngrok.app/logistics/client/shipments", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -527,7 +527,7 @@ export default function LogisticsPage() {
         phone: modal.form.phone || ""
       };
 
-      const res = await fetch(`http://localhost:3001/logistics/client/shipments/${modal.editId}`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/logistics/client/shipments/${modal.editId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -553,7 +553,7 @@ export default function LogisticsPage() {
   const deleteShipment = async (id: number) => {
     if (confirm(t("logistics.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/logistics/client/shipments/${id}`, {
+      await fetch(`https://api-inovexa.ngrok.app/logistics/client/shipments/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -568,7 +568,7 @@ export default function LogisticsPage() {
     if (confirm(t("logistics.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/logistics/client/shipments/${id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/logistics/client/shipments/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });

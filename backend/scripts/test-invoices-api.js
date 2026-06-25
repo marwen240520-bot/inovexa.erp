@@ -5,7 +5,7 @@ async function testApi() {
   
   // 1. Tester la connexion au backend
   try {
-    const res = await fetch('http://localhost:3001');
+    const res = await fetch('https://api-inovexa.ngrok.app');
     if (res.ok) {
       console.log('✅ Backend accessible sur le port 3001');
     } else {

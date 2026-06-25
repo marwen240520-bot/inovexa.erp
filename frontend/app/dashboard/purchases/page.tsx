@@ -330,7 +330,7 @@ export default function PurchasesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/purchases", {
+      const res = await fetch("https://api-inovexa.ngrok.app/purchases", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data: Purchase[] = await res.json();
@@ -365,7 +365,7 @@ export default function PurchasesPage() {
   const fetchSuppliers = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/suppliers", {
+      const res = await fetch("https://api-inovexa.ngrok.app/suppliers", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data: Supplier[] = await res.json();
@@ -376,7 +376,7 @@ export default function PurchasesPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/products", {
+      const res = await fetch("https://api-inovexa.ngrok.app/products", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data: Product[] = await res.json();
@@ -389,7 +389,7 @@ export default function PurchasesPage() {
   const createPurchase = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/purchases", {
+      const res = await fetch("https://api-inovexa.ngrok.app/purchases", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -410,7 +410,7 @@ export default function PurchasesPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`http://localhost:3001/purchases/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/purchases/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -421,7 +421,7 @@ export default function PurchasesPage() {
       } else {
         const purchase = allPurchases.find(p => p.id === id);
         if (purchase) {
-          const putRes = await fetch(`http://localhost:3001/purchases/${id}`, {
+          const putRes = await fetch(`https://api-inovexa.ngrok.app/purchases/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...purchase, status: newStatus })
@@ -446,7 +446,7 @@ export default function PurchasesPage() {
   const deletePurchase = async (id: number) => {
     if (confirm(t("purchases.confirmDelete") || "Supprimer cet achat ?")) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/purchases/${id}`, {
+      await fetch(`https://api-inovexa.ngrok.app/purchases/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -461,7 +461,7 @@ export default function PurchasesPage() {
     if (confirm(`${t("purchases.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} achat(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/purchases/${id}`, {
+        await fetch(`https://api-inovexa.ngrok.app/purchases/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -478,7 +478,7 @@ export default function PurchasesPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/purchases/import", {
+      const res = await fetch("https://api-inovexa.ngrok.app/purchases/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ purchases: data })

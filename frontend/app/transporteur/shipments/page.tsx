@@ -251,7 +251,7 @@ export default function TransporteurShipmentsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/transporteur/shipments", { 
+      const res = await fetch("https://api-inovexa.ngrok.app/transporteur/shipments", { 
         headers: { Authorization: "Bearer " + token } 
       });
       if (res.status === 401) { 
@@ -273,7 +273,7 @@ export default function TransporteurShipmentsPage() {
     const token = localStorage.getItem("token");
     setUpdating(id);
     try {
-      const res = await fetch(`http://localhost:3001/transporteur/shipments/${id}/status`, {
+      const res = await fetch(`https://api-inovexa.ngrok.app/transporteur/shipments/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
         body: JSON.stringify({ status })

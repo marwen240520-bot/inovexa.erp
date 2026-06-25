@@ -1,6 +1,4 @@
-﻿// app/dashboard/products/page.tsx (version complète corrigée)
-
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -32,7 +30,6 @@ interface ModalForm {
   name?: string;
   sku?: string;
   price?: number;
-  quantity?: number;
   categoryId?: string | number;
   [key: string]: any;
 }
@@ -149,7 +146,6 @@ const IconX = ({ size = 16, color = "currentColor" }: { size?: number; color?: s
   </svg>
 );
 
-// ✅ IconInfo corrigée avec support de style
 const IconInfo = ({ size = 16, color = "currentColor", style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <circle cx="12" cy="12" r="10"/>
@@ -244,7 +240,7 @@ export default function ProductsPage() {
   const fetchCategories = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/categories", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/categories", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setCategories(Array.isArray(data) ? data : []);
       await fetchProducts();
@@ -258,7 +254,7 @@ export default function ProductsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error("Erreur chargement produits:", e); }
@@ -268,61 +264,86 @@ export default function ProductsPage() {
   const createProduct = async () => {
     const token = localStorage.getItem("token");
     try {
-      // ✅ La quantité initiale est 0 (stock géré par achats/ventes)
-      const res = await fetch("http://localhost:3001/products", {
+      const productData = {
+        name: modal.form.name,
+        sku: modal.form.sku || "",
+        price: modal.form.price || 0,
+        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
+      };
+
+      const res = await fetch("https://api-inovexa.ngrok.app/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          name: modal.form.name, 
-          sku: modal.form.sku || "", 
-          price: modal.form.price || 0, 
-          quantity: 0,
-          categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null 
-        })
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(productData)
       });
+      
       if (res.ok) { 
         setModal({ open: false, form: {}, editMode: false, editId: null }); 
-        fetchProducts(); 
+        await fetchProducts(); 
         showMessage(t("products.productCreated"), "success"); 
       } else { 
         const err = await res.json(); 
+        console.error("Erreur création produit:", err);
         showMessage(err.message || t("common.error"), "error"); 
       }
-    } catch(e) { showMessage(t("common.error"), "error"); }
+    } catch(e) { 
+      console.error("Exception création produit:", e);
+      showMessage(t("common.error"), "error"); 
+    }
   };
 
   const updateProduct = async () => {
     const token = localStorage.getItem("token");
     try {
-      // ✅ Ne pas modifier la quantité lors de l'édition
-      const res = await fetch(`http://localhost:3001/products/${modal.editId}`, {
+      const productData = {
+        name: modal.form.name,
+        sku: modal.form.sku || "",
+        price: modal.form.price || 0,
+        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
+      };
+
+      const res = await fetch(`https://api-inovexa.ngrok.app/products/${modal.editId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          name: modal.form.name, 
-          sku: modal.form.sku || "", 
-          price: modal.form.price || 0, 
-          categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null 
-        })
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(productData)
       });
+      
       if (res.ok) { 
         setModal({ open: false, form: {}, editMode: false, editId: null }); 
-        fetchProducts(); 
+        await fetchProducts(); 
         showMessage(t("products.productUpdated"), "success"); 
       } else { 
         const err = await res.json(); 
+        console.error("Erreur mise à jour produit:", err);
         showMessage(err.message || t("common.error"), "error"); 
       }
-    } catch(e) { showMessage(t("common.error"), "error"); }
+    } catch(e) { 
+      console.error("Exception mise à jour produit:", e);
+      showMessage(t("common.error"), "error"); 
+    }
   };
 
   const deleteProduct = async (id: number | string) => {
     if (confirm(t("products.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3001/products/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      fetchProducts();
-      showMessage(t("products.productDeleted"), "success");
-      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      try {
+        await fetch(`https://api-inovexa.ngrok.app/products/${id}`, { 
+          method: "DELETE", 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        await fetchProducts();
+        showMessage(t("products.productDeleted"), "success");
+        setSelectedIds(selectedIds.filter(sid => sid !== id));
+      } catch(e) {
+        console.error("Erreur suppression produit:", e);
+        showMessage(t("common.error"), "error");
+      }
     }
   };
 
@@ -331,12 +352,20 @@ export default function ProductsPage() {
     const count = selectedIds.length;
     if (confirm(t("products.confirmBulkDelete").replace("{count}", String(count)))) {
       const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`http://localhost:3001/products/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      try {
+        for (const id of selectedIds) {
+          await fetch(`https://api-inovexa.ngrok.app/products/${id}`, { 
+            method: "DELETE", 
+            headers: { Authorization: `Bearer ${token}` } 
+          });
+        }
+        await fetchProducts();
+        setSelectedIds([]);
+        showMessage(`${count} produit(s) supprimé(s)`, "success");
+      } catch(e) {
+        console.error("Erreur suppression en masse:", e);
+        showMessage(t("common.error"), "error");
       }
-      fetchProducts();
-      setSelectedIds([]);
-      showMessage(`${count} produit(s) supprimé(s)`, "success");
     }
   };
 
@@ -344,21 +373,26 @@ export default function ProductsPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      // ✅ Forcer la quantité à 0 pour les produits importés
       const productsWithZeroStock = data.map(p => ({ ...p, quantity: 0 }));
-      const res = await fetch("http://localhost:3001/products/import", {
+      const res = await fetch("https://api-inovexa.ngrok.app/products/import", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}` 
+        },
         body: JSON.stringify({ products: productsWithZeroStock })
       });
       const result = await res.json();
       if (res.ok) { 
         showMessage(`${result.success} produit(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success"); 
-        fetchProducts(); 
+        await fetchProducts(); 
       } else { 
         showMessage(result.message || "Erreur lors de l'import", "error"); 
       }
-    } catch(e) { showMessage("Erreur de connexion lors de l'import", "error"); }
+    } catch(e) { 
+      console.error("Erreur import:", e);
+      showMessage("Erreur de connexion lors de l'import", "error"); 
+    }
     finally { setImporting(false); }
   };
 
@@ -369,7 +403,6 @@ export default function ProductsPage() {
   };
 
   const openEditModal = (product: Product) => {
-    // ✅ Ne pas inclure la quantité dans le formulaire d'édition
     setModal({ 
       open: true, 
       editMode: true, 
@@ -379,6 +412,20 @@ export default function ProductsPage() {
         sku: product.sku || "", 
         price: product.price || 0, 
         categoryId: product.categoryId || "",
+      } 
+    });
+  };
+
+  const openCreateModal = () => {
+    setModal({ 
+      open: true, 
+      editMode: false, 
+      editId: null,
+      form: { 
+        name: "", 
+        sku: "", 
+        price: 0, 
+        categoryId: "" 
       } 
     });
   };
@@ -411,16 +458,12 @@ export default function ProductsPage() {
 
   const stats = {
     total: products.length,
-    lowStock: products.filter(p => (p.quantity || 0) < 10 && (p.quantity || 0) > 0).length,
-    outOfStock: products.filter(p => (p.quantity || 0) === 0).length,
     totalValue: calculateTotalValue(products)
   };
 
   const statsCards = [
     { Icon: IconBox,           label: t("products.totalProducts"), value: stats.total,                     color: theme.primary },
     { Icon: IconDollar,        label: t("products.totalValue"),    value: formatCurrency(stats.totalValue), color: theme.accent },
-    { Icon: IconAlertTriangle, label: t("products.lowStock"),      value: stats.lowStock,                   color: stats.lowStock > 0 ? "#f59e0b" : theme.accent },
-    { Icon: IconXCircle,       label: t("products.outOfStock"),    value: stats.outOfStock,                 color: stats.outOfStock > 0 ? "#ef4444" : theme.accent },
   ];
 
   const animations = `
@@ -480,7 +523,7 @@ export default function ProductsPage() {
                   <>
                     <ImportButton onImport={importProducts} label={t("common.import")} />
                     <ExportButtons data={filteredProducts} filename="produits" />
-                    <button onClick={() => setModal({ open: true, editMode: false, form: { name: "", sku: "", price: 0, quantity: 0, categoryId: "" } })} style={{ background: theme.gradient, color: "white", padding: buttonPadding, border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <button onClick={openCreateModal} style={{ background: theme.gradient, color: "white", padding: buttonPadding, border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "4px" }}>
                       <IconPlus size={14} />{t("common.add")}
                     </button>
                   </>
@@ -491,7 +534,7 @@ export default function ProductsPage() {
               <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
                 <ImportButton onImport={importProducts} label={<IconBox size={14} />} />
                 <ExportButtons data={filteredProducts} filename="produits" />
-                <button onClick={() => setModal({ open: true, editMode: false, form: { name: "", sku: "", price: 0, quantity: 0, categoryId: "" } })} style={{ background: theme.gradient, color: "white", padding: buttonPadding, border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", gap: "4px" }}>
+                <button onClick={openCreateModal} style={{ background: theme.gradient, color: "white", padding: buttonPadding, border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconPlus size={12} />{t("common.add")}
                 </button>
               </div>
@@ -593,7 +636,7 @@ export default function ProductsPage() {
           {viewMode === "list" && (
             <div style={{ background: theme.surface, borderRadius: cardRadius, padding: isMobile ? "8px" : "16px", border: `1px solid ${theme.border}`, overflowX: "auto", animation: "fadeInUp 0.5s ease 0.5s", opacity: animateCards ? 1 : 0 }}>
               <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? "550px" : "100%" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? "450px" : "100%" }}>
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${theme.border}`, color: theme.textSecondary }}>
                       <th style={{ padding: "8px", width: "32px" }}>
@@ -605,7 +648,6 @@ export default function ProductsPage() {
                       {!isMobile && <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>SKU</th>}
                       <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>{t("common.category")}</th>
                       <th style={{ padding: "8px", textAlign: "right", fontSize: tableFontSize }}>{t("common.price")}</th>
-                      <th style={{ padding: "8px", textAlign: "right", fontSize: tableFontSize }}>{t("common.quantity")}</th>
                       <th style={{ padding: "8px", textAlign: "center", fontSize: tableFontSize }}>{t("common.status")}</th>
                       <th style={{ padding: "8px", textAlign: "center", fontSize: tableFontSize }}>{t("common.actions")}</th>
                     </tr>
@@ -632,7 +674,6 @@ export default function ProductsPage() {
                             <span style={{ background: `${theme.primary}20`, color: theme.primary, padding: "2px 6px", borderRadius: "10px", fontSize: statusFontSize, display: "inline-block", whiteSpace: "nowrap" }}>{getCategoryName(p.categoryId)}</span>
                           </td>
                           <td style={{ padding: "8px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize }}>{formatCurrency(p.price || 0)}</td>
-                          <td style={{ padding: "8px", textAlign: "right", color: (p.quantity || 0) < 10 ? "#f59e0b" : theme.text, fontSize: tableFontSize }}>{p.quantity || 0}</td>
                           <td style={{ padding: "8px", textAlign: "center" }}>
                             <span style={{ background: `${statusColor}20`, color: statusColor, padding: "2px 6px", borderRadius: "12px", fontSize: statusFontSize, whiteSpace: "nowrap" }}>{getStatusText(p.quantity || 0)}</span>
                           </td>
@@ -679,7 +720,6 @@ export default function ProductsPage() {
                       {[
                         { label: t("common.category"), value: getCategoryName(p.categoryId), style: { color: theme.primary, background: `${theme.primary}15`, padding: "2px 6px", borderRadius: "8px", fontSize: isMobile ? "8px" : "10px", fontWeight: "bold", display: "inline-block" as const } },
                         { label: t("common.price"), value: formatCurrency(p.price || 0), style: { color: theme.accent, fontSize: isMobile ? "11px" : "13px", fontWeight: "bold" } },
-                        { label: t("common.quantity"), value: `${p.quantity || 0}`, style: { color: (p.quantity || 0) < 10 ? "#f59e0b" : theme.text, fontSize: isMobile ? "11px" : "13px", fontWeight: "bold" } },
                         { label: t("common.status"), value: getStatusText(p.quantity || 0), style: { color: statusColor, fontSize: isMobile ? "8px" : "10px", fontWeight: "bold" } },
                       ].map((row, i) => (
                         <div key={i} style={{ marginBottom: "4px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
@@ -764,8 +804,6 @@ export default function ProductsPage() {
                 style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: isMobile ? "12px" : "14px" }} />
             </div>
 
-            {/* Champ quantité supprimé */}
-            
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={modal.editMode ? updateProduct : createProduct} style={{ flex: 1, padding: "10px", background: theme.gradient, color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <IconSave size={14} />{modal.editMode ? t("common.edit") : t("common.add")}

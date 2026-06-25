@@ -20,39 +20,25 @@ import { SearchModule } from './modules/search/search.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
-import { ProductionModule } from './modules/production/production.module';
 import { TransporteurModule } from './modules/transporteur/transporteur.module';
 import { TransporteursModule } from './modules/transporteurs/transporteurs.module';
+import { ProductionModule } from './modules/production/production.module';
 import { IaModule } from './modules/ia/ia.module';
-
-import { User } from './modules/users/entities/user.entity';
-import { Product } from './modules/products/product.entity';
-import { Client } from './modules/clients/entities/client.entity';
-import { Category } from './modules/categories/category.entity';
-import { Supplier } from './modules/suppliers/supplier.entity';
-import { Order } from './modules/orders/entities/order.entity';
-import { Invoice } from './modules/invoices/entities/invoice.entity';
-import { Sale } from './modules/sales/entities/sale.entity';
-import { Purchase } from './modules/purchases/entities/purchase.entity';
-import { Employee } from './modules/employees/entities/employee.entity';
-import { Expense } from './modules/expenses/entities/expense.entity';
-import { Shipment } from './modules/logistics/entities/shipment.entity';
-import { ProductionOrder } from './modules/production/entities/production-order.entity';
-import { Transporteur } from './modules/transporteurs/entities/transporteur.entity';
-import { IaChat } from './modules/ia/entities/ia-chat.entity';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
-      database: 'inovexa_erp',
-      entities: [User, Product, Client, Category, Supplier, Order, Invoice, Sale, Purchase, Employee, Expense, Shipment, ProductionOrder, Transporteur, IaChat],
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT) || 5432,
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      database: process.env.DB_DATABASE || 'inovexa_erp',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false,
       logging: false,
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }),
     AuthModule,
     UsersModule,
@@ -72,10 +58,11 @@ import { IaChat } from './modules/ia/entities/ia-chat.entity';
     EmployeesModule,
     ExpensesModule,
     LogisticsModule,
-    ProductionModule,
     TransporteurModule,
     TransporteursModule,
+    ProductionModule,
     IaModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -341,7 +341,7 @@ export default function DashboardPage() {
     const token = localStorage.getItem("token");
     if (!token) return null;
     try {
-      const res = await fetch("http://localhost:3001/users/profile", {
+      const res = await fetch("https://api-inovexa.ngrok.app/users/profile", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -609,13 +609,13 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [salesRes, purchasesRes, clientsRes, productsRes, invoicesRes, ordersRes, employeesRes] = await Promise.all([
-        fetch(`http://localhost:3001/sales`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`http://localhost:3001/purchases`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/clients", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/products", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/invoices", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/orders", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:3001/employees", { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`https://api-inovexa.ngrok.app/sales`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`https://api-inovexa.ngrok.app/purchases`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/invoices", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/orders", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("https://api-inovexa.ngrok.app/employees", { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       let sales = await salesRes.json();
@@ -926,7 +926,7 @@ export default function DashboardPage() {
                   >
                     {profileImage && !imageError ? (
                       <img 
-                        src={`http://localhost:3001${profileImage}?t=${imageTimestamp}`} 
+                        src={`$RENDER_API_URL${profileImage}?t=${imageTimestamp}`} 
                         alt="Profile" 
                         style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover", border: `2px solid ${theme.primary}`, boxShadow: `0 4px 15px ${theme.primary}80` }}
                         onError={() => { setImageError(true); refreshUserData(); }} 
@@ -943,7 +943,7 @@ export default function DashboardPage() {
                     <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
                       <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
                         {profileImage && !imageError ? (
-                          <img src={`http://localhost:3001${profileImage}?t=${imageTimestamp}`} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
+                          <img src={`$RENDER_API_URL${profileImage}?t=${imageTimestamp}`} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
                         ) : (
                           <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
                         )}
@@ -1187,4 +1187,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 

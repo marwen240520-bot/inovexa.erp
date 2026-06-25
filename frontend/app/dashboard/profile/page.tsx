@@ -166,12 +166,9 @@ const Icons = {
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
     </svg>
   ),
-  Menu: ({ size = 24 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
-    </svg>
-  ),
 };
+
+const API_URL = "https://api-inovexa.ngrok.app";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -180,18 +177,17 @@ export default function ProfilePage() {
   const { theme: globalTheme, themeId: globalThemeId, setTheme: setGlobalTheme } = useTheme();
   const { isMobile } = useResponsive();
 
-  const contentMarginLeft = isMobile ? "0" : "0px";
-
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
   const [form, setForm] = useState({ name: "", email: "", phone: "", companyName: "" });
   const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("success");
+  const [messageType, setMessageType] = useState<"success" | "error" | "warning">("success");
   const [animateCards, setAnimateCards] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [deletingImage, setDeletingImage] = useState(false);
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -204,6 +200,16 @@ export default function ProfilePage() {
     lastLogin: new Date().toLocaleString()
   });
 
+  const currentTheme = globalTheme;
+  const currentThemeId = globalThemeId;
+
+  const themeTranslations = {
+    fr: { themeChanged: "Thème changé", chooseTheme: "Choisir un thème" },
+    en: { themeChanged: "Theme changed", chooseTheme: "Choose a theme" },
+    es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" }
+  };
+  const themeT = themeTranslations[language as keyof typeof themeTranslations] || themeTranslations.fr;
+
   // Fermer le menu quand on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -214,16 +220,6 @@ export default function ProfilePage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const currentTheme = globalTheme;
-  const currentThemeId = globalThemeId;
-
-  const themeTranslations = {
-    fr: { themeChanged: "Thème changé", chooseTheme: "Choisir un thème" },
-    en: { themeChanged: "Theme changed", chooseTheme: "Choose a theme" },
-    es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" }
-  };
-  const themeT = themeTranslations[language as keyof typeof themeTranslations] || themeTranslations.fr;
 
   const changeTheme = (themeId: string) => {
     setGlobalTheme(themeId);
@@ -258,7 +254,7 @@ export default function ProfilePage() {
     const token = localStorage.getItem("token");
     if (!token) return null;
     try {
-      const res = await fetch("http://localhost:3001/users/profile", {
+      const res = await fetch(`${API_URL}/users/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -280,14 +276,14 @@ export default function ProfilePage() {
       if (freshUser) {
         setUser(freshUser);
         setForm({ name: freshUser.name || "", email: freshUser.email || "", phone: freshUser.phone || "", companyName: freshUser.companyName || "" });
-        setProfileImage(freshUser.profileImage || null);
+        setProfileImage(freshUser.avatar || freshUser.profileImage || null);
       } else {
         const userData = localStorage.getItem("user");
         if (userData) {
           const u = JSON.parse(userData);
           setUser(u);
           setForm({ name: u.name || "", email: u.email || "", phone: u.phone || "", companyName: u.companyName || "" });
-          setProfileImage(u.profileImage || null);
+          setProfileImage(u.avatar || u.profileImage || null);
         }
       }
       await fetchUserStats();
@@ -301,7 +297,7 @@ export default function ProfilePage() {
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     const locale = language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US';
     try {
-      const salesRes = await fetch("http://localhost:3001/sales", { headers: { Authorization: `Bearer ${token}` } });
+      const salesRes = await fetch(`${API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } });
       let sales = await salesRes.json();
       sales = Array.isArray(sales) ? sales : [];
       let userSales = sales;
@@ -313,7 +309,7 @@ export default function ProfilePage() {
         return sum + (typeof amount === 'number' ? amount : parseFloat(amount) || 0);
       }, 0);
 
-      const ordersRes = await fetch("http://localhost:3001/orders", { headers: { Authorization: `Bearer ${token}` } });
+      const ordersRes = await fetch(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${token}` } });
       let orders = await ordersRes.json();
       orders = Array.isArray(orders) ? orders : [];
       let userOrders = orders;
@@ -321,7 +317,7 @@ export default function ProfilePage() {
         userOrders = orders.filter(o => o.userId === currentUser.id || o.createdBy === currentUser.id);
       }
 
-      const clientsRes = await fetch("http://localhost:3001/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const clientsRes = await fetch(`${API_URL}/clients`, { headers: { Authorization: `Bearer ${token}` } });
       let clients = await clientsRes.json();
       clients = Array.isArray(clients) ? clients : [];
       let userClients = clients;
@@ -348,84 +344,101 @@ export default function ProfilePage() {
   const updateProfile = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/users/profile", {
+      const res = await fetch(`${API_URL}/users/profile`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
       });
       if (res.ok) {
         const freshUser = await loadUserFromBackend();
-        if (freshUser) { setUser(freshUser); setProfileImage(freshUser.profileImage || null); }
-        showMessage(t("profile.profileUpdated"), "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch(e) { showMessage(t("common.error"), "error"); }
+        if (freshUser) { setUser(freshUser); setProfileImage(freshUser.avatar || freshUser.profileImage || null); }
+        showMessage(t("profile.profileUpdated") || "✅ Profil mis à jour", "success");
+      } else { showMessage(t("common.error") || "❌ Erreur", "error"); }
+    } catch(e) { showMessage(t("common.error") || "❌ Erreur de connexion", "error"); }
   };
 
-  const optimizeImage = (file: File, maxWidth = 400, maxHeight = 400, quality = 0.95) => {
-    return new Promise<File>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        const result = event.target?.result;
-        if (typeof result !== 'string') { reject(new Error('Invalid file')); return; }
-        img.src = result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width, height = img.height;
-          if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
-          if (height > maxHeight) { width = (width * maxHeight) / height; height = maxHeight; }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) { reject(new Error('Failed to get canvas context')); return; }
-          ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (!blob) { reject(new Error('Failed to create blob')); return; }
-            resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' }));
-          }, 'image/jpeg', quality);
-        };
-        img.onerror = reject;
-      };
-      reader.onerror = reject;
-    });
-  };
-
-  const uploadProfileImage = async (file) => {
+  const uploadProfileImage = async (file: File) => {
     const token = localStorage.getItem("token");
     setUploadingImage(true);
     try {
-      const optimizedFile = await optimizeImage(file, 400, 400, 0.95);
       const formData = new FormData();
-      formData.append("image", optimizedFile);
-      const res = await fetch("http://localhost:3001/users/profile-image", {
+      formData.append("file", file);
+      
+      const res = await fetch(`${API_URL}/upload/avatar`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
+      
       if (res.ok) {
         const data = await res.json();
-        const imageUrl = data.profileImage || `/uploads/profiles/${data.filename}`;
-        setProfileImage(imageUrl);
+        const filename = data.avatar || data.filename || data.url;
+        if (filename) {
+          setProfileImage(filename);
+          setImageTimestamp(Date.now());
+          const freshUser = await loadUserFromBackend();
+          if (freshUser) setUser(freshUser);
+          showMessage("✅ Photo de profil mise à jour", "success");
+        } else {
+          showMessage("⚠️ Image uploadée", "warning");
+        }
+      } else {
+        const error = await res.json();
+        showMessage(error.message || "❌ Erreur lors de l'upload", "error");
+      }
+    } catch(e) {
+      console.error("Erreur upload:", e);
+      showMessage("❌ Erreur de connexion", "error");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const deleteProfileImage = async () => {
+    const token = localStorage.getItem("token");
+    setDeletingImage(true);
+    try {
+      const res = await fetch(`${API_URL}/upload/avatar`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        setProfileImage(null);
         setImageTimestamp(Date.now());
         const freshUser = await loadUserFromBackend();
         if (freshUser) setUser(freshUser);
-        showMessage("Photo de profil mise à jour", "success");
+        showMessage("✅ Photo de profil supprimée", "success");
       } else {
-        const error = await res.json();
-        showMessage(error.error || error.message || "Erreur lors de l'upload", "error");
+        showMessage("❌ Erreur lors de la suppression", "error");
       }
-    } catch(e) { showMessage("Erreur de connexion", "error"); }
-    finally { setUploadingImage(false); }
+    } catch(e) {
+      console.error("Erreur suppression:", e);
+      showMessage("❌ Erreur de connexion", "error");
+    } finally {
+      setDeletingImage(false);
+    }
   };
 
-  const handleImageClick = () => fileInputRef.current?.click();
-  const handleFileChange = (e) => {
+  const handleImageClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.match(/^(image\/jpeg|image\/png)$/)) { showMessage("Veuillez sélectionner une image JPEG ou PNG", "error"); return; }
-    if (file.size > 5 * 1024 * 1024) { showMessage("L'image ne doit pas dépasser 5MB", "error"); return; }
+    if (!file.type.match(/^(image\/jpeg|image\/png|image\/webp)$/)) { 
+      showMessage("Veuillez sélectionner une image JPEG, PNG ou WEBP", "error"); 
+      return; 
+    }
+    if (file.size > 5 * 1024 * 1024) { 
+      showMessage("L'image ne doit pas dépasser 5MB", "error"); 
+      return; 
+    }
     uploadProfileImage(file);
+    e.target.value = "";
   };
 
   const changePassword = async () => {
@@ -434,16 +447,16 @@ export default function ProfilePage() {
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      showMessage(t("profile.passwordMismatch"), "error");
+      showMessage(t("profile.passwordMismatch") || "Les mots de passe ne correspondent pas", "error");
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      showMessage(t("profile.passwordMinLength"), "error");
+      showMessage(t("profile.passwordMinLength") || "Le mot de passe doit contenir au moins 6 caractères", "error");
       return;
     }
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:3001/users/change-password", {
+      const res = await fetch(`${API_URL}/users/change-password`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -453,49 +466,63 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
-        showMessage(t("profile.passwordChanged"), "success");
+        showMessage(t("profile.passwordChanged") || "✅ Mot de passe changé", "success");
       } else {
         const err = await res.json();
-        showMessage(err.message || t("common.error"), "error");
+        showMessage(err.message || t("common.error") || "❌ Erreur", "error");
       }
     } catch(e) {
-      showMessage(t("common.error"), "error");
+      showMessage(t("common.error") || "❌ Erreur de connexion", "error");
     }
   };
 
   const logoutAllDevices = async () => {
-    if (confirm(t("profile.logoutAllWarning"))) {
+    if (confirm(t("profile.logoutAllWarning") || "⚠️ Se déconnecter de tous les appareils ?")) {
       const token = localStorage.getItem("token");
       try {
-        await fetch("http://localhost:3001/users/logout-all", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`${API_URL}/users/logout-all`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
         localStorage.clear();
         router.push("/");
       } catch(e) { console.error(e); }
     }
   };
 
-  const showMessage = (msg, type) => {
-    setMessage(msg); setMessageType(type);
+  const showMessage = (msg: string, type: "success" | "error" | "warning") => {
+    setMessage(msg); 
+    setMessageType(type);
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const getInitials = (name) => name ? name.charAt(0).toUpperCase() : "?";
+  const getInitials = (name: string) => name ? name.charAt(0).toUpperCase() : "?";
   const getRandomColor = () => {
     const colors = ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6", "#ec489a"];
     return colors[(user?.name?.length || 0) % colors.length];
   };
 
-  const getRoleIcon = (role) => {
+  const getRoleIcon = (role: string) => {
     if (role === "admin") return <Icons.Crown />;
     if (role === "transporteur") return <Icons.Truck />;
     return <Icons.User />;
   };
 
-  const getRoleText = (role) => {
-    if (role === "admin") return t("profile.admin");
-    if (role === "transporteur") return t("profile.transporter");
-    return t("profile.client");
+  const getRoleText = (role: string) => {
+    if (role === "admin") return t("profile.admin") || "Administrateur";
+    if (role === "transporteur") return t("profile.transporter") || "Transporteur";
+    return t("profile.client") || "Client";
   };
+
+  const getImageUrl = () => {
+    if (!profileImage) return null;
+    if (profileImage.includes('/uploads/')) {
+      return `${API_URL}${profileImage}?t=${imageTimestamp}`;
+    }
+    if (profileImage.startsWith('http')) {
+      return `${profileImage}?t=${imageTimestamp}`;
+    }
+    return `${API_URL}/uploads/avatars/${profileImage}?t=${imageTimestamp}`;
+  };
+
+  const imageUrl = getImageUrl();
 
   const responsive = {
     contentPadding: isMobile ? "16px" : "32px",
@@ -517,7 +544,7 @@ export default function ProfilePage() {
         <style>{animations}</style>
         <div style={{ textAlign: "center" }}>
           <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
-          <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading")}</p>
+          <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading") || "Chargement..."}</p>
         </div>
       </div>
     );
@@ -530,7 +557,7 @@ export default function ProfilePage() {
       <Sidebar />
       
       <div style={{ 
-        marginLeft: contentMarginLeft,
+        marginLeft: "0px",
         flex: 1, 
         padding: isMobile ? `${responsive.contentPadding} ${responsive.contentPadding} 80px ${responsive.contentPadding}` : responsive.contentPadding,
         paddingTop: isMobile ? "12px" : responsive.contentPadding,
@@ -552,37 +579,33 @@ export default function ProfilePage() {
             <div>
               <h1 style={{ color: currentTheme.text, fontSize: responsive.titleSize, display: "flex", alignItems: "center", gap: "10px" }}>
                 <Icons.User size={isMobile ? 24 : 28} />
-                {t("common.profile")}
+                {t("common.profile") || "Mon Profil"}
               </h1>
               <p style={{ color: currentTheme.textSecondary, marginTop: "4px", fontSize: isMobile ? "12px" : "14px" }}>
+                {user?.email}
               </p>
             </div>
             
-            {/* Bouton Thème - Version corrigée pour mobile */}
+            {/* Bouton Thème */}
             <div style={{ position: "relative" }} ref={themeMenuRef}>
-             <button
-  onClick={() => setShowThemeMenu(!showThemeMenu)}
-  style={{ 
-    display: "flex", 
-    alignItems: "center", 
-    justifyContent: "center",
-    marginRight: "0px",  // ← COLLE À DROITE
-    
-    gap: isMobile ? "4px" : "8px",  // Réduire l'espace
-    padding: isMobile ? "6px 10px" : "8px 16px",  // ← Plus petit sur mobile
-    width: isMobile ? "160px" : "210px",  // ← CHANGE ICI (160px au lieu de 210px)
-    maxWidth: isMobile ? "90vw" : "none",  // ← Pour éviter de dépasser l'écran
-    background: currentTheme.surface, 
-    border: `1px solid ${currentTheme.border}`, 
-    borderRadius: "30px", 
-    color: currentTheme.text, 
-    cursor: "pointer", 
-    fontSize: isMobile ? "11px" : "13px",  // Police plus petite sur mobile
-    whiteSpace: "nowrap"
-
+              <button
+                onClick={() => setShowThemeMenu(!showThemeMenu)}
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  gap: isMobile ? "4px" : "8px",
+                  padding: isMobile ? "6px 10px" : "8px 16px",
+                  width: isMobile ? "160px" : "210px",
+                  maxWidth: isMobile ? "90vw" : "none",
+                  background: currentTheme.surface, 
+                  border: `1px solid ${currentTheme.border}`, 
+                  borderRadius: "30px", 
+                  color: currentTheme.text, 
+                  cursor: "pointer", 
+                  fontSize: isMobile ? "11px" : "13px",
+                  whiteSpace: "nowrap"
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = currentTheme.surfaceHover}
-                onMouseLeave={(e) => e.currentTarget.style.background = currentTheme.surface}
               >
                 <span style={{ color: currentTheme.primary, display: "flex", alignItems: "center" }}>{getThemeIcon(currentThemeId)}</span>
                 {!isMobile && <span>{getThemeName(currentThemeId)}</span>}
@@ -631,8 +654,6 @@ export default function ProfilePage() {
                         marginBottom: "2px",
                         textAlign: "left"
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = currentTheme.surfaceHover}
-                      onMouseLeave={(e) => e.currentTarget.style.background = currentThemeId === key ? `${currentTheme.primary}20` : "transparent"}
                     >
                       <span style={{ color: THEMES[key]?.primary, fontSize: isMobile ? "14px" : "16px", display: "flex", alignItems: "center" }}>{getThemeIcon(key)}</span>
                       <div style={{ flex: 1, textAlign: "left" }}>
@@ -649,58 +670,152 @@ export default function ProfilePage() {
 
           {/* Avatar section */}
           <div style={{ marginBottom: isMobile ? "24px" : "32px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
-            <div className="profile-header" style={{ display: "flex", alignItems: isMobile ? "center" : "center", gap: isMobile ? "20px" : "24px", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
+            <div style={{ display: "flex", alignItems: isMobile ? "center" : "center", gap: isMobile ? "20px" : "24px", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
               
-              {/* Avatar */}
-              <div className="profile-avatar-section" style={{ position: "relative", cursor: "pointer" }} onClick={handleImageClick}>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/jpeg,image/png" style={{ display: "none" }} />
-                {profileImage ? (
-                  <img
-                    src={`http://localhost:3001${profileImage}?t=${imageTimestamp}`}
-                    alt="Profile"
-                    style={{ width: responsive.avatarSize, height: responsive.avatarSize, borderRadius: "50%", objectFit: "cover", objectPosition: "center", border: `3px solid ${currentTheme.primary}`, transition: "transform 0.3s, box-shadow 0.3s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = `0 0 20px ${currentTheme.primary}80`; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
-                    onError={() => setProfileImage(null)}
-                  />
-                ) : (
+              {/* Avatar avec upload et suppression */}
+              <div style={{ position: "relative" }}>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  accept="image/jpeg,image/png,image/webp" 
+                  style={{ display: "none" }} 
+                />
+                
+                <div 
+                  onClick={handleImageClick}
+                  style={{ 
+                    cursor: "pointer",
+                    position: "relative",
+                    width: isMobile ? "80px" : "100px",
+                    height: isMobile ? "80px" : "100px"
+                  }}
+                >
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt="Profile"
+                      style={{ 
+                        width: "100%", 
+                        height: "100%", 
+                        borderRadius: "50%", 
+                        objectFit: "cover",
+                        objectPosition: "center",
+                        border: `3px solid ${currentTheme.primary}`,
+                        background: currentTheme.surface,
+                        display: "block",
+                        transition: "transform 0.3s, box-shadow 0.3s"
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = `0 0 20px ${currentTheme.primary}80`; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
+                      onError={() => setProfileImage(null)}
+                    />
+                  ) : (
+                    <div
+                      style={{ 
+                        width: "100%", 
+                        height: "100%", 
+                        borderRadius: "50%", 
+                        background: `linear-gradient(135deg, ${getRandomColor()} 0%, #764ba2 100%)`, 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        fontSize: isMobile ? "36px" : "48px", 
+                        color: "white",
+                        transition: "transform 0.3s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                      {getInitials(user?.name)}
+                    </div>
+                  )}
+
+                  {/* Camera badge */}
                   <div
-                    style={{ width: responsive.avatarSize, height: responsive.avatarSize, borderRadius: "50%", background: `linear-gradient(135deg, ${getRandomColor()} 0%, #764ba2 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "36px" : "48px", color: "white", transition: "transform 0.3s", cursor: "pointer" }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+                    style={{ 
+                      position: "absolute", 
+                      bottom: "0", 
+                      right: "0", 
+                      background: currentTheme.primary, 
+                      borderRadius: "50%", 
+                      width: isMobile ? "24px" : "28px", 
+                      height: isMobile ? "24px" : "28px", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center", 
+                      border: `2px solid ${currentTheme.background}`, 
+                      cursor: "pointer", 
+                      color: "white",
+                      fontSize: isMobile ? "12px" : "14px",
+                      transition: "transform 0.2s"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
                     onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
                   >
-                    {getInitials(user?.name)}
+                    <Icons.Camera />
                   </div>
-                )}
 
-                {/* Camera badge */}
-                <div
-                  style={{ position: "absolute", bottom: "0", right: "0", background: currentTheme.primary, borderRadius: "50%", width: isMobile ? "24px" : "28px", height: isMobile ? "24px" : "28px", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${currentTheme.background}`, cursor: "pointer", transition: "transform 0.2s", color: "white" }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                >
-                  <Icons.Camera />
+                  {uploadingImage && (
+                    <div style={{ 
+                      position: "absolute", 
+                      top: "50%", 
+                      left: "50%", 
+                      transform: "translate(-50%, -50%)", 
+                      background: "rgba(0,0,0,0.7)", 
+                      borderRadius: "50%", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      width: "100%",
+                      height: "100%"
+                    }}>
+                      <Icons.Spinner color="white" size={24} />
+                    </div>
+                  )}
                 </div>
 
-                {uploadingImage && (
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(0,0,0,0.7)", borderRadius: "50%", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Icons.Spinner color="white" size={24} />
-                  </div>
+                {/* Bouton Supprimer */}
+                {imageUrl && (
+                  <button
+                    onClick={deleteProfileImage}
+                    disabled={deletingImage}
+                    style={{
+                      position: "absolute",
+                      bottom: "-8px",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      background: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "20px",
+                      padding: isMobile ? "4px 12px" : "6px 16px",
+                      fontSize: isMobile ? "10px" : "12px",
+                      cursor: deletingImage ? "not-allowed" : "pointer",
+                      opacity: deletingImage ? 0.6 : 1,
+                      whiteSpace: "nowrap",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}
+                  >
+                    {deletingImage ? "⏳" : "🗑️"} {t("common.delete") || "Supprimer"}
+                  </button>
                 )}
               </div>
 
               {/* Infos utilisateur */}
-              <div style={{ textAlign: isMobile ? "center" : "left" }}>
+              <div style={{ textAlign: isMobile ? "center" : "left", flex: 1 }}>
                 <h2 style={{ color: currentTheme.text, fontSize: isMobile ? "20px" : "24px", marginBottom: "4px" }}>{user?.name}</h2>
                 <p style={{ color: currentTheme.textSecondary, margin: "4px 0 0 0", display: "flex", alignItems: "center", justifyContent: isMobile ? "center" : "flex-start", gap: "6px", fontSize: isMobile ? "13px" : "14px" }}>
                   {getRoleIcon(user?.role)} {getRoleText(user?.role)}
                 </p>
                 <div style={{ display: "flex", gap: "16px", marginTop: "8px", flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start" }}>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Calendar /> {t("profile.memberSince")} {stats.memberSince}
+                    <Icons.Calendar /> {t("profile.memberSince") || "Membre depuis"} {stats.memberSince}
                   </span>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Lock /> {t("profile.lastLogin")}: {stats.lastLogin}
+                    <Icons.Lock /> {t("profile.lastLogin") || "Dernière connexion"}: {stats.lastLogin}
                   </span>
                 </div>
               </div>
@@ -709,23 +824,58 @@ export default function ProfilePage() {
 
           {/* Message */}
           {message && (
-            <div style={{ background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#f87171", padding: "12px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", animation: "fadeInUp 0.3s ease", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "12px" : "14px" }}>
-              {messageType === "success" ? <Icons.CheckCircle /> : <Icons.XCircle />}
+            <div style={{ 
+              background: messageType === "success" ? "rgba(16,185,129,0.1)" : messageType === "warning" ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)", 
+              border: `1px solid ${messageType === "success" ? "#10b981" : messageType === "warning" ? "#f59e0b" : "#ef4444"}`, 
+              color: messageType === "success" ? "#10b981" : messageType === "warning" ? "#f59e0b" : "#f87171", 
+              padding: "12px", 
+              borderRadius: "12px", 
+              marginBottom: "20px", 
+              textAlign: "center", 
+              animation: "fadeInUp 0.3s ease", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              gap: "8px", 
+              fontSize: isMobile ? "12px" : "14px" 
+            }}>
+              {messageType === "success" ? <Icons.CheckCircle /> : messageType === "warning" ? "⚠️" : <Icons.XCircle />}
               {message}
             </div>
           )}
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: `1px solid ${currentTheme.border}`, overflowX: "auto", WebkitOverflowScrolling: "touch", animation: `fadeInUp 0.5s ease 0.3s`, opacity: animateCards ? 1 : 0 }}>
+          <div style={{ 
+            display: "flex", 
+            gap: "8px", 
+            marginBottom: "24px", 
+            borderBottom: `1px solid ${currentTheme.border}`, 
+            overflowX: "auto", 
+            animation: `fadeInUp 0.5s ease 0.3s`, 
+            opacity: animateCards ? 1 : 0 
+          }}>
             {[
-              { id: "info", label: t("profile.personalInfo"), Icon: Icons.FileText },
-              { id: "security", label: t("profile.security"), Icon: Icons.ShieldLock },
-              { id: "activity", label: t("profile.activity"), Icon: Icons.BarChart2 },
+              { id: "info", label: t("profile.personalInfo") || "📋 Informations", Icon: Icons.FileText },
+              { id: "security", label: t("profile.security") || "🔒 Sécurité", Icon: Icons.ShieldLock },
+              { id: "activity", label: t("profile.activity") || "📊 Activité", Icon: Icons.BarChart2 },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                style={{ padding: isMobile ? "10px 16px" : "12px 20px", background: activeTab === tab.id ? currentTheme.primary : "transparent", border: "none", borderRadius: "12px 12px 0 0", color: activeTab === tab.id ? "white" : currentTheme.textSecondary, cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "12px" : "14px", whiteSpace: "nowrap" }}
+                style={{ 
+                  padding: isMobile ? "10px 16px" : "12px 20px", 
+                  background: activeTab === tab.id ? currentTheme.primary : "transparent", 
+                  border: "none", 
+                  borderRadius: "12px 12px 0 0", 
+                  color: activeTab === tab.id ? "white" : currentTheme.textSecondary, 
+                  cursor: "pointer", 
+                  transition: "all 0.2s", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "7px", 
+                  fontSize: isMobile ? "12px" : "14px", 
+                  whiteSpace: "nowrap" 
+                }}
               >
                 <tab.Icon /> {!isMobile && tab.label}
                 {isMobile && (tab.id === "info" ? "Info" : tab.id === "security" ? "Sécurité" : "Activité")}
@@ -735,37 +885,71 @@ export default function ProfilePage() {
 
           {/* Tab: Info */}
           {activeTab === "info" && (
-            <div style={{ background: currentTheme.surface, borderRadius: "20px", padding: responsive.cardPadding, border: `1px solid ${currentTheme.border}`, animation: "fadeInUp 0.3s ease" }}>
+            <div style={{ 
+              background: currentTheme.surface, 
+              borderRadius: "20px", 
+              padding: responsive.cardPadding, 
+              border: `1px solid ${currentTheme.border}`, 
+              animation: "fadeInUp 0.3s ease" 
+            }}>
               {[
-                { label: t("common.name"), key: "name", type: "text" },
-                { label: t("common.email"), key: "email", type: "email" },
-                { label: t("common.phone"), key: "phone", type: "tel" },
-                { label: t("profile.company"), key: "companyName", type: "text" },
+                { label: t("common.name") || "Nom complet", key: "name", type: "text" },
+                { label: t("common.email") || "Email", key: "email", type: "email" },
+                { label: t("common.phone") || "Téléphone", key: "phone", type: "tel" },
+                { label: t("profile.company") || "Société", key: "companyName", type: "text" },
               ].map(field => (
                 <div key={field.key} style={{ marginBottom: "20px" }}>
                   <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{field.label}</label>
                   <input
                     type={field.type}
-                    value={form[field.key]}
+                    value={form[field.key as keyof typeof form] || ""}
                     onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-                    style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", outline: "none", fontSize: isMobile ? "13px" : "14px" }}
+                    style={{ 
+                      width: "100%", 
+                      padding: isMobile ? "10px" : "12px", 
+                      background: currentTheme.surfaceHover, 
+                      border: `1px solid ${currentTheme.border}`, 
+                      borderRadius: "10px", 
+                      color: currentTheme.text, 
+                      boxSizing: "border-box", 
+                      outline: "none", 
+                      fontSize: isMobile ? "13px" : "14px" 
+                    }}
                   />
                 </div>
               ))}
               <button
                 onClick={updateProfile}
-                style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "14px" : "15px", fontWeight: "500" }}
+                style={{ 
+                  width: "100%", 
+                  padding: isMobile ? "10px" : "12px", 
+                  background: currentTheme.gradient, 
+                  color: "white", 
+                  border: "none", 
+                  borderRadius: "10px", 
+                  cursor: "pointer", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  gap: "8px", 
+                  fontSize: isMobile ? "14px" : "15px", 
+                  fontWeight: "500" 
+                }}
               >
-                <Icons.Save /> {t("common.save")}
+                <Icons.Save /> {t("common.save") || "Enregistrer"}
               </button>
             </div>
           )}
 
           {/* Tab: Security */}
           {activeTab === "security" && (
-            <div style={{ background: currentTheme.surface, borderRadius: "20px", padding: responsive.cardPadding, border: `1px solid ${currentTheme.border}`, animation: "fadeInUp 0.3s ease" }}>
-              
-              {/* Ancien mot de passe */}
+            <div style={{ 
+              background: currentTheme.surface, 
+              borderRadius: "20px", 
+              padding: responsive.cardPadding, 
+              border: `1px solid ${currentTheme.border}`, 
+              animation: "fadeInUp 0.3s ease" 
+            }}>
               <div style={{ marginBottom: "20px" }}>
                 <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>
                   {t("profile.oldPassword") || "Ancien mot de passe"}
@@ -774,40 +958,109 @@ export default function ProfilePage() {
                   type="password" 
                   value={passwordForm.oldPassword} 
                   onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })} 
-                  style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", fontSize: isMobile ? "13px" : "14px" }} 
+                  style={{ 
+                    width: "100%", 
+                    padding: isMobile ? "10px" : "12px", 
+                    background: currentTheme.surfaceHover, 
+                    border: `1px solid ${currentTheme.border}`, 
+                    borderRadius: "10px", 
+                    color: currentTheme.text, 
+                    boxSizing: "border-box", 
+                    fontSize: isMobile ? "13px" : "14px" 
+                  }} 
                 />
               </div>
               
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{t("profile.newPassword")}</label>
-                <input type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", fontSize: isMobile ? "13px" : "14px" }} />
+                <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>
+                  {t("profile.newPassword") || "Nouveau mot de passe"}
+                </label>
+                <input type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} style={{ 
+                  width: "100%", 
+                  padding: isMobile ? "10px" : "12px", 
+                  background: currentTheme.surfaceHover, 
+                  border: `1px solid ${currentTheme.border}`, 
+                  borderRadius: "10px", 
+                  color: currentTheme.text, 
+                  boxSizing: "border-box", 
+                  fontSize: isMobile ? "13px" : "14px" 
+                }} />
               </div>
               
               <div style={{ marginBottom: "24px" }}>
-                <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{t("profile.confirmPassword")}</label>
-                <input type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", fontSize: isMobile ? "13px" : "14px" }} />
+                <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>
+                  {t("profile.confirmPassword") || "Confirmer le mot de passe"}
+                </label>
+                <input type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} style={{ 
+                  width: "100%", 
+                  padding: isMobile ? "10px" : "12px", 
+                  background: currentTheme.surfaceHover, 
+                  border: `1px solid ${currentTheme.border}`, 
+                  borderRadius: "10px", 
+                  color: currentTheme.text, 
+                  boxSizing: "border-box", 
+                  fontSize: isMobile ? "13px" : "14px" 
+                }} />
               </div>
               
               <button
                 onClick={changePassword}
-                style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "14px" : "15px", fontWeight: "500" }}
+                style={{ 
+                  width: "100%", 
+                  padding: isMobile ? "10px" : "12px", 
+                  background: currentTheme.gradient, 
+                  color: "white", 
+                  border: "none", 
+                  borderRadius: "10px", 
+                  cursor: "pointer", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  gap: "8px", 
+                  fontSize: isMobile ? "14px" : "15px", 
+                  fontWeight: "500" 
+                }}
               >
-                <Icons.Key /> {t("profile.changePassword")}
+                <Icons.Key /> {t("profile.changePassword") || "Changer le mot de passe"}
               </button>
 
-              <div style={{ marginTop: "32px", padding: "20px", background: "rgba(239,68,68,0.08)", borderRadius: "12px", border: "1px solid rgba(239,68,68,0.4)" }}>
+              <div style={{ 
+                marginTop: "32px", 
+                padding: "20px", 
+                background: "rgba(239,68,68,0.08)", 
+                borderRadius: "12px", 
+                border: "1px solid rgba(239,68,68,0.4)" 
+              }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
                   <Icons.AlertTriangle />
                   <div>
-                    <div style={{ color: "#f87171", fontWeight: "bold", fontSize: isMobile ? "14px" : "15px" }}>{t("profile.dangerZone")}</div>
-                    <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "11px" : "12px", marginTop: "2px" }}>{t("profile.logoutAllWarning")}</div>
+                    <div style={{ color: "#f87171", fontWeight: "bold", fontSize: isMobile ? "14px" : "15px" }}>
+                      {t("profile.dangerZone") || "Zone de danger"}
+                    </div>
+                    <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "11px" : "12px", marginTop: "2px" }}>
+                      {t("profile.logoutAllWarning") || "Déconnexion de tous les appareils"}
+                    </div>
                   </div>
                 </div>
                 <button
                   onClick={logoutAllDevices}
-                  style={{ width: "100%", padding: isMobile ? "8px" : "10px", background: "#b91c1c", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: isMobile ? "13px" : "14px", fontWeight: "500" }}
+                  style={{ 
+                    width: "100%", 
+                    padding: isMobile ? "8px" : "10px", 
+                    background: "#b91c1c", 
+                    color: "white", 
+                    border: "none", 
+                    borderRadius: "8px", 
+                    cursor: "pointer", 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    gap: "8px", 
+                    fontSize: isMobile ? "13px" : "14px", 
+                    fontWeight: "500" 
+                  }}
                 >
-                  <Icons.LogOut /> {t("profile.logoutAllDevices")}
+                  <Icons.LogOut /> {t("profile.logoutAllDevices") || "Se déconnecter de tous les appareils"}
                 </button>
               </div>
             </div>
@@ -815,16 +1068,22 @@ export default function ProfilePage() {
 
           {/* Tab: Activity */}
           {activeTab === "activity" && (
-            <div style={{ background: currentTheme.surface, borderRadius: "20px", padding: responsive.cardPadding, border: `1px solid ${currentTheme.border}`, animation: "fadeInUp 0.3s ease" }}>
+            <div style={{ 
+              background: currentTheme.surface, 
+              borderRadius: "20px", 
+              padding: responsive.cardPadding, 
+              border: `1px solid ${currentTheme.border}`, 
+              animation: "fadeInUp 0.3s ease" 
+            }}>
               <h3 style={{ color: currentTheme.text, marginBottom: "20px", fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Icons.BarChart2 /> {t("profile.personalStats")}
+                <Icons.BarChart2 /> {t("profile.personalStats") || "Statistiques personnelles"}
               </h3>
-              <div className="activity-stats" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
                 {[
-                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: t("profile.revenueGenerated"), color: currentTheme.accent },
-                  { Icon: Icons.ClipboardList, value: stats.totalOrders, label: t("common.orders"), color: currentTheme.primary },
-                  { Icon: Icons.Users, value: stats.totalClients, label: t("common.clients"), color: currentTheme.secondary },
-                  { Icon: Icons.Clock, value: stats.memberSince, label: t("profile.memberSince"), color: "#f59e0b" },
+                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: t("profile.revenueGenerated") || "CA généré", color: currentTheme.accent },
+                  { Icon: Icons.ClipboardList, value: stats.totalOrders, label: t("common.orders") || "Commandes", color: currentTheme.primary },
+                  { Icon: Icons.Users, value: stats.totalClients, label: t("common.clients") || "Clients", color: currentTheme.secondary },
+                  { Icon: Icons.Clock, value: stats.memberSince, label: t("profile.memberSince") || "Membre depuis", color: "#f59e0b" },
                 ].map((item, i) => (
                   <div key={i} style={{ padding: isMobile ? "12px" : "16px", background: currentTheme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: item.color }}><item.Icon /></div>
@@ -838,9 +1097,11 @@ export default function ProfilePage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px", flexWrap: "wrap" }}>
                   <span style={{ color: currentTheme.primary }}><Icons.Shield /></span>
                   <div>
-                    <div style={{ color: currentTheme.text, fontWeight: "bold", fontSize: isMobile ? "13px" : "14px" }}>{t("profile.currentSession")}</div>
+                    <div style={{ color: currentTheme.text, fontWeight: "bold", fontSize: isMobile ? "13px" : "14px" }}>
+                      {t("profile.currentSession") || "Session actuelle"}
+                    </div>
                     <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px" }}>
-                      {t("profile.connectedSince")} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
+                      {t("profile.connectedSince") || "Connecté depuis"} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
                     </div>
                   </div>
                 </div>

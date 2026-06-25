@@ -12,11 +12,6 @@ export class ClientsController {
     return this.clientsService.findAll(req.user.userId);
   }
 
-  @Get('stats')
-  async getStats(@Request() req: any) {
-    return this.clientsService.getStats(req.user.userId);
-  }
-
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req: any) {
     return this.clientsService.findOne(parseInt(id), req.user.userId);
@@ -24,6 +19,8 @@ export class ClientsController {
 
   @Post()
   async create(@Request() req: any, @Body() body: any) {
+    // Ajouter userId au body
+    body.userId = req.user.userId;
     return this.clientsService.create(req.user.userId, body);
   }
 
@@ -35,11 +32,6 @@ export class ClientsController {
   @Patch(':id/status')
   async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
     return this.clientsService.updateStatus(parseInt(id), req.user.userId, body.status);
-  }
-
-  @Post('import')
-  async importClients(@Request() req: any, @Body() body: { clients: any[] }) {
-    return this.clientsService.importClients(req.user.userId, body.clients);
   }
 
   @Delete(':id')
