@@ -1,0 +1,8 @@
+﻿node_modules/
+dist/
+.env
+.env.production
+uploads/*
+!uploads/.gitkeep
+!uploads/avatars/.gitkeep
+!uploads/profiles/.gitkeep
