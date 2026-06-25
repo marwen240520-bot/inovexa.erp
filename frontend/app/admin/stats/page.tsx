@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -32,7 +32,7 @@ export default function AdminStatsPage() {
 
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-inovexa.ngrok.app";
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "${process.env.NEXT_PUBLIC_API_URL}";
     
     try {
       const res = await fetch(`${API_URL}/admin/stats`, {
@@ -67,28 +67,28 @@ export default function AdminStatsPage() {
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
           
           <div style={{ marginBottom: "32px" }}>
-            <h1 style={{ color: "white", fontSize: "28px", margin: 0 }}>📊 Statistiques</h1>
+            <h1 style={{ color: "white", fontSize: "28px", margin: 0 }}>?? Statistiques</h1>
             <p style={{ color: "#94a3b8", marginTop: "4px" }}>Vue d'ensemble de la plateforme</p>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
             <div style={{ background: "#111", borderRadius: "20px", padding: "24px", border: "1px solid #222", textAlign: "center" }}>
-              <div style={{ fontSize: "40px", marginBottom: "12px" }}>👥</div>
+              <div style={{ fontSize: "40px", marginBottom: "12px" }}>??</div>
               <div style={{ fontSize: "32px", color: "#667eea", fontWeight: "bold" }}>{stats.totalUsers}</div>
               <div style={{ color: "#94a3b8", fontSize: "14px" }}>Total Utilisateurs</div>
             </div>
             <div style={{ background: "#111", borderRadius: "20px", padding: "24px", border: "1px solid #222", textAlign: "center" }}>
-              <div style={{ fontSize: "40px", marginBottom: "12px" }}>🟢</div>
+              <div style={{ fontSize: "40px", marginBottom: "12px" }}>??</div>
               <div style={{ fontSize: "32px", color: "#10b981", fontWeight: "bold" }}>{stats.activeUsers}</div>
               <div style={{ color: "#94a3b8", fontSize: "14px" }}>Utilisateurs Actifs</div>
             </div>
             <div style={{ background: "#111", borderRadius: "20px", padding: "24px", border: "1px solid #222", textAlign: "center" }}>
-              <div style={{ fontSize: "40px", marginBottom: "12px" }}>💰</div>
-              <div style={{ fontSize: "32px", color: "#f59e0b", fontWeight: "bold" }}>{stats.totalSales.toLocaleString()} €</div>
+              <div style={{ fontSize: "40px", marginBottom: "12px" }}>??</div>
+              <div style={{ fontSize: "32px", color: "#f59e0b", fontWeight: "bold" }}>{stats.totalSales.toLocaleString()} �</div>
               <div style={{ color: "#94a3b8", fontSize: "14px" }}>Chiffre d'affaires</div>
             </div>
             <div style={{ background: "#111", borderRadius: "20px", padding: "24px", border: "1px solid #222", textAlign: "center" }}>
-              <div style={{ fontSize: "40px", marginBottom: "12px" }}>📦</div>
+              <div style={{ fontSize: "40px", marginBottom: "12px" }}>??</div>
               <div style={{ fontSize: "32px", color: "#8b5cf6", fontWeight: "bold" }}>{stats.totalProducts}</div>
               <div style={{ color: "#94a3b8", fontSize: "14px" }}>Produits</div>
             </div>

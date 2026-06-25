@@ -1,4 +1,4 @@
-ï»¿"use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -125,7 +125,7 @@ const Icons = {
   ),
 };
 
-// Composant champ de formulaire amÃ©liorÃ©
+// Composant champ de formulaire amélioré
 const FormField = ({
   label,
   icon,
@@ -265,33 +265,33 @@ export default function TransporteurProfilePage() {
   const getTranslation = (key: string): string => {
     const directTranslations: Record<string, Record<string, string>> = {
       "profile.title": { fr: "Mon Profil", en: "My Profile", es: "Mi Perfil" },
-      "profile.subtitle": { fr: "GÃ©rez vos informations personnelles", en: "Manage your personal information", es: "Gestione su informaciÃ³n personal" },
-      "profile.personalInfo": { fr: "Informations personnelles", en: "Personal information", es: "InformaciÃ³n personal" },
-      "profile.detailedStats": { fr: "Statistiques dÃ©taillÃ©es", en: "Detailed statistics", es: "EstadÃ­sticas detalladas" },
+      "profile.subtitle": { fr: "Gérez vos informations personnelles", en: "Manage your personal information", es: "Gestione su información personal" },
+      "profile.personalInfo": { fr: "Informations personnelles", en: "Personal information", es: "Información personal" },
+      "profile.detailedStats": { fr: "Statistiques détaillées", en: "Detailed statistics", es: "Estadísticas detalladas" },
       "profile.name": { fr: "Nom complet", en: "Full name", es: "Nombre completo" },
-      "profile.email": { fr: "Email", en: "Email", es: "Correo electrÃ³nico" },
-      "profile.phone": { fr: "TÃ©lÃ©phone", en: "Phone", es: "TelÃ©fono" },
+      "profile.email": { fr: "Email", en: "Email", es: "Correo electrónico" },
+      "profile.phone": { fr: "Téléphone", en: "Phone", es: "Teléfono" },
       "profile.company": { fr: "Entreprise", en: "Company", es: "Empresa" },
       "profile.save": { fr: "Enregistrer les modifications", en: "Save changes", es: "Guardar cambios" },
       "profile.cancel": { fr: "Annuler", en: "Cancel", es: "Cancelar" },
-      "profile.saved": { fr: "EnregistrÃ© !", en: "Saved!", es: "Â¡Guardado!" },
+      "profile.saved": { fr: "Enregistré !", en: "Saved!", es: "¡Guardado!" },
       "profile.saving": { fr: "Enregistrement...", en: "Saving...", es: "Guardando..." },
-      "profile.profileUpdated": { fr: "Profil mis Ã  jour avec succÃ¨s", en: "Profile updated successfully", es: "Perfil actualizado con Ã©xito" },
-      "profile.unsavedChanges": { fr: "Vous avez des modifications non enregistrÃ©es", en: "You have unsaved changes", es: "Tiene cambios sin guardar" },
+      "profile.profileUpdated": { fr: "Profil mis à jour avec succès", en: "Profile updated successfully", es: "Perfil actualizado con éxito" },
+      "profile.unsavedChanges": { fr: "Vous avez des modifications non enregistrées", en: "You have unsaved changes", es: "Tiene cambios sin guardar" },
       "profile.totalShipments": { fr: "Livraisons totales", en: "Total shipments", es: "Entregas totales" },
-      "profile.completedShipments": { fr: "Livraisons complÃ©tÃ©es", en: "Completed shipments", es: "Entregas completadas" },
+      "profile.completedShipments": { fr: "Livraisons complétées", en: "Completed shipments", es: "Entregas completadas" },
       "profile.pendingShipments": { fr: "En attente", en: "Pending", es: "Pendientes" },
-      "profile.successRate": { fr: "Taux de rÃ©ussite", en: "Success rate", es: "Tasa de Ã©xito" },
+      "profile.successRate": { fr: "Taux de réussite", en: "Success rate", es: "Tasa de éxito" },
       "profile.performanceScore": { fr: "Performance", en: "Performance", es: "Rendimiento" },
       "profile.tipTitle": { fr: "Conseil", en: "Tip", es: "Consejo" },
       "profile.professionalTransporter": { fr: "Transporteur professionnel", en: "Professional transporter", es: "Transportista profesional" },
-      "profile.verified": { fr: "VÃ©rifiÃ©", en: "Verified", es: "Verificado" },
-      "profile.emailHint": { fr: "UtilisÃ© pour les notifications de livraison", en: "Used for delivery notifications", es: "Usado para notificaciones de entrega" },
-      "profile.companyHint": { fr: "Visible sur votre profil public", en: "Visible on your public profile", es: "Visible en su perfil pÃºblico" },
-      "profile.identity": { fr: "IdentitÃ©", en: "Identity", es: "Identidad" },
+      "profile.verified": { fr: "Vérifié", en: "Verified", es: "Verificado" },
+      "profile.emailHint": { fr: "Utilisé pour les notifications de livraison", en: "Used for delivery notifications", es: "Usado para notificaciones de entrega" },
+      "profile.companyHint": { fr: "Visible sur votre profil public", en: "Visible on your public profile", es: "Visible en su perfil público" },
+      "profile.identity": { fr: "Identité", en: "Identity", es: "Identidad" },
       "profile.contact": { fr: "Contact", en: "Contact", es: "Contacto" },
       "common.loading": { fr: "Chargement...", en: "Loading...", es: "Cargando..." },
-      "common.error": { fr: "Une erreur est survenue", en: "An error occurred", es: "OcurriÃ³ un error" },
+      "common.error": { fr: "Une erreur est survenue", en: "An error occurred", es: "Ocurrió un error" },
     };
     if (directTranslations[key]?.[language]) return directTranslations[key][language];
     const translated = t(key);
@@ -309,7 +309,7 @@ export default function TransporteurProfilePage() {
   const fetchUserData = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/users/profile", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/users/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -358,7 +358,7 @@ export default function TransporteurProfilePage() {
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/transporteur/stats", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/transporteur/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -372,7 +372,7 @@ export default function TransporteurProfilePage() {
     const token = localStorage.getItem("token");
     setSaving(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/users/profile", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/users/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
@@ -588,7 +588,7 @@ export default function TransporteurProfilePage() {
       {activeTab === "info" && (
         <div style={{ background: "#111", border: "1px solid #1e1e1e", borderTop: "none", borderRadius: "0 0 18px 18px", padding: isMobile ? "20px" : "28px" }}>
 
-          {/* BanniÃ¨re modifications non enregistrÃ©es */}
+          {/* Bannière modifications non enregistrées */}
           {hasChanges && (
             <div style={{
               display: "flex",
@@ -610,7 +610,7 @@ export default function TransporteurProfilePage() {
 
           <div style={{ maxWidth: isMobile ? "100%" : "560px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
-            {/* Section IdentitÃ© */}
+            {/* Section Identité */}
             <div>
               <p style={{ color: "#444", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 14px" }}>
                 {getTranslation("profile.identity")}
@@ -639,7 +639,7 @@ export default function TransporteurProfilePage() {
               </div>
             </div>
 
-            {/* SÃ©parateur */}
+            {/* Séparateur */}
             <div style={{ height: "1px", background: "#1a1a1a" }} />
 
             {/* Section Contact */}
@@ -673,7 +673,7 @@ export default function TransporteurProfilePage() {
               </div>
             </div>
 
-            {/* SÃ©parateur */}
+            {/* Séparateur */}
             <div style={{ height: "1px", background: "#1a1a1a" }} />
 
             {/* Actions */}
@@ -760,7 +760,7 @@ export default function TransporteurProfilePage() {
             </div>
           </div>
 
-          {/* Taux de rÃ©ussite */}
+          {/* Taux de réussite */}
           <div style={{ marginBottom: "18px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
               <span style={{ color: "#94a3b8", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -794,7 +794,7 @@ export default function TransporteurProfilePage() {
               <div style={{ color: "#94a3b8", fontSize: isMobile ? "10px" : "11px", marginTop: "4px" }}>
                 {stats.pending > 0
                   ? `${stats.pending} ${stats.pending === 1 ? "livraison en attente" : "livraisons en attente"}`
-                  : "Bravo ! Toutes vos livraisons sont Ã  jour"}
+                  : "Bravo ! Toutes vos livraisons sont à jour"}
               </div>
             </div>
           </div>

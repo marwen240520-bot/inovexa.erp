@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
+// --- SVG Icons ----------------------------------------------------------------
 const icons = {
   // Module icons
   dashboard: (
@@ -251,7 +251,7 @@ const categoryIcons: Record<string, JSX.Element> = {
   ),
 };
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 interface Client {
   id: number;
@@ -286,7 +286,7 @@ export default function AdminModulesPage() {
   const allModules = [
     { id: "dashboard",   name: "Dashboard",             icon: icons.dashboard,   description: "Tableau de bord principal",  category: "principal"  },
     { id: "products",    name: "Produits",               icon: icons.products,    description: "Gestion des produits",       category: "commerce"   },
-    { id: "categories",  name: "Catégories",             icon: icons.categories,  description: "Gestion des catégories",     category: "commerce"   },
+    { id: "categories",  name: "Cat�gories",             icon: icons.categories,  description: "Gestion des cat�gories",     category: "commerce"   },
     { id: "stock",       name: "Stock",                  icon: icons.stock,       description: "Gestion du stock",           category: "commerce"   },
     { id: "sales",       name: "Ventes",                 icon: icons.sales,       description: "Gestion des ventes",         category: "commerce"   },
     { id: "purchases",   name: "Achats",                 icon: icons.purchases,   description: "Gestion des achats",         category: "commerce"   },
@@ -295,14 +295,14 @@ export default function AdminModulesPage() {
     { id: "suppliers",   name: "Fournisseurs",           icon: icons.suppliers,   description: "Gestion des fournisseurs",   category: "crm"        },
     { id: "invoices",    name: "Factures",               icon: icons.invoices,    description: "Gestion des factures",       category: "finance"    },
     { id: "hr",          name: "Ressources Humaines",    icon: icons.hr,          description: "Gestion RH",                 category: "rh"         },
-    { id: "finance",     name: "Finance",                icon: icons.finance,     description: "Gestion financière",         category: "finance"    },
+    { id: "finance",     name: "Finance",                icon: icons.finance,     description: "Gestion financi�re",         category: "finance"    },
     { id: "logistics",   name: "Logistique",             icon: icons.logistics,   description: "Gestion logistique",         category: "logistics"  },
     { id: "production",  name: "Production",             icon: icons.production,  description: "Gestion production",         category: "production" },
     { id: "ai",          name: "Assistant IA",           icon: icons.ai,          description: "Intelligence artificielle",  category: "ai"         },
-    { id: "reports",     name: "Rapports",               icon: icons.reports,     description: "Génération de rapports",     category: "analytics"  },
-    { id: "analytics",   name: "Analytics",              icon: icons.analytics,   description: "Analyses avancées",          category: "analytics"  },
+    { id: "reports",     name: "Rapports",               icon: icons.reports,     description: "G�n�ration de rapports",     category: "analytics"  },
+    { id: "analytics",   name: "Analytics",              icon: icons.analytics,   description: "Analyses avanc�es",          category: "analytics"  },
     { id: "profile",     name: "Mon Profil",             icon: icons.profile,     description: "Profil utilisateur",         category: "user"       },
-    { id: "settings",    name: "Paramètres",             icon: icons.settings,    description: "Configuration",              category: "user"       },
+    { id: "settings",    name: "Param�tres",             icon: icons.settings,    description: "Configuration",              category: "user"       },
   ];
 
   useEffect(() => {
@@ -317,7 +317,7 @@ export default function AdminModulesPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/admin/clients", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/admin/clients", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -333,7 +333,7 @@ export default function AdminModulesPage() {
   const loadClientModules = async (clientId: number) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/users/${clientId}/modules`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${clientId}/modules`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -367,13 +367,13 @@ export default function AdminModulesPage() {
     modules.forEach(m => { modulesConfig[m.id] = m.enabled; });
 
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/admin/clients/${selectedClient.id}/modules`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${selectedClient.id}/modules`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ modules: modulesConfig })
       });
       if (res.ok) {
-        showMessage(`Modules mis à jour pour ${selectedClient.name}`, "success");
+        showMessage(`Modules mis � jour pour ${selectedClient.name}`, "success");
       } else {
         showMessage("Erreur lors de la sauvegarde", "error");
       }
@@ -403,7 +403,7 @@ export default function AdminModulesPage() {
   const totalModules = modules.length;
   const progress = totalModules > 0 ? (enabledCount / totalModules) * 100 : 0;
 
-  // Grouper les modules par catégorie
+  // Grouper les modules par cat�gorie
   const groupedModules = modules.reduce((acc: Record<string, Module[]>, module) => {
     if (!acc[module.category]) acc[module.category] = [];
     acc[module.category].push(module);
@@ -455,7 +455,7 @@ export default function AdminModulesPage() {
                   <span style={{ color: "#667eea" }}>{icons.modules}</span>
                   Gestion des Modules
                 </h1>
-                <p style={{ color: "#94a3b8", marginTop: "4px" }}>Activez ou désactivez les modules pour chaque client</p>
+                <p style={{ color: "#94a3b8", marginTop: "4px" }}>Activez ou d�sactivez les modules pour chaque client</p>
               </div>
             </div>
           </div>
@@ -475,7 +475,7 @@ export default function AdminModulesPage() {
             </div>
           )}
 
-          {/* Sélection du client */}
+          {/* S�lection du client */}
           <div style={{
             background: "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
             borderRadius: "20px", padding: "24px", border: "1px solid #222",
@@ -483,7 +483,7 @@ export default function AdminModulesPage() {
           }}>
             <label style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
               {icons.users}
-              Sélectionner un client
+              S�lectionner un client
             </label>
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
               <select
@@ -494,7 +494,7 @@ export default function AdminModulesPage() {
                 }}
                 style={{ flex: 2, padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white", minWidth: "250px" }}
               >
-                <option value="">Sélectionner un client</option>
+                <option value="">S�lectionner un client</option>
                 {clients.map(c => (
                   <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
                 ))}
@@ -537,7 +537,7 @@ export default function AdminModulesPage() {
                       onClick={() => toggleAllModules(false)}
                       style={{ background: "#c33", color: "white", border: "none", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}
                     >
-                      {icons.xCircle} Tout désactiver
+                      {icons.xCircle} Tout d�sactiver
                     </button>
                     <button
                       onClick={saveModules}
@@ -560,7 +560,7 @@ export default function AdminModulesPage() {
               marginBottom: "24px", animation: `fadeInUp 0.5s ease 0.1s`, opacity: animateCards ? 1 : 0
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                <span style={{ color: "#94a3b8" }}>Modules activés</span>
+                <span style={{ color: "#94a3b8" }}>Modules activ�s</span>
                 <span style={{ color: "#10b981", fontWeight: "bold" }}>{enabledCount}/{totalModules} ({Math.round(progress)}%)</span>
               </div>
               <div style={{ background: "#1a1a1a", borderRadius: "10px", height: "8px" }}>
@@ -569,7 +569,7 @@ export default function AdminModulesPage() {
             </div>
           )}
 
-          {/* Liste des modules par catégorie */}
+          {/* Liste des modules par cat�gorie */}
           {selectedClient && (
             <div style={{ animation: `fadeInUp 0.5s ease 0.2s`, opacity: animateCards ? 1 : 0 }}>
               {Object.entries(groupedModules).map(([category, categoryModules]) => (
@@ -612,14 +612,14 @@ export default function AdminModulesPage() {
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                   <polyline points="20 6 9 17 4 12"/>
                                 </svg>
-                                Activé
+                                Activ�
                               </>
                             ) : (
                               <>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                   <circle cx="12" cy="12" r="10"/>
                                 </svg>
-                                Désactivé
+                                D�sactiv�
                               </>
                             )}
                           </span>
@@ -653,7 +653,7 @@ export default function AdminModulesPage() {
               <div style={{ marginBottom: "16px", color: "#667eea", display: "flex", justifyContent: "center" }}>
                 {icons.arrowLeft}
               </div>
-              <p style={{ color: "#94a3b8" }}>Sélectionnez un client pour gérer ses modules</p>
+              <p style={{ color: "#94a3b8" }}>S�lectionnez un client pour g�rer ses modules</p>
             </div>
           )}
 

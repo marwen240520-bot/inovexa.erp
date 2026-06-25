@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -9,7 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 
-// ─── SVG Icon Components ───────────────────────────────────────────────────────
+// --- SVG Icon Components -------------------------------------------------------
 
 const IconBuilding2 = ({ size = 20, color = "currentColor", style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -151,7 +151,7 @@ const IconPhone = ({ size = 11, color = "currentColor", style }: { size?: number
   </svg>
 );
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// --- Types ---------------------------------------------------------------------
 
 type Supplier = {
   id: string;
@@ -181,7 +181,7 @@ type ModalState = {
   editId: string | null;
 };
 
-// ─── SelectAllCheckbox ─────────────────────────────────────────────────────────
+// --- SelectAllCheckbox ---------------------------------------------------------
 
 function SelectAllCheckbox({
   items, selectedIds, onSelect, onSelectAll, getItemId
@@ -220,7 +220,7 @@ function SelectAllCheckbox({
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// --- Main Component ------------------------------------------------------------
 
 export default function SuppliersPage() {
   const router = useRouter();
@@ -245,7 +245,7 @@ export default function SuppliersPage() {
   const [importing, setImporting] = useState(false);
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, totalPurchases: 0 });
 
-  // ── Responsive sizing ──
+  // -- Responsive sizing --
   const headerTitleSize = isMobile ? "20px" : "28px";
   const cardPadding = isMobile ? "14px" : "20px";
   const cardRadius = isMobile ? "16px" : "16px";
@@ -285,13 +285,13 @@ export default function SuppliersPage() {
     setTimeout(() => setAnimateCards(true), 100);
   }, []);
 
-  // ── Data fetching ──────────────────────────────────────────────────────────
+  // -- Data fetching ----------------------------------------------------------
 
   const fetchSuppliers = async () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/suppliers", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/suppliers", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data = await res.json();
@@ -308,12 +308,12 @@ export default function SuppliersPage() {
     setLoading(false);
   };
 
-  // ── CRUD ───────────────────────────────────────────────────────────────────
+  // -- CRUD -------------------------------------------------------------------
 
   const createSupplier = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/suppliers", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/suppliers", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -328,7 +328,7 @@ export default function SuppliersPage() {
       if (res.ok) {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchSuppliers();
-        showMessage(t("suppliers.supplierCreated") || "Fournisseur créé", "success");
+        showMessage(t("suppliers.supplierCreated") || "Fournisseur cr��", "success");
       } else { showMessage(t("common.error"), "error"); }
     } catch (e) { showMessage(t("common.error"), "error"); }
   };
@@ -336,7 +336,7 @@ export default function SuppliersPage() {
   const updateSupplier = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/suppliers/${modal.editId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -351,7 +351,7 @@ export default function SuppliersPage() {
       if (res.ok) {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchSuppliers();
-        showMessage(t("suppliers.supplierUpdated") || "Fournisseur mis à jour", "success");
+        showMessage(t("suppliers.supplierUpdated") || "Fournisseur mis � jour", "success");
       } else { showMessage(t("common.error"), "error"); }
     } catch (e) { showMessage(t("common.error"), "error"); }
   };
@@ -359,12 +359,12 @@ export default function SuppliersPage() {
   const deleteSupplier = async (id: string) => {
     if (confirm(t("suppliers.confirmDelete") || "Supprimer ce fournisseur ?")) {
       const token = localStorage.getItem("token");
-      await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchSuppliers();
-      showMessage(t("suppliers.supplierDeleted") || "Fournisseur supprimé", "success");
+      showMessage(t("suppliers.supplierDeleted") || "Fournisseur supprim�", "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     }
   };
@@ -374,14 +374,14 @@ export default function SuppliersPage() {
     if (confirm(`${t("suppliers.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} fournisseur(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
       }
       fetchSuppliers();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} fournisseur(s) supprimé(s)`, "success");
+      showMessage(`${selectedIds.length} fournisseur(s) supprim�(s)`, "success");
     }
   };
 
@@ -390,7 +390,7 @@ export default function SuppliersPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -398,12 +398,12 @@ export default function SuppliersPage() {
       if (res.ok) {
         await fetchSuppliers();
         showMessage(newStatus === "active"
-          ? (t("suppliers.activated") || "Activé")
-          : (t("suppliers.deactivated") || "Désactivé"), "success");
+          ? (t("suppliers.activated") || "Activ�")
+          : (t("suppliers.deactivated") || "D�sactiv�"), "success");
       } else {
         const supplier = suppliers.find(s => s.id === id);
         if (supplier) {
-          const putRes = await fetch(`https://api-inovexa.ngrok.app/suppliers/${id}`, {
+          const putRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...supplier, status: newStatus })
@@ -411,8 +411,8 @@ export default function SuppliersPage() {
           if (putRes.ok) {
             await fetchSuppliers();
             showMessage(newStatus === "active"
-              ? (t("suppliers.activated") || "Activé")
-              : (t("suppliers.deactivated") || "Désactivé"), "success");
+              ? (t("suppliers.activated") || "Activ�")
+              : (t("suppliers.deactivated") || "D�sactiv�"), "success");
           } else { showMessage(t("common.error"), "error"); }
         } else { showMessage(t("common.error"), "error"); }
       }
@@ -424,7 +424,7 @@ export default function SuppliersPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/suppliers/import", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/suppliers/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ suppliers: data })
@@ -432,7 +432,7 @@ export default function SuppliersPage() {
       const result = await res.json();
       if (res.ok) {
         showMessage(
-          `${result.success} fournisseur(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
+          `${result.success} fournisseur(s) import�(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
           "success"
         );
         fetchSuppliers();
@@ -468,7 +468,7 @@ export default function SuppliersPage() {
     (s.phone as string | undefined)?.includes(searchTerm)
   );
 
-  // ── Stats cards ────────────────────────────────────────────────────────────
+  // -- Stats cards ------------------------------------------------------------
 
   const statsCards = [
     {
@@ -497,7 +497,7 @@ export default function SuppliersPage() {
     }
   ];
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  // -- Loading ----------------------------------------------------------------
 
   if (loading) {
     return (
@@ -511,7 +511,7 @@ export default function SuppliersPage() {
     );
   }
 
-  // ── Status badge ───────────────────────────────────────────────────────────
+  // -- Status badge -----------------------------------------------------------
 
   const StatusBadge = ({ supplier, onClick }: { supplier: Supplier; onClick: () => void }) => (
     <button
@@ -544,7 +544,7 @@ export default function SuppliersPage() {
     </button>
   );
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // -- Render -----------------------------------------------------------------
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background }}>
@@ -561,7 +561,7 @@ export default function SuppliersPage() {
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
-          {/* ── Header ── */}
+          {/* -- Header -- */}
           <div style={{
             marginBottom: sectionMargin,
             animation: "fadeInDown 0.5s ease",
@@ -635,7 +635,7 @@ export default function SuppliersPage() {
             </div>
           </div>
 
-          {/* ── Message ── */}
+          {/* -- Message -- */}
           {message && (
             <div style={{
               background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
@@ -653,7 +653,7 @@ export default function SuppliersPage() {
             </div>
           )}
 
-          {/* ── Stats Cards ── */}
+          {/* -- Stats Cards -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(200px, 1fr))`,
@@ -679,7 +679,7 @@ export default function SuppliersPage() {
             ))}
           </div>
 
-          {/* ── Filters ── */}
+          {/* -- Filters -- */}
           <div style={{ marginBottom: "20px", animation: "fadeInUp 0.5s ease 0.4s", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "16px", flexDirection: isMobile ? "column" : "row" }}>
               <div style={{ flex: 2, position: "relative", width: isMobile ? "100%" : "auto" }}>
@@ -730,7 +730,7 @@ export default function SuppliersPage() {
             </div>
           </div>
 
-          {/* ── List View ── */}
+          {/* -- List View -- */}
           {viewMode === "list" && (
             <div style={{
               background: theme.surface, borderRadius: cardRadius, padding: "16px",
@@ -858,14 +858,14 @@ export default function SuppliersPage() {
                   <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>
                     {searchTerm
                       ? t("common.noResults")
-                      : t("suppliers.noSuppliers") || "Aucun fournisseur. Cliquez sur '+ Ajouter' pour en créer un."}
+                      : t("suppliers.noSuppliers") || "Aucun fournisseur. Cliquez sur '+ Ajouter' pour en cr�er un."}
                   </p>
                 </div>
               )}
             </div>
           )}
 
-          {/* ── Grid View ── */}
+          {/* -- Grid View -- */}
           {viewMode === "grid" && (
             <div style={{
               display: "grid",
@@ -889,7 +889,7 @@ export default function SuppliersPage() {
                   onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.3)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
                 >
-                  {/* Card header — avatar + name */}
+                  {/* Card header � avatar + name */}
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                     <div style={{
                       width: isMobile ? "38px" : "52px",
@@ -1010,7 +1010,7 @@ export default function SuppliersPage() {
         </div>
       </div>
 
-      {/* ── Modal Add / Edit ── */}
+      {/* -- Modal Add / Edit -- */}
       {modal.open && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -1031,7 +1031,7 @@ export default function SuppliersPage() {
             {([
               { label: (t("common.name") || "Nom") + " *", key: "name", type: "text", placeholder: t("suppliers.supplierName") || "Nom du fournisseur", autoFocus: true },
               { label: (t("common.email") || "Email") + " *", key: "email", type: "email", placeholder: "Email" },
-              { label: t("common.phone") || "Téléphone", key: "phone", type: "tel", placeholder: t("common.phone") || "Téléphone" },
+              { label: t("common.phone") || "T�l�phone", key: "phone", type: "tel", placeholder: t("common.phone") || "T�l�phone" },
               { label: t("common.address") || "Adresse", key: "address", type: "text", placeholder: t("common.address") || "Adresse" },
               { label: (t("suppliers.totalPurchases") || "Total achats"), key: "totalPurchases", type: "number", placeholder: "0", step: "0.01" }
             ] as { label: string; key: string; type: string; placeholder: string; step?: string; autoFocus?: boolean }[]).map((field) => (

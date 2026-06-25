@@ -1,4 +1,4 @@
-ï»¿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -85,7 +85,7 @@ export default function TransporteurSettingsPage() {
   const [animateCards, setAnimateCards] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // DÃ©tecter mobile
+  // Détecter mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -97,30 +97,30 @@ export default function TransporteurSettingsPage() {
 
   const getTranslation = (key) => {
     const directTranslations = {
-      'transporteur.settings.title': { fr: 'ParamÃ¨tres', en: 'Settings', es: 'Ajustes' },
-      'transporteur.settings.subtitle': { fr: 'Personnalisez votre expÃ©rience', en: 'Customize your experience', es: 'Personalice su experiencia' },
+      'transporteur.settings.title': { fr: 'Paramètres', en: 'Settings', es: 'Ajustes' },
+      'transporteur.settings.subtitle': { fr: 'Personnalisez votre expérience', en: 'Customize your experience', es: 'Personalice su experiencia' },
       'transporteur.settings.language': { fr: 'Langue', en: 'Language', es: 'Idioma' },
       'transporteur.settings.date_format': { fr: 'Format de date', en: 'Date format', es: 'Formato de fecha' },
-      'transporteur.settings.change_password': { fr: 'Changer le mot de passe', en: 'Change password', es: 'Cambiar contraseÃ±a' },
-      'transporteur.settings.change_password_btn': { fr: 'Changer le mot de passe', en: 'Change password', es: 'Cambiar contraseÃ±a' },
-      'transporteur.settings.old_password': { fr: 'Ancien mot de passe', en: 'Old password', es: 'ContraseÃ±a anterior' },
-      'transporteur.settings.new_password': { fr: 'Nouveau mot de passe', en: 'New password', es: 'Nueva contraseÃ±a' },
-      'transporteur.settings.confirm_password': { fr: 'Confirmer le mot de passe', en: 'Confirm password', es: 'Confirmar contraseÃ±a' },
-      'transporteur.settings.password_min_length': { fr: 'Minimum 6 caractÃ¨res', en: 'Minimum 6 characters', es: 'MÃ­nimo 6 caracteres' },
-      'transporteur.settings.password_too_short': { fr: 'Le mot de passe doit contenir au moins 6 caractÃ¨res', en: 'Password must be at least 6 characters', es: 'La contraseÃ±a debe tener al menos 6 caracteres' },
-      'transporteur.settings.password_mismatch': { fr: 'Les mots de passe ne correspondent pas', en: 'Passwords do not match', es: 'Las contraseÃ±as no coinciden' },
-      'transporteur.settings.old_password_incorrect': { fr: 'Ancien mot de passe incorrect', en: 'Old password is incorrect', es: 'ContraseÃ±a anterior incorrecta' },
-      'transporteur.settings.password_changed': { fr: 'Mot de passe changÃ© avec succÃ¨s', en: 'Password changed successfully', es: 'ContraseÃ±a cambiada con Ã©xito' },
-      'transporteur.settings.date_format_saved': { fr: 'Format de date enregistrÃ©', en: 'Date format saved', es: 'Formato de fecha guardado' },
-      'transporteur.settings.preferences_saved': { fr: 'PrÃ©fÃ©rences enregistrÃ©es', en: 'Preferences saved', es: 'Preferencias guardadas' },
-      'transporteur.settings.language_changed': { fr: 'Langue changÃ©e', en: 'Language changed', es: 'Idioma cambiado' },
+      'transporteur.settings.change_password': { fr: 'Changer le mot de passe', en: 'Change password', es: 'Cambiar contraseña' },
+      'transporteur.settings.change_password_btn': { fr: 'Changer le mot de passe', en: 'Change password', es: 'Cambiar contraseña' },
+      'transporteur.settings.old_password': { fr: 'Ancien mot de passe', en: 'Old password', es: 'Contraseña anterior' },
+      'transporteur.settings.new_password': { fr: 'Nouveau mot de passe', en: 'New password', es: 'Nueva contraseña' },
+      'transporteur.settings.confirm_password': { fr: 'Confirmer le mot de passe', en: 'Confirm password', es: 'Confirmar contraseña' },
+      'transporteur.settings.password_min_length': { fr: 'Minimum 6 caractères', en: 'Minimum 6 characters', es: 'Mínimo 6 caracteres' },
+      'transporteur.settings.password_too_short': { fr: 'Le mot de passe doit contenir au moins 6 caractères', en: 'Password must be at least 6 characters', es: 'La contraseña debe tener al menos 6 caracteres' },
+      'transporteur.settings.password_mismatch': { fr: 'Les mots de passe ne correspondent pas', en: 'Passwords do not match', es: 'Las contraseñas no coinciden' },
+      'transporteur.settings.old_password_incorrect': { fr: 'Ancien mot de passe incorrect', en: 'Old password is incorrect', es: 'Contraseña anterior incorrecta' },
+      'transporteur.settings.password_changed': { fr: 'Mot de passe changé avec succès', en: 'Password changed successfully', es: 'Contraseña cambiada con éxito' },
+      'transporteur.settings.date_format_saved': { fr: 'Format de date enregistré', en: 'Date format saved', es: 'Formato de fecha guardado' },
+      'transporteur.settings.preferences_saved': { fr: 'Préférences enregistrées', en: 'Preferences saved', es: 'Preferencias guardadas' },
+      'transporteur.settings.language_changed': { fr: 'Langue changée', en: 'Language changed', es: 'Idioma cambiado' },
       'transporteur.settings.current_language': { fr: 'Langue actuelle', en: 'Current language', es: 'Idioma actual' },
       'transporteur.settings.example': { fr: 'exemple', en: 'example', es: 'ejemplo' },
       'transporteur.settings.current_date': { fr: 'Date actuelle', en: 'Current date', es: 'Fecha actual' },
       'common.loading': { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...' },
       'common.error': { fr: 'Erreur', en: 'Error', es: 'Error' },
-      'common.logout': { fr: 'DÃ©connexion', en: 'Logout', es: 'Cerrar sesiÃ³n' },
-      'common.logoutWarning': { fr: 'ÃŠtes-vous sÃ»r de vouloir vous dÃ©connecter ?', en: 'Are you sure you want to logout?', es: 'Â¿EstÃ¡ seguro de que desea cerrar sesiÃ³n?' }
+      'common.logout': { fr: 'Déconnexion', en: 'Logout', es: 'Cerrar sesión' },
+      'common.logoutWarning': { fr: 'Êtes-vous sûr de vouloir vous déconnecter ?', en: 'Are you sure you want to logout?', es: '¿Está seguro de que desea cerrar sesión?' }
     };
     if (directTranslations[key] && directTranslations[key][language]) return directTranslations[key][language];
     const translated = t(key);
@@ -179,7 +179,7 @@ export default function TransporteurSettingsPage() {
     }
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/users/change-password", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/users/change-password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
@@ -221,9 +221,9 @@ export default function TransporteurSettingsPage() {
   };
 
   const getLanguageButtonText = (lang) => {
-    if (lang === 'fr') return 'FranÃ§ais';
+    if (lang === 'fr') return 'Français';
     if (lang === 'en') return 'English';
-    return 'EspaÃ±ol';
+    return 'Español';
   };
 
   // Styles responsives
@@ -354,7 +354,7 @@ export default function TransporteurSettingsPage() {
         </div>
         <div style={{ marginTop: "11px", padding: "7px 11px", background: "#1a1a1a", borderRadius: "7px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
           <span style={{ color: "#94a3b8", fontSize: fontSizeExtraSmall }}>
-            {getTranslation("transporteur.settings.current_language")}: {settings.language === "fr" ? "FranÃ§ais" : settings.language === "en" ? "English" : "EspaÃ±ol"}
+            {getTranslation("transporteur.settings.current_language")}: {settings.language === "fr" ? "Français" : settings.language === "en" ? "English" : "Español"}
           </span>
         </div>
       </div>
@@ -428,7 +428,7 @@ export default function TransporteurSettingsPage() {
         </button>
       </div>
 
-      {/* DÃ©connexion */}
+      {/* Déconnexion */}
       <div style={{ 
         display: "flex", 
         gap: "14px", 

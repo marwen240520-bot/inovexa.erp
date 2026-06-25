@@ -1,4 +1,4 @@
-Ôªø"use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -168,7 +168,7 @@ const Icons = {
   ),
 };
 
-const API_URL = "https://api-inovexa.ngrok.app";
+const API_URL = "${process.env.NEXT_PUBLIC_API_URL}";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -204,7 +204,7 @@ export default function ProfilePage() {
   const currentThemeId = globalThemeId;
 
   const themeTranslations = {
-    fr: { themeChanged: "Th√®me chang√©", chooseTheme: "Choisir un th√®me" },
+    fr: { themeChanged: "ThËme changÈ", chooseTheme: "Choisir un thËme" },
     en: { themeChanged: "Theme changed", chooseTheme: "Choose a theme" },
     es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" }
   };
@@ -232,9 +232,9 @@ export default function ProfilePage() {
       dark: { fr: "Sombre", en: "Dark", es: "Oscuro" },
       light: { fr: "Clair", en: "Light", es: "Claro" },
       lightPremium: { fr: "Premium Clair", en: "Premium Light", es: "Premium Claro" },
-      blue: { fr: "Bleu Oc√©an", en: "Ocean Blue", es: "Azul Oc√©ano" },
-      purple: { fr: "Violet", en: "Purple", es: "P√∫rpura" },
-      green: { fr: "For√™t", en: "Forest", es: "Bosque" },
+      blue: { fr: "Bleu OcÈan", en: "Ocean Blue", es: "Azul OcÈano" },
+      purple: { fr: "Violet", en: "Purple", es: "P˙rpura" },
+      green: { fr: "ForÍt", en: "Forest", es: "Bosque" },
       sunset: { fr: "Coucher de Soleil", en: "Sunset", es: "Atardecer" },
       rose: { fr: "Rose", en: "Rose", es: "Rosa" }
     };
@@ -352,9 +352,9 @@ export default function ProfilePage() {
       if (res.ok) {
         const freshUser = await loadUserFromBackend();
         if (freshUser) { setUser(freshUser); setProfileImage(freshUser.avatar || freshUser.profileImage || null); }
-        showMessage(t("profile.profileUpdated") || "‚úÖ Profil mis √† jour", "success");
-      } else { showMessage(t("common.error") || "‚ùå Erreur", "error"); }
-    } catch(e) { showMessage(t("common.error") || "‚ùå Erreur de connexion", "error"); }
+        showMessage(t("profile.profileUpdated") || "? Profil mis ‡ jour", "success");
+      } else { showMessage(t("common.error") || "? Erreur", "error"); }
+    } catch(e) { showMessage(t("common.error") || "? Erreur de connexion", "error"); }
   };
 
   const uploadProfileImage = async (file: File) => {
@@ -378,17 +378,17 @@ export default function ProfilePage() {
           setImageTimestamp(Date.now());
           const freshUser = await loadUserFromBackend();
           if (freshUser) setUser(freshUser);
-          showMessage("‚úÖ Photo de profil mise √† jour", "success");
+          showMessage("? Photo de profil mise ‡ jour", "success");
         } else {
-          showMessage("‚ö†Ô∏è Image upload√©e", "warning");
+          showMessage("?? Image uploadÈe", "warning");
         }
       } else {
         const error = await res.json();
-        showMessage(error.message || "‚ùå Erreur lors de l'upload", "error");
+        showMessage(error.message || "? Erreur lors de l'upload", "error");
       }
     } catch(e) {
       console.error("Erreur upload:", e);
-      showMessage("‚ùå Erreur de connexion", "error");
+      showMessage("? Erreur de connexion", "error");
     } finally {
       setUploadingImage(false);
     }
@@ -408,13 +408,13 @@ export default function ProfilePage() {
         setImageTimestamp(Date.now());
         const freshUser = await loadUserFromBackend();
         if (freshUser) setUser(freshUser);
-        showMessage("‚úÖ Photo de profil supprim√©e", "success");
+        showMessage("? Photo de profil supprimÈe", "success");
       } else {
-        showMessage("‚ùå Erreur lors de la suppression", "error");
+        showMessage("? Erreur lors de la suppression", "error");
       }
     } catch(e) {
       console.error("Erreur suppression:", e);
-      showMessage("‚ùå Erreur de connexion", "error");
+      showMessage("? Erreur de connexion", "error");
     } finally {
       setDeletingImage(false);
     }
@@ -430,11 +430,11 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.match(/^(image\/jpeg|image\/png|image\/webp)$/)) { 
-      showMessage("Veuillez s√©lectionner une image JPEG, PNG ou WEBP", "error"); 
+      showMessage("Veuillez sÈlectionner une image JPEG, PNG ou WEBP", "error"); 
       return; 
     }
     if (file.size > 5 * 1024 * 1024) { 
-      showMessage("L'image ne doit pas d√©passer 5MB", "error"); 
+      showMessage("L'image ne doit pas dÈpasser 5MB", "error"); 
       return; 
     }
     uploadProfileImage(file);
@@ -451,7 +451,7 @@ export default function ProfilePage() {
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      showMessage(t("profile.passwordMinLength") || "Le mot de passe doit contenir au moins 6 caract√®res", "error");
+      showMessage(t("profile.passwordMinLength") || "Le mot de passe doit contenir au moins 6 caractËres", "error");
       return;
     }
     const token = localStorage.getItem("token");
@@ -466,18 +466,18 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
-        showMessage(t("profile.passwordChanged") || "‚úÖ Mot de passe chang√©", "success");
+        showMessage(t("profile.passwordChanged") || "? Mot de passe changÈ", "success");
       } else {
         const err = await res.json();
-        showMessage(err.message || t("common.error") || "‚ùå Erreur", "error");
+        showMessage(err.message || t("common.error") || "? Erreur", "error");
       }
     } catch(e) {
-      showMessage(t("common.error") || "‚ùå Erreur de connexion", "error");
+      showMessage(t("common.error") || "? Erreur de connexion", "error");
     }
   };
 
   const logoutAllDevices = async () => {
-    if (confirm(t("profile.logoutAllWarning") || "‚ö†Ô∏è Se d√©connecter de tous les appareils ?")) {
+    if (confirm(t("profile.logoutAllWarning") || "?? Se dÈconnecter de tous les appareils ?")) {
       const token = localStorage.getItem("token");
       try {
         await fetch(`${API_URL}/users/logout-all`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
@@ -586,7 +586,7 @@ export default function ProfilePage() {
               </p>
             </div>
             
-            {/* Bouton Th√®me */}
+            {/* Bouton ThËme */}
             <div style={{ position: "relative" }} ref={themeMenuRef}>
               <button
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
@@ -799,7 +799,7 @@ export default function ProfilePage() {
                       gap: "4px"
                     }}
                   >
-                    {deletingImage ? "‚è≥" : "üóëÔ∏è"} {t("common.delete") || "Supprimer"}
+                    {deletingImage ? "?" : "???"} {t("common.delete") || "Supprimer"}
                   </button>
                 )}
               </div>
@@ -815,7 +815,7 @@ export default function ProfilePage() {
                     <Icons.Calendar /> {t("profile.memberSince") || "Membre depuis"} {stats.memberSince}
                   </span>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Lock /> {t("profile.lastLogin") || "Derni√®re connexion"}: {stats.lastLogin}
+                    <Icons.Lock /> {t("profile.lastLogin") || "DerniËre connexion"}: {stats.lastLogin}
                   </span>
                 </div>
               </div>
@@ -839,7 +839,7 @@ export default function ProfilePage() {
               gap: "8px", 
               fontSize: isMobile ? "12px" : "14px" 
             }}>
-              {messageType === "success" ? <Icons.CheckCircle /> : messageType === "warning" ? "‚ö†Ô∏è" : <Icons.XCircle />}
+              {messageType === "success" ? <Icons.CheckCircle /> : messageType === "warning" ? "??" : <Icons.XCircle />}
               {message}
             </div>
           )}
@@ -855,9 +855,9 @@ export default function ProfilePage() {
             opacity: animateCards ? 1 : 0 
           }}>
             {[
-              { id: "info", label: t("profile.personalInfo") || "üìã Informations", Icon: Icons.FileText },
-              { id: "security", label: t("profile.security") || "üîí S√©curit√©", Icon: Icons.ShieldLock },
-              { id: "activity", label: t("profile.activity") || "üìä Activit√©", Icon: Icons.BarChart2 },
+              { id: "info", label: t("profile.personalInfo") || "?? Informations", Icon: Icons.FileText },
+              { id: "security", label: t("profile.security") || "?? SÈcuritÈ", Icon: Icons.ShieldLock },
+              { id: "activity", label: t("profile.activity") || "?? ActivitÈ", Icon: Icons.BarChart2 },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -878,7 +878,7 @@ export default function ProfilePage() {
                 }}
               >
                 <tab.Icon /> {!isMobile && tab.label}
-                {isMobile && (tab.id === "info" ? "Info" : tab.id === "security" ? "S√©curit√©" : "Activit√©")}
+                {isMobile && (tab.id === "info" ? "Info" : tab.id === "security" ? "SÈcuritÈ" : "ActivitÈ")}
               </button>
             ))}
           </div>
@@ -895,8 +895,8 @@ export default function ProfilePage() {
               {[
                 { label: t("common.name") || "Nom complet", key: "name", type: "text" },
                 { label: t("common.email") || "Email", key: "email", type: "email" },
-                { label: t("common.phone") || "T√©l√©phone", key: "phone", type: "tel" },
-                { label: t("profile.company") || "Soci√©t√©", key: "companyName", type: "text" },
+                { label: t("common.phone") || "TÈlÈphone", key: "phone", type: "tel" },
+                { label: t("profile.company") || "SociÈtÈ", key: "companyName", type: "text" },
               ].map(field => (
                 <div key={field.key} style={{ marginBottom: "20px" }}>
                   <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{field.label}</label>
@@ -1038,7 +1038,7 @@ export default function ProfilePage() {
                       {t("profile.dangerZone") || "Zone de danger"}
                     </div>
                     <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "11px" : "12px", marginTop: "2px" }}>
-                      {t("profile.logoutAllWarning") || "D√©connexion de tous les appareils"}
+                      {t("profile.logoutAllWarning") || "DÈconnexion de tous les appareils"}
                     </div>
                   </div>
                 </div>
@@ -1060,7 +1060,7 @@ export default function ProfilePage() {
                     fontWeight: "500" 
                   }}
                 >
-                  <Icons.LogOut /> {t("profile.logoutAllDevices") || "Se d√©connecter de tous les appareils"}
+                  <Icons.LogOut /> {t("profile.logoutAllDevices") || "Se dÈconnecter de tous les appareils"}
                 </button>
               </div>
             </div>
@@ -1080,7 +1080,7 @@ export default function ProfilePage() {
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
                 {[
-                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: t("profile.revenueGenerated") || "CA g√©n√©r√©", color: currentTheme.accent },
+                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: t("profile.revenueGenerated") || "CA gÈnÈrÈ", color: currentTheme.accent },
                   { Icon: Icons.ClipboardList, value: stats.totalOrders, label: t("common.orders") || "Commandes", color: currentTheme.primary },
                   { Icon: Icons.Users, value: stats.totalClients, label: t("common.clients") || "Clients", color: currentTheme.secondary },
                   { Icon: Icons.Clock, value: stats.memberSince, label: t("profile.memberSince") || "Membre depuis", color: "#f59e0b" },
@@ -1101,7 +1101,7 @@ export default function ProfilePage() {
                       {t("profile.currentSession") || "Session actuelle"}
                     </div>
                     <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px" }}>
-                      {t("profile.connectedSince") || "Connect√© depuis"} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
+                      {t("profile.connectedSince") || "ConnectÈ depuis"} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -27,7 +27,7 @@ ChartJS.register(
   ArcElement, PointElement, LineElement, Filler, RadialLinearScale
 );
 
-// ─── SVG Icon Components ──────────────────────────────────────────────────────
+// --- SVG Icon Components ------------------------------------------------------
 const Icon = ({ children, size = 18, style = {} }: { children: React.ReactNode; size?: number; style?: React.CSSProperties }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, ...style }}>{children}</svg>
 );
@@ -76,18 +76,18 @@ const Icons = {
 
 // Helper functions pour les labels
 const getMonthLabelsByLang = (language: string): string[] => {
-  if (language === 'fr') return ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+  if (language === 'fr') return ["Jan", "F�v", "Mar", "Avr", "Mai", "Juin", "Juil", "Ao�", "Sep", "Oct", "Nov", "D�c"];
   if (language === 'es') return ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 };
 
 const getWeekDaysByLang = (language: string): string[] => {
   if (language === 'fr') return ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-  if (language === 'es') return ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  if (language === 'es') return ["Lun", "Mar", "Mi�", "Jue", "Vie", "S�b", "Dom"];
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 };
 
-// ─── Mobile Bottom Sheet Modal ────────────────────────────────────────────────
+// --- Mobile Bottom Sheet Modal ------------------------------------------------
 function MobileBottomSheetModal({ isOpen, onClose, children, title, theme }: {
   isOpen: boolean;
   onClose: () => void;
@@ -180,7 +180,7 @@ function MobileBottomSheetModal({ isOpen, onClose, children, title, theme }: {
   );
 }
 
-// ─── Custom Chart Modal ────────────────────────────────────────────────────────
+// --- Custom Chart Modal --------------------------------------------------------
 function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topProducts, topClients, rawSales, t, formatCurrency, theme, isMobile, language }: {
   isOpen: boolean;
   onClose: () => void;
@@ -216,13 +216,13 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
   const weekLabels = getWeekDaysByLang(language);
   const currentYear = new Date().getFullYear();
 
-  // Fonction pour générer les données de manière dynamique
+  // Fonction pour g�n�rer les donn�es de mani�re dynamique
   const generateRealData = useCallback((module: string, dataType: string, period: string) => {
     let labels: string[] = [];
     let dataValues: number[] = [];
 
     if (period === "week") {
-      // Données pour les 7 derniers jours (aujourd'hui + 6 jours précédents)
+      // Donn�es pour les 7 derniers jours (aujourd'hui + 6 jours pr�c�dents)
       labels = weekLabels;
       dataValues = Array(7).fill(0);
       
@@ -335,7 +335,7 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
       }
     }
 
-    // Nettoyer les données
+    // Nettoyer les donn�es
     while (dataValues.length < labels.length) dataValues.push(0);
     if (dataValues.length > labels.length) dataValues = dataValues.slice(0, labels.length);
 
@@ -617,7 +617,7 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
   );
 }
 
-// ─── Mobile Period Selector ───────────────────────────────────────────────────
+// --- Mobile Period Selector ---------------------------------------------------
 function MobilePeriodSheet({ isOpen, onClose, period, setPeriod, options, theme, t }: {
   isOpen: boolean; onClose: () => void; period: string; setPeriod: (v: string) => void;
   options: { value: string; label: string }[]; theme: any; t: (k: string) => string;
@@ -657,7 +657,7 @@ function MobilePeriodSheet({ isOpen, onClose, period, setPeriod, options, theme,
   );
 }
 
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
+// --- KPI Card -----------------------------------------------------------------
 function KpiCard({ Icon, label, value, color, sub, isMobile, theme, animDelay }: any) {
   return (
     <div
@@ -682,7 +682,7 @@ function KpiCard({ Icon, label, value, color, sub, isMobile, theme, animDelay }:
   );
 }
 
-// ─── Module Stat Card ─────────────────────────────────────────────────────────
+// --- Module Stat Card ---------------------------------------------------------
 function ModuleStatCard({ Icon, label, value, color, isMobile, theme }: any) {
   return (
     <div style={{ background: theme.surfaceHover, padding: isMobile ? "14px" : "20px", borderRadius: "14px", textAlign: "center" }}>
@@ -693,7 +693,7 @@ function ModuleStatCard({ Icon, label, value, color, isMobile, theme }: any) {
   );
 }
 
-// ─── Main Analytics Page ───────────────────────────────────────────────────────
+// --- Main Analytics Page -------------------------------------------------------
 export default function AnalyticsPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
@@ -744,13 +744,13 @@ export default function AnalyticsPage() {
     setLoading(true);
     try {
       const [salesRes, productsRes, clientsRes, ordersRes, invoicesRes, employeesRes, shipmentsRes] = await Promise.all([
-        fetch("https://api-inovexa.ngrok.app/sales", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("https://api-inovexa.ngrok.app/orders", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("https://api-inovexa.ngrok.app/invoices", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("https://api-inovexa.ngrok.app/employees", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("https://api-inovexa.ngrok.app/logistics/shipments", { headers: { Authorization: `Bearer ${token}` } })
+        fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("${process.env.NEXT_PUBLIC_API_URL}/orders", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("${process.env.NEXT_PUBLIC_API_URL}/invoices", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("${process.env.NEXT_PUBLIC_API_URL}/employees", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("${process.env.NEXT_PUBLIC_API_URL}/logistics/shipments", { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       let sales = await salesRes.json();
@@ -795,7 +795,7 @@ export default function AnalyticsPage() {
         logistics: { total: shipments.length, delivered: deliveredShipments, inTransit: 0, pending: 0, onTime: shipments.length > 0 ? (deliveredShipments / shipments.length * 100) : 0 }
       });
 
-      // Calculer les ventes mensuelles pour l'année en cours
+      // Calculer les ventes mensuelles pour l'ann�e en cours
       const monthlySales = Array(12).fill(0);
       sales.forEach((s: any) => {
         if (s.createdAt) {
@@ -842,7 +842,7 @@ export default function AnalyticsPage() {
     let dataValues: number[] = [];
     
     if (period === "week") {
-      // Données pour les 7 derniers jours (aujourd'hui + 6 jours précédents)
+      // Donn�es pour les 7 derniers jours (aujourd'hui + 6 jours pr�c�dents)
       labels = weekLabels;
       dataValues = Array(7).fill(0);
       
@@ -920,7 +920,7 @@ export default function AnalyticsPage() {
   };
 
   const topProductsChartData = {
-    labels: topProducts.map(p => isMobile && p.name.length > 10 ? p.name.substring(0, 8) + "…" : p.name),
+    labels: topProducts.map(p => isMobile && p.name.length > 10 ? p.name.substring(0, 8) + "�" : p.name),
     datasets: [{ 
       label: t("dashboard.topProducts"), 
       data: topProducts.map(p => p.amount), 
@@ -931,7 +931,7 @@ export default function AnalyticsPage() {
   };
 
   const topClientsChartData = {
-    labels: topClients.map(c => isMobile && c.name.length > 10 ? c.name.substring(0, 8) + "…" : c.name),
+    labels: topClients.map(c => isMobile && c.name.length > 10 ? c.name.substring(0, 8) + "�" : c.name),
     datasets: [{ 
       label: t("dashboard.topClients"), 
       data: topClients.map(c => c.amount), 
@@ -1064,7 +1064,7 @@ export default function AnalyticsPage() {
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
-          {/* Header - Desktop et Mobile unifié */}
+          {/* Header - Desktop et Mobile unifi� */}
           <div style={{ 
             display: "flex", 
             justifyContent: "space-between", 

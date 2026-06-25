@@ -1,4 +1,4 @@
-﻿
+
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 interface Product {
   id: number | string;
   name: string;
@@ -47,7 +47,7 @@ interface ProductWithStock extends Product {
   currentStock: number;
 }
 
-// ─── Icon Components ──────────────────────────────────────────────────────────
+// --- Icon Components ----------------------------------------------------------
 const IconBox = ({ size = 20, color = "currentColor", style }: any) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
@@ -151,11 +151,11 @@ const IconChevronRight = ({ size = 16, color = "currentColor", style }: any) => 
   </svg>
 );
 
-// ─── Traductions ──────────────────────────────────────────────────────────────
+// --- Traductions --------------------------------------------------------------
 const stockTranslations: Record<string, Record<string, string>> = {
   fr: {
     title: "Gestion du Stock",
-    subtitle: "Stock basé sur les achats et ventes",
+    subtitle: "Stock bas� sur les achats et ventes",
     totalProducts: "Total produits",
     totalValue: "Valeur totale",
     lowStock: "Stock faible",
@@ -163,12 +163,12 @@ const stockTranslations: Record<string, Record<string, string>> = {
     stockTurnover: "Rotation stock",
     thisWeek: "Cette semaine",
     thisMonth: "Ce mois",
-    thisYear: "Cette année",
+    thisYear: "Cette ann�e",
     allTime: "Tout",
     refresh: "Actualiser",
     searchPlaceholder: "Rechercher un produit...",
     filterAll: "Tous les produits",
-    filterWell: "Stock élevé (≥10)",
+    filterWell: "Stock �lev� (=10)",
     filterLow: "Stock faible (<10)",
     filterOut: "Rupture (=0)",
     product: "Produit",
@@ -178,54 +178,54 @@ const stockTranslations: Record<string, Record<string, string>> = {
     value: "Valeur",
     status: "Statut",
     history: "Historique",
-    noResults: "Aucun résultat",
+    noResults: "Aucun r�sultat",
     noProducts: "Aucun produit dans le stock",
     movementsTitle: "Mouvements de stock",
     date: "Date",
     type: "Type",
-    quantity: "Quantité",
-    reference: "Référence",
-    entry: "Entrée",
+    quantity: "Quantit�",
+    reference: "R�f�rence",
+    entry: "Entr�e",
     exit: "Sortie",
     noMovements: "Aucun mouvement pour ce produit",
-    periodAnalyzed: "Période analysée",
+    periodAnalyzed: "P�riode analys�e",
     last7Days: "7 derniers jours",
     last30Days: "30 derniers jours",
     last12Months: "12 derniers mois",
-    allData: "Toutes les données",
+    allData: "Toutes les donn�es",
     salesCount: "ventes",
     purchasesCount: "achats",
     stockStatus: "Statut du stock",
     outOfStockStatus: "Rupture",
     lowStockStatus: "Stock faible",
     mediumStockStatus: "Stock moyen",
-    highStockStatus: "Stock élevé",
-    outOfStockDesc: "Nécessite un réapprovisionnement urgent",
-    lowStockDesc: "À réapprovisionner bientôt",
+    highStockStatus: "Stock �lev�",
+    outOfStockDesc: "N�cessite un r�approvisionnement urgent",
+    lowStockDesc: "� r�approvisionner bient�t",
     mediumStockDesc: "Stock suffisant",
     highStockDesc: "Stock confortable",
-    legend: "Légende des statuts de stock",
-    infoMessage: "ℹ️ Le stock est calculé automatiquement à partir des achats et des ventes.",
+    legend: "L�gende des statuts de stock",
+    infoMessage: "?? Le stock est calcul� automatiquement � partir des achats et des ventes.",
     close: "Fermer",
     unitPrice: "Prix unitaire",
     stockValue: "Valeur stock"
   },
   es: {
-    title: "Gestión de Stock",
+    title: "Gesti�n de Stock",
     subtitle: "Stock basado en compras y ventas",
     totalProducts: "Total productos",
     totalValue: "Valor total",
     lowStock: "Stock bajo",
     outOfStock: "Agotado",
-    stockTurnover: "Rotación stock",
+    stockTurnover: "Rotaci�n stock",
     thisWeek: "Esta semana",
     thisMonth: "Este mes",
-    thisYear: "Este año",
+    thisYear: "Este a�o",
     allTime: "Todo",
     refresh: "Actualizar",
     searchPlaceholder: "Buscar producto...",
     filterAll: "Todos los productos",
-    filterWell: "Stock alto (≥10)",
+    filterWell: "Stock alto (=10)",
     filterLow: "Stock bajo (<10)",
     filterOut: "Agotado (=0)",
     product: "Producto",
@@ -245,10 +245,10 @@ const stockTranslations: Record<string, Record<string, string>> = {
     entry: "Entrada",
     exit: "Salida",
     noMovements: "No hay movimientos para este producto",
-    periodAnalyzed: "Período analizado",
-    last7Days: "últimos 7 días",
-    last30Days: "últimos 30 días",
-    last12Months: "últimos 12 meses",
+    periodAnalyzed: "Per�odo analizado",
+    last7Days: "�ltimos 7 d�as",
+    last30Days: "�ltimos 30 d�as",
+    last12Months: "�ltimos 12 meses",
     allData: "Todos los datos",
     salesCount: "ventas",
     purchasesCount: "compras",
@@ -262,7 +262,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Stock suficiente",
     highStockDesc: "Stock confortable",
     legend: "Leyenda de estados de stock",
-    infoMessage: "ℹ️ El stock se calcula automáticamente a partir de compras y ventas.",
+    infoMessage: "?? El stock se calcula autom�ticamente a partir de compras y ventas.",
     close: "Cerrar",
     unitPrice: "Precio unitario",
     stockValue: "Valor stock"
@@ -282,7 +282,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     refresh: "Refresh",
     searchPlaceholder: "Search product...",
     filterAll: "All products",
-    filterWell: "High stock (≥10)",
+    filterWell: "High stock (=10)",
     filterLow: "Low stock (<10)",
     filterOut: "Out of stock (=0)",
     product: "Product",
@@ -319,7 +319,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Sufficient stock",
     highStockDesc: "Comfortable stock",
     legend: "Stock status legend",
-    infoMessage: "ℹ️ Stock is automatically calculated from purchases and sales.",
+    infoMessage: "?? Stock is automatically calculated from purchases and sales.",
     close: "Close",
     unitPrice: "Unit price",
     stockValue: "Stock value"
@@ -372,19 +372,19 @@ export default function StockPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const productsRes = await fetch("https://api-inovexa.ngrok.app/products", {
+      const productsRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const productsData = await productsRes.json();
       const productsList: Product[] = Array.isArray(productsData) ? productsData : [];
 
-      const salesRes = await fetch("https://api-inovexa.ngrok.app/sales", {
+      const salesRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let salesData = await salesRes.json();
       let salesList: Sale[] = Array.isArray(salesData) ? salesData : [];
 
-      const purchasesRes = await fetch("https://api-inovexa.ngrok.app/purchases", {
+      const purchasesRes = await fetch("${process.env.NEXT_PUBLIC_API_URL}/purchases", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let purchasesData = await purchasesRes.json();
@@ -527,7 +527,7 @@ export default function StockPage() {
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
           <style>{animations}</style>
 
-          {/* ── STICKY SEARCH BAR (mobile only) ── */}
+          {/* -- STICKY SEARCH BAR (mobile only) -- */}
           {isMobile && (
             <div style={{
               position: "sticky", top: 0, zIndex: 50,
@@ -600,7 +600,7 @@ export default function StockPage() {
             </div>
           )}
 
-          {/* ── MAIN CONTENT PADDING ── */}
+          {/* -- MAIN CONTENT PADDING -- */}
           <div style={{ padding: isMobile ? "16px 16px 0" : "24px" }}>
 
             {/* Header */}
@@ -679,12 +679,12 @@ export default function StockPage() {
                   {selectedPeriod === "week" ? t.last7Days : selectedPeriod === "month" ? t.last30Days : selectedPeriod === "year" ? t.last12Months : t.allData}
                 </span>
                 <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "11px" : "13px" }}>
-                  📊 {sales.length} {t.salesCount} • {purchases.length} {t.purchasesCount}
+                  ?? {sales.length} {t.salesCount} � {purchases.length} {t.purchasesCount}
                 </span>
               </div>
             </div>
 
-            {/* ── DESKTOP: Search + Filter ── */}
+            {/* -- DESKTOP: Search + Filter -- */}
             {!isMobile && (
               <div style={{ marginBottom: "20px" }}>
                 <div style={{ display: "flex", gap: "12px" }}>
@@ -702,7 +702,7 @@ export default function StockPage() {
               </div>
             )}
 
-            {/* ── MOBILE: Product Cards ── */}
+            {/* -- MOBILE: Product Cards -- */}
             {isMobile ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {filteredProducts.length === 0 ? (
@@ -779,7 +779,7 @@ export default function StockPage() {
                 })}
               </div>
             ) : (
-              /* ── DESKTOP: Table ── */
+              /* -- DESKTOP: Table -- */
               <div style={{ background: theme.surface, borderRadius: cardRadius, padding: "16px", border: `1px solid ${theme.border}`, overflowX: "auto" }}>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -842,7 +842,7 @@ export default function StockPage() {
                 ].map((item, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                     <span style={{ background: item.bg, color: item.color, padding: "2px 8px", borderRadius: "16px", fontSize: legendFontSize, display: "inline-flex", alignItems: "center", gap: "4px" }}>{item.icon} {item.label}</span>
-                    {!isMobile && <span style={{ fontSize: "11px", color: theme.textSecondary }}>→ {item.desc}</span>}
+                    {!isMobile && <span style={{ fontSize: "11px", color: theme.textSecondary }}>? {item.desc}</span>}
                   </div>
                 ))}
               </div>
@@ -851,7 +851,7 @@ export default function StockPage() {
         </div>
       </div>
 
-      {/* ── MOBILE: Filter Bottom Sheet ── */}
+      {/* -- MOBILE: Filter Bottom Sheet -- */}
       {isMobile && showFilterSheet && (
         <div
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200, display: "flex", alignItems: "flex-end" }}
@@ -892,7 +892,7 @@ export default function StockPage() {
         </div>
       )}
 
-      {/* ── Stock Movements Modal (desktop) / Bottom Sheet (mobile) ── */}
+      {/* -- Stock Movements Modal (desktop) / Bottom Sheet (mobile) -- */}
       {showMovements && selectedProduct && (
         <div
           style={{
@@ -949,7 +949,7 @@ export default function StockPage() {
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: "18px"
                         }}>
-                          {m.type === "in" ? "📥" : "📤"}
+                          {m.type === "in" ? "??" : "??"}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -983,7 +983,7 @@ export default function StockPage() {
                           <td style={{ padding: "8px", color: theme.textSecondary, fontSize: "12px" }}>{new Date(m.date).toLocaleDateString()}</td>
                           <td style={{ padding: "8px" }}>
                             <span style={{ background: m.type === "in" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: m.type === "in" ? "#10b981" : "#ef4444", padding: "2px 8px", borderRadius: "12px", fontSize: "11px" }}>
-                              {m.type === "in" ? `📥 ${t.entry}` : `📤 ${t.exit}`}
+                              {m.type === "in" ? `?? ${t.entry}` : `?? ${t.exit}`}
                             </span>
                           </td>
                           <td style={{ padding: "8px", textAlign: "right", color: m.type === "in" ? "#10b981" : "#ef4444" }}>{m.quantity}</td>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -27,7 +27,7 @@ ChartJS.register(
   ArcElement, PointElement, LineElement, Filler, RadialLinearScale
 );
 
-// ==================== TRADUCTIONS COMPLÈTES ====================
+// ==================== TRADUCTIONS COMPL�TES ====================
 const translations = {
   fr: {
     common: {
@@ -49,30 +49,30 @@ const translations = {
       date: "Date",
       amount: "Montant",
       total: "Total",
-      paid: "Payé",
+      paid: "Pay�",
       pending: "En attente",
       yes: "Oui",
       no: "Non",
       all: "Tous",
       error: "Erreur",
-      success: "Succès",
-      noData: "Aucune donnée",
+      success: "Succ�s",
+      noData: "Aucune donn�e",
       year: "Exercice",
       lastUpdate: "MAJ",
-      cashAlert: "Alerte trésorerie",
+      cashAlert: "Alerte tr�sorerie",
       margin: "marge",
-      forecast: "Projetée",
-      invoicesPending: "factures impayées",
+      forecast: "Projet�e",
+      invoicesPending: "factures impay�es",
       currentAssets: "Actif circulant",
-      fixedAssets: "Actif immobilisé",
+      fixedAssets: "Actif immobilis�",
       currentLiabilities: "Dettes CT",
       longTermLiabilities: "Dettes LT",
       equity: "Capitaux propres",
       cogs: "Achats et stocks (COGS)",
       depreciation: "Amortissements",
-      interestExpense: "Intérêts",
-      incomeTax: "Impôts (25%)",
-      monthlyEvolution: "Évolution mensuelle",
+      interestExpense: "Int�r�ts",
+      incomeTax: "Imp�ts (25%)",
+      monthlyEvolution: "�volution mensuelle",
       assets: "Actif",
       inventory: "Stocks",
       totalAssets: "TOTAL ACTIF",
@@ -80,60 +80,60 @@ const translations = {
       taxLiabilities: "Dettes fiscales & sociales",
       totalLiabilities: "Total dettes",
       capital: "Capital",
-      reserves: "Réserves",
-      currentYearResult: "Résultat exercice",
+      reserves: "R�serves",
+      currentYearResult: "R�sultat exercice",
       balanceSheetStructure: "Structure du bilan",
       currentBalance: "Solde actuel",
-      monthlyCashflow: "Flux de trésorerie mensuels",
+      monthlyCashflow: "Flux de tr�sorerie mensuels",
       sixMonthForecast: "Projection 6 mois",
-      byCategory: "Par catégorie",
+      byCategory: "Par cat�gorie",
       byFamily: "Par famille",
       transactions: "Transactions",
       supplier: "Fournisseur",
       paymentMethod: "Moyen de paiement",
-      reference: "Référence",
+      reference: "R�f�rence",
       client: "Client",
-      dueDate: "Échéance",
+      dueDate: "�ch�ance",
       delay: "Retard",
-      unpaidInvoices: "Factures impayées",
-      agingSchedule: "Échéancier client",
+      unpaidInvoices: "Factures impay�es",
+      agingSchedule: "�ch�ancier client",
       customerInvoices: "Factures client",
-      budgetVsActual: "Budget vs Réel",
-      departmentPerformance: "Performance par département",
+      budgetVsActual: "Budget vs R�el",
+      departmentPerformance: "Performance par d�partement",
       performanceRadar: "Radar de performance",
       amountExcludingTax: "Montant HT",
       accountName: "Nom du compte",
       initialBalance: "Solde initial",
       situation: "Situation",
-      paymentTerm: "Délai client",
+      paymentTerm: "D�lai client",
       topClients: "Top 5 clients",
       topProducts: "Top 5 produits",
-      detailedProfitEvolution: "Évolution détaillée du résultat",
-      expenseDistribution: "Répartition des dépenses",
-      actual: "Réel",
+      detailedProfitEvolution: "�volution d�taill�e du r�sultat",
+      expenseDistribution: "R�partition des d�penses",
+      actual: "R�el",
       budget: "Budget",
       performance: "Performance",
       target: "Cible",
-      category: "Catégorie",
+      category: "Cat�gorie",
       description: "Description",
       supplier_label: "Fournisseur",
       date_label: "Date",
       accountsPayable: "Dettes fournisseurs",
-      current: "À échoir",
+      current: "� �choir",
       debtToEquity: "Endettement",
       debtToEquityDesc: "Dettes / Capitaux propres",
-      currentRatioDesc: "Capacité à payer les dettes CT",
+      currentRatioDesc: "Capacit� � payer les dettes CT",
       quickRatioDesc: "Ratio hors stocks",
-      netMarginDesc: "Rentabilité nette %",
+      netMarginDesc: "Rentabilit� nette %",
       roiDesc: "Retour sur investissement",
       roeDesc: "Retour sur capitaux propres",
-      cash: "Liquidités",
+      cash: "Liquidit�s",
       card: "Carte bancaire",
       transfer: "Virement",
-      check: "Chèque",
+      check: "Ch�que",
       online: "Paiement en ligne",
       checking: "Compte courant",
-      savings: "Compte épargne",
+      savings: "Compte �pargne",
       netMargin: "Marge nette",
       ebit: "EBIT",
       amountHT: "Montant HT",
@@ -141,7 +141,7 @@ const translations = {
       amountIncVat: "Montant TTC",
       quarter: "Trimestre",
       currentQuarter: "Trimestre en cours",
-      cashIn: "Entrées d'argent",
+      cashIn: "Entr�es d'argent",
       cashOut: "Sorties d'argent",
       netCash: "Flux net",
       excellent: "Excellent",
@@ -150,77 +150,77 @@ const translations = {
       critical: "Critique",
       healthy: "Sain",
       okay: "Acceptable",
-      profitable: "Bénéficiaire",
-      loss: "Déficitaire",
-      healthScore: "Score santé",
+      profitable: "B�n�ficiaire",
+      loss: "D�ficitaire",
+      healthScore: "Score sant�",
       roiLong: "Retour sur investissement",
       roeLong: "Retour sur capitaux propres",
       ebitda: "EBITDA",
-      ebitLong: "Résultat d'exploitation",
-      ebt: "Résultat avant impôts",
+      ebitLong: "R�sultat d'exploitation",
+      ebt: "R�sultat avant imp�ts",
       quickRatio: "Ratio rapide",
       roe: "ROE",
       days: "j",
       monthPlus: "M+",
       quarterShort: "T",
-      yearCurrent: "Année en cours",
+      yearCurrent: "Ann�e en cours",
       confirmDelete: "Confirmer la suppression ?",
-      confirmBulkDelete: "Confirmer la suppression de {count} élément(s) ?",
-      fillAmountAndCategory: "Veuillez remplir le montant et la catégorie",
+      confirmBulkDelete: "Confirmer la suppression de {count} �l�ment(s) ?",
+      fillAmountAndCategory: "Veuillez remplir le montant et la cat�gorie",
       fillAmount: "Veuillez remplir le montant",
       fillAccountName: "Veuillez remplir le nom du compte",
-      expenseAdded: "Dépense ajoutée",
-      budgetSaved: "Budget enregistré",
-      accountAdded: "Compte bancaire ajouté",
-      expenseDeleted: "Dépense supprimée",
-      expenses: "Dépenses",
+      expenseAdded: "D�pense ajout�e",
+      budgetSaved: "Budget enregistr�",
+      accountAdded: "Compte bancaire ajout�",
+      expenseDeleted: "D�pense supprim�e",
+      expenses: "D�penses",
       other: "Autres",
-      overdue: "Créances échues",
+      overdue: "Cr�ances �chues",
       value: "Valeur"
     },
     finance: {
       title: "Module Finance",
-      subtitle: "Comptabilité · Trésorerie · Analyse · Budgets · Fiscalité",
+      subtitle: "Comptabilit� � Tr�sorerie � Analyse � Budgets � Fiscalit�",
       revenue: "Chiffre d'affaires",
-      profit: "Bénéfice net",
-      cashBalance: "Trésorerie",
+      profit: "B�n�fice net",
+      cashBalance: "Tr�sorerie",
       ebitda: "EBITDA",
-      accountsReceivable: "Créances clients",
+      accountsReceivable: "Cr�ances clients",
       accountsPayable: "Dettes fournisseurs",
       equity: "Capitaux propres",
       roi: "ROI global",
       grossMargin: "Marge brute",
-      currentRatio: "Ratio liquidité",
-      overdue: "Créances échues",
+      currentRatio: "Ratio liquidit�",
+      overdue: "Cr�ances �chues",
       dashboard: "Tableau de bord",
-      income: "Compte de résultat",
+      income: "Compte de r�sultat",
       balance: "Bilan comptable",
-      cashflow: "Trésorerie",
-      expenses: "Dépenses",
+      cashflow: "Tr�sorerie",
+      expenses: "D�penses",
       invoices: "Factures",
       budget: "Budget",
       ratios: "Ratios & KPIs",
-      cashIn: "Entrées",
+      cashIn: "Entr�es",
       cashOut: "Sorties",
       netCashflow: "Flux net",
-      operationalExpenses: "Opérationnelles",
+      operationalExpenses: "Op�rationnelles",
       administrativeExpenses: "Administratives",
-      financialExpenses: "Financières",
-      addExpense: "Ajouter dépense",
-      setBudget: "Définir budget",
+      financialExpenses: "Financi�res",
+      addExpense: "Ajouter d�pense",
+      setBudget: "D�finir budget",
       addAccount: "Ajouter compte",
-      healthScore: "Score santé",
+      healthScore: "Score sant�",
       excellent: "Excellent",
       good: "Bon",
       warning: "Attention",
       critical: "Critique",
-      profitable: "Bénéficiaire",
-      loss: "Déficitaire",
+      profitable: "B�n�ficiaire",
+      loss: "D�ficitaire",
       healthy: "Sain",
       okay: "Acceptable",
       thisMonth: "Ce mois",
       thisQuarter: "Ce trimestre",
-      thisYear: "Cette année"
+      thisYear: "Cette ann�e"
     }
   },
   es: {
@@ -245,15 +245,15 @@ const translations = {
       total: "Total",
       paid: "Pagado",
       pending: "Pendiente",
-      yes: "Sí",
+      yes: "S�",
       no: "No",
       all: "Todos",
       error: "Error",
-      success: "Éxito",
+      success: "�xito",
       noData: "Sin datos",
       year: "Ejercicio",
       lastUpdate: "ACT",
-      cashAlert: "Alerta tesorería",
+      cashAlert: "Alerta tesorer�a",
       margin: "margen",
       forecast: "Proyectada",
       invoicesPending: "facturas impagas",
@@ -266,7 +266,7 @@ const translations = {
       depreciation: "Amortizaciones",
       interestExpense: "Intereses",
       incomeTax: "Impuestos (25%)",
-      monthlyEvolution: "Evolución mensual",
+      monthlyEvolution: "Evoluci�n mensual",
       assets: "Activo",
       inventory: "Inventario",
       totalAssets: "TOTAL ACTIVO",
@@ -279,12 +279,12 @@ const translations = {
       balanceSheetStructure: "Estructura del balance",
       currentBalance: "Saldo actual",
       monthlyCashflow: "Flujo de caja mensual",
-      sixMonthForecast: "Proyección 6 meses",
-      byCategory: "Por categoría",
+      sixMonthForecast: "Proyecci�n 6 meses",
+      byCategory: "Por categor�a",
       byFamily: "Por familia",
       transactions: "Transacciones",
       supplier: "Proveedor",
-      paymentMethod: "Método pago",
+      paymentMethod: "M�todo pago",
       reference: "Referencia",
       client: "Cliente",
       dueDate: "Vencimiento",
@@ -298,18 +298,18 @@ const translations = {
       amountExcludingTax: "Monto sin IVA",
       accountName: "Nombre cuenta",
       initialBalance: "Saldo inicial",
-      situation: "Situación",
+      situation: "Situaci�n",
       paymentTerm: "Plazo cliente",
       topClients: "Top 5 clientes",
       topProducts: "Top 5 productos",
-      detailedProfitEvolution: "Evolución detallada del resultado",
-      expenseDistribution: "Distribución de gastos",
+      detailedProfitEvolution: "Evoluci�n detallada del resultado",
+      expenseDistribution: "Distribuci�n de gastos",
       actual: "Real",
       budget: "Presupuesto",
       performance: "Rendimiento",
       target: "Objetivo",
-      category: "Categoría",
-      description: "Descripción",
+      category: "Categor�a",
+      description: "Descripci�n",
       supplier_label: "Proveedor",
       date_label: "Fecha",
       accountsPayable: "Cuentas por pagar",
@@ -319,7 +319,7 @@ const translations = {
       currentRatioDesc: "Capacidad de pago de deudas CP",
       quickRatioDesc: "Ratio excluye inventarios",
       netMarginDesc: "Rentabilidad neta %",
-      roiDesc: "Retorno inversión",
+      roiDesc: "Retorno inversi�n",
       roeDesc: "Retorno patrimonio",
       cash: "Efectivo",
       card: "Tarjeta",
@@ -340,27 +340,27 @@ const translations = {
       netCash: "Flujo neto",
       excellent: "Excelente",
       good: "Bueno",
-      warning: "Atención",
-      critical: "Crítico",
+      warning: "Atenci�n",
+      critical: "Cr�tico",
       healthy: "Saneado",
       okay: "Aceptable",
       profitable: "Rentable",
       loss: "Deficitario",
-      healthScore: "Puntuación salud",
-      roiLong: "Retorno inversión",
+      healthScore: "Puntuaci�n salud",
+      roiLong: "Retorno inversi�n",
       roeLong: "Retorno patrimonio",
       ebitda: "EBITDA",
       ebitLong: "Resultado operativo",
       ebt: "Resultado antes impuestos",
-      quickRatio: "Ratio rápido",
+      quickRatio: "Ratio r�pido",
       roe: "ROE",
       days: "d",
       monthPlus: "M+",
       quarterShort: "T",
-      yearCurrent: "Año actual",
-      confirmDelete: "¿Confirmar eliminación?",
-      confirmBulkDelete: "¿Confirmar eliminación de {count} elemento(s)?",
-      fillAmountAndCategory: "Por favor complete el monto y la categoría",
+      yearCurrent: "A�o actual",
+      confirmDelete: "�Confirmar eliminaci�n?",
+      confirmBulkDelete: "�Confirmar eliminaci�n de {count} elemento(s)?",
+      fillAmountAndCategory: "Por favor complete el monto y la categor�a",
       fillAmount: "Por favor complete el monto",
       fillAccountName: "Por favor complete el nombre de la cuenta",
       expenseAdded: "Gasto agregado",
@@ -373,11 +373,11 @@ const translations = {
       value: "Valor"
     },
     finance: {
-      title: "Módulo Finanzas",
-      subtitle: "Contabilidad · Tesorería · Análisis · Presupuestos · Fiscalidad",
+      title: "M�dulo Finanzas",
+      subtitle: "Contabilidad � Tesorer�a � An�lisis � Presupuestos � Fiscalidad",
       revenue: "Ingresos",
       profit: "Beneficio neto",
-      cashBalance: "Tesorería",
+      cashBalance: "Tesorer�a",
       ebitda: "EBITDA",
       accountsReceivable: "Cuentas por cobrar",
       accountsPayable: "Cuentas por pagar",
@@ -403,18 +403,18 @@ const translations = {
       addExpense: "Agregar gasto",
       setBudget: "Definir presupuesto",
       addAccount: "Agregar cuenta",
-      healthScore: "Puntuación salud",
+      healthScore: "Puntuaci�n salud",
       excellent: "Excelente",
       good: "Bueno",
-      warning: "Atención",
-      critical: "Crítico",
+      warning: "Atenci�n",
+      critical: "Cr�tico",
       profitable: "Rentable",
       loss: "Deficitario",
       healthy: "Saneado",
       okay: "Aceptable",
       thisMonth: "Este mes",
       thisQuarter: "Este trimestre",
-      thisYear: "Este año"
+      thisYear: "Este a�o"
     }
   },
   en: {
@@ -568,7 +568,7 @@ const translations = {
     },
     finance: {
       title: "Finance Module",
-      subtitle: "Accounting · Cashflow · Analysis · Budgets · Taxation",
+      subtitle: "Accounting � Cashflow � Analysis � Budgets � Taxation",
       revenue: "Revenue",
       profit: "Net profit",
       cashBalance: "Cash balance",
@@ -670,46 +670,46 @@ const STORAGE_KEYS = {
 
 const EXPENSE_CATEGORIES = {
   operational: [
-    { value: "salaries", labelKey: "salary", icon: "👥", color: "#3b82f6", group: "operational", taxDeductible: true },
-    { value: "rent", labelKey: "rent", icon: "🏢", color: "#f59e0b", group: "operational", taxDeductible: true },
-    { value: "utilities", labelKey: "utilities", icon: "💡", color: "#10b981", group: "operational", taxDeductible: true },
-    { value: "supplies", labelKey: "supplies", icon: "📦", color: "#8b5cf6", group: "operational", taxDeductible: true },
-    { value: "marketing", labelKey: "marketing", icon: "📢", color: "#ec4899", group: "operational", taxDeductible: true },
-    { value: "transport", labelKey: "transport", icon: "🚚", color: "#06b6d4", group: "operational", taxDeductible: true },
-    { value: "maintenance", labelKey: "maintenance", icon: "🔧", color: "#f97316", group: "operational", taxDeductible: true }
+    { value: "salaries", labelKey: "salary", icon: "??", color: "#3b82f6", group: "operational", taxDeductible: true },
+    { value: "rent", labelKey: "rent", icon: "??", color: "#f59e0b", group: "operational", taxDeductible: true },
+    { value: "utilities", labelKey: "utilities", icon: "??", color: "#10b981", group: "operational", taxDeductible: true },
+    { value: "supplies", labelKey: "supplies", icon: "??", color: "#8b5cf6", group: "operational", taxDeductible: true },
+    { value: "marketing", labelKey: "marketing", icon: "??", color: "#ec4899", group: "operational", taxDeductible: true },
+    { value: "transport", labelKey: "transport", icon: "??", color: "#06b6d4", group: "operational", taxDeductible: true },
+    { value: "maintenance", labelKey: "maintenance", icon: "??", color: "#f97316", group: "operational", taxDeductible: true }
   ],
   administrative: [
-    { value: "taxes", labelKey: "taxes", icon: "📄", color: "#ef4444", group: "administrative", taxDeductible: true },
-    { value: "insurance", labelKey: "insurance", icon: "🛡️", color: "#6366f1", group: "administrative", taxDeductible: true },
-    { value: "software", labelKey: "software", icon: "💻", color: "#14b8a6", group: "administrative", taxDeductible: true },
-    { value: "training", labelKey: "training", icon: "📚", color: "#a855f7", group: "administrative", taxDeductible: true },
-    { value: "legal", labelKey: "legal", icon: "⚖️", color: "#f43f5e", group: "administrative", taxDeductible: true },
-    { value: "accounting", labelKey: "accounting", icon: "📊", color: "#0ea5e9", group: "administrative", taxDeductible: true }
+    { value: "taxes", labelKey: "taxes", icon: "??", color: "#ef4444", group: "administrative", taxDeductible: true },
+    { value: "insurance", labelKey: "insurance", icon: "???", color: "#6366f1", group: "administrative", taxDeductible: true },
+    { value: "software", labelKey: "software", icon: "??", color: "#14b8a6", group: "administrative", taxDeductible: true },
+    { value: "training", labelKey: "training", icon: "??", color: "#a855f7", group: "administrative", taxDeductible: true },
+    { value: "legal", labelKey: "legal", icon: "??", color: "#f43f5e", group: "administrative", taxDeductible: true },
+    { value: "accounting", labelKey: "accounting", icon: "??", color: "#0ea5e9", group: "administrative", taxDeductible: true }
   ],
   financial: [
-    { value: "interest", labelKey: "interest", icon: "🏦", color: "#eab308", group: "financial", taxDeductible: true },
-    { value: "bank_fees", labelKey: "bankFees", icon: "💳", color: "#a855f7", group: "financial", taxDeductible: true }
+    { value: "interest", labelKey: "interest", icon: "??", color: "#eab308", group: "financial", taxDeductible: true },
+    { value: "bank_fees", labelKey: "bankFees", icon: "??", color: "#a855f7", group: "financial", taxDeductible: true }
   ],
   other: [
-    { value: "other", labelKey: "other", icon: "📌", color: "#64748b", group: "other", taxDeductible: false }
+    { value: "other", labelKey: "other", icon: "??", color: "#64748b", group: "other", taxDeductible: false }
   ]
 };
 
 const bankAccountTypes = [
-  { value: "checking", labelKey: "checking", icon: "💰" },
-  { value: "savings", labelKey: "savings", icon: "🏦" },
-  { value: "cash", labelKey: "cash", icon: "💵" }
+  { value: "checking", labelKey: "checking", icon: "??" },
+  { value: "savings", labelKey: "savings", icon: "??" },
+  { value: "cash", labelKey: "cash", icon: "??" }
 ];
 
 const paymentMethods = [
-  { value: "cash", labelKey: "cash", icon: "💵" },
-  { value: "card", labelKey: "card", icon: "💳" },
-  { value: "transfer", labelKey: "transfer", icon: "🏦" },
-  { value: "check", labelKey: "check", icon: "📝" },
-  { value: "online", labelKey: "online", icon: "🌐" }
+  { value: "cash", labelKey: "cash", icon: "??" },
+  { value: "card", labelKey: "card", icon: "??" },
+  { value: "transfer", labelKey: "transfer", icon: "??" },
+  { value: "check", labelKey: "check", icon: "??" },
+  { value: "online", labelKey: "online", icon: "??" }
 ];
 
-// ─── REUSABLE CARD COMPONENT ──────────────────────────────────────────────────
+// --- REUSABLE CARD COMPONENT --------------------------------------------------
 interface KpiCardProps {
   icon: React.ReactNode;
   label: string;
@@ -757,7 +757,7 @@ const KpiCard = ({ icon, label, value, detail, accentColor, index, theme, isMobi
   );
 };
 
-// ─── STAT BADGE ───────────────────────────────────────────────────────────────
+// --- STAT BADGE ---------------------------------------------------------------
 const StatBadge = ({ icon, value, label, theme }: any) => (
   <div style={{ display: "flex", alignItems: "center", gap: "8px", background: theme.surfaceHover, padding: "7px 14px", borderRadius: "20px" }}>
     <span style={{ color: theme.textSecondary, display: "flex" }}>{icon}</span>
@@ -766,7 +766,7 @@ const StatBadge = ({ icon, value, label, theme }: any) => (
   </div>
 );
 
-// ─── SECTION CARD ─────────────────────────────────────────────────────────────
+// --- SECTION CARD -------------------------------------------------------------
 const SectionCard = ({ title, children, theme, style = {} }: any) => (
   <div style={{
     background: theme.surface, borderRadius: "22px", padding: "22px",
@@ -781,7 +781,7 @@ const SectionCard = ({ title, children, theme, style = {} }: any) => (
   </div>
 );
 
-// ─── MODAL WRAPPER ────────────────────────────────────────────────────────────
+// --- MODAL WRAPPER ------------------------------------------------------------
 const Modal = ({ open, onClose, title, children, theme, isMobile }: any) => {
   if (!open) return null;
   return (
@@ -804,7 +804,7 @@ const Modal = ({ open, onClose, title, children, theme, isMobile }: any) => {
   );
 };
 
-// ─── FORM INPUT ───────────────────────────────────────────────────────────────
+// --- FORM INPUT ---------------------------------------------------------------
 const FormField = ({ as: Tag = "input", theme, style = {}, ...props }: any) => (
   <Tag
     {...props}
@@ -818,7 +818,7 @@ const FormField = ({ as: Tag = "input", theme, style = {}, ...props }: any) => (
   />
 );
 
-// ─── ACTION BUTTON ─────────────────────────────────────────────────────────────
+// --- ACTION BUTTON -------------------------------------------------------------
 const ActionButton = ({ icon, label, onClick, color, theme, isMobile }: any) => {
   const [hovered, setHovered] = useState(false);
   return (
@@ -849,7 +849,7 @@ const ActionButton = ({ icon, label, onClick, color, theme, isMobile }: any) => 
   );
 };
 
-// ─── FILTER BAR ───────────────────────────────────────────────────────────────
+// --- FILTER BAR ---------------------------------------------------------------
 const FilterBar = ({ t, theme, isMobile, selectedPeriod, setSelectedPeriod, selectedYear, setSelectedYear, years, months, selectedMonth, setSelectedMonth, selectedQuarter, setSelectedQuarter, style }: any) => {
   const [showFilters, setShowFilters] = useState(false);
   
@@ -1012,13 +1012,13 @@ export default function FinancePage() {
   const [financialRatios, setFinancialRatios] = useState<any[]>([]);
 
   const shortMonths = useMemo(() => {
-    if (language === "fr") return ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+    if (language === "fr") return ["Jan", "F�v", "Mar", "Avr", "Mai", "Juin", "Juil", "Ao�", "Sep", "Oct", "Nov", "D�c"];
     if (language === "es") return ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   }, [language]);
 
   const months = useMemo(() => {
-    if (language === "fr") return ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    if (language === "fr") return ["Janvier", "F�vrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Ao�t", "Septembre", "Octobre", "Novembre", "D�cembre"];
     if (language === "es") return ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     return ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   }, [language]);
@@ -1104,14 +1104,14 @@ export default function FinancePage() {
         } catch { return def; }
       };
       const [sd, pd, id, prd, cd, supp, emp, proj] = await Promise.all([
-        fw("https://api-inovexa.ngrok.app/sales"),
-        fw("https://api-inovexa.ngrok.app/purchases"),
-        fw("https://api-inovexa.ngrok.app/invoices"),
-        fw("https://api-inovexa.ngrok.app/products"),
-        fw("https://api-inovexa.ngrok.app/clients"),
-        fw("https://api-inovexa.ngrok.app/suppliers"),
-        fw("https://api-inovexa.ngrok.app/employees"),
-        fw("https://api-inovexa.ngrok.app/projects")
+        fw("${process.env.NEXT_PUBLIC_API_URL}/sales"),
+        fw("${process.env.NEXT_PUBLIC_API_URL}/purchases"),
+        fw("${process.env.NEXT_PUBLIC_API_URL}/invoices"),
+        fw("${process.env.NEXT_PUBLIC_API_URL}/products"),
+        fw("${process.env.NEXT_PUBLIC_API_URL}/clients"),
+        fw("${process.env.NEXT_PUBLIC_API_URL}/suppliers"),
+        fw("${process.env.NEXT_PUBLIC_API_URL}/employees"),
+        fw("${process.env.NEXT_PUBLIC_API_URL}/projects")
       ]);
       setSales(sd); setPurchases(pd); setInvoices(id); setProducts(prd);
       setClients(cd); setSuppliers(supp); setEmployees(emp); setProjects(proj);
@@ -1329,7 +1329,7 @@ export default function FinancePage() {
   const calculateDepartmentPerformance = (projectsData: any[]) => {
     const dp: Record<string, any> = {};
     projectsData.forEach((p: any) => {
-      const dept = p.department || "Général";
+      const dept = p.department || "G�n�ral";
       if (!dp[dept]) dp[dept] = { revenue: 0, expenses: 0, profit: 0 };
       dp[dept].revenue += parseFloat(p.budget) || 0;
       dp[dept].expenses += parseFloat(p.cost) || 0;
@@ -1875,7 +1875,7 @@ export default function FinancePage() {
                     <span style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none", display: "inline-flex" }}>
                       <Icon.Refresh />
                     </span>
-                    {refreshing ? tCommon.sync + "…" : tCommon.refresh}
+                    {refreshing ? tCommon.sync + "�" : tCommon.refresh}
                   </button>
                 </div>
               </div>
@@ -1927,7 +1927,7 @@ export default function FinancePage() {
               {/* Health bar */}
               <div style={{ marginTop: "20px", display: "flex", gap: "16px", flexWrap: "wrap" }}>
                 {[
-                  { label: tCommon.situation, value: stats.netProfit >= 0 ? `${tCommon.profitable} ✓` : `${tCommon.loss} ✗`, color: stats.netProfit >= 0 ? "#10b981" : "#ef4444" },
+                  { label: tCommon.situation, value: stats.netProfit >= 0 ? `${tCommon.profitable} ?` : `${tCommon.loss} ?`, color: stats.netProfit >= 0 ? "#10b981" : "#ef4444" },
                   { label: `${tCommon.forecast} ${tCommon.monthPlus}3`, value: formatCurrency(cashflowProjection[2]?.balance || 0), color: (cashflowProjection[2]?.balance || 0) >= 10000 ? "#10b981" : "#ef4444" },
                   { label: tCommon.paymentTerm, value: `45 ${tCommon.days}`, color: "#f59e0b" },
                   { label: tCommon.healthScore, value: `${Math.min(100, Math.round(stats.currentRatio * 30 + Math.max(0, stats.netMargin) * 2))}/100`, color: theme.accent }
@@ -2054,7 +2054,7 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* COMPTE DE RÉSULTAT */}
+          {/* COMPTE DE R�SULTAT */}
           {activeTab === "income" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <SectionCard theme={theme} style={{ marginBottom: "20px" }}>
@@ -2063,17 +2063,17 @@ export default function FinancePage() {
                 </h3>
                 {[
                   { label: t.revenue, value: formatCurrency(stats.revenue), bold: true, color: theme.accent },
-                  { label: `└ ${tCommon.cogs}`, value: `− ${formatCurrency(stats.costOfGoodsSold)}`, indent: true, muted: true },
-                  { label: `└ ${t.grossMargin}`, value: `${formatCurrency(stats.grossProfit)} (${stats.grossMargin.toFixed(1)}%)`, indent: true, color: "#10b981" },
-                  { label: t.operationalExpenses, value: `− ${formatCurrency(stats.operationalExpenses)}`, muted: true },
-                  { label: t.administrativeExpenses, value: `− ${formatCurrency(stats.administrativeExpenses)}`, muted: true },
-                  { label: t.financialExpenses, value: `− ${formatCurrency(stats.financialExpenses)}`, muted: true },
+                  { label: `+ ${tCommon.cogs}`, value: `- ${formatCurrency(stats.costOfGoodsSold)}`, indent: true, muted: true },
+                  { label: `+ ${t.grossMargin}`, value: `${formatCurrency(stats.grossProfit)} (${stats.grossMargin.toFixed(1)}%)`, indent: true, color: "#10b981" },
+                  { label: t.operationalExpenses, value: `- ${formatCurrency(stats.operationalExpenses)}`, muted: true },
+                  { label: t.administrativeExpenses, value: `- ${formatCurrency(stats.administrativeExpenses)}`, muted: true },
+                  { label: t.financialExpenses, value: `- ${formatCurrency(stats.financialExpenses)}`, muted: true },
                   { label: tCommon.ebitda, value: formatCurrency(stats.ebitda), bold: true, color: "#f59e0b" },
-                  { label: `└ ${tCommon.depreciation}`, value: `− ${formatCurrency(stats.depreciation)}`, indent: true, muted: true },
+                  { label: `+ ${tCommon.depreciation}`, value: `- ${formatCurrency(stats.depreciation)}`, indent: true, muted: true },
                   { label: tCommon.ebitLong, value: formatCurrency(stats.ebit), bold: true, color: stats.ebit >= 0 ? "#10b981" : "#ef4444" },
-                  { label: `└ ${tCommon.interestExpense}`, value: `− ${formatCurrency(stats.interest)}`, indent: true, muted: true },
+                  { label: `+ ${tCommon.interestExpense}`, value: `- ${formatCurrency(stats.interest)}`, indent: true, muted: true },
                   { label: tCommon.ebt, value: formatCurrency(stats.ebt), bold: true, color: stats.ebt >= 0 ? "#10b981" : "#ef4444" },
-                  { label: `└ ${tCommon.incomeTax}`, value: `− ${formatCurrency(stats.tax)}`, indent: true, muted: true },
+                  { label: `+ ${tCommon.incomeTax}`, value: `- ${formatCurrency(stats.tax)}`, indent: true, muted: true },
                 ].map((row, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", paddingLeft: row.indent ? "16px" : "0", borderBottom: `1px solid ${theme.surfaceHover}` }}>
                     <span style={{ fontSize: isMobile ? "11px" : "14px", color: row.muted ? theme.textSecondary : theme.text, fontWeight: row.bold ? "600" : "400" }}>{row.label}</span>
@@ -2146,7 +2146,7 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* TRÉSORERIE */}
+          {/* TR�SORERIE */}
           {activeTab === "cashflow" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
@@ -2176,7 +2176,7 @@ export default function FinancePage() {
                     <div key={i} style={{ textAlign: "center", padding: "8px", background: theme.surfaceHover, borderRadius: "10px" }}>
                       <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "700", color: theme.text }}>{p.month}</div>
                       <div style={{ fontSize: isMobile ? "10px" : "13px", color: p.status === "excellent" ? "#10b981" : p.status === "good" ? "#f59e0b" : "#ef4444", fontWeight: "700", marginTop: "2px" }}>{formatCurrency(p.balance)}</div>
-                      <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "2px" }}>{p.status === "excellent" ? `🟢 ${tCommon.healthy}` : p.status === "good" ? `🟡 ${tCommon.okay}` : `🔴 ${tCommon.critical}`}</div>
+                      <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "2px" }}>{p.status === "excellent" ? `?? ${tCommon.healthy}` : p.status === "good" ? `?? ${tCommon.okay}` : `?? ${tCommon.critical}`}</div>
                     </div>
                   ))}
                 </div>
@@ -2184,7 +2184,7 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* ANALYSE DÉPENSES */}
+          {/* ANALYSE D�PENSES */}
           {activeTab === "expenses" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "14px", marginBottom: "20px" }}>
@@ -2247,7 +2247,7 @@ export default function FinancePage() {
                             </td>
                             <td style={{ padding: "8px 10px" }}>
                               <span style={{ background: `${cat?.color || "#64748b"}18`, color: cat?.color || "#64748b", padding: "2px 6px", borderRadius: "16px", fontSize: isMobile ? "9px" : "11px", fontWeight: "600" }}>
-                                {cat?.icon} {cat?.label || "—"}
+                                {cat?.icon} {cat?.label || "�"}
                               </span>
                             </td>
                             <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "10px" : "13px" }}>
@@ -2260,7 +2260,7 @@ export default function FinancePage() {
                               {formatCurrency(exp.amount)}
                             </td>
                             <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>
-                              {exp.vendor || "—"}
+                              {exp.vendor || "�"}
                             </td>
                             <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>
                               {getPaymentMethods().find(p => p.value === exp.paymentMethod)?.icon}
@@ -2325,16 +2325,16 @@ export default function FinancePage() {
                         const daysOverdue = inv.dueDate ? Math.floor((Date.now() - new Date(inv.dueDate).getTime()) / 86400000) : 0;
                         return (
                           <tr key={i} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px", color: theme.textSecondary }}>{inv.reference || "—"}</td>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>{inv.clientName || "—"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px", color: theme.textSecondary }}>{inv.reference || "�"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>{inv.clientName || "�"}</td>
                             <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "11px" : "13px", fontWeight: "700", color: theme.accent }}>{formatCurrency(inv.amount)}</td>
                             <td style={{ padding: "8px 10px" }}>
                               <span style={{ background: inv.status === "paid" ? "#10b98120" : isOverdue ? "#ef444420" : "#f59e0b20", color: inv.status === "paid" ? "#10b981" : isOverdue ? "#ef4444" : "#f59e0b", padding: "2px 6px", borderRadius: "16px", fontSize: isMobile ? "9px" : "11px", fontWeight: "600" }}>
                                 {inv.status === "paid" ? tCommon.paid : isOverdue ? tCommon.overdue : tCommon.pending}
                               </span>
                             </td>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "—"}</td>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: isOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isOverdue ? "600" : "400" }}>{isOverdue ? `${daysOverdue}${tCommon.days}` : "—"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "�"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: isOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isOverdue ? "600" : "400" }}>{isOverdue ? `${daysOverdue}${tCommon.days}` : "�"}</td>
                           </tr>
                         );
                       })}
@@ -2348,7 +2348,7 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* BUDGET & PRÉVISIONS */}
+          {/* BUDGET & PR�VISIONS */}
           {activeTab === "budget" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "14px", marginBottom: "20px" }}>
@@ -2388,7 +2388,7 @@ export default function FinancePage() {
               <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "130px" : "180px"}, 1fr))`, gap: "14px", marginBottom: "20px" }}>
                 {financialRatios.map((r, i) => (
                   <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "16px", textAlign: "center", border: `1px solid ${r.status === "good" ? "#10b98130" : r.status === "warning" ? "#f59e0b30" : "#ef444430"}` }}>
-                    <div style={{ fontSize: isMobile ? "18px" : "22px", marginBottom: "4px" }}>{r.status === "good" ? "🟢" : r.status === "warning" ? "🟡" : "🔴"}</div>
+                    <div style={{ fontSize: isMobile ? "18px" : "22px", marginBottom: "4px" }}>{r.status === "good" ? "??" : r.status === "warning" ? "??" : "??"}</div>
                     <div style={{ fontSize: isMobile ? "20px" : "26px", fontWeight: "800", color: r.status === "good" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4444", letterSpacing: "-1px" }}>{r.value.toFixed(1)}</div>
                     <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "600", color: theme.text, marginTop: "4px" }}>{r.name}</div>
                     <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary, marginTop: "2px" }}>{tCommon.target}: {r.target}{r.name.includes(t.currentRatio) ? "" : "%"}</div>
@@ -2411,7 +2411,7 @@ export default function FinancePage() {
       {/* MODALS */}
       <Modal open={expenseModalOpen} onClose={() => setExpenseModalOpen(false)} title={t.addExpense} theme={theme} isMobile={isMobile}>
         <FormField as="select" theme={theme} value={expenseForm.category} onChange={(e: any) => setExpenseForm({ ...expenseForm, category: e.target.value })}>
-          <option value="">— {tCommon.category} —</option>
+          <option value="">� {tCommon.category} �</option>
           {getExpenseCategories().map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
         </FormField>
         <FormField type="number" placeholder={`${tCommon.amountExcludingTax} (${currencySymbol})`} theme={theme} value={expenseForm.amount} onChange={(e: any) => setExpenseForm({ ...expenseForm, amount: e.target.value })} />
@@ -2439,9 +2439,9 @@ export default function FinancePage() {
 
       <Modal open={budgetModalOpen} onClose={() => setBudgetModalOpen(false)} title={t.setBudget} theme={theme} isMobile={isMobile}>
         <FormField as="select" theme={theme} value={budgetForm.category} onChange={(e: any) => setBudgetForm({ ...budgetForm, category: e.target.value })}>
-          <option value="revenue">💰 {t.revenue}</option>
-          <option value="expenses">📉 {tCommon.expenses}</option>
-          <option value="profit">📈 {t.profit}</option>
+          <option value="revenue">?? {t.revenue}</option>
+          <option value="expenses">?? {tCommon.expenses}</option>
+          <option value="profit">?? {t.profit}</option>
         </FormField>
         <FormField type="number" placeholder={`${tCommon.amount} (${currencySymbol})`} theme={theme} value={budgetForm.amount} onChange={(e: any) => setBudgetForm({ ...budgetForm, amount: e.target.value })} />
         <FormField as="select" theme={theme} value={budgetForm.year} onChange={(e: any) => setBudgetForm({ ...budgetForm, year: parseInt(e.target.value) })} style={{ marginBottom: "22px" }}>

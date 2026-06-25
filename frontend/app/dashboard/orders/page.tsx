@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -8,7 +8,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 
-// ─── Interfaces ────────────────────────────────────────────────────────────────
+// --- Interfaces ----------------------------------------------------------------
 
 interface Order {
   id: number;
@@ -55,7 +55,7 @@ interface StatsState {
   totalAmount: number;
 }
 
-// ─── SVG Icon Components ───────────────────────────────────────────────────────
+// --- SVG Icon Components -------------------------------------------------------
 
 const IconChart = ({ size = 20, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -157,7 +157,7 @@ const IconOrder = ({ size = 22, color = "currentColor" }: { size?: number; color
   </svg>
 );
 
-// ─── SelectAllCheckbox ─────────────────────────────────────────────────────────
+// --- SelectAllCheckbox ---------------------------------------------------------
 
 interface SelectAllCheckboxProps {
   items: Order[];
@@ -201,7 +201,7 @@ function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemI
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// --- Main Component ------------------------------------------------------------
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -233,11 +233,11 @@ export default function OrdersPage() {
   const gridGap = isMobile ? "10px" : "16px";
   const sectionMargin = isMobile ? "18px" : "32px";
   const tableFontSize = isMobile ? "12px" : "13px";
-  // ✅ Touch targets ≥ 44px sur mobile
+  // ? Touch targets = 44px sur mobile
   const buttonPadding = isMobile ? "12px 16px" : "10px 20px";
   const modalWidth = isMobile ? "95%" : "500px";
   const modalPadding = isMobile ? "20px" : "32px";
-  // ✅ Hauteur minimum des inputs sur mobile
+  // ? Hauteur minimum des inputs sur mobile
   const inputPadding = isMobile ? "13px 12px" : "10px 12px";
 
   useEffect(() => {
@@ -257,7 +257,7 @@ export default function OrdersPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/orders", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/orders", {
         headers: { Authorization: `Bearer ${token}` }
       });
       let data: Order[] = await res.json();
@@ -295,7 +295,7 @@ export default function OrdersPage() {
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } });
       const data: Client[] = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -304,7 +304,7 @@ export default function OrdersPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
       const data: Product[] = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -313,7 +313,7 @@ export default function OrdersPage() {
   const createOrder = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/orders", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -334,25 +334,25 @@ export default function OrdersPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/orders/${id}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
         await fetchOrders();
-        showMessage(`✓ ${t("orders.statusUpdated")}`, "success");
+        showMessage(`? ${t("orders.statusUpdated")}`, "success");
       } else {
         const order = allOrders.find(o => o.id === id);
         if (order) {
-          const putRes = await fetch(`https://api-inovexa.ngrok.app/orders/${id}`, {
+          const putRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...order, status: newStatus })
           });
           if (putRes.ok) {
             await fetchOrders();
-            showMessage(`✓ ${t("orders.statusUpdated")}`, "success");
+            showMessage(`? ${t("orders.statusUpdated")}`, "success");
           } else {
             showMessage(t("common.error"), "error");
           }
@@ -371,7 +371,7 @@ export default function OrdersPage() {
   const deleteOrder = async (id: number) => {
     if (confirm(t("orders.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`https://api-inovexa.ngrok.app/orders/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -386,14 +386,14 @@ export default function OrdersPage() {
     if (confirm(t("orders.confirmBulkDelete")?.replace("{count}", String(selectedIds.length)) || `Supprimer ${selectedIds.length} commande(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`https://api-inovexa.ngrok.app/orders/${id}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
       }
       fetchOrders();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} commande(s) supprimée(s)`, "success");
+      showMessage(`${selectedIds.length} commande(s) supprim�e(s)`, "success");
     }
   };
 
@@ -477,7 +477,7 @@ export default function OrdersPage() {
 
           <style>{animations}</style>
 
-          {/* ── Header ── */}
+          {/* -- Header -- */}
           <div style={{
             marginBottom: sectionMargin,
             animation: "fadeInDown 0.5s ease",
@@ -495,7 +495,7 @@ export default function OrdersPage() {
                 </p>
               </div>
 
-              {/* ✅ Boutons header — touch targets larges sur mobile */}
+              {/* ? Boutons header � touch targets larges sur mobile */}
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <ExportButtons data={orders} filename="commandes" />
                 <button
@@ -513,20 +513,20 @@ export default function OrdersPage() {
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
-                    minHeight: "44px",          // ✅ touch target
+                    minHeight: "44px",          // ? touch target
                     whiteSpace: "nowrap"
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.opacity = "0.88"}
                   onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                 >
                   <IconPlus size={16} color="white" />
-                  {t("common.add")}   {/* ✅ texte complet, pas de troncature */}
+                  {t("common.add")}   {/* ? texte complet, pas de troncature */}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* ── Message ── */}
+          {/* -- Message -- */}
           {message && (
             <div style={{
               background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)",
@@ -551,8 +551,8 @@ export default function OrdersPage() {
             </div>
           )}
 
-          {/* ── Stats Cards ── */}
-          {/* ✅ Grid: 3 colonnes sur mobile pour tout afficher sans scroll */}
+          {/* -- Stats Cards -- */}
+          {/* ? Grid: 3 colonnes sur mobile pour tout afficher sans scroll */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(auto-fit, minmax(150px, 1fr))",
@@ -572,7 +572,7 @@ export default function OrdersPage() {
                   opacity: animateCards ? 1 : 0,
                   transition: "transform 0.3s, box-shadow 0.3s",
                   cursor: "pointer",
-                  // ✅ légère ombre sur mobile pour mieux séparer les cards
+                  // ? l�g�re ombre sur mobile pour mieux s�parer les cards
                   boxShadow: isMobile ? `0 2px 8px rgba(0,0,0,0.15)` : "none"
                 }}
                 onMouseEnter={(e) => {
@@ -587,7 +587,7 @@ export default function OrdersPage() {
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px", color: card.color }}>
                   {card.icon}
                 </div>
-                {/* ✅ Valeur lisible sur mobile */}
+                {/* ? Valeur lisible sur mobile */}
                 <div style={{
                   fontSize: isMobile ? "15px" : "20px",
                   color: card.color,
@@ -597,7 +597,7 @@ export default function OrdersPage() {
                 }}>
                   {card.value}
                 </div>
-                {/* ✅ Label: 10px min (pas 8px) */}
+                {/* ? Label: 10px min (pas 8px) */}
                 <div style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, marginTop: "3px", lineHeight: 1.3 }}>
                   {card.label}
                 </div>
@@ -605,11 +605,11 @@ export default function OrdersPage() {
             ))}
           </div>
 
-          {/* ── Filtres ── */}
+          {/* -- Filtres -- */}
           <div style={{ marginBottom: "20px", animation: `fadeInUp 0.5s ease 0.4s`, opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
 
-              {/* ✅ Search input — hauteur 44px+ sur mobile */}
+              {/* ? Search input � hauteur 44px+ sur mobile */}
               <div style={{ flex: 2, position: "relative", display: "flex", alignItems: "center", width: isMobile ? "100%" : "auto" }}>
                 <span style={{ position: "absolute", left: "12px", color: theme.textSecondary, pointerEvents: "none", display: "flex" }}>
                   <IconSearch size={16} color={theme.textSecondary} />
@@ -628,14 +628,14 @@ export default function OrdersPage() {
                     color: theme.text,
                     transition: "border-color 0.2s",
                     fontSize: isMobile ? "14px" : "14px",
-                    minHeight: "44px"             // ✅ touch target
+                    minHeight: "44px"             // ? touch target
                   }}
                   onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
                   onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
                 />
               </div>
 
-              {/* ✅ Select filtre — hauteur 44px+ sur mobile */}
+              {/* ? Select filtre � hauteur 44px+ sur mobile */}
               <div style={{ position: "relative", display: "flex", alignItems: "center", minWidth: isMobile ? "100%" : "160px" }}>
                 <span style={{ position: "absolute", left: "12px", pointerEvents: "none", display: "flex" }}>
                   <IconFilter size={14} color={theme.textSecondary} />
@@ -653,7 +653,7 @@ export default function OrdersPage() {
                     cursor: "pointer",
                     fontSize: isMobile ? "14px" : "14px",
                     appearance: "none",
-                    minHeight: "44px"             // ✅ touch target
+                    minHeight: "44px"             // ? touch target
                   }}
                 >
                   <option value="all">{t("orders.allStatus")}</option>
@@ -681,7 +681,7 @@ export default function OrdersPage() {
                     color: "white",
                     border: "none",
                     borderRadius: "10px",
-                    padding: isMobile ? "11px 18px" : "8px 16px",  // ✅ touch target
+                    padding: isMobile ? "11px 18px" : "8px 16px",  // ? touch target
                     cursor: "pointer",
                     transition: "opacity 0.2s",
                     fontSize: isMobile ? "13px" : "14px",
@@ -701,7 +701,7 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          {/* ── Orders Table ── */}
+          {/* -- Orders Table -- */}
           <div style={{
             background: theme.surface,
             borderRadius: cardRadius,
@@ -737,7 +737,7 @@ export default function OrdersPage() {
                     <th style={{ padding: "10px 8px", textAlign: "right", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.total")}</th>
                     <th style={{ padding: "10px 8px", textAlign: "center", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.status")}</th>
                     <th style={{ padding: "10px 8px", textAlign: "left", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.date")}</th>
-                    {/* ✅ Colonne actions — label visible */}
+                    {/* ? Colonne actions � label visible */}
                     <th style={{ padding: "10px 8px", textAlign: "center", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.actions")}</th>
                   </tr>
                 </thead>
@@ -772,12 +772,12 @@ export default function OrdersPage() {
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                         {order.clientName?.length > (isMobile ? 12 : 20)
-                          ? order.clientName.substring(0, isMobile ? 10 : 17) + "…"
+                          ? order.clientName.substring(0, isMobile ? 10 : 17) + "�"
                           : order.clientName || "-"}
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                         {order.productName?.length > (isMobile ? 12 : 20)
-                          ? order.productName.substring(0, isMobile ? 10 : 17) + "…"
+                          ? order.productName.substring(0, isMobile ? 10 : 17) + "�"
                           : order.productName || "-"}
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "right", color: theme.textSecondary, fontSize: tableFontSize }}>
@@ -787,7 +787,7 @@ export default function OrdersPage() {
                         {formatCurrency(parseFloat(String(order.total)))}
                       </td>
 
-                      {/* ✅ Badge statut + select — taille lisible sur mobile */}
+                      {/* ? Badge statut + select � taille lisible sur mobile */}
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center" }}>
                         <div style={{
                           display: "inline-flex",
@@ -796,7 +796,7 @@ export default function OrdersPage() {
                           background: `${getStatusColor(order.status)}18`,
                           border: `1px solid ${getStatusColor(order.status)}55`,
                           borderRadius: "8px",
-                          padding: isMobile ? "5px 8px" : "3px 8px"   // ✅ plus de padding vertical
+                          padding: isMobile ? "5px 8px" : "3px 8px"   // ? plus de padding vertical
                         }}>
                           <span style={{ color: getStatusColor(order.status), display: "flex", flexShrink: 0 }}>
                             {order.status === "delivered"  && <IconCheck size={12} color={getStatusColor(order.status)} />}
@@ -815,7 +815,7 @@ export default function OrdersPage() {
                               cursor: updatingStatus === order.id ? "wait" : "pointer",
                               fontWeight: "600",
                               opacity: updatingStatus === order.id ? 0.7 : 1,
-                              fontSize: isMobile ? "11px" : "12px",  // ✅ 11px min (pas 10px)
+                              fontSize: isMobile ? "11px" : "12px",  // ? 11px min (pas 10px)
                               outline: "none",
                               appearance: "none",
                               padding: 0,
@@ -836,7 +836,7 @@ export default function OrdersPage() {
                         )}
                       </td>
 
-                      {/* ✅ Bouton delete — touch target 44px sur mobile */}
+                      {/* ? Bouton delete � touch target 44px sur mobile */}
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center" }}>
                         <button
                           onClick={() => deleteOrder(order.id)}
@@ -845,7 +845,7 @@ export default function OrdersPage() {
                             color: "#ef4444",
                             border: "1px solid rgba(204,51,51,0.3)",
                             borderRadius: "8px",
-                            padding: isMobile ? "10px 13px" : "5px 8px",  // ✅ touch target
+                            padding: isMobile ? "10px 13px" : "5px 8px",  // ? touch target
                             cursor: "pointer",
                             transition: "all 0.2s",
                             display: "inline-flex",
@@ -880,14 +880,14 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* ── Modal création commande ── */}
+      {/* -- Modal cr�ation commande -- */}
       {modal.open && (
         <div style={{
           position: "fixed",
           top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(0,0,0,0.85)",
           display: "flex",
-          alignItems: isMobile ? "flex-end" : "center",  // ✅ bottom sheet sur mobile
+          alignItems: isMobile ? "flex-end" : "center",  // ? bottom sheet sur mobile
           justifyContent: "center",
           zIndex: 1000,
           animation: "fadeIn 0.2s ease",
@@ -896,14 +896,14 @@ export default function OrdersPage() {
           <div style={{
             background: theme.surface,
             padding: modalPadding,
-            borderRadius: isMobile ? "24px 24px 0 0" : "24px",  // ✅ bottom sheet radius
+            borderRadius: isMobile ? "24px 24px 0 0" : "24px",  // ? bottom sheet radius
             width: isMobile ? "100%" : modalWidth,
             maxWidth: isMobile ? "100%" : "95%",
             border: `1px solid ${theme.border}`,
             maxHeight: isMobile ? "90vh" : "auto",
             overflowY: "auto"
           }}>
-            {/* ✅ Drag handle visible sur mobile */}
+            {/* ? Drag handle visible sur mobile */}
             {isMobile && (
               <div style={{ width: "40px", height: "4px", background: theme.border, borderRadius: "2px", margin: "0 auto 16px" }} />
             )}
@@ -932,7 +932,7 @@ export default function OrdersPage() {
                 onChange={e => setModal({ ...modal, form: { ...modal.form, clientName: e.target.value } })}
                 style={{
                   width: "100%",
-                  padding: inputPadding,             // ✅ 44px+ hauteur sur mobile
+                  padding: inputPadding,             // ? 44px+ hauteur sur mobile
                   background: theme.surfaceHover,
                   border: `1px solid ${theme.border}`,
                   borderRadius: "10px",
@@ -972,7 +972,7 @@ export default function OrdersPage() {
                 </label>
                 <input
                   type="number"
-                  placeholder="Quantité"
+                  placeholder="Quantit�"
                   value={modal.form.quantity ?? 1}
                   onChange={e => {
                     const qty = parseInt(e.target.value) || 1;
@@ -1036,7 +1036,7 @@ export default function OrdersPage() {
               </span>
             </div>
 
-            {/* ✅ Boutons modal — colonne sur mobile, rangée sur desktop */}
+            {/* ? Boutons modal � colonne sur mobile, rang�e sur desktop */}
             <div style={{ display: "flex", gap: "12px", flexDirection: isMobile ? "column" : "row" }}>
               <button
                 onClick={createOrder}
@@ -1055,7 +1055,7 @@ export default function OrdersPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  minHeight: "48px"             // ✅ touch target généreux
+                  minHeight: "48px"             // ? touch target g�n�reux
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
@@ -1079,7 +1079,7 @@ export default function OrdersPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  minHeight: "48px"             // ✅ touch target généreux
+                  minHeight: "48px"             // ? touch target g�n�reux
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}

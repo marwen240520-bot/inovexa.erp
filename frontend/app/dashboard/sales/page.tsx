@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -9,7 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// --- Types ---------------------------------------------------------------------
 
 interface IconProps {
   size?: number;
@@ -65,7 +65,7 @@ interface EditModalState {
   status: string;
 }
 
-// ─── SVG Icon Components ───────────────────────────────────────────────────────
+// --- SVG Icon Components -------------------------------------------------------
 
 const IconBarChart2 = ({ size = 20, color = "currentColor", style }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -170,7 +170,7 @@ const IconChevronDown = ({ size = 12, color = "currentColor", style }: IconProps
   </svg>
 );
 
-// ─── Status helpers ────────────────────────────────────────────────────────────
+// --- Status helpers ------------------------------------------------------------
 
 function StatusIcon({ status, size = 13 }: { status: string; size?: number }) {
   if (status === "paid") return <IconCheckCircle size={size} color="#10b981" />;
@@ -179,7 +179,7 @@ function StatusIcon({ status, size = 13 }: { status: string; size?: number }) {
   return <IconBarChart2 size={size} color="currentColor" />;
 }
 
-// ─── SelectAllCheckbox ─────────────────────────────────────────────────────────
+// --- SelectAllCheckbox ---------------------------------------------------------
 
 function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemId }: any) {
   const { t } = useLanguage();
@@ -199,7 +199,7 @@ function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemI
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// --- Main Component ------------------------------------------------------------
 
 export default function SalesPage() {
   const router = useRouter();
@@ -265,7 +265,7 @@ export default function SalesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/sales", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", { headers: { Authorization: `Bearer ${token}` } });
       let data = await res.json();
       data = Array.isArray(data) ? data : [];
       setAllSales(data);
@@ -301,17 +301,17 @@ export default function SalesPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      console.log("📦 Produits chargés:", data);
+      console.log("?? Produits charg�s:", data);
       setProducts(Array.isArray(data) ? data : []);
-    } catch(e) { console.error("❌ Erreur chargement produits:", e); }
+    } catch(e) { console.error("? Erreur chargement produits:", e); }
   };
 
   const fetchClients = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/clients", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setClients(Array.isArray(data) ? data : []);
     } catch(e) { console.error(e); }
@@ -321,14 +321,14 @@ export default function SalesPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/sales/import", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ sales: data })
       });
       const result = await res.json();
       if (res.ok) {
-        showMessage(`${result.success} vente(s) importée(s) avec succès${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
+        showMessage(`${result.success} vente(s) import�e(s) avec succ�s${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
         fetchSales();
       } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
     } catch (error) { showMessage("Erreur de connexion lors de l'import", "error"); }
@@ -336,20 +336,20 @@ export default function SalesPage() {
   };
 
   const createSale = async () => {
-    console.log("🔍 Formulaire avant création:", modal.form);
+    console.log("?? Formulaire avant cr�ation:", modal.form);
 
     if (!modal.form.productId) {
-      showMessage("Veuillez sélectionner un produit", "error");
+      showMessage("Veuillez s�lectionner un produit", "error");
       return;
     }
 
     if (!modal.form.quantity || modal.form.quantity <= 0) {
-      showMessage("La quantité doit être supérieure à 0", "error");
+      showMessage("La quantit� doit �tre sup�rieure � 0", "error");
       return;
     }
 
     if (!modal.form.unitPrice || modal.form.unitPrice <= 0) {
-      showMessage("Le prix unitaire doit être supérieur à 0", "error");
+      showMessage("Le prix unitaire doit �tre sup�rieur � 0", "error");
       return;
     }
 
@@ -361,7 +361,7 @@ export default function SalesPage() {
 
     const product = products.find(p => p.id === productId);
     if (!product) {
-      showMessage("Produit non trouvé", "error");
+      showMessage("Produit non trouv�", "error");
       return;
     }
 
@@ -379,10 +379,10 @@ export default function SalesPage() {
       status: modal.form.status || "pending"
     };
 
-    console.log("📦 Données envoyées au backend:", formData);
+    console.log("?? Donn�es envoy�es au backend:", formData);
 
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/sales", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
@@ -392,7 +392,7 @@ export default function SalesPage() {
       });
 
       const result = await res.json();
-      console.log("📥 Réponse du backend:", result);
+      console.log("?? R�ponse du backend:", result);
 
       if (res.ok) {
         setModal({ open: false, form: { status: "pending", quantity: 1, productId: undefined, clientId: undefined, unitPrice: 0, total: 0 } });
@@ -400,12 +400,12 @@ export default function SalesPage() {
         setSelectedClient(null);
         await fetchSales();
         await fetchProducts();
-        showMessage("Vente créée avec succès !", "success");
+        showMessage("Vente cr��e avec succ�s !", "success");
       } else {
-        showMessage(result.message || "Erreur lors de la création de la vente", "error");
+        showMessage(result.message || "Erreur lors de la cr�ation de la vente", "error");
       }
     } catch(e) {
-      console.error("❌ Erreur lors de la création:", e);
+      console.error("? Erreur lors de la cr�ation:", e);
       showMessage("Erreur de connexion au serveur", "error");
     }
   };
@@ -414,7 +414,7 @@ export default function SalesPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/sales/${id}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -434,7 +434,7 @@ export default function SalesPage() {
   const deleteSale = async (id: string | number) => {
     if (confirm(t("sales.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`https://api-inovexa.ngrok.app/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       fetchSales();
       showMessage(t("sales.saleDeleted"), "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
@@ -446,11 +446,11 @@ export default function SalesPage() {
     if (confirm((t("sales.confirmBulkDelete") || "Supprimer {count} vente(s) ?").replace("{count}", String(selectedIds.length)))) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`https://api-inovexa.ngrok.app/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       }
       fetchSales();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} vente(s) supprimée(s)`, "success");
+      showMessage(`${selectedIds.length} vente(s) supprim�e(s)`, "success");
     }
   };
 
@@ -473,10 +473,10 @@ export default function SalesPage() {
     return status;
   };
 
-  // ✅ HANDLE PRODUCT SELECT - VERSION CORRIGÉE
+  // ? HANDLE PRODUCT SELECT - VERSION CORRIG�E
   const handleProductSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    console.log("🔄 Produit sélectionné - valeur brute:", value);
+    console.log("?? Produit s�lectionn� - valeur brute:", value);
     
     if (!value || value === "") {
       setSelectedProduct(null);
@@ -494,10 +494,10 @@ export default function SalesPage() {
     }
     
     const productId = parseInt(value, 10);
-    console.log("🔄 ID produit converti:", productId);
+    console.log("?? ID produit converti:", productId);
     
     const product = products.find(p => p.id === productId);
-    console.log("🔄 Produit trouvé:", product);
+    console.log("?? Produit trouv�:", product);
     
     if (product) {
       setSelectedProduct(product);
@@ -529,10 +529,10 @@ export default function SalesPage() {
     }
   };
 
-  // ✅ HANDLE CLIENT SELECT - VERSION CORRIGÉE
+  // ? HANDLE CLIENT SELECT - VERSION CORRIG�E
   const handleClientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    console.log("🔄 Client sélectionné - valeur brute:", value);
+    console.log("?? Client s�lectionn� - valeur brute:", value);
     
     if (!value || value === "") {
       setSelectedClient(null);
@@ -549,7 +549,7 @@ export default function SalesPage() {
     
     const clientId = parseInt(value, 10);
     const client = clients.find(c => c.id === clientId);
-    console.log("🔄 Client trouvé:", client);
+    console.log("?? Client trouv�:", client);
     
     if (client) {
       setSelectedClient(client);
@@ -666,7 +666,7 @@ export default function SalesPage() {
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
-          {/* ── Header ── */}
+          {/* -- Header -- */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -736,7 +736,7 @@ export default function SalesPage() {
             </div>
           </div>
 
-          {/* ── Message ── */}
+          {/* -- Message -- */}
           {message && (
             <div style={{
               background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
@@ -753,7 +753,7 @@ export default function SalesPage() {
             </div>
           )}
 
-          {/* ── Stats Cards ── */}
+          {/* -- Stats Cards -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(3, 1fr)",
@@ -814,7 +814,7 @@ export default function SalesPage() {
             ))}
           </div>
 
-          {/* ── Filters ── */}
+          {/* -- Filters -- */}
           <div style={{ marginBottom: "20px", animation: "fadeInUp 0.5s ease 0.4s", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
               <div style={{ flex: 2, position: "relative", width: isMobile ? "100%" : "auto" }}>
@@ -871,7 +871,7 @@ export default function SalesPage() {
             </div>
           </div>
 
-          {/* ── Table ── */}
+          {/* -- Table -- */}
           <div style={{ background: theme.surface, borderRadius: cardRadius, padding: isMobile ? "12px" : "16px", border: `1px solid ${theme.border}`, overflowX: "auto", animation: "fadeInUp 0.5s ease 0.5s", opacity: animateCards ? 1 : 0 }}>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? "620px" : "100%" }}>
@@ -984,7 +984,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* ── Modal — New Sale ── */}
+      {/* -- Modal � New Sale -- */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "90vh", overflowY: "auto" }}>
@@ -1001,7 +1001,7 @@ export default function SalesPage() {
                 value={modal.form.clientId ? String(modal.form.clientId) : ""}
                 style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
               >
-                <option value="">{t("sales.selectClient") || "Sélectionner un client"}</option>
+                <option value="">{t("sales.selectClient") || "S�lectionner un client"}</option>
                 {clients.map((c) => (
                   <option key={String(c.id)} value={String(c.id)}>
                     {c.name} {c.email ? `(${c.email})` : ""}
@@ -1011,12 +1011,12 @@ export default function SalesPage() {
               {selectedClient && (
                 <div style={{ marginTop: "6px", fontSize: isMobile ? "10px" : "11px", color: theme.accent, display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconCheckCircle size={12} color={theme.accent} />
-                  {t("sales.clientSelected") || "Client sélectionné"}: {selectedClient.name}
+                  {t("sales.clientSelected") || "Client s�lectionn�"}: {selectedClient.name}
                 </div>
               )}
             </div>
 
-            {/* Product Selection - CORRIGÉE */}
+            {/* Product Selection - CORRIG�E */}
             <div style={{ marginBottom: "14px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("common.product")} *
@@ -1162,7 +1162,7 @@ export default function SalesPage() {
         </div>
       )}
 
-      {/* ── Modal — Edit Status ── */}
+      {/* -- Modal � Edit Status -- */}
       {editModal.open && editModal.sale && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "420px", maxWidth: "95%", border: `1px solid ${theme.border}` }}>

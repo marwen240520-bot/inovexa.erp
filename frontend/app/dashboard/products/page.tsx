@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -9,7 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 
-// ── Types ──────────────────────────────────────────────────
+// -- Types --------------------------------------------------
 interface Product {
   id: number | string;
   name: string;
@@ -41,7 +41,7 @@ interface ModalState {
   editId?: number | string | null;
 }
 
-// ── SVG Icons ──────────────────────────────────────────────
+// -- SVG Icons ----------------------------------------------
 const IconBox = ({ size = 20, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -154,7 +154,7 @@ const IconInfo = ({ size = 16, color = "currentColor", style }: { size?: number;
   </svg>
 );
 
-// ── SelectAllCheckbox ──────────────────────────────────────
+// -- SelectAllCheckbox --------------------------------------
 function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemId }: {
   items: Product[];
   selectedIds: (number | string)[];
@@ -190,7 +190,7 @@ function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemI
   );
 }
 
-// ── Page principale ────────────────────────────────────────
+// -- Page principale ----------------------------------------
 export default function ProductsPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
@@ -240,12 +240,12 @@ export default function ProductsPage() {
   const fetchCategories = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/categories", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/categories", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setCategories(Array.isArray(data) ? data : []);
       await fetchProducts();
     } catch(e) {
-      console.error("Erreur chargement catégories:", e);
+      console.error("Erreur chargement cat�gories:", e);
       await fetchProducts();
     }
   };
@@ -254,7 +254,7 @@ export default function ProductsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error("Erreur chargement produits:", e); }
@@ -271,7 +271,7 @@ export default function ProductsPage() {
         categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
       };
 
-      const res = await fetch("https://api-inovexa.ngrok.app/products", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
@@ -286,11 +286,11 @@ export default function ProductsPage() {
         showMessage(t("products.productCreated"), "success"); 
       } else { 
         const err = await res.json(); 
-        console.error("Erreur création produit:", err);
+        console.error("Erreur cr�ation produit:", err);
         showMessage(err.message || t("common.error"), "error"); 
       }
     } catch(e) { 
-      console.error("Exception création produit:", e);
+      console.error("Exception cr�ation produit:", e);
       showMessage(t("common.error"), "error"); 
     }
   };
@@ -305,7 +305,7 @@ export default function ProductsPage() {
         categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
       };
 
-      const res = await fetch(`https://api-inovexa.ngrok.app/products/${modal.editId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${modal.editId}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json", 
@@ -320,11 +320,11 @@ export default function ProductsPage() {
         showMessage(t("products.productUpdated"), "success"); 
       } else { 
         const err = await res.json(); 
-        console.error("Erreur mise à jour produit:", err);
+        console.error("Erreur mise � jour produit:", err);
         showMessage(err.message || t("common.error"), "error"); 
       }
     } catch(e) { 
-      console.error("Exception mise à jour produit:", e);
+      console.error("Exception mise � jour produit:", e);
       showMessage(t("common.error"), "error"); 
     }
   };
@@ -333,7 +333,7 @@ export default function ProductsPage() {
     if (confirm(t("products.confirmDelete"))) {
       const token = localStorage.getItem("token");
       try {
-        await fetch(`https://api-inovexa.ngrok.app/products/${id}`, { 
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, { 
           method: "DELETE", 
           headers: { Authorization: `Bearer ${token}` } 
         });
@@ -354,14 +354,14 @@ export default function ProductsPage() {
       const token = localStorage.getItem("token");
       try {
         for (const id of selectedIds) {
-          await fetch(`https://api-inovexa.ngrok.app/products/${id}`, { 
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, { 
             method: "DELETE", 
             headers: { Authorization: `Bearer ${token}` } 
           });
         }
         await fetchProducts();
         setSelectedIds([]);
-        showMessage(`${count} produit(s) supprimé(s)`, "success");
+        showMessage(`${count} produit(s) supprim�(s)`, "success");
       } catch(e) {
         console.error("Erreur suppression en masse:", e);
         showMessage(t("common.error"), "error");
@@ -374,7 +374,7 @@ export default function ProductsPage() {
     const token = localStorage.getItem("token");
     try {
       const productsWithZeroStock = data.map(p => ({ ...p, quantity: 0 }));
-      const res = await fetch("https://api-inovexa.ngrok.app/products/import", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products/import", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
@@ -384,7 +384,7 @@ export default function ProductsPage() {
       });
       const result = await res.json();
       if (res.ok) { 
-        showMessage(`${result.success} produit(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success"); 
+        showMessage(`${result.success} produit(s) import�(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success"); 
         await fetchProducts(); 
       } else { 
         showMessage(result.message || "Erreur lors de l'import", "error"); 
@@ -560,8 +560,8 @@ export default function ProductsPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
                 <IconInfo size={20} color={theme.primary} />
                 <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "13px" }}>
-                  ℹ️ La quantité affichée est le stock calculé automatiquement à partir des achats et ventes.
-                  Pour modifier le stock, créez un achat ou une vente dans les sections correspondantes.
+                  ?? La quantit� affich�e est le stock calcul� automatiquement � partir des achats et ventes.
+                  Pour modifier le stock, cr�ez un achat ou une vente dans les sections correspondantes.
                 </span>
               </div>
               <button
@@ -617,7 +617,7 @@ export default function ProductsPage() {
                 <span style={{ position: "absolute", left: "10px", color: theme.textSecondary, display: "flex", zIndex: 1, pointerEvents: "none" }}><IconFolder size={14} /></span>
                 <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
                   style={{ width: "100%", padding: "8px 10px 8px 32px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, minWidth: isMobile ? "100%" : "180px", cursor: "pointer", fontSize: isMobile ? "12px" : "14px" }}>
-                  <option value="all">{t("products.allCategories") || "Toutes les catégories"}</option>
+                  <option value="all">{t("products.allCategories") || "Toutes les cat�gories"}</option>
                   {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
                 </select>
               </div>
@@ -750,7 +750,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Modal - Formulaire sans champ quantité */}
+      {/* Modal - Formulaire sans champ quantit� */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
@@ -759,7 +759,7 @@ export default function ProductsPage() {
               {modal.editMode ? t("products.editProduct") : t("products.addProduct")}
             </h2>
             
-            {/* Message d'information sur la quantité */}
+            {/* Message d'information sur la quantit� */}
             {!modal.editMode && (
               <div style={{ 
                 background: `${theme.primary}10`, 
@@ -773,7 +773,7 @@ export default function ProductsPage() {
                 gap: "6px"
               }}>
                 <IconInfo size={12} color={theme.primary} />
-                <span>La quantité sera gérée automatiquement via les achats et ventes.</span>
+                <span>La quantit� sera g�r�e automatiquement via les achats et ventes.</span>
               </div>
             )}
 
@@ -793,7 +793,7 @@ export default function ProductsPage() {
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.category")}</label>
               <select value={String(modal.form.categoryId || "")} onChange={(e) => setModal({ ...modal, form: { ...modal.form, categoryId: e.target.value } })}
                 style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "12px" : "14px" }}>
-                <option value="">{t("products.selectCategory") || "Sélectionner une catégorie"}</option>
+                <option value="">{t("products.selectCategory") || "S�lectionner une cat�gorie"}</option>
                 {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
               </select>
             </div>

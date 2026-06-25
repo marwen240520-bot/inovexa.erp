@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -22,7 +22,7 @@ ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement
 );
 
-// ─── TYPES ────────────────────────────────────────────────────────────────────
+// --- TYPES --------------------------------------------------------------------
 interface ProductionOrder {
   id: number;
   orderNumber?: string;
@@ -53,7 +53,7 @@ interface ModalState {
   editId: number | null;
 }
 
-// ─── SelectAllCheckbox ────────────────────────────────────────────────────────
+// --- SelectAllCheckbox --------------------------------------------------------
 function LocalSelectAllCheckbox({
   items,
   selectedIds,
@@ -81,7 +81,7 @@ function LocalSelectAllCheckbox({
   };
 
   const getSelectAllText = () => {
-    if (language === "fr") return "Tout sélectionner";
+    if (language === "fr") return "Tout s�lectionner";
     if (language === "es") return "Seleccionar todo";
     return "Select all";
   };
@@ -100,7 +100,7 @@ function LocalSelectAllCheckbox({
   );
 }
 
-// ─── Utilitaires ──────────────────────────────────────────────────────────────
+// --- Utilitaires --------------------------------------------------------------
 const formatNumber = (value: number | string | undefined | null): string => {
   if (value === undefined || value === null) return "0";
   const num = typeof value === "string" ? parseFloat(value) : value;
@@ -108,13 +108,13 @@ const formatNumber = (value: number | string | undefined | null): string => {
   return num.toLocaleString();
 };
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---------------------------------------------------------------------
 export default function ProductionPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
 
-  // ── FIX: typed state arrays ────────────────────────────────────────────────
+  // -- FIX: typed state arrays ------------------------------------------------
   const [productionOrders, setProductionOrders] = useState<ProductionOrder[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,7 +123,7 @@ export default function ProductionPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
 
-  // ── FIX: modal has complete typed initial state (editId included) ──────────
+  // -- FIX: modal has complete typed initial state (editId included) ----------
   const emptyForm: ModalForm = {
     productName: "",
     quantity: 1,
@@ -162,7 +162,7 @@ export default function ProductionPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/production/orders", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/production/orders", {
         headers: { Authorization: `Bearer ${token}` },
       });
       let data: ProductionOrder[] = await res.json();
@@ -188,7 +188,7 @@ export default function ProductionPage() {
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/products", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -208,7 +208,7 @@ export default function ProductionPage() {
         return;
       }
 
-      const res = await fetch("https://api-inovexa.ngrok.app/production/orders", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/production/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -247,7 +247,7 @@ export default function ProductionPage() {
         return;
       }
 
-      const res = await fetch(`https://api-inovexa.ngrok.app/production/orders/${modal.editId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -275,14 +275,14 @@ export default function ProductionPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
         await fetchProductionOrders();
-        showMessage(`✅ ${t("production.statusUpdated")}: ${getStatusText(status)}`, "success");
+        showMessage(`? ${t("production.statusUpdated")}: ${getStatusText(status)}`, "success");
       } else {
         showMessage(t("common.error"), "error");
       }
@@ -298,14 +298,14 @@ export default function ProductionPage() {
     const token = localStorage.getItem("token");
     setUpdatingProgress(id);
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}/progress`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders/${id}/progress`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ progress }),
       });
       if (res.ok) {
         await fetchProductionOrders();
-        showMessage(`✅ ${t("production.progressUpdated")}: ${progress}%`, "success");
+        showMessage(`? ${t("production.progressUpdated")}: ${progress}%`, "success");
       } else {
         showMessage(t("common.error"), "error");
       }
@@ -320,7 +320,7 @@ export default function ProductionPage() {
   const deleteOrder = async (id: number) => {
     if (confirm(t("production.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -332,11 +332,11 @@ export default function ProductionPage() {
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    // ── FIX: String.replace expects string, not number ─────────────────────
+    // -- FIX: String.replace expects string, not number ---------------------
     if (confirm(t("production.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`https://api-inovexa.ngrok.app/production/orders/${id}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -386,11 +386,11 @@ export default function ProductionPage() {
   };
 
   const getStatusIcon = (status: string) => {
-    if (status === "completed") return "✅";
-    if (status === "in_progress") return "🔄";
-    if (status === "pending") return "⏳";
-    if (status === "cancelled") return "❌";
-    return "🏭";
+    if (status === "completed") return "?";
+    if (status === "in_progress") return "??";
+    if (status === "pending") return "?";
+    if (status === "cancelled") return "?";
+    return "??";
   };
 
   const getPriorityColor = (priority: string) => {
@@ -445,7 +445,7 @@ export default function ProductionPage() {
     }],
   };
 
-  // ── FIX: position typed as const to satisfy Chart.js ──────────────────────
+  // -- FIX: position typed as const to satisfy Chart.js ----------------------
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
@@ -474,14 +474,14 @@ export default function ProductionPage() {
   };
 
   const statsCards = [
-    { icon: "🏭", label: t("production.totalOrders"), value: formatNumber(stats.total), color: theme.primary },
-    { icon: "⏳", label: t("production.pending"), value: formatNumber(stats.pending), color: stats.pending > 0 ? "#f59e0b" : theme.textSecondary },
-    { icon: "🔄", label: t("production.inProgress"), value: formatNumber(stats.inProgress), color: stats.inProgress > 0 ? "#3b82f6" : theme.textSecondary },
-    { icon: "✅", label: t("production.completed"), value: formatNumber(stats.completed), color: stats.completed > 0 ? theme.accent : theme.textSecondary },
-    { icon: "❌", label: t("production.cancelled"), value: formatNumber(stats.cancelled), color: stats.cancelled > 0 ? "#ef4444" : theme.textSecondary },
-    { icon: "📦", label: t("production.totalUnits"), value: formatNumber(stats.totalQuantity), color: theme.primary },
-    { icon: "✅", label: t("production.producedUnits"), value: formatNumber(stats.completedQuantity), color: stats.completedQuantity > 0 ? theme.accent : theme.textSecondary },
-    { icon: "📊", label: t("production.avgProgress"), value: formatNumber(stats.avgProgress), suffix: "%", color: stats.avgProgress > 0 ? "#f59e0b" : theme.textSecondary },
+    { icon: "??", label: t("production.totalOrders"), value: formatNumber(stats.total), color: theme.primary },
+    { icon: "?", label: t("production.pending"), value: formatNumber(stats.pending), color: stats.pending > 0 ? "#f59e0b" : theme.textSecondary },
+    { icon: "??", label: t("production.inProgress"), value: formatNumber(stats.inProgress), color: stats.inProgress > 0 ? "#3b82f6" : theme.textSecondary },
+    { icon: "?", label: t("production.completed"), value: formatNumber(stats.completed), color: stats.completed > 0 ? theme.accent : theme.textSecondary },
+    { icon: "?", label: t("production.cancelled"), value: formatNumber(stats.cancelled), color: stats.cancelled > 0 ? "#ef4444" : theme.textSecondary },
+    { icon: "??", label: t("production.totalUnits"), value: formatNumber(stats.totalQuantity), color: theme.primary },
+    { icon: "?", label: t("production.producedUnits"), value: formatNumber(stats.completedQuantity), color: stats.completedQuantity > 0 ? theme.accent : theme.textSecondary },
+    { icon: "??", label: t("production.avgProgress"), value: formatNumber(stats.avgProgress), suffix: "%", color: stats.avgProgress > 0 ? "#f59e0b" : theme.textSecondary },
   ];
 
   if (loading) {
@@ -507,16 +507,16 @@ export default function ProductionPage() {
           <div style={{ marginBottom: "32px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0, transform: animateCards ? "translateY(0)" : "translateY(-20px)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
               <div>
-                <h1 style={{ color: theme.text, fontSize: "28px", }}>🏭 {t("common.production")}</h1>
+                <h1 style={{ color: theme.text, fontSize: "28px", }}>?? {t("common.production")}</h1>
                 <p style={{ color: theme.textSecondary, marginTop: "4px" }}>{t("production.subtitle")}</p>
               </div>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button onClick={() => setViewMode("list")} style={{ padding: "8px 16px", background: viewMode === "list" ? theme.primary : theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: "white", cursor: "pointer", transition: "all 0.2s" }}>
-                    📋 {t("production.listView") || "Liste"}
+                    ?? {t("production.listView") || "Liste"}
                   </button>
                   <button onClick={() => setViewMode("grid")} style={{ padding: "8px 16px", background: viewMode === "grid" ? theme.primary : theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: "white", cursor: "pointer", transition: "all 0.2s" }}>
-                    🖼️ {t("production.gridView") || "Grille"}
+                    ??? {t("production.gridView") || "Grille"}
                   </button>
                 </div>
                 <ExportButtons data={filteredOrders} filename="production" />
@@ -557,13 +557,13 @@ export default function ProductionPage() {
           {/* Graphiques */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", marginBottom: "32px", animation: `fadeInUp 0.5s ease 0.35s`, opacity: animateCards ? 1 : 0 }}>
             <div style={{ background: theme.surface, borderRadius: "20px", padding: "24px", border: `1px solid ${theme.border}` }}>
-              <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: "16px" }}>📊 {t("production.statusDistribution")}</h3>
+              <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: "16px" }}>?? {t("production.statusDistribution")}</h3>
               <div style={{ height: "220px" }}>
                 <Doughnut data={statusChartData} options={chartOptions} />
               </div>
             </div>
             <div style={{ background: theme.surface, borderRadius: "20px", padding: "24px", border: `1px solid ${theme.border}` }}>
-              <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: "16px" }}>🎯 {t("production.priorityDistribution")}</h3>
+              <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: "16px" }}>?? {t("production.priorityDistribution")}</h3>
               <div style={{ height: "220px" }}>
                 <Doughnut data={priorityChartData} options={chartOptions} />
               </div>
@@ -573,26 +573,26 @@ export default function ProductionPage() {
           {/* Filtres */}
           <div style={{ marginBottom: "20px", animation: `fadeInUp 0.5s ease 0.4s`, opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginBottom: "16px" }}>
-              <input type="text" placeholder={`🔍 ${t("common.search")}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, transition: "border-color 0.2s" }} onFocus={(e) => e.currentTarget.style.borderColor = theme.primary} onBlur={(e) => e.currentTarget.style.borderColor = theme.border} />
+              <input type="text" placeholder={`?? ${t("common.search")}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 2, padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, transition: "border-color 0.2s" }} onFocus={(e) => e.currentTarget.style.borderColor = theme.primary} onBlur={(e) => e.currentTarget.style.borderColor = theme.border} />
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, minWidth: "150px", cursor: "pointer" }}>
-                <option value="all">📊 {t("production.allStatus")}</option>
-                <option value="pending">⏳ {t("production.pending")}</option>
-                <option value="in_progress">🔄 {t("production.inProgress")}</option>
-                <option value="completed">✅ {t("production.completed")}</option>
-                <option value="cancelled">❌ {t("production.cancelled")}</option>
+                <option value="all">?? {t("production.allStatus")}</option>
+                <option value="pending">? {t("production.pending")}</option>
+                <option value="in_progress">?? {t("production.inProgress")}</option>
+                <option value="completed">? {t("production.completed")}</option>
+                <option value="cancelled">? {t("production.cancelled")}</option>
               </select>
               <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} style={{ padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, minWidth: "150px", cursor: "pointer" }}>
-                <option value="all">🎯 {t("production.allPriorities")}</option>
-                <option value="high">🔴 {t("production.high")}</option>
-                <option value="medium">🟡 {t("production.medium")}</option>
-                <option value="low">🟢 {t("production.low")}</option>
+                <option value="all">?? {t("production.allPriorities")}</option>
+                <option value="high">?? {t("production.high")}</option>
+                <option value="medium">?? {t("production.medium")}</option>
+                <option value="low">?? {t("production.low")}</option>
               </select>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px", flexWrap: "wrap", gap: "12px" }}>
               <LocalSelectAllCheckbox items={filteredOrders} selectedIds={selectedIds} onSelect={setSelectedIds} onSelectAll={(ids) => setSelectedIds(ids)} getItemId={(item) => item.id} />
               {selectedIds.length > 0 && (
                 <button onClick={deleteSelected} style={{ background: "#c33", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
-                  🗑️ {t("common.delete")} ({selectedIds.length})
+                  ??? {t("common.delete")} ({selectedIds.length})
                 </button>
               )}
             </div>
@@ -621,14 +621,14 @@ export default function ProductionPage() {
                       </span>
                       <span style={{ color: theme.accent, fontSize: "16px", fontWeight: "bold" }}>{formatNumber(order.quantity)} {t("production.units")}</span>
                       <select value={order.status} onChange={(e) => updateStatus(order.id, e.target.value)} disabled={updatingStatus === order.id} style={{ background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", padding: "6px 12px", cursor: updatingStatus === order.id ? "wait" : "pointer", fontSize: "12px", opacity: updatingStatus === order.id ? 0.7 : 1 }}>
-                        <option value="pending">⏳ {t("production.pending")}</option>
-                        <option value="in_progress">🔄 {t("production.inProgress")}</option>
-                        <option value="completed">✅ {t("production.completed")}</option>
-                        <option value="cancelled">❌ {t("production.cancelled")}</option>
+                        <option value="pending">? {t("production.pending")}</option>
+                        <option value="in_progress">?? {t("production.inProgress")}</option>
+                        <option value="completed">? {t("production.completed")}</option>
+                        <option value="cancelled">? {t("production.cancelled")}</option>
                       </select>
                       <div style={{ display: "flex", gap: "8px" }}>
-                        <button onClick={() => openEditModal(order)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", padding: "5px 10px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"} title={t("common.edit")}>✏️</button>
-                        <button onClick={() => deleteOrder(order.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "8px", padding: "5px 10px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"} title={t("common.delete")}>🗑️</button>
+                        <button onClick={() => openEditModal(order)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", padding: "5px 10px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"} title={t("common.edit")}>??</button>
+                        <button onClick={() => deleteOrder(order.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "8px", padding: "5px 10px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"} title={t("common.delete")}>???</button>
                       </div>
                     </div>
                   </div>
@@ -643,7 +643,7 @@ export default function ProductionPage() {
                       onClick={() => {
                         if (updatingProgress === order.id) return;
                         const newProgress = prompt(t("production.progressPrompt"), String(order.progress || 0));
-                        // ── FIX: parse to number before comparisons ────────
+                        // -- FIX: parse to number before comparisons --------
                         if (newProgress !== null) {
                           const parsed = parseInt(newProgress, 10);
                           if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
@@ -656,16 +656,16 @@ export default function ProductionPage() {
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", gap: "16px", flexWrap: "wrap" }}>
                       <span style={{ color: "#666", fontSize: "11px" }}>
-                        📅 {t("production.startDate")}: {order.startDate ? new Date(order.startDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "-"}
+                        ?? {t("production.startDate")}: {order.startDate ? new Date(order.startDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "-"}
                       </span>
                       {order.endDate && (
                         <span style={{ color: "#666", fontSize: "11px" }}>
-                          🏁 {t("production.endDate")}: {new Date(order.endDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
+                          ?? {t("production.endDate")}: {new Date(order.endDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
                         </span>
                       )}
                       {order.assignedTo && (
                         <span style={{ color: "#666", fontSize: "11px" }}>
-                          👤 {t("production.assignedTo")}: {order.assignedTo}
+                          ?? {t("production.assignedTo")}: {order.assignedTo}
                         </span>
                       )}
                     </div>
@@ -674,7 +674,7 @@ export default function ProductionPage() {
               ))}
               {filteredOrders.length === 0 && (
                 <div style={{ textAlign: "center", padding: "60px", background: theme.surface, borderRadius: "20px" }}>
-                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>🏭</div>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>??</div>
                   <p style={{ color: theme.textSecondary }}>{searchTerm ? t("common.noResults") : t("production.noOrders")}</p>
                 </div>
               )}
@@ -691,7 +691,7 @@ export default function ProductionPage() {
                   onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                    <div style={{ fontSize: "32px" }}>🏭</div>
+                    <div style={{ fontSize: "32px" }}>??</div>
                     <div>
                       <div style={{ fontSize: "11px", color: theme.textSecondary, fontFamily: "monospace" }}>{order.orderNumber || `#${order.id}`}</div>
                       <div style={{ color: theme.text, fontWeight: "bold" }}>{order.productName}</div>
@@ -708,10 +708,10 @@ export default function ProductionPage() {
                   <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: theme.textSecondary, fontSize: "11px" }}>{t("common.status")}</span>
                     <select value={order.status} onChange={(e) => updateStatus(order.id, e.target.value)} disabled={updatingStatus === order.id} style={{ background: getStatusColor(order.status) + "20", color: getStatusColor(order.status), border: `1px solid ${getStatusColor(order.status)}`, borderRadius: "20px", padding: "4px 12px", cursor: updatingStatus === order.id ? "wait" : "pointer", fontSize: "11px", fontWeight: "500", opacity: updatingStatus === order.id ? 0.7 : 1 }}>
-                      <option value="pending">⏳ {t("production.pending")}</option>
-                      <option value="in_progress">🔄 {t("production.inProgress")}</option>
-                      <option value="completed">✅ {t("production.completed")}</option>
-                      <option value="cancelled">❌ {t("production.cancelled")}</option>
+                      <option value="pending">? {t("production.pending")}</option>
+                      <option value="in_progress">?? {t("production.inProgress")}</option>
+                      <option value="completed">? {t("production.completed")}</option>
+                      <option value="cancelled">? {t("production.cancelled")}</option>
                     </select>
                   </div>
                   <div style={{ marginBottom: "16px" }}>
@@ -736,22 +736,22 @@ export default function ProductionPage() {
                     </div>
                   </div>
                   <div style={{ marginBottom: "16px", fontSize: "10px", color: "#666" }}>
-                    {order.assignedTo && <div>👤 {order.assignedTo}</div>}
-                    <div>📅 {order.startDate ? new Date(order.startDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "-"}</div>
+                    {order.assignedTo && <div>?? {order.assignedTo}</div>}
+                    <div>?? {order.startDate ? new Date(order.startDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "-"}</div>
                   </div>
                   <div style={{ display: "flex", gap: "8px" }}>
                     <button onClick={() => openEditModal(order)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
-                      ✏️ {t("common.edit")}
+                      ?? {t("common.edit")}
                     </button>
                     <button onClick={() => deleteOrder(order.id)} style={{ flex: 1, padding: "8px", background: "#c33", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
-                      🗑️ {t("common.delete")}
+                      ??? {t("common.delete")}
                     </button>
                   </div>
                 </div>
               ))}
               {filteredOrders.length === 0 && (
                 <div style={{ textAlign: "center", padding: "60px", gridColumn: "1 / -1", background: theme.surface, borderRadius: "16px" }}>
-                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>🏭</div>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>??</div>
                   <p style={{ color: theme.textSecondary }}>{searchTerm ? t("common.noResults") : t("production.noOrders")}</p>
                 </div>
               )}
@@ -765,7 +765,7 @@ export default function ProductionPage() {
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease" }}>
           <div style={{ background: theme.surface, padding: "32px", borderRadius: "24px", width: "500px", maxWidth: "90%", maxHeight: "90vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "24px" }}>
-              {modal.editMode ? `✏️ ${t("production.editOrder")}` : `🏭 ${t("production.addOrder")}`}
+              {modal.editMode ? `?? ${t("production.editOrder")}` : `?? ${t("production.addOrder")}`}
             </h2>
 
             <div style={{ marginBottom: "16px" }}>
@@ -779,9 +779,9 @@ export default function ProductionPage() {
             <div style={{ marginBottom: "16px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "8px" }}>{t("production.priority")}</label>
               <select value={modal.form.priority || "medium"} onChange={(e) => setModal({ ...modal, form: { ...modal.form, priority: e.target.value } })} style={{ width: "100%", padding: "12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer" }}>
-                <option value="low">🟢 {t("production.low")}</option>
-                <option value="medium">🟡 {t("production.medium")}</option>
-                <option value="high">🔴 {t("production.high")}</option>
+                <option value="low">?? {t("production.low")}</option>
+                <option value="medium">?? {t("production.medium")}</option>
+                <option value="high">?? {t("production.high")}</option>
               </select>
             </div>
             <div style={{ marginBottom: "16px" }}>
@@ -795,7 +795,7 @@ export default function ProductionPage() {
 
             <div style={{ display: "flex", gap: "12px" }}>
               <button onClick={modal.editMode ? updateProductionOrder : createProductionOrder} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "500", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
-                💾 {modal.editMode ? t("common.edit") : t("common.add")}
+                ?? {modal.editMode ? t("common.edit") : t("common.add")}
               </button>
               <button onClick={() => setModal({ open: false, form: emptyForm, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
                 {t("common.cancel")}

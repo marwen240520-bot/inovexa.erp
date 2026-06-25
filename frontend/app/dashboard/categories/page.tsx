@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 
-// ── SVG Icons ──────────────────────────────────────────────
+// -- SVG Icons ----------------------------------------------
 const IconTag = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
@@ -114,7 +114,7 @@ const IconSave = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
-// ── Types ──────────────────────────────────────────────────
+// -- Types --------------------------------------------------
 interface Category {
   id: number | string;
   name: string;
@@ -140,7 +140,7 @@ interface ModalState {
   editId?: number | string | null;
 }
 
-// ── Page principale ────────────────────────────────────────
+// -- Page principale ----------------------------------------
 export default function CategoriesPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
@@ -221,7 +221,7 @@ export default function CategoriesPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/categories", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/categories", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       const categoriesData = Array.isArray(data) ? data : [];
       setCategories(categoriesData.map(cat => ({ ...cat, productCount: getProductCountForCategory(cat.id) })));
@@ -232,7 +232,7 @@ export default function CategoriesPage() {
   const fetchAllProducts = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/products", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error(e); }
@@ -241,7 +241,7 @@ export default function CategoriesPage() {
   const createCategory = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/categories", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -260,7 +260,7 @@ export default function CategoriesPage() {
   const updateCategory = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/categories/${modal.editId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -280,7 +280,7 @@ export default function CategoriesPage() {
     if (hasProducts) { showMessage(t("categories.cannotDelete"), "error"); return; }
     if (confirm(t("categories.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      const res = await fetch(`https://api-inovexa.ngrok.app/categories/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { await fetchCategories(); showMessage(t("categories.categoryDeleted"), "success"); }
       else {
         const error = await res.json();
@@ -352,7 +352,7 @@ export default function CategoriesPage() {
         <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
-          {/* ── Header ── */}
+          {/* -- Header -- */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: sectionMargin, flexWrap: "wrap", gap: "16px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0, transform: animateCards ? "translateY(0)" : "translateY(-20px)" }}>
             <div>
               <h1 style={{ color: theme.text, fontSize: headerTitleSize, display: "flex", alignItems: "center", gap: "10px" }}>
@@ -390,7 +390,7 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          {/* ── Message ── */}
+          {/* -- Message -- */}
           {message && (
             <div style={{ background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`, color: messageType === "success" ? theme.accent : "#f87171", padding: "12px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               {messageType === "success" ? <IconCheck size={16} /> : <IconAlertTriangle size={16} />}
@@ -398,7 +398,7 @@ export default function CategoriesPage() {
             </div>
           )}
 
-          {/* ── Recherche ── */}
+          {/* -- Recherche -- */}
           <div style={{ marginBottom: "20px", animation: "fadeInUp 0.5s ease 0.2s", opacity: animateCards ? 1 : 0 }}>
             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
               <span style={{ position: "absolute", left: "12px", color: theme.textSecondary, display: "flex" }}>
@@ -416,7 +416,7 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          {/* ── Stats ── */}
+          {/* -- Stats -- */}
           <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "150px" : "200px"}, 1fr))`, gap: "16px", marginBottom: "24px", animation: "fadeInUp 0.5s ease 0.3s", opacity: animateCards ? 1 : 0 }}>
             {[
               { Icon: IconFolder, value: categories.length,          color: theme.primary, label: t("categories.totalCategories") },
@@ -433,7 +433,7 @@ export default function CategoriesPage() {
             ))}
           </div>
 
-          {/* ── Vue Liste ── */}
+          {/* -- Vue Liste -- */}
           {viewMode === "list" && (
             <div style={{ background: theme.surface, borderRadius: cardRadius, padding: "16px", border: `1px solid ${theme.border}`, overflowX: "auto", animation: "fadeInUp 0.5s ease 0.5s", opacity: animateCards ? 1 : 0 }}>
               <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
@@ -489,7 +489,7 @@ export default function CategoriesPage() {
             </div>
           )}
 
-          {/* ── Vue Grille ── */}
+          {/* -- Vue Grille -- */}
           {viewMode === "grid" && (
             <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? "280px" : "350px"}, 1fr))`, gap: gridGap, marginBottom: "20px" }}>
               {filteredCategories.map((c, idx) => {
@@ -565,7 +565,7 @@ export default function CategoriesPage() {
             </div>
           )}
 
-          {/* ── Empty state ── */}
+          {/* -- Empty state -- */}
           {filteredCategories.length === 0 && viewMode === "grid" && (
             <div style={{ background: theme.surface, borderRadius: "20px", padding: "40px", textAlign: "center", border: `1px solid ${theme.border}`, animation: "fadeInUp 0.3s ease" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px", color: theme.textSecondary }}><IconTag size={isMobile ? 36 : 48} /></div>
@@ -582,7 +582,7 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      {/* ── Modal Ajout/Modification ── */}
+      {/* -- Modal Ajout/Modification -- */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "24px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}` }}>
@@ -615,7 +615,7 @@ export default function CategoriesPage() {
         </div>
       )}
 
-      {/* ── Modal Produits de la catégorie ── */}
+      {/* -- Modal Produits de la cat�gorie -- */}
       {showProductsModal && selectedCategory && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: "20px", borderRadius: "24px", width: productsModalWidth, maxWidth: "95%", maxHeight: "80vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
@@ -641,7 +641,7 @@ export default function CategoriesPage() {
                           <div style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", marginTop: "4px" }}>SKU: {product.sku || "-"}</div>
                         </div>
                         <div style={{ textAlign: "right" }}>
-                          <div style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "13px" : "16px" }}>{product.price} €</div>
+                          <div style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "13px" : "16px" }}>{product.price} �</div>
                           <div style={{ color: statusColor, fontSize: isMobile ? "10px" : "12px", marginTop: "4px" }}>
                             {getStockStatusText(product.quantity)} ({product.quantity || 0} {!isMobile && t("products.units")})
                           </div>

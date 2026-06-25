@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -9,7 +9,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 
-// ─── SVG Icon Components ───────────────────────────────────────────────────────
+// --- SVG Icon Components -------------------------------------------------------
 
 const IconUsers = ({ size = 20, color = "currentColor", style = undefined as React.CSSProperties | undefined }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -128,7 +128,7 @@ const IconDotFilled = ({ size = 8, color = "currentColor", style = undefined as 
   </svg>
 );
 
-// ─── SelectAllCheckbox ─────────────────────────────────────────────────────────
+// --- SelectAllCheckbox ---------------------------------------------------------
 
 function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemId }) {
   const { t } = useLanguage();
@@ -159,7 +159,7 @@ function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemI
   );
 }
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// --- Types ---------------------------------------------------------------------
 
 type Client = {
   id: string;
@@ -189,7 +189,7 @@ type ModalState = {
   editId: string | null;
 };
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// --- Main Component ------------------------------------------------------------
 
 export default function ClientsPage() {
   const router = useRouter();
@@ -213,7 +213,7 @@ export default function ClientsPage() {
   const [importing, setImporting] = useState(false);
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, totalSpent: 0 });
 
-  // ── Responsive sizing tokens ──
+  // -- Responsive sizing tokens --
   const headerTitleSize = isMobile ? "20px" : "28px";
   const cardPadding = isMobile ? "14px" : "20px";
   const cardRadius = isMobile ? "14px" : "16px";
@@ -252,7 +252,7 @@ export default function ClientsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/clients", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", {
         headers: { Authorization: `Bearer ${token}` },
       });
       let data = await res.json();
@@ -274,7 +274,7 @@ export default function ClientsPage() {
   const createClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/clients", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -294,7 +294,7 @@ export default function ClientsPage() {
   const updateClient = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/clients/${modal.editId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -314,7 +314,7 @@ export default function ClientsPage() {
   const deleteClient = async (id: string) => {
     if (confirm(t("clients.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`https://api-inovexa.ngrok.app/clients/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
       fetchClients();
@@ -331,13 +331,13 @@ export default function ClientsPage() {
     )) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`https://api-inovexa.ngrok.app/clients/${id}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}`, {
           method: "DELETE", headers: { Authorization: `Bearer ${token}` },
         });
       }
       fetchClients();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} client(s) supprimé(s)`, "success");
+      showMessage(`${selectedIds.length} client(s) supprim�(s)`, "success");
     }
   };
 
@@ -346,7 +346,7 @@ export default function ClientsPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/clients/${id}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
@@ -357,7 +357,7 @@ export default function ClientsPage() {
       } else {
         const client = clients.find((c) => c.id === id);
         if (client) {
-          const putRes = await fetch(`https://api-inovexa.ngrok.app/clients/${id}`, {
+          const putRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...client, status: newStatus }),
@@ -376,7 +376,7 @@ export default function ClientsPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/clients/import", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/clients/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ clients: data }),
@@ -384,7 +384,7 @@ export default function ClientsPage() {
       const result = await res.json();
       if (res.ok) {
         showMessage(
-          `${result.success} client(s) importé(s) avec succès${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
+          `${result.success} client(s) import�(s) avec succ�s${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
           "success"
         );
         fetchClients();
@@ -437,7 +437,7 @@ export default function ClientsPage() {
     }
   `;
 
-  // ── Shared button style helpers ──
+  // -- Shared button style helpers --
   const viewToggleBtnStyle = (active: boolean): React.CSSProperties => ({
     width: "32px",
     height: "32px",
@@ -468,7 +468,7 @@ export default function ClientsPage() {
     flexShrink: 0,
   };
 
-  // ── Stat icon bubble ──
+  // -- Stat icon bubble --
   const statIconBubble = (bg: string): React.CSSProperties => ({
     width: isMobile ? "36px" : "44px",
     height: isMobile ? "36px" : "44px",
@@ -523,7 +523,7 @@ export default function ClientsPage() {
     );
   }
 
-  // ── Status Badge ──
+  // -- Status Badge --
   const StatusBadge = ({ client, onClick }: { client: Client; onClick: () => void }) => (
     <button
       onClick={onClick}
@@ -560,7 +560,7 @@ export default function ClientsPage() {
         <div style={innerContainerStyle}>
           <style>{animations}</style>
 
-          {/* ── Header ── */}
+          {/* -- Header -- */}
           <div style={{
             marginBottom: sectionMargin,
             animation: "fadeInDown 0.5s ease",
@@ -645,7 +645,7 @@ export default function ClientsPage() {
             </div>
           </div>
 
-          {/* ── Message ── */}
+          {/* -- Message -- */}
           {message && (
             <div style={{
               background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
@@ -669,7 +669,7 @@ export default function ClientsPage() {
             </div>
           )}
 
-          {/* ── Stats Cards — 2 colonnes fixes sur mobile ── */}
+          {/* -- Stats Cards � 2 colonnes fixes sur mobile -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile
@@ -709,7 +709,7 @@ export default function ClientsPage() {
             ))}
           </div>
 
-          {/* ── Filters ── */}
+          {/* -- Filters -- */}
           <div style={{ marginBottom: "16px", animation: "fadeInUp 0.5s ease 0.4s", opacity: animateCards ? 1 : 0 }}>
             {/* Search */}
             <div style={{ position: "relative", marginBottom: "12px" }}>
@@ -777,7 +777,7 @@ export default function ClientsPage() {
             </div>
           </div>
 
-          {/* ══ LIST VIEW ══ */}
+          {/* -- LIST VIEW -- */}
           {viewMode === "list" && (
             <div style={{
               background: theme.surface,
@@ -837,24 +837,24 @@ export default function ClientsPage() {
                         </td>
                         <td style={{ padding: "10px 8px", color: theme.text, fontWeight: "500", fontSize: tableFontSize }}>
                           {(client.name?.length ?? 0) > (isMobile ? 14 : 20)
-                            ? client.name.substring(0, isMobile ? 11 : 17) + "…"
+                            ? client.name.substring(0, isMobile ? 11 : 17) + "�"
                             : client.name}
                         </td>
                         <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                           {(client.email?.length ?? 0) > (isMobile ? 18 : 30)
-                            ? client.email.substring(0, isMobile ? 15 : 27) + "…"
+                            ? client.email.substring(0, isMobile ? 15 : 27) + "�"
                             : client.email}
                         </td>
                         {!isMobile && (
                           <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
-                            {(client.phone as string) || "—"}
+                            {(client.phone as string) || "�"}
                           </td>
                         )}
                         {!isMobile && (
                           <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                             {(client.address?.length ?? 0) > 30
-                              ? (client.address as string).substring(0, 27) + "…"
-                              : (client.address as string) || "—"}
+                              ? (client.address as string).substring(0, 27) + "�"
+                              : (client.address as string) || "�"}
                           </td>
                         )}
                         <td style={{ padding: "10px 8px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize }}>
@@ -928,7 +928,7 @@ export default function ClientsPage() {
             </div>
           )}
 
-          {/* ══ GRID VIEW ══ */}
+          {/* -- GRID VIEW -- */}
           {viewMode === "grid" && (
             <div style={{
               display: "grid",
@@ -990,7 +990,7 @@ export default function ClientsPage() {
                   {/* Info rows */}
                   <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: "10px", marginBottom: "12px" }}>
                     {[
-                      { label: t("common.phone"), value: (client.phone as string) || "—", accent: false },
+                      { label: t("common.phone"), value: (client.phone as string) || "�", accent: false },
                       { label: t("clients.totalSpent"), value: formatCurrency(client.totalSpent), accent: true },
                     ].map((row, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: i === 0 ? "6px" : 0 }}>
@@ -1073,7 +1073,7 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* ══ MODAL — Add / Edit ══ */}
+      {/* -- MODAL � Add / Edit -- */}
       {modal.open && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,

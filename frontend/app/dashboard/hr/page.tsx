@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -20,7 +20,7 @@ ChartJS.register(
   ArcElement, PointElement, LineElement, Filler
 );
 
-// ─── Interfaces ────────────────────────────────────────────────────────────────
+// --- Interfaces ----------------------------------------------------------------
 
 interface Employee {
   id: number;
@@ -60,7 +60,7 @@ interface StatsState {
   departments: number;
 }
 
-// ─── SVG Icon Components ───────────────────────────────────────────────────────
+// --- SVG Icon Components -------------------------------------------------------
 
 const IconUsers = ({ size = 20, color = "currentColor", style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -228,7 +228,7 @@ const IconUserTie = ({ size = 28, color = "currentColor", style }: { size?: numb
   </svg>
 );
 
-// ─── Status helpers ────────────────────────────────────────────────────────────
+// --- Status helpers ------------------------------------------------------------
 
 function getStatusDotColor(status: string, theme: Record<string, string>) {
   if (status === "active") return theme.accent;
@@ -285,7 +285,7 @@ function StatusSelect({ empId, status, onUpdate, updatingStatus, isMobile, t, th
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// --- Main Component ------------------------------------------------------------
 
 export default function HRPage() {
   const router = useRouter();
@@ -355,7 +355,7 @@ export default function HRPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/employees", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/employees", { headers: { Authorization: `Bearer ${token}` } });
       let data: Employee[] = await res.json();
       data = Array.isArray(data) ? data : [];
       setEmployees(data);
@@ -374,7 +374,7 @@ export default function HRPage() {
   const fetchDepartments = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/departments", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/departments", { headers: { Authorization: `Bearer ${token}` } });
       const data: Department[] = await res.json();
       setDepartments(Array.isArray(data) ? data : []);
       setStats(prev => ({ ...prev, departments: Array.isArray(data) ? data.length : 0 }));
@@ -384,7 +384,7 @@ export default function HRPage() {
   const createEmployee = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/employees", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -400,7 +400,7 @@ export default function HRPage() {
   const updateEmployee = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/employees/${modal.editId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
@@ -417,7 +417,7 @@ export default function HRPage() {
     const token = localStorage.getItem("token");
     setUpdatingStatus(id);
     try {
-      const res = await fetch(`https://api-inovexa.ngrok.app/employees/${id}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status })
@@ -429,7 +429,7 @@ export default function HRPage() {
       } else {
         const employee = employees.find(e => e.id === id);
         if (employee) {
-          const putRes = await fetch(`https://api-inovexa.ngrok.app/employees/${id}`, {
+          const putRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ ...employee, status })
@@ -448,7 +448,7 @@ export default function HRPage() {
   const deleteEmployee = async (id: number) => {
     if (confirm(t("hr.confirmDelete"))) {
       const token = localStorage.getItem("token");
-      await fetch(`https://api-inovexa.ngrok.app/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       fetchEmployees();
       showMessage(t("hr.employeeDeleted"), "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
@@ -460,7 +460,7 @@ export default function HRPage() {
     if (confirm(t("hr.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        await fetch(`https://api-inovexa.ngrok.app/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       }
       fetchEmployees();
       setSelectedIds([]);
@@ -472,14 +472,14 @@ export default function HRPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://api-inovexa.ngrok.app/employees/import", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/employees/import", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ employees: data })
       });
       const result = await res.json();
       if (res.ok) {
-        showMessage(`${result.success} employé(s) importé(s) avec succès${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
+        showMessage(`${result.success} employ�(s) import�(s) avec succ�s${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
         fetchEmployees();
       } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
     } catch (error) {
@@ -513,7 +513,7 @@ export default function HRPage() {
     return matchSearch && matchDepartment && matchStatus;
   });
 
-  // ── Stats cards ────────────────────────────────────────────────────────────
+  // -- Stats cards ------------------------------------------------------------
 
   const statsCards = [
     {
@@ -597,7 +597,7 @@ export default function HRPage() {
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
-          {/* ── Header ── */}
+          {/* -- Header -- */}
           <div style={{ marginBottom: sectionMargin, animation: "fadeInDown 0.5s ease" }}>
             <div style={{
               display: "flex",
@@ -653,7 +653,7 @@ export default function HRPage() {
                   <ExportButtons data={filteredEmployees} filename="employes" iconOnly={isMobile} />
                 </div>
 
-                {/* Add employee — full-width on mobile */}
+                {/* Add employee � full-width on mobile */}
                 <button
                   onClick={() => setModal({ open: true, editMode: false, editId: null, form: { name: "", email: "", position: "", department: "", salary: 0, phone: "", hireDate: "", status: "active" } })}
                   style={{
@@ -680,7 +680,7 @@ export default function HRPage() {
             </div>
           </div>
 
-          {/* ── Message ── */}
+          {/* -- Message -- */}
           {message && (
             <div style={{
               background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)",
@@ -695,7 +695,7 @@ export default function HRPage() {
             </div>
           )}
 
-          {/* ── Stats Cards — improved ── */}
+          {/* -- Stats Cards � improved -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(5, 1fr)",
@@ -766,7 +766,7 @@ export default function HRPage() {
             ))}
           </div>
 
-          {/* ── Department Charts ── */}
+          {/* -- Department Charts -- */}
           {departmentData.length > 0 && (
             <div style={{
               display: "grid",
@@ -809,7 +809,7 @@ export default function HRPage() {
             </div>
           )}
 
-          {/* ── Filters ── */}
+          {/* -- Filters -- */}
           <div style={{ marginBottom: "20px", animation: "fadeInUp 0.5s ease 0.4s", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
               <div style={{ flex: 2, position: "relative", width: isMobile ? "100%" : "auto" }}>
@@ -868,7 +868,7 @@ export default function HRPage() {
             </div>
           </div>
 
-          {/* ── List View ── */}
+          {/* -- List View -- */}
           {viewMode === "list" && (
             <div style={{
               background: theme.surface, borderRadius: cardRadius, padding: isMobile ? "12px" : "16px",
@@ -980,7 +980,7 @@ export default function HRPage() {
             </div>
           )}
 
-          {/* ── Grid View ── */}
+          {/* -- Grid View -- */}
           {viewMode === "grid" && (
             <div style={{
               display: "grid",
@@ -1081,7 +1081,7 @@ export default function HRPage() {
         </div>
       </div>
 
-      {/* ── Modal Add / Edit Employee ── */}
+      {/* -- Modal Add / Edit Employee -- */}
       {modal.open && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
