@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -303,7 +303,7 @@ export default function SalesPage() {
     try {
       const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/products", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      console.log("?? Produits chargés:", data);
+      console.log("?? Produits chargï¿½s:", data);
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error("? Erreur chargement produits:", e); }
   };
@@ -328,7 +328,7 @@ export default function SalesPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        showMessage(`${result.success} vente(s) importée(s) avec succès${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
+        showMessage(`${result.success} vente(s) importï¿½e(s) avec succï¿½s${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
         fetchSales();
       } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
     } catch (error) { showMessage("Erreur de connexion lors de l'import", "error"); }
@@ -336,20 +336,20 @@ export default function SalesPage() {
   };
 
   const createSale = async () => {
-    console.log("?? Formulaire avant création:", modal.form);
+    console.log("?? Formulaire avant crï¿½ation:", modal.form);
 
     if (!modal.form.productId) {
-      showMessage("Veuillez sélectionner un produit", "error");
+      showMessage("Veuillez sï¿½lectionner un produit", "error");
       return;
     }
 
     if (!modal.form.quantity || modal.form.quantity <= 0) {
-      showMessage("La quantité doit être supérieure à 0", "error");
+      showMessage("La quantitï¿½ doit ï¿½tre supï¿½rieure ï¿½ 0", "error");
       return;
     }
 
     if (!modal.form.unitPrice || modal.form.unitPrice <= 0) {
-      showMessage("Le prix unitaire doit être supérieur à 0", "error");
+      showMessage("Le prix unitaire doit ï¿½tre supï¿½rieur ï¿½ 0", "error");
       return;
     }
 
@@ -361,7 +361,7 @@ export default function SalesPage() {
 
     const product = products.find(p => p.id === productId);
     if (!product) {
-      showMessage("Produit non trouvé", "error");
+      showMessage("Produit non trouvï¿½", "error");
       return;
     }
 
@@ -379,7 +379,7 @@ export default function SalesPage() {
       status: modal.form.status || "pending"
     };
 
-    console.log("?? Données envoyées au backend:", formData);
+    console.log("?? Donnï¿½es envoyï¿½es au backend:", formData);
 
     try {
       const res = await fetch("${process.env.NEXT_PUBLIC_API_URL}/sales", {
@@ -392,7 +392,7 @@ export default function SalesPage() {
       });
 
       const result = await res.json();
-      console.log("?? Réponse du backend:", result);
+      console.log("?? Rï¿½ponse du backend:", result);
 
       if (res.ok) {
         setModal({ open: false, form: { status: "pending", quantity: 1, productId: undefined, clientId: undefined, unitPrice: 0, total: 0 } });
@@ -400,12 +400,12 @@ export default function SalesPage() {
         setSelectedClient(null);
         await fetchSales();
         await fetchProducts();
-        showMessage("Vente créée avec succès !", "success");
+        showMessage("Vente crï¿½ï¿½e avec succï¿½s !", "success");
       } else {
-        showMessage(result.message || "Erreur lors de la création de la vente", "error");
+        showMessage(result.message || "Erreur lors de la crï¿½ation de la vente", "error");
       }
     } catch(e) {
-      console.error("? Erreur lors de la création:", e);
+      console.error("? Erreur lors de la crï¿½ation:", e);
       showMessage("Erreur de connexion au serveur", "error");
     }
   };
@@ -450,7 +450,7 @@ export default function SalesPage() {
       }
       fetchSales();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} vente(s) supprimée(s)`, "success");
+      showMessage(`${selectedIds.length} vente(s) supprimï¿½e(s)`, "success");
     }
   };
 
@@ -473,10 +473,10 @@ export default function SalesPage() {
     return status;
   };
 
-  // ? HANDLE PRODUCT SELECT - VERSION CORRIGÉE
+  // ? HANDLE PRODUCT SELECT - VERSION CORRIGï¿½E
   const handleProductSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    console.log("?? Produit sélectionné - valeur brute:", value);
+    console.log("?? Produit sï¿½lectionnï¿½ - valeur brute:", value);
     
     if (!value || value === "") {
       setSelectedProduct(null);
@@ -497,7 +497,7 @@ export default function SalesPage() {
     console.log("?? ID produit converti:", productId);
     
     const product = products.find(p => p.id === productId);
-    console.log("?? Produit trouvé:", product);
+    console.log("?? Produit trouvï¿½:", product);
     
     if (product) {
       setSelectedProduct(product);
@@ -529,10 +529,10 @@ export default function SalesPage() {
     }
   };
 
-  // ? HANDLE CLIENT SELECT - VERSION CORRIGÉE
+  // ? HANDLE CLIENT SELECT - VERSION CORRIGï¿½E
   const handleClientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    console.log("?? Client sélectionné - valeur brute:", value);
+    console.log("?? Client sï¿½lectionnï¿½ - valeur brute:", value);
     
     if (!value || value === "") {
       setSelectedClient(null);
@@ -549,7 +549,7 @@ export default function SalesPage() {
     
     const clientId = parseInt(value, 10);
     const client = clients.find(c => c.id === clientId);
-    console.log("?? Client trouvé:", client);
+    console.log("?? Client trouvï¿½:", client);
     
     if (client) {
       setSelectedClient(client);
@@ -984,7 +984,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* -- Modal — New Sale -- */}
+      {/* -- Modal ï¿½ New Sale -- */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "90vh", overflowY: "auto" }}>
@@ -1001,7 +1001,7 @@ export default function SalesPage() {
                 value={modal.form.clientId ? String(modal.form.clientId) : ""}
                 style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
               >
-                <option value="">{t("sales.selectClient") || "Sélectionner un client"}</option>
+                <option value="">{t("sales.selectClient") || "Sï¿½lectionner un client"}</option>
                 {clients.map((c) => (
                   <option key={String(c.id)} value={String(c.id)}>
                     {c.name} {c.email ? `(${c.email})` : ""}
@@ -1011,12 +1011,12 @@ export default function SalesPage() {
               {selectedClient && (
                 <div style={{ marginTop: "6px", fontSize: isMobile ? "10px" : "11px", color: theme.accent, display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconCheckCircle size={12} color={theme.accent} />
-                  {t("sales.clientSelected") || "Client sélectionné"}: {selectedClient.name}
+                  {t("sales.clientSelected") || "Client sï¿½lectionnï¿½"}: {selectedClient.name}
                 </div>
               )}
             </div>
 
-            {/* Product Selection - CORRIGÉE */}
+            {/* Product Selection - CORRIGï¿½E */}
             <div style={{ marginBottom: "14px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("common.product")} *
@@ -1162,7 +1162,7 @@ export default function SalesPage() {
         </div>
       )}
 
-      {/* -- Modal — Edit Status -- */}
+      {/* -- Modal ï¿½ Edit Status -- */}
       {editModal.open && editModal.sale && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "420px", maxWidth: "95%", border: `1px solid ${theme.border}` }}>

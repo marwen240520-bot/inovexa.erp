@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -167,7 +167,7 @@ export default function TransporteurShipmentsPage() {
   const [isMobile, setIsMobile] = useState(false);
   const itemsPerPage = 10;
 
-  // Détecter mobile
+  // Dï¿½tecter mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -181,49 +181,49 @@ export default function TransporteurShipmentsPage() {
     const translations: Record<string, Record<string, string>> = {
       'common.loading': { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...' },
       'shipments.title': { fr: 'Mes livraisons', en: 'My shipments', es: 'Mis entregas' },
-      'shipments.subtitle': { fr: 'Gérez vos livraisons assignées', en: 'Manage your assigned shipments', es: 'Gestione sus entregas asignadas' },
+      'shipments.subtitle': { fr: 'Gï¿½rez vos livraisons assignï¿½es', en: 'Manage your assigned shipments', es: 'Gestione sus entregas asignadas' },
       'shipments.list': { fr: 'Liste', en: 'List', es: 'Lista' },
-      'shipments.grid': { fr: 'Grille', en: 'Grid', es: 'Cuadrícula' },
+      'shipments.grid': { fr: 'Grille', en: 'Grid', es: 'Cuadrï¿½cula' },
       'shipments.total': { fr: 'Total', en: 'Total', es: 'Total' },
       'shipments.pending': { fr: 'En attente', en: 'Pending', es: 'Pendientes' },
-      'shipments.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
-      'shipments.delivered': { fr: 'Livrées', en: 'Delivered', es: 'Entregadas' },
-      'shipments.search_placeholder': { fr: 'N° suivi, client, adresse...', en: 'Tracking #, client, address...', es: 'Nº seguimiento, cliente, dirección...' },
+      'shipments.in_transit': { fr: 'En transit', en: 'In transit', es: 'En trï¿½nsito' },
+      'shipments.delivered': { fr: 'Livrï¿½es', en: 'Delivered', es: 'Entregadas' },
+      'shipments.search_placeholder': { fr: 'Nï¿½ suivi, client, adresse...', en: 'Tracking #, client, address...', es: 'Nï¿½ seguimiento, cliente, direcciï¿½n...' },
       'shipments.all_statuses': { fr: 'Tous les statuts', en: 'All statuses', es: 'Todos los estados' },
       'shipments.status_pending': { fr: 'En attente', en: 'Pending', es: 'Pendiente' },
-      'shipments.status_in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
-      'shipments.status_delivered': { fr: 'Livrée', en: 'Delivered', es: 'Entregado' },
-      'shipments.status_cancelled': { fr: 'Annulée', en: 'Cancelled', es: 'Cancelado' },
-      'shipments.all_periods': { fr: 'Toutes les périodes', en: 'All periods', es: 'Todos los períodos' },
+      'shipments.status_in_transit': { fr: 'En transit', en: 'In transit', es: 'En trï¿½nsito' },
+      'shipments.status_delivered': { fr: 'Livrï¿½e', en: 'Delivered', es: 'Entregado' },
+      'shipments.status_cancelled': { fr: 'Annulï¿½e', en: 'Cancelled', es: 'Cancelado' },
+      'shipments.all_periods': { fr: 'Toutes les pï¿½riodes', en: 'All periods', es: 'Todos los perï¿½odos' },
       'shipments.today': { fr: "Aujourd'hui", en: 'Today', es: 'Hoy' },
       'shipments.this_week': { fr: 'Cette semaine', en: 'This week', es: 'Esta semana' },
       'shipments.this_month': { fr: 'Ce mois', en: 'This month', es: 'Este mes' },
-      'shipments.this_year': { fr: 'Cette année', en: 'This year', es: 'Este año' },
+      'shipments.this_year': { fr: 'Cette annï¿½e', en: 'This year', es: 'Este aï¿½o' },
       'shipments.sort_by_date': { fr: 'Trier par date', en: 'Sort by date', es: 'Ordenar por fecha' },
-      'shipments.sort_by_tracking': { fr: 'Trier par N° suivi', en: 'Sort by tracking #', es: 'Ordenar por Nº seguimiento' },
+      'shipments.sort_by_tracking': { fr: 'Trier par Nï¿½ suivi', en: 'Sort by tracking #', es: 'Ordenar por Nï¿½ seguimiento' },
       'shipments.sort_by_client': { fr: 'Trier par client', en: 'Sort by client', es: 'Ordenar por cliente' },
       'shipments.sort_by_amount': { fr: 'Trier par montant', en: 'Sort by amount', es: 'Ordenar por monto' },
-      'shipments.sort_by_address': { fr: 'Trier par adresse', en: 'Sort by address', es: 'Ordenar por dirección' },
+      'shipments.sort_by_address': { fr: 'Trier par adresse', en: 'Sort by address', es: 'Ordenar por direcciï¿½n' },
       'shipments.sort_by_status': { fr: 'Trier par statut', en: 'Sort by status', es: 'Ordenar por estado' },
       'shipments.ascending': { fr: 'Ascendant', en: 'Ascending', es: 'Ascendente' },
       'shipments.descending': { fr: 'Descendant', en: 'Descending', es: 'Descendente' },
-      'shipments.results': { fr: 'résultat(s)', en: 'result(s)', es: 'resultado(s)' },
-      'shipments.tracking_number': { fr: 'N° suivi', en: 'Tracking #', es: 'Nº seguimiento' },
+      'shipments.results': { fr: 'rï¿½sultat(s)', en: 'result(s)', es: 'resultado(s)' },
+      'shipments.tracking_number': { fr: 'Nï¿½ suivi', en: 'Tracking #', es: 'Nï¿½ seguimiento' },
       'shipments.client': { fr: 'Client', en: 'Client', es: 'Cliente' },
       'shipments.amount': { fr: 'Montant', en: 'Amount', es: 'Monto' },
-      'shipments.phone': { fr: 'Téléphone', en: 'Phone', es: 'Teléfono' },
-      'shipments.address': { fr: 'Adresse', en: 'Address', es: 'Dirección' },
+      'shipments.phone': { fr: 'Tï¿½lï¿½phone', en: 'Phone', es: 'Telï¿½fono' },
+      'shipments.address': { fr: 'Adresse', en: 'Address', es: 'Direcciï¿½n' },
       'shipments.date': { fr: 'Date', en: 'Date', es: 'Fecha' },
       'shipments.status': { fr: 'Statut', en: 'Status', es: 'Estado' },
-      'shipments.action': { fr: 'Action', en: 'Action', es: 'Acción' },
-      'status.delivered': { fr: 'Livrée', en: 'Delivered', es: 'Entregado' },
-      'status.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
+      'shipments.action': { fr: 'Action', en: 'Action', es: 'Acciï¿½n' },
+      'status.delivered': { fr: 'Livrï¿½e', en: 'Delivered', es: 'Entregado' },
+      'status.in_transit': { fr: 'En transit', en: 'In transit', es: 'En trï¿½nsito' },
       'status.pending': { fr: 'En attente', en: 'Pending', es: 'Pendiente' },
-      'status.cancelled': { fr: 'Annulée', en: 'Cancelled', es: 'Cancelado' },
-      'shipments.no_results': { fr: 'Aucun résultat pour vos filtres', en: 'No results for your filters', es: 'No hay resultados para sus filtros' },
+      'status.cancelled': { fr: 'Annulï¿½e', en: 'Cancelled', es: 'Cancelado' },
+      'shipments.no_results': { fr: 'Aucun rï¿½sultat pour vos filtres', en: 'No results for your filters', es: 'No hay resultados para sus filtros' },
       'shipments.no_shipments': { fr: 'Aucune livraison', en: 'No shipments', es: 'No hay entregas' },
       'shipments.clear_filters': { fr: 'Effacer les filtres', en: 'Clear filters', es: 'Borrar filtros' },
-      'shipments.page': { fr: 'Page', en: 'Page', es: 'Página' },
+      'shipments.page': { fr: 'Page', en: 'Page', es: 'Pï¿½gina' },
       'shipments.of': { fr: '/', en: '/', es: '/' },
       'shipments.unknown_client': { fr: 'Client inconnu', en: 'Unknown client', es: 'Cliente desconocido' },
     };
@@ -373,8 +373,8 @@ export default function TransporteurShipmentsPage() {
   };
 
   const formatAmount = (amount?: number): string => {
-    if (!amount && amount !== 0) return "0 €";
-    return amount.toLocaleString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") + (language === "fr" ? " €" : language === "es" ? " €" : " €");
+    if (!amount && amount !== 0) return "0 ï¿½";
+    return amount.toLocaleString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") + (language === "fr" ? " ï¿½" : language === "es" ? " ï¿½" : " ï¿½");
   };
 
   if (loading) {

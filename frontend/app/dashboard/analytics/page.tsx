@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -76,14 +76,14 @@ const Icons = {
 
 // Helper functions pour les labels
 const getMonthLabelsByLang = (language: string): string[] => {
-  if (language === 'fr') return ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+  if (language === 'fr') return ["Jan", "Fï¿½v", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoï¿½", "Sep", "Oct", "Nov", "Dï¿½c"];
   if (language === 'es') return ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 };
 
 const getWeekDaysByLang = (language: string): string[] => {
   if (language === 'fr') return ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-  if (language === 'es') return ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  if (language === 'es') return ["Lun", "Mar", "Miï¿½", "Jue", "Vie", "Sï¿½b", "Dom"];
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 };
 
@@ -216,13 +216,13 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
   const weekLabels = getWeekDaysByLang(language);
   const currentYear = new Date().getFullYear();
 
-  // Fonction pour générer les données de manière dynamique
+  // Fonction pour gï¿½nï¿½rer les donnï¿½es de maniï¿½re dynamique
   const generateRealData = useCallback((module: string, dataType: string, period: string) => {
     let labels: string[] = [];
     let dataValues: number[] = [];
 
     if (period === "week") {
-      // Données pour les 7 derniers jours (aujourd'hui + 6 jours précédents)
+      // Donnï¿½es pour les 7 derniers jours (aujourd'hui + 6 jours prï¿½cï¿½dents)
       labels = weekLabels;
       dataValues = Array(7).fill(0);
       
@@ -335,7 +335,7 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
       }
     }
 
-    // Nettoyer les données
+    // Nettoyer les donnï¿½es
     while (dataValues.length < labels.length) dataValues.push(0);
     if (dataValues.length > labels.length) dataValues = dataValues.slice(0, labels.length);
 
@@ -795,7 +795,7 @@ export default function AnalyticsPage() {
         logistics: { total: shipments.length, delivered: deliveredShipments, inTransit: 0, pending: 0, onTime: shipments.length > 0 ? (deliveredShipments / shipments.length * 100) : 0 }
       });
 
-      // Calculer les ventes mensuelles pour l'année en cours
+      // Calculer les ventes mensuelles pour l'annï¿½e en cours
       const monthlySales = Array(12).fill(0);
       sales.forEach((s: any) => {
         if (s.createdAt) {
@@ -842,7 +842,7 @@ export default function AnalyticsPage() {
     let dataValues: number[] = [];
     
     if (period === "week") {
-      // Données pour les 7 derniers jours (aujourd'hui + 6 jours précédents)
+      // Donnï¿½es pour les 7 derniers jours (aujourd'hui + 6 jours prï¿½cï¿½dents)
       labels = weekLabels;
       dataValues = Array(7).fill(0);
       
@@ -920,7 +920,7 @@ export default function AnalyticsPage() {
   };
 
   const topProductsChartData = {
-    labels: topProducts.map(p => isMobile && p.name.length > 10 ? p.name.substring(0, 8) + "…" : p.name),
+    labels: topProducts.map(p => isMobile && p.name.length > 10 ? p.name.substring(0, 8) + "ï¿½" : p.name),
     datasets: [{ 
       label: t("dashboard.topProducts"), 
       data: topProducts.map(p => p.amount), 
@@ -931,7 +931,7 @@ export default function AnalyticsPage() {
   };
 
   const topClientsChartData = {
-    labels: topClients.map(c => isMobile && c.name.length > 10 ? c.name.substring(0, 8) + "…" : c.name),
+    labels: topClients.map(c => isMobile && c.name.length > 10 ? c.name.substring(0, 8) + "ï¿½" : c.name),
     datasets: [{ 
       label: t("dashboard.topClients"), 
       data: topClients.map(c => c.amount), 
@@ -1064,7 +1064,7 @@ export default function AnalyticsPage() {
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
-          {/* Header - Desktop et Mobile unifié */}
+          {/* Header - Desktop et Mobile unifiï¿½ */}
           <div style={{ 
             display: "flex", 
             justifyContent: "space-between", 

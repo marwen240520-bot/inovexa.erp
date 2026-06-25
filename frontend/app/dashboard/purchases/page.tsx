@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -397,9 +397,9 @@ export default function PurchasesPage() {
       if (res.ok) {
         setModal({ open: false, form: {} });
         fetchPurchases();
-        showMessage(t("purchases.purchaseCreated") || "Achat créé avec succès", "success");
+        showMessage(t("purchases.purchaseCreated") || "Achat crï¿½ï¿½ avec succï¿½s", "success");
       } else {
-        showMessage(t("common.error") || "Erreur lors de la création", "error");
+        showMessage(t("common.error") || "Erreur lors de la crï¿½ation", "error");
       }
     } catch (e) {
       showMessage(t("common.error") || "Erreur de connexion", "error");
@@ -417,7 +417,7 @@ export default function PurchasesPage() {
       });
       if (res.ok) {
         await fetchPurchases();
-        showMessage(t("purchases.statusUpdated") || "Statut mis à jour", "success");
+        showMessage(t("purchases.statusUpdated") || "Statut mis ï¿½ jour", "success");
       } else {
         const purchase = allPurchases.find(p => p.id === id);
         if (purchase) {
@@ -428,7 +428,7 @@ export default function PurchasesPage() {
           });
           if (putRes.ok) {
             await fetchPurchases();
-            showMessage(t("purchases.statusUpdated") || "Statut mis à jour", "success");
+            showMessage(t("purchases.statusUpdated") || "Statut mis ï¿½ jour", "success");
           } else {
             showMessage(t("common.error") || "Erreur", "error");
           }
@@ -451,7 +451,7 @@ export default function PurchasesPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchPurchases();
-      showMessage(t("purchases.purchaseDeleted") || "Achat supprimé", "success");
+      showMessage(t("purchases.purchaseDeleted") || "Achat supprimï¿½", "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     }
   };
@@ -468,7 +468,7 @@ export default function PurchasesPage() {
       }
       fetchPurchases();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} achat(s) supprimé(s)`, "success");
+      showMessage(`${selectedIds.length} achat(s) supprimï¿½(s)`, "success");
     }
   };
 
@@ -486,7 +486,7 @@ export default function PurchasesPage() {
       const result = await res.json();
       if (res.ok) {
         showMessage(
-          `${result.success} achat(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
+          `${result.success} achat(s) importï¿½(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
           "success"
         );
         fetchPurchases();
@@ -506,7 +506,7 @@ export default function PurchasesPage() {
     setTimeout(() => setMessage(""), 3000);
   };
 
-  // -- Handlers pour le formulaire (sélection dynamique) ----------------------
+  // -- Handlers pour le formulaire (sï¿½lection dynamique) ----------------------
 
   const handleSupplierChange = (supplierId: number) => {
     const selectedSupplier = suppliers.find(s => s.id === supplierId);
@@ -551,7 +551,7 @@ export default function PurchasesPage() {
     },
     {
       icon: <IconDollarSign size={isMobile ? 20 : 24} color={theme.accent} />,
-      label: t("purchases.totalSpent") || "Total dépensé",
+      label: t("purchases.totalSpent") || "Total dï¿½pensï¿½",
       value: formatCurrency(stats.amount),
       color: theme.accent,
       bg: `${theme.accent}15`,
@@ -567,7 +567,7 @@ export default function PurchasesPage() {
     },
     {
       icon: <IconCheckCircle size={isMobile ? 20 : 24} color="#10b981" />,
-      label: t("purchases.delivered") || "Livrés",
+      label: t("purchases.delivered") || "Livrï¿½s",
       value: stats.delivered,
       color: "#10b981",
       bg: "#10b98115",
@@ -829,8 +829,8 @@ export default function PurchasesPage() {
                 >
                   <option value="all">{t("purchases.allStatus") || "Tous les statuts"}</option>
                   <option value="pending">{t("purchases.pending") || "En attente"}</option>
-                  <option value="delivered">{t("purchases.delivered") || "Livrés"}</option>
-                  <option value="cancelled">{t("purchases.cancelled") || "Annulés"}</option>
+                  <option value="delivered">{t("purchases.delivered") || "Livrï¿½s"}</option>
+                  <option value="cancelled">{t("purchases.cancelled") || "Annulï¿½s"}</option>
                 </select>
               </div>
 
@@ -869,7 +869,7 @@ export default function PurchasesPage() {
                   style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: theme.primary }}
                 />
                 <span style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "13px" }}>
-                  {t("common.selectAll") || "Tout sélectionner"}
+                  {t("common.selectAll") || "Tout sï¿½lectionner"}
                 </span>
               </label>
 
@@ -929,7 +929,7 @@ export default function PurchasesPage() {
                     <th style={{ padding: "10px", textAlign: "left" }}>ID</th>
                     <th style={{ padding: "10px", textAlign: "left" }}>{t("purchases.supplier") || "Fournisseur"}</th>
                     <th style={{ padding: "10px", textAlign: "left" }}>{t("common.product") || "Produit"}</th>
-                    <th style={{ padding: "10px", textAlign: "right" }}>{t("common.quantity") || "Qté"}</th>
+                    <th style={{ padding: "10px", textAlign: "right" }}>{t("common.quantity") || "Qtï¿½"}</th>
                     <th style={{ padding: "10px", textAlign: "right" }}>{t("purchases.unitPrice") || "P.U."}</th>
                     <th style={{ padding: "10px", textAlign: "right" }}>{t("common.total") || "Total"}</th>
                     <th style={{ padding: "10px", textAlign: "center" }}>{t("common.status") || "Statut"}</th>
@@ -1030,8 +1030,8 @@ export default function PurchasesPage() {
                 <IconPackage size={isMobile ? 36 : 48} color={theme.textSecondary} style={{ margin: "0 auto 16px", display: "block", opacity: 0.4 }} />
                 <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>
                   {searchTerm
-                    ? t("common.noResults") || "Aucun résultat"
-                    : t("purchases.noPurchases") || "Aucun achat trouvé."}
+                    ? t("common.noResults") || "Aucun rï¿½sultat"
+                    : t("purchases.noPurchases") || "Aucun achat trouvï¿½."}
                 </p>
               </div>
             )}
@@ -1039,7 +1039,7 @@ export default function PurchasesPage() {
         </div>
       </div>
 
-      {/* -- Modal création achat avec sélection dynamique -- */}
+      {/* -- Modal crï¿½ation achat avec sï¿½lection dynamique -- */}
       {modal.open && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -1080,14 +1080,14 @@ export default function PurchasesPage() {
                 onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
                 onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
               >
-                <option value="">-- Sélectionner un fournisseur --</option>
+                <option value="">-- Sï¿½lectionner un fournisseur --</option>
                 {suppliers.map(supplier => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.name} {supplier.companyName ? `(${supplier.companyName})` : ""}
                   </option>
                 ))}
               </select>
-              {/* Afficher le nom du fournisseur sélectionné en lecture seule si nécessaire */}
+              {/* Afficher le nom du fournisseur sï¿½lectionnï¿½ en lecture seule si nï¿½cessaire */}
               {modal.form.supplierName && (
                 <div style={{ marginTop: "6px", fontSize: "11px", color: theme.textSecondary, display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconBuilding size={11} color={theme.accent} />
@@ -1115,7 +1115,7 @@ export default function PurchasesPage() {
                 onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
                 onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
               >
-                <option value="">-- Sélectionner un produit --</option>
+                <option value="">-- Sï¿½lectionner un produit --</option>
                 {products.map(product => (
                   <option key={product.id} value={product.id}>
                     {product.name} {product.sku ? `(${product.sku})` : ""} - {formatCurrency(product.price)}
@@ -1130,10 +1130,10 @@ export default function PurchasesPage() {
               )}
             </div>
 
-            {/* Quantité */}
+            {/* Quantitï¿½ */}
             <div style={{ marginBottom: "14px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
-                {t("common.quantity") || "Quantité"} *
+                {t("common.quantity") || "Quantitï¿½"} *
               </label>
               <input
                 type="number"
@@ -1156,7 +1156,7 @@ export default function PurchasesPage() {
               />
             </div>
 
-            {/* Prix unitaire - peut être modifié même si sélectionné depuis produit */}
+            {/* Prix unitaire - peut ï¿½tre modifiï¿½ mï¿½me si sï¿½lectionnï¿½ depuis produit */}
             <div style={{ marginBottom: "14px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("purchases.unitPrice") || "Prix unitaire"} *
@@ -1218,8 +1218,8 @@ export default function PurchasesPage() {
                 }}
               >
                 <option value="pending">{t("purchases.pending") || "En attente"}</option>
-                <option value="delivered">{t("purchases.delivered") || "Livrée"}</option>
-                <option value="cancelled">{t("purchases.cancelled") || "Annulée"}</option>
+                <option value="delivered">{t("purchases.delivered") || "Livrï¿½e"}</option>
+                <option value="cancelled">{t("purchases.cancelled") || "Annulï¿½e"}</option>
               </select>
             </div>
 

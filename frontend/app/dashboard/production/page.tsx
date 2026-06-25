@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -81,7 +81,7 @@ function LocalSelectAllCheckbox({
   };
 
   const getSelectAllText = () => {
-    if (language === "fr") return "Tout sélectionner";
+    if (language === "fr") return "Tout sï¿½lectionner";
     if (language === "es") return "Seleccionar todo";
     return "Select all";
   };

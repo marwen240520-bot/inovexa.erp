@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -186,9 +186,9 @@ export default function AdminClientsPage() {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchClients();
         fetchStats();
-        showMessage("? Client créé avec succès !", "success");
+        showMessage("? Client crï¿½ï¿½ avec succï¿½s !", "success");
       } else {
-        showMessage("? Erreur lors de la création", "error");
+        showMessage("? Erreur lors de la crï¿½ation", "error");
       }
     } catch(e) {
       showMessage("? Erreur de connexion", "error");
@@ -213,7 +213,7 @@ export default function AdminClientsPage() {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchClients();
         fetchStats();
-        showMessage("? Client modifié avec succès !", "success");
+        showMessage("? Client modifiï¿½ avec succï¿½s !", "success");
       } else {
         showMessage("? Erreur lors de la modification", "error");
       }
@@ -231,9 +231,9 @@ export default function AdminClientsPage() {
       if (res.ok) {
         setModulesModal({ open: false, clientId: null, modules: {} });
         fetchClients();
-        showMessage("? Modules mis à jour !", "success");
+        showMessage("? Modules mis ï¿½ jour !", "success");
       } else {
-        showMessage("? Erreur lors de la mise à jour", "error");
+        showMessage("? Erreur lors de la mise ï¿½ jour", "error");
       }
     } catch(e) { console.error(e); }
   };
@@ -248,7 +248,7 @@ export default function AdminClientsPage() {
       });
       if (res.ok) {
         fetchClients();
-        showMessage(`? Abonnement prolongé de ${days} jours`, "success");
+        showMessage(`? Abonnement prolongï¿½ de ${days} jours`, "success");
       }
     } catch(e) { console.error(e); }
   };
@@ -261,7 +261,7 @@ export default function AdminClientsPage() {
     });
     fetchClients();
     fetchStats();
-    showMessage("? Statut modifié", "success");
+    showMessage("? Statut modifiï¿½", "success");
   };
 
   const deleteClient = async (id: number) => {
@@ -273,7 +273,7 @@ export default function AdminClientsPage() {
       });
       fetchClients();
       fetchStats();
-      showMessage("Client supprimé", "success");
+      showMessage("Client supprimï¿½", "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     }
   };
@@ -291,7 +291,7 @@ export default function AdminClientsPage() {
       fetchClients();
       fetchStats();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} client(s) supprimé(s)`, "success");
+      showMessage(`${selectedIds.length} client(s) supprimï¿½(s)`, "success");
     }
   };
 
@@ -349,7 +349,7 @@ export default function AdminClientsPage() {
   // --- Chart data -----------------------------------------------------------
 
   const statusChartData = {
-    labels: ["Actifs", "Inactifs", "Expirés"],
+    labels: ["Actifs", "Inactifs", "Expirï¿½s"],
     datasets: [{
       data: [stats.activeClients, stats.totalClients - stats.activeClients - stats.expiredClients, stats.expiredClients],
       backgroundColor: ["#10b981", "#ef4444", "#f59e0b"],
@@ -499,8 +499,8 @@ export default function AdminClientsPage() {
             {[
               { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 21V19C17 16.8 15.2 15 13 15H5C2.8 15 1 16.8 1 19V21" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="#667eea" strokeWidth="1.5"/><path d="M23 21V19C22.9 16.9 21.3 15.2 19 15" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 3.13C18.1 3.63 19.6 5.5 19.6 7.63C19.6 9.76 18.1 11.63 16 12.13" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round"/></svg>', label: "Total clients", value: stats.totalClients, color: "#667eea", suffix: "" },
               { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 12V8H4V12M20 12L22 14V20H2V14L4 12M20 12H4" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="16" r="2" stroke="#10b981" strokeWidth="1.5"/></svg>', label: "Clients actifs", value: stats.activeClients, color: "#10b981", suffix: "" },
-              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8V12L15 15" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="12" r="9" stroke="#f59e0b" strokeWidth="1.5"/></svg>', label: "Abonnements expirés", value: stats.expiredClients, color: "#f59e0b", suffix: "" },
-              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#10b981" strokeWidth="1.5"/><path d="M12 8V16M9 11H15" stroke="#10b981" strokeWidth="1.5"/></svg>', label: "CA total", value: stats.totalRevenue?.toLocaleString() || "0", color: "#10b981", suffix: "€" }
+              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8V12L15 15" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="12" r="9" stroke="#f59e0b" strokeWidth="1.5"/></svg>', label: "Abonnements expirï¿½s", value: stats.expiredClients, color: "#f59e0b", suffix: "" },
+              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#10b981" strokeWidth="1.5"/><path d="M12 8V16M9 11H15" stroke="#10b981" strokeWidth="1.5"/></svg>', label: "CA total", value: stats.totalRevenue?.toLocaleString() || "0", color: "#10b981", suffix: "ï¿½" }
             ].map((card, idx) => (
               <div key={idx} style={{
                 background: "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
@@ -522,19 +522,19 @@ export default function AdminClientsPage() {
           {/* Charts */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", marginBottom: "32px" }}>
             <div style={{ background: "#111", borderRadius: "20px", padding: "20px", border: "1px solid #222" }}>
-              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>Répartition des clients</h3>
+              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>Rï¿½partition des clients</h3>
               <div style={{ height: "220px" }}>
                 <Doughnut data={statusChartData} options={doughnutOptions} />
               </div>
             </div>
             <div style={{ background: "#111", borderRadius: "20px", padding: "20px", border: "1px solid #222" }}>
-              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>Évolution des inscriptions</h3>
+              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>ï¿½volution des inscriptions</h3>
               <div style={{ height: "220px" }}>
                 {registrationsData.length > 0 ? (
                   <Line data={registrationsChartData} options={chartOptions} />
                 ) : (
                   <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#1a1a1a", borderRadius: "12px" }}>
-                    <p style={{ color: "#666" }}>Aucune donnée disponible</p>
+                    <p style={{ color: "#666" }}>Aucune donnï¿½e disponible</p>
                   </div>
                 )}
               </div>
@@ -585,7 +585,7 @@ export default function AdminClientsPage() {
                   </th>
                   <th style={{ padding: "12px", textAlign: "left" }}>{t("common.name")}</th>
                   <th style={{ padding: "12px", textAlign: "left" }}>{t("common.email")}</th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Société</th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>Sociï¿½tï¿½</th>
                   <th style={{ padding: "12px", textAlign: "left" }}>{t("common.phone")}</th>
                   <th style={{ padding: "12px", textAlign: "center" }}>Abonnement</th>
                   <th style={{ padding: "12px", textAlign: "center" }}>{t("common.status")}</th>
@@ -629,8 +629,8 @@ export default function AdminClientsPage() {
                         <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
                           <button onClick={() => openEditModal(client)} style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modifier">??</button>
                           <button onClick={() => openModulesModal(client)} style={{ background: "#8b5cf6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modules">??</button>
-                          <button onClick={() => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Prolonger">??</button>
-                          <button onClick={() => toggleStatus(client.id)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title={client.isActive ? "Désactiver" : "Activer"}>
+                          <button onClick={() => { const days = prompt("Jours ï¿½ ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Prolonger">??</button>
+                          <button onClick={() => toggleStatus(client.id)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title={client.isActive ? "Dï¿½sactiver" : "Activer"}>
                             {client.isActive ? "??" : "??"}
                           </button>
                           <button onClick={() => deleteClient(client.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Supprimer">???</button>
@@ -641,7 +641,7 @@ export default function AdminClientsPage() {
                 })}
               </tbody>
             </table>
-            {filteredClients.length === 0 && <p style={{ textAlign: "center", color: "#666", padding: "40px" }}>Aucun client trouvé</p>}
+            {filteredClients.length === 0 && <p style={{ textAlign: "center", color: "#666", padding: "40px" }}>Aucun client trouvï¿½</p>}
           </div>
         </div>
       </div>
@@ -672,7 +672,7 @@ export default function AdminClientsPage() {
             )}
             <div style={{ marginBottom: "20px" }}>
               <label style={{ color: "#94a3b8", display: "block", marginBottom: "8px" }}>
-                {modal.editMode ? "Date fin abonnement" : "Durée d'abonnement (jours)"}
+                {modal.editMode ? "Date fin abonnement" : "Durï¿½e d'abonnement (jours)"}
               </label>
               {modal.editMode ? (
                 <input type="date" value={modal.form.subscriptionEnd || ""} onChange={e => setModal({ ...modal, form: { ...modal.form, subscriptionEnd: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
@@ -681,7 +681,7 @@ export default function AdminClientsPage() {
               )}
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
-              <button onClick={modal.editMode ? updateClient : createClient} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>{modal.editMode ? "Modifier" : "Créer"}</button>
+              <button onClick={modal.editMode ? updateClient : createClient} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>{modal.editMode ? "Modifier" : "Crï¿½er"}</button>
               <button onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler</button>
             </div>
           </div>

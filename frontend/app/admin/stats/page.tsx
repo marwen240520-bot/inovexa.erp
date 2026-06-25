@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -84,7 +84,7 @@ export default function AdminStatsPage() {
             </div>
             <div style={{ background: "#111", borderRadius: "20px", padding: "24px", border: "1px solid #222", textAlign: "center" }}>
               <div style={{ fontSize: "40px", marginBottom: "12px" }}>??</div>
-              <div style={{ fontSize: "32px", color: "#f59e0b", fontWeight: "bold" }}>{stats.totalSales.toLocaleString()} €</div>
+              <div style={{ fontSize: "32px", color: "#f59e0b", fontWeight: "bold" }}>{stats.totalSales.toLocaleString()} ï¿½</div>
               <div style={{ color: "#94a3b8", fontSize: "14px" }}>Chiffre d'affaires</div>
             </div>
             <div style={{ background: "#111", borderRadius: "20px", padding: "24px", border: "1px solid #222", textAlign: "center" }}>

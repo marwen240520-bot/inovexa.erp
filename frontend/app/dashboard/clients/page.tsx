@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -337,7 +337,7 @@ export default function ClientsPage() {
       }
       fetchClients();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} client(s) supprimé(s)`, "success");
+      showMessage(`${selectedIds.length} client(s) supprimï¿½(s)`, "success");
     }
   };
 
@@ -384,7 +384,7 @@ export default function ClientsPage() {
       const result = await res.json();
       if (res.ok) {
         showMessage(
-          `${result.success} client(s) importé(s) avec succès${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
+          `${result.success} client(s) importï¿½(s) avec succï¿½s${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
           "success"
         );
         fetchClients();
@@ -669,7 +669,7 @@ export default function ClientsPage() {
             </div>
           )}
 
-          {/* -- Stats Cards — 2 colonnes fixes sur mobile -- */}
+          {/* -- Stats Cards ï¿½ 2 colonnes fixes sur mobile -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile
@@ -837,24 +837,24 @@ export default function ClientsPage() {
                         </td>
                         <td style={{ padding: "10px 8px", color: theme.text, fontWeight: "500", fontSize: tableFontSize }}>
                           {(client.name?.length ?? 0) > (isMobile ? 14 : 20)
-                            ? client.name.substring(0, isMobile ? 11 : 17) + "…"
+                            ? client.name.substring(0, isMobile ? 11 : 17) + "ï¿½"
                             : client.name}
                         </td>
                         <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                           {(client.email?.length ?? 0) > (isMobile ? 18 : 30)
-                            ? client.email.substring(0, isMobile ? 15 : 27) + "…"
+                            ? client.email.substring(0, isMobile ? 15 : 27) + "ï¿½"
                             : client.email}
                         </td>
                         {!isMobile && (
                           <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
-                            {(client.phone as string) || "—"}
+                            {(client.phone as string) || "ï¿½"}
                           </td>
                         )}
                         {!isMobile && (
                           <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                             {(client.address?.length ?? 0) > 30
-                              ? (client.address as string).substring(0, 27) + "…"
-                              : (client.address as string) || "—"}
+                              ? (client.address as string).substring(0, 27) + "ï¿½"
+                              : (client.address as string) || "ï¿½"}
                           </td>
                         )}
                         <td style={{ padding: "10px 8px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize }}>
@@ -990,7 +990,7 @@ export default function ClientsPage() {
                   {/* Info rows */}
                   <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: "10px", marginBottom: "12px" }}>
                     {[
-                      { label: t("common.phone"), value: (client.phone as string) || "—", accent: false },
+                      { label: t("common.phone"), value: (client.phone as string) || "ï¿½", accent: false },
                       { label: t("clients.totalSpent"), value: formatCurrency(client.totalSpent), accent: true },
                     ].map((row, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: i === 0 ? "6px" : 0 }}>
@@ -1073,7 +1073,7 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* -- MODAL — Add / Edit -- */}
+      {/* -- MODAL ï¿½ Add / Edit -- */}
       {modal.open && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,

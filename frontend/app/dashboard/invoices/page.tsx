@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -247,79 +247,79 @@ const translations = {
   fr: {
     title: "Facturation",
     subtitle: "Gestion de vos factures professionnelles",
-    add: "Créer une facture",
+    add: "Crï¿½er une facture",
     import: "Importer",
     filters: "Filtres",
     search: "Rechercher",
-    reference: "Référence",
-    operationNumber: "N° d'opération",
+    reference: "Rï¿½fï¿½rence",
+    operationNumber: "Nï¿½ d'opï¿½ration",
     type: "Type",
     clientSupplier: "Client / Fournisseur",
     amount: "Montant TTC",
     status: "Statut",
-    dueDate: "Date d'échéance",
+    dueDate: "Date d'ï¿½chï¿½ance",
     actions: "Actions",
-    paid: "Réglée",
+    paid: "Rï¿½glï¿½e",
     pending: "En attente",
     overdue: "En retard",
     debit: "Facture client",
     credit: "Avoir fournisseur",
     view: "Consulter",
-    pay: "Régler",
+    pay: "Rï¿½gler",
     pdf: "Exporter PDF",
     print: "Imprimer",
     edit: "Modifier",
     delete: "Supprimer",
     newInvoice: "Nouvelle facture",
     editInvoice: "Modifier la facture",
-    referenceRequired: "La référence est requise",
+    referenceRequired: "La rï¿½fï¿½rence est requise",
     clientRequired: "Le client est requis",
     supplierRequired: "Le fournisseur est requis",
-    create: "Créer",
+    create: "Crï¿½er",
     save: "Enregistrer",
     cancel: "Annuler",
     close: "Fermer",
     loading: "Chargement...",
     total: "Total",
-    paidInvoices: "Factures réglées",
-    pendingInvoices: "Factures impayées",
+    paidInvoices: "Factures rï¿½glï¿½es",
+    pendingInvoices: "Factures impayï¿½es",
     totalAmount: "Montant total",
     thisMonth: "Ce mois-ci",
     thisQuarter: "Ce trimestre",
-    thisYear: "Cette année",
+    thisYear: "Cette annï¿½e",
     lines: "Lignes",
     description: "Description",
-    qty: "Qté",
+    qty: "Qtï¿½",
     unitPriceHT: "Prix unitaire HT",
     subtotalHT: "Sous-total HT",
     subtotalTTC: "Sous-total TTC",
     tax: "TVA",
     totalHT: "Total HT",
     totalTTC: "Total TTC",
-    dueDateLabel: "Date d'échéance",
-    paymentTerms: "Conditions de règlement",
+    dueDateLabel: "Date d'ï¿½chï¿½ance",
+    paymentTerms: "Conditions de rï¿½glement",
     notes: "Observations",
     thankYou: "Merci pour votre confiance",
     invoice: "FACTURE",
-    details: "DÉTAILS",
+    details: "Dï¿½TAILS",
     client: "CLIENT",
     supplier: "FOURNISSEUR",
     dateLabel: "Date",
     noInvoices: "Aucune facture disponible",
-    noResults: "Aucun résultat trouvé",
-    selectLabel: "Sélectionner",
+    noResults: "Aucun rï¿½sultat trouvï¿½",
+    selectLabel: "Sï¿½lectionner",
     allLabel: "Tous",
     newClientLabel: "Nouveau client",
     newSupplierLabel: "Nouveau fournisseur",
     addLine: "Ajouter une ligne",
     taxAmount: "Montant TVA",
     itemsCount: "articles",
-    productsList: "Détail des prestations",
-    invoiceNumber: "Facture n°",
-    generatedOn: "Émise le",
-    selectAll: "Tout sélectionner",
-    deselectAll: "Tout désélectionner",
-    selectedCount: "sélectionnée(s)"
+    productsList: "Dï¿½tail des prestations",
+    invoiceNumber: "Facture nï¿½",
+    generatedOn: "ï¿½mise le",
+    selectAll: "Tout sï¿½lectionner",
+    deselectAll: "Tout dï¿½sï¿½lectionner",
+    selectedCount: "sï¿½lectionnï¿½e(s)"
   },
   en: {
     title: "Invoices",
@@ -399,14 +399,14 @@ const translations = {
     selectedCount: "selected"
   },
   es: {
-    title: "Facturación",
-    subtitle: "Gestión de facturas empresariales",
+    title: "Facturaciï¿½n",
+    subtitle: "Gestiï¿½n de facturas empresariales",
     add: "Crear factura",
     import: "Importar",
     filters: "Filtros",
     search: "Buscar",
     reference: "Referencia",
-    operationNumber: "N.º de operación",
+    operationNumber: "N.ï¿½ de operaciï¿½n",
     type: "Tipo",
     clientSupplier: "Cliente / Proveedor",
     amount: "Importe con IVA",
@@ -440,9 +440,9 @@ const translations = {
     totalAmount: "Importe total",
     thisMonth: "Este mes",
     thisQuarter: "Este trimestre",
-    thisYear: "Este año",
-    lines: "Líneas",
-    description: "Descripción",
+    thisYear: "Este aï¿½o",
+    lines: "Lï¿½neas",
+    description: "Descripciï¿½n",
     qty: "Cant.",
     unitPriceHT: "Precio unitario (sin IVA)",
     subtotalHT: "Subtotal (sin IVA)",
@@ -465,11 +465,11 @@ const translations = {
     allLabel: "Todos",
     newClientLabel: "Nuevo cliente",
     newSupplierLabel: "Nuevo proveedor",
-    addLine: "Agregar línea",
+    addLine: "Agregar lï¿½nea",
     taxAmount: "Importe IVA",
-    itemsCount: "artículos",
+    itemsCount: "artï¿½culos",
     productsList: "Detalle de servicios",
-    invoiceNumber: "Factura n.º",
+    invoiceNumber: "Factura n.ï¿½",
     generatedOn: "Emitida el",
     selectAll: "Seleccionar todo",
     deselectAll: "Deseleccionar todo",
@@ -705,7 +705,7 @@ export default function InvoicesPage() {
         });
       }
       await fetchInvoices();
-      showMessage(`${data.length} facture(s) importée(s)`, "success");
+      showMessage(`${data.length} facture(s) importï¿½e(s)`, "success");
     } catch (e) {
       console.error("Erreur import:", e);
       showMessage("Erreur lors de l'import", "error");
@@ -765,14 +765,14 @@ export default function InvoicesPage() {
         setModalOpen(false);
         setModalForm({ ...defaultFormState });
         await fetchInvoices();
-        showMessage(`Facture créée avec ${validItems.length} article(s)`, "success");
+        showMessage(`Facture crï¿½ï¿½e avec ${validItems.length} article(s)`, "success");
       } else {
         const error = await res.json();
-        showMessage(error.message || "Erreur lors de la création", "error");
+        showMessage(error.message || "Erreur lors de la crï¿½ation", "error");
       }
     } catch (e) {
-      console.error("Erreur création:", e);
-      showMessage("Erreur lors de la création", "error");
+      console.error("Erreur crï¿½ation:", e);
+      showMessage("Erreur lors de la crï¿½ation", "error");
     }
   };
 
@@ -794,7 +794,7 @@ export default function InvoicesPage() {
       const taxAmount = calculateTaxAmount(subtotalHT, taxRate);
       const totalTTC = calculateTotalTTC(subtotalHT, taxRate);
       const invoiceToUpdate = invoices.find(inv => inv.operationNumber === editOperationNumber);
-      if (!invoiceToUpdate) { showMessage("Facture non trouvée", "error"); return; }
+      if (!invoiceToUpdate) { showMessage("Facture non trouvï¿½e", "error"); return; }
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices/${invoiceToUpdate.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -826,7 +826,7 @@ export default function InvoicesPage() {
         setEditModalForm({ ...defaultEditFormState });
         setEditOperationNumber(null);
         await fetchInvoices();
-        showMessage(`Facture modifiée avec ${validItems.length} article(s)`, "success");
+        showMessage(`Facture modifiï¿½e avec ${validItems.length} article(s)`, "success");
       } else {
         const error = await res.json();
         showMessage(error.message || "Erreur lors de la modification", "error");
@@ -846,7 +846,7 @@ export default function InvoicesPage() {
       });
       if (res.ok) {
         await fetchInvoices();
-        showMessage("Facture payée", "success");
+        showMessage("Facture payï¿½e", "success");
       } else {
         const invoice = invoices.find(inv => inv.operationNumber === operationNumber);
         if (invoice) {
@@ -854,7 +854,7 @@ export default function InvoicesPage() {
             method: "PATCH",
             headers: { Authorization: `Bearer ${token}` }
           });
-          if (fallbackRes.ok) { await fetchInvoices(); showMessage("Facture payée", "success"); }
+          if (fallbackRes.ok) { await fetchInvoices(); showMessage("Facture payï¿½e", "success"); }
         }
       }
     } catch (e) { console.error(e); }
@@ -870,7 +870,7 @@ export default function InvoicesPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         await fetchInvoices();
-        showMessage("Facture supprimée", "success");
+        showMessage("Facture supprimï¿½e", "success");
         setSelectedOperationNumbers(selectedOperationNumbers.filter(sop => sop !== operationNumber));
       }
     }
@@ -891,7 +891,7 @@ export default function InvoicesPage() {
       }
       await fetchInvoices();
       setSelectedOperationNumbers([]);
-      showMessage(`${selectedOperationNumbers.length} facture(s) supprimée(s)`, "success");
+      showMessage(`${selectedOperationNumbers.length} facture(s) supprimï¿½e(s)`, "success");
     }
   };
 
@@ -949,12 +949,12 @@ export default function InvoicesPage() {
                   <img src="/logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'" />
                   <div>
                     <h1>INOVEXA ERP</h1>
-                    <p>Solution ERP complète</p>
+                    <p>Solution ERP complï¿½te</p>
                   </div>
                 </div>
                 <div class="invoice-title">
                   <h2>${t.invoice}</h2>
-                  <div class="badge">${invoice.status === "paid" ? "PAYÉE" : invoice.status === "pending" ? "EN ATTENTE" : "EN RETARD"}</div>
+                  <div class="badge">${invoice.status === "paid" ? "PAYï¿½E" : invoice.status === "pending" ? "EN ATTENTE" : "EN RETARD"}</div>
                 </div>
               </div>
               <div class="info-grid">
@@ -1264,11 +1264,11 @@ export default function InvoicesPage() {
                   <input type="date" value={quickFilters.endDate} onChange={e => setQuickFilters({ ...quickFilters, endDate: e.target.value })} style={{ width: "100%", padding: "4px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "4px", color: theme.text, fontSize: "10px" }} />
                 </div>
                 <div>
-                  <label style={{ color: theme.textSecondary, fontSize: "8px", display: "block", marginBottom: "2px" }}>Min (€)</label>
+                  <label style={{ color: theme.textSecondary, fontSize: "8px", display: "block", marginBottom: "2px" }}>Min (ï¿½)</label>
                   <input type="number" placeholder="0" value={quickFilters.minAmount} onChange={e => setQuickFilters({ ...quickFilters, minAmount: e.target.value })} style={{ width: "100%", padding: "4px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "4px", color: theme.text, fontSize: "10px" }} />
                 </div>
                 <div>
-                  <label style={{ color: theme.textSecondary, fontSize: "8px", display: "block", marginBottom: "2px" }}>Max (€)</label>
+                  <label style={{ color: theme.textSecondary, fontSize: "8px", display: "block", marginBottom: "2px" }}>Max (ï¿½)</label>
                   <input type="number" placeholder="999999" value={quickFilters.maxAmount} onChange={e => setQuickFilters({ ...quickFilters, maxAmount: e.target.value })} style={{ width: "100%", padding: "4px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "4px", color: theme.text, fontSize: "10px" }} />
                 </div>
               </div>
@@ -1446,7 +1446,7 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* --- MODAL CRÉATION -------------------------------------------------------- */}
+      {/* --- MODAL CRï¿½ATION -------------------------------------------------------- */}
       {modalOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "10px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "16px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
@@ -1483,7 +1483,7 @@ export default function InvoicesPage() {
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px" }}>
                   <input type="text" placeholder="Nom du client" value={modalForm.clientName} onChange={e => setModalForm({ ...modalForm, clientName: e.target.value, clientId: "" })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                   <input type="email" placeholder="Email" value={modalForm.clientEmail} onChange={e => setModalForm({ ...modalForm, clientEmail: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
-                  <input type="tel" placeholder="Téléphone" value={modalForm.clientPhone} onChange={e => setModalForm({ ...modalForm, clientPhone: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
+                  <input type="tel" placeholder="Tï¿½lï¿½phone" value={modalForm.clientPhone} onChange={e => setModalForm({ ...modalForm, clientPhone: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                   <input type="text" placeholder="Adresse" value={modalForm.clientAddress} onChange={e => setModalForm({ ...modalForm, clientAddress: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                   <input type="text" placeholder="SIRET" value={modalForm.clientSiret} onChange={e => setModalForm({ ...modalForm, clientSiret: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                 </div>
@@ -1593,7 +1593,7 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* --- MODAL ÉDITION --------------------------------------------------------- */}
+      {/* --- MODAL ï¿½DITION --------------------------------------------------------- */}
       {editModalOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "10px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "16px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
@@ -1630,7 +1630,7 @@ export default function InvoicesPage() {
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px" }}>
                   <input type="text" placeholder="Nom du client" value={editModalForm.clientName} onChange={e => setEditModalForm({ ...editModalForm, clientName: e.target.value, clientId: "" })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                   <input type="email" placeholder="Email" value={editModalForm.clientEmail} onChange={e => setEditModalForm({ ...editModalForm, clientEmail: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
-                  <input type="tel" placeholder="Téléphone" value={editModalForm.clientPhone} onChange={e => setEditModalForm({ ...editModalForm, clientPhone: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
+                  <input type="tel" placeholder="Tï¿½lï¿½phone" value={editModalForm.clientPhone} onChange={e => setEditModalForm({ ...editModalForm, clientPhone: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                   <input type="text" placeholder="Adresse" value={editModalForm.clientAddress} onChange={e => setEditModalForm({ ...editModalForm, clientAddress: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                   <input type="text" placeholder="SIRET" value={editModalForm.clientSiret} onChange={e => setEditModalForm({ ...editModalForm, clientSiret: e.target.value })} style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "12px" }} />
                 </div>
@@ -1646,7 +1646,7 @@ export default function InvoicesPage() {
               </div>
             )}
 
-            {/* ? CORRIGÉ : tableau des lignes du modal édition */}
+            {/* ? CORRIGï¿½ : tableau des lignes du modal ï¿½dition */}
             <div style={{ marginBottom: "16px" }}>
               <label style={{ color: theme.textSecondary, fontSize: "11px", display: "block", marginBottom: "8px" }}>{t.lines}</label>
               <div style={{ overflowX: "auto" }}>
@@ -1749,7 +1749,7 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* --- MODAL APERÇU ---------------------------------------------------------- */}
+      {/* --- MODAL APERï¿½U ---------------------------------------------------------- */}
       {showPreviewModal && viewInvoice && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, padding: "20px" }}>
           <div style={{ background: "white", borderRadius: "16px", width: "900px", maxWidth: "95%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 50px rgba(0,0,0,0.3)" }}>
@@ -1789,7 +1789,7 @@ export default function InvoicesPage() {
                       <div style={{ textAlign: "right" }}>
                         <h2 style={{ color: "#667eea", fontSize: "30px", }}>{t.invoice}</h2>
                         <div style={{ background: viewInvoice.status === "paid" ? "#10b981" : viewInvoice.status === "pending" ? "#f59e0b" : "#ef4444", color: "white", padding: "4px 14px", borderRadius: "20px", fontSize: "11px", display: "inline-block", marginTop: "8px" }}>
-                          {viewInvoice.status === "paid" ? "PAYÉE" : viewInvoice.status === "pending" ? "EN ATTENTE" : "EN RETARD"}
+                          {viewInvoice.status === "paid" ? "PAYï¿½E" : viewInvoice.status === "pending" ? "EN ATTENTE" : "EN RETARD"}
                         </div>
                       </div>
                     </div>

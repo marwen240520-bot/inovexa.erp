@@ -1,4 +1,4 @@
-
+ï»¿
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -155,7 +155,7 @@ const IconChevronRight = ({ size = 16, color = "currentColor", style }: any) => 
 const stockTranslations: Record<string, Record<string, string>> = {
   fr: {
     title: "Gestion du Stock",
-    subtitle: "Stock basé sur les achats et ventes",
+    subtitle: "Stock basï¿½ sur les achats et ventes",
     totalProducts: "Total produits",
     totalValue: "Valeur totale",
     lowStock: "Stock faible",
@@ -163,12 +163,12 @@ const stockTranslations: Record<string, Record<string, string>> = {
     stockTurnover: "Rotation stock",
     thisWeek: "Cette semaine",
     thisMonth: "Ce mois",
-    thisYear: "Cette année",
+    thisYear: "Cette annï¿½e",
     allTime: "Tout",
     refresh: "Actualiser",
     searchPlaceholder: "Rechercher un produit...",
     filterAll: "Tous les produits",
-    filterWell: "Stock élevé (=10)",
+    filterWell: "Stock ï¿½levï¿½ (=10)",
     filterLow: "Stock faible (<10)",
     filterOut: "Rupture (=0)",
     product: "Produit",
@@ -178,49 +178,49 @@ const stockTranslations: Record<string, Record<string, string>> = {
     value: "Valeur",
     status: "Statut",
     history: "Historique",
-    noResults: "Aucun résultat",
+    noResults: "Aucun rï¿½sultat",
     noProducts: "Aucun produit dans le stock",
     movementsTitle: "Mouvements de stock",
     date: "Date",
     type: "Type",
-    quantity: "Quantité",
-    reference: "Référence",
-    entry: "Entrée",
+    quantity: "Quantitï¿½",
+    reference: "Rï¿½fï¿½rence",
+    entry: "Entrï¿½e",
     exit: "Sortie",
     noMovements: "Aucun mouvement pour ce produit",
-    periodAnalyzed: "Période analysée",
+    periodAnalyzed: "Pï¿½riode analysï¿½e",
     last7Days: "7 derniers jours",
     last30Days: "30 derniers jours",
     last12Months: "12 derniers mois",
-    allData: "Toutes les données",
+    allData: "Toutes les donnï¿½es",
     salesCount: "ventes",
     purchasesCount: "achats",
     stockStatus: "Statut du stock",
     outOfStockStatus: "Rupture",
     lowStockStatus: "Stock faible",
     mediumStockStatus: "Stock moyen",
-    highStockStatus: "Stock élevé",
-    outOfStockDesc: "Nécessite un réapprovisionnement urgent",
-    lowStockDesc: "À réapprovisionner bientôt",
+    highStockStatus: "Stock ï¿½levï¿½",
+    outOfStockDesc: "Nï¿½cessite un rï¿½approvisionnement urgent",
+    lowStockDesc: "ï¿½ rï¿½approvisionner bientï¿½t",
     mediumStockDesc: "Stock suffisant",
     highStockDesc: "Stock confortable",
-    legend: "Légende des statuts de stock",
-    infoMessage: "?? Le stock est calculé automatiquement à partir des achats et des ventes.",
+    legend: "Lï¿½gende des statuts de stock",
+    infoMessage: "?? Le stock est calculï¿½ automatiquement ï¿½ partir des achats et des ventes.",
     close: "Fermer",
     unitPrice: "Prix unitaire",
     stockValue: "Valeur stock"
   },
   es: {
-    title: "Gestión de Stock",
+    title: "Gestiï¿½n de Stock",
     subtitle: "Stock basado en compras y ventas",
     totalProducts: "Total productos",
     totalValue: "Valor total",
     lowStock: "Stock bajo",
     outOfStock: "Agotado",
-    stockTurnover: "Rotación stock",
+    stockTurnover: "Rotaciï¿½n stock",
     thisWeek: "Esta semana",
     thisMonth: "Este mes",
-    thisYear: "Este año",
+    thisYear: "Este aï¿½o",
     allTime: "Todo",
     refresh: "Actualizar",
     searchPlaceholder: "Buscar producto...",
@@ -245,10 +245,10 @@ const stockTranslations: Record<string, Record<string, string>> = {
     entry: "Entrada",
     exit: "Salida",
     noMovements: "No hay movimientos para este producto",
-    periodAnalyzed: "Período analizado",
-    last7Days: "últimos 7 días",
-    last30Days: "últimos 30 días",
-    last12Months: "últimos 12 meses",
+    periodAnalyzed: "Perï¿½odo analizado",
+    last7Days: "ï¿½ltimos 7 dï¿½as",
+    last30Days: "ï¿½ltimos 30 dï¿½as",
+    last12Months: "ï¿½ltimos 12 meses",
     allData: "Todos los datos",
     salesCount: "ventas",
     purchasesCount: "compras",
@@ -262,7 +262,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Stock suficiente",
     highStockDesc: "Stock confortable",
     legend: "Leyenda de estados de stock",
-    infoMessage: "?? El stock se calcula automáticamente a partir de compras y ventas.",
+    infoMessage: "?? El stock se calcula automï¿½ticamente a partir de compras y ventas.",
     close: "Cerrar",
     unitPrice: "Precio unitario",
     stockValue: "Valor stock"
@@ -679,7 +679,7 @@ export default function StockPage() {
                   {selectedPeriod === "week" ? t.last7Days : selectedPeriod === "month" ? t.last30Days : selectedPeriod === "year" ? t.last12Months : t.allData}
                 </span>
                 <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "11px" : "13px" }}>
-                  ?? {sales.length} {t.salesCount} • {purchases.length} {t.purchasesCount}
+                  ?? {sales.length} {t.salesCount} ï¿½ {purchases.length} {t.purchasesCount}
                 </span>
               </div>
             </div>
