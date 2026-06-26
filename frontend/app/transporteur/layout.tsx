@@ -123,6 +123,7 @@ export default function TransporteurLayout({
       'transporteur.shipments.title': { fr: 'Mes livraisons', en: 'My shipments', es: 'Mis entregas' },
       'transporteur.profile.title': { fr: 'Mon profil', en: 'My profile', es: 'Mi perfil' },
       'transporteur.settings.title': { fr: 'Paramètres', en: 'Settings', es: 'Configuración' },
+      'transporteur.role.label': { fr: 'Transporteur', en: 'Transporter', es: 'Transportista' },
     };
 
     if (translations[key] && translations[key][language]) {
@@ -303,7 +304,7 @@ export default function TransporteurLayout({
           }}>
             {!logoError ? (
               <img 
-                src="/logo.png" 
+                src="/images/logo.png" 
                 alt="Logo"
                 style={{
                   width: "42px",
@@ -314,25 +315,14 @@ export default function TransporteurLayout({
                 onError={() => setLogoError(true)}
               />
             ) : (
-              <div style={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #667eea, #764ba2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "20px",
-                fontWeight: "bold",
-                color: "white"
-              }}>
-                I
-              </div>
-            )}
+           
             <div>
               <span style={{ color: "white", fontSize: "16px", fontWeight: "bold" }}>Inovexa ERP</span>
-              <p style={{ color: "#667eea", fontSize: "10px", margin: "2px 0 0" }}>Transporteur</p>
+              <p style={{ color: "#667eea", fontSize: "10px", margin: "2px 0 0" }}>
+                {getTranslation("transporteur.role.label")}
+              </p>
             </div>
+          )}
           </div>
 
           {/* Navigation */}
