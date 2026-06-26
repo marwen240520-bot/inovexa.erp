@@ -9,6 +9,37 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 
+// --- Translations ------------------------------------------------------------
+const translations = {
+  fr: {
+    sales: {
+      selectClient: "Sélectionner un client",
+      clientSelected: "Client sélectionné",
+      productSelected: "Produit sélectionné",
+      selectProduct: "Sélectionner un produit",
+      // ... autres traductions existantes
+    }
+  },
+  es: {
+    sales: {
+      selectClient: "Seleccionar un cliente",
+      clientSelected: "Cliente seleccionado",
+      productSelected: "Producto seleccionado",
+      selectProduct: "Seleccionar un producto",
+      // ... autres traductions existantes
+    }
+  },
+  en: {
+    sales: {
+      selectClient: "Select a client",
+      clientSelected: "Client selected",
+      productSelected: "Product selected",
+      selectProduct: "Select a product",
+      // ... autres traductions existantes
+    }
+  }
+};
+
 // --- Types ---------------------------------------------------------------------
 
 interface IconProps {
@@ -207,6 +238,9 @@ export default function SalesPage() {
   const { formatCurrency } = useAppSettings();
   const { isMobile } = useResponsive();
   const { theme } = useTheme();
+
+  // Utiliser les traductions locales pour sales.selectClient
+  const localT = translations[language as keyof typeof translations] || translations.fr;
 
   const contentMarginLeft = isMobile ? "0" : "0px";
 
@@ -1001,7 +1035,7 @@ export default function SalesPage() {
                 value={modal.form.clientId ? String(modal.form.clientId) : ""}
                 style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
               >
-                <option value="">{t("sales.selectClient") || "Sélectionner un client"}</option>
+                <option value="">{localT.sales.selectClient}</option>
                 {clients.map((c) => (
                   <option key={String(c.id)} value={String(c.id)}>
                     {c.name} {c.email ? `(${c.email})` : ""}
@@ -1011,7 +1045,7 @@ export default function SalesPage() {
               {selectedClient && (
                 <div style={{ marginTop: "6px", fontSize: isMobile ? "10px" : "11px", color: theme.accent, display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconCheckCircle size={12} color={theme.accent} />
-                  {t("sales.clientSelected") || "Client sélectionné"}: {selectedClient.name}
+                  {localT.sales.clientSelected}: {selectedClient.name}
                 </div>
               )}
             </div>
@@ -1035,7 +1069,7 @@ export default function SalesPage() {
                   fontSize: isMobile ? "13px" : "14px" 
                 }}
               >
-                <option value="">{t("sales.selectProduct")}</option>
+                <option value="">{localT.sales.selectProduct}</option>
                 {products.map((p) => (
                   <option key={String(p.id)} value={String(p.id)}>
                     {p.name} - {formatCurrency(p.price)} (Stock: {p.quantity})
@@ -1056,7 +1090,7 @@ export default function SalesPage() {
                   ) : (
                     <IconXCircle size={12} color="#ef4444" />
                   )}
-                  {t("sales.productSelected")}: {selectedProduct.name} (Stock: {selectedProduct.quantity})
+                  {localT.sales.productSelected}: {selectedProduct.name} (Stock: {selectedProduct.quantity})
                   {selectedProduct.quantity < (modal.form.quantity || 0) && (
                     <span style={{ color: "#ef4444", fontWeight: "bold" }}>
                       {" "}- Stock insuffisant!

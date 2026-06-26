@@ -7,6 +7,100 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme, THEMES } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 
+// ==================== TRADUCTIONS ====================
+const profileTranslations = {
+  fr: {
+    profile: {
+      oldPassword: "Ancien mot de passe",
+      newPassword: "Nouveau mot de passe",
+      confirmPassword: "Confirmer le mot de passe",
+      changePassword: "Changer le mot de passe",
+      oldPasswordRequired: "Veuillez entrer votre mot de passe actuel",
+      passwordMismatch: "Les mots de passe ne correspondent pas",
+      passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
+      passwordChanged: "Mot de passe changé avec succès",
+      personalInfo: "Informations personnelles",
+      security: "Sécurité",
+      activity: "Activité",
+      company: "Société",
+      memberSince: "Membre depuis",
+      lastLogin: "Dernière connexion",
+      admin: "Administrateur",
+      transporter: "Transporteur",
+      client: "Client",
+      dangerZone: "Zone de danger",
+      logoutAllWarning: "Déconnexion de tous les appareils",
+      logoutAllDevices: "Se déconnecter de tous les appareils",
+      personalStats: "Statistiques personnelles",
+      revenueGenerated: "CA généré",
+      currentSession: "Session actuelle",
+      connectedSince: "Connecté depuis",
+      profileUpdated: "Profil mis à jour",
+      logoutAllConfirm: "Se déconnecter de tous les appareils ?"
+    }
+  },
+  es: {
+    profile: {
+      oldPassword: "Contraseña anterior",
+      newPassword: "Nueva contraseña",
+      confirmPassword: "Confirmar contraseña",
+      changePassword: "Cambiar contraseña",
+      oldPasswordRequired: "Por favor, introduzca su contraseña actual",
+      passwordMismatch: "Las contraseñas no coinciden",
+      passwordMinLength: "La contraseña debe tener al menos 6 caracteres",
+      passwordChanged: "Contraseña cambiada con éxito",
+      personalInfo: "Información personal",
+      security: "Seguridad",
+      activity: "Actividad",
+      company: "Empresa",
+      memberSince: "Miembro desde",
+      lastLogin: "Último acceso",
+      admin: "Administrador",
+      transporter: "Transportista",
+      client: "Cliente",
+      dangerZone: "Zona de peligro",
+      logoutAllWarning: "Cerrar sesión en todos los dispositivos",
+      logoutAllDevices: "Cerrar sesión en todos los dispositivos",
+      personalStats: "Estadísticas personales",
+      revenueGenerated: "Ingresos generados",
+      currentSession: "Sesión actual",
+      connectedSince: "Conectado desde",
+      profileUpdated: "Perfil actualizado",
+      logoutAllConfirm: "¿Cerrar sesión en todos los dispositivos?"
+    }
+  },
+  en: {
+    profile: {
+      oldPassword: "Old password",
+      newPassword: "New password",
+      confirmPassword: "Confirm password",
+      changePassword: "Change password",
+      oldPasswordRequired: "Please enter your current password",
+      passwordMismatch: "Passwords do not match",
+      passwordMinLength: "Password must be at least 6 characters",
+      passwordChanged: "Password changed successfully",
+      personalInfo: "Personal information",
+      security: "Security",
+      activity: "Activity",
+      company: "Company",
+      memberSince: "Member since",
+      lastLogin: "Last login",
+      admin: "Administrator",
+      transporter: "Transporter",
+      client: "Client",
+      dangerZone: "Danger zone",
+      logoutAllWarning: "Log out from all devices",
+      logoutAllDevices: "Log out from all devices",
+      personalStats: "Personal statistics",
+      revenueGenerated: "Revenue generated",
+      currentSession: "Current session",
+      connectedSince: "Connected since",
+      profileUpdated: "Profile updated",
+      logoutAllConfirm: "Log out from all devices?"
+    }
+  }
+};
+
 // ==================== SVG ICONS ====================
 const Icons = {
   Moon: () => (
@@ -176,6 +270,9 @@ export default function ProfilePage() {
   const { formatCurrency } = useAppSettings();
   const { theme: globalTheme, themeId: globalThemeId, setTheme: setGlobalTheme } = useTheme();
   const { isMobile } = useResponsive();
+
+  // Utiliser les traductions locales du profil
+  const profileT = profileTranslations[language as keyof typeof profileTranslations] || profileTranslations.fr;
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -352,9 +449,9 @@ export default function ProfilePage() {
       if (res.ok) {
         const freshUser = await loadUserFromBackend();
         if (freshUser) { setUser(freshUser); setProfileImage(freshUser.avatar || freshUser.profileImage || null); }
-        showMessage(t("profile.profileUpdated") || " Profil mis à jour", "success");
-      } else { showMessage(t("common.error") || " Erreur", "error"); }
-    } catch(e) { showMessage(t("common.error") || " Erreur de connexion", "error"); }
+        showMessage(profileT.profile.profileUpdated || "Profil mis à jour", "success");
+      } else { showMessage(t("common.error") || "Erreur", "error"); }
+    } catch(e) { showMessage(t("common.error") || "Erreur de connexion", "error"); }
   };
 
   const uploadProfileImage = async (file: File) => {
@@ -378,17 +475,17 @@ export default function ProfilePage() {
           setImageTimestamp(Date.now());
           const freshUser = await loadUserFromBackend();
           if (freshUser) setUser(freshUser);
-          showMessage(" Photo de profil mise à jour", "success");
+          showMessage("Photo de profil mise à jour", "success");
         } else {
-          showMessage(" Image uploadée", "warning");
+          showMessage("Image uploadée", "warning");
         }
       } else {
         const error = await res.json();
-        showMessage(error.message || " Erreur lors de l'upload", "error");
+        showMessage(error.message || "Erreur lors de l'upload", "error");
       }
     } catch(e) {
       console.error("Erreur upload:", e);
-      showMessage(" Erreur de connexion", "error");
+      showMessage("Erreur de connexion", "error");
     } finally {
       setUploadingImage(false);
     }
@@ -408,13 +505,13 @@ export default function ProfilePage() {
         setImageTimestamp(Date.now());
         const freshUser = await loadUserFromBackend();
         if (freshUser) setUser(freshUser);
-        showMessage(" Photo de profil supprimée", "success");
+        showMessage("Photo de profil supprimée", "success");
       } else {
-        showMessage(" Erreur lors de la suppression", "error");
+        showMessage("Erreur lors de la suppression", "error");
       }
     } catch(e) {
       console.error("Erreur suppression:", e);
-      showMessage(" Erreur de connexion", "error");
+      showMessage("Erreur de connexion", "error");
     } finally {
       setDeletingImage(false);
     }
@@ -443,15 +540,15 @@ export default function ProfilePage() {
 
   const changePassword = async () => {
     if (!passwordForm.oldPassword) {
-      showMessage(t("profile.oldPasswordRequired") || "Veuillez entrer votre mot de passe actuel", "error");
+      showMessage(profileT.profile.oldPasswordRequired || "Veuillez entrer votre mot de passe actuel", "error");
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      showMessage(t("profile.passwordMismatch") || "Les mots de passe ne correspondent pas", "error");
+      showMessage(profileT.profile.passwordMismatch || "Les mots de passe ne correspondent pas", "error");
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      showMessage(t("profile.passwordMinLength") || "Le mot de passe doit contenir au moins 6 caractères", "error");
+      showMessage(profileT.profile.passwordMinLength || "Le mot de passe doit contenir au moins 6 caractères", "error");
       return;
     }
     const token = localStorage.getItem("token");
@@ -466,18 +563,18 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
-        showMessage(t("profile.passwordChanged") || " Mot de passe changé", "success");
+        showMessage(profileT.profile.passwordChanged || "Mot de passe changé", "success");
       } else {
         const err = await res.json();
-        showMessage(err.message || t("common.error") || " Erreur", "error");
+        showMessage(err.message || t("common.error") || "Erreur", "error");
       }
     } catch(e) {
-      showMessage(t("common.error") || " Erreur de connexion", "error");
+      showMessage(t("common.error") || "Erreur de connexion", "error");
     }
   };
 
   const logoutAllDevices = async () => {
-    if (confirm(t("profile.logoutAllWarning") || " Se déconnecter de tous les appareils ?")) {
+    if (confirm(profileT.profile.logoutAllConfirm || "Se déconnecter de tous les appareils ?")) {
       const token = localStorage.getItem("token");
       try {
         await fetch(`${API_URL}/users/logout-all`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
@@ -506,9 +603,9 @@ export default function ProfilePage() {
   };
 
   const getRoleText = (role: string) => {
-    if (role === "admin") return t("profile.admin") || "Administrateur";
-    if (role === "transporteur") return t("profile.transporter") || "Transporteur";
-    return t("profile.client") || "Client";
+    if (role === "admin") return profileT.profile.admin || "Administrateur";
+    if (role === "transporteur") return profileT.profile.transporter || "Transporteur";
+    return profileT.profile.client || "Client";
   };
 
   const getImageUrl = () => {
@@ -812,10 +909,10 @@ export default function ProfilePage() {
                 </p>
                 <div style={{ display: "flex", gap: "16px", marginTop: "8px", flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start" }}>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Calendar /> {t("profile.memberSince") || "Membre depuis"} {stats.memberSince}
+                    <Icons.Calendar /> {profileT.profile.memberSince || "Membre depuis"} {stats.memberSince}
                   </span>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Lock /> {t("profile.lastLogin") || "Dernière connexion"}: {stats.lastLogin}
+                    <Icons.Lock /> {profileT.profile.lastLogin || "Dernière connexion"}: {stats.lastLogin}
                   </span>
                 </div>
               </div>
@@ -855,9 +952,9 @@ export default function ProfilePage() {
             opacity: animateCards ? 1 : 0 
           }}>
             {[
-              { id: "info", label: t("profile.personalInfo") || " Informations", Icon: Icons.FileText },
-              { id: "security", label: t("profile.security") || " Sécurité", Icon: Icons.ShieldLock },
-              { id: "activity", label: t("profile.activity") || " Activité", Icon: Icons.BarChart2 },
+              { id: "info", label: profileT.profile.personalInfo || "Informations", Icon: Icons.FileText },
+              { id: "security", label: profileT.profile.security || "Sécurité", Icon: Icons.ShieldLock },
+              { id: "activity", label: profileT.profile.activity || "Activité", Icon: Icons.BarChart2 },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -896,7 +993,7 @@ export default function ProfilePage() {
                 { label: t("common.name") || "Nom complet", key: "name", type: "text" },
                 { label: t("common.email") || "Email", key: "email", type: "email" },
                 { label: t("common.phone") || "Téléphone", key: "phone", type: "tel" },
-                { label: t("profile.company") || "Société", key: "companyName", type: "text" },
+                { label: profileT.profile.company || "Société", key: "companyName", type: "text" },
               ].map(field => (
                 <div key={field.key} style={{ marginBottom: "20px" }}>
                   <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{field.label}</label>
@@ -952,7 +1049,7 @@ export default function ProfilePage() {
             }}>
               <div style={{ marginBottom: "20px" }}>
                 <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>
-                  {t("profile.oldPassword") || "Ancien mot de passe"}
+                  {profileT.profile.oldPassword || "Ancien mot de passe"}
                 </label>
                 <input 
                   type="password" 
@@ -973,7 +1070,7 @@ export default function ProfilePage() {
               
               <div style={{ marginBottom: "20px" }}>
                 <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>
-                  {t("profile.newPassword") || "Nouveau mot de passe"}
+                  {profileT.profile.newPassword || "Nouveau mot de passe"}
                 </label>
                 <input type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} style={{ 
                   width: "100%", 
@@ -989,7 +1086,7 @@ export default function ProfilePage() {
               
               <div style={{ marginBottom: "24px" }}>
                 <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>
-                  {t("profile.confirmPassword") || "Confirmer le mot de passe"}
+                  {profileT.profile.confirmPassword || "Confirmer le mot de passe"}
                 </label>
                 <input type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} style={{ 
                   width: "100%", 
@@ -1021,7 +1118,7 @@ export default function ProfilePage() {
                   fontWeight: "500" 
                 }}
               >
-                <Icons.Key /> {t("profile.changePassword") || "Changer le mot de passe"}
+                <Icons.Key /> {profileT.profile.changePassword || "Changer le mot de passe"}
               </button>
 
               <div style={{ 
@@ -1035,10 +1132,10 @@ export default function ProfilePage() {
                   <Icons.AlertTriangle />
                   <div>
                     <div style={{ color: "#f87171", fontWeight: "bold", fontSize: isMobile ? "14px" : "15px" }}>
-                      {t("profile.dangerZone") || "Zone de danger"}
+                      {profileT.profile.dangerZone || "Zone de danger"}
                     </div>
                     <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "11px" : "12px", marginTop: "2px" }}>
-                      {t("profile.logoutAllWarning") || "Déconnexion de tous les appareils"}
+                      {profileT.profile.logoutAllWarning || "Déconnexion de tous les appareils"}
                     </div>
                   </div>
                 </div>
@@ -1060,7 +1157,7 @@ export default function ProfilePage() {
                     fontWeight: "500" 
                   }}
                 >
-                  <Icons.LogOut /> {t("profile.logoutAllDevices") || "Se déconnecter de tous les appareils"}
+                  <Icons.LogOut /> {profileT.profile.logoutAllDevices || "Se déconnecter de tous les appareils"}
                 </button>
               </div>
             </div>
@@ -1076,14 +1173,14 @@ export default function ProfilePage() {
               animation: "fadeInUp 0.3s ease" 
             }}>
               <h3 style={{ color: currentTheme.text, marginBottom: "20px", fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Icons.BarChart2 /> {t("profile.personalStats") || "Statistiques personnelles"}
+                <Icons.BarChart2 /> {profileT.profile.personalStats || "Statistiques personnelles"}
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", gap: "16px", marginBottom: "24px" }}>
                 {[
-                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: t("profile.revenueGenerated") || "CA généré", color: currentTheme.accent },
+                  { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: profileT.profile.revenueGenerated || "CA généré", color: currentTheme.accent },
                   { Icon: Icons.ClipboardList, value: stats.totalOrders, label: t("common.orders") || "Commandes", color: currentTheme.primary },
                   { Icon: Icons.Users, value: stats.totalClients, label: t("common.clients") || "Clients", color: currentTheme.secondary },
-                  { Icon: Icons.Clock, value: stats.memberSince, label: t("profile.memberSince") || "Membre depuis", color: "#f59e0b" },
+                  { Icon: Icons.Clock, value: stats.memberSince, label: profileT.profile.memberSince || "Membre depuis", color: "#f59e0b" },
                 ].map((item, i) => (
                   <div key={i} style={{ padding: isMobile ? "12px" : "16px", background: currentTheme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: item.color }}><item.Icon /></div>
@@ -1098,10 +1195,10 @@ export default function ProfilePage() {
                   <span style={{ color: currentTheme.primary }}><Icons.Shield /></span>
                   <div>
                     <div style={{ color: currentTheme.text, fontWeight: "bold", fontSize: isMobile ? "13px" : "14px" }}>
-                      {t("profile.currentSession") || "Session actuelle"}
+                      {profileT.profile.currentSession || "Session actuelle"}
                     </div>
                     <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px" }}>
-                      {t("profile.connectedSince") || "Connecté depuis"} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
+                      {profileT.profile.connectedSince || "Connecté depuis"} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
                     </div>
                   </div>
                 </div>

@@ -508,7 +508,7 @@ export default function IAPage() {
              ` **${t.growthRate} :** +${growth}%\n` +
              ` **${t.totalSales} :** ${stats?.sales?.total || 0}\n` +
              ` **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 0)}\n\n` +
-             ` **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! ??" : Number(growth) > 8 ? "Bonne dynamique commerciale ??" : "Croissance é surveiller ??"}`;
+             ` **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! " : Number(growth) > 8 ? "Bonne dynamique commerciale " : "Croissance é surveiller "}`;
     }
     
     if (q.match(/bénéfice|profit|beneficio|ganancia|marge/)) {
@@ -518,7 +518,7 @@ export default function IAPage() {
              ` **${t.revenue} :** ${formatCurrency(revenue)}\n` +
              ` **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 0)}\n` +
              ` **EBITDA estimé :** ${formatCurrency(Number(ebitda))}\n\n` +
-             ` **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! ??" : Number(margin) > 15 ? "Bonne marge, optimisez vos coéts ??" : "Marge é améliorer, analysez vos dépenses ??"}`;
+             ` **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! " : Number(margin) > 15 ? "Bonne marge, optimisez vos coéts " : "Marge é améliorer, analysez vos dépenses "}`;
     }
     
     if (q.match(/résumé|synthése|bilan|rapport|summary|resumen/)) {
@@ -584,7 +584,7 @@ export default function IAPage() {
         });
         stockResponse += `\n **Action IA recommandée** : Réapprovisionnez ${urgentItems.length} produit(s) en priorité !`;
       } else {
-        stockResponse += `? Aucune urgence - niveau de stock satisfaisant\n\n?? **Bravo !** Votre gestion des stocks est optimale.`;
+        stockResponse += ` Aucune urgence - niveau de stock satisfaisant\n\n **Bravo !** Votre gestion des stocks est optimale.`;
       }
       return stockResponse;
     }
@@ -626,7 +626,7 @@ export default function IAPage() {
              ` **Astuce IA** : Plus votre question est précise, plus la réponse sera pertinente !`;
     }
     
-    return ` **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n?? **${t.tryQuestions} :**\n` +
+    return ` **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n**${t.tryQuestions} :**\n` +
            `  "${t.askRevenue}"\n` +
            `  "${t.askSummary}"\n` +
            `  "${t.askTopProducts}"\n` +
@@ -657,7 +657,7 @@ export default function IAPage() {
     else greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     
     if (isMobile) {
-      return `${greeting} ${name} ! ??\n\n` +
+      return `${greeting} ${name} ! \n\n` +
              ` **${t.aiAssistant}**\n\n` +
              ` **${t.whatCanIDo} :**\n` +
              `  Analyser ventes\n` +
@@ -672,7 +672,7 @@ export default function IAPage() {
              `Comment puis-je vous aider ? `;
     }
     
-    return `${greeting} ${name} ! ??\n\n` +
+    return `${greeting} ${name} ! \n\n` +
            ` **${t.aiAssistant}**\n\n` +
            ` **${t.whatCanIDo} :**\n` +
            `  Analyser vos ventes et bénéfices\n` +
@@ -690,7 +690,7 @@ export default function IAPage() {
   };
 
   const copyConversation = () => {
-    const conversation = chatMessages.map(msg => `${msg.role === "user" ? "?? " + (language === 'fr' ? "Vous" : language === 'es' ? "Té" : "You") : "?? IA"}: ${msg.content}`).join("\n\n");
+    const conversation = chatMessages.map(msg => `${msg.role === "user" ? " " + (language === 'fr' ? "Vous" : language === 'es' ? "Té" : "You") : " IA"}: ${msg.content}`).join("\n\n");
     navigator.clipboard.writeText(conversation);
     if (isMobile) {
       const toast = document.createElement('div');
@@ -899,7 +899,7 @@ export default function IAPage() {
           
           {lastRefresh && !refreshing && isMobile && (
             <p style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "-12px", marginBottom: responsive.gapSmall, textAlign: "right" }}>
-              ?? {lastRefresh.toLocaleTimeString()}
+               {lastRefresh.toLocaleTimeString()}
             </p>
           )}
 
@@ -1295,7 +1295,7 @@ export default function IAPage() {
                         WebkitTapHighlightColor: "transparent"
                       }}
                     >
-                      {key === "optimistic" ? "??" : key === "pessimistic" ? "??" : "??"} {isMobile && label.length > 8 ? label.substring(0, 6) : label}
+                      {key === "optimistic" ? "" : key === "pessimistic" ? "" : ""} {isMobile && label.length > 8 ? label.substring(0, 6) : label}
                     </button>
                   ))}
                 </div>
@@ -1338,10 +1338,10 @@ export default function IAPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   {recommendations.slice(0, 5).map((rec, idx) => {
                     const urgencyConfig = rec.urgency === "high"
-                      ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "??" }
+                      ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "" }
                       : rec.urgency === "medium"
-                      ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "??" }
-                      : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "??" };
+                      ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "" }
+                      : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "" };
                     return (
                       <div key={idx} style={{ background: theme.surfaceHover, borderRadius: "12px", padding: "12px", border: `1px solid ${theme.border}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
@@ -1412,10 +1412,10 @@ export default function IAPage() {
                     <tbody>
                       {recommendations.map((rec, idx) => {
                         const urgencyConfig = rec.urgency === "high"
-                          ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "??" }
+                          ? { color: "#ef4444", bg: "rgba(239,68,68,0.15)", text: t.priorityHigh, icon: "!" }
                           : rec.urgency === "medium"
-                          ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "??" }
-                          : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "??" };
+                          ? { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", text: t.priorityMedium, icon: "•" }
+                          : { color: "#10b981", bg: "rgba(16,185,129,0.1)", text: t.priorityLow, icon: "✓" };
                         return (
                           <tr key={idx} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
                             <td style={{ padding: "12px 8px", color: theme.text, fontWeight: "500" }}>{rec.productName}</td>
