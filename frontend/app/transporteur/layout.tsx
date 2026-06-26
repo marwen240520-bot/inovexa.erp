@@ -1,7 +1,7 @@
 ﻿"use client";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 // SVG Icons with better styling
 const DashboardIcon = ({ active = false }: { active?: boolean }) => (

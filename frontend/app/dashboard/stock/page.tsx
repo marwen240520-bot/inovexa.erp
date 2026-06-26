@@ -205,7 +205,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Stock suffisant",
     highStockDesc: "Stock confortable",
     legend: "Légende des statuts de stock",
-    infoMessage: "📦 Le stock est calculé automatiquement à partir des achats et des ventes.",
+    infoMessage: " Le stock est calculé automatiquement à partir des achats et des ventes.",
     close: "Fermer",
     unitPrice: "Prix unitaire",
     stockValue: "Valeur stock"
