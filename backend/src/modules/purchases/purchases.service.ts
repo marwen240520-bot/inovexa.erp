@@ -15,7 +15,7 @@ export class PurchasesService {
 
   async findAll(userId: number, period?: string) {
     let where: any = { userId };
-    
+
     if (period === 'week') {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 7);
@@ -25,38 +25,43 @@ export class PurchasesService {
       startDate.setMonth(startDate.getMonth() - 1);
       where.createdAt = Between(startDate, new Date());
     }
-    
-    return this.purchaseRepository.find({ 
-      where, 
+
+    return this.purchaseRepository.find({
+      where,
       relations: ['product'],
-      order: { createdAt: 'DESC' } 
+      order: { createdAt: 'DESC' }
     });
   }
 
   async findOne(id: number, userId: number) {
     const purchase = await this.purchaseRepository.findOne({ where: { id, userId }, relations: ['product'] });
-    if (!purchase) throw new NotFoundException('Achat non trouvé');
+    if (!purchase) throw new NotFoundException('Achat non trouve');
     return purchase;
   }
 
   async create(userId: number, data: any) {
-    // Vérifier que productId est fourni
     if (!data.productId) {
       throw new BadRequestException('Le produit est requis');
     }
-    
-    // Vérifier que le produit existe
+
     const product = await this.productRepository.findOne({ where: { id: data.productId } });
     if (!product) {
-      throw new NotFoundException('Produit non trouvé');
+      throw new NotFoundException('Produit non trouve');
     }
-    
-    const purchase = this.purchaseRepository.create({ 
-      ...data, 
+
+    const purchase = this.purchaseRepository.create({
+      ...data,
       userId,
       productName: product.name,
       total: (data.unitPrice || 0) * (data.quantity || 1)
     });
+    return this.purchaseRepository.save(purchase);
+  }
+
+  async updateStatus(id: number, userId: number, status: string) {
+    const purchase = await this.purchaseRepository.findOne({ where: { id, userId } });
+    if (!purchase) throw new NotFoundException('Achat non trouve');
+    purchase.status = status;
     return this.purchaseRepository.save(purchase);
   }
 

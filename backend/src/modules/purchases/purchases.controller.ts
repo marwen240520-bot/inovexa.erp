@@ -1,4 +1,4 @@
-﻿import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Delete, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PurchasesService } from './purchases.service';
 
@@ -20,6 +20,11 @@ export class PurchasesController {
   @Post()
   async create(@Request() req: any, @Body() body: any) {
     return this.purchasesService.create(req.user.userId, body);
+  }
+
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    return this.purchasesService.updateStatus(parseInt(id), req.user.userId, body.status);
   }
 
   @Delete(':id')
