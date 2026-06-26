@@ -1749,23 +1749,135 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* --- MODAL APERéU ---------------------------------------------------------- */}
+      {/* --- MODAL APERçU AMéLIORé POUR MOBILE --- */}
       {showPreviewModal && viewInvoice && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, padding: "20px" }}>
-          <div style={{ background: "white", borderRadius: "16px", width: "900px", maxWidth: "95%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 50px rgba(0,0,0,0.3)" }}>
-            <div className="no-print" style={{ position: "sticky", top: 0, background: "#1e293b", padding: "12px 20px", display: "flex", justifyContent: "flex-end", gap: "10px", borderBottom: "1px solid #334155", zIndex: 10 }}>
-              <button onClick={() => generateInvoicePDF(viewInvoice)} style={{ padding: "8px 16px", background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", display: "flex", alignItems: "center", gap: "6px" }}>
-                <Icons.FileText size={14} color="white" /> {t.pdf}
-              </button>
-              <button onClick={() => window.print()} style={{ padding: "8px 16px", background: "#3b82f6", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", display: "flex", alignItems: "center", gap: "6px" }}>
-                <Icons.Printer size={14} color="white" /> {t.print}
-              </button>
-              <button onClick={() => setShowPreviewModal(false)} style={{ padding: "8px 16px", background: "#ef4444", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", display: "flex", alignItems: "center", gap: "6px" }}>
-                <Icons.X size={14} color="white" /> {t.close}
-              </button>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.9)",
+            display: "flex",
+            alignItems: isMobile ? "flex-start" : "center",
+            justifyContent: "center",
+            zIndex: 1001,
+            padding: isMobile ? "0" : "20px",
+            overflowY: "auto"
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowPreviewModal(false);
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: isMobile ? "0" : "16px",
+              width: isMobile ? "100%" : "900px",
+              maxWidth: "100%",
+              maxHeight: isMobile ? "100vh" : "90vh",
+              minHeight: isMobile ? "100vh" : "auto",
+              overflowY: "auto",
+              boxShadow: isMobile ? "none" : "0 25px 50px rgba(0,0,0,0.3)",
+              paddingBottom: isMobile ? "20px" : "0"
+            }}
+          >
+            {/* Barre d'outils mobile adaptée */}
+            <div
+              className="no-print"
+              style={{
+                position: isMobile ? "sticky" : "sticky",
+                top: 0,
+                background: "#1e293b",
+                padding: isMobile ? "10px 12px" : "12px 20px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: isMobile ? "6px" : "10px",
+                borderBottom: "1px solid #334155",
+                zIndex: 10,
+                flexWrap: isMobile ? "wrap" : "nowrap"
+              }}
+            >
+              <span style={{ color: "white", fontSize: isMobile ? "12px" : "14px", fontWeight: "500" }}>
+                {viewInvoice.reference}
+              </span>
+              <div style={{ display: "flex", gap: isMobile ? "4px" : "10px", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                <button
+                  onClick={() => generateInvoicePDF(viewInvoice)}
+                  style={{
+                    padding: isMobile ? "6px 10px" : "8px 16px",
+                    background: "#f59e0b",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: isMobile ? "10px" : "13px",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  <Icons.FileText size={isMobile ? 12 : 14} color="white" />
+                  {isMobile ? "PDF" : t.pdf}
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  style={{
+                    padding: isMobile ? "6px 10px" : "8px 16px",
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: isMobile ? "10px" : "13px",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  <Icons.Printer size={isMobile ? 12 : 14} color="white" />
+                  {isMobile ? "Imp" : t.print}
+                </button>
+                <button
+                  onClick={() => setShowPreviewModal(false)}
+                  style={{
+                    padding: isMobile ? "6px 10px" : "8px 16px",
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: isMobile ? "10px" : "13px",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  <Icons.X size={isMobile ? 12 : 14} color="white" />
+                  {isMobile ? "Fermer" : t.close}
+                </button>
+              </div>
             </div>
 
-            <div id="invoice-print-area" style={{ padding: "30px", background: "white", fontFamily: "Arial, sans-serif", color: "#111" }}>
+            {/* Contenu de la facture optimisé mobile */}
+            <div
+              id="invoice-print-area"
+              style={{
+                padding: isMobile ? "14px" : "30px",
+                background: "white",
+                fontFamily: "Arial, sans-serif",
+                color: "#111",
+                fontSize: isMobile ? "11px" : "13px"
+              }}
+            >
               {(() => {
                 const subtotalHT = Number(viewInvoice.subtotalHT) || 0;
                 const taxRate = Number(viewInvoice.taxRate) || 20;
@@ -1776,108 +1888,227 @@ export default function InvoicesPage() {
                 const dateObj = new Date(viewInvoice.createdAt);
                 const dueDateObj = viewInvoice.dueDate ? new Date(viewInvoice.dueDate) : null;
                 const locale = language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US";
+
                 return (
                   <>
-                    <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "3px solid #667eea", paddingBottom: "20px", marginBottom: "30px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                        <img src="/logo.png" alt="Logo" style={{ width: "150px", height: "150px", objectFit: "contain" }} onError={(e) => (e.currentTarget.style.display = "none")} />
+                    {/* En-tête compact mobile */}
+                    <div style={{
+                      display: "flex",
+                      flexDirection: isMobile ? "column" : "row",
+                      justifyContent: "space-between",
+                      borderBottom: isMobile ? "2px solid #667eea" : "3px solid #667eea",
+                      paddingBottom: isMobile ? "12px" : "20px",
+                      marginBottom: isMobile ? "16px" : "30px",
+                      gap: isMobile ? "8px" : "0"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "10px" : "15px" }}>
+                        <img
+                          src="/logo.png"
+                          alt="Logo"
+                          style={{
+                            width: isMobile ? "50px" : "150px",
+                            height: isMobile ? "50px" : "150px",
+                            objectFit: "contain"
+                          }}
+                          onError={(e) => (e.currentTarget.style.display = "none")}
+                        />
                         <div>
-                          <h1 style={{ color: "#667eea", fontSize: "26px", }}>INOVEXA ERP</h1>
-                          <p style={{ color: "#333", fontSize: "12px", marginTop: "5px" }}>Solution ERP</p>
+                          <h1 style={{
+                            color: "#667eea",
+                            fontSize: isMobile ? "16px" : "26px",
+                            margin: 0
+                          }}>INOVEXA</h1>
+                          <p style={{ color: "#333", fontSize: isMobile ? "9px" : "12px", margin: "2px 0 0" }}>ERP</p>
                         </div>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <h2 style={{ color: "#667eea", fontSize: "30px", }}>{t.invoice}</h2>
-                        <div style={{ background: viewInvoice.status === "paid" ? "#10b981" : viewInvoice.status === "pending" ? "#f59e0b" : "#ef4444", color: "white", padding: "4px 14px", borderRadius: "20px", fontSize: "11px", display: "inline-block", marginTop: "8px" }}>
-                          {viewInvoice.status === "paid" ? "PAYéE" : viewInvoice.status === "pending" ? "EN ATTENTE" : "EN RETARD"}
+                      <div style={{ textAlign: isMobile ? "left" : "right" }}>
+                        <h2 style={{
+                          color: "#667eea",
+                          fontSize: isMobile ? "18px" : "30px",
+                          margin: 0
+                        }}>{t.invoice}</h2>
+                        <div style={{
+                          background: viewInvoice.status === "paid" ? "#10b981" : viewInvoice.status === "pending" ? "#f59e0b" : "#ef4444",
+                          color: "white",
+                          padding: isMobile ? "2px 10px" : "4px 14px",
+                          borderRadius: "20px",
+                          fontSize: isMobile ? "9px" : "11px",
+                          display: "inline-block",
+                          marginTop: isMobile ? "4px" : "8px"
+                        }}>
+                          {viewInvoice.status === "paid" ? "PAYÉE" : viewInvoice.status === "pending" ? "EN ATTENTE" : "EN RETARD"}
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px", background: "#f5f5f5", padding: "20px", borderRadius: "10px", marginBottom: "30px" }}>
+                    {/* Grille d'info mobile: une colonne sur mobile */}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                      gap: isMobile ? "12px" : "30px",
+                      background: "#f5f5f5",
+                      padding: isMobile ? "12px" : "20px",
+                      borderRadius: isMobile ? "8px" : "10px",
+                      marginBottom: isMobile ? "16px" : "30px"
+                    }}>
                       <div>
-                        <h4 style={{ color: "#667eea", fontSize: "11px", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px" }}>
+                        <h4 style={{
+                          color: "#667eea",
+                          fontSize: isMobile ? "9px" : "11px",
+                          marginBottom: isMobile ? "6px" : "10px",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px"
+                        }}>
                           {viewInvoice.type === "debit" ? t.client : t.supplier}
                         </h4>
-                        <p style={{ margin: "4px 0", fontWeight: "bold", color: "#111" }}>{clientInfo || "-"}</p>
+                        <p style={{ margin: "4px 0", fontWeight: "bold", color: "#111", fontSize: isMobile ? "12px" : "13px" }}>{clientInfo || "-"}</p>
                         {viewInvoice.clientEmail && (
-                          <p style={{ margin: "3px 0", fontSize: "12px", color: "#111", display: "flex", alignItems: "center", gap: "5px" }}>
-                            <Icons.Mail size={12} color="#667eea" /> {viewInvoice.clientEmail}
+                          <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "#111", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <Icons.Mail size={isMobile ? 10 : 12} color="#667eea" /> {viewInvoice.clientEmail}
                           </p>
                         )}
                         {viewInvoice.clientPhone && (
-                          <p style={{ margin: "3px 0", fontSize: "12px", color: "#111", display: "flex", alignItems: "center", gap: "5px" }}>
-                            <Icons.Phone size={12} color="#667eea" /> {viewInvoice.clientPhone}
+                          <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "#111", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <Icons.Phone size={isMobile ? 10 : 12} color="#667eea" /> {viewInvoice.clientPhone}
                           </p>
                         )}
-                        {viewInvoice.clientAddress && <p style={{ margin: "3px 0", fontSize: "12px", color: "#111" }}>{viewInvoice.clientAddress}</p>}
-                        {viewInvoice.clientSiret && <p style={{ margin: "3px 0", fontSize: "11px", color: "#111" }}>SIRET: {viewInvoice.clientSiret}</p>}
+                        {viewInvoice.clientAddress && <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "#111" }}>{viewInvoice.clientAddress}</p>}
+                        {viewInvoice.clientSiret && <p style={{ margin: "2px 0", fontSize: isMobile ? "9px" : "11px", color: "#111" }}>SIRET: {viewInvoice.clientSiret}</p>}
                       </div>
                       <div>
-                        <h4 style={{ color: "#667eea", fontSize: "11px", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px" }}>{t.details}</h4>
-                        <p style={{ margin: "5px 0", fontSize: "13px", color: "#111" }}><strong>{t.invoiceNumber}:</strong> {viewInvoice.reference}</p>
-                        <p style={{ margin: "5px 0", fontSize: "13px", color: "#111" }}><strong>{t.operationNumber}:</strong> {viewInvoice.operationNumber}</p>
-                        <p style={{ margin: "5px 0", fontSize: "13px", color: "#111" }}><strong>{t.dateLabel}:</strong> {dateObj.toLocaleDateString(locale)}</p>
-                        <p style={{ margin: "5px 0", fontSize: "13px", color: "#111" }}><strong>{t.dueDateLabel}:</strong> {dueDateObj ? dueDateObj.toLocaleDateString(locale) : "-"}</p>
-                        {viewInvoice.paymentTerms && <p style={{ margin: "5px 0", fontSize: "13px", color: "#111" }}><strong>{t.paymentTerms}:</strong> {viewInvoice.paymentTerms}</p>}
+                        <h4 style={{
+                          color: "#667eea",
+                          fontSize: isMobile ? "9px" : "11px",
+                          marginBottom: isMobile ? "6px" : "10px",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px"
+                        }}>{t.details}</h4>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                          <strong>{t.invoiceNumber}:</strong> {viewInvoice.reference}
+                        </p>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                          <strong>{t.operationNumber}:</strong> {viewInvoice.operationNumber}
+                        </p>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                          <strong>{t.dateLabel}:</strong> {dateObj.toLocaleDateString(locale)}
+                        </p>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                          <strong>{t.dueDateLabel}:</strong> {dueDateObj ? dueDateObj.toLocaleDateString(locale) : "-"}
+                        </p>
+                        {viewInvoice.paymentTerms && (
+                          <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                            <strong>{t.paymentTerms}:</strong> {viewInvoice.paymentTerms}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <h3 style={{ marginBottom: "14px", color: "#111" }}>{t.productsList}</h3>
-                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "30px" }}>
-                      <thead>
-                        <tr style={{ background: "#667eea", color: "white" }}>
-                          <th style={{ padding: "10px 12px", textAlign: "left", color: "#000" }}>{t.description}</th>
-                          <th style={{ padding: "10px 12px", textAlign: "right", width: "70px", color: "#000" }}>{t.qty}</th>
-                          <th style={{ padding: "10px 12px", textAlign: "right", width: "120px", color: "#000" }}>{t.unitPriceHT}</th>
-                          <th style={{ padding: "10px 12px", textAlign: "right", width: "120px", color: "#000" }}>{t.subtotalHT}</th>
-                          <th style={{ padding: "10px 12px", textAlign: "right", width: "120px", color: "#000" }}>{t.subtotalTTC}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {items.length > 0 ? items.map((item: any, i: number) => {
-                          const itemHT = item.totalHT || ((item.quantity || 1) * (item.unitPriceHT || 0));
-                          const itemTTC = item.totalTTC || (itemHT * (1 + taxRate / 100));
-                          return (
-                            <tr key={i} style={{ borderBottom: "1px solid #e0e0e0" }}>
-                              <td style={{ padding: "10px 12px", color: "#111" }}>{item.description || "-"}</td>
-                              <td style={{ padding: "10px 12px", textAlign: "right", color: "#111" }}>{item.quantity || 1}</td>
-                              <td style={{ padding: "10px 12px", textAlign: "right", color: "#111" }}>{formatCurrency(item.unitPriceHT || 0)}</td>
-                              <td style={{ padding: "10px 12px", textAlign: "right", color: "#111" }}>{formatCurrency(itemHT)}</td>
-                              <td style={{ padding: "10px 12px", textAlign: "right", color: "#111" }}>{formatCurrency(itemTTC)}</td>
-                            </tr>
-                          );
-                        }) : (
-                          <tr><td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#555" }}>Aucun article</td></tr>
-                        )}
-                      </tbody>
-                    </table>
+                    {/* Tableau des articles adapté mobile */}
+                    <h3 style={{
+                      marginBottom: isMobile ? "10px" : "14px",
+                      color: "#111",
+                      fontSize: isMobile ? "13px" : "16px"
+                    }}>{t.productsList}</h3>
 
-                    <div style={{ width: "320px", marginLeft: "auto", marginBottom: "30px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", color: "#111" }}>
+                    <div style={{ overflowX: "auto", marginBottom: isMobile ? "16px" : "30px" }}>
+                      <table style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: isMobile ? "9px" : "12px"
+                      }}>
+                        <thead>
+                          <tr style={{ background: "#667eea", color: "white" }}>
+                            <th style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "left", color: "#000" }}>{t.description}</th>
+                            <th style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", width: isMobile ? "40px" : "70px", color: "#000" }}>{t.qty}</th>
+                            <th style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", width: isMobile ? "70px" : "120px", color: "#000" }}>{isMobile ? "PU HT" : t.unitPriceHT}</th>
+                            <th style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", width: isMobile ? "70px" : "120px", color: "#000" }}>{isMobile ? "HT" : t.subtotalHT}</th>
+                            <th style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", width: isMobile ? "70px" : "120px", color: "#000" }}>{isMobile ? "TTC" : t.subtotalTTC}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.length > 0 ? items.map((item: any, i: number) => {
+                            const itemHT = item.totalHT || ((item.quantity || 1) * (item.unitPriceHT || 0));
+                            const itemTTC = item.totalTTC || (itemHT * (1 + taxRate / 100));
+                            return (
+                              <tr key={i} style={{ borderBottom: "1px solid #e0e0e0" }}>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                  {item.description || "-"}
+                                </td>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                  {item.quantity || 1}
+                                </td>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                  {formatCurrency(item.unitPriceHT || 0)}
+                                </td>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                  {formatCurrency(itemHT)}
+                                </td>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                  {formatCurrency(itemTTC)}
+                                </td>
+                              </tr>
+                            );
+                          }) : (
+                            <tr><td colSpan={5} style={{ padding: isMobile ? "20px" : "40px", textAlign: "center", color: "#555" }}>Aucun article</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Totaux adaptés mobile */}
+                    <div style={{
+                      width: isMobile ? "100%" : "320px",
+                      marginLeft: isMobile ? "0" : "auto",
+                      marginBottom: isMobile ? "16px" : "30px",
+                      padding: isMobile ? "10px" : "0",
+                      background: isMobile ? "#f8f8f8" : "transparent",
+                      borderRadius: isMobile ? "8px" : "0"
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: isMobile ? "4px 0" : "7px 0", color: "#111", fontSize: isMobile ? "11px" : "13px" }}>
                         <span>{t.totalHT}</span>
                         <span>{formatCurrency(subtotalHT)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", color: "#111" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: isMobile ? "4px 0" : "7px 0", color: "#111", fontSize: isMobile ? "11px" : "13px" }}>
                         <span>{t.tax} ({taxRate}%)</span>
                         <span>{formatCurrency(taxAmount)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderTop: "2px solid #667eea", marginTop: "8px", fontWeight: "bold", fontSize: "18px", color: "#111" }}>
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        padding: isMobile ? "8px 0" : "12px 0",
+                        borderTop: "2px solid #667eea",
+                        marginTop: isMobile ? "4px" : "8px",
+                        fontWeight: "bold",
+                        fontSize: isMobile ? "15px" : "18px",
+                        color: "#111"
+                      }}>
                         <span>{t.totalTTC}</span>
                         <span style={{ color: "#667eea" }}>{formatCurrency(totalTTC)}</span>
                       </div>
                     </div>
 
+                    {/* Notes */}
                     {viewInvoice.notes && (
-                      <div style={{ background: "#f5f5f5", padding: "14px", borderRadius: "8px", marginBottom: "20px" }}>
-                        <strong style={{ color: "#111" }}>{t.notes}:</strong>
-                        <p style={{ margin: "6px 0 0", color: "#111", fontSize: "12px" }}>{viewInvoice.notes}</p>
+                      <div style={{
+                        background: "#f5f5f5",
+                        padding: isMobile ? "10px" : "14px",
+                        borderRadius: isMobile ? "6px" : "8px",
+                        marginBottom: isMobile ? "12px" : "20px"
+                      }}>
+                        <strong style={{ color: "#111", fontSize: isMobile ? "10px" : "12px" }}>{t.notes}:</strong>
+                        <p style={{ margin: "4px 0 0", color: "#111", fontSize: isMobile ? "10px" : "12px" }}>{viewInvoice.notes}</p>
                       </div>
                     )}
 
-                    <div style={{ textAlign: "center", marginTop: "30px", paddingTop: "20px", borderTop: "1px solid #ddd" }}>
-                      <p style={{ fontSize: "12px", color: "#333" }}>{t.thankYou}</p>
-                      <p style={{ fontSize: "11px", color: "#555", marginTop: "5px" }}>INOVEXA ERP</p>
+                    {/* Footer */}
+                    <div style={{
+                      textAlign: "center",
+                      marginTop: isMobile ? "16px" : "30px",
+                      paddingTop: isMobile ? "12px" : "20px",
+                      borderTop: "1px solid #ddd"
+                    }}>
+                      <p style={{ fontSize: isMobile ? "10px" : "12px", color: "#333" }}>{t.thankYou}</p>
+                      <p style={{ fontSize: isMobile ? "9px" : "11px", color: "#555", marginTop: "4px" }}>INOVEXA ERP</p>
                     </div>
                   </>
                 );
@@ -1889,4 +2120,3 @@ export default function InvoicesPage() {
     </div>
   );
 }
-

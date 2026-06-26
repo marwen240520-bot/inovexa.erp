@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -168,7 +167,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     refresh: "Actualiser",
     searchPlaceholder: "Rechercher un produit...",
     filterAll: "Tous les produits",
-    filterWell: "Stock élevé (=10)",
+    filterWell: "Stock élevé (≥10)",
     filterLow: "Stock faible (<10)",
     filterOut: "Rupture (=0)",
     product: "Produit",
@@ -201,7 +200,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockStatus: "Stock moyen",
     highStockStatus: "Stock élevé",
     outOfStockDesc: "Nécessite un réapprovisionnement urgent",
-    lowStockDesc: "é réapprovisionner bientét",
+    lowStockDesc: "À réapprovisionner bientôt",
     mediumStockDesc: "Stock suffisant",
     highStockDesc: "Stock confortable",
     legend: "Légende des statuts de stock",
@@ -211,21 +210,21 @@ const stockTranslations: Record<string, Record<string, string>> = {
     stockValue: "Valeur stock"
   },
   es: {
-    title: "Gestién de Stock",
+    title: "Gestión de Stock",
     subtitle: "Stock basado en compras y ventas",
     totalProducts: "Total productos",
     totalValue: "Valor total",
     lowStock: "Stock bajo",
     outOfStock: "Agotado",
-    stockTurnover: "Rotacién stock",
+    stockTurnover: "Rotación stock",
     thisWeek: "Esta semana",
     thisMonth: "Este mes",
-    thisYear: "Este aéo",
+    thisYear: "Este año",
     allTime: "Todo",
     refresh: "Actualizar",
     searchPlaceholder: "Buscar producto...",
     filterAll: "Todos los productos",
-    filterWell: "Stock alto (=10)",
+    filterWell: "Stock alto (≥10)",
     filterLow: "Stock bajo (<10)",
     filterOut: "Agotado (=0)",
     product: "Producto",
@@ -245,10 +244,10 @@ const stockTranslations: Record<string, Record<string, string>> = {
     entry: "Entrada",
     exit: "Salida",
     noMovements: "No hay movimientos para este producto",
-    periodAnalyzed: "Peréodo analizado",
-    last7Days: "éltimos 7 déas",
-    last30Days: "éltimos 30 déas",
-    last12Months: "éltimos 12 meses",
+    periodAnalyzed: "Período analizado",
+    last7Days: "últimos 7 días",
+    last30Days: "últimos 30 días",
+    last12Months: "últimos 12 meses",
     allData: "Todos los datos",
     salesCount: "ventas",
     purchasesCount: "compras",
@@ -262,7 +261,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Stock suficiente",
     highStockDesc: "Stock confortable",
     legend: "Leyenda de estados de stock",
-    infoMessage: "📦 El stock se calcula automáticamente a partir de compras y ventas.",
+    infoMessage: " El stock se calcula automáticamente a partir de compras y ventas.",
     close: "Cerrar",
     unitPrice: "Precio unitario",
     stockValue: "Valor stock"
@@ -282,7 +281,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     refresh: "Refresh",
     searchPlaceholder: "Search product...",
     filterAll: "All products",
-    filterWell: "High stock (=10)",
+    filterWell: "High stock (≥10)",
     filterLow: "Low stock (<10)",
     filterOut: "Out of stock (=0)",
     product: "Product",
@@ -319,7 +318,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Sufficient stock",
     highStockDesc: "Comfortable stock",
     legend: "Stock status legend",
-    infoMessage: "📦 Stock is automatically calculated from purchases and sales.",
+    infoMessage: " Stock is automatically calculated from purchases and sales.",
     close: "Close",
     unitPrice: "Unit price",
     stockValue: "Stock value"
@@ -390,6 +389,7 @@ export default function StockPage() {
       let purchasesData = await purchasesRes.json();
       let purchasesList: Purchase[] = Array.isArray(purchasesData) ? purchasesData : [];
 
+      // Filtrage par période
       const now = new Date();
       let startDate: Date | null = null;
       if (selectedPeriod === "week") { startDate = new Date(now); startDate.setDate(now.getDate() - 7); }
@@ -404,34 +404,64 @@ export default function StockPage() {
       setSales(salesList);
       setPurchases(purchasesList);
 
+      // Calcul du stock pour chaque produit
       const productStockMap: Record<number, { quantity: number; product: Product }> = {};
       productsList.forEach(p => {
         productStockMap[p.id as number] = { quantity: p.quantity || 0, product: p };
       });
+      
+      // Ajout des achats (entrées)
       purchasesList.forEach(purchase => {
-        if (productStockMap[purchase.productId]) productStockMap[purchase.productId].quantity += purchase.quantity;
+        if (productStockMap[purchase.productId]) {
+          productStockMap[purchase.productId].quantity += purchase.quantity;
+        }
       });
+      
+      // Soustractions des ventes (sorties)
       salesList.forEach(sale => {
-        if (productStockMap[sale.productId]) productStockMap[sale.productId].quantity -= sale.quantity;
+        if (productStockMap[sale.productId]) {
+          productStockMap[sale.productId].quantity -= sale.quantity;
+        }
       });
 
+      // Construction des mouvements de stock
       const movements: StockMovement[] = [];
       purchasesList.forEach(purchase => {
         const product = productsList.find(p => p.id === purchase.productId);
-        if (product) movements.push({ productId: purchase.productId, productName: product.name, quantity: purchase.quantity, type: "in", date: purchase.createdAt, reference: `Achat #${purchase.id}` });
+        if (product) {
+          movements.push({
+            productId: purchase.productId,
+            productName: product.name,
+            quantity: purchase.quantity,
+            type: "in",
+            date: purchase.createdAt,
+            reference: `Achat #${purchase.id}`
+          });
+        }
       });
       salesList.forEach(sale => {
         const product = productsList.find(p => p.id === sale.productId);
-        if (product) movements.push({ productId: sale.productId, productName: product.name, quantity: sale.quantity, type: "out", date: sale.createdAt, reference: `Vente #${sale.id}` });
+        if (product) {
+          movements.push({
+            productId: sale.productId,
+            productName: product.name,
+            quantity: sale.quantity,
+            type: "out",
+            date: sale.createdAt,
+            reference: `Vente #${sale.id}`
+          });
+        }
       });
       movements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setStockMovements(movements);
 
+      // Mise à jour des produits avec leur stock calculé
       const updatedProducts: ProductWithStock[] = productsList.map(p => ({
         ...p,
         currentStock: Math.max(0, productStockMap[p.id as number]?.quantity || 0)
       }));
 
+      // Calcul des statistiques
       const totalSalesQuantity = salesList.reduce((sum, s) => sum + s.quantity, 0);
       const avgStock = updatedProducts.reduce((sum, p) => sum + p.currentStock, 0) / (updatedProducts.length || 1);
       const turnoverRate = avgStock > 0 ? (totalSalesQuantity / avgStock) : 0;
@@ -440,7 +470,13 @@ export default function StockPage() {
       const outOfStockCount = updatedProducts.filter(p => p.currentStock === 0).length;
 
       setProducts(updatedProducts);
-      setStats({ total: updatedProducts.length, value: totalValue, lowStock: lowStockCount, outOfStock: outOfStockCount, turnover: turnoverRate });
+      setStats({
+        total: updatedProducts.length,
+        value: totalValue,
+        lowStock: lowStockCount,
+        outOfStock: outOfStockCount,
+        turnover: turnoverRate
+      });
     } catch (e) {
       console.error("Erreur:", e);
     }
@@ -454,10 +490,36 @@ export default function StockPage() {
   };
 
   const getStockStatus = (quantity: number) => {
-    if (quantity <= 0) return { text: t.outOfStockStatus, color: "#ef4444", icon: <IconBan size={13} color="#ef4444" />, bgColor: "rgba(239,68,68,0.1)" };
-    if (quantity < 10) return { text: t.lowStockStatus, color: "#f59e0b", icon: <IconAlertTriangle size={13} color="#f59e0b" />, bgColor: "rgba(245,158,11,0.1)" };
-    if (quantity < 50) return { text: t.mediumStockStatus, color: theme.primary, icon: <IconBox size={13} color={theme.primary} />, bgColor: `${theme.primary}15` };
-    return { text: t.highStockStatus, color: theme.accent, icon: <IconCheckCircle size={13} color={theme.accent} />, bgColor: `${theme.accent}15` };
+    if (quantity <= 0) {
+      return {
+        text: t.outOfStockStatus,
+        color: "#ef4444",
+        icon: <IconBan size={13} color="#ef4444" />,
+        bgColor: "rgba(239,68,68,0.1)"
+      };
+    }
+    if (quantity < 10) {
+      return {
+        text: t.lowStockStatus,
+        color: "#f59e0b",
+        icon: <IconAlertTriangle size={13} color="#f59e0b" />,
+        bgColor: "rgba(245,158,11,0.1)"
+      };
+    }
+    if (quantity < 50) {
+      return {
+        text: t.mediumStockStatus,
+        color: theme.primary,
+        icon: <IconBox size={13} color={theme.primary} />,
+        bgColor: `${theme.primary}15`
+      };
+    }
+    return {
+      text: t.highStockStatus,
+      color: theme.accent,
+      icon: <IconCheckCircle size={13} color={theme.accent} />,
+      bgColor: `${theme.accent}15`
+    };
   };
 
   const filteredProducts = products.filter(p => {
@@ -494,11 +556,36 @@ export default function StockPage() {
   `;
 
   const statsCards = [
-    { icon: <IconBox size={isMobile ? 26 : 32} color={theme.primary} />, label: t.totalProducts, value: stats.total, color: theme.primary },
-    { icon: <IconCurrencyDollar size={isMobile ? 26 : 32} color={theme.accent} />, label: t.totalValue, value: formatCurrency(stats.value), color: theme.accent },
-    { icon: <IconAlertTriangle size={isMobile ? 26 : 32} color={stats.lowStock > 0 ? "#f59e0b" : theme.accent} />, label: t.lowStock, value: stats.lowStock, color: stats.lowStock > 0 ? "#f59e0b" : theme.accent },
-    { icon: <IconBan size={isMobile ? 26 : 32} color={stats.outOfStock > 0 ? "#ef4444" : theme.accent} />, label: t.outOfStock, value: stats.outOfStock, color: stats.outOfStock > 0 ? "#ef4444" : theme.accent },
-    { icon: <IconTrendingUp size={isMobile ? 22 : 28} color="#10b981" />, label: t.stockTurnover, value: stats.turnover.toFixed(1), color: "#10b981" }
+    {
+      icon: <IconBox size={isMobile ? 26 : 32} color={theme.primary} />,
+      label: t.totalProducts,
+      value: stats.total,
+      color: theme.primary
+    },
+    {
+      icon: <IconCurrencyDollar size={isMobile ? 26 : 32} color={theme.accent} />,
+      label: t.totalValue,
+      value: formatCurrency(stats.value),
+      color: theme.accent
+    },
+    {
+      icon: <IconAlertTriangle size={isMobile ? 26 : 32} color={stats.lowStock > 0 ? "#f59e0b" : theme.accent} />,
+      label: t.lowStock,
+      value: stats.lowStock,
+      color: stats.lowStock > 0 ? "#f59e0b" : theme.accent
+    },
+    {
+      icon: <IconBan size={isMobile ? 26 : 32} color={stats.outOfStock > 0 ? "#ef4444" : theme.accent} />,
+      label: t.outOfStock,
+      value: stats.outOfStock,
+      color: stats.outOfStock > 0 ? "#ef4444" : theme.accent
+    },
+    {
+      icon: <IconTrendingUp size={isMobile ? 22 : 28} color="#10b981" />,
+      label: t.stockTurnover,
+      value: stats.turnover.toFixed(1),
+      color: "#10b981"
+    }
   ];
 
   const filterOptions = [
@@ -660,7 +747,6 @@ export default function StockPage() {
                   textAlign: "center", border: `1px solid ${theme.border}`,
                   animation: `fadeInUp 0.5s ease ${0.1 + idx * 0.08}s`,
                   opacity: animateCards ? 1 : 0,
-                  // last card spans full width on 2-col mobile grid
                   ...(isMobile && idx === statsCards.length - 1 && statsCards.length % 2 !== 0 ? { gridColumn: "span 2" } : {})
                 }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>{card.icon}</div>
@@ -670,7 +756,7 @@ export default function StockPage() {
               ))}
             </div>
 
-            {/* Period info */}
+            {/* Period info - CORRIGÉ : affichage correct des ventes et achats */}
             <div style={{ background: theme.surface, borderRadius: cardRadius, padding: "14px 16px", marginBottom: sectionMargin, border: `1px solid ${theme.border}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <IconHistory size={16} color={theme.primary} />
@@ -679,7 +765,7 @@ export default function StockPage() {
                   {selectedPeriod === "week" ? t.last7Days : selectedPeriod === "month" ? t.last30Days : selectedPeriod === "year" ? t.last12Months : t.allData}
                 </span>
                 <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "11px" : "13px" }}>
-                  ?? {sales.length} {t.salesCount} é {purchases.length} {t.purchasesCount}
+                  📊 {sales.length} {t.salesCount} • {purchases.length} {t.purchasesCount}
                 </span>
               </div>
             </div>
@@ -842,7 +928,7 @@ export default function StockPage() {
                 ].map((item, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                     <span style={{ background: item.bg, color: item.color, padding: "2px 8px", borderRadius: "16px", fontSize: legendFontSize, display: "inline-flex", alignItems: "center", gap: "4px" }}>{item.icon} {item.label}</span>
-                    {!isMobile && <span style={{ fontSize: "11px", color: theme.textSecondary }}>? {item.desc}</span>}
+                    {!isMobile && <span style={{ fontSize: "11px", color: theme.textSecondary }}>• {item.desc}</span>}
                   </div>
                 ))}
               </div>
@@ -867,7 +953,7 @@ export default function StockPage() {
           >
             {/* Handle bar */}
             <div style={{ width: "40px", height: "4px", background: theme.border, borderRadius: "2px", margin: "0 auto 20px" }} />
-            <h3 style={{ color: theme.text, fontSize: "16px", marginBottom: "16px" }}>{t.filterAll.replace("Tous les p", "Filtrer p")}</h3>
+            <h3 style={{ color: theme.text, fontSize: "16px", marginBottom: "16px" }}>Filtrer les produits</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {filterOptions.map(f => (
                 <button
@@ -949,7 +1035,7 @@ export default function StockPage() {
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: "18px"
                         }}>
-                          {m.type === "in" ? "??" : "??"}
+                          {m.type === "in" ? "📥" : "📤"}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -983,7 +1069,7 @@ export default function StockPage() {
                           <td style={{ padding: "8px", color: theme.textSecondary, fontSize: "12px" }}>{new Date(m.date).toLocaleDateString()}</td>
                           <td style={{ padding: "8px" }}>
                             <span style={{ background: m.type === "in" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: m.type === "in" ? "#10b981" : "#ef4444", padding: "2px 8px", borderRadius: "12px", fontSize: "11px" }}>
-                              {m.type === "in" ? `?? ${t.entry}` : `?? ${t.exit}`}
+                              {m.type === "in" ? `📥 ${t.entry}` : `📤 ${t.exit}`}
                             </span>
                           </td>
                           <td style={{ padding: "8px", textAlign: "right", color: m.type === "in" ? "#10b981" : "#ef4444" }}>{m.quantity}</td>

@@ -891,7 +891,7 @@ export default function IAPage() {
             </div>
             {lastRefresh && !refreshing && !isMobile && (
               <p style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "8px", textAlign: "right" }}>
-                ?? Derniére actualisation: {lastRefresh.toLocaleTimeString()}
+                 Derniére actualisation: {lastRefresh.toLocaleTimeString()}
               </p>
             )}
           </div>
