@@ -307,8 +307,8 @@ export default function TransporteurLayout({
                 src="/images/logo.png" 
                 alt="Inovexa Logo"
                 style={{
-                  width: "44px",
-                  height: "44px",
+                  width: "66px",
+                  height: "66px",
                   objectFit: "contain",
                   filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))",
                   borderRadius: "10px"
@@ -338,7 +338,7 @@ export default function TransporteurLayout({
                 fontWeight: "800", 
                 letterSpacing: "1px"
               }}>
-                INOVEXA
+                Inovexa-ERP
               </div>
               <div style={{ 
                 display: "flex", 

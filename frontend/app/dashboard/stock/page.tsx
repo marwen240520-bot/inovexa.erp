@@ -765,7 +765,7 @@ export default function StockPage() {
                   {selectedPeriod === "week" ? t.last7Days : selectedPeriod === "month" ? t.last30Days : selectedPeriod === "year" ? t.last12Months : t.allData}
                 </span>
                 <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "11px" : "13px" }}>
-                  📊 {sales.length} {t.salesCount} • {purchases.length} {t.purchasesCount}
+                   {sales.length} {t.salesCount} • {purchases.length} {t.purchasesCount}
                 </span>
               </div>
             </div>

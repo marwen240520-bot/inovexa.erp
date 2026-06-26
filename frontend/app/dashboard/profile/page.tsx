@@ -380,7 +380,7 @@ export default function ProfilePage() {
           if (freshUser) setUser(freshUser);
           showMessage("? Photo de profil mise é jour", "success");
         } else {
-          showMessage("?? Image uploadée", "warning");
+          showMessage(" Image uploadée", "warning");
         }
       } else {
         const error = await res.json();
@@ -477,7 +477,7 @@ export default function ProfilePage() {
   };
 
   const logoutAllDevices = async () => {
-    if (confirm(t("profile.logoutAllWarning") || "?? Se déconnecter de tous les appareils ?")) {
+    if (confirm(t("profile.logoutAllWarning") || " Se déconnecter de tous les appareils ")) {
       const token = localStorage.getItem("token");
       try {
         await fetch(`${API_URL}/users/logout-all`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
@@ -799,7 +799,7 @@ export default function ProfilePage() {
                       gap: "4px"
                     }}
                   >
-                    {deletingImage ? "?" : "???"} {t("common.delete") || "Supprimer"}
+                    {deletingImage ? "?" : ""} {t("common.delete") || "Supprimer"}
                   </button>
                 )}
               </div>
@@ -839,7 +839,7 @@ export default function ProfilePage() {
               gap: "8px", 
               fontSize: isMobile ? "12px" : "14px" 
             }}>
-              {messageType === "success" ? <Icons.CheckCircle /> : messageType === "warning" ? "??" : <Icons.XCircle />}
+              {messageType === "success" ? <Icons.CheckCircle /> : messageType === "warning" ? <Icons.AlertTriangle /> : <Icons.XCircle />}
               {message}
             </div>
           )}
@@ -855,9 +855,9 @@ export default function ProfilePage() {
             opacity: animateCards ? 1 : 0 
           }}>
             {[
-              { id: "info", label: t("profile.personalInfo") || "?? Informations", Icon: Icons.FileText },
-              { id: "security", label: t("profile.security") || "?? Sécurité", Icon: Icons.ShieldLock },
-              { id: "activity", label: t("profile.activity") || "?? Activité", Icon: Icons.BarChart2 },
+              { id: "info", label: t("profile.personalInfo") || " Informations", Icon: Icons.FileText },
+              { id: "security", label: t("profile.security") || " Sécurité", Icon: Icons.ShieldLock },
+              { id: "activity", label: t("profile.activity") || " Activité", Icon: Icons.BarChart2 },
             ].map(tab => (
               <button
                 key={tab.id}
