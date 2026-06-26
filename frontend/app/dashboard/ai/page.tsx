@@ -627,12 +627,13 @@ export default function IAPage() {
     }
     
     return ` **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n?? **${t.tryQuestions} :**\n` +
-           `é "${t.askRevenue}"\n` +
-           `é "${t.askSummary}"\n` +
-           `é "${t.askTopProducts}"\n` +
-           `é "${t.askStock}"\n` +
-           `é "${t.askForecast}"\n` +
-           `é "Aide" pour plus d'options\n\n?? Posez votre question en langage naturel, je suis lé pour vous aider !`;
+           `  "${t.askRevenue}"\n` +
+           `  "${t.askSummary}"\n` +
+           `  "${t.askTopProducts}"\n` +
+           `  "${t.askStock}"\n` +
+           `  "${t.askForecast}"\n` +
+           `  "Aide" pour plus d'options\n\n` +
+           `  Posez votre question en langage naturel, je suis là pour vous aider !`;
   };
 
   const getContextualActions = (question: string) => {
@@ -648,7 +649,7 @@ export default function IAPage() {
   };
 
   const getWelcomeMessage = () => {
-    const name = currentUser?.name?.split(' ')[0] || (language === 'fr' ? "utilisateur" : language === 'es' ? "usuario" : "user");
+    
     const hour = new Date().getHours();
     let greeting = "";
     if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon aprés-midi" : "Bonsoir";
@@ -659,32 +660,32 @@ export default function IAPage() {
       return `${greeting} ${name} ! ??\n\n` +
              ` **${t.aiAssistant}**\n\n` +
              ` **${t.whatCanIDo} :**\n` +
-             `é  Analyser ventes\n` +
-             `é  état du stock\n` +
-             `é  Top produits/clients\n` +
-             `é  Prévisions\n\n` +
+             `  Analyser ventes\n` +
+             `  état du stock\n` +
+             `  Top produits/clients\n` +
+             `  Prévisions\n\n` +
              ` **${t.tryQuestions} :**\n` +
-             `é "${t.askRevenue}"\n` +
-             `é "${t.askSummary}"\n` +
-             `é "${t.askTopProducts}"\n` +
-             `é "${t.askStock}"\n\n` +
+             `  "${t.askRevenue}"\n` +
+             `  "${t.askSummary}"\n` +
+             `  "${t.askTopProducts}"\n` +
+             `  "${t.askStock}"\n\n` +
              `Comment puis-je vous aider ? `;
     }
     
     return `${greeting} ${name} ! ??\n\n` +
            ` **${t.aiAssistant}**\n\n` +
            ` **${t.whatCanIDo} :**\n` +
-           `é  Analyser vos ventes et bénéfices\n` +
-           `é  Vérifier l'état de votre stock\n` +
-           `é  Identifier vos meilleurs clients et produits\n` +
-           `é  Générer des prévisions précises\n` +
-           `é  Vous donner un résumé complet\n\n` +
+           `  Analyser vos ventes et bénéfices\n` +
+           `  Vérifier l'état de votre stock\n` +
+           `  Identifier vos meilleurs clients et produits\n` +
+           `  Générer des prévisions précises\n` +
+           `  Vous donner un résumé complet\n\n` +
            ` **${t.tryQuestions} :**\n` +
-           `é "${t.askRevenue}"\n` +
-           `é "${t.askSummary}"\n` +
-           `é "${t.askTopProducts}"\n` +
-           `é "${t.askStock}"\n` +
-           `é "${t.askForecast}"\n\n` +
+           `  "${t.askRevenue}"\n` +
+           `  "${t.askSummary}"\n` +
+           `  "${t.askTopProducts}"\n` +
+           `  "${t.askStock}"\n` +
+           `  "${t.askForecast}"\n\n` +
            `Comment puis-je vous aider aujourd'hui ? `;
   };
 

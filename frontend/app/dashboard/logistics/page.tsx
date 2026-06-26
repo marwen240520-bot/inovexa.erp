@@ -298,6 +298,16 @@ export default function LogisticsPage() {
 
   const currencySymbol = getCurrencySymbol();
 
+  // Traductions pour logistics.selectCarrier
+  const getSelectCarrierText = () => {
+    const translations = {
+      fr: "Sélectionner un transporteur",
+      en: "Select a carrier",
+      es: "Seleccionar un transportista"
+    };
+    return translations[language as keyof typeof translations] || translations.fr;
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) router.push("/auth/login");
@@ -1311,7 +1321,7 @@ export default function LogisticsPage() {
                 onChange={e => setModal({ ...modal, form: { ...modal.form, transporteurId: e.target.value } })}
                 style={{ ...inputStyle }}
               >
-                <option value="">{t("logistics.selectCarrier")}</option>
+                <option value="">{getSelectCarrierText()}</option>
                 {transporteurs.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>

@@ -204,7 +204,7 @@ export default function ProfilePage() {
   const currentThemeId = globalThemeId;
 
   const themeTranslations = {
-    fr: { themeChanged: "Théme changé", chooseTheme: "Choisir un théme" },
+    fr: { themeChanged: "Thème changé", chooseTheme: "Choisir un thème" },
     en: { themeChanged: "Theme changed", chooseTheme: "Choose a theme" },
     es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" }
   };
@@ -233,8 +233,8 @@ export default function ProfilePage() {
       light: { fr: "Clair", en: "Light", es: "Claro" },
       lightPremium: { fr: "Premium Clair", en: "Premium Light", es: "Premium Claro" },
       blue: { fr: "Bleu Océan", en: "Ocean Blue", es: "Azul Océano" },
-      purple: { fr: "Violet", en: "Purple", es: "Pérpura" },
-      green: { fr: "Forét", en: "Forest", es: "Bosque" },
+      purple: { fr: "Violet", en: "Purple", es: "Púrpura" },
+      green: { fr: "Forêt", en: "Forest", es: "Bosque" },
       sunset: { fr: "Coucher de Soleil", en: "Sunset", es: "Atardecer" },
       rose: { fr: "Rose", en: "Rose", es: "Rosa" }
     };
@@ -352,9 +352,9 @@ export default function ProfilePage() {
       if (res.ok) {
         const freshUser = await loadUserFromBackend();
         if (freshUser) { setUser(freshUser); setProfileImage(freshUser.avatar || freshUser.profileImage || null); }
-        showMessage(t("profile.profileUpdated") || "? Profil mis é jour", "success");
-      } else { showMessage(t("common.error") || "? Erreur", "error"); }
-    } catch(e) { showMessage(t("common.error") || "? Erreur de connexion", "error"); }
+        showMessage(t("profile.profileUpdated") || " Profil mis à jour", "success");
+      } else { showMessage(t("common.error") || " Erreur", "error"); }
+    } catch(e) { showMessage(t("common.error") || " Erreur de connexion", "error"); }
   };
 
   const uploadProfileImage = async (file: File) => {
@@ -378,17 +378,17 @@ export default function ProfilePage() {
           setImageTimestamp(Date.now());
           const freshUser = await loadUserFromBackend();
           if (freshUser) setUser(freshUser);
-          showMessage("? Photo de profil mise é jour", "success");
+          showMessage(" Photo de profil mise à jour", "success");
         } else {
           showMessage(" Image uploadée", "warning");
         }
       } else {
         const error = await res.json();
-        showMessage(error.message || "? Erreur lors de l'upload", "error");
+        showMessage(error.message || " Erreur lors de l'upload", "error");
       }
     } catch(e) {
       console.error("Erreur upload:", e);
-      showMessage("? Erreur de connexion", "error");
+      showMessage(" Erreur de connexion", "error");
     } finally {
       setUploadingImage(false);
     }
@@ -408,13 +408,13 @@ export default function ProfilePage() {
         setImageTimestamp(Date.now());
         const freshUser = await loadUserFromBackend();
         if (freshUser) setUser(freshUser);
-        showMessage("? Photo de profil supprimée", "success");
+        showMessage(" Photo de profil supprimée", "success");
       } else {
-        showMessage("? Erreur lors de la suppression", "error");
+        showMessage(" Erreur lors de la suppression", "error");
       }
     } catch(e) {
       console.error("Erreur suppression:", e);
-      showMessage("? Erreur de connexion", "error");
+      showMessage(" Erreur de connexion", "error");
     } finally {
       setDeletingImage(false);
     }
@@ -451,7 +451,7 @@ export default function ProfilePage() {
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      showMessage(t("profile.passwordMinLength") || "Le mot de passe doit contenir au moins 6 caractéres", "error");
+      showMessage(t("profile.passwordMinLength") || "Le mot de passe doit contenir au moins 6 caractères", "error");
       return;
     }
     const token = localStorage.getItem("token");
@@ -466,18 +466,18 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
-        showMessage(t("profile.passwordChanged") || "? Mot de passe changé", "success");
+        showMessage(t("profile.passwordChanged") || " Mot de passe changé", "success");
       } else {
         const err = await res.json();
-        showMessage(err.message || t("common.error") || "? Erreur", "error");
+        showMessage(err.message || t("common.error") || " Erreur", "error");
       }
     } catch(e) {
-      showMessage(t("common.error") || "? Erreur de connexion", "error");
+      showMessage(t("common.error") || " Erreur de connexion", "error");
     }
   };
 
   const logoutAllDevices = async () => {
-    if (confirm(t("profile.logoutAllWarning") || " Se déconnecter de tous les appareils ")) {
+    if (confirm(t("profile.logoutAllWarning") || " Se déconnecter de tous les appareils ?")) {
       const token = localStorage.getItem("token");
       try {
         await fetch(`${API_URL}/users/logout-all`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
@@ -586,7 +586,7 @@ export default function ProfilePage() {
               </p>
             </div>
             
-            {/* Bouton Théme */}
+            {/* Bouton Thème */}
             <div style={{ position: "relative" }} ref={themeMenuRef}>
               <button
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
@@ -799,7 +799,7 @@ export default function ProfilePage() {
                       gap: "4px"
                     }}
                   >
-                    {deletingImage ? "?" : ""} {t("common.delete") || "Supprimer"}
+                    {deletingImage ? "" : ""} {t("common.delete") || "Supprimer"}
                   </button>
                 )}
               </div>
@@ -815,7 +815,7 @@ export default function ProfilePage() {
                     <Icons.Calendar /> {t("profile.memberSince") || "Membre depuis"} {stats.memberSince}
                   </span>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Lock /> {t("profile.lastLogin") || "Derniére connexion"}: {stats.lastLogin}
+                    <Icons.Lock /> {t("profile.lastLogin") || "Dernière connexion"}: {stats.lastLogin}
                   </span>
                 </div>
               </div>
