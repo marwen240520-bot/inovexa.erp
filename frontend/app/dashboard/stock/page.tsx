@@ -205,7 +205,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Stock suffisant",
     highStockDesc: "Stock confortable",
     legend: "Légende des statuts de stock",
-    infoMessage: "?? Le stock est calculé automatiquement é partir des achats et des ventes.",
+    infoMessage: "📦 Le stock est calculé automatiquement à partir des achats et des ventes.",
     close: "Fermer",
     unitPrice: "Prix unitaire",
     stockValue: "Valeur stock"
@@ -262,7 +262,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Stock suficiente",
     highStockDesc: "Stock confortable",
     legend: "Leyenda de estados de stock",
-    infoMessage: "?? El stock se calcula autométicamente a partir de compras y ventas.",
+    infoMessage: "📦 El stock se calcula automáticamente a partir de compras y ventas.",
     close: "Cerrar",
     unitPrice: "Precio unitario",
     stockValue: "Valor stock"
@@ -319,7 +319,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     mediumStockDesc: "Sufficient stock",
     highStockDesc: "Comfortable stock",
     legend: "Stock status legend",
-    infoMessage: "?? Stock is automatically calculated from purchases and sales.",
+    infoMessage: "📦 Stock is automatically calculated from purchases and sales.",
     close: "Close",
     unitPrice: "Unit price",
     stockValue: "Stock value"
