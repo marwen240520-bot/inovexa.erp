@@ -245,7 +245,7 @@ export default function ProductsPage() {
       setCategories(Array.isArray(data) ? data : []);
       await fetchProducts();
     } catch(e) {
-      console.error("Erreur chargement cat�gories:", e);
+      console.error("Erreur chargement catégories:", e);
       await fetchProducts();
     }
   };
@@ -286,11 +286,11 @@ export default function ProductsPage() {
         showMessage(t("products.productCreated"), "success"); 
       } else { 
         const err = await res.json(); 
-        console.error("Erreur cr�ation produit:", err);
+        console.error("Erreur création produit:", err);
         showMessage(err.message || t("common.error"), "error"); 
       }
     } catch(e) { 
-      console.error("Exception cr�ation produit:", e);
+      console.error("Exception création produit:", e);
       showMessage(t("common.error"), "error"); 
     }
   };
@@ -320,11 +320,11 @@ export default function ProductsPage() {
         showMessage(t("products.productUpdated"), "success"); 
       } else { 
         const err = await res.json(); 
-        console.error("Erreur mise � jour produit:", err);
+        console.error("Erreur mise à jour produit:", err);
         showMessage(err.message || t("common.error"), "error"); 
       }
     } catch(e) { 
-      console.error("Exception mise � jour produit:", e);
+      console.error("Exception mise à jour produit:", e);
       showMessage(t("common.error"), "error"); 
     }
   };
@@ -361,7 +361,7 @@ export default function ProductsPage() {
         }
         await fetchProducts();
         setSelectedIds([]);
-        showMessage(`${count} produit(s) supprim�(s)`, "success");
+        showMessage(`${count} produit(s) supprim(s)`, "success");
       } catch(e) {
         console.error("Erreur suppression en masse:", e);
         showMessage(t("common.error"), "error");
@@ -384,7 +384,7 @@ export default function ProductsPage() {
       });
       const result = await res.json();
       if (res.ok) { 
-        showMessage(`${result.success} produit(s) import�(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success"); 
+        showMessage(`${result.success} produit(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success"); 
         await fetchProducts(); 
       } else { 
         showMessage(result.message || "Erreur lors de l'import", "error"); 
@@ -560,8 +560,8 @@ export default function ProductsPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
                 <IconInfo size={20} color={theme.primary} />
                 <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "13px" }}>
-                  ?? La quantit� affich�e est le stock calcul� automatiquement � partir des achats et ventes.
-                  Pour modifier le stock, cr�ez un achat ou une vente dans les sections correspondantes.
+                   La quantité affichée est le stock calculé automatiquement à partir des achats et ventes.
+                  Pour modifier le stock, créez un achat ou une vente dans les sections correspondantes.
                 </span>
               </div>
               <button
@@ -617,7 +617,7 @@ export default function ProductsPage() {
                 <span style={{ position: "absolute", left: "10px", color: theme.textSecondary, display: "flex", zIndex: 1, pointerEvents: "none" }}><IconFolder size={14} /></span>
                 <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
                   style={{ width: "100%", padding: "8px 10px 8px 32px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, minWidth: isMobile ? "100%" : "180px", cursor: "pointer", fontSize: isMobile ? "12px" : "14px" }}>
-                  <option value="all">{t("products.allCategories") || "Toutes les cat�gories"}</option>
+                  <option value="all">{t("products.allCategories") || "Toutes les catégories"}</option>
                   {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
                 </select>
               </div>
@@ -750,7 +750,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Modal - Formulaire sans champ quantit� */}
+      {/* Modal - Formulaire sans champ quantité */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
@@ -759,7 +759,7 @@ export default function ProductsPage() {
               {modal.editMode ? t("products.editProduct") : t("products.addProduct")}
             </h2>
             
-            {/* Message d'information sur la quantit� */}
+            {/* Message d'information sur la quantité */}
             {!modal.editMode && (
               <div style={{ 
                 background: `${theme.primary}10`, 
@@ -773,7 +773,7 @@ export default function ProductsPage() {
                 gap: "6px"
               }}>
                 <IconInfo size={12} color={theme.primary} />
-                <span>La quantit� sera g�r�e automatiquement via les achats et ventes.</span>
+                <span>La quantité sera gérée automatiquement via les achats et ventes.</span>
               </div>
             )}
 
@@ -793,7 +793,7 @@ export default function ProductsPage() {
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.category")}</label>
               <select value={String(modal.form.categoryId || "")} onChange={(e) => setModal({ ...modal, form: { ...modal.form, categoryId: e.target.value } })}
                 style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "12px" : "14px" }}>
-                <option value="">{t("products.selectCategory") || "S�lectionner une cat�gorie"}</option>
+                <option value="">{t("products.selectCategory") || "Sélectionner une catégorie"}</option>
                 {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
               </select>
             </div>
