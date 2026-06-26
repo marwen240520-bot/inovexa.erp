@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -84,67 +84,67 @@ const animations = `
   }
 `;
 
-const MONTHS = ["Jan", "F�v", "Mar", "Avr", "Mai", "Juin", "Juil", "Ao�", "Sep", "Oct", "Nov", "D�c"];
+const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoé", "Sep", "Oct", "Nov", "Déc"];
 
 // TRADUCTIONS MULTILANGUES
 const translations = {
   fr: {
-    dashboard: "Tableau de bord", chat: "Chat IA", forecasts: "Pr�visions", recommendations: "Recommandations", analytics: "Analyses",
-    revenue: "Chiffre d'affaires", profit: "B�n�fice net", activeClients: "Clients actifs", products: "Produits",
-    salesEvolution: "�volution des ventes", profitEvolution: "�volution du b�n�fice", topProducts: "Top produits", topClients: "Top clients",
-    forecastGrowth: "Croissance pr�vue", projectedRevenue: "CA projet�", projectedProfit: "B�n�fice projet�",
+    dashboard: "Tableau de bord", chat: "Chat IA", forecasts: "Prévisions", recommendations: "Recommandations", analytics: "Analyses",
+    revenue: "Chiffre d'affaires", profit: "Bénéfice net", activeClients: "Clients actifs", products: "Produits",
+    salesEvolution: "évolution des ventes", profitEvolution: "évolution du bénéfice", topProducts: "Top produits", topClients: "Top clients",
+    forecastGrowth: "Croissance prévue", projectedRevenue: "CA projeté", projectedProfit: "Bénéfice projeté",
     threeMonths: "3 mois", sixMonths: "6 mois", twelveMonths: "12 mois",
-    optimistic: "Optimiste", realistic: "R�aliste", pessimistic: "Pessimiste",
-    salesForecast: "Pr�visions des ventes", lowStock: "produit(s) en stock faible", outOfStock: "produit(s) en rupture",
+    optimistic: "Optimiste", realistic: "Réaliste", pessimistic: "Pessimiste",
+    salesForecast: "Prévisions des ventes", lowStock: "produit(s) en stock faible", outOfStock: "produit(s) en rupture",
     pendingOrders: "commande(s) en attente", send: "Envoyer", newChat: "Nouveau chat", online: "En ligne",
     loading: "Chargement...", questionPlaceholder: "Posez votre question", refreshing: "Actualisation...",
     welcome: "Bonjour", whatCanIDo: "Ce que je peux faire", tryQuestions: "Essayez",
-    askRevenue: "Quel est mon chiffre d'affaires ?", askSummary: "R�sum� de mon activit�",
-    askTopProducts: "Top produits", askStock: "�tat du stock", askForecast: "Pr�visions",
-    viewStock: "Voir stock", restock: "R�approvisionner", viewOrders: "Voir commandes",
-    dashboardBtn: "Tableau de bord", aiAssistant: "Assistant IA", aiSubtitle: "Intelligence artificielle pour l'analyse et les pr�visions",
-    priorityHigh: "Haute priorit�", priorityMedium: "Priorit� moyenne", priorityLow: "Priorit� faible",
-    orderNow: "Commander maintenant", stockStatus: "�tat du stock", monthlyDemand: "Demande mensuelle",
-    recommendedStock: "Stock recommand�", urgency: "Urgence", action: "Action",
-    confidence: "Niveau de confiance", highConfidence: "Confiance �lev�e", mediumConfidence: "Confiance moyenne",
-    upperBound: "Sc�nario optimiste", lowerBound: "Sc�nario pessimiste", roi: "Retour sur investissement",
-    backToDashboard: "Retour au tableau de bord", quickActions: "Actions rapides", aiThoughts: "L'IA analyse vos donn�es...",
+    askRevenue: "Quel est mon chiffre d'affaires ?", askSummary: "Résumé de mon activité",
+    askTopProducts: "Top produits", askStock: "état du stock", askForecast: "Prévisions",
+    viewStock: "Voir stock", restock: "Réapprovisionner", viewOrders: "Voir commandes",
+    dashboardBtn: "Tableau de bord", aiAssistant: "Assistant IA", aiSubtitle: "Intelligence artificielle pour l'analyse et les prévisions",
+    priorityHigh: "Haute priorité", priorityMedium: "Priorité moyenne", priorityLow: "Priorité faible",
+    orderNow: "Commander maintenant", stockStatus: "état du stock", monthlyDemand: "Demande mensuelle",
+    recommendedStock: "Stock recommandé", urgency: "Urgence", action: "Action",
+    confidence: "Niveau de confiance", highConfidence: "Confiance élevée", mediumConfidence: "Confiance moyenne",
+    upperBound: "Scénario optimiste", lowerBound: "Scénario pessimiste", roi: "Retour sur investissement",
+    backToDashboard: "Retour au tableau de bord", quickActions: "Actions rapides", aiThoughts: "L'IA analyse vos données...",
     typeMessage: "Tapez votre message...", newMessage: "Nouveau message", copyConversation: "Copier la conversation",
-    clearConversation: "Effacer la conversation", conversationCopied: "Conversation copi�e !", conversationCleared: "Conversation effac�e",
-    typing: "en train d'�crire...", aiResponding: "L'IA r�pond...",
-    suggestedQuestions: "Questions sugg�r�es", askQuestion: "Poser une question", welcomeBack: "Bon retour",
+    clearConversation: "Effacer la conversation", conversationCopied: "Conversation copiée !", conversationCleared: "Conversation effacée",
+    typing: "en train d'écrire...", aiResponding: "L'IA répond...",
+    suggestedQuestions: "Questions suggérées", askQuestion: "Poser une question", welcomeBack: "Bon retour",
     totalSales: "Ventes totales", averageTicket: "Ticket moyen", growthRate: "Taux de croissance",
-    profitMargin: "Marge b�n�ficiaire", totalExpenses: "D�penses totales", conversionRate: "Taux de conversion",
-    inventoryTurnover: "Rotation stock", productivity: "Productivit� par employ�"
+    profitMargin: "Marge bénéficiaire", totalExpenses: "Dépenses totales", conversionRate: "Taux de conversion",
+    inventoryTurnover: "Rotation stock", productivity: "Productivité par employé"
   },
   es: {
-    dashboard: "Tablero", chat: "Chat IA", forecasts: "Previsiones", recommendations: "Recomendaciones", analytics: "An�lisis",
+    dashboard: "Tablero", chat: "Chat IA", forecasts: "Previsiones", recommendations: "Recomendaciones", analytics: "Anélisis",
     revenue: "Ingresos", profit: "Beneficio neto", activeClients: "Clientes activos", products: "Productos",
-    salesEvolution: "Evoluci�n de ventas", profitEvolution: "Evoluci�n del beneficio", topProducts: "Top productos", topClients: "Top clientes",
+    salesEvolution: "Evolucién de ventas", profitEvolution: "Evolucién del beneficio", topProducts: "Top productos", topClients: "Top clientes",
     forecastGrowth: "Crecimiento previsto", projectedRevenue: "Ingreso proyectado", projectedProfit: "Beneficio proyectado",
     threeMonths: "3 meses", sixMonths: "6 meses", twelveMonths: "12 meses",
     optimistic: "Optimista", realistic: "Realista", pessimistic: "Pesimista",
-    salesForecast: "Previsi�n de ventas", lowStock: "producto(s) con stock bajo", outOfStock: "producto(s) agotado(s)",
-    pendingOrders: "pedido(s) pendiente(s)", send: "Enviar", newChat: "Nuevo chat", online: "En l�nea",
+    salesForecast: "Previsién de ventas", lowStock: "producto(s) con stock bajo", outOfStock: "producto(s) agotado(s)",
+    pendingOrders: "pedido(s) pendiente(s)", send: "Enviar", newChat: "Nuevo chat", online: "En lénea",
     loading: "Cargando...", questionPlaceholder: "Haz tu pregunta", refreshing: "Actualizando...",
     welcome: "Hola", whatCanIDo: "Lo que puedo hacer", tryQuestions: "Prueba",
-    askRevenue: "�Cu�l es mi facturaci�n?", askSummary: "Resumen de mi actividad",
+    askRevenue: "éCuél es mi facturacién?", askSummary: "Resumen de mi actividad",
     askTopProducts: "Top productos", askStock: "Estado del stock", askForecast: "Previsiones",
     viewStock: "Ver stock", restock: "Reabastecer", viewOrders: "Ver pedidos",
-    dashboardBtn: "Tablero", aiAssistant: "Asistente IA", aiSubtitle: "Inteligencia artificial para an�lisis y previsiones",
+    dashboardBtn: "Tablero", aiAssistant: "Asistente IA", aiSubtitle: "Inteligencia artificial para anélisis y previsiones",
     priorityHigh: "Alta prioridad", priorityMedium: "Prioridad media", priorityLow: "Prioridad baja",
     orderNow: "Pedir ahora", stockStatus: "Estado del stock", monthlyDemand: "Demanda mensual",
-    recommendedStock: "Stock recomendado", urgency: "Urgencia", action: "Acci�n",
+    recommendedStock: "Stock recomendado", urgency: "Urgencia", action: "Accién",
     confidence: "Nivel de confianza", highConfidence: "Confianza alta", mediumConfidence: "Confianza media",
-    upperBound: "Escenario optimista", lowerBound: "Escenario pesimista", roi: "Retorno de inversi�n",
-    backToDashboard: "Volver al tablero", quickActions: "Acciones r�pidas", aiThoughts: "La IA analiza tus datos...",
-    typeMessage: "Escribe tu mensaje...", newMessage: "Nuevo mensaje", copyConversation: "Copiar conversaci�n",
-    clearConversation: "Borrar conversaci�n", conversationCopied: "�Conversaci�n copiada!", conversationCleared: "Conversaci�n borrada",
+    upperBound: "Escenario optimista", lowerBound: "Escenario pesimista", roi: "Retorno de inversién",
+    backToDashboard: "Volver al tablero", quickActions: "Acciones répidas", aiThoughts: "La IA analiza tus datos...",
+    typeMessage: "Escribe tu mensaje...", newMessage: "Nuevo mensaje", copyConversation: "Copiar conversacién",
+    clearConversation: "Borrar conversacién", conversationCopied: "éConversacién copiada!", conversationCleared: "Conversacién borrada",
     typing: "escribiendo...", aiResponding: "La IA responde...",
     suggestedQuestions: "Preguntas sugeridas", askQuestion: "Hacer pregunta", welcomeBack: "Bienvenido",
     totalSales: "Ventas totales", averageTicket: "Ticket promedio", growthRate: "Tasa de crecimiento",
-    profitMargin: "Margen de beneficio", totalExpenses: "Gastos totales", conversionRate: "Tasa de conversi�n",
-    inventoryTurnover: "Rotaci�n de stock", productivity: "Productividad por empleado"
+    profitMargin: "Margen de beneficio", totalExpenses: "Gastos totales", conversionRate: "Tasa de conversién",
+    inventoryTurnover: "Rotacién de stock", productivity: "Productividad por empleado"
   },
   en: {
     dashboard: "Dashboard", chat: "AI Chat", forecasts: "Forecasts", recommendations: "Recommendations", analytics: "Analytics",
@@ -185,7 +185,7 @@ export default function IAPage() {
   
   const t = translations[language as keyof typeof translations] || translations.fr;
   
-  // D�tection mobile am�lior�e
+  // Détection mobile améliorée
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -200,7 +200,7 @@ export default function IAPage() {
     checkMobile();
     window.addEventListener("resize", checkMobile);
     
-    // D�tection du clavier mobile
+    // Détection du clavier mobile
     const handleResize = () => {
       if (isMobile) {
         setKeyboardVisible(window.innerHeight < 500);
@@ -214,7 +214,7 @@ export default function IAPage() {
     };
   }, [isMobile]);
   
-  // Styles responsifs optimis�s
+  // Styles responsifs optimisés
   const responsive = {
     contentPadding: isMobile ? "12px" : "20px",
     cardPadding: isMobile ? "12px" : "16px",
@@ -508,42 +508,42 @@ export default function IAPage() {
              ` **${t.growthRate} :** +${growth}%\n` +
              ` **${t.totalSales} :** ${stats?.sales?.total || 0}\n` +
              ` **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 0)}\n\n` +
-             ` **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! ??" : Number(growth) > 8 ? "Bonne dynamique commerciale ??" : "Croissance � surveiller ??"}`;
+             ` **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! ??" : Number(growth) > 8 ? "Bonne dynamique commerciale ??" : "Croissance é surveiller ??"}`;
     }
     
-    if (q.match(/b�n�fice|profit|beneficio|ganancia|marge/)) {
+    if (q.match(/bénéfice|profit|beneficio|ganancia|marge/)) {
       return ` **${t.profit}**\n\n` +
              ` **${t.profit} :** ${formatCurrency(profit)}\n` +
              ` **${t.profitMargin} :** ${margin}%\n` +
              ` **${t.revenue} :** ${formatCurrency(revenue)}\n` +
              ` **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 0)}\n` +
-             ` **EBITDA estim� :** ${formatCurrency(Number(ebitda))}\n\n` +
-             ` **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! ??" : Number(margin) > 15 ? "Bonne marge, optimisez vos co�ts ??" : "Marge � am�liorer, analysez vos d�penses ??"}`;
+             ` **EBITDA estimé :** ${formatCurrency(Number(ebitda))}\n\n` +
+             ` **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! ??" : Number(margin) > 15 ? "Bonne marge, optimisez vos coéts ??" : "Marge é améliorer, analysez vos dépenses ??"}`;
     }
     
-    if (q.match(/r�sum�|synth�se|bilan|rapport|summary|resumen/)) {
-      return ` **RAPPORT D'ACTIVIT�**\n\n` +
+    if (q.match(/résumé|synthése|bilan|rapport|summary|resumen/)) {
+      return ` **RAPPORT D'ACTIVITé**\n\n` +
              ` **FINANCES**\n` +
-             `� ${t.revenue}: ${formatCurrency(revenue)}\n` +
-             `� ${t.profit}: ${formatCurrency(profit)}\n` +
-             `� ${t.profitMargin}: ${margin}%\n` +
-             `� ${t.growthRate}: +${growth}%\n\n` +
+             `é ${t.revenue}: ${formatCurrency(revenue)}\n` +
+             `é ${t.profit}: ${formatCurrency(profit)}\n` +
+             `é ${t.profitMargin}: ${margin}%\n` +
+             `é ${t.growthRate}: +${growth}%\n\n` +
              ` **CLIENTS**\n` +
-             `� Total: ${stats?.clients?.total || 0}\n` +
-             `� ${t.activeClients}: ${stats?.clients?.active || 0}\n` +
-             `� ${t.conversionRate}: ${stats?.clients?.total > 0 ? Math.round((stats?.clients?.active || 0) / (stats?.clients?.total || 1) * 100) : 0}%\n\n` +
+             `é Total: ${stats?.clients?.total || 0}\n` +
+             `é ${t.activeClients}: ${stats?.clients?.active || 0}\n` +
+             `é ${t.conversionRate}: ${stats?.clients?.total > 0 ? Math.round((stats?.clients?.active || 0) / (stats?.clients?.total || 1) * 100) : 0}%\n\n` +
              ` **PRODUITS**\n` +
-             `� Catalogue: ${stats?.products?.total || 0} ${t.products}\n` +
-             `� ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
-             `� Valeur stock: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
-             `� ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
+             `é Catalogue: ${stats?.products?.total || 0} ${t.products}\n` +
+             `é ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
+             `é Valeur stock: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
+             `é ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
              ` **COMMANDES**\n` +
-             `� ${t.pendingOrders}: ${stats?.orders?.pending || 0}\n\n` +
-             ` **PR�VISIONS IA**\n` +
-             `� ${t.projectedRevenue} M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
-             `� ${t.growthRate}: +${growth}%\n` +
-             `� ${t.confidence}: ${confidence}%\n\n` +
-             ` **Recommandation :** ${Number(growth) > 10 ? "Capitalisez sur cette dynamique !" : "Optimisez vos processus pour acc�l�rer la croissance"}`;
+             `é ${t.pendingOrders}: ${stats?.orders?.pending || 0}\n\n` +
+             ` **PRéVISIONS IA**\n` +
+             `é ${t.projectedRevenue} M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
+             `é ${t.growthRate}: +${growth}%\n` +
+             `é ${t.confidence}: ${confidence}%\n\n` +
+             ` **Recommandation :** ${Number(growth) > 10 ? "Capitalisez sur cette dynamique !" : "Optimisez vos processus pour accélérer la croissance"}`;
     }
     
     if (q.match(/top produits|meilleurs produits|best sellers|top productos/)) {
@@ -551,9 +551,9 @@ export default function IAPage() {
       topProducts.slice(0, 4).forEach((p, i) => {
         response += `${i + 1}. **${p.name}**\n` +
                    `    CA: ${formatCurrency(p.amount)}\n` +
-                   `    Ventes: ${p.sales} unit�s\n\n`;
+                   `    Ventes: ${p.sales} unités\n\n`;
       });
-      response += ` **Analyse IA** : Ces produits repr�sentent votre c�ur de m�tier. Concentrez vos efforts marketing sur ces r�f�rences !`;
+      response += ` **Analyse IA** : Ces produits représentent votre céur de métier. Concentrez vos efforts marketing sur ces références !`;
       return response;
     }
     
@@ -564,7 +564,7 @@ export default function IAPage() {
                    `    Achats: ${formatCurrency(c.amount)}\n` +
                    `    Commandes: ${c.orders}\n\n`;
       });
-      response += ` **Recommandation IA** : Mettez en place un programme de fid�lisation premium pour ces clients strat�giques !`;
+      response += ` **Recommandation IA** : Mettez en place un programme de fidélisation premium pour ces clients stratégiques !`;
       return response;
     }
     
@@ -572,67 +572,67 @@ export default function IAPage() {
       const urgentItems = recommendations.filter(r => r.urgency === "high").slice(0, 3);
       let stockResponse = ` **${t.stockStatus}**\n\n` +
                          ` **Vue d'ensemble**\n` +
-                         `� ${t.products} total: ${stats?.products?.total || 0}\n` +
-                         `� ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
-                         `� Rupture: ${stats?.products?.outOfStock || 0}\n` +
-                         `� Valeur totale: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
-                         `� ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
-                         ` **URGENCES R�APPROVISIONNEMENT**\n`;
+                         `é ${t.products} total: ${stats?.products?.total || 0}\n` +
+                         `é ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
+                         `é Rupture: ${stats?.products?.outOfStock || 0}\n` +
+                         `é Valeur totale: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
+                         `é ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
+                         ` **URGENCES RéAPPROVISIONNEMENT**\n`;
       if (urgentItems.length) {
         urgentItems.forEach(i => {
-          stockResponse += `� **${i.productName}** : ${i.currentStock} unit�s (demande: ${i.monthlyDemand}/mois)\n`;
+          stockResponse += `é **${i.productName}** : ${i.currentStock} unités (demande: ${i.monthlyDemand}/mois)\n`;
         });
-        stockResponse += `\n **Action IA recommand�e** : R�approvisionnez ${urgentItems.length} produit(s) en priorit� !`;
+        stockResponse += `\n **Action IA recommandée** : Réapprovisionnez ${urgentItems.length} produit(s) en priorité !`;
       } else {
         stockResponse += `? Aucune urgence - niveau de stock satisfaisant\n\n?? **Bravo !** Votre gestion des stocks est optimale.`;
       }
       return stockResponse;
     }
     
-    if (q.match(/pr�vision|forecast|tendance|prediction|prevision/)) {
+    if (q.match(/prévision|forecast|tendance|prediction|prevision/)) {
       return ` **${t.salesForecast}**\n\n` +
-             ` **Tendances d�tect�es**\n` +
-             `� ${t.growthRate}: +${growth}%\n` +
-             `� ${t.roi} estim�: ${roi}%\n` +
-             `� EBITDA projet�: ${formatCurrency(Number(ebitda))}\n\n` +
+             ` **Tendances détectées**\n` +
+             `é ${t.growthRate}: +${growth}%\n` +
+             `é ${t.roi} estimé: ${roi}%\n` +
+             `é EBITDA projeté: ${formatCurrency(Number(ebitda))}\n\n` +
              ` **Projections mensuelles**\n` +
-             `� M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
-             `� M+2: ${formatCurrency(forecastData[1] || 0)}\n` +
-             `� M+3: ${formatCurrency(forecastData[2] || 0)}\n\n` +
+             `é M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
+             `é M+2: ${formatCurrency(forecastData[1] || 0)}\n` +
+             `é M+3: ${formatCurrency(forecastData[2] || 0)}\n\n` +
              ` **${t.confidence}**\n` +
-             `� ${t.confidence}: ${confidence}%\n` +
-             `� ${Number(confidence) > 85 ? t.highConfidence : t.mediumConfidence}\n\n` +
-             ` **Conseil strat�gique IA**\n` +
-             (Number(growth) > 15 ? " Anticipez la forte croissance ! Augmentez vos stocks et renforcez votre �quipe commerciale." :
-              Number(growth) > 5 ? " Pr�parez-vous � une croissance mod�r�e. Maintenez vos investissements." :
-              " Soyez prudent sur les investissements. Optimisez vos co�ts.");
+             `é ${t.confidence}: ${confidence}%\n` +
+             `é ${Number(confidence) > 85 ? t.highConfidence : t.mediumConfidence}\n\n` +
+             ` **Conseil stratégique IA**\n` +
+             (Number(growth) > 15 ? " Anticipez la forte croissance ! Augmentez vos stocks et renforcez votre équipe commerciale." :
+              Number(growth) > 5 ? " Préparez-vous é une croissance modérée. Maintenez vos investissements." :
+              " Soyez prudent sur les investissements. Optimisez vos coéts.");
     }
     
     if (q.match(/aide|help|que faire|commandes|que puis-je/)) {
       return ` **GUIDE D'UTILISATION**\n\n` +
              ` **Questions possibles**\n` +
-             `� "${t.askRevenue}"\n` +
-             `� "${t.askSummary}"\n` +
-             `� "${t.askTopProducts}"\n` +
-             `� "${t.askStock}"\n` +
-             `� "${t.askForecast}"\n` +
-             `� "Quel est mon ROI ?"\n` +
-             `� "Performance globale"\n\n` +
+             `é "${t.askRevenue}"\n` +
+             `é "${t.askSummary}"\n` +
+             `é "${t.askTopProducts}"\n` +
+             `é "${t.askStock}"\n` +
+             `é "${t.askForecast}"\n` +
+             `é "Quel est mon ROI ?"\n` +
+             `é "Performance globale"\n\n` +
              ` **Actions rapides disponibles**\n` +
-             `�  Analyse des ventes\n` +
-             `�  Suivi du stock\n` +
-             `�  Pr�visions financi�res\n` +
-             `�  Recommandations produits\n\n` +
-             ` **Astuce IA** : Plus votre question est pr�cise, plus la r�ponse sera pertinente !`;
+             `é  Analyse des ventes\n` +
+             `é  Suivi du stock\n` +
+             `é  Prévisions financiéres\n` +
+             `é  Recommandations produits\n\n` +
+             ` **Astuce IA** : Plus votre question est précise, plus la réponse sera pertinente !`;
     }
     
     return ` **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n?? **${t.tryQuestions} :**\n` +
-           `� "${t.askRevenue}"\n` +
-           `� "${t.askSummary}"\n` +
-           `� "${t.askTopProducts}"\n` +
-           `� "${t.askStock}"\n` +
-           `� "${t.askForecast}"\n` +
-           `� "Aide" pour plus d'options\n\n?? Posez votre question en langage naturel, je suis l� pour vous aider !`;
+           `é "${t.askRevenue}"\n` +
+           `é "${t.askSummary}"\n` +
+           `é "${t.askTopProducts}"\n` +
+           `é "${t.askStock}"\n` +
+           `é "${t.askForecast}"\n` +
+           `é "Aide" pour plus d'options\n\n?? Posez votre question en langage naturel, je suis lé pour vous aider !`;
   };
 
   const getContextualActions = (question: string) => {
@@ -641,7 +641,7 @@ export default function IAPage() {
     if (q.match(/produit|stock|inventaire|producto/)) actions.push({ label: t.viewStock, icon: IconPackage, path: "/dashboard/stock" });
     if (q.match(/client|cliente/)) actions.push({ label: "Voir clients", icon: IconUsers, path: "/dashboard/clients" });
     if (q.match(/commande|pedido|order/)) actions.push({ label: t.viewOrders, icon: IconShoppingCart, path: "/dashboard/orders" });
-    if (q.match(/pr�vision|forecast|tendance|prevision/)) actions.push({ label: "Voir pr�visions", icon: IconPredictions, path: "/dashboard/ai?tab=forecasts" });
+    if (q.match(/prévision|forecast|tendance|prevision/)) actions.push({ label: "Voir prévisions", icon: IconPredictions, path: "/dashboard/ai?tab=forecasts" });
     if (q.match(/vente|ca|chiffre|ventas|ingresos/)) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
     if (actions.length === 0) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
     return actions.slice(0, 4);
@@ -651,45 +651,45 @@ export default function IAPage() {
     const name = currentUser?.name?.split(' ')[0] || (language === 'fr' ? "utilisateur" : language === 'es' ? "usuario" : "user");
     const hour = new Date().getHours();
     let greeting = "";
-    if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon apr�s-midi" : "Bonsoir";
-    else if (language === 'es') greeting = hour < 12 ? "Buenos d�as" : hour < 18 ? "Buenas tardes" : "Buenas noches";
+    if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon aprés-midi" : "Bonsoir";
+    else if (language === 'es') greeting = hour < 12 ? "Buenos déas" : hour < 18 ? "Buenas tardes" : "Buenas noches";
     else greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     
     if (isMobile) {
       return `${greeting} ${name} ! ??\n\n` +
              ` **${t.aiAssistant}**\n\n` +
              ` **${t.whatCanIDo} :**\n` +
-             `�  Analyser ventes\n` +
-             `�  �tat du stock\n` +
-             `�  Top produits/clients\n` +
-             `�  Pr�visions\n\n` +
+             `é  Analyser ventes\n` +
+             `é  état du stock\n` +
+             `é  Top produits/clients\n` +
+             `é  Prévisions\n\n` +
              ` **${t.tryQuestions} :**\n` +
-             `� "${t.askRevenue}"\n` +
-             `� "${t.askSummary}"\n` +
-             `� "${t.askTopProducts}"\n` +
-             `� "${t.askStock}"\n\n` +
+             `é "${t.askRevenue}"\n` +
+             `é "${t.askSummary}"\n` +
+             `é "${t.askTopProducts}"\n` +
+             `é "${t.askStock}"\n\n` +
              `Comment puis-je vous aider ? `;
     }
     
     return `${greeting} ${name} ! ??\n\n` +
            ` **${t.aiAssistant}**\n\n` +
            ` **${t.whatCanIDo} :**\n` +
-           `�  Analyser vos ventes et b�n�fices\n` +
-           `�  V�rifier l'�tat de votre stock\n` +
-           `�  Identifier vos meilleurs clients et produits\n` +
-           `�  G�n�rer des pr�visions pr�cises\n` +
-           `�  Vous donner un r�sum� complet\n\n` +
+           `é  Analyser vos ventes et bénéfices\n` +
+           `é  Vérifier l'état de votre stock\n` +
+           `é  Identifier vos meilleurs clients et produits\n` +
+           `é  Générer des prévisions précises\n` +
+           `é  Vous donner un résumé complet\n\n` +
            ` **${t.tryQuestions} :**\n` +
-           `� "${t.askRevenue}"\n` +
-           `� "${t.askSummary}"\n` +
-           `� "${t.askTopProducts}"\n` +
-           `� "${t.askStock}"\n` +
-           `� "${t.askForecast}"\n\n` +
+           `é "${t.askRevenue}"\n` +
+           `é "${t.askSummary}"\n` +
+           `é "${t.askTopProducts}"\n` +
+           `é "${t.askStock}"\n` +
+           `é "${t.askForecast}"\n\n` +
            `Comment puis-je vous aider aujourd'hui ? `;
   };
 
   const copyConversation = () => {
-    const conversation = chatMessages.map(msg => `${msg.role === "user" ? "?? " + (language === 'fr' ? "Vous" : language === 'es' ? "T�" : "You") : "?? IA"}: ${msg.content}`).join("\n\n");
+    const conversation = chatMessages.map(msg => `${msg.role === "user" ? "?? " + (language === 'fr' ? "Vous" : language === 'es' ? "Té" : "You") : "?? IA"}: ${msg.content}`).join("\n\n");
     navigator.clipboard.writeText(conversation);
     if (isMobile) {
       const toast = document.createElement('div');
@@ -703,7 +703,7 @@ export default function IAPage() {
   };
 
   const clearConversation = () => {
-    if (confirm(language === 'fr' ? "Effacer toute la conversation ?" : language === 'es' ? "�Borrar toda la conversaci�n?" : "Clear entire conversation?")) {
+    if (confirm(language === 'fr' ? "Effacer toute la conversation ?" : language === 'es' ? "éBorrar toda la conversacién?" : "Clear entire conversation?")) {
       setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]);
       if (isMobile) {
         const toast = document.createElement('div');
@@ -780,7 +780,7 @@ export default function IAPage() {
     labels: getForecastLabels(), 
     datasets: [
       { label: t.upperBound, data: getUpperBoundData(), borderColor: "rgba(16,185,129,0.4)", backgroundColor: "rgba(16,185,129,0.05)", borderWidth: 1.5, fill: "+1", tension: 0.3, pointRadius: 0 },
-      { label: t.salesForecast + " (" + (language === 'fr' ? "R�aliste" : language === 'es' ? "Realista" : "Realistic") + ")", data: getForecastData(), borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.25)", borderWidth: isMobile ? 2 : 2.5, fill: true, tension: 0.3, pointBackgroundColor: "#f59e0b", pointRadius: isMobile ? 2 : 5, pointHoverRadius: isMobile ? 4 : 7 },
+      { label: t.salesForecast + " (" + (language === 'fr' ? "Réaliste" : language === 'es' ? "Realista" : "Realistic") + ")", data: getForecastData(), borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.25)", borderWidth: isMobile ? 2 : 2.5, fill: true, tension: 0.3, pointBackgroundColor: "#f59e0b", pointRadius: isMobile ? 2 : 5, pointHoverRadius: isMobile ? 4 : 7 },
       { label: t.lowerBound, data: getLowerBoundData(), borderColor: "rgba(239,68,68,0.4)", backgroundColor: "rgba(239,68,68,0.05)", borderWidth: 1.5, fill: false, tension: 0.3, pointRadius: 0 }
     ] 
   };
@@ -844,7 +844,7 @@ export default function IAPage() {
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           
-          {/* Header Desktop et Mobile unifi� */}
+          {/* Header Desktop et Mobile unifié */}
           <div style={{ 
             marginBottom: responsive.gapLarge, 
             animation: "fadeInDown 0.4s ease", 
@@ -891,7 +891,7 @@ export default function IAPage() {
             </div>
             {lastRefresh && !refreshing && !isMobile && (
               <p style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "8px", textAlign: "right" }}>
-                ?? Derni�re actualisation: {lastRefresh.toLocaleTimeString()}
+                ?? Derniére actualisation: {lastRefresh.toLocaleTimeString()}
               </p>
             )}
           </div>
@@ -958,7 +958,7 @@ export default function IAPage() {
                 </div>
                 <div style={{ fontSize: responsive.kpiValueSize, color: card.color, fontWeight: "bold" }}>{card.value}</div>
                 {!isMobile && (
-                  <div style={{ fontSize: "9px", color: "#10b981", marginTop: "6px", display: "flex", alignItems: "center", gap: "3px" }}><IconTrendingUp size={10} /> +{card.growth}% vs p�riode pr�c.</div>
+                  <div style={{ fontSize: "9px", color: "#10b981", marginTop: "6px", display: "flex", alignItems: "center", gap: "3px" }}><IconTrendingUp size={10} /> +{card.growth}% vs période préc.</div>
                 )}
               </div>
             ))}
@@ -1056,10 +1056,10 @@ export default function IAPage() {
                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} /> {t.online}
                         </span>
-                        <span>�</span>
+                        <span>é</span>
                         <span>{chatMessages.length} messages</span>
-                        <span>�</span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> R�ponses instantan�es</span>
+                        <span>é</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> Réponses instantanées</span>
                       </div>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
@@ -1162,7 +1162,7 @@ export default function IAPage() {
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Zone de saisie am�lior�e pour mobile */}
+              {/* Zone de saisie améliorée pour mobile */}
               <div style={{ padding: isMobile ? "12px" : "14px 18px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
                 <div style={{ display: "flex", gap: isMobile ? "8px" : "12px", alignItems: "flex-end" }}>
                   <textarea 
@@ -1237,9 +1237,9 @@ export default function IAPage() {
             <div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
                 {[
-                  { label: t.forecastGrowth, value: predictions?.revenueForecast?.growthRate + "%", color: "#10b981", icon: IconTrendingUp, sub: isMobile ? "vs pr�c." : "vs p�riode pr�c�dente" },
+                  { label: t.forecastGrowth, value: predictions?.revenueForecast?.growthRate + "%", color: "#10b981", icon: IconTrendingUp, sub: isMobile ? "vs préc." : "vs période précédente" },
                   { label: t.projectedRevenue, value: formatCurrency(getForecastData()[0] || 0), color: "#10b981", icon: IconRevenue, sub: isMobile ? "prochain mois" : "pour le prochain mois" },
-                  { label: t.projectedProfit, value: formatCurrency((getForecastData()[0] || 0) * 0.35), color: "#f59e0b", icon: IconProfit, sub: isMobile ? "estimation" : "estimation � 35% de marge" }
+                  { label: t.projectedProfit, value: formatCurrency((getForecastData()[0] || 0) * 0.35), color: "#f59e0b", icon: IconProfit, sub: isMobile ? "estimation" : "estimation é 35% de marge" }
                 ].map((card, idx) => (
                   <div key={idx} style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, textAlign: "center", border: `1px solid ${theme.border}`, transition: "transform 0.2s, box-shadow 0.2s", animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.1}s` }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: card.color }}><card.icon size={isMobile ? 24 : 28} /></div>
@@ -1302,7 +1302,7 @@ export default function IAPage() {
               
               <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px", flexDirection: isMobile ? "column" : "row" }}>
-                  <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconPredictions size={isMobile ? 14 : 16} /> {t.salesForecast} � {selectedScenario === "optimistic" ? t.optimistic : selectedScenario === "realistic" ? t.realistic : t.pessimistic}</h3>
+                  <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconPredictions size={isMobile ? 14 : 16} /> {t.salesForecast} é {selectedScenario === "optimistic" ? t.optimistic : selectedScenario === "realistic" ? t.realistic : t.pessimistic}</h3>
                   <div style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, background: theme.surfaceHover, padding: "4px 10px", borderRadius: "20px" }}>
                     ?? {t.confidence}: {predictions?.revenueForecast?.confidence || 0}%
                   </div>
@@ -1328,7 +1328,7 @@ export default function IAPage() {
                 <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconRecommendations size={isMobile ? 14 : 16} /> {t.recommendations}</h3>
                 {!isMobile && (
                   <div style={{ fontSize: "10px", color: theme.textSecondary, background: `${theme.accent}15`, padding: "4px 10px", borderRadius: "20px" }}>
-                    ?? G�n�r�es par IA
+                    ?? Générées par IA
                   </div>
                 )}
               </div>
@@ -1350,9 +1350,9 @@ export default function IAPage() {
                           </span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "10px", fontSize: "10px" }}>
-                          <div><span style={{ color: theme.textSecondary }}>Stock:</span> <span style={{ color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", fontWeight: "bold" }}>{rec.currentStock} unit�s</span></div>
+                          <div><span style={{ color: theme.textSecondary }}>Stock:</span> <span style={{ color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", fontWeight: "bold" }}>{rec.currentStock} unités</span></div>
                           <div><span style={{ color: theme.textSecondary }}>Demande:</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.monthlyDemand}/mois</span></div>
-                          <div><span style={{ color: theme.textSecondary }}>Recommand�:</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.recommendedStock} unit�s</span></div>
+                          <div><span style={{ color: theme.textSecondary }}>Recommandé:</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.recommendedStock} unités</span></div>
                         </div>
                         <button 
                           onClick={() => router.push("/dashboard/purchases")} 
@@ -1420,14 +1420,14 @@ export default function IAPage() {
                             <td style={{ padding: "12px 8px", color: theme.text, fontWeight: "500" }}>{rec.productName}</td>
                             <td style={{ padding: "12px 8px", textAlign: "center" }}>
                               <span style={{ background: rec.currentStock < 10 ? "rgba(239,68,68,0.15)" : rec.currentStock < 20 ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)", color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", padding: "4px 10px", borderRadius: "20px", fontSize: "10px", fontWeight: "500" }}>
-                                {rec.currentStock} unit�s
+                                {rec.currentStock} unités
                               </span>
                             </td>
                             <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "500" }}>
-                              {rec.monthlyDemand} unit�s/mois
+                              {rec.monthlyDemand} unités/mois
                             </td>
                             <td style={{ padding: "12px 8px", textAlign: "center", color: "#10b981", fontWeight: "bold" }}>
-                              {rec.recommendedStock} unit�s
+                              {rec.recommendedStock} unités
                             </td>
                             <td style={{ padding: "12px 8px", textAlign: "center" }}>
                               <span style={{ background: urgencyConfig.bg, color: urgencyConfig.color, padding: "4px 12px", borderRadius: "20px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: "500" }}>
@@ -1450,7 +1450,7 @@ export default function IAPage() {
               {recommendations.length === 0 && (
                 <div style={{ textAlign: "center", padding: isMobile ? "30px" : "40px" }}>
                   <span style={{ display: "inline-flex", color: theme.accent, marginBottom: "12px" }}><IconCheckCircle size={isMobile ? 28 : 32} /></span>
-                  <p style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune recommandation pour le moment. Votre stock est bien g�r� !</p>
+                  <p style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune recommandation pour le moment. Votre stock est bien géré !</p>
                 </div>
               )}
             </div>
@@ -1461,7 +1461,7 @@ export default function IAPage() {
             <div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px" }}><IconAnalytics size={isMobile ? 12 : 14} /> R�partition</h3>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px" }}><IconAnalytics size={isMobile ? 12 : 14} /> Répartition</h3>
                   <div style={{ height: isMobile ? "220px" : "200px" }}>
                     <Doughnut 
                       data={{ 
@@ -1497,7 +1497,7 @@ export default function IAPage() {
                 </div>
               </div>
               <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "12px" : "14px" }}><IconDashboard size={isMobile ? 12 : 14} /> KPIs cl�s</h3>
+                <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "12px" : "14px" }}><IconDashboard size={isMobile ? 12 : 14} /> KPIs clés</h3>
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "10px" : "16px" }}>
                   <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
                     <span style={{ display: "inline-flex", color: "#10b981" }}><IconPackage size={isMobile ? 20 : 24} /></span>
@@ -1511,7 +1511,7 @@ export default function IAPage() {
                   </div>
                   <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
                     <span style={{ display: "inline-flex", color: theme.accent }}><IconTrendingUp size={isMobile ? 20 : 24} /></span>
-                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: theme.accent, marginTop: "6px" }}>{stats?.employees?.total > 0 ? Math.round((stats?.sales?.revenue || 0) / (stats?.employees?.total || 1)).toLocaleString() : 0} �</div>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: theme.accent, marginTop: "6px" }}>{stats?.employees?.total > 0 ? Math.round((stats?.sales?.revenue || 0) / (stats?.employees?.total || 1)).toLocaleString() : 0} é</div>
                     <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary }}>{t.productivity}</div>
                   </div>
                   <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>

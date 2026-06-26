@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -479,7 +479,7 @@ export default function HRPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        showMessage(`${result.success} employ�(s) import�(s) avec succ�s${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
+        showMessage(`${result.success} employé(s) importé(s) avec succés${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
         fetchEmployees();
       } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
     } catch (error) {
@@ -653,7 +653,7 @@ export default function HRPage() {
                   <ExportButtons data={filteredEmployees} filename="employes" iconOnly={isMobile} />
                 </div>
 
-                {/* Add employee � full-width on mobile */}
+                {/* Add employee é full-width on mobile */}
                 <button
                   onClick={() => setModal({ open: true, editMode: false, editId: null, form: { name: "", email: "", position: "", department: "", salary: 0, phone: "", hireDate: "", status: "active" } })}
                   style={{
@@ -695,7 +695,7 @@ export default function HRPage() {
             </div>
           )}
 
-          {/* -- Stats Cards � improved -- */}
+          {/* -- Stats Cards é improved -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(5, 1fr)",

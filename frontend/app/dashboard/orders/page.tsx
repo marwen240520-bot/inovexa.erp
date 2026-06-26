@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -393,7 +393,7 @@ export default function OrdersPage() {
       }
       fetchOrders();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} commande(s) supprim�e(s)`, "success");
+      showMessage(`${selectedIds.length} commande(s) supprimée(s)`, "success");
     }
   };
 
@@ -495,7 +495,7 @@ export default function OrdersPage() {
                 </p>
               </div>
 
-              {/* ? Boutons header � touch targets larges sur mobile */}
+              {/* ? Boutons header é touch targets larges sur mobile */}
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <ExportButtons data={orders} filename="commandes" />
                 <button
@@ -572,7 +572,7 @@ export default function OrdersPage() {
                   opacity: animateCards ? 1 : 0,
                   transition: "transform 0.3s, box-shadow 0.3s",
                   cursor: "pointer",
-                  // ? l�g�re ombre sur mobile pour mieux s�parer les cards
+                  // ? légère ombre sur mobile pour mieux séparer les cards
                   boxShadow: isMobile ? `0 2px 8px rgba(0,0,0,0.15)` : "none"
                 }}
                 onMouseEnter={(e) => {
@@ -609,7 +609,7 @@ export default function OrdersPage() {
           <div style={{ marginBottom: "20px", animation: `fadeInUp 0.5s ease 0.4s`, opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
 
-              {/* ? Search input � hauteur 44px+ sur mobile */}
+              {/* ? Search input é hauteur 44px+ sur mobile */}
               <div style={{ flex: 2, position: "relative", display: "flex", alignItems: "center", width: isMobile ? "100%" : "auto" }}>
                 <span style={{ position: "absolute", left: "12px", color: theme.textSecondary, pointerEvents: "none", display: "flex" }}>
                   <IconSearch size={16} color={theme.textSecondary} />
@@ -635,7 +635,7 @@ export default function OrdersPage() {
                 />
               </div>
 
-              {/* ? Select filtre � hauteur 44px+ sur mobile */}
+              {/* ? Select filtre é hauteur 44px+ sur mobile */}
               <div style={{ position: "relative", display: "flex", alignItems: "center", minWidth: isMobile ? "100%" : "160px" }}>
                 <span style={{ position: "absolute", left: "12px", pointerEvents: "none", display: "flex" }}>
                   <IconFilter size={14} color={theme.textSecondary} />
@@ -737,7 +737,7 @@ export default function OrdersPage() {
                     <th style={{ padding: "10px 8px", textAlign: "right", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.total")}</th>
                     <th style={{ padding: "10px 8px", textAlign: "center", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.status")}</th>
                     <th style={{ padding: "10px 8px", textAlign: "left", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.date")}</th>
-                    {/* ? Colonne actions � label visible */}
+                    {/* ? Colonne actions é label visible */}
                     <th style={{ padding: "10px 8px", textAlign: "center", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.actions")}</th>
                   </tr>
                 </thead>
@@ -772,12 +772,12 @@ export default function OrdersPage() {
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                         {order.clientName?.length > (isMobile ? 12 : 20)
-                          ? order.clientName.substring(0, isMobile ? 10 : 17) + "�"
+                          ? order.clientName.substring(0, isMobile ? 10 : 17) + "é"
                           : order.clientName || "-"}
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                         {order.productName?.length > (isMobile ? 12 : 20)
-                          ? order.productName.substring(0, isMobile ? 10 : 17) + "�"
+                          ? order.productName.substring(0, isMobile ? 10 : 17) + "é"
                           : order.productName || "-"}
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "right", color: theme.textSecondary, fontSize: tableFontSize }}>
@@ -787,7 +787,7 @@ export default function OrdersPage() {
                         {formatCurrency(parseFloat(String(order.total)))}
                       </td>
 
-                      {/* ? Badge statut + select � taille lisible sur mobile */}
+                      {/* ? Badge statut + select é taille lisible sur mobile */}
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center" }}>
                         <div style={{
                           display: "inline-flex",
@@ -836,7 +836,7 @@ export default function OrdersPage() {
                         )}
                       </td>
 
-                      {/* ? Bouton delete � touch target 44px sur mobile */}
+                      {/* ? Bouton delete é touch target 44px sur mobile */}
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center" }}>
                         <button
                           onClick={() => deleteOrder(order.id)}
@@ -880,7 +880,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* -- Modal cr�ation commande -- */}
+      {/* -- Modal création commande -- */}
       {modal.open && (
         <div style={{
           position: "fixed",
@@ -972,7 +972,7 @@ export default function OrdersPage() {
                 </label>
                 <input
                   type="number"
-                  placeholder="Quantit�"
+                  placeholder="Quantité"
                   value={modal.form.quantity ?? 1}
                   onChange={e => {
                     const qty = parseInt(e.target.value) || 1;
@@ -1036,7 +1036,7 @@ export default function OrdersPage() {
               </span>
             </div>
 
-            {/* ? Boutons modal � colonne sur mobile, rang�e sur desktop */}
+            {/* ? Boutons modal é colonne sur mobile, rangée sur desktop */}
             <div style={{ display: "flex", gap: "12px", flexDirection: isMobile ? "column" : "row" }}>
               <button
                 onClick={createOrder}
@@ -1055,7 +1055,7 @@ export default function OrdersPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  minHeight: "48px"             // ? touch target g�n�reux
+                  minHeight: "48px"             // ? touch target généreux
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
@@ -1079,7 +1079,7 @@ export default function OrdersPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  minHeight: "48px"             // ? touch target g�n�reux
+                  minHeight: "48px"             // ? touch target généreux
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}

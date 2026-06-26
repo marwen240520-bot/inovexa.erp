@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -328,7 +328,7 @@ export default function SuppliersPage() {
       if (res.ok) {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchSuppliers();
-        showMessage(t("suppliers.supplierCreated") || "Fournisseur cr��", "success");
+        showMessage(t("suppliers.supplierCreated") || "Fournisseur créé", "success");
       } else { showMessage(t("common.error"), "error"); }
     } catch (e) { showMessage(t("common.error"), "error"); }
   };
@@ -351,7 +351,7 @@ export default function SuppliersPage() {
       if (res.ok) {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchSuppliers();
-        showMessage(t("suppliers.supplierUpdated") || "Fournisseur mis � jour", "success");
+        showMessage(t("suppliers.supplierUpdated") || "Fournisseur mis é jour", "success");
       } else { showMessage(t("common.error"), "error"); }
     } catch (e) { showMessage(t("common.error"), "error"); }
   };
@@ -364,7 +364,7 @@ export default function SuppliersPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchSuppliers();
-      showMessage(t("suppliers.supplierDeleted") || "Fournisseur supprim�", "success");
+      showMessage(t("suppliers.supplierDeleted") || "Fournisseur supprimé", "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     }
   };
@@ -381,7 +381,7 @@ export default function SuppliersPage() {
       }
       fetchSuppliers();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} fournisseur(s) supprim�(s)`, "success");
+      showMessage(`${selectedIds.length} fournisseur(s) supprimé(s)`, "success");
     }
   };
 
@@ -398,8 +398,8 @@ export default function SuppliersPage() {
       if (res.ok) {
         await fetchSuppliers();
         showMessage(newStatus === "active"
-          ? (t("suppliers.activated") || "Activ�")
-          : (t("suppliers.deactivated") || "D�sactiv�"), "success");
+          ? (t("suppliers.activated") || "Activé")
+          : (t("suppliers.deactivated") || "Désactivé"), "success");
       } else {
         const supplier = suppliers.find(s => s.id === id);
         if (supplier) {
@@ -411,8 +411,8 @@ export default function SuppliersPage() {
           if (putRes.ok) {
             await fetchSuppliers();
             showMessage(newStatus === "active"
-              ? (t("suppliers.activated") || "Activ�")
-              : (t("suppliers.deactivated") || "D�sactiv�"), "success");
+              ? (t("suppliers.activated") || "Activé")
+              : (t("suppliers.deactivated") || "Désactivé"), "success");
           } else { showMessage(t("common.error"), "error"); }
         } else { showMessage(t("common.error"), "error"); }
       }
@@ -432,7 +432,7 @@ export default function SuppliersPage() {
       const result = await res.json();
       if (res.ok) {
         showMessage(
-          `${result.success} fournisseur(s) import�(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
+          `${result.success} fournisseur(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
           "success"
         );
         fetchSuppliers();
@@ -858,7 +858,7 @@ export default function SuppliersPage() {
                   <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>
                     {searchTerm
                       ? t("common.noResults")
-                      : t("suppliers.noSuppliers") || "Aucun fournisseur. Cliquez sur '+ Ajouter' pour en cr�er un."}
+                      : t("suppliers.noSuppliers") || "Aucun fournisseur. Cliquez sur '+ Ajouter' pour en créer un."}
                   </p>
                 </div>
               )}
@@ -889,7 +889,7 @@ export default function SuppliersPage() {
                   onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.3)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
                 >
-                  {/* Card header � avatar + name */}
+                  {/* Card header é avatar + name */}
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                     <div style={{
                       width: isMobile ? "38px" : "52px",
@@ -1031,7 +1031,7 @@ export default function SuppliersPage() {
             {([
               { label: (t("common.name") || "Nom") + " *", key: "name", type: "text", placeholder: t("suppliers.supplierName") || "Nom du fournisseur", autoFocus: true },
               { label: (t("common.email") || "Email") + " *", key: "email", type: "email", placeholder: "Email" },
-              { label: t("common.phone") || "T�l�phone", key: "phone", type: "tel", placeholder: t("common.phone") || "T�l�phone" },
+              { label: t("common.phone") || "Téléphone", key: "phone", type: "tel", placeholder: t("common.phone") || "Téléphone" },
               { label: t("common.address") || "Adresse", key: "address", type: "text", placeholder: t("common.address") || "Adresse" },
               { label: (t("suppliers.totalPurchases") || "Total achats"), key: "totalPurchases", type: "number", placeholder: "0", step: "0.01" }
             ] as { label: string; key: string; type: string; placeholder: string; step?: string; autoFocus?: boolean }[]).map((field) => (

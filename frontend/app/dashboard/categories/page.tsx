@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -615,7 +615,7 @@ export default function CategoriesPage() {
         </div>
       )}
 
-      {/* -- Modal Produits de la cat�gorie -- */}
+      {/* -- Modal Produits de la catégorie -- */}
       {showProductsModal && selectedCategory && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: "20px", borderRadius: "24px", width: productsModalWidth, maxWidth: "95%", maxHeight: "80vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
@@ -641,7 +641,7 @@ export default function CategoriesPage() {
                           <div style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", marginTop: "4px" }}>SKU: {product.sku || "-"}</div>
                         </div>
                         <div style={{ textAlign: "right" }}>
-                          <div style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "13px" : "16px" }}>{product.price} �</div>
+                          <div style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "13px" : "16px" }}>{product.price} é</div>
                           <div style={{ color: statusColor, fontSize: isMobile ? "10px" : "12px", marginTop: "4px" }}>
                             {getStockStatusText(product.quantity)} ({product.quantity || 0} {!isMobile && t("products.units")})
                           </div>

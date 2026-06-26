@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -295,9 +295,9 @@ export default function DashboardPage() {
   const getTempTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
       "dashboard.profile": { fr: "Mon profil", en: "My profile", es: "Mi perfil" },
-      "dashboard.settings": { fr: "Param�tres", en: "Settings", es: "Ajustes" },
+      "dashboard.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes" },
       "common.profile": { fr: "Profil", en: "Profile", es: "Perfil" },
-      "common.settings": { fr: "Param�tres", en: "Settings", es: "Ajustes" }
+      "common.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes" }
     };
     if (translations[key] && translations[key][language]) return translations[key][language];
     const translated = t(key);
@@ -401,17 +401,17 @@ export default function DashboardPage() {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return t("dashboard.goodMorning") || "Bonjour";
-    if (hour < 18) return t("dashboard.goodAfternoon") || "Bon apr�s-midi";
+    if (hour < 18) return t("dashboard.goodAfternoon") || "Bon aprés-midi";
     return t("dashboard.goodEvening") || "Bonsoir";
   };
 
   // -- FIX: explicit return type so icon field is keyof typeof Icons ----------
   const getPeriodOptions = (): { value: string; label: string; icon: keyof typeof Icons }[] => [
-    { value: "day",     label: language === 'fr' ? "Jour"      : language === 'es' ? "D�a"       : "Day",     icon: "DayIcon"     },
+    { value: "day",     label: language === 'fr' ? "Jour"      : language === 'es' ? "Déa"       : "Day",     icon: "DayIcon"     },
     { value: "week",    label: language === 'fr' ? "Semaine"   : language === 'es' ? "Semana"    : "Week",    icon: "WeekIcon"    },
     { value: "month",   label: language === 'fr' ? "Mois"      : language === 'es' ? "Mes"       : "Month",   icon: "MonthIcon"   },
     { value: "quarter", label: language === 'fr' ? "Trimestre" : language === 'es' ? "Trimestre" : "Quarter", icon: "QuarterIcon" },
-    { value: "year",    label: language === 'fr' ? "Ann�e"     : language === 'es' ? "A�o"       : "Year",    icon: "YearIcon"    }
+    { value: "year",    label: language === 'fr' ? "Année"     : language === 'es' ? "Aéo"       : "Year",    icon: "YearIcon"    }
   ];
 
   const periodOptions = getPeriodOptions();
@@ -435,7 +435,7 @@ export default function DashboardPage() {
     } else if (period === "week") {
       return ["S1", "S2", "S3", "S4"];
     } else if (period === "month") {
-      if (language === 'fr') return ["Jan", "F�v", "Mar", "Avr", "Mai", "Juin", "Juil", "Ao�", "Sep", "Oct", "Nov", "D�c"];
+      if (language === 'fr') return ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoé", "Sep", "Oct", "Nov", "Déc"];
       else if (language === 'es') return ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
       else return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     } else if (period === "quarter") {
@@ -911,7 +911,7 @@ export default function DashboardPage() {
                   {getCurrentDate()}
                   {!isMobile && (
                     <span style={{ marginLeft: "6px", fontSize: responsive.dateSize, color: "#666", display: "flex", alignItems: "center", gap: "3px" }}>
-                      <Icon name="Clock" size="0.8em" /> {t("common.lastUpdate") || "Derni�re mise � jour"}: {refreshTime}
+                      <Icon name="Clock" size="0.8em" /> {t("common.lastUpdate") || "Derniére mise é jour"}: {refreshTime}
                     </span>
                   )}
                 </p>
@@ -1005,7 +1005,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* S�lecteur de p�riode */}
+          {/* Sélecteur de période */}
           <div style={{ marginBottom: isMobile ? "12px" : responsive.sectionMargin, display: "flex", justifyContent: "flex-end" }}>
             <div style={{ display: "flex", gap: "4px", background: theme.surface, padding: "4px", borderRadius: "32px", border: `1px solid ${theme.border}`, flexWrap: "wrap", justifyContent: "center", width: isMobile ? "100%" : "auto" }}>
               {periodOptions.map((option) => (
@@ -1031,13 +1031,13 @@ export default function DashboardPage() {
               {salesData.length > 0 && salesData.some(d => d.sales > 0) ? (
                 <div style={{ height: responsive.chartHeight }}><Line data={salesChartData} options={chartOptions} /></div>
               ) : (
-                <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donn�e pour cette p�riode</div>
+                <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
             <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
                 <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Icon name="DollarSign" size="1em" color={theme.accent} /> {t("dashboard.profitEvolution") || "�volution du b�n�fice"}
+                  <Icon name="DollarSign" size="1em" color={theme.accent} /> {t("dashboard.profitEvolution") || "évolution du bénéfice"}
                 </h3>
                 <div style={{ background: theme.surfaceHover, padding: "2px 8px", borderRadius: "16px", fontSize: isMobile ? "9px" : "10px", color: stats.profitGrowth >= 0 ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", gap: "3px" }}>
                   <Icon name={stats.profitGrowth >= 0 ? "TrendingUp" : "TrendingDown"} size="0.8em" /> {Math.abs(stats.profitGrowth)}%
@@ -1046,7 +1046,7 @@ export default function DashboardPage() {
               {profitData.length > 0 && profitData.some(d => d.profit !== 0) ? (
                 <div style={{ height: responsive.chartHeight }}><Line data={profitChartData} options={chartOptions} /></div>
               ) : (
-                <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donn�e pour cette p�riode</div>
+                <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
           </div>
@@ -1081,7 +1081,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* KPIs strat�giques */}
+          {/* KPIs stratégiques */}
           <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, marginBottom: responsive.sectionMargin, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
             <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Icon name="BarChart2" size="1em" color={theme.primary} /> {t("dashboard.strategicKpis")}
@@ -1144,7 +1144,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Activit�s r�centes */}
+          {/* Activités récentes */}
           <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
             <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Icon name="Activity" size="1em" color={theme.primary} /> {t("dashboard.recentActivities")}
@@ -1179,7 +1179,7 @@ export default function DashboardPage() {
           {/* Footer */}
           <div style={{ marginTop: responsive.sectionMargin, textAlign: "center", padding: isMobile ? "12px" : "10px", borderTop: `1px solid ${theme.border}`, fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <Icon name="Clock" size="0.9em" /> {t("common.lastUpdate") || "Derni�re mise � jour"}: {refreshTime}
+              <Icon name="Clock" size="0.9em" /> {t("common.lastUpdate") || "Derniére mise é jour"}: {refreshTime}
             </span>
           </div>
         </div>
