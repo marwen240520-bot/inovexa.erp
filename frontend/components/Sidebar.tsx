@@ -843,7 +843,7 @@ export default function Sidebar() {
             >
               <div style={{ position: "relative", flexShrink: 0 }}>
                 <img
-                  src="public/logo.png"
+                  src="/images/logo.png"
                   alt="Logo"
                   style={styles.logoImage}
                   onError={(e) => { e.currentTarget.style.display = "none"; }}

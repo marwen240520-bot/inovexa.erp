@@ -294,35 +294,73 @@ export default function TransporteurLayout({
           display: "flex",
           flexDirection: "column"
         }}>
-          {/* Logo */}
+          {/* Logo - Version améliorée */}
           <div style={{
             padding: "28px 20px",
             borderBottom: "1px solid rgba(102,126,234,0.08)",
             display: "flex",
             alignItems: "center",
-            gap: "12px"
+            gap: "14px"
           }}>
             {!logoError ? (
               <img 
                 src="/images/logo.png" 
-                alt="Logo"
+                alt="Inovexa Logo"
                 style={{
-                  width: "42px",
-                  height: "42px",
-                  borderRadius: "12px",
-                  objectFit: "cover"
+                  width: "44px",
+                  height: "44px",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))",
+                  borderRadius: "10px"
                 }}
                 onError={() => setLogoError(true)}
               />
             ) : (
-           
+              <div style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #667eea, #764ba2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "20px",
+                fontWeight: "bold",
+                color: "white"
+              }}>
+                I
+              </div>
+            )}
             <div>
-              <span style={{ color: "white", fontSize: "16px", fontWeight: "bold" }}>Inovexa ERP</span>
-              <p style={{ color: "#667eea", fontSize: "10px", margin: "2px 0 0" }}>
-                {getTranslation("transporteur.role.label")}
-              </p>
+              <div style={{ 
+                color: "white", 
+                fontSize: "18px", 
+                fontWeight: "800", 
+                letterSpacing: "1px"
+              }}>
+                INOVEXA
+              </div>
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: "6px",
+                marginTop: "2px"
+              }}>
+                <span style={{ 
+                  color: "#667eea", 
+                  fontSize: "10px", 
+                  fontWeight: "600",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                  background: "rgba(102,126,234,0.12)",
+                  padding: "2px 10px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(102,126,234,0.15)"
+                }}>
+                  {getTranslation("transporteur.role.label")}
+                </span>
+              </div>
             </div>
-          )}
           </div>
 
           {/* Navigation */}
