@@ -469,7 +469,8 @@ export default function SalesPage() {
     if (confirm(t("sales.confirmDelete"))) {
       const token = localStorage.getItem("token");
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      fetchSales();
+      await fetchSales();
+      await fetchProducts();
       showMessage(t("sales.saleDeleted"), "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     }
@@ -482,7 +483,8 @@ export default function SalesPage() {
       for (const id of selectedIds) {
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       }
-      fetchSales();
+      await fetchSales();
+      await fetchProducts();
       setSelectedIds([]);
       showMessage(`${selectedIds.length} vente(s) supprimée(s)`, "success");
     }

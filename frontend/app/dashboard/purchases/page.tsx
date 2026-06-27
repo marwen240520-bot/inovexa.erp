@@ -395,9 +395,28 @@ export default function PurchasesPage() {
         body: JSON.stringify(modal.form)
       });
       if (res.ok) {
+        // Mettre à jour le stock du produit après l'achat
+        const productId = modal.form.productId;
+        const quantity = modal.form.quantity ?? 1;
+        if (productId) {
+          try {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+              const newQuantity = (product.quantity ?? 0) + quantity;
+              await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${productId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ quantity: newQuantity })
+              });
+            }
+          } catch (stockError) {
+            console.error("Erreur mise à jour stock:", stockError);
+          }
+        }
         setModal({ open: false, form: {} });
-        fetchPurchases();
-        showMessage(t("purchases.purchaseCreated") || "Achat créé avec succés", "success");
+        await fetchPurchases();
+        await fetchProducts();
+        showMessage(t("purchases.purchaseCreated") || "Achat créé avec succès", "success");
       } else {
         showMessage(t("common.error") || "Erreur lors de la création", "error");
       }
@@ -446,11 +465,30 @@ export default function PurchasesPage() {
   const deletePurchase = async (id: number) => {
     if (confirm(t("purchases.confirmDelete") || "Supprimer cet achat ?")) {
       const token = localStorage.getItem("token");
+      // Récupérer l'achat avant suppression pour déduire le stock
+      const purchase = allPurchases.find(p => p.id === id);
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchPurchases();
+      // Déduire la quantité du stock si le produit existe
+      if (purchase && purchase.productId) {
+        try {
+          const product = products.find(p => p.id === purchase.productId);
+          if (product) {
+            const newQuantity = Math.max(0, (product.quantity ?? 0) - (purchase.quantity ?? 0));
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${purchase.productId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ quantity: newQuantity })
+            });
+          }
+        } catch (e) {
+          console.error("Erreur mise à jour stock après suppression:", e);
+        }
+      }
+      await fetchPurchases();
+      await fetchProducts();
       showMessage(t("purchases.purchaseDeleted") || "Achat supprimé", "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     }
@@ -461,12 +499,29 @@ export default function PurchasesPage() {
     if (confirm(`${t("purchases.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} achat(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
+        const purchase = allPurchases.find(p => p.id === id);
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (purchase && purchase.productId) {
+          try {
+            const product = products.find(p => p.id === purchase.productId);
+            if (product) {
+              const newQuantity = Math.max(0, (product.quantity ?? 0) - (purchase.quantity ?? 0));
+              await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${purchase.productId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ quantity: newQuantity })
+              });
+            }
+          } catch (e) {
+            console.error("Erreur mise à jour stock:", e);
+          }
+        }
       }
-      fetchPurchases();
+      await fetchPurchases();
+      await fetchProducts();
       setSelectedIds([]);
       showMessage(`${selectedIds.length} achat(s) supprimé(s)`, "success");
     }
