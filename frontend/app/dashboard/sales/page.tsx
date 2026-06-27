@@ -338,7 +338,6 @@ export default function SalesPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      console.log("?? Produits chargés:", data);
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error("? Erreur chargement produits:", e); }
   };
@@ -371,7 +370,6 @@ export default function SalesPage() {
   };
 
   const createSale = async () => {
-    console.log("?? Formulaire avant création:", modal.form);
 
     if (!modal.form.productId) {
       showMessage("Veuillez sélectionner un produit", "error");
@@ -414,7 +412,6 @@ export default function SalesPage() {
       status: modal.form.status || "pending"
     };
 
-    console.log("?? Données envoyées au backend:", formData);
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, {
@@ -427,7 +424,6 @@ export default function SalesPage() {
       });
 
       const result = await res.json();
-      console.log("?? Réponse du backend:", result);
 
       if (res.ok) {
         setModal({ open: false, form: { status: "pending", quantity: 1, productId: undefined, clientId: undefined, unitPrice: 0, total: 0 } });
@@ -513,7 +509,6 @@ export default function SalesPage() {
   // ? HANDLE PRODUCT SELECT - VERSION CORRIGéE
   const handleProductSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    console.log("?? Produit sélectionné - valeur brute:", value);
     
     if (!value || value === "") {
       setSelectedProduct(null);
@@ -531,10 +526,8 @@ export default function SalesPage() {
     }
     
     const productId = parseInt(value, 10);
-    console.log("?? ID produit converti:", productId);
     
     const product = products.find(p => p.id === productId);
-    console.log("?? Produit trouvé:", product);
     
     if (product) {
       setSelectedProduct(product);
@@ -569,7 +562,6 @@ export default function SalesPage() {
   // ? HANDLE CLIENT SELECT - VERSION CORRIGéE
   const handleClientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    console.log("?? Client sélectionné - valeur brute:", value);
     
     if (!value || value === "") {
       setSelectedClient(null);
@@ -586,7 +578,6 @@ export default function SalesPage() {
     
     const clientId = parseInt(value, 10);
     const client = clients.find(c => c.id === clientId);
-    console.log("?? Client trouvé:", client);
     
     if (client) {
       setSelectedClient(client);

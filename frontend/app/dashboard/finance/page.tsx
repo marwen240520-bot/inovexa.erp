@@ -1074,9 +1074,9 @@ export default function FinancePage() {
     } catch (err) { console.error(err); }
   };
 
-  const saveExpenses = (ne: any[]) => { try { localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(ne)); setExpenses(ne); } catch { } };
-  const saveBudgets = (nb: any[]) => { try { localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(nb)); setBudgets(nb); } catch { } };
-  const saveBankAccounts = (na: any[]) => { try { localStorage.setItem(STORAGE_KEYS.BANK_ACCOUNTS, JSON.stringify(na)); setBankAccounts(na); } catch { } };
+  const saveExpenses = (ne: any[]) => { try { localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(ne)); setExpenses(ne); } catch (e) { console.error(e); } };
+  const saveBudgets = (nb: any[]) => { try { localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(nb)); setBudgets(nb); } catch (e) { console.error(e); } };
+  const saveBankAccounts = (na: any[]) => { try { localStorage.setItem(STORAGE_KEYS.BANK_ACCOUNTS, JSON.stringify(na)); setBankAccounts(na); } catch (e) { console.error(e); } };
 
   const filterByPeriod = useCallback((data: any[], dateField = "createdAt") => {
     if (!data || !Array.isArray(data)) return [];
