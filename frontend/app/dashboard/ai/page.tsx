@@ -227,6 +227,8 @@ export default function IAPage() {
     gapMedium: isMobile ? "12px" : "16px",
     gapLarge: isMobile ? "16px" : "24px"
   };
+  
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [chatInput, setChatInput] = useState("");
@@ -305,6 +307,7 @@ export default function IAPage() {
 
   const fetchAllData = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     
     try {
       const [sales, purchases, products, clients, orders, invoices, employees] = await Promise.all([
@@ -407,6 +410,7 @@ export default function IAPage() {
       console.error("Erreur fetch:", error);
       setStats(null);
     } finally {
+      setLoading(false);
     }
   };
 
@@ -809,6 +813,35 @@ export default function IAPage() {
   const mobileQuickSuggestions = quickSuggestions.slice(0, 4);
 
   // FIX: Loading state with sidebar
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <IconSpinner size={isMobile ? 32 : 40} color={theme.primary} />
+            <p style={{ color: theme.textSecondary, marginTop: "12px", fontSize: isMobile ? "11px" : "12px" }}>{t.loading}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 

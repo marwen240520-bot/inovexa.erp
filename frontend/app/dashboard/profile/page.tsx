@@ -275,6 +275,7 @@ export default function ProfilePage() {
   const profileT = profileTranslations[language as keyof typeof profileTranslations] || profileTranslations.fr;
 
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
   const [form, setForm] = useState({ name: "", email: "", phone: "", companyName: "" });
   const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
@@ -437,6 +438,7 @@ export default function ProfilePage() {
       const memberDate = new Date();
       setStats({ totalSales: 0, totalOrders: 0, totalClients: 0, memberSince: memberDate.toLocaleDateString(), lastLogin: new Date().toLocaleString() });
     }
+    setLoading(false);
   };
 
   const updateProfile = async () => {
@@ -637,6 +639,35 @@ export default function ProfilePage() {
   `;
 
   // FIX: Loading state with sidebar
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: currentTheme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: currentTheme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
+            <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading") || "Chargement..."}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 

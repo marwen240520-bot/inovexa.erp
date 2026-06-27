@@ -942,6 +942,8 @@ export default function FinancePage() {
   const tableMinWidth = isMobile ? "650px" : "100%";
   const chartHeight = isMobile ? "200px" : "250px";
   const chartHeightSmall = isMobile ? "150px" : "180px";
+
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -1091,6 +1093,7 @@ export default function FinancePage() {
 
   const fetchAllModuleData = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const fw = async (url: string, def: any[] = []) => {
         try {
@@ -1116,6 +1119,7 @@ export default function FinancePage() {
     } catch (err) {
       console.error(err);
     } finally {
+      setLoading(false);
     }
   };
 
@@ -1784,6 +1788,35 @@ export default function FinancePage() {
   ];
 
   // FIX: Loading state with sidebar
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{tCommon.loading}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 

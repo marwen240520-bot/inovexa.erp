@@ -506,6 +506,7 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOperationNumbers, setSelectedOperationNumbers] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -555,6 +556,7 @@ export default function InvoicesPage() {
 
   const fetchInvoices = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -574,6 +576,7 @@ export default function InvoicesPage() {
     } catch (e) {
       console.error("Erreur fetch invoices:", e);
     }
+    setLoading(false);
   };
 
   const calculateStats = (data: any[]) => {
@@ -695,6 +698,7 @@ export default function InvoicesPage() {
 
   const importInvoices = async (data: any[]) => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       for (const invoice of data) {
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, {
@@ -709,6 +713,7 @@ export default function InvoicesPage() {
       console.error("Erreur import:", e);
       showMessage("Erreur lors de l'import", "error");
     }
+    setLoading(false);
   };
 
   const createInvoice = async () => {
@@ -1155,6 +1160,37 @@ export default function InvoicesPage() {
   ];
 
   // FIX: Loading state with sidebar
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ animation: "spin 1s linear infinite", display: "inline-block", margin: "0 auto 10px" }}>
+              <Icons.Loader size={isMobile ? 28 : 32} color={theme.primary} />
+            </div>
+            <p style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary }}>{t.loading}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 

@@ -705,6 +705,7 @@ export default function AnalyticsPage() {
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [showPeriodSheet, setShowPeriodSheet] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("month");
   const [activeModule, setActiveModule] = useState("global");
   const [chartType, setChartType] = useState("bar");
@@ -740,6 +741,7 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const [salesRes, productsRes, clientsRes, ordersRes, invoicesRes, employeesRes, shipmentsRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -829,6 +831,7 @@ export default function AnalyticsPage() {
       setAlerts(newAlerts.slice(0, isMobile ? 2 : 4));
 
     } catch (e) { console.error(e); }
+    setLoading(false);
   };
 
   const addCustomChart = (chart: any) => setCustomCharts(prev => [...prev, chart]);
@@ -1019,6 +1022,35 @@ export default function AnalyticsPage() {
   `;
 
   // FIX: Loading state with sidebar
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 44, height: 44, border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ fontSize: "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const renderChartByType = (type: string, data: any, opts: any) => {
     switch (type) {

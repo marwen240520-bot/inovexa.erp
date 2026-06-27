@@ -117,6 +117,7 @@ export default function ProductionPage() {
   // -- FIX: typed state arrays ------------------------------------------------
   const [productionOrders, setProductionOrders] = useState<ProductionOrder[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -159,6 +160,7 @@ export default function ProductionPage() {
 
   const fetchProductionOrders = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/production/orders`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -180,6 +182,7 @@ export default function ProductionPage() {
 
       setStats({ total: data.length, pending, inProgress, completed, cancelled, totalQuantity, completedQuantity, avgProgress });
     } catch (e) { console.error(e); }
+    setLoading(false);
   };
 
   const fetchProducts = async () => {
@@ -480,6 +483,18 @@ export default function ProductionPage() {
     { icon: "?", label: t("production.producedUnits"), value: formatNumber(stats.completedQuantity), color: stats.completedQuantity > 0 ? theme.accent : theme.textSecondary },
     { icon: "??", label: t("production.avgProgress"), value: formatNumber(stats.avgProgress), suffix: "%", color: stats.avgProgress > 0 ? "#f59e0b" : theme.textSecondary },
   ];
+
+  if (loading) {
+    return (
+      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: "48px", height: "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
+          <style>{animations}</style>
+          <p>{t("common.loading")}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>

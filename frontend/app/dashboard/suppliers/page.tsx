@@ -233,6 +233,7 @@ export default function SuppliersPage() {
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({ open: false, form: {}, editMode: false, editId: null });
@@ -288,6 +289,7 @@ export default function SuppliersPage() {
 
   const fetchSuppliers = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -303,6 +305,7 @@ export default function SuppliersPage() {
         totalPurchases
       });
     } catch (e) { console.error(e); }
+    setLoading(false);
   };
 
   // -- CRUD -------------------------------------------------------------------
@@ -495,6 +498,35 @@ export default function SuppliersPage() {
   ];
 
   // FIX: Loading state with sidebar
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
+            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // -- Status badge -----------------------------------------------------------
 
