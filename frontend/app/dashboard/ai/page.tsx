@@ -718,58 +718,6 @@ export default function IAPage() {
     }
   };
 
-  // ==================== RENDU MARKDOWN LÉGER ====================
-  // Convertit **gras**, puces et sauts de ligne en JSX (les réponses IA
-  // sont écrites en markdown : sans ça, l'utilisateur voit les ** bruts).
-  const renderInline = (text: string, keyPrefix: string) => {
-    return text.split(/(\*\*[^*]+\*\*)/g).map((part, j) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={`${keyPrefix}-${j}`} style={{ fontWeight: 700, color: theme.text }}>{part.slice(2, -2)}</strong>;
-      }
-      return <span key={`${keyPrefix}-${j}`}>{part}</span>;
-    });
-  };
-
-  const renderRichText = (text: string) => {
-    return text.split("\n").map((rawLine, i) => {
-      const line = rawLine.replace(/\s+$/, "");
-      if (line.trim() === "") return <div key={i} style={{ height: "7px" }} />;
-
-      // Détection de puce en début de ligne ("é " = puce corrompue, "• ", "- ")
-      const bulletMatch = line.match(/^\s*(é|•|-)\s+(.*)$/);
-      if (bulletMatch) {
-        return (
-          <div key={i} style={{ display: "flex", gap: "8px", paddingLeft: "2px", marginBottom: "3px", alignItems: "flex-start" }}>
-            <span style={{ color: theme.primary, flexShrink: 0, lineHeight: "1.5" }}>•</span>
-            <span style={{ flex: 1 }}>{renderInline(bulletMatch[2], `b-${i}`)}</span>
-          </div>
-        );
-      }
-
-      // Ligne numérotée "1. ..." -> léger renfort visuel
-      const numMatch = line.match(/^\s*(\d+)\.\s+(.*)$/);
-      if (numMatch) {
-        return (
-          <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "3px", alignItems: "flex-start" }}>
-            <span style={{ color: theme.primary, flexShrink: 0, fontWeight: 700, minWidth: "16px" }}>{numMatch[1]}.</span>
-            <span style={{ flex: 1 }}>{renderInline(numMatch[2], `n-${i}`)}</span>
-          </div>
-        );
-      }
-
-      return <div key={i} style={{ marginBottom: "2px" }}>{renderInline(line.trimStart(), `l-${i}`)}</div>;
-    });
-  };
-
-  const copySingleMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
-    const toast = document.createElement("div");
-    toast.textContent = t.conversationCopied;
-    toast.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${theme.primary};color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10000;animation:fadeInUp 0.3s ease;box-shadow:0 4px 16px rgba(0,0,0,0.2)`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1800);
-  };
-
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
@@ -1130,7 +1078,7 @@ export default function IAPage() {
                     <div>
                       <div style={{ color: theme.text, fontWeight: "bold", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
                         {t.aiAssistant}
-                        <span style={{ background: `${theme.accent}25`, color: theme.accent, fontSize: "9px", padding: "2px 8px", borderRadius: "20px", fontWeight: "normal" }}>IA</span>
+                        <span style={{ background: `${theme.accent}25`, color: theme.accent, fontSize: "9px", padding: "2px 8px", borderRadius: "20px", fontWeight: "normal" }}>GPT-4</span>
                       </div>
                       <div style={{ color: theme.textSecondary, fontSize: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -1157,35 +1105,6 @@ export default function IAPage() {
                 </div>
               )}
 
-              {isMobile && (
-                <div style={{ padding: "10px 12px", borderBottom: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${theme.surfaceHover}, ${theme.surface})`, display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "34px", height: "34px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 2px 8px ${theme.primary}40` }}>
-                    <IconRobot size={17} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: theme.text, fontWeight: "bold", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      {t.aiAssistant}
-                      <span style={{ background: `${theme.accent}25`, color: theme.accent, fontSize: "8px", padding: "1px 6px", borderRadius: "20px" }}>IA</span>
-                    </div>
-                    <div style={{ color: theme.textSecondary, fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}>
-                      <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10b981", display: "inline-block", animation: "pulse 2s infinite" }} />
-                      {t.online} · {chatMessages.length} msg
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: "4px" }}>
-                    <button onClick={copyConversation} title={t.copyConversation} style={{ background: `${theme.primary}15`, border: "none", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: theme.primary, WebkitTapHighlightColor: "transparent" }}>
-                      <IconCopy size={14} />
-                    </button>
-                    <button onClick={clearConversation} title={t.clearConversation} style={{ background: `${theme.primary}15`, border: "none", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: theme.primary, WebkitTapHighlightColor: "transparent" }}>
-                      <IconTrash size={14} />
-                    </button>
-                    <button onClick={() => { setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]); }} title={t.newChat} style={{ background: `${theme.primary}15`, border: "none", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: theme.primary, WebkitTapHighlightColor: "transparent" }}>
-                      <IconRefresh size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <div 
                 ref={chatContainerRef} 
                 style={{ 
@@ -1207,19 +1126,8 @@ export default function IAPage() {
                       </div>
                     )}
                     <div style={{ maxWidth: isMobile ? "85%" : "75%" }}>
-                      <div style={{ padding: msg.role === "user" ? (isMobile ? "11px 15px" : "13px 18px") : (isMobile ? "11px 36px 11px 15px" : "13px 40px 13px 18px"), borderRadius: msg.role === "user" ? "20px 20px 6px 20px" : "20px 20px 20px 6px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: msg.role === "user" ? "white" : theme.text, fontSize: isMobile ? "12.5px" : "13px", lineHeight: "1.55", whiteSpace: msg.role === "user" ? "pre-wrap" : "normal", wordBreak: "break-word", boxShadow: msg.role === "user" ? `0 2px 12px ${theme.primary}45` : "none", border: msg.role === "user" ? "none" : `1px solid ${theme.border}`, position: "relative" }}>
-                        {msg.role === "user" ? msg.content : renderRichText(msg.content)}
-                        {msg.role !== "user" && (
-                          <button
-                            onClick={() => copySingleMessage(msg.content)}
-                            title={t.copyConversation}
-                            style={{ position: "absolute", top: "8px", right: "8px", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "8px", width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: theme.textSecondary, opacity: 0.6, transition: "opacity 0.2s", WebkitTapHighlightColor: "transparent" }}
-                            onMouseEnter={e => { e.currentTarget.style.opacity = "1"; }}
-                            onMouseLeave={e => { e.currentTarget.style.opacity = "0.6"; }}
-                          >
-                            <IconCopy size={12} />
-                          </button>
-                        )}
+                      <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: theme.text, fontSize: isMobile ? "12px" : "13px", lineHeight: "1.5", whiteSpace: "pre-wrap", wordBreak: "break-word", boxShadow: msg.role === "user" ? `0 2px 10px ${theme.primary}40` : "none" }}>
+                        {msg.content}
                       </div>
                       {msg.actions && msg.actions.length > 0 && msg.role !== "user" && (
                         <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
@@ -1274,8 +1182,8 @@ export default function IAPage() {
                 {isStreaming && streamingContent && (
                   <div style={{ display: "flex", justifyContent: "flex-start" }}>
                     {!isMobile && <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>}
-                    <div style={{ padding: isMobile ? "11px 15px" : "13px 18px", borderRadius: "20px 20px 20px 6px", background: theme.surfaceHover, color: theme.text, fontSize: isMobile ? "12.5px" : "13px", maxWidth: isMobile ? "85%" : "75%", lineHeight: "1.55", wordBreak: "break-word", border: `1px solid ${theme.border}` }}>
-                      {renderRichText(streamingContent)}<span style={{ display: "inline-block", width: "2px", height: "13px", background: theme.primary, marginLeft: "2px", animation: "blink 1s infinite", verticalAlign: "middle" }} />
+                    <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: theme.surfaceHover, fontSize: isMobile ? "12px" : "13px", maxWidth: isMobile ? "85%" : "75%", lineHeight: "1.5", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      {streamingContent}<span style={{ display: "inline-block", width: "2px", height: "12px", background: theme.primary, marginLeft: "2px", animation: "blink 1s infinite", verticalAlign: "middle" }} />
                     </div>
                   </div>
                 )}
@@ -1283,16 +1191,7 @@ export default function IAPage() {
               </div>
 
               {/* Zone de saisie améliorée pour mobile */}
-              <div style={{ padding: isMobile ? "10px 12px 12px" : "14px 18px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
-                {isMobile && !keyboardVisible && (
-                  <div className="hide-scrollbar" style={{ display: "flex", gap: "6px", overflowX: "auto", marginBottom: "10px", WebkitOverflowScrolling: "touch", paddingBottom: "2px" }}>
-                    {quickSuggestions.map((s, idx) => (
-                      <button key={idx} onClick={() => { setChatInput(s.query); }} style={{ background: `${s.color}15`, border: `1px solid ${s.color}30`, borderRadius: "20px", padding: "6px 12px", fontSize: "10px", color: s.color, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap", flexShrink: 0, WebkitTapHighlightColor: "transparent" }}>
-                        <s.Icon size={11} /> {s.text}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div style={{ padding: isMobile ? "12px" : "14px 18px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
                 <div style={{ display: "flex", gap: isMobile ? "8px" : "12px", alignItems: "flex-end" }}>
                   <textarea 
                     ref={textareaRef}
