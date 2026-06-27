@@ -351,6 +351,7 @@ export default function StockPage() {
   const [showInfo, setShowInfo] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
   const headerTitleSize = isMobile ? "20px" : "28px";
   const cardPadding = isMobile ? "14px" : "20px";
@@ -595,23 +596,56 @@ export default function StockPage() {
     { value: "out", label: t.filterOut }
   ];
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <IconLoader size={isMobile ? 40 : 48} color={theme.primary} />
-          <p style={{ color: theme.textSecondary, marginTop: "16px" }}>Chargement...</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "0px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} />
+            <p style={{ color: theme.textSecondary, marginTop: "16px" }}>Chargement...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
-      <div style={{ flex: 1, marginLeft: contentMarginLeft, paddingBottom: isMobile ? "80px" : "24px" }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+      <div style={{ 
+        flex: 1, 
+        marginLeft: contentMarginLeft, 
+        paddingBottom: isMobile ? "80px" : "24px",
+        paddingTop: isMobile ? "0" : "24px",
+        paddingRight: isMobile ? "0" : "24px",
+        minHeight: "100vh",
+        background: theme.background
+      }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto", padding: isMobile ? "0" : "0 24px" }}>
           <style>{animations}</style>
 
           {/* -- STICKY SEARCH BAR (mobile only) -- */}
@@ -688,7 +722,7 @@ export default function StockPage() {
           )}
 
           {/* -- MAIN CONTENT PADDING -- */}
-          <div style={{ padding: isMobile ? "16px 16px 0" : "24px" }}>
+          <div style={{ padding: isMobile ? "16px 16px 0" : "0" }}>
 
             {/* Header */}
             <div style={{ marginBottom: sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
