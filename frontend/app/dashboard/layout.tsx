@@ -29,9 +29,8 @@ export default function DashboardLayout({
     pathname?.includes("/auth/login") || pathname?.includes("/auth/register");
 
   if (isAuthPage) return <>{children}</>;
-  if (!mounted) return null;
-
-  const sidebarWidth = !isMobile && sidebarOpen ? 280 : 0;
+  // Avant le mount: on suppose desktop avec sidebar (évite le flash)
+  const sidebarWidth = mounted ? (!isMobile && sidebarOpen ? 280 : 0) : 280;
 
   return (
     <div
@@ -42,8 +41,8 @@ export default function DashboardLayout({
         background: "#0a0a0a",
       }}
     >
-      {/* â”€â”€ Sidebar desktop fixe â”€â”€ */}
-      {!isMobile && (
+      {/* ── Sidebar desktop fixe ── */}
+      {mounted && !isMobile && (
         <div
           style={{
             position: "fixed",
@@ -60,8 +59,8 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* â”€â”€ Sidebar mobile overlay â”€â”€ */}
-      {isMobile && sidebarOpen && (
+      {/* ── Sidebar mobile overlay ── */}
+      {mounted && isMobile && sidebarOpen && (
         <>
           <div
             onClick={() => setSidebarOpen(false)}
@@ -88,13 +87,13 @@ export default function DashboardLayout({
         </>
       )}
 
-      {/* â”€â”€ Contenu principal â”€â”€ */}
+      {/* ── Contenu principal ── */}
       <div
         style={{
           flex: 1,
           marginLeft: sidebarWidth,
           width: `calc(100% - ${sidebarWidth}px)`,
-          transition: "margin-left 0.3s ease, width 0.3s ease",
+          transition: mounted ? "margin-left 0.3s ease, width 0.3s ease" : "none",
           minHeight: "100vh",
           position: "relative",
         }}
