@@ -266,6 +266,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
+  const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [stats, setStats] = useState({
     totalSales: 0, totalPurchases: 0, totalClients: 0, totalProducts: 0,
@@ -601,6 +602,7 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const [salesRes, purchasesRes, clientsRes, productsRes, invoicesRes, ordersRes, employeesRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -723,6 +725,7 @@ export default function DashboardPage() {
       setRecentActivities(recent.slice(0, 8));
 
     } catch(e) { console.error("Erreur:", e); }
+    setLoading(false);
   };
 
   const profit = stats.totalSales - stats.totalPurchases;
@@ -819,10 +822,11 @@ export default function DashboardPage() {
     { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
   ];
 
+  // Corrected main container style with proper sidebar offset
   const mainContainerStyle = { 
     flex: 1, 
     margin: 0, 
-    marginLeft: isMobile ? "0" : "280px",
+    marginLeft: isMobile ? "0" : "280px", // Match sidebar width
     padding: isMobile ? "10px" : "16px", 
     paddingBottom: isMobile ? "70px" : "16px",
     width: isMobile ? "100%" : "auto",
@@ -837,6 +841,47 @@ export default function DashboardPage() {
     width: "100%",
     padding: isMobile ? "0" : "20px"
   };
+
+  // Loading component with proper page dimensions
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ 
+              width: isMobile ? "40px" : "48px", 
+              height: isMobile ? "40px" : "48px", 
+              border: `3px solid ${theme.border}`, 
+              borderTopColor: theme.primary, 
+              borderRadius: "50%", 
+              animation: "spin 1s linear infinite", 
+              margin: "0 auto 16px" 
+            }}></div>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>
+              {t("common.loading") || "Chargement..."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0, margin: 0 }}>
@@ -959,6 +1004,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Rest of the dashboard content remains the same... */}
           {/* 4 Cartes KPI */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {kpiCards.map((card, idx) => (
