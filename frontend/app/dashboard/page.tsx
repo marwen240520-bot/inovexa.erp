@@ -273,13 +273,11 @@ export default function DashboardPage() {
     pendingInvoices: 0, lowStock: 0, activeEmployees: 0, pendingOrders: 0,
     salesGrowth: 0, clientGrowth: 0, profitGrowth: 0
   });
-  // -- FIX: typed state arrays (was never[]) ----------------------------------
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
   const [profitData, setProfitData] = useState<ProfitDataPoint[]>([]);
   const [topProducts, setTopProducts] = useState<TopItem[]>([]);
   const [topClients, setTopClients] = useState<TopItem[]>([]);
-  // -- FIX: typed hover state (was null ? never accepts number) --------------
   const [animateCards, setAnimateCards] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [hoveredAction, setHoveredAction] = useState<number | null>(null);
@@ -290,7 +288,6 @@ export default function DashboardPage() {
   const [rawPurchases, setRawPurchases] = useState<any[]>([]);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [imageError, setImageError] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const getTempTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
@@ -405,7 +402,6 @@ export default function DashboardPage() {
     return t("dashboard.goodEvening") || "Bonsoir";
   };
 
-  // -- FIX: explicit return type so icon field is keyof typeof Icons ----------
   const getPeriodOptions = (): { value: string; label: string; icon: keyof typeof Icons }[] => [
     { value: "day",     label: language === 'fr' ? "Jour"      : language === 'es' ? "Déa"       : "Day",     icon: "DayIcon"     },
     { value: "week",    label: language === 'fr' ? "Semaine"   : language === 'es' ? "Semana"    : "Week",    icon: "WeekIcon"    },
@@ -684,7 +680,6 @@ export default function DashboardPage() {
         }
       });
 
-      // -- FIX: all growth values are numbers (parseFloat eliminates string | 0 | 100) --
       const salesGrowth = lastMonthSalesTotal > 0
         ? parseFloat(((currentMonthSales - lastMonthSalesTotal) / lastMonthSalesTotal * 100).toFixed(1))
         : currentMonthSales > 0 ? 100 : 0;
@@ -701,7 +696,6 @@ export default function DashboardPage() {
       setSalesData(labels.map((label, i) => ({ month: label, sales: salesValues[i] })));
       setProfitData(labels.map((label, i) => ({ month: label, profit: profitValues[i] })));
 
-      // -- FIX: cast Object.entries values to number --------------------------
       const productSales: Record<string, number> = {};
       sales.forEach((s: any) => {
         if (s.productName) productSales[s.productName] = (productSales[s.productName] || 0) + (parseFloat(s.total) || 0);
@@ -724,7 +718,6 @@ export default function DashboardPage() {
           .slice(0, 5)
       );
 
-      // -- FIX: typed Activity array ------------------------------------------
       const recent: Activity[] = [];
       orders.slice(0, 5).forEach((o: any) => recent.push({ type: "order", data: o, date: o.createdAt }));
       invoices.slice(0, 5).forEach((i: any) => recent.push({ type: "invoice", data: i, date: i.createdAt }));
@@ -829,27 +822,69 @@ export default function DashboardPage() {
     { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
   ];
 
+  // Corrected main container style with proper sidebar offset
   const mainContainerStyle = { 
-    flex: 1, margin: isMobile ? "0" : "6px", marginLeft: isMobile ? "0" : "0", 
-    padding: isMobile ? "10px" : "16px", paddingBottom: isMobile ? "70px" : "16px",
-    width: "100%", minHeight: "100vh", overflowX: "hidden" as const, background: theme.background 
+    flex: 1, 
+    margin: 0, 
+    marginLeft: isMobile ? "0" : "280px", // Match sidebar width
+    padding: isMobile ? "10px" : "16px", 
+    paddingBottom: isMobile ? "70px" : "16px",
+    width: isMobile ? "100%" : "auto",
+    minHeight: "100vh", 
+    overflowX: "hidden" as const, 
+    background: theme.background 
   };
-  const innerContainerStyle = { maxWidth: isMobile ? "100%" : "1400px", margin: "0 auto", width: "100%" };
 
+  const innerContainerStyle = { 
+    maxWidth: isMobile ? "100%" : "1400px", 
+    margin: "0 auto", 
+    width: "100%",
+    padding: isMobile ? "0" : "20px"
+  };
+
+  // Loading component with proper page dimensions
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ 
+              width: isMobile ? "40px" : "48px", 
+              height: isMobile ? "40px" : "48px", 
+              border: `3px solid ${theme.border}`, 
+              borderTopColor: theme.primary, 
+              borderRadius: "50%", 
+              animation: "spin 1s linear infinite", 
+              margin: "0 auto 16px" 
+            }}></div>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>
+              {t("common.loading") || "Chargement..."}
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0 }}>
+    <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0, margin: 0 }}>
       <Sidebar />
       <div style={mainContainerStyle}>
         <div style={innerContainerStyle}>
@@ -926,7 +961,7 @@ export default function DashboardPage() {
                   >
                     {profileImage && !imageError ? (
                       <img 
-                        src={`$RENDER_API_URL${profileImage}?t=${imageTimestamp}`} 
+                        src={`${process.env.NEXT_PUBLIC_API_URL}${profileImage}?t=${imageTimestamp}`} 
                         alt="Profile" 
                         style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover", border: `2px solid ${theme.primary}`, boxShadow: `0 4px 15px ${theme.primary}80` }}
                         onError={() => { setImageError(true); refreshUserData(); }} 
@@ -943,7 +978,7 @@ export default function DashboardPage() {
                     <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
                       <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
                         {profileImage && !imageError ? (
-                          <img src={`$RENDER_API_URL${profileImage}?t=${imageTimestamp}`} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
+                          <img src={`${process.env.NEXT_PUBLIC_API_URL}${profileImage}?t=${imageTimestamp}`} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
                         ) : (
                           <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
                         )}
@@ -969,6 +1004,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Rest of the dashboard content remains the same... */}
           {/* 4 Cartes KPI */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {kpiCards.map((card, idx) => (
@@ -1187,5 +1223,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
