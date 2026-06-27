@@ -1162,13 +1162,31 @@ export default function InvoicesPage() {
   // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: theme.background }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ animation: "spin 1s linear infinite", display: "inline-block", margin: "0 auto 10px" }}>
-            <Icons.Loader size={isMobile ? 28 : 32} color={theme.primary} />
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ animation: "spin 1s linear infinite", display: "inline-block", margin: "0 auto 10px" }}>
+              <Icons.Loader size={isMobile ? 28 : 32} color={theme.primary} />
+            </div>
+            <p style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary }}>{t.loading}</p>
           </div>
-          <p style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary }}>{t.loading}</p>
         </div>
       </div>
     );

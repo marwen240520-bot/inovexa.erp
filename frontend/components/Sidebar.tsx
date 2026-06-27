@@ -554,7 +554,7 @@ export default function Sidebar() {
       border: `2px solid ${ct.border}`,
       borderTopColor: ct.primary,
       borderRadius: "50%",
-      animation: "spin 0.8s linear infinite",
+      display: "none",
     },
     errorToast: {
       position: "fixed",
@@ -628,20 +628,9 @@ export default function Sidebar() {
     );
   };
 
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner} />
-      </div>
-    );
-  }
-
-  if (!mounted) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner} />
-      </div>
-    );
+  // Pas de chargement propre à la Sidebar : on laisse la page afficher l'unique indicateur
+  if (loading || !mounted) {
+    return null;
   }
 
   return (
