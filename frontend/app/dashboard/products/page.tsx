@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -223,7 +222,7 @@ export default function ProductsPage() {
   const modalPadding = isMobile ? "20px" : "32px";
   const gridMinWidth = isMobile ? "160px" : "280px";
   // FIX: Set proper margin-left for desktop (280px for sidebar)
-  const contentMarginLeft = isMobile ? "0" : "0px";
+  const contentMarginLeft = 0;
 
   // suppress unused warnings
   void isTablet; void isDesktop; void language; void importing;
@@ -485,10 +484,9 @@ export default function ProductsPage() {
         padding: 0,
         margin: 0
       }}>
-        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
+          marginLeft: 0,
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -514,7 +512,6 @@ export default function ProductsPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
 
       <div style={{ 
         flex: 1, 

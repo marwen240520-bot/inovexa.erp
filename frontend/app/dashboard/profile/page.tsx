@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme, THEMES } from "@/contexts/ThemeContext";
@@ -348,7 +347,7 @@ export default function ProfilePage() {
   };
 
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = isMobile ? "0" : "0px";
+  const contentMarginLeft = 0;
 
   const loadUserFromBackend = async () => {
     const token = localStorage.getItem("token");
@@ -649,10 +648,9 @@ export default function ProfilePage() {
         padding: 0,
         margin: 0
       }}>
-        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
+          marginLeft: 0,
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -679,7 +677,6 @@ export default function ProfilePage() {
     }}>
       <style>{animations}</style>
       
-      <Sidebar />
       
       <div style={{ 
         marginLeft: contentMarginLeft,

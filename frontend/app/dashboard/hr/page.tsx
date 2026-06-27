@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -295,7 +294,7 @@ export default function HRPage() {
   const { theme } = useTheme();
 
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = isMobile ? "0" : "0px";
+  const contentMarginLeft = 0;
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -583,10 +582,9 @@ export default function HRPage() {
         padding: 0,
         margin: 0
       }}>
-        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
+          marginLeft: 0,
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -611,7 +609,6 @@ export default function HRPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
       <div style={{
         marginLeft: contentMarginLeft,
         flex: 1,

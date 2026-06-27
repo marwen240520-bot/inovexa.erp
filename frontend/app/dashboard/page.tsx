@@ -2,7 +2,6 @@
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -853,7 +852,6 @@ export default function DashboardPage() {
         padding: 0,
         margin: 0
       }}>
-        <Sidebar />
         <div style={{
           flex: 1,
           marginLeft: isMobile ? "0" : "0px",
@@ -885,7 +883,6 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0, margin: 0 }}>
-      <Sidebar />
       <div style={mainContainerStyle}>
         <div style={innerContainerStyle}>
           <style>{`

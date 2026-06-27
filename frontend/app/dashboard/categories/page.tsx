@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -160,7 +159,7 @@ export default function CategoriesPage() {
   const [viewMode, setViewMode] = useState("grid");
 
   // FIX: Margin left pour desktop (sidebar fixe 280px)
-  const contentMarginLeft = isMobile ? "0" : "0px";
+  const contentMarginLeft = 0;
 
   // Traduction directe pour totalProducts
   const getTotalProductsLabel = () => {
@@ -337,10 +336,9 @@ export default function CategoriesPage() {
         padding: 0,
         margin: 0
       }}>
-        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
+          marginLeft: 0,
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -365,7 +363,6 @@ export default function CategoriesPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
       <div style={{ 
         marginLeft: contentMarginLeft, 
         flex: 1, 
