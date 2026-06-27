@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Purchase } from './entities/purchase.entity';
@@ -55,16 +55,7 @@ export class PurchasesService {
       productName: product.name,
       total: (data.unitPrice || 0) * (data.quantity || 1)
     });
-    const savedPurchase = await this.purchaseRepository.save(purchase);
-
-    // ✅ Mettre à jour le stock du produit après un achat
-    product.quantity = (product.quantity || 0) + (data.quantity || 0);
-    await this.productRepository.save(product);
-
-    return {
-      ...savedPurchase,
-      newStock: product.quantity
-    };
+    return this.purchaseRepository.save(purchase);
   }
 
   async updateStatus(id: number, userId: number, status: string) {
@@ -76,15 +67,7 @@ export class PurchasesService {
 
   async delete(id: number, userId: number) {
     const purchase = await this.findOne(id, userId);
-
-    // ✅ Rétablir le stock si l'achat est supprimé
-    const product = await this.productRepository.findOne({ where: { id: purchase.productId } });
-    if (product) {
-      product.quantity = Math.max(0, (product.quantity || 0) - (purchase.quantity || 0));
-      await this.productRepository.save(product);
-    }
-
     await this.purchaseRepository.delete(id);
-    return { success: true, message: 'Achat supprimé, stock rétabli' };
+    return { success: true };
   }
 }
