@@ -5,7 +5,8 @@
       background: "#0a0a0a",
       display: "flex",
       alignItems: "center",
-      justifyContent: "center"
+      justifyContent: "center",
+      width: "100%",   // ← 100% du conteneur parent, pas 100vw
     }}>
       <div style={{
         width: "50px",
