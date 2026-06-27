@@ -30,7 +30,7 @@ export default function DashboardLayout({
 
   if (isAuthPage) return <>{children}</>;
   // Avant le mount: on suppose desktop avec sidebar (évite le flash)
-  const sidebarWidth = mounted ? (!isMobile && sidebarOpen ? 0 : 0) : 0;
+ const sidebarWidth = mounted && !isMobile && sidebarOpen ? 280 : 0;
 
   return (
     <div
@@ -77,7 +77,7 @@ export default function DashboardLayout({
               position: "fixed",
               top: 0,
               left: 0,
-              width: 0,
+              width: 280,
               height: "100vh",
               zIndex: 999,
             }}

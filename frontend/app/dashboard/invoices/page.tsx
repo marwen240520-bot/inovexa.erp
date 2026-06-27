@@ -946,7 +946,7 @@ export default function InvoicesPage() {
             <div class="invoice-container">
               <div class="header">
                 <div class="company-info">
-                  <img src="/logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'" />
+                  <img src="/images/logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'" />
                   <div>
                     <h1>INOVEXA ERP</h1>
                     <p>Solution ERP compléte</p>
