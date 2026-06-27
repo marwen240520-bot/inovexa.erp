@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -190,7 +191,7 @@ export default function IAPage() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = 0;
+  const contentMarginLeft = isMobile ? "0" : "0px";
   
   useEffect(() => {
     const checkMobile = () => {
@@ -822,9 +823,10 @@ export default function IAPage() {
         padding: 0,
         margin: 0
       }}>
+        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: 0,
+          marginLeft: isMobile ? "0" : "280px",
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -853,6 +855,7 @@ export default function IAPage() {
       <style>{animations}</style>
       
       {/* Sidebar */}
+      <Sidebar />
       
       <div style={{ 
         flex: 1, 

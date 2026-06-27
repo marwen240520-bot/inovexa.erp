@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -497,7 +498,7 @@ export default function InvoicesPage() {
   const { theme } = useTheme();
   
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = 0;
+  const contentMarginLeft = isMobile ? "0" : "0px";
   
   const t = translations[language as keyof typeof translations] || translations.fr;
   const printRef = useRef<HTMLDivElement>(null);
@@ -1169,9 +1170,10 @@ export default function InvoicesPage() {
         padding: 0,
         margin: 0
       }}>
+        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: 0,
+          marginLeft: isMobile ? "0" : "280px",
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -1198,6 +1200,7 @@ export default function InvoicesPage() {
       padding: 0,
       margin: 0
     }}>
+      <Sidebar />
       <div style={{ 
         marginLeft: contentMarginLeft, 
         flex: 1, 

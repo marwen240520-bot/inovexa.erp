@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -98,7 +99,7 @@ export default function SettingsPage() {
   const { isMobile } = useResponsive();
 
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = 0;
+  const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [loading, setLoading] = useState(true);
   const [animateCards, setAnimateCards] = useState(false);
@@ -221,9 +222,10 @@ export default function SettingsPage() {
         padding: 0,
         margin: 0
       }}>
+        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: 0,
+          marginLeft: isMobile ? "0" : "280px",
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -252,6 +254,7 @@ export default function SettingsPage() {
     }}>
       <style>{animations}</style>
       
+      <Sidebar />
       
       <div style={{ 
         marginLeft: contentMarginLeft,

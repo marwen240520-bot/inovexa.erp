@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -242,7 +243,7 @@ export default function SalesPage() {
   const localT = translations[language as keyof typeof translations] || translations.fr;
 
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = 0;
+  const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [allSales, setAllSales] = useState<Sale[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -687,9 +688,10 @@ export default function SalesPage() {
         padding: 0,
         margin: 0
       }}>
+        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: 0,
+          marginLeft: isMobile ? "0" : "280px",
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -714,6 +716,7 @@ export default function SalesPage() {
       padding: 0,
       margin: 0
     }}>
+      <Sidebar />
       <div style={{
         flex: 1,
         marginLeft: contentMarginLeft,

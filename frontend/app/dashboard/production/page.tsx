@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
@@ -497,6 +498,7 @@ export default function ProductionPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+      <Sidebar />
       <div style={{ marginLeft: "0px", flex: 1, padding: "32px" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
           <style>{animations}</style>

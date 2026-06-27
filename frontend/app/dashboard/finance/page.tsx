@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -934,7 +935,7 @@ export default function FinancePage() {
   const tCommon = translations[language as keyof typeof translations]?.common || translations.fr.common;
 
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = 0;
+  const contentMarginLeft = isMobile ? "0" : "0px";
   const contentPadding = isMobile ? "12px" : "28px";
   const headerPadding = isMobile ? "16px" : "26px";
   const cardGap = isMobile ? "12px" : "20px";
@@ -1797,9 +1798,10 @@ export default function FinancePage() {
         padding: 0,
         margin: 0
       }}>
+        <Sidebar />
         <div style={{ 
           flex: 1,
-          marginLeft: 0,
+          marginLeft: isMobile ? "0" : "280px",
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -1825,6 +1827,7 @@ export default function FinancePage() {
       margin: 0
     }}>
       {/* Sidebar - Fixed */}
+      <Sidebar />
 
       {/* Contenu principal */}
       <div style={{ 

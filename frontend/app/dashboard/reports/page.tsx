@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -210,7 +211,7 @@ export default function ReportsPage() {
   const { isMobile } = useResponsive();
 
   // FIX: Margin left for desktop sidebar (280px)
-  const contentMarginLeft = 0;
+  const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [reportType, setReportType] = useState("sales");
   const [reportFormat, setReportFormat] = useState("json");
@@ -404,6 +405,7 @@ export default function ReportsPage() {
     }}>
       <style>{animations}</style>
 
+      <Sidebar />
 
       <div style={{
         marginLeft: contentMarginLeft,
