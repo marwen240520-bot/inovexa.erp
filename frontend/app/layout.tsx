@@ -1,4 +1,4 @@
-﻿// app/layout.tsx
+// app/layout.tsx
 import type { Metadata } from "next";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Inovexa-ERP ",
   description: "Gestion complète pour votre entreprise",
   icons: {
-    icon: "/images/logo.png",
+    icon: "/logo.png",
   },
 };
 
