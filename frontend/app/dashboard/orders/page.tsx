@@ -217,7 +217,6 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -254,7 +253,6 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     const token = localStorage.getItem("token");
-    setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -272,7 +270,6 @@ export default function OrdersPage() {
         totalAmount
       });
     } catch (e) { console.error(e); }
-    setLoading(false);
   };
 
   const applyFilters = () => {
@@ -450,17 +447,6 @@ export default function OrdersPage() {
   ];
 
   // FIX: Loading state with sidebar
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
-            <p style={{ fontSize: isMobile ? "13px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
-          </div>
-        </div>
-    );
-  }
 
   return (
     <div style={{ 

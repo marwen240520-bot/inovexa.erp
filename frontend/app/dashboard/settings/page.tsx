@@ -100,8 +100,6 @@ export default function SettingsPage() {
 
   // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
-
-  const [loading, setLoading] = useState(true);
   const [animateCards, setAnimateCards] = useState(false);
   const [settings, setSettings] = useState({
     language: "fr",
@@ -131,7 +129,6 @@ export default function SettingsPage() {
     const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
 
     setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
-    setLoading(false);
     setTimeout(() => setAnimateCards(true), 100);
   }, []);
 
@@ -212,19 +209,6 @@ export default function SettingsPage() {
   `;
 
   // FIX: Loading state with sidebar
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-              <IconLoader size={isMobile ? 36 : 44} color={theme.primary} />
-            </div>
-            <p style={{ fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
-          </div>
-        </div>
-    );
-  }
 
   return (
     <div style={{ 

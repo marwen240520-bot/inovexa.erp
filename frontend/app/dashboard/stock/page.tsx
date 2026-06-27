@@ -338,7 +338,6 @@ export default function StockPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
-  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [searchTerm, setSearchTerm] = useState("");
@@ -370,7 +369,6 @@ export default function StockPage() {
 
   const fetchAllData = async () => {
     const token = localStorage.getItem("token");
-    setLoading(true);
     try {
       const productsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -481,7 +479,6 @@ export default function StockPage() {
     } catch (e) {
       console.error("Erreur:", e);
     }
-    setLoading(false);
   };
 
   const showMessage = (msg: string, type: string) => {
@@ -597,17 +594,6 @@ export default function StockPage() {
   ];
 
   // FIX: Loading state with sidebar
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} />
-            <p style={{ color: theme.textSecondary, marginTop: "16px" }}>Chargement...</p>
-          </div>
-        </div>
-    );
-  }
 
   return (
     <div style={{ 

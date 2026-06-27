@@ -275,7 +275,6 @@ export default function ProfilePage() {
   const profileT = profileTranslations[language as keyof typeof profileTranslations] || profileTranslations.fr;
 
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
   const [form, setForm] = useState({ name: "", email: "", phone: "", companyName: "" });
   const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
@@ -438,7 +437,6 @@ export default function ProfilePage() {
       const memberDate = new Date();
       setStats({ totalSales: 0, totalOrders: 0, totalClients: 0, memberSince: memberDate.toLocaleDateString(), lastLogin: new Date().toLocaleString() });
     }
-    setLoading(false);
   };
 
   const updateProfile = async () => {
@@ -639,17 +637,6 @@ export default function ProfilePage() {
   `;
 
   // FIX: Loading state with sidebar
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
-            <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading") || "Chargement..."}</p>
-          </div>
-        </div>
-    );
-  }
 
   return (
     <div style={{ 

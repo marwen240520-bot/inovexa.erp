@@ -268,7 +268,6 @@ export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -329,7 +328,6 @@ export default function PurchasesPage() {
 
   const fetchPurchases = async () => {
     const token = localStorage.getItem("token");
-    setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -346,7 +344,6 @@ export default function PurchasesPage() {
         delivered: data.filter(p => p.status === "delivered").length
       });
     } catch (e) { console.error(e); }
-    setLoading(false);
   };
 
   const applyFilters = () => {
@@ -640,20 +637,6 @@ export default function PurchasesPage() {
   ];
 
   // -- Loading screen with sidebar ----------------------------------------------
-
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
-            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>
-              {t("common.loading") || "Chargement..."}
-            </p>
-          </div>
-        </div>
-    );
-  }
 
   // -- Render -----------------------------------------------------------------
 

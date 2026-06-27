@@ -249,7 +249,6 @@ export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalState>({ 
     open: false, 
     form: { 
@@ -298,7 +297,6 @@ export default function SalesPage() {
 
   const fetchSales = async () => {
     const token = localStorage.getItem("token");
-    setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } });
       let data = await res.json();
@@ -307,7 +305,6 @@ export default function SalesPage() {
       const totalAmount = data.reduce((sum: number, sale: Sale) => sum + (parseFloat(String(sale.total)) || 0), 0);
       setStats({ total: data.length, amount: totalAmount, average: data.length > 0 ? totalAmount / data.length : 0 });
     } catch(e) { console.error(e); }
-    setLoading(false);
   };
 
   const applyFilters = () => {
@@ -678,17 +675,6 @@ export default function SalesPage() {
   ];
 
   // FIX: Loading state with sidebar
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
-            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
-          </div>
-        </div>
-    );
-  }
 
   return (
     <div style={{ 

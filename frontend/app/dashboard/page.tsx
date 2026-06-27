@@ -266,7 +266,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
-  const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [stats, setStats] = useState({
     totalSales: 0, totalPurchases: 0, totalClients: 0, totalProducts: 0,
@@ -602,7 +601,6 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     const token = localStorage.getItem("token");
-    setLoading(true);
     try {
       const [salesRes, purchasesRes, clientsRes, productsRes, invoicesRes, ordersRes, employeesRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -725,7 +723,6 @@ export default function DashboardPage() {
       setRecentActivities(recent.slice(0, 8));
 
     } catch(e) { console.error("Erreur:", e); }
-    setLoading(false);
   };
 
   const profit = stats.totalSales - stats.totalPurchases;
@@ -842,21 +839,7 @@ export default function DashboardPage() {
     padding: isMobile ? "0" : "20px"
   };
 
-  // Loading component with proper page dimensions
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ 
-              width: isMobile ? "40px" : "48px", 
-              height: isMobile ? "40px" : "48px", 
-              border: `3px solid ${theme.border}`, 
-              borderTopColor: theme.primary, 
-              borderRadius: "50%", 
-              animation: "spin 1s linear infinite", 
-              margin: "0 auto 16px" 
-            }}></div>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  // Loading component with proper page dimensions }`}</style>
             <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>
               {t("common.loading") || "Chargement..."}
             </p>

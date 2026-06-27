@@ -299,7 +299,6 @@ export default function HRPage() {
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterDepartment, setFilterDepartment] = useState("all");
@@ -354,7 +353,6 @@ export default function HRPage() {
 
   const fetchEmployees = async () => {
     const token = localStorage.getItem("token");
-    setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees`, { headers: { Authorization: `Bearer ${token}` } });
       let data: Employee[] = await res.json();
@@ -369,7 +367,6 @@ export default function HRPage() {
       data.forEach(e => { if (e.department) deptMap[e.department] = (deptMap[e.department] || 0) + 1; });
       setDepartmentData(Object.entries(deptMap).map(([name, count]) => ({ name, count })));
     } catch(e) { console.error(e); }
-    setLoading(false);
   };
 
   const fetchDepartments = async () => {
@@ -573,17 +570,6 @@ export default function HRPage() {
   };
 
   // FIX: Loading state with sidebar
-  if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
-            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
-          </div>
-        </div>
-    );
-  }
 
   return (
     <div style={{ 
