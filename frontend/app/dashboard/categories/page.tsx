@@ -160,7 +160,7 @@ export default function CategoriesPage() {
   const [viewMode, setViewMode] = useState("grid");
 
   // FIX: Margin left pour desktop (sidebar fixe 280px)
-  const contentMarginLeft = isMobile ? "0" : "280px";
+  const contentMarginLeft = isMobile ? "0" : "0px";
 
   // Traduction directe pour totalProducts
   const getTotalProductsLabel = () => {
