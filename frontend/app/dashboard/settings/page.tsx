@@ -123,47 +123,35 @@ export default function SettingsPage() {
   const flagCodes = { fr: "fr", en: "us", es: "es" };
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/auth/login");
-        return;
-      }
+    const token = localStorage.getItem("token");
+    if (!token) router.push("/auth/login");
 
-      const savedLanguage = localStorage.getItem("language") || "fr";
-      const savedCurrency = localStorage.getItem("currency") || "eur";
-      const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
+    const savedLanguage = localStorage.getItem("language") || "fr";
+    const savedCurrency = localStorage.getItem("currency") || "eur";
+    const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
 
-      setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
-    } catch (err) {
-      // localStorage indisponible (mode privé, quota, SSR) : on garde les valeurs par défaut
-      console.error("Lecture des préférences impossible :", err);
-    } finally {
-      setLoading(false);
-      setTimeout(() => setAnimateCards(true), 100);
-    }
+    setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
+    setLoading(false);
+    setTimeout(() => setAnimateCards(true), 100);
   }, []);
 
   const saveSettings = async () => {
-    try {
-      localStorage.setItem("currency", settings.currency);
-      localStorage.setItem("dateFormat", settings.dateFormat);
-      localStorage.setItem("app_currency", settings.currency);
-      localStorage.setItem("app_dateFormat", settings.dateFormat);
+    localStorage.setItem("currency", settings.currency);
+    localStorage.setItem("dateFormat", settings.dateFormat);
+    localStorage.setItem("app_currency", settings.currency);
+    localStorage.setItem("app_dateFormat", settings.dateFormat);
 
-      const event = new CustomEvent("settingsChanged", {
-        detail: { currency: settings.currency, dateFormat: settings.dateFormat }
-      });
-      window.dispatchEvent(event);
+    const event = new CustomEvent("settingsChanged", {
+      detail: { currency: settings.currency, dateFormat: settings.dateFormat }
+    });
+    window.dispatchEvent(event);
 
-      if (settings.language !== language) {
-        localStorage.setItem("language", settings.language);
-        await changeLanguage(settings.language);
-      }
+    if (settings.language !== language) {
+      localStorage.setItem("language", settings.language);
+      await changeLanguage(settings.language);
       showMessage(t("settings.settingsSaved"), "success");
-    } catch (err) {
-      console.error("Enregistrement des préférences impossible :", err);
-      showMessage(t("settings.settingsSaveError") || "Échec de l'enregistrement", "error");
+    } else {
+      showMessage(t("settings.settingsSaved"), "success");
     }
   };
 

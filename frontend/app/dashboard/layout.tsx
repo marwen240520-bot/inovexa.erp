@@ -25,22 +25,12 @@ export default function DashboardLayout({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Fermeture de la sidebar mobile via la touche Échap (accessibilité clavier)
-  useEffect(() => {
-    if (!isMobile || !sidebarOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSidebarOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isMobile, sidebarOpen]);
-
   const isAuthPage =
     pathname?.includes("/auth/login") || pathname?.includes("/auth/register");
 
   if (isAuthPage) return <>{children}</>;
   // Avant le mount: on suppose desktop avec sidebar (évite le flash)
-  const sidebarWidth = mounted && !isMobile && sidebarOpen ? 280 : 0;
+ const sidebarWidth = mounted && !isMobile && sidebarOpen ? 280 : 0;
 
   return (
     <div
@@ -53,8 +43,7 @@ export default function DashboardLayout({
     >
       {/* ── Sidebar desktop fixe ── */}
       {mounted && !isMobile && (
-        <nav
-          aria-label="Navigation principale"
+        <div
           style={{
             position: "fixed",
             left: 0,
@@ -67,50 +56,7 @@ export default function DashboardLayout({
           }}
         >
           <Sidebar />
-        </nav>
-      )}
-
-      {/* ── Bouton menu mobile (ouvre la sidebar) ── */}
-      {mounted && isMobile && !sidebarOpen && (
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Ouvrir le menu de navigation"
-          aria-expanded={false}
-          aria-controls="dashboard-sidebar"
-          style={{
-            position: "fixed",
-            top: 14,
-            left: 14,
-            zIndex: 997,
-            width: 46,
-            height: 46,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 12,
-            cursor: "pointer",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
-          }}
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+        </div>
       )}
 
       {/* ── Sidebar mobile overlay ── */}
@@ -118,7 +64,6 @@ export default function DashboardLayout({
         <>
           <div
             onClick={() => setSidebarOpen(false)}
-            aria-hidden="true"
             style={{
               position: "fixed",
               inset: 0,
@@ -127,9 +72,7 @@ export default function DashboardLayout({
               zIndex: 998,
             }}
           />
-          <nav
-            id="dashboard-sidebar"
-            aria-label="Navigation principale"
+          <div
             style={{
               position: "fixed",
               top: 0,
@@ -139,51 +82,13 @@ export default function DashboardLayout({
               zIndex: 999,
             }}
           >
-            {/* Bouton de fermeture explicite (accessible) */}
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(false)}
-              aria-label="Fermer le menu de navigation"
-              style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                zIndex: 1000,
-                width: 38,
-                height: 38,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(255,255,255,0.08)",
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                cursor: "pointer",
-              }}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
             <Sidebar />
-          </nav>
+          </div>
         </>
       )}
 
       {/* ── Contenu principal ── */}
-      <main
-        id="main-content"
-        role="main"
+      <div
         style={{
           flex: 1,
           marginLeft: sidebarWidth,
@@ -194,11 +99,10 @@ export default function DashboardLayout({
         }}
       >
         {children}
-      </main>
+      </div>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
           * { box-sizing: border-box; }
 
           ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -206,8 +110,7 @@ export default function DashboardLayout({
           ::-webkit-scrollbar-thumb { background: #667eea; border-radius: 10px; }
           ::-webkit-scrollbar-thumb:hover { background: #764ba2; }
         `,
-        }}
-      />
+      }} />
     </div>
   );
 }
