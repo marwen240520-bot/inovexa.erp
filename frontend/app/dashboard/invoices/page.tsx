@@ -1903,7 +1903,7 @@ export default function InvoicesPage() {
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "10px" : "15px" }}>
                         <img
-                          src="/logo.png"
+                          src="/images/logo.png"
                           alt="Logo"
                           style={{
                             width: isMobile ? "50px" : "150px",
