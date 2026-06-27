@@ -217,7 +217,6 @@ export default function Sidebar() {
   const [localTheme, setLocalTheme] = useState<ThemeColors | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
@@ -228,7 +227,6 @@ export default function Sidebar() {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (!mobile) setSidebarOpen(false);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -275,7 +273,6 @@ export default function Sidebar() {
     try {
       await router.push(path);
       if (isMobile) {
-        setSidebarOpen(false);
         setMobileMoreOpen(false);
       }
       setTimeout(() => setNavigationError(null), 3000);
@@ -410,7 +407,7 @@ export default function Sidebar() {
       background: `linear-gradient(180deg, ${ct.surface} 0%, ${ct.background} 100%)`,
       borderTop: `1px solid ${ct.primary}26`,
       borderRadius: "24px 24px 0 0",
-      padding: "20px 16px 20px", // ✅ Changé de 90px à 20px pour enlever l'espace vide
+      padding: "20px 16px 20px",
       zIndex: 1002,
       maxHeight: "75vh",
       overflowY: "auto",
@@ -454,13 +451,8 @@ export default function Sidebar() {
       display: "flex",
       flexDirection: "column",
       transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      transform: "translateX(-100%)",
+      transform: "translateX(0)", // Always open
       boxShadow: "2px 0 20px rgba(0,0,0,0.1)",
-    },
-    sidebarOpen: { transform: "translateX(0)" },
-    sidebarDesktop: {
-      transform: "translateX(0)",
-      position: "fixed",
     },
     header: {
       padding: "20px 16px 18px",
@@ -833,9 +825,9 @@ export default function Sidebar() {
         </>
       )}
 
-      {/* ── DESKTOP: fixed sidebar (sans bouton de menu) ───────────────────────────── */}
+      {/* ── DESKTOP: fixed sidebar (always open) ───────────────────────────── */}
       {mounted && !isMobile && (
-        <div style={{ ...styles.sidebar, ...styles.sidebarDesktop }}>
+        <div style={styles.sidebar}>
           <div style={styles.header}>
             <div
               style={styles.logoWrapper}
