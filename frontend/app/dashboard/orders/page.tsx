@@ -210,6 +210,7 @@ export default function OrdersPage() {
   const { theme } = useTheme();
   const { isMobile, isTablet, isDesktop } = useResponsive();
 
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [allOrders, setAllOrders] = useState<Order[]>([]);
@@ -233,11 +234,9 @@ export default function OrdersPage() {
   const gridGap = isMobile ? "10px" : "16px";
   const sectionMargin = isMobile ? "18px" : "32px";
   const tableFontSize = isMobile ? "12px" : "13px";
-  // ? Touch targets = 44px sur mobile
   const buttonPadding = isMobile ? "12px 16px" : "10px 20px";
   const modalWidth = isMobile ? "95%" : "500px";
   const modalPadding = isMobile ? "20px" : "32px";
-  // ? Hauteur minimum des inputs sur mobile
   const inputPadding = isMobile ? "13px 12px" : "10px 12px";
 
   useEffect(() => {
@@ -450,20 +449,45 @@ export default function OrdersPage() {
     { icon: <IconDollar size={isMobile ? 20 : 24} />, label: t("orders.totalAmount"), value: formatCurrency(stats.totalAmount), color: theme.accent }
   ];
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
           <style>{animations}</style>
-          <p style={{ fontSize: isMobile ? "13px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
+            <p style={{ fontSize: isMobile ? "13px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
       <div style={{
         marginLeft: contentMarginLeft,
@@ -471,7 +495,8 @@ export default function OrdersPage() {
         padding: isMobile ? "12px" : "24px",
         paddingBottom: isMobile ? "80px" : "24px",
         overflowX: "hidden",
-        background: theme.background
+        background: theme.background,
+        minHeight: "100vh"
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
 
@@ -495,7 +520,6 @@ export default function OrdersPage() {
                 </p>
               </div>
 
-              {/* ? Boutons header é touch targets larges sur mobile */}
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <ExportButtons data={orders} filename="commandes" />
                 <button
@@ -513,14 +537,14 @@ export default function OrdersPage() {
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
-                    minHeight: "44px",          // ? touch target
+                    minHeight: "44px",
                     whiteSpace: "nowrap"
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.opacity = "0.88"}
                   onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
                 >
                   <IconPlus size={16} color="white" />
-                  {t("common.add")}   {/* ? texte complet, pas de troncature */}
+                  {t("common.add")}
                 </button>
               </div>
             </div>
@@ -552,7 +576,6 @@ export default function OrdersPage() {
           )}
 
           {/* -- Stats Cards -- */}
-          {/* ? Grid: 3 colonnes sur mobile pour tout afficher sans scroll */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(auto-fit, minmax(150px, 1fr))",
@@ -572,7 +595,6 @@ export default function OrdersPage() {
                   opacity: animateCards ? 1 : 0,
                   transition: "transform 0.3s, box-shadow 0.3s",
                   cursor: "pointer",
-                  // ? légère ombre sur mobile pour mieux séparer les cards
                   boxShadow: isMobile ? `0 2px 8px rgba(0,0,0,0.15)` : "none"
                 }}
                 onMouseEnter={(e) => {
@@ -587,7 +609,6 @@ export default function OrdersPage() {
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px", color: card.color }}>
                   {card.icon}
                 </div>
-                {/* ? Valeur lisible sur mobile */}
                 <div style={{
                   fontSize: isMobile ? "15px" : "20px",
                   color: card.color,
@@ -597,7 +618,6 @@ export default function OrdersPage() {
                 }}>
                   {card.value}
                 </div>
-                {/* ? Label: 10px min (pas 8px) */}
                 <div style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, marginTop: "3px", lineHeight: 1.3 }}>
                   {card.label}
                 </div>
@@ -609,7 +629,6 @@ export default function OrdersPage() {
           <div style={{ marginBottom: "20px", animation: `fadeInUp 0.5s ease 0.4s`, opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
 
-              {/* ? Search input é hauteur 44px+ sur mobile */}
               <div style={{ flex: 2, position: "relative", display: "flex", alignItems: "center", width: isMobile ? "100%" : "auto" }}>
                 <span style={{ position: "absolute", left: "12px", color: theme.textSecondary, pointerEvents: "none", display: "flex" }}>
                   <IconSearch size={16} color={theme.textSecondary} />
@@ -628,14 +647,13 @@ export default function OrdersPage() {
                     color: theme.text,
                     transition: "border-color 0.2s",
                     fontSize: isMobile ? "14px" : "14px",
-                    minHeight: "44px"             // ? touch target
+                    minHeight: "44px"
                   }}
                   onFocus={(e) => e.currentTarget.style.borderColor = theme.primary}
                   onBlur={(e) => e.currentTarget.style.borderColor = theme.border}
                 />
               </div>
 
-              {/* ? Select filtre é hauteur 44px+ sur mobile */}
               <div style={{ position: "relative", display: "flex", alignItems: "center", minWidth: isMobile ? "100%" : "160px" }}>
                 <span style={{ position: "absolute", left: "12px", pointerEvents: "none", display: "flex" }}>
                   <IconFilter size={14} color={theme.textSecondary} />
@@ -653,7 +671,7 @@ export default function OrdersPage() {
                     cursor: "pointer",
                     fontSize: isMobile ? "14px" : "14px",
                     appearance: "none",
-                    minHeight: "44px"             // ? touch target
+                    minHeight: "44px"
                   }}
                 >
                   <option value="all">{t("orders.allStatus")}</option>
@@ -681,7 +699,7 @@ export default function OrdersPage() {
                     color: "white",
                     border: "none",
                     borderRadius: "10px",
-                    padding: isMobile ? "11px 18px" : "8px 16px",  // ? touch target
+                    padding: isMobile ? "11px 18px" : "8px 16px",
                     cursor: "pointer",
                     transition: "opacity 0.2s",
                     fontSize: isMobile ? "13px" : "14px",
@@ -737,7 +755,6 @@ export default function OrdersPage() {
                     <th style={{ padding: "10px 8px", textAlign: "right", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.total")}</th>
                     <th style={{ padding: "10px 8px", textAlign: "center", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.status")}</th>
                     <th style={{ padding: "10px 8px", textAlign: "left", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.date")}</th>
-                    {/* ? Colonne actions é label visible */}
                     <th style={{ padding: "10px 8px", textAlign: "center", fontSize: tableFontSize, fontWeight: "600" }}>{t("common.actions")}</th>
                   </tr>
                 </thead>
@@ -787,7 +804,6 @@ export default function OrdersPage() {
                         {formatCurrency(parseFloat(String(order.total)))}
                       </td>
 
-                      {/* ? Badge statut + select é taille lisible sur mobile */}
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center" }}>
                         <div style={{
                           display: "inline-flex",
@@ -796,7 +812,7 @@ export default function OrdersPage() {
                           background: `${getStatusColor(order.status)}18`,
                           border: `1px solid ${getStatusColor(order.status)}55`,
                           borderRadius: "8px",
-                          padding: isMobile ? "5px 8px" : "3px 8px"   // ? plus de padding vertical
+                          padding: isMobile ? "5px 8px" : "3px 8px"
                         }}>
                           <span style={{ color: getStatusColor(order.status), display: "flex", flexShrink: 0 }}>
                             {order.status === "delivered"  && <IconCheck size={12} color={getStatusColor(order.status)} />}
@@ -815,7 +831,7 @@ export default function OrdersPage() {
                               cursor: updatingStatus === order.id ? "wait" : "pointer",
                               fontWeight: "600",
                               opacity: updatingStatus === order.id ? 0.7 : 1,
-                              fontSize: isMobile ? "11px" : "12px",  // ? 11px min (pas 10px)
+                              fontSize: isMobile ? "11px" : "12px",
                               outline: "none",
                               appearance: "none",
                               padding: 0,
@@ -836,7 +852,6 @@ export default function OrdersPage() {
                         )}
                       </td>
 
-                      {/* ? Bouton delete é touch target 44px sur mobile */}
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center" }}>
                         <button
                           onClick={() => deleteOrder(order.id)}
@@ -845,7 +860,7 @@ export default function OrdersPage() {
                             color: "#ef4444",
                             border: "1px solid rgba(204,51,51,0.3)",
                             borderRadius: "8px",
-                            padding: isMobile ? "10px 13px" : "5px 8px",  // ? touch target
+                            padding: isMobile ? "10px 13px" : "5px 8px",
                             cursor: "pointer",
                             transition: "all 0.2s",
                             display: "inline-flex",
@@ -887,7 +902,7 @@ export default function OrdersPage() {
           top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(0,0,0,0.85)",
           display: "flex",
-          alignItems: isMobile ? "flex-end" : "center",  // ? bottom sheet sur mobile
+          alignItems: isMobile ? "flex-end" : "center",
           justifyContent: "center",
           zIndex: 1000,
           animation: "fadeIn 0.2s ease",
@@ -896,14 +911,13 @@ export default function OrdersPage() {
           <div style={{
             background: theme.surface,
             padding: modalPadding,
-            borderRadius: isMobile ? "24px 24px 0 0" : "24px",  // ? bottom sheet radius
+            borderRadius: isMobile ? "24px 24px 0 0" : "24px",
             width: isMobile ? "100%" : modalWidth,
             maxWidth: isMobile ? "100%" : "95%",
             border: `1px solid ${theme.border}`,
             maxHeight: isMobile ? "90vh" : "auto",
             overflowY: "auto"
           }}>
-            {/* ? Drag handle visible sur mobile */}
             {isMobile && (
               <div style={{ width: "40px", height: "4px", background: theme.border, borderRadius: "2px", margin: "0 auto 16px" }} />
             )}
@@ -932,7 +946,7 @@ export default function OrdersPage() {
                 onChange={e => setModal({ ...modal, form: { ...modal.form, clientName: e.target.value } })}
                 style={{
                   width: "100%",
-                  padding: inputPadding,             // ? 44px+ hauteur sur mobile
+                  padding: inputPadding,
                   background: theme.surfaceHover,
                   border: `1px solid ${theme.border}`,
                   borderRadius: "10px",
@@ -1017,7 +1031,6 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            {/* Total */}
             <div style={{
               marginBottom: "20px",
               padding: "14px",
@@ -1036,7 +1049,6 @@ export default function OrdersPage() {
               </span>
             </div>
 
-            {/* ? Boutons modal é colonne sur mobile, rangée sur desktop */}
             <div style={{ display: "flex", gap: "12px", flexDirection: isMobile ? "column" : "row" }}>
               <button
                 onClick={createOrder}
@@ -1055,7 +1067,7 @@ export default function OrdersPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  minHeight: "48px"             // ? touch target généreux
+                  minHeight: "48px"
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
@@ -1079,7 +1091,7 @@ export default function OrdersPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "6px",
-                  minHeight: "48px"             // ? touch target généreux
+                  minHeight: "48px"
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}

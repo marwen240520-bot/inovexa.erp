@@ -934,7 +934,7 @@ export default function FinancePage() {
   const t = translations[language as keyof typeof translations]?.finance || translations.fr.finance;
   const tCommon = translations[language as keyof typeof translations]?.common || translations.fr.common;
 
-  // Dimensions responsives
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
   const contentPadding = isMobile ? "12px" : "28px";
   const headerPadding = isMobile ? "16px" : "26px";
@@ -1787,20 +1787,45 @@ export default function FinancePage() {
     { id: "ratios", label: t.ratios, icon: <Icon.Ratios /> }
   ];
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{tCommon.loading}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{tCommon.loading}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       {/* Sidebar - Fixed */}
       <Sidebar />
 
@@ -1811,7 +1836,9 @@ export default function FinancePage() {
         padding: isMobile ? "0" : contentPadding,
         paddingBottom: isMobile ? "70px" : "24px",
         width: isMobile ? "100%" : "auto",
-        overflowX: "hidden"
+        overflowX: "hidden",
+        minHeight: "100vh",
+        background: theme.background
       }}>
         <div style={{ maxWidth: "1600px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>

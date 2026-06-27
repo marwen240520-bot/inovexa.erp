@@ -198,6 +198,7 @@ export default function ClientsPage() {
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
 
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [clients, setClients] = useState<Client[]>([]);
@@ -224,6 +225,7 @@ export default function ClientsPage() {
   const modalWidth = isMobile ? "95%" : "500px";
   const modalPadding = isMobile ? "20px" : "32px";
 
+  // FIX: Main container with proper sidebar offset
   const mainContainerStyle = {
     flex: 1,
     marginLeft: contentMarginLeft,
@@ -511,13 +513,32 @@ export default function ClientsPage() {
     },
   ];
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
-          <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
+            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
@@ -554,7 +575,14 @@ export default function ClientsPage() {
   );
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0 }}>
+    <div style={{ 
+      display: "flex", 
+      minHeight: "100vh", 
+      width: "100%", 
+      background: theme.background, 
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
       <div style={mainContainerStyle}>
         <div style={innerContainerStyle}>

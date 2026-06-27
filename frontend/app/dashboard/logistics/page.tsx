@@ -269,7 +269,7 @@ export default function LogisticsPage() {
   const { isMobile } = useResponsive();
   const { formatCurrency, getCurrencySymbol } = useAppSettings();
 
-  // Margin left pour desktop (sidebar fixe)
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -691,22 +691,47 @@ export default function LogisticsPage() {
     fontSize: isMobile ? "13px" : "14px"
   };
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ animation: "svgSpin 1s linear infinite", display: "inline-block", marginBottom: "16px" }}>
-            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} />
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ animation: "svgSpin 1s linear infinite", display: "inline-block", marginBottom: "16px" }}>
+              <IconLoader size={isMobile ? 40 : 48} color={theme.primary} />
+            </div>
+            <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
           </div>
-          <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
       <div style={{ 
         marginLeft: contentMarginLeft, 
@@ -715,7 +740,9 @@ export default function LogisticsPage() {
         paddingBottom: isMobile ? "70px" : "24px",
         paddingTop: contentPadding, 
         width: isMobile ? "100%" : "auto", 
-        overflowX: "hidden" 
+        overflowX: "hidden",
+        minHeight: "100vh",
+        background: theme.background
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
 

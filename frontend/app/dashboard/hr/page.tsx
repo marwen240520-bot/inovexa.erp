@@ -294,6 +294,7 @@ export default function HRPage() {
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
 
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -571,20 +572,45 @@ export default function HRPage() {
     }
   };
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
-          <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
+            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
       <div style={{
         marginLeft: contentMarginLeft,
@@ -592,7 +618,8 @@ export default function HRPage() {
         padding: isMobile ? "14px 12px" : "24px",
         paddingBottom: isMobile ? "80px" : "24px",
         overflowX: "hidden",
-        background: theme.background
+        background: theme.background,
+        minHeight: "100vh"
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
@@ -719,7 +746,6 @@ export default function HRPage() {
                   overflow: "hidden",
                   cursor: "default",
                   transition: "transform 0.25s, box-shadow 0.25s",
-                  // Mobile: 3 cols top row, last 2 spread bottom
                   ...(isMobile && idx === 3 ? { gridColumn: "1 / span 2" } : {}),
                   ...(isMobile && idx === 4 ? { gridColumn: "3 / span 1" } : {}),
                 }}

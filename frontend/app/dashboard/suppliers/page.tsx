@@ -229,7 +229,7 @@ export default function SuppliersPage() {
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
 
-  // Margin left pour desktop (sidebar fixe)
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -497,15 +497,32 @@ export default function SuppliersPage() {
     }
   ];
 
-  // -- Loading ----------------------------------------------------------------
-
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
-          <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <IconLoader size={isMobile ? 40 : 48} color={theme.primary} style={{ margin: "0 auto 16px", display: "block" }} />
+            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
@@ -547,7 +564,14 @@ export default function SuppliersPage() {
   // -- Render -----------------------------------------------------------------
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background }}>
+    <div style={{ 
+      display: "flex", 
+      minHeight: "100vh", 
+      width: "100%", 
+      background: theme.background,
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
       <div style={{
         flex: 1,

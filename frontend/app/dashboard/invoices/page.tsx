@@ -496,7 +496,10 @@ export default function InvoicesPage() {
   const { formatCurrency } = useAppSettings();
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
+  
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
+  
   const t = translations[language as keyof typeof translations] || translations.fr;
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -1156,24 +1159,58 @@ export default function InvoicesPage() {
     { icon: <Icons.Percent size={isMobile ? 14 : 16} color="#8b5cf6" />, label: t.tax, value: formatCurrency(stats.totalTax), color: "#8b5cf6" }
   ];
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ animation: "spin 1s linear infinite", display: "inline-block", margin: "0 auto 10px" }}>
-            <Icons.Loader size={isMobile ? 28 : 32} color={theme.primary} />
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ animation: "spin 1s linear infinite", display: "inline-block", margin: "0 auto 10px" }}>
+              <Icons.Loader size={isMobile ? 28 : 32} color={theme.primary} />
+            </div>
+            <p style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary }}>{t.loading}</p>
           </div>
-          <p style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary }}>{t.loading}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
-<div style={{ marginLeft: contentMarginLeft, flex: 1, padding: isMobile ? "10px" : "16px", paddingBottom: isMobile ? "70px" : "24px", overflowX: "hidden", background: theme.background }}>        <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
+      <div style={{ 
+        marginLeft: contentMarginLeft, 
+        flex: 1, 
+        padding: isMobile ? "10px" : "16px", 
+        paddingBottom: isMobile ? "70px" : "24px", 
+        overflowX: "hidden", 
+        background: theme.background,
+        minHeight: "100vh"
+      }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
 
           {/* Header */}
@@ -1646,7 +1683,6 @@ export default function InvoicesPage() {
               </div>
             )}
 
-            {/* ? CORRIGé : tableau des lignes du modal édition */}
             <div style={{ marginBottom: "16px" }}>
               <label style={{ color: theme.textSecondary, fontSize: "11px", display: "block", marginBottom: "8px" }}>{t.lines}</label>
               <div style={{ overflowX: "auto" }}>
