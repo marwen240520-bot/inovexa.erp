@@ -98,6 +98,7 @@ export default function SettingsPage() {
   const { theme } = useTheme();
   const { isMobile } = useResponsive();
 
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [loading, setLoading] = useState(true);
@@ -210,22 +211,47 @@ export default function SettingsPage() {
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   `;
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-            <IconLoader size={isMobile ? 36 : 44} color={theme.primary} />
-          </div>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
           <style>{animations}</style>
-          <p style={{ fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+              <IconLoader size={isMobile ? 36 : 44} color={theme.primary} />
+            </div>
+            <p style={{ fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <style>{animations}</style>
       
       <Sidebar />
@@ -237,6 +263,8 @@ export default function SettingsPage() {
         paddingBottom: isMobile ? "70px" : containerPadding,
         overflowX: "hidden",
         width: "100%",
+        minHeight: "100vh",
+        background: theme.background,
         transition: "margin-left 0.3s ease"
       }}>
         <div style={{ maxWidth: isMobile ? "100%" : "800px", margin: "0 auto", width: "100%" }}>

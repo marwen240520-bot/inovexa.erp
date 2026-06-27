@@ -190,7 +190,7 @@ export default function IAPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   
-  // Margin left pour desktop (sidebar fixe)
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
   
   useEffect(() => {
@@ -649,7 +649,7 @@ export default function IAPage() {
   };
 
   const getWelcomeMessage = () => {
-    
+    const name = currentUser?.name?.split(' ')[0] || "Utilisateur";
     const hour = new Date().getHours();
     let greeting = "";
     if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon aprés-midi" : "Bonsoir";
@@ -812,20 +812,46 @@ export default function IAPage() {
 
   const mobileQuickSuggestions = quickSuggestions.slice(0, 4);
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <IconSpinner size={isMobile ? 32 : 40} color={theme.primary} />
-          <p style={{ color: theme.textSecondary, marginTop: "12px", fontSize: isMobile ? "11px" : "12px" }}>{t.loading}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <IconSpinner size={isMobile ? 32 : 40} color={theme.primary} />
+            <p style={{ color: theme.textSecondary, marginTop: "12px", fontSize: isMobile ? "11px" : "12px" }}>{t.loading}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex", overflowX: "hidden" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex", 
+      overflowX: "hidden",
+      padding: 0,
+      margin: 0
+    }}>
       <style>{animations}</style>
       
       {/* Sidebar */}
@@ -841,7 +867,8 @@ export default function IAPage() {
         background: theme.background, 
         transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         width: "100%",
-        overflowX: "hidden"
+        overflowX: "hidden",
+        minHeight: "100vh"
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           

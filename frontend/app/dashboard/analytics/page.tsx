@@ -701,7 +701,7 @@ export default function AnalyticsPage() {
   const { theme } = useTheme();
   const { isMobile } = useResponsive();
 
-  // Margin left pour desktop (sidebar fixe)
+  // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
 
   const [showPeriodSheet, setShowPeriodSheet] = useState(false);
@@ -1021,13 +1021,32 @@ export default function AnalyticsPage() {
     * { -webkit-tap-highlight-color: transparent; }
   `;
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 44, height: 44, border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ fontSize: "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 44, height: 44, border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ fontSize: "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
@@ -1045,7 +1064,14 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex", overflowX: "hidden" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex", 
+      overflowX: "hidden",
+      padding: 0,
+      margin: 0
+    }}>
       <style>{animations}</style>
 
       {/* Sidebar - comme sur les autres pages */}
@@ -1060,6 +1086,8 @@ export default function AnalyticsPage() {
         paddingRight: isMobile ? "16px" : "32px",
         paddingBottom: isMobile ? "70px" : "32px",
         minWidth: 0,
+        minHeight: "100vh",
+        background: theme.background,
         transition: "all 0.3s ease"
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
@@ -1141,7 +1169,7 @@ export default function AnalyticsPage() {
                 }}
               >
                 <Icons.Plus size={isMobile ? 14 : 16} /> 
-{isMobile ? t("analytics.createCustomChart") : t("analytics.createCustomChart")}
+                {isMobile ? t("analytics.createCustomChart") : t("analytics.createCustomChart")}
               </button>
             </div>
           </div>

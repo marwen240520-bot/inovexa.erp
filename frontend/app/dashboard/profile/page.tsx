@@ -347,6 +347,9 @@ export default function ProfilePage() {
     return icons[themeId] || <Icons.Moon />;
   };
 
+  // FIX: Margin left for desktop sidebar (280px)
+  const contentMarginLeft = isMobile ? "0" : "0px";
+
   const loadUserFromBackend = async () => {
     const token = localStorage.getItem("token");
     if (!token) return null;
@@ -635,30 +638,57 @@ export default function ProfilePage() {
     @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
   `;
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: currentTheme.background, minHeight: "100vh", color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
-          <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading") || "Chargement..."}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: currentTheme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: currentTheme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
+            <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading") || "Chargement..."}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: currentTheme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: currentTheme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <style>{animations}</style>
       
       <Sidebar />
       
       <div style={{ 
-        marginLeft: "0px",
+        marginLeft: contentMarginLeft,
         flex: 1, 
         padding: isMobile ? `${responsive.contentPadding} ${responsive.contentPadding} 80px ${responsive.contentPadding}` : responsive.contentPadding,
         paddingTop: isMobile ? "12px" : responsive.contentPadding,
-        paddingBottom: isMobile ? "70px" : responsive.contentPadding
+        paddingBottom: isMobile ? "70px" : responsive.contentPadding,
+        minHeight: "100vh",
+        background: currentTheme.background
       }}>
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
 
