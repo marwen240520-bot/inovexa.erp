@@ -452,31 +452,13 @@ export default function OrdersPage() {
   // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
           <style>{animations}</style>
           <div style={{ textAlign: "center" }}>
             <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
             <p style={{ fontSize: isMobile ? "13px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
           </div>
         </div>
-      </div>
     );
   }
 

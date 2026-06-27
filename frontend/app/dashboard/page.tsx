@@ -845,24 +845,7 @@ export default function DashboardPage() {
   // Loading component with proper page dimensions
   if (loading) {
     return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{
-          flex: 1,
-          marginLeft: isMobile ? "0" : "0px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ 
               width: isMobile ? "40px" : "48px", 
@@ -879,7 +862,6 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-      </div>
     );
   }
 

@@ -641,31 +641,13 @@ export default function ProfilePage() {
   // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: currentTheme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: currentTheme.background
-        }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
           <style>{animations}</style>
           <div style={{ textAlign: "center" }}>
             <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
             <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading") || "Chargement..."}</p>
           </div>
         </div>
-      </div>
     );
   }
 

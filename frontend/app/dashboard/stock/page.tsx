@@ -599,31 +599,13 @@ export default function StockPage() {
   // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "0px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
           <style>{animations}</style>
           <div style={{ textAlign: "center" }}>
             <IconLoader size={isMobile ? 40 : 48} color={theme.primary} />
             <p style={{ color: theme.textSecondary, marginTop: "16px" }}>Chargement...</p>
           </div>
         </div>
-      </div>
     );
   }
 
