@@ -159,8 +159,8 @@ export default function CategoriesPage() {
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [viewMode, setViewMode] = useState("grid");
 
-  // Margin left pour desktop (sidebar fixe)
-  const contentMarginLeft = isMobile ? "0" : "0px";
+  // FIX: Margin left pour desktop (sidebar fixe 280px)
+  const contentMarginLeft = isMobile ? "0" : "280px";
 
   // Traduction directe pour totalProducts
   const getTotalProductsLabel = () => {
@@ -185,19 +185,19 @@ export default function CategoriesPage() {
   const tableFontSize = isMobile ? "11px" : "13px";
   const buttonPadding = isMobile ? "6px 12px" : "8px 16px";
 
-  const getProductCountForCategory = (categoryId) =>
+  const getProductCountForCategory = (categoryId: number | string) =>
     products.filter(p => p.categoryId === categoryId).length;
 
-  const getProductsForCategory = (categoryId) =>
+  const getProductsForCategory = (categoryId: number | string) =>
     products.filter(p => p.categoryId === categoryId);
 
-  const getStockStatusText = (quantity) => {
+  const getStockStatusText = (quantity: number) => {
     if (quantity <= 0) return t("products.outOfStock") || "Rupture";
     if (quantity < 10) return t("products.lowStock") || "Stock faible";
     return t("products.inStock") || "En stock";
   };
 
-  const getStockStatusColor = (quantity) => {
+  const getStockStatusColor = (quantity: number) => {
     if (quantity <= 0) return "#ef4444";
     if (quantity < 10) return "#f59e0b";
     return "#10b981";
@@ -276,7 +276,7 @@ export default function CategoriesPage() {
     } catch(e) { showMessage(t("common.error"), "error"); }
   };
 
-  const deleteCategory = async (id, hasProducts = false) => {
+  const deleteCategory = async (id: number | string, hasProducts: boolean = false) => {
     if (hasProducts) { showMessage(t("categories.cannotDelete"), "error"); return; }
     if (confirm(t("categories.confirmDelete"))) {
       const token = localStorage.getItem("token");
@@ -289,24 +289,24 @@ export default function CategoriesPage() {
     }
   };
 
-  const viewCategoryProducts = (category) => {
+  const viewCategoryProducts = (category: Category) => {
     setSelectedCategory(category);
     setCategoryProducts(getProductsForCategory(category.id));
     setShowProductsModal(true);
   };
 
-  const navigateToCategoryProducts = (categoryId, categoryName) => {
-    sessionStorage.setItem("selectedCategoryId", categoryId);
+  const navigateToCategoryProducts = (categoryId: number | string, categoryName: string) => {
+    sessionStorage.setItem("selectedCategoryId", String(categoryId));
     sessionStorage.setItem("selectedCategoryName", categoryName);
     router.push("/dashboard/products");
   };
 
-  const showMessage = (msg, type) => {
+  const showMessage = (msg: string, type: string) => {
     setMessage(msg); setMessageType(type);
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const openEditModal = (category) => {
+  const openEditModal = (category: Category) => {
     setModal({ open: true, editMode: true, editId: category.id, form: { name: category.name || "", description: category.description || "" } });
   };
 
@@ -326,20 +326,45 @@ export default function CategoriesPage() {
     @keyframes slideIn    { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
   `;
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex",
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
       <div style={{ 
         marginLeft: contentMarginLeft, 
@@ -347,7 +372,8 @@ export default function CategoriesPage() {
         padding: isMobile ? "12px" : "24px", 
         paddingBottom: isMobile ? "70px" : "24px",
         overflowX: "hidden", 
-        background: theme.background 
+        background: theme.background,
+        minHeight: "100vh"
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
@@ -632,7 +658,7 @@ export default function CategoriesPage() {
             {categoryProducts.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {categoryProducts.map((product, idx) => {
-                  const statusColor = getStockStatusColor(product.quantity);
+                  const statusColor = getStockStatusColor(product.quantity || 0);
                   return (
                     <div key={product.id} style={{ background: theme.surfaceHover, borderRadius: "12px", padding: "12px", animation: `slideIn 0.3s ease ${idx * 0.05}s`, borderLeft: `4px solid ${statusColor}` }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
@@ -643,7 +669,7 @@ export default function CategoriesPage() {
                         <div style={{ textAlign: "right" }}>
                           <div style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "13px" : "16px" }}>{product.price} é</div>
                           <div style={{ color: statusColor, fontSize: isMobile ? "10px" : "12px", marginTop: "4px" }}>
-                            {getStockStatusText(product.quantity)} ({product.quantity || 0} {!isMobile && t("products.units")})
+                            {getStockStatusText(product.quantity || 0)} ({product.quantity || 0} {!isMobile && t("products.units")})
                           </div>
                         </div>
                       </div>

@@ -826,7 +826,7 @@ export default function DashboardPage() {
   const mainContainerStyle = { 
     flex: 1, 
     margin: 0, 
-    marginLeft: isMobile ? "0" : "280px", // Match sidebar width
+    marginLeft: isMobile ? "0" : "0px", // Match sidebar width
     padding: isMobile ? "10px" : "16px", 
     paddingBottom: isMobile ? "70px" : "16px",
     width: isMobile ? "100%" : "auto",
@@ -856,7 +856,7 @@ export default function DashboardPage() {
         <Sidebar />
         <div style={{
           flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
+          marginLeft: isMobile ? "0" : "0px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
