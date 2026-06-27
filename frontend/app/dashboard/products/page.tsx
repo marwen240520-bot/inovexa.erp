@@ -223,7 +223,7 @@ export default function ProductsPage() {
   const modalPadding = isMobile ? "20px" : "32px";
   const gridMinWidth = isMobile ? "160px" : "280px";
   // FIX: Set proper margin-left for desktop (280px for sidebar)
-  const contentMarginLeft = isMobile ? "0" : "280px";
+  const contentMarginLeft = isMobile ? "0" : "0px";
 
   // suppress unused warnings
   void isTablet; void isDesktop; void language; void importing;
