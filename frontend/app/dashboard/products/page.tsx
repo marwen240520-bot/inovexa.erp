@@ -222,7 +222,8 @@ export default function ProductsPage() {
   const modalWidth = isMobile ? "95%" : "500px";
   const modalPadding = isMobile ? "20px" : "32px";
   const gridMinWidth = isMobile ? "160px" : "280px";
-  const contentMarginLeft = isMobile ? "0" : "0px";
+  // FIX: Set proper margin-left for desktop (280px for sidebar)
+  const contentMarginLeft = isMobile ? "0" : "280px";
 
   // suppress unused warnings
   void isTablet; void isDesktop; void language; void importing;
@@ -473,20 +474,46 @@ export default function ProductsPage() {
     @keyframes slideIn    { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
   `;
 
+  // FIX: Loading state with sidebar
   if (loading) {
     return (
-      <div style={{ background: theme.background, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{animations}</style>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
+      <div style={{ 
+        display: "flex", 
+        minHeight: "100vh", 
+        width: "100%", 
+        background: theme.background,
+        padding: 0,
+        margin: 0
+      }}>
+        <Sidebar />
+        <div style={{ 
+          flex: 1,
+          marginLeft: isMobile ? "0" : "280px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: theme.background
+        }}>
+          <style>{animations}</style>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.background, display: "flex", position: "relative" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      background: theme.background, 
+      display: "flex", 
+      position: "relative",
+      padding: 0,
+      margin: 0
+    }}>
       <Sidebar />
 
       <div style={{ 
@@ -496,6 +523,7 @@ export default function ProductsPage() {
         overflowX: "hidden",
         marginLeft: contentMarginLeft,
         paddingBottom: isMobile ? "70px" : "24px",
+        minHeight: "100vh"
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           <style>{animations}</style>
