@@ -623,7 +623,19 @@ export default function IAPage() {
     const ebitda = predictions?.ebitda || 0;
     const margin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : "0";
     
-    if (q.match(/vente|chiffre|ca|revenue|recette|ventas|ingresos|sales/)) {
+    const rd = rawData || {};
+    const arr = (x: any): any[] => (Array.isArray(x) ? x : []);
+    const money = (v: any) => formatCurrency(Number(v) || 0);
+    const firstName = currentUser?.name?.split(' ')[0] || "";
+
+    // ── Salutations ──
+    if (q.match(/\b(hi|hello|hey|yo|bonjour|bjr|salut|slt|coucou|cc|hola|buenas|salam|salem|ahla)\b/)) {
+      return ` **Assistant Inovexa**\n\n` +
+             `Bonjour${firstName ? " " + firstName : ""} ! Je peux analyser **tous vos modules** : ventes, bénéfices, stock, produits, clients, commandes, factures, achats, fournisseurs, RH et prévisions.\n\n` +
+             `Essayez : "résumé de mon activité", "état du stock", "factures impayées", "top clients" ou "prévisions".`;
+    }
+
+    if (q.match(/vente|chiffre|\bca\b|revenue|recette|ventas|ingresos|sales/)) {
       return ` **${t.revenue}**\n\n` +
              ` **Total :** ${formatCurrency(revenue)}\n` +
              ` **${t.growthRate} :** +${growth}%\n` +
@@ -729,7 +741,7 @@ export default function IAPage() {
               " Soyez prudent sur les investissements. Optimisez vos coéts.");
     }
     
-    if (q.match(/aide|help|que faire|commandes|que puis-je/)) {
+    if (q.match(/aide|help|que faire|guide|que puis-je/)) {
       return ` **GUIDE D'UTILISATION**\n\n` +
              ` **Questions possibles**\n` +
              `é "${t.askRevenue}"\n` +
@@ -747,14 +759,75 @@ export default function IAPage() {
              ` **Astuce IA** : Plus votre question est précise, plus la réponse sera pertinente !`;
     }
     
-    return ` **Assistant IA**\n\nJe n'ai pas compris votre demande.\n\n**${t.tryQuestions} :**\n` +
-           `  "${t.askRevenue}"\n` +
-           `  "${t.askSummary}"\n` +
-           `  "${t.askTopProducts}"\n` +
-           `  "${t.askStock}"\n` +
-           `  "${t.askForecast}"\n` +
-           `  "Aide" pour plus d'options\n\n` +
-           `  Posez votre question en langage naturel, je suis là pour vous aider !`;
+    // ── Commandes & logistique ──
+    if (q.match(/commande|order\b|pedido|livraison|logistique|logistics|exp[ée]dition|shipment|transport/)) {
+      const orders = arr(rd.orders);
+      const totalOrders = stats?.orders?.total || orders.length || 0;
+      const pending = stats?.orders?.pending ?? orders.filter((o: any) => o.status === "pending").length;
+      const totalVal = orders.reduce((s: number, o: any) => s + (Number(o.total) || 0), 0);
+      const byStatus: Record<string, number> = {};
+      orders.forEach((o: any) => { const st = o.status || "—"; byStatus[st] = (byStatus[st] || 0) + 1; });
+      let out = ` **Commandes & logistique**\n\n- Total : ${totalOrders}\n- En attente : ${pending}\n` + (totalVal ? `- Valeur cumulée : ${money(totalVal)}\n` : "");
+      const keys = Object.keys(byStatus);
+      if (keys.length) { out += `\n**Par statut :**\n`; keys.slice(0, 6).forEach(k => { out += `- ${k} : ${byStatus[k]}\n`; }); }
+      out += `\n${pending > 0 ? `**Action :** ${pending} commande(s) à traiter.` : "Aucune commande en attente."}`;
+      return out;
+    }
+
+    // ── Factures ──
+    if (q.match(/facture|invoice|factura|impay|unpaid|paiement|payment/)) {
+      const inv = arr(rd.invoices);
+      if (!inv.length) return ` **Factures**\n\nAucune facture dans les données chargées. Consultez le module Factures.`;
+      const total = inv.reduce((s: number, i: any) => s + (Number(i.total) || 0), 0);
+      const unpaid = inv.filter((i: any) => /unpaid|impay|pending|attente|overdue|retard/i.test(String(i.status || "")));
+      const unpaidVal = unpaid.reduce((s: number, i: any) => s + (Number(i.total) || 0), 0);
+      return ` **Factures**\n\n- Total : ${inv.length}\n- Montant total : ${money(total)}\n- Impayées / en attente : ${unpaid.length}${unpaidVal ? ` (${money(unpaidVal)})` : ""}\n\n${unpaid.length ? `**Action :** relancez ${unpaid.length} facture(s) impayée(s).` : "Toutes les factures sont réglées."}`;
+    }
+
+    // ── Achats & fournisseurs ──
+    if (q.match(/fournisseur|supplier|proveedor|achat|purchase|compra|approvision/)) {
+      const pur = arr(rd.purchases);
+      const spent = stats?.purchases?.spent || pur.reduce((s: number, p: any) => s + (Number(p.total) || 0), 0);
+      const suppliers = new Set(pur.map((p: any) => p.supplierName || p.supplier).filter(Boolean));
+      return ` **Achats & fournisseurs**\n\n- Total dépensé : ${money(spent)}\n- Nombre d'achats : ${stats?.purchases?.total || pur.length || 0}\n- Fournisseurs distincts : ${suppliers.size}\n\nConsultez le module Achats pour le détail.`;
+    }
+
+    // ── Ressources humaines ──
+    if (q.match(/employ|salari|personnel|\bstaff\b|\brh\b|ressources humaines|empleado/)) {
+      const emp = arr(rd.employees);
+      const total = stats?.employees?.total || emp.length || 0;
+      const payroll = emp.reduce((s: number, e: any) => s + (Number(e.salary) || 0), 0);
+      return ` **Ressources humaines**\n\n- Effectif : ${total}\n` + (payroll ? `- Masse salariale (mensuelle) : ${money(payroll)}\n` : "") + `\nConsultez le module RH pour la gestion des employés.`;
+    }
+
+    // ── Catégories ──
+    if (q.match(/cat[ée]gorie|category|categoria|rayon/)) {
+      const prods = arr(rd.products);
+      const byCat: Record<string, number> = {};
+      prods.forEach((p: any) => { const c = p.category || p.categoryName || "Sans catégorie"; byCat[c] = (byCat[c] || 0) + 1; });
+      const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+      let out = ` **Catégories**\n\n- Catégories distinctes : ${cats.length}\n`;
+      if (cats.length) { out += `\n**Répartition (produits) :**\n`; cats.slice(0, 8).forEach(([c, num]) => { out += `- ${c} : ${num}\n`; }); }
+      return out;
+    }
+
+    // ── Clients (vue générale) ──
+    if (q.match(/client|cliente|customer/)) {
+      const totalC = stats?.clients?.total || 0;
+      const activeC = stats?.clients?.active || 0;
+      const rate = totalC > 0 ? Math.round((activeC / totalC) * 100) : 0;
+      return ` **Clients**\n\n- Total : ${totalC}\n- Actifs : ${activeC} (${rate}%)\n\nDemandez "top clients" pour vos meilleurs clients.`;
+    }
+
+    // ── Défaut : aperçu utile + orientation (jamais "je n'ai pas compris") ──
+    return ` **Assistant Inovexa**\n\n` +
+           `Aperçu rapide de votre activité :\n` +
+           `- ${t.revenue} : ${formatCurrency(revenue)}\n` +
+           `- ${t.profit} : ${formatCurrency(profit)}\n` +
+           `- Clients : ${stats?.clients?.total || 0} (${stats?.clients?.active || 0} actifs)\n` +
+           `- Stock : ${stats?.products?.total || 0} produits, ${stats?.products?.outOfStock || 0} en rupture\n` +
+           `- Commandes en attente : ${stats?.orders?.pending || 0}\n\n` +
+           `Je couvre **tous les modules**. Demandez : ventes, bénéfices, stock, produits, clients, commandes, factures, achats, fournisseurs, RH, catégories ou prévisions.`;
   };
 
   const getContextualActions = (question: string) => {
@@ -763,6 +836,10 @@ export default function IAPage() {
     if (q.match(/produit|stock|inventaire|producto/)) actions.push({ label: t.viewStock, icon: IconPackage, path: "/dashboard/stock" });
     if (q.match(/client|cliente/)) actions.push({ label: "Voir clients", icon: IconUsers, path: "/dashboard/clients" });
     if (q.match(/commande|pedido|order/)) actions.push({ label: t.viewOrders, icon: IconShoppingCart, path: "/dashboard/orders" });
+    if (q.match(/facture|invoice|impay/)) actions.push({ label: "Voir factures", icon: IconShoppingCart, path: "/dashboard/invoices" });
+    if (q.match(/fournisseur|supplier|achat|purchase/)) actions.push({ label: "Voir achats", icon: IconShoppingCart, path: "/dashboard/purchases" });
+    if (q.match(/employ|salari|\brh\b|personnel/)) actions.push({ label: "Voir RH", icon: IconUsers, path: "/dashboard/hr" });
+    if (q.match(/logistique|logistics|livraison|transport/)) actions.push({ label: "Logistique", icon: IconShoppingCart, path: "/dashboard/logistics" });
     if (q.match(/prévision|forecast|tendance|prevision/)) actions.push({ label: "Voir prévisions", icon: IconPredictions, path: "/dashboard/ai?tab=forecasts" });
     if (q.match(/vente|ca|chiffre|ventas|ingresos/)) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
     if (actions.length === 0) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
@@ -770,15 +847,16 @@ export default function IAPage() {
   };
 
   const getWelcomeMessage = () => {
-    const name = currentUser?.name?.split(' ')[0] || "Utilisateur";
+    const firstName = (currentUser?.name?.split(' ')[0] || "").trim();
     const hour = new Date().getHours();
     let greeting = "";
     if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon aprés-midi" : "Bonsoir";
     else if (language === 'es') greeting = hour < 12 ? "Buenos déas" : hour < 18 ? "Buenas tardes" : "Buenas noches";
     else greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    const hello = firstName ? `${greeting} ${firstName}` : greeting;
     
     if (isMobile) {
-      return `${greeting} ${name} ! \n\n` +
+      return `${hello} ! \n\n` +
              ` **${t.aiAssistant}**\n\n` +
              ` **${t.whatCanIDo} :**\n` +
              `  Analyser ventes\n` +
@@ -793,7 +871,7 @@ export default function IAPage() {
              `Comment puis-je vous aider ? `;
     }
     
-    return `${greeting} ${name} ! \n\n` +
+    return `${hello} ! \n\n` +
            ` **${t.aiAssistant}**\n\n` +
            ` **${t.whatCanIDo} :**\n` +
            `  Analyser vos ventes et bénéfices\n` +
