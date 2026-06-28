@@ -38,7 +38,8 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        companyName: user.companyName
+        companyName: user.companyName,
+        modules: user.modules
       }
     };
   }

@@ -33,6 +33,6 @@ export class UsersController {
     if (req.user.role !== 'admin' && Number(req.user.userId) !== targetId) {
       throw new ForbiddenException('Acces non autorise');
     }
-    return this.clientModulesService.getModulesByClient(targetId);
+    return this.usersService.getUserModules(targetId);
   }
 }
