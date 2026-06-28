@@ -29,7 +29,7 @@ function buildCSP() {
     // unsafe-eval only in development (required for HMR / Fast Refresh)
     'script-src': IS_DEV
       ? ["'self'", "'unsafe-eval'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com']
-      : ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
+      : ["'self'", "'unsafe-eval'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
 
     'style-src':   ["'self'", "'unsafe-inline'"],
     'img-src':     ["'self'", 'data:', 'blob:', 'https://flagcdn.com', API_ORIGIN],
