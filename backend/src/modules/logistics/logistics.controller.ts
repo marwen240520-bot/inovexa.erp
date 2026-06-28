@@ -7,6 +7,15 @@ import { LogisticsService } from './logistics.service';
 export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) {}
 
+  // GET /logistics/shipments -> liste selon le role (client / transporteur)
+  @Get('shipments')
+  async getShipments(@Request() req: any) {
+    if (req.user.role === 'transporteur') {
+      return this.logisticsService.findAllByTransporteur(req.user.userId);
+    }
+    return this.logisticsService.findAllByClient(req.user.userId);
+  }
+
   @Get('client/shipments')
   async getClientShipments(@Request() req: any) {
     if (req.user.role !== 'client') {

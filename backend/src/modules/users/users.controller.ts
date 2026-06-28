@@ -1,11 +1,15 @@
-﻿import { Controller, Get, Patch, Body, UseGuards, Request, Post, Delete, UploadedFile, UseInterceptors } from '@nestjs/common';
+﻿import { Controller, Get, Patch, Body, Param, UseGuards, Request, Post, Delete, UploadedFile, UseInterceptors, ForbiddenException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
+import { ClientModulesService } from '../client-modules/client-modules.service';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly clientModulesService: ClientModulesService,
+  ) {}
 
   @Get('profile')
   async getProfile(@Request() req: any) {
@@ -20,5 +24,15 @@ export class UsersController {
   @Patch('change-password')
   async changePassword(@Request() req: any, @Body() body: { oldPassword: string; newPassword: string }) {
     return this.usersService.changePassword(req.user.userId, body.oldPassword, body.newPassword);
+  }
+
+  // GET /users/:id/modules -> configuration des modules de l'utilisateur
+  @Get(':id/modules')
+  async getUserModules(@Param('id') id: string, @Request() req: any) {
+    const targetId = parseInt(id, 10);
+    if (req.user.role !== 'admin' && Number(req.user.userId) !== targetId) {
+      throw new ForbiddenException('Acces non autorise');
+    }
+    return this.clientModulesService.getModulesByClient(targetId);
   }
 }
