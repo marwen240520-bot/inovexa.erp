@@ -340,6 +340,7 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
     if (dataValues.length > labels.length) dataValues = dataValues.slice(0, labels.length);
 
     return { labels, dataValues };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawSales, topProducts, topClients, modulesData, monthLabels, weekLabels, currentYear, language, t]);
 
   useEffect(() => {
@@ -361,6 +362,7 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
       setPreviewData({ labels, datasets });
       setError("");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, isOpen, generateRealData, theme]);
 
   const getFieldLabel = (module: string, dataType: string) => {
@@ -737,6 +739,7 @@ export default function AnalyticsPage() {
     if (!token) router.push("/auth/login");
     fetchAnalytics();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   const fetchAnalytics = async () => {

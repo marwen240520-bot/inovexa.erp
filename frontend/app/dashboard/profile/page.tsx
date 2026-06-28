@@ -390,6 +390,7 @@ export default function ProfilePage() {
       setTimeout(() => setAnimateCards(true), 100);
     };
     initPage();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUserStats = async () => {

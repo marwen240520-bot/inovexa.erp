@@ -290,10 +290,12 @@ export default function SalesPage() {
     fetchProducts();
     fetchClients();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     applyFilters();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterPeriod, filterStatus, searchTerm, allSales]);
 
   const fetchSales = async () => {

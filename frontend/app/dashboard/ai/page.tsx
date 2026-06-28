@@ -274,6 +274,7 @@ export default function IAPage() {
     return () => {
       if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {

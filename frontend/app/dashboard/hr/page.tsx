@@ -350,6 +350,7 @@ export default function HRPage() {
     fetchEmployees();
     fetchDepartments();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchEmployees = async () => {

@@ -248,6 +248,7 @@ export default function ClientsPage() {
     if (!token) router.push("/auth/login");
     fetchClients();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchClients = async () => {

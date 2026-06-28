@@ -239,8 +239,10 @@ export default function TransporteurDashboard() {
     }
     fetchData();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { processPeriodData(); }, [selectedPeriod, shipments]);
 
   const getWeekNumber = (date: Date): number => {

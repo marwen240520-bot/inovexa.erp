@@ -312,6 +312,7 @@ export default function AdminModulesPage() {
     if (user.role !== "admin") router.push("/dashboard");
     fetchClients();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchClients = async () => {

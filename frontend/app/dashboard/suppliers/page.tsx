@@ -283,6 +283,7 @@ export default function SuppliersPage() {
     if (!token) router.push("/auth/login");
     fetchSuppliers();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // -- Data fetching ----------------------------------------------------------

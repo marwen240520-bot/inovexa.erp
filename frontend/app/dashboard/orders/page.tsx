@@ -246,10 +246,12 @@ export default function OrdersPage() {
     fetchClients();
     fetchProducts();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     applyFilters();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus, searchTerm, allOrders]);
 
   const fetchOrders = async () => {

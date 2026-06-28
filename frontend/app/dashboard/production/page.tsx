@@ -156,6 +156,7 @@ export default function ProductionPage() {
     fetchProductionOrders();
     fetchProducts();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProductionOrders = async () => {

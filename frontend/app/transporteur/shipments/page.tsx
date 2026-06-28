@@ -245,6 +245,7 @@ export default function TransporteurShipmentsPage() {
       } catch (e) { router.push("/auth/login"); return; }
     }
     fetchShipments();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchShipments = async () => {

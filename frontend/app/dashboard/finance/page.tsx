@@ -1055,10 +1055,12 @@ export default function FinancePage() {
     if (!token) { router.push("/auth/login"); return; }
     loadLocalData();
     fetchAllModuleData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!loading) calculateAllFinancialStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriod, selectedYear, selectedMonth, selectedQuarter, expenses, budgets, bankAccounts]);
 
   const loadLocalData = () => {

@@ -353,6 +353,7 @@ export default function TransporteurProfilePage() {
     fetchStats();
     setTimeout(() => setAnimateCards(true), 100);
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchStats = async () => {

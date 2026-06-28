@@ -582,16 +582,19 @@ export default function DashboardPage() {
       setTimeout(() => setAnimateCards(true), 100);
     };
     initPage();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     window.addEventListener("storage", refreshUserData);
     window.addEventListener("focus", refreshUserData);
     return () => { window.removeEventListener("storage", refreshUserData); window.removeEventListener("focus", refreshUserData); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (rawSales.length > 0 || rawPurchases.length > 0) updateChartsByPeriod();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriod, rawSales, rawPurchases]);
 
   const updateChartsByPeriod = () => {

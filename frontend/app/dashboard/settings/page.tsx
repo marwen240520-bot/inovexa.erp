@@ -133,6 +133,7 @@ export default function SettingsPage() {
     setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
     setLoading(false);
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const saveSettings = async () => {

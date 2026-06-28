@@ -366,6 +366,7 @@ export default function StockPage() {
     if (!token) router.push("/auth/login");
     fetchAllData();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriod]);
 
   const fetchAllData = async () => {

@@ -156,6 +156,7 @@ export default function TransporteurSettingsPage() {
     });
     setLoading(false);
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
   const savePreference = (key: string, value: string | number | boolean) => {

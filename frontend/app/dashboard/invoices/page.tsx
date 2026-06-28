@@ -552,6 +552,7 @@ export default function InvoicesPage() {
     fetchClients();
     fetchSuppliers();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchInvoices = async () => {

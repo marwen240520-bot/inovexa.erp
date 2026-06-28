@@ -209,12 +209,14 @@ export default function CategoriesPage() {
     fetchCategories();
     fetchAllProducts();
     setTimeout(() => setAnimateCards(true), 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (categories.length > 0 && products.length > 0) {
       setCategories(prev => prev.map(cat => ({ ...cat, productCount: getProductCountForCategory(cat.id) })));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products]);
 
   const fetchCategories = async () => {
