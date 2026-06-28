@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -68,6 +68,69 @@ interface RegistrationMonth {
 
 // --- Component ----------------------------------------------------------------
 
+// --- UI helpers, action icons & module catalog -------------------------------
+
+const actionBtn = (bg: string): CSSProperties => ({
+  background: bg, color: "white", border: "none", borderRadius: "8px",
+  width: "34px", height: "34px", minWidth: "34px", cursor: "pointer",
+  display: "inline-flex", alignItems: "center", justifyContent: "center",
+});
+
+const ACT = {
+  edit: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>),
+  modules: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>),
+  extend: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>),
+  power: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>),
+  trash: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>),
+};
+
+const MODULE_ICON: Record<string, JSX.Element> = {
+  dashboard: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>),
+  products: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>),
+  categories: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>),
+  stock: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>),
+  sales: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>),
+  purchases: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>),
+  orders: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>),
+  clients: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>),
+  suppliers: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>),
+  invoices: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>),
+  hr: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>),
+  finance: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>),
+  logistics: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>),
+  production: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>),
+  ai: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>),
+  reports: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>),
+  analytics: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>),
+  profile: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>),
+  settings: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>),
+};
+
+const MODULES: { id: string; label: string }[] = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "products", label: "Produits" },
+  { id: "categories", label: "Catégories" },
+  { id: "stock", label: "Stock" },
+  { id: "sales", label: "Ventes" },
+  { id: "purchases", label: "Achats" },
+  { id: "orders", label: "Commandes" },
+  { id: "clients", label: "Clients" },
+  { id: "suppliers", label: "Fournisseurs" },
+  { id: "invoices", label: "Factures" },
+  { id: "hr", label: "Ressources Humaines" },
+  { id: "finance", label: "Finance" },
+  { id: "logistics", label: "Logistique" },
+  { id: "production", label: "Production" },
+  { id: "ai", label: "Assistant IA" },
+  { id: "reports", label: "Rapports" },
+  { id: "analytics", label: "Analytics" },
+  { id: "profile", label: "Mon Profil" },
+  { id: "settings", label: "Paramètres" },
+];
+
+const CHECK_ICON = (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
+const DASH_ICON = (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>);
+
 export default function AdminClientsPage() {
   const router = useRouter();
   const { t } = useLanguage();
@@ -81,6 +144,14 @@ export default function AdminClientsPage() {
   const [message, setMessage]                   = useState<string>("");
   const [messageType, setMessageType]           = useState<"success" | "error">("success");
   const [animateCards, setAnimateCards]         = useState<boolean>(false);
+  const [isMobile, setIsMobile]                 = useState<boolean>(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [stats, setStats]                       = useState<Stats>({ totalClients: 0, activeClients: 0, expiredClients: 0, totalRevenue: 0 });
   const [registrationsData, setRegistrationsData] = useState<RegistrationMonth[]>([]);
 
@@ -193,7 +264,7 @@ export default function AdminClientsPage() {
         showMessage("Erreur lors de la création", "error");
       }
     } catch(e) {
-      showMessage("? Erreur de connexion", "error");
+      showMessage("Erreur de connexion", "error");
     }
   };
 
@@ -217,7 +288,7 @@ export default function AdminClientsPage() {
         fetchStats();
         showMessage("Client modifié avec succès !", "success");
       } else {
-        showMessage("? Erreur lors de la modification", "error");
+        showMessage("Erreur lors de la modification", "error");
       }
     } catch(e) { console.error(e); }
   };
@@ -319,12 +390,10 @@ export default function AdminClientsPage() {
   };
 
   const openModulesModal = (client: Client) => {
-    const currentModules = client.modules || {};
-    setModulesModal({
-      open: true,
-      clientId: client.id,
-      modules: { ...currentModules }
-    });
+    const current = client.modules || {};
+    const merged: Record<string, boolean> = {};
+    MODULES.forEach((m) => { merged[m.id] = !!current[m.id]; });
+    setModulesModal({ open: true, clientId: client.id, modules: merged });
   };
 
   const toggleModule = (moduleName: string) => {
@@ -442,7 +511,7 @@ export default function AdminClientsPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex" }}>
       <Sidebar />
-      <div style={{ marginLeft: "280px", flex: 1, padding: "32px" }}>
+      <div style={{ marginLeft: isMobile ? 0 : "280px", flex: 1, padding: isMobile ? "16px" : "32px", paddingBottom: isMobile ? "90px" : "32px", width: "100%", minWidth: 0 }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
           {/* Header */}
@@ -514,7 +583,7 @@ export default function AdminClientsPage() {
           </div>
 
           {/* Charts */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", marginBottom: "32px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "24px", marginBottom: "32px" }}>
             <div style={{ background: "#111", borderRadius: "20px", padding: "20px", border: "1px solid #222" }}>
               <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>Répartition des clients</h3>
               <div style={{ height: "220px" }}>
@@ -621,13 +690,11 @@ export default function AdminClientsPage() {
                       </td>
                       <td style={{ padding: "12px", textAlign: "center" }}>
                         <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
-                          <button onClick={() => openEditModal(client)} style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modifier">??</button>
-                          <button onClick={() => openModulesModal(client)} style={{ background: "#8b5cf6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modules">??</button>
-                          <button onClick={() => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Prolonger">??</button>
-                          <button onClick={() => toggleStatus(client.id)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title={client.isActive ? "Désactiver" : "Activer"}>
-                            {client.isActive ? "??" : "??"}
-                          </button>
-                          <button onClick={() => deleteClient(client.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Supprimer">???</button>
+                          <button onClick={() => openEditModal(client)} style={actionBtn("#3b82f6")} title="Modifier">{ACT.edit}</button>
+                          <button onClick={() => openModulesModal(client)} style={actionBtn("#8b5cf6")} title="Modules">{ACT.modules}</button>
+                          <button onClick={() => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={actionBtn("#10b981")} title="Prolonger">{ACT.extend}</button>
+                          <button onClick={() => toggleStatus(client.id)} style={actionBtn("#f59e0b")} title={client.isActive ? "Désactiver" : "Activer"}>{ACT.power}</button>
+                          <button onClick={() => deleteClient(client.id)} style={actionBtn("#c33")} title="Supprimer">{ACT.trash}</button>
                         </div>
                       </td>
                     </tr>
@@ -643,7 +710,7 @@ export default function AdminClientsPage() {
       {/* Modal Create/Edit */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#111", padding: "32px", borderRadius: "24px", width: "500px", maxHeight: "90vh", overflowY: "auto" }}>
+          <div style={{ background: "#111", padding: "32px", borderRadius: "24px", width: isMobile ? "92vw" : "500px", maxHeight: "90vh", overflowY: "auto" }}>
             <h2 style={{ color: "white", marginBottom: "24px" }}>
               {modal.editMode ? "Modifier le client" : "Nouveau client"}
             </h2>
@@ -685,19 +752,20 @@ export default function AdminClientsPage() {
       {/* Modal Modules */}
       {modulesModal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#111", padding: "32px", borderRadius: "24px", width: "600px", maxHeight: "80vh", overflowY: "auto" }}>
+          <div style={{ background: "#111", padding: "32px", borderRadius: "24px", width: isMobile ? "92vw" : "600px", maxHeight: "80vh", overflowY: "auto" }}>
             <h2 style={{ color: "white", marginBottom: "24px" }}>Modules disponibles</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", marginBottom: "24px" }}>
-              {Object.keys(modulesModal.modules).map((moduleName) => {
-                const isActive = modulesModal.modules[moduleName];
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "12px", marginBottom: "24px" }}>
+              {MODULES.map((m) => {
+                const isActive = !!modulesModal.modules[m.id];
                 return (
-                  <div key={moduleName} onClick={() => toggleModule(moduleName)} style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "12px", background: "#1a1a1a", borderRadius: "8px", cursor: "pointer",
+                  <div key={m.id} onClick={() => toggleModule(m.id)} style={{
+                    display: "flex", alignItems: "center", gap: "12px",
+                    padding: "12px", background: "#1a1a1a", borderRadius: "10px", cursor: "pointer",
                     border: `1px solid ${isActive ? "#667eea" : "#333"}`, transition: "all 0.2s"
                   }}>
-                    <span style={{ color: "white", textTransform: "capitalize" }}>{moduleName}</span>
-                    <span>{isActive ? "?" : "?"}</span>
+                    <span style={{ color: isActive ? "#818cf8" : "#64748b", display: "flex", flexShrink: 0 }}>{MODULE_ICON[m.id]}</span>
+                    <span style={{ color: isActive ? "#fff" : "#94a3b8", fontSize: "14px", flex: 1 }}>{m.label}</span>
+                    <span style={{ color: isActive ? "#10b981" : "#475569", display: "flex", flexShrink: 0 }}>{isActive ? CHECK_ICON : DASH_ICON}</span>
                   </div>
                 );
               })}

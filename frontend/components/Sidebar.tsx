@@ -325,7 +325,6 @@ export default function Sidebar() {
 
   const adminMenuItems = [
     { id: "adminClients", path: "/admin/clients",      label: "admin.clients",    iconKey: "adminClients" },
-    { id: "adminModules", path: "/admin/modules",      label: "admin.modules",    iconKey: "adminModules" },
     { id: "profile",      path: "/dashboard/profile",  label: "common.profile",   iconKey: "profile" },
     { id: "settings",     path: "/dashboard/settings", label: "common.settings",  iconKey: "settings" },
   ];
