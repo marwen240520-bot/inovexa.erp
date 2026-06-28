@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import Spinner from "@/components/ui/Spinner";
 
 // Types
 interface Shipment {
@@ -470,14 +471,7 @@ export default function TransporteurDashboard() {
   ];
 
   if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#0a0a0a" }}>
-        <div style={{ textAlign: "center" }}>
-          <Ic.Loader size={40} color="#667eea" />
-          <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "14px" }}>{getTranslation("common.loading")}</p>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

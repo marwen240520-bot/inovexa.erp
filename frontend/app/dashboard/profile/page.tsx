@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme, THEMES } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
+import Spinner from "@/components/ui/Spinner";
 
 // ==================== TRADUCTIONS ====================
 const profileTranslations = {
@@ -641,33 +642,7 @@ export default function ProfilePage() {
 
   // FIX: Loading state with sidebar
   if (loading) {
-    return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: currentTheme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: currentTheme.background
-        }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <Icons.Spinner color={currentTheme.primary} size={isMobile ? 40 : 48} />
-            <p style={{ marginTop: "16px", color: currentTheme.textSecondary, fontSize: isMobile ? "13px" : "14px" }}>{t("common.loading") || "Chargement..."}</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

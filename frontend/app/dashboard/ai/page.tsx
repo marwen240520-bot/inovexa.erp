@@ -19,6 +19,7 @@ import {
   Filler
 } from "chart.js";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
+import Spinner from "@/components/ui/Spinner";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
@@ -934,33 +935,7 @@ export default function IAPage() {
 
   // FIX: Loading state with sidebar
   if (loading) {
-    return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <IconSpinner size={isMobile ? 32 : 40} color={theme.primary} />
-            <p style={{ color: theme.textSecondary, marginTop: "12px", fontSize: isMobile ? "11px" : "12px" }}>{t.loading}</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

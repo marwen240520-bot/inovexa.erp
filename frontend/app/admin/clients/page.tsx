@@ -19,6 +19,7 @@ import {
   Filler
 } from "chart.js";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
+import Spinner from "@/components/ui/Spinner";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement, Filler
@@ -435,15 +436,7 @@ export default function AdminClientsPage() {
   // --- Render ---------------------------------------------------------------
 
   if (loading) {
-    return (
-      <div style={{ background: "#0a0a0a", minHeight: "100vh", color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: "48px", height: "48px", border: "3px solid #1a1a1a", borderTopColor: "#667eea", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <p>{t("common.loading")}</p>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

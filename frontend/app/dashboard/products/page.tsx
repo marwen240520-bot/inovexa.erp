@@ -8,6 +8,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
+import Spinner from "@/components/ui/Spinner";
 
 // -- Types --------------------------------------------------
 interface Product {
@@ -476,33 +477,7 @@ export default function ProductsPage() {
 
   // FIX: Loading state with sidebar
   if (loading) {
-    return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ width: isMobile ? "40px" : "48px", height: isMobile ? "40px" : "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
-            <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (
@@ -569,7 +544,43 @@ export default function ProductsPage() {
             )}
           </div>
 
-         
+          {/* Banner d'information */}
+          {showInfo && (
+            <div style={{
+              background: `${theme.primary}10`,
+              border: `1px solid ${theme.primary}30`,
+              borderRadius: "12px",
+              padding: "12px 16px",
+              marginBottom: sectionMargin,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "12px",
+              animation: "fadeInUp 0.5s ease 0.05s",
+              opacity: animateCards ? 1 : 0
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
+                <IconInfo size={20} color={theme.primary} />
+
+              </div>
+              <button
+                onClick={() => setShowInfo(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: theme.textSecondary,
+                  cursor: "pointer",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center"
+                }}
+              >
+                <IconX size={14} />
+              </button>
+            </div>
+          )}
+
           {/* Message */}
           {message && (
             <div style={{ background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`, color: messageType === "success" ? theme.accent : "#f87171", padding: "10px", borderRadius: "10px", marginBottom: "16px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "11px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>

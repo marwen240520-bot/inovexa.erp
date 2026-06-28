@@ -21,6 +21,7 @@ import {
   TooltipItem
 } from "chart.js";
 import { Line, Doughnut } from "react-chartjs-2";
+import Spinner from "@/components/ui/Spinner";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
@@ -847,43 +848,7 @@ export default function DashboardPage() {
 
   // Loading component with proper page dimensions
   if (loading) {
-    return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{
-          flex: 1,
-          marginLeft: isMobile ? "0" : "0px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ 
-              width: isMobile ? "40px" : "48px", 
-              height: isMobile ? "40px" : "48px", 
-              border: `3px solid ${theme.border}`, 
-              borderTopColor: theme.primary, 
-              borderRadius: "50%", 
-              animation: "spin 1s linear infinite", 
-              margin: "0 auto 16px" 
-            }}></div>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            <p style={{ fontSize: isMobile ? "12px" : "14px", color: theme.textSecondary }}>
-              {t("common.loading") || "Chargement..."}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

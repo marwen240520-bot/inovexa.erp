@@ -17,6 +17,7 @@ import {
   ArcElement
 } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
+import Spinner from "@/components/ui/Spinner";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement
@@ -486,15 +487,7 @@ export default function ProductionPage() {
   ];
 
   if (loading) {
-    return (
-      <div style={{ background: theme.background, minHeight: "100vh", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: "48px", height: "48px", border: `3px solid ${theme.border}`, borderTopColor: theme.primary, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
-          <style>{animations}</style>
-          <p>{t("common.loading")}</p>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

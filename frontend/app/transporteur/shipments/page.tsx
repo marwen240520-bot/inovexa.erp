@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import Spinner from "@/components/ui/Spinner";
 
 interface Shipment {
   id: number;
@@ -379,17 +380,7 @@ export default function TransporteurShipmentsPage() {
   };
 
   if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#0a0a0a" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px" }}>
-            <Ic.Loader size={40} color="#667eea" />
-          </div>
-          <p style={{ color: "#94a3b8", fontSize: "13px" }}>{getTranslation("common.loading")}</p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import Spinner from "@/components/ui/Spinner";
 
 // ==================== SVG ICONS ====================
 const Icons = {
@@ -259,15 +260,7 @@ export default function TransporteurSettingsPage() {
   };
 
   if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#0a0a0a" }}>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ textAlign: "center" }}>
-          <Icons.Spinner size={isMobile ? 35 : 43} />
-          <p style={{ color: "#94a3b8", marginTop: "14px", fontSize: fontSizeSmall }}>{getTranslation("common.loading")}</p>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

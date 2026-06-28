@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
+import Spinner from "@/components/ui/Spinner";
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -214,35 +215,7 @@ export default function SettingsPage() {
 
   // FIX: Loading state with sidebar
   if (loading) {
-    return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-              <IconLoader size={isMobile ? 36 : 44} color={theme.primary} />
-            </div>
-            <p style={{ fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

@@ -17,6 +17,7 @@ import {
   ArcElement
 } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import Spinner from "@/components/ui/Spinner";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement
@@ -694,35 +695,7 @@ export default function LogisticsPage() {
 
   // FIX: Loading state with sidebar
   if (loading) {
-    return (
-      <div style={{ 
-        display: "flex", 
-        minHeight: "100vh", 
-        width: "100%", 
-        background: theme.background,
-        padding: 0,
-        margin: 0
-      }}>
-        <Sidebar />
-        <div style={{ 
-          flex: 1,
-          marginLeft: isMobile ? "0" : "280px",
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: theme.background
-        }}>
-          <style>{animations}</style>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ animation: "svgSpin 1s linear infinite", display: "inline-block", marginBottom: "16px" }}>
-              <IconLoader size={isMobile ? 40 : 48} color={theme.primary} />
-            </div>
-            <p style={{ color: theme.textSecondary, fontSize: isMobile ? "12px" : "14px" }}>{t("common.loading")}</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (
