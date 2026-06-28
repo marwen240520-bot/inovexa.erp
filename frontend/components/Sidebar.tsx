@@ -193,6 +193,7 @@ interface User {
   role: string;
   companyName?: string;
   phone?: string;
+  modules?: Record<string, boolean>;
 }
 
 interface ThemeColors {
@@ -242,6 +243,18 @@ export default function Sidebar() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileMoreOpen]);
 
+  const normalizeModules = (data: any): Record<string, boolean> | null => {
+    if (!data) return null;
+    if (Array.isArray(data)) {
+      const m: Record<string, boolean> = {};
+      data.forEach((id) => { m[String(id)] = true; });
+      return m;
+    }
+    if (data.modules && typeof data.modules === "object") return data.modules;
+    if (typeof data === "object") return data;
+    return null;
+  };
+
   useEffect(() => {
     const userData = localStorage.getItem("user");
     const token = localStorage.getItem("token");
@@ -249,10 +262,13 @@ export default function Sidebar() {
       try {
         const u = JSON.parse(userData);
         setUser(u);
+        const fromUser = normalizeModules(u.modules);
+        if (fromUser) setUserModules(fromUser);
         if (u.id && token) fetchUserModules(u.id, token);
         else setLoading(false);
       } catch { setLoading(false); }
     } else { setLoading(false); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUserModules = async (userId: string, token: string) => {
@@ -260,7 +276,10 @@ export default function Sidebar() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/modules`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setUserModules(await res.json());
+      if (res.ok) {
+        const mods = normalizeModules(await res.json());
+        if (mods) setUserModules(mods);
+      }
     } catch {}
     setLoading(false);
   };
