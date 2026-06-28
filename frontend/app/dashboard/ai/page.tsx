@@ -233,6 +233,7 @@ export default function IAPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [rawData, setRawData] = useState<any>(null); // brut multi-modules pour le contexte RAG
   const [alerts, setAlerts] = useState<any[]>([]);
   const [predictions, setPredictions] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
@@ -320,6 +321,9 @@ export default function IAPage() {
         fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/invoices`),
         fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/employees`)
       ]);
+
+      // Conserver le brut de chaque module pour le contexte RAG du chat IA
+      setRawData({ sales, purchases, products, clients, orders, invoices, employees });
 
       const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
       const totalExpenses = purchases.reduce((sum: number, p: any) => sum + (Number(p.total) || 0), 0);
@@ -457,39 +461,154 @@ export default function IAPage() {
   const getUpperBoundData = () => getForecastData().map(v => Math.round(v * 1.12));
   const getLowerBoundData = () => getForecastData().map(v => Math.round(v * 0.88));
 
-  const sendMessage = () => {
+  // ────────────────────────────────────────────────────────────────
+  //  Contexte RAG : instantané multi-modules envoyé au modèle
+  // ────────────────────────────────────────────────────────────────
+  const buildErpContext = () => {
+    const r = rawData || {};
+    const n = (v: any) => Number(v) || 0;
+    const cap = (arr: any, k: number) => (Array.isArray(arr) ? arr.slice(0, k) : []);
+    const last = (arr: any, k: number) => (Array.isArray(arr) ? arr.slice(-k).reverse() : []);
+
+    return {
+      generatedAt: new Date().toISOString(),
+      currency: "DT (TND)",
+      stats,
+      predictions,
+      topProducts,
+      topClients,
+      recommendations,
+      alerts: (alerts || []).map((a: any) => ({ type: a.type, message: a.message })),
+      lowStock: (r.products || [])
+        .filter((p: any) => n(p.quantity) > 0 && n(p.quantity) < 10)
+        .map((p: any) => ({ name: p.name, quantity: n(p.quantity) }))
+        .slice(0, 50),
+      outOfStock: (r.products || [])
+        .filter((p: any) => n(p.quantity) === 0)
+        .map((p: any) => ({ name: p.name }))
+        .slice(0, 50),
+      counts: {
+        products: (r.products || []).length,
+        clients: (r.clients || []).length,
+        sales: (r.sales || []).length,
+        orders: (r.orders || []).length,
+        invoices: (r.invoices || []).length,
+        purchases: (r.purchases || []).length,
+        employees: (r.employees || []).length,
+      },
+      samples: {
+        products: cap(r.products, 120).map((p: any) => ({
+          name: p.name,
+          category: p.category ?? p.categoryName ?? null,
+          price: n(p.price),
+          quantity: n(p.quantity),
+          ref: p.sku ?? p.reference ?? null,
+        })),
+        recentSales: last(r.sales, 60).map((s: any) => ({
+          date: s.createdAt ?? s.date ?? null,
+          client: s.clientName ?? null,
+          product: s.productName ?? s.product ?? null,
+          qty: n(s.quantity),
+          total: n(s.total),
+        })),
+        clients: cap(r.clients, 80).map((c: any) => ({
+          name: c.name,
+          status: c.status ?? null,
+          email: c.email ?? null,
+          phone: c.phone ?? null,
+        })),
+        orders: last(r.orders, 60).map((o: any) => ({
+          ref: o.reference ?? o.id ?? null,
+          client: o.clientName ?? null,
+          status: o.status ?? null,
+          total: n(o.total),
+          date: o.createdAt ?? null,
+        })),
+        invoices: last(r.invoices, 60).map((iv: any) => ({
+          ref: iv.reference ?? iv.number ?? iv.id ?? null,
+          client: iv.clientName ?? null,
+          status: iv.status ?? null,
+          total: n(iv.total),
+          dueDate: iv.dueDate ?? null,
+          date: iv.createdAt ?? null,
+        })),
+        purchases: last(r.purchases, 40).map((p: any) => ({
+          supplier: p.supplierName ?? p.supplier ?? null,
+          total: n(p.total),
+          date: p.createdAt ?? null,
+        })),
+        employees: cap(r.employees, 40).map((e: any) => ({
+          name: e.name ?? `${e.firstName ?? ""} ${e.lastName ?? ""}`.trim(),
+          role: e.role ?? e.position ?? null,
+          department: e.department ?? null,
+        })),
+      },
+      note: "Les listes 'samples' sont tronquees ; 'counts' donne les totaux reels.",
+    };
+  };
+
+  // Animation d'ecriture mot-a-mot (reutilisee par l'IA et par le repli local)
+  const streamAssistant = (response: string, actions: any[]) => {
+    setIsTyping(false);
+    setIsStreaming(true);
+    setStreamingContent("");
+    let fullResponse = "";
+    const words = response.split(/(\s+)/);
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index < words.length) {
+        fullResponse += words[index];
+        setStreamingContent(fullResponse);
+        index++;
+      } else {
+        clearInterval(interval);
+        setChatMessages(prev => [...prev, { role: "assistant", content: fullResponse, timestamp: new Date(), actions }]);
+        setLoadingAI(false);
+        setIsStreaming(false);
+        setStreamingContent("");
+      }
+    }, isMobile ? 20 : 15);
+  };
+
+  const sendMessage = async () => {
     if (!chatInput.trim() || loadingAI) return;
     const userMessage = chatInput;
+
+    // Historique (incluant le nouveau message) normalise pour l'API.
+    const history = [...chatMessages, { role: "user", content: userMessage }]
+      .filter((m: any) => m.role === "user" || m.role === "assistant")
+      .map((m: any) => ({ role: m.role, content: String(m.content || "") }))
+      .slice(-12);
+
     setChatMessages(prev => [...prev, { role: "user", content: userMessage, timestamp: new Date() }]);
     setChatInput("");
     setLoadingAI(true);
     setIsTyping(true);
-    
-    setTimeout(() => {
-      setIsTyping(false);
-      setIsStreaming(true);
-      setStreamingContent("");
-      
-      const response = generateAIResponse(userMessage);
-      const actions = getContextualActions(userMessage);
-      let fullResponse = "";
-      const words = response.split(/(\s+)/);
-      let index = 0;
-      
-      const interval = setInterval(() => {
-        if (index < words.length) {
-          fullResponse += words[index];
-          setStreamingContent(fullResponse);
-          index++;
-        } else {
-          clearInterval(interval);
-          setChatMessages(prev => [...prev, { role: "assistant", content: fullResponse, timestamp: new Date(), actions }]);
-          setLoadingAI(false);
-          setIsStreaming(false);
-          setStreamingContent("");
+
+    const actions = getContextualActions(userMessage);
+
+    // 1) Vrai assistant IA (route serveur + contexte RAG). 2) Repli local si indispo.
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language, context: buildErpContext(), messages: history }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = (data?.text || "").trim();
+        if (text) {
+          streamAssistant(text, actions);
+          return;
         }
-      }, isMobile ? 20 : 15);
-    }, 500);
+      }
+      // 503 (cle absente), reponse vide, etc. -> repli local ci-dessous.
+    } catch {
+      // Erreur reseau -> repli local.
+    }
+
+    // Repli hors-ligne : matcher par mots-cles existant.
+    streamAssistant(generateAIResponse(userMessage), actions);
   };
 
   const generateAIResponse = (question: string): string => {
