@@ -547,7 +547,7 @@ export default function IAPage() {
              ` **Recommandation :** ${Number(growth) > 10 ? "Capitalisez sur cette dynamique !" : "Optimisez vos processus pour accélérer la croissance"}`;
     }
     
-    if (q.match(/top produits|meilleurs produits|best sellers|top productos/)) {
+    if (q.match(/top produits|meilleurs produits|top products|best products|best sellers|top productos/)) {
       let response = ` **${t.topProducts}**\n\n`;
       topProducts.slice(0, 4).forEach((p, i) => {
         response += `${i + 1}. **${p.name}**\n` +
