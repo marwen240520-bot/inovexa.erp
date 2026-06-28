@@ -569,43 +569,7 @@ export default function ProductsPage() {
             )}
           </div>
 
-          {/* Banner d'information */}
-          {showInfo && (
-            <div style={{
-              background: `${theme.primary}10`,
-              border: `1px solid ${theme.primary}30`,
-              borderRadius: "12px",
-              padding: "12px 16px",
-              marginBottom: sectionMargin,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "12px",
-              animation: "fadeInUp 0.5s ease 0.05s",
-              opacity: animateCards ? 1 : 0
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
-                <IconInfo size={20} color={theme.primary} />
-
-              </div>
-              <button
-                onClick={() => setShowInfo(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: theme.textSecondary,
-                  cursor: "pointer",
-                  padding: "4px",
-                  display: "flex",
-                  alignItems: "center"
-                }}
-              >
-                <IconX size={14} />
-              </button>
-            </div>
-          )}
-
+         
           {/* Message */}
           {message && (
             <div style={{ background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`, color: messageType === "success" ? theme.accent : "#f87171", padding: "10px", borderRadius: "10px", marginBottom: "16px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "11px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
