@@ -622,166 +622,290 @@ export default function IAPage() {
     const roi = predictions?.roi || 0;
     const ebitda = predictions?.ebitda || 0;
     const margin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : "0";
-    
+
     const rd = rawData || {};
     const arr = (x: any): any[] => (Array.isArray(x) ? x : []);
     const money = (v: any) => formatCurrency(Number(v) || 0);
     const firstName = currentUser?.name?.split(' ')[0] || "";
+    const nm = firstName ? " " + firstName : "";
+
+    // Dictionnaire de réponses — fr / en / es (phrases hors étiquettes `t`).
+    const AI_L: Record<string, any> = {
+      fr: {
+        colon: " :",
+        assistant: "Assistant Inovexa",
+        greet: (n: string) => `Bonjour${n} ! Je peux analyser **tous vos modules** : ventes, bénéfices, stock, produits, clients, commandes, factures, achats, fournisseurs, RH et prévisions.`,
+        greetTry: `Essayez : « résumé de mon activité », « état du stock », « factures impayées », « top clients » ou « prévisions ».`,
+        aiAnalysis: "Analyse", total: "Total",
+        revTier: ["Croissance exceptionnelle, félicitations !", "Bonne dynamique commerciale.", "Croissance à surveiller de près."],
+        ebitdaEst: "EBITDA estimé",
+        profitTier: ["Marge excellente, continuez ainsi !", "Bonne marge — pensez à optimiser vos coûts.", "Marge à améliorer : analysez vos dépenses."],
+        report: "RAPPORT D'ACTIVITÉ",
+        finances: "Finances", clientsH: "Clients", productsH: "Produits", ordersH: "Commandes", forecastH: "Prévisions",
+        catalog: "Catalogue", stockValue: "Valeur du stock", recommendation: "Recommandation",
+        summaryTier: ["Capitalisez sur cette dynamique !", "Optimisez vos processus pour accélérer la croissance."],
+        ca: "CA", salesUnits: "Ventes", units: "unités",
+        coreBiz: "Ces produits sont le cœur de votre activité. Concentrez vos efforts marketing sur ces références !",
+        purchasesL: "Achats", ordersL: "Commandes",
+        loyalty: "Mettez en place un programme de fidélité premium pour ces clients stratégiques !",
+        overview: "Vue d'ensemble", outOfStock: "Ruptures", totalValue: "Valeur totale",
+        restockUrgent: "RÉAPPROVISIONNEMENTS PRIORITAIRES", demand: "demande", perMonth: "mois",
+        restockAction: (n: number) => `Action recommandée : réapprovisionnez ${n} produit(s) en priorité.`,
+        stockOk: "Aucune urgence — niveau de stock sain.", stockBravo: "Votre gestion des stocks est optimale.",
+        trends: "Tendances détectées", estimated: "estimé", ebitdaProj: "EBITDA projeté",
+        monthlyProj: "Projections mensuelles", strategicAdvice: "Conseil stratégique",
+        forecastTier: ["Anticipez la forte croissance : renforcez vos stocks et votre équipe commerciale.", "Croissance modérée en vue : maintenez vos investissements.", "Soyez prudent sur les investissements et optimisez vos coûts."],
+        guide: "GUIDE D'UTILISATION", possibleQ: "Questions possibles", askRoi: "Quel est mon ROI ?", askPerf: "Performance globale",
+        quickActions: "Actions rapides", qa: ["Analyse des ventes", "Suivi du stock", "Prévisions financières", "Recommandations produits"],
+        tip: "Astuce : plus votre question est précise, plus la réponse est pertinente.",
+        ordersLog: "Commandes & logistique", pending: "En attente", cumValue: "Valeur cumulée", byStatus: "Par statut",
+        orderAction: (n: number) => `Action : ${n} commande(s) à traiter.`, noPending: "Aucune commande en attente.",
+        invoices: "Factures", noInvoices: "Aucune facture dans les données chargées. Consultez le module Factures.",
+        amount: "Montant total", unpaid: "Impayées / en attente",
+        invAction: (n: number) => `Action : relancez ${n} facture(s) impayée(s).`, allPaid: "Toutes les factures sont réglées.",
+        purchasesSuppliers: "Achats & fournisseurs", spent: "Total dépensé", purchaseCount: "Nombre d'achats", distinctSuppliers: "Fournisseurs distincts",
+        seePurchases: "Consultez le module Achats pour le détail.",
+        hr: "Ressources humaines", headcount: "Effectif", payroll: "Masse salariale (mensuelle)", seeHr: "Consultez le module RH pour la gestion des employés.",
+        categories: "Catégories", distinctCats: "Catégories distinctes", distribution: "Répartition (produits)", noCat: "Sans catégorie",
+        clients: "Clients", active: "Actifs", askTopClients: "Demandez « top clients » pour vos meilleurs clients.",
+        quickOverview: "Aperçu rapide de votre activité", productsWord: "produits", outWord: "en rupture", pendingOrders: "Commandes en attente",
+        coverAll: "Je couvre **tous les modules**. Demandez : ventes, bénéfices, stock, produits, clients, commandes, factures, achats, fournisseurs, RH, catégories ou prévisions.",
+      },
+      en: {
+        colon: ":",
+        assistant: "Inovexa Assistant",
+        greet: (n: string) => `Hi${n}! I can analyze **all your modules**: sales, profit, stock, products, clients, orders, invoices, purchases, suppliers, HR and forecasts.`,
+        greetTry: `Try: "summary of my activity", "stock status", "unpaid invoices", "top clients" or "forecasts".`,
+        aiAnalysis: "Analysis", total: "Total",
+        revTier: ["Outstanding growth — well done!", "Solid commercial momentum.", "Growth to watch closely."],
+        ebitdaEst: "Estimated EBITDA",
+        profitTier: ["Excellent margin, keep it up!", "Good margin — consider optimizing your costs.", "Margin to improve: review your expenses."],
+        report: "ACTIVITY REPORT",
+        finances: "Finances", clientsH: "Clients", productsH: "Products", ordersH: "Orders", forecastH: "Forecasts",
+        catalog: "Catalog", stockValue: "Stock value", recommendation: "Recommendation",
+        summaryTier: ["Capitalize on this momentum!", "Streamline your processes to accelerate growth."],
+        ca: "Revenue", salesUnits: "Sales", units: "units",
+        coreBiz: "These products are the core of your business. Focus your marketing on them!",
+        purchasesL: "Purchases", ordersL: "Orders",
+        loyalty: "Set up a premium loyalty program for these strategic clients!",
+        overview: "Overview", outOfStock: "Out of stock", totalValue: "Total value",
+        restockUrgent: "RESTOCK PRIORITIES", demand: "demand", perMonth: "mo",
+        restockAction: (n: number) => `Recommended action: restock ${n} product(s) as a priority.`,
+        stockOk: "No urgency — stock level is healthy.", stockBravo: "Your inventory management is on point.",
+        trends: "Detected trends", estimated: "est.", ebitdaProj: "Projected EBITDA",
+        monthlyProj: "Monthly projections", strategicAdvice: "Strategic advice",
+        forecastTier: ["Plan for strong growth: build up stock and reinforce your sales team.", "Moderate growth ahead: keep your investments steady.", "Be cautious with investments and optimize your costs."],
+        guide: "USER GUIDE", possibleQ: "Things you can ask", askRoi: "What is my ROI?", askPerf: "Overall performance",
+        quickActions: "Quick actions", qa: ["Sales analysis", "Stock tracking", "Financial forecasts", "Product recommendations"],
+        tip: "Tip: the more specific your question, the more relevant the answer.",
+        ordersLog: "Orders & logistics", pending: "Pending", cumValue: "Cumulative value", byStatus: "By status",
+        orderAction: (n: number) => `Action: ${n} order(s) to process.`, noPending: "No pending orders.",
+        invoices: "Invoices", noInvoices: "No invoices in the loaded data. Check the Invoices module.",
+        amount: "Total amount", unpaid: "Unpaid / pending",
+        invAction: (n: number) => `Action: follow up on ${n} unpaid invoice(s).`, allPaid: "All invoices are settled.",
+        purchasesSuppliers: "Purchases & suppliers", spent: "Total spent", purchaseCount: "Number of purchases", distinctSuppliers: "Distinct suppliers",
+        seePurchases: "See the Purchases module for details.",
+        hr: "Human resources", headcount: "Headcount", payroll: "Payroll (monthly)", seeHr: "See the HR module to manage employees.",
+        categories: "Categories", distinctCats: "Distinct categories", distribution: "Breakdown (products)", noCat: "Uncategorized",
+        clients: "Clients", active: "Active", askTopClients: `Ask "top clients" for your best customers.`,
+        quickOverview: "Quick overview of your activity", productsWord: "products", outWord: "out of stock", pendingOrders: "Pending orders",
+        coverAll: "I cover **all modules**. Ask about: sales, profit, stock, products, clients, orders, invoices, purchases, suppliers, HR, categories or forecasts.",
+      },
+      es: {
+        colon: ":",
+        assistant: "Asistente Inovexa",
+        greet: (n: string) => `¡Hola${n}! Puedo analizar **todos tus módulos**: ventas, beneficios, stock, productos, clientes, pedidos, facturas, compras, proveedores, RR. HH. y previsiones.`,
+        greetTry: `Prueba: "resumen de mi actividad", "estado del stock", "facturas impagadas", "mejores clientes" o "previsiones".`,
+        aiAnalysis: "Análisis", total: "Total",
+        revTier: ["¡Crecimiento excepcional, enhorabuena!", "Buena dinámica comercial.", "Crecimiento a vigilar de cerca."],
+        ebitdaEst: "EBITDA estimado",
+        profitTier: ["¡Margen excelente, sigue así!", "Buen margen — conviene optimizar tus costes.", "Margen a mejorar: revisa tus gastos."],
+        report: "INFORME DE ACTIVIDAD",
+        finances: "Finanzas", clientsH: "Clientes", productsH: "Productos", ordersH: "Pedidos", forecastH: "Previsiones",
+        catalog: "Catálogo", stockValue: "Valor del stock", recommendation: "Recomendación",
+        summaryTier: ["¡Aprovecha esta dinámica!", "Optimiza tus procesos para acelerar el crecimiento."],
+        ca: "Ingresos", salesUnits: "Ventas", units: "uds.",
+        coreBiz: "Estos productos son el núcleo de tu negocio. ¡Concentra tu marketing en ellos!",
+        purchasesL: "Compras", ordersL: "Pedidos",
+        loyalty: "¡Implanta un programa de fidelización premium para estos clientes estratégicos!",
+        overview: "Visión general", outOfStock: "Sin stock", totalValue: "Valor total",
+        restockUrgent: "REPOSICIONES PRIORITARIAS", demand: "demanda", perMonth: "mes",
+        restockAction: (n: number) => `Acción recomendada: repón ${n} producto(s) con prioridad.`,
+        stockOk: "Sin urgencias — nivel de stock saludable.", stockBravo: "Tu gestión de inventario es óptima.",
+        trends: "Tendencias detectadas", estimated: "est.", ebitdaProj: "EBITDA proyectado",
+        monthlyProj: "Proyecciones mensuales", strategicAdvice: "Consejo estratégico",
+        forecastTier: ["Prepárate para un fuerte crecimiento: aumenta el stock y refuerza tu equipo comercial.", "Crecimiento moderado a la vista: mantén tus inversiones.", "Sé prudente con las inversiones y optimiza tus costes."],
+        guide: "GUÍA DE USO", possibleQ: "Preguntas posibles", askRoi: "¿Cuál es mi ROI?", askPerf: "Rendimiento global",
+        quickActions: "Acciones rápidas", qa: ["Análisis de ventas", "Seguimiento del stock", "Previsiones financieras", "Recomendaciones de productos"],
+        tip: "Consejo: cuanto más concreta sea tu pregunta, más relevante será la respuesta.",
+        ordersLog: "Pedidos y logística", pending: "Pendientes", cumValue: "Valor acumulado", byStatus: "Por estado",
+        orderAction: (n: number) => `Acción: ${n} pedido(s) por procesar.`, noPending: "No hay pedidos pendientes.",
+        invoices: "Facturas", noInvoices: "No hay facturas en los datos cargados. Consulta el módulo Facturas.",
+        amount: "Importe total", unpaid: "Impagadas / pendientes",
+        invAction: (n: number) => `Acción: reclama ${n} factura(s) impagada(s).`, allPaid: "Todas las facturas están saldadas.",
+        purchasesSuppliers: "Compras y proveedores", spent: "Total gastado", purchaseCount: "Número de compras", distinctSuppliers: "Proveedores distintos",
+        seePurchases: "Consulta el módulo Compras para el detalle.",
+        hr: "Recursos humanos", headcount: "Plantilla", payroll: "Masa salarial (mensual)", seeHr: "Consulta el módulo RR. HH. para gestionar los empleados.",
+        categories: "Categorías", distinctCats: "Categorías distintas", distribution: "Distribución (productos)", noCat: "Sin categoría",
+        clients: "Clientes", active: "Activos", askTopClients: `Pide "mejores clientes" para tus mejores clientes.`,
+        quickOverview: "Resumen rápido de tu actividad", productsWord: "productos", outWord: "sin stock", pendingOrders: "Pedidos pendientes",
+        coverAll: "Cubro **todos los módulos**. Pregunta por: ventas, beneficios, stock, productos, clientes, pedidos, facturas, compras, proveedores, RR. HH., categorías o previsiones.",
+      },
+    };
+    const L = AI_L[language] || AI_L.fr;
 
     // ── Salutations ──
     if (q.match(/\b(hi|hello|hey|yo|bonjour|bjr|salut|slt|coucou|cc|hola|buenas|salam|salem|ahla)\b/)) {
-      return ` **Assistant Inovexa**\n\n` +
-             `Bonjour${firstName ? " " + firstName : ""} ! Je peux analyser **tous vos modules** : ventes, bénéfices, stock, produits, clients, commandes, factures, achats, fournisseurs, RH et prévisions.\n\n` +
-             `Essayez : "résumé de mon activité", "état du stock", "factures impayées", "top clients" ou "prévisions".`;
+      return `**${L.assistant}**\n\n${L.greet(nm)}\n\n${L.greetTry}`;
     }
 
+    // ── Chiffre d'affaires ──
     if (q.match(/vente|chiffre|\bca\b|revenue|recette|ventas|ingresos|sales/)) {
-      return ` **${t.revenue}**\n\n` +
-             ` **Total :** ${formatCurrency(revenue)}\n` +
-             ` **${t.growthRate} :** +${growth}%\n` +
-             ` **${t.totalSales} :** ${stats?.sales?.total || 0}\n` +
-             ` **${t.averageTicket} :** ${formatCurrency(stats?.sales?.average || 0)}\n\n` +
-             ` **Analyse IA :** ${Number(growth) > 15 ? "Croissance exceptionnelle ! " : Number(growth) > 8 ? "Bonne dynamique commerciale " : "Croissance é surveiller "}`;
+      const tier = Number(growth) > 15 ? L.revTier[0] : Number(growth) > 8 ? L.revTier[1] : L.revTier[2];
+      return `**${t.revenue}**\n\n` +
+             `• **${L.total}${L.colon}** ${money(revenue)}\n` +
+             `• **${t.growthRate}${L.colon}** +${growth}%\n` +
+             `• **${t.totalSales}${L.colon}** ${stats?.sales?.total || 0}\n` +
+             `• **${t.averageTicket}${L.colon}** ${money(stats?.sales?.average || 0)}\n\n` +
+             `**${L.aiAnalysis}${L.colon}** ${tier}`;
     }
-    
-    if (q.match(/bénéfice|profit|beneficio|ganancia|marge/)) {
-      return ` **${t.profit}**\n\n` +
-             ` **${t.profit} :** ${formatCurrency(profit)}\n` +
-             ` **${t.profitMargin} :** ${margin}%\n` +
-             ` **${t.revenue} :** ${formatCurrency(revenue)}\n` +
-             ` **${t.totalExpenses} :** ${formatCurrency(stats?.purchases?.spent || 0)}\n` +
-             ` **EBITDA estimé :** ${formatCurrency(Number(ebitda))}\n\n` +
-             ` **Analyse IA :** ${Number(margin) > 25 ? "Marge excellente, continuez ainsi ! " : Number(margin) > 15 ? "Bonne marge, optimisez vos coéts " : "Marge é améliorer, analysez vos dépenses "}`;
+
+    // ── Bénéfice ──
+    if (q.match(/bénéfice|benefice|profit|beneficio|ganancia|marge|margen/)) {
+      const tier = Number(margin) > 25 ? L.profitTier[0] : Number(margin) > 15 ? L.profitTier[1] : L.profitTier[2];
+      return `**${t.profit}**\n\n` +
+             `• **${t.profit}${L.colon}** ${money(profit)}\n` +
+             `• **${t.profitMargin}${L.colon}** ${margin}%\n` +
+             `• **${t.revenue}${L.colon}** ${money(revenue)}\n` +
+             `• **${t.totalExpenses}${L.colon}** ${money(stats?.purchases?.spent || 0)}\n` +
+             `• **${L.ebitdaEst}${L.colon}** ${money(Number(ebitda))}\n\n` +
+             `**${L.aiAnalysis}${L.colon}** ${tier}`;
     }
-    
-    if (q.match(/résumé|synthése|bilan|rapport|summary|resumen/)) {
-      return ` **RAPPORT D'ACTIVITé**\n\n` +
-             ` **FINANCES**\n` +
-             `é ${t.revenue}: ${formatCurrency(revenue)}\n` +
-             `é ${t.profit}: ${formatCurrency(profit)}\n` +
-             `é ${t.profitMargin}: ${margin}%\n` +
-             `é ${t.growthRate}: +${growth}%\n\n` +
-             ` **CLIENTS**\n` +
-             `é Total: ${stats?.clients?.total || 0}\n` +
-             `é ${t.activeClients}: ${stats?.clients?.active || 0}\n` +
-             `é ${t.conversionRate}: ${stats?.clients?.total > 0 ? Math.round((stats?.clients?.active || 0) / (stats?.clients?.total || 1) * 100) : 0}%\n\n` +
-             ` **PRODUITS**\n` +
-             `é Catalogue: ${stats?.products?.total || 0} ${t.products}\n` +
-             `é ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
-             `é Valeur stock: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
-             `é ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
-             ` **COMMANDES**\n` +
-             `é ${t.pendingOrders}: ${stats?.orders?.pending || 0}\n\n` +
-             ` **PRéVISIONS IA**\n` +
-             `é ${t.projectedRevenue} M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
-             `é ${t.growthRate}: +${growth}%\n` +
-             `é ${t.confidence}: ${confidence}%\n\n` +
-             ` **Recommandation :** ${Number(growth) > 10 ? "Capitalisez sur cette dynamique !" : "Optimisez vos processus pour accélérer la croissance"}`;
+
+    // ── Résumé / rapport ──
+    if (q.match(/résumé|resume|synthése|synthese|bilan|rapport|summary|resumen/)) {
+      const tier = Number(growth) > 10 ? L.summaryTier[0] : L.summaryTier[1];
+      const conv = stats?.clients?.total > 0 ? Math.round((stats?.clients?.active || 0) / (stats?.clients?.total || 1) * 100) : 0;
+      const turn = stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0;
+      return `**${L.report}**\n\n` +
+             `**${L.finances}**\n` +
+             `• ${t.revenue}${L.colon} ${money(revenue)}\n` +
+             `• ${t.profit}${L.colon} ${money(profit)}\n` +
+             `• ${t.profitMargin}${L.colon} ${margin}%\n` +
+             `• ${t.growthRate}${L.colon} +${growth}%\n\n` +
+             `**${L.clientsH}**\n` +
+             `• ${L.total}${L.colon} ${stats?.clients?.total || 0}\n` +
+             `• ${t.activeClients}${L.colon} ${stats?.clients?.active || 0}\n` +
+             `• ${t.conversionRate}${L.colon} ${conv}%\n\n` +
+             `**${L.productsH}**\n` +
+             `• ${L.catalog}${L.colon} ${stats?.products?.total || 0} ${t.products}\n` +
+             `• ${t.lowStock}${L.colon} ${stats?.products?.lowStock || 0}\n` +
+             `• ${L.stockValue}${L.colon} ${money(stats?.products?.totalValue || 0)}\n` +
+             `• ${t.inventoryTurnover}${L.colon} ${turn}x\n\n` +
+             `**${L.ordersH}**\n` +
+             `• ${t.pendingOrders}${L.colon} ${stats?.orders?.pending || 0}\n\n` +
+             `**${L.forecastH}**\n` +
+             `• ${t.projectedRevenue} M+1${L.colon} ${money(forecastData[0] || 0)}\n` +
+             `• ${t.growthRate}${L.colon} +${growth}%\n` +
+             `• ${t.confidence}${L.colon} ${confidence}%\n\n` +
+             `**${L.recommendation}${L.colon}** ${tier}`;
     }
-    
-    if (q.match(/top produits|meilleurs produits|top products|best products|best sellers|top productos/)) {
-      let response = ` **${t.topProducts}**\n\n`;
+
+    // ── Top produits ──
+    if (q.match(/top produits|meilleurs produits|top products|best products|best sellers|top productos|mejores productos/)) {
+      let out = `**${t.topProducts}**\n\n`;
       topProducts.slice(0, 4).forEach((p, i) => {
-        response += `${i + 1}. **${p.name}**\n` +
-                   `    CA: ${formatCurrency(p.amount)}\n` +
-                   `    Ventes: ${p.sales} unités\n\n`;
+        out += `${i + 1}. **${p.name}**\n   • ${L.ca}${L.colon} ${money(p.amount)}\n   • ${L.salesUnits}${L.colon} ${p.sales} ${L.units}\n\n`;
       });
-      response += ` **Analyse IA** : Ces produits représentent votre céur de métier. Concentrez vos efforts marketing sur ces références !`;
-      return response;
+      out += `**${L.aiAnalysis}${L.colon}** ${L.coreBiz}`;
+      return out;
     }
-    
-    if (q.match(/top clients|meilleurs clients|best customers|top clientes/)) {
-      let response = ` **${t.topClients}**\n\n`;
+
+    // ── Top clients ──
+    if (q.match(/top clients|meilleurs clients|best customers|top clientes|mejores clientes/)) {
+      let out = `**${t.topClients}**\n\n`;
       topClients.slice(0, 4).forEach((c, i) => {
-        response += `${i + 1}. **${c.name}**\n` +
-                   `    Achats: ${formatCurrency(c.amount)}\n` +
-                   `    Commandes: ${c.orders}\n\n`;
+        out += `${i + 1}. **${c.name}**\n   • ${L.purchasesL}${L.colon} ${money(c.amount)}\n   • ${L.ordersL}${L.colon} ${c.orders}\n\n`;
       });
-      response += ` **Recommandation IA** : Mettez en place un programme de fidélisation premium pour ces clients stratégiques !`;
-      return response;
+      out += `**${L.recommendation}${L.colon}** ${L.loyalty}`;
+      return out;
     }
-    
-    if (q.match(/stock|inventaire|inventory|estado del stock/)) {
-      const urgentItems = recommendations.filter(r => r.urgency === "high").slice(0, 3);
-      let stockResponse = ` **${t.stockStatus}**\n\n` +
-                         ` **Vue d'ensemble**\n` +
-                         `é ${t.products} total: ${stats?.products?.total || 0}\n` +
-                         `é ${t.lowStock}: ${stats?.products?.lowStock || 0}\n` +
-                         `é Rupture: ${stats?.products?.outOfStock || 0}\n` +
-                         `é Valeur totale: ${formatCurrency(stats?.products?.totalValue || 0)}\n` +
-                         `é ${t.inventoryTurnover}: ${stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0}x\n\n` +
-                         ` **URGENCES RéAPPROVISIONNEMENT**\n`;
-      if (urgentItems.length) {
-        urgentItems.forEach(i => {
-          stockResponse += `é **${i.productName}** : ${i.currentStock} unités (demande: ${i.monthlyDemand}/mois)\n`;
-        });
-        stockResponse += `\n **Action IA recommandée** : Réapprovisionnez ${urgentItems.length} produit(s) en priorité !`;
+
+    // ── Stock ──
+    if (q.match(/stock|inventaire|inventory|inventario|estado del stock/)) {
+      const urgent = recommendations.filter(r => r.urgency === "high").slice(0, 3);
+      const turn = stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0;
+      let out = `**${t.stockStatus}**\n\n**${L.overview}**\n` +
+                `• ${t.products}${L.colon} ${stats?.products?.total || 0}\n` +
+                `• ${t.lowStock}${L.colon} ${stats?.products?.lowStock || 0}\n` +
+                `• ${L.outOfStock}${L.colon} ${stats?.products?.outOfStock || 0}\n` +
+                `• ${L.totalValue}${L.colon} ${money(stats?.products?.totalValue || 0)}\n` +
+                `• ${t.inventoryTurnover}${L.colon} ${turn}x\n\n`;
+      if (urgent.length) {
+        out += `**${L.restockUrgent}**\n`;
+        urgent.forEach(it => { out += `• **${it.productName}**${L.colon} ${it.currentStock} ${L.units} (${L.demand}${L.colon} ${it.monthlyDemand}/${L.perMonth})\n`; });
+        out += `\n**${L.restockAction(urgent.length)}**`;
       } else {
-        stockResponse += ` Aucune urgence - niveau de stock satisfaisant\n\n **Bravo !** Votre gestion des stocks est optimale.`;
+        out += `${L.stockOk}\n\n**${L.stockBravo}**`;
       }
-      return stockResponse;
+      return out;
     }
-    
-    if (q.match(/prévision|forecast|tendance|prediction|prevision/)) {
-      return ` **${t.salesForecast}**\n\n` +
-             ` **Tendances détectées**\n` +
-             `é ${t.growthRate}: +${growth}%\n` +
-             `é ${t.roi} estimé: ${roi}%\n` +
-             `é EBITDA projeté: ${formatCurrency(Number(ebitda))}\n\n` +
-             ` **Projections mensuelles**\n` +
-             `é M+1: ${formatCurrency(forecastData[0] || 0)}\n` +
-             `é M+2: ${formatCurrency(forecastData[1] || 0)}\n` +
-             `é M+3: ${formatCurrency(forecastData[2] || 0)}\n\n` +
-             ` **${t.confidence}**\n` +
-             `é ${t.confidence}: ${confidence}%\n` +
-             `é ${Number(confidence) > 85 ? t.highConfidence : t.mediumConfidence}\n\n` +
-             ` **Conseil stratégique IA**\n` +
-             (Number(growth) > 15 ? " Anticipez la forte croissance ! Augmentez vos stocks et renforcez votre équipe commerciale." :
-              Number(growth) > 5 ? " Préparez-vous é une croissance modérée. Maintenez vos investissements." :
-              " Soyez prudent sur les investissements. Optimisez vos coéts.");
+
+    // ── Prévisions ──
+    if (q.match(/prévision|prevision|forecast|tendance|prediction|previsiones|predicci[oó]n/)) {
+      const advice = Number(growth) > 15 ? L.forecastTier[0] : Number(growth) > 5 ? L.forecastTier[1] : L.forecastTier[2];
+      return `**${t.salesForecast}**\n\n**${L.trends}**\n` +
+             `• ${t.growthRate}${L.colon} +${growth}%\n` +
+             `• ${t.roi} ${L.estimated}${L.colon} ${roi}%\n` +
+             `• ${L.ebitdaProj}${L.colon} ${money(Number(ebitda))}\n\n` +
+             `**${L.monthlyProj}**\n` +
+             `• M+1${L.colon} ${money(forecastData[0] || 0)}\n` +
+             `• M+2${L.colon} ${money(forecastData[1] || 0)}\n` +
+             `• M+3${L.colon} ${money(forecastData[2] || 0)}\n\n` +
+             `**${t.confidence}**\n` +
+             `• ${t.confidence}${L.colon} ${confidence}%\n` +
+             `• ${Number(confidence) > 85 ? t.highConfidence : t.mediumConfidence}\n\n` +
+             `**${L.strategicAdvice}${L.colon}** ${advice}`;
     }
-    
-    if (q.match(/aide|help|que faire|guide|que puis-je/)) {
-      return ` **GUIDE D'UTILISATION**\n\n` +
-             ` **Questions possibles**\n` +
-             `é "${t.askRevenue}"\n` +
-             `é "${t.askSummary}"\n` +
-             `é "${t.askTopProducts}"\n` +
-             `é "${t.askStock}"\n` +
-             `é "${t.askForecast}"\n` +
-             `é "Quel est mon ROI ?"\n` +
-             `é "Performance globale"\n\n` +
-             ` **Actions rapides disponibles**\n` +
-             `é  Analyse des ventes\n` +
-             `é  Suivi du stock\n` +
-             `é  Prévisions financiéres\n` +
-             `é  Recommandations produits\n\n` +
-             ` **Astuce IA** : Plus votre question est précise, plus la réponse sera pertinente !`;
+
+    // ── Aide / guide ──
+    if (q.match(/aide|help|ayuda|que faire|guide|gu[ií]a|que puis-je/)) {
+      return `**${L.guide}**\n\n**${L.possibleQ}**\n` +
+             `• "${t.askRevenue}"\n` +
+             `• "${t.askSummary}"\n` +
+             `• "${t.askTopProducts}"\n` +
+             `• "${t.askStock}"\n` +
+             `• "${t.askForecast}"\n` +
+             `• "${L.askRoi}"\n` +
+             `• "${L.askPerf}"\n\n` +
+             `**${L.quickActions}**\n` +
+             `• ${L.qa[0]}\n• ${L.qa[1]}\n• ${L.qa[2]}\n• ${L.qa[3]}\n\n` +
+             `**${L.tip}**`;
     }
-    
+
     // ── Commandes & logistique ──
-    if (q.match(/commande|order\b|pedido|livraison|logistique|logistics|exp[ée]dition|shipment|transport/)) {
+    if (q.match(/commande|order\b|orders|pedido|livraison|logistique|logistics|log[ií]stica|exp[ée]dition|shipment|transport/)) {
       const orders = arr(rd.orders);
       const totalOrders = stats?.orders?.total || orders.length || 0;
       const pending = stats?.orders?.pending ?? orders.filter((o: any) => o.status === "pending").length;
       const totalVal = orders.reduce((s: number, o: any) => s + (Number(o.total) || 0), 0);
       const byStatus: Record<string, number> = {};
       orders.forEach((o: any) => { const st = o.status || "—"; byStatus[st] = (byStatus[st] || 0) + 1; });
-      let out = ` **Commandes & logistique**\n\n- Total : ${totalOrders}\n- En attente : ${pending}\n` + (totalVal ? `- Valeur cumulée : ${money(totalVal)}\n` : "");
+      let out = `**${L.ordersLog}**\n\n• ${L.total}${L.colon} ${totalOrders}\n• ${L.pending}${L.colon} ${pending}\n` + (totalVal ? `• ${L.cumValue}${L.colon} ${money(totalVal)}\n` : "");
       const keys = Object.keys(byStatus);
-      if (keys.length) { out += `\n**Par statut :**\n`; keys.slice(0, 6).forEach(k => { out += `- ${k} : ${byStatus[k]}\n`; }); }
-      out += `\n${pending > 0 ? `**Action :** ${pending} commande(s) à traiter.` : "Aucune commande en attente."}`;
+      if (keys.length) { out += `\n**${L.byStatus}${L.colon}**\n`; keys.slice(0, 6).forEach(k => { out += `• ${k}${L.colon} ${byStatus[k]}\n`; }); }
+      out += `\n${pending > 0 ? `**${L.orderAction(pending)}**` : L.noPending}`;
       return out;
     }
 
     // ── Factures ──
-    if (q.match(/facture|invoice|factura|impay|unpaid|paiement|payment/)) {
+    if (q.match(/facture|invoice|factura|impay|unpaid|impagad|paiement|payment|pago/)) {
       const inv = arr(rd.invoices);
-      if (!inv.length) return ` **Factures**\n\nAucune facture dans les données chargées. Consultez le module Factures.`;
-      const total = inv.reduce((s: number, i: any) => s + (Number(i.total) || 0), 0);
-      const unpaid = inv.filter((i: any) => /unpaid|impay|pending|attente|overdue|retard/i.test(String(i.status || "")));
-      const unpaidVal = unpaid.reduce((s: number, i: any) => s + (Number(i.total) || 0), 0);
-      return ` **Factures**\n\n- Total : ${inv.length}\n- Montant total : ${money(total)}\n- Impayées / en attente : ${unpaid.length}${unpaidVal ? ` (${money(unpaidVal)})` : ""}\n\n${unpaid.length ? `**Action :** relancez ${unpaid.length} facture(s) impayée(s).` : "Toutes les factures sont réglées."}`;
+      if (!inv.length) return `**${L.invoices}**\n\n${L.noInvoices}`;
+      const total = inv.reduce((s: number, iv: any) => s + (Number(iv.total) || 0), 0);
+      const unpaid = inv.filter((iv: any) => /unpaid|impay|impagad|pending|attente|overdue|retard/i.test(String(iv.status || "")));
+      const unpaidVal = unpaid.reduce((s: number, iv: any) => s + (Number(iv.total) || 0), 0);
+      return `**${L.invoices}**\n\n• ${L.total}${L.colon} ${inv.length}\n• ${L.amount}${L.colon} ${money(total)}\n• ${L.unpaid}${L.colon} ${unpaid.length}${unpaidVal ? ` (${money(unpaidVal)})` : ""}\n\n${unpaid.length ? `**${L.invAction(unpaid.length)}**` : L.allPaid}`;
     }
 
     // ── Achats & fournisseurs ──
@@ -789,25 +913,25 @@ export default function IAPage() {
       const pur = arr(rd.purchases);
       const spent = stats?.purchases?.spent || pur.reduce((s: number, p: any) => s + (Number(p.total) || 0), 0);
       const suppliers = new Set(pur.map((p: any) => p.supplierName || p.supplier).filter(Boolean));
-      return ` **Achats & fournisseurs**\n\n- Total dépensé : ${money(spent)}\n- Nombre d'achats : ${stats?.purchases?.total || pur.length || 0}\n- Fournisseurs distincts : ${suppliers.size}\n\nConsultez le module Achats pour le détail.`;
+      return `**${L.purchasesSuppliers}**\n\n• ${L.spent}${L.colon} ${money(spent)}\n• ${L.purchaseCount}${L.colon} ${stats?.purchases?.total || pur.length || 0}\n• ${L.distinctSuppliers}${L.colon} ${suppliers.size}\n\n${L.seePurchases}`;
     }
 
     // ── Ressources humaines ──
-    if (q.match(/employ|salari|personnel|\bstaff\b|\brh\b|ressources humaines|empleado/)) {
+    if (q.match(/employ|salari|personnel|\bstaff\b|\brh\b|\bhr\b|ressources humaines|recursos humanos|empleado/)) {
       const emp = arr(rd.employees);
       const total = stats?.employees?.total || emp.length || 0;
-      const payroll = emp.reduce((s: number, e: any) => s + (Number(e.salary) || 0), 0);
-      return ` **Ressources humaines**\n\n- Effectif : ${total}\n` + (payroll ? `- Masse salariale (mensuelle) : ${money(payroll)}\n` : "") + `\nConsultez le module RH pour la gestion des employés.`;
+      const pr = emp.reduce((s: number, e: any) => s + (Number(e.salary) || 0), 0);
+      return `**${L.hr}**\n\n• ${L.headcount}${L.colon} ${total}\n` + (pr ? `• ${L.payroll}${L.colon} ${money(pr)}\n` : "") + `\n${L.seeHr}`;
     }
 
     // ── Catégories ──
-    if (q.match(/cat[ée]gorie|category|categoria|rayon/)) {
+    if (q.match(/cat[ée]gorie|category|categories|categor[ií]a|rayon/)) {
       const prods = arr(rd.products);
       const byCat: Record<string, number> = {};
-      prods.forEach((p: any) => { const c = p.category || p.categoryName || "Sans catégorie"; byCat[c] = (byCat[c] || 0) + 1; });
+      prods.forEach((p: any) => { const c = p.category || p.categoryName || L.noCat; byCat[c] = (byCat[c] || 0) + 1; });
       const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-      let out = ` **Catégories**\n\n- Catégories distinctes : ${cats.length}\n`;
-      if (cats.length) { out += `\n**Répartition (produits) :**\n`; cats.slice(0, 8).forEach(([c, num]) => { out += `- ${c} : ${num}\n`; }); }
+      let out = `**${L.categories}**\n\n• ${L.distinctCats}${L.colon} ${cats.length}\n`;
+      if (cats.length) { out += `\n**${L.distribution}${L.colon}**\n`; cats.slice(0, 8).forEach(([c, num]) => { out += `• ${c}${L.colon} ${num}\n`; }); }
       return out;
     }
 
@@ -816,18 +940,17 @@ export default function IAPage() {
       const totalC = stats?.clients?.total || 0;
       const activeC = stats?.clients?.active || 0;
       const rate = totalC > 0 ? Math.round((activeC / totalC) * 100) : 0;
-      return ` **Clients**\n\n- Total : ${totalC}\n- Actifs : ${activeC} (${rate}%)\n\nDemandez "top clients" pour vos meilleurs clients.`;
+      return `**${L.clients}**\n\n• ${L.total}${L.colon} ${totalC}\n• ${L.active}${L.colon} ${activeC} (${rate}%)\n\n${L.askTopClients}`;
     }
 
-    // ── Défaut : aperçu utile + orientation (jamais "je n'ai pas compris") ──
-    return ` **Assistant Inovexa**\n\n` +
-           `Aperçu rapide de votre activité :\n` +
-           `- ${t.revenue} : ${formatCurrency(revenue)}\n` +
-           `- ${t.profit} : ${formatCurrency(profit)}\n` +
-           `- Clients : ${stats?.clients?.total || 0} (${stats?.clients?.active || 0} actifs)\n` +
-           `- Stock : ${stats?.products?.total || 0} produits, ${stats?.products?.outOfStock || 0} en rupture\n` +
-           `- Commandes en attente : ${stats?.orders?.pending || 0}\n\n` +
-           `Je couvre **tous les modules**. Demandez : ventes, bénéfices, stock, produits, clients, commandes, factures, achats, fournisseurs, RH, catégories ou prévisions.`;
+    // ── Défaut : aperçu utile (jamais « pas compris ») ──
+    return `**${L.assistant}**\n\n${L.quickOverview}${L.colon}\n` +
+           `• ${t.revenue}${L.colon} ${money(revenue)}\n` +
+           `• ${t.profit}${L.colon} ${money(profit)}\n` +
+           `• ${L.clientsH}${L.colon} ${stats?.clients?.total || 0} (${stats?.clients?.active || 0} ${String(L.active).toLowerCase()})\n` +
+           `• Stock${L.colon} ${stats?.products?.total || 0} ${L.productsWord}, ${stats?.products?.outOfStock || 0} ${L.outWord}\n` +
+           `• ${L.pendingOrders}${L.colon} ${stats?.orders?.pending || 0}\n\n` +
+           `${L.coverAll}`;
   };
 
   const getContextualActions = (question: string) => {
@@ -849,43 +972,39 @@ export default function IAPage() {
   const getWelcomeMessage = () => {
     const firstName = (currentUser?.name?.split(' ')[0] || "").trim();
     const hour = new Date().getHours();
-    let greeting = "";
-    if (language === 'fr') greeting = hour < 12 ? "Bonjour" : hour < 18 ? "Bon aprés-midi" : "Bonsoir";
-    else if (language === 'es') greeting = hour < 12 ? "Buenos déas" : hour < 18 ? "Buenas tardes" : "Buenas noches";
-    else greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    const W: Record<string, any> = {
+      fr: {
+        excl: " !", morning: "Bonjour", afternoon: "Bon après-midi", evening: "Bonsoir",
+        can: ["Analyser vos ventes et bénéfices", "Vérifier l'état de votre stock", "Identifier vos meilleurs clients et produits", "Générer des prévisions précises", "Vous donner un résumé complet"],
+        help: "Comment puis-je vous aider aujourd'hui ?",
+      },
+      en: {
+        excl: "!", morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening",
+        can: ["Analyze your sales and profit", "Check your stock status", "Identify your best clients and products", "Generate accurate forecasts", "Give you a full summary"],
+        help: "How can I help you today?",
+      },
+      es: {
+        excl: "!", morning: "Buenos días", afternoon: "Buenas tardes", evening: "Buenas noches",
+        can: ["Analizar tus ventas y beneficios", "Comprobar el estado del stock", "Identificar tus mejores clientes y productos", "Generar previsiones precisas", "Darte un resumen completo"],
+        help: "¿En qué puedo ayudarte hoy?",
+      },
+    };
+    const w = W[language] || W.fr;
+    const greeting = hour < 12 ? w.morning : hour < 18 ? w.afternoon : w.evening;
     const hello = firstName ? `${greeting} ${firstName}` : greeting;
-    
-    if (isMobile) {
-      return `${hello} ! \n\n` +
-             ` **${t.aiAssistant}**\n\n` +
-             ` **${t.whatCanIDo} :**\n` +
-             `  Analyser ventes\n` +
-             `  état du stock\n` +
-             `  Top produits/clients\n` +
-             `  Prévisions\n\n` +
-             ` **${t.tryQuestions} :**\n` +
-             `  "${t.askRevenue}"\n` +
-             `  "${t.askSummary}"\n` +
-             `  "${t.askTopProducts}"\n` +
-             `  "${t.askStock}"\n\n` +
-             `Comment puis-je vous aider ? `;
-    }
-    
-    return `${hello} ! \n\n` +
+    const can: string[] = isMobile ? w.can.slice(0, 4) : w.can;
+
+    return `${hello}${w.excl}\n\n` +
            ` **${t.aiAssistant}**\n\n` +
-           ` **${t.whatCanIDo} :**\n` +
-           `  Analyser vos ventes et bénéfices\n` +
-           `  Vérifier l'état de votre stock\n` +
-           `  Identifier vos meilleurs clients et produits\n` +
-           `  Générer des prévisions précises\n` +
-           `  Vous donner un résumé complet\n\n` +
-           ` **${t.tryQuestions} :**\n` +
-           `  "${t.askRevenue}"\n` +
-           `  "${t.askSummary}"\n` +
-           `  "${t.askTopProducts}"\n` +
-           `  "${t.askStock}"\n` +
-           `  "${t.askForecast}"\n\n` +
-           `Comment puis-je vous aider aujourd'hui ? `;
+           ` **${t.whatCanIDo}${w.excl === " !" ? " :" : ":"}**\n` +
+           can.map((c: string) => `• ${c}`).join("\n") + `\n\n` +
+           ` **${t.tryQuestions}${w.excl === " !" ? " :" : ":"}**\n` +
+           `• "${t.askRevenue}"\n` +
+           `• "${t.askSummary}"\n` +
+           `• "${t.askTopProducts}"\n` +
+           `• "${t.askStock}"\n` +
+           (isMobile ? "" : `• "${t.askForecast}"\n`) +
+           `\n${w.help}`;
   };
 
   const copyConversation = () => {
