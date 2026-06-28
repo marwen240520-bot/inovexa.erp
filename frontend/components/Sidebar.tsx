@@ -265,7 +265,12 @@ export default function Sidebar() {
     setLoading(false);
   };
 
-  const isModuleActive = (id: string) => !userModules || userModules[id] !== false;
+  const CORE_MODULES = ["dashboard", "profile", "settings"];
+  const isModuleActive = (id: string) => {
+    if (CORE_MODULES.includes(id)) return true;            // toujours accessibles
+    if (!userModules || Object.keys(userModules).length === 0) return true; // client non configuré : tout ouvert
+    return userModules[id] === true;                       // sinon : actif seulement si explicitement true
+  };
 
   const handleNavigation = async (path: string, label: string) => {
     const token = localStorage.getItem("token");

@@ -107,7 +107,6 @@ const MODULE_ICON: Record<string, JSX.Element> = {
 };
 
 const MODULES: { id: string; label: string }[] = [
-  { id: "dashboard", label: "Dashboard" },
   { id: "products", label: "Produits" },
   { id: "categories", label: "Catégories" },
   { id: "stock", label: "Stock" },
@@ -124,8 +123,6 @@ const MODULES: { id: string; label: string }[] = [
   { id: "ai", label: "Assistant IA" },
   { id: "reports", label: "Rapports" },
   { id: "analytics", label: "Analytics" },
-  { id: "profile", label: "Mon Profil" },
-  { id: "settings", label: "Paramètres" },
 ];
 
 const CHECK_ICON = (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
@@ -391,8 +388,9 @@ export default function AdminClientsPage() {
 
   const openModulesModal = (client: Client) => {
     const current = client.modules || {};
+    const hasRecord = Object.keys(current).length > 0;
     const merged: Record<string, boolean> = {};
-    MODULES.forEach((m) => { merged[m.id] = !!current[m.id]; });
+    MODULES.forEach((m) => { merged[m.id] = hasRecord ? !!current[m.id] : true; });
     setModulesModal({ open: true, clientId: client.id, modules: merged });
   };
 
