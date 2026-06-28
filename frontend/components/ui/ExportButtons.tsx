@@ -331,6 +331,7 @@ export default function ExportButtons({
     if (selectedColumns.length === 0 && allColumns.length > 0) {
       setSelectedColumns(allColumns.map(c => c.key));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, columns]);
 
   const showSuccessMsg = (msg: string) => {
