@@ -22,7 +22,6 @@ import { ExpensesModule } from './modules/expenses/expenses.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { TransporteurModule } from './modules/transporteur/transporteur.module';
 import { TransporteursModule } from './modules/transporteurs/transporteurs.module';
-import { ProductionModule } from './modules/production/production.module';
 import { IaModule } from './modules/ia/ia.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
@@ -58,7 +57,6 @@ import { ProjectsModule } from './modules/projects/projects.module';
     LogisticsModule,
     TransporteurModule,
     TransporteursModule,
-    ProductionModule,
     IaModule,
     UploadModule,
     DepartmentsModule,
