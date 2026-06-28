@@ -587,10 +587,7 @@ export default function ProductsPage() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
                 <IconInfo size={20} color={theme.primary} />
-                <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "13px" }}>
-                   La quantité affichée est le stock calculé automatiquement à partir des achats et ventes.
-                  Pour modifier le stock, créez un achat ou une vente dans les sections correspondantes.
-                </span>
+
               </div>
               <button
                 onClick={() => setShowInfo(false)}
