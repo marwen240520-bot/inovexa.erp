@@ -188,9 +188,9 @@ export default function AdminClientsPage() {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchClients();
         fetchStats();
-        showMessage("? Client cr�� avec succ�s !", "success");
+        showMessage("Client créé avec succès !", "success");
       } else {
-        showMessage("? Erreur lors de la cr�ation", "error");
+        showMessage("Erreur lors de la création", "error");
       }
     } catch(e) {
       showMessage("? Erreur de connexion", "error");
@@ -215,7 +215,7 @@ export default function AdminClientsPage() {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchClients();
         fetchStats();
-        showMessage("? Client modifi� avec succ�s !", "success");
+        showMessage("Client modifié avec succès !", "success");
       } else {
         showMessage("? Erreur lors de la modification", "error");
       }
@@ -233,9 +233,9 @@ export default function AdminClientsPage() {
       if (res.ok) {
         setModulesModal({ open: false, clientId: null, modules: {} });
         fetchClients();
-        showMessage("? Modules mis � jour !", "success");
+        showMessage("Modules mis à jour !", "success");
       } else {
-        showMessage("? Erreur lors de la mise � jour", "error");
+        showMessage("Erreur lors de la mise à jour", "error");
       }
     } catch(e) { console.error(e); }
   };
@@ -250,7 +250,7 @@ export default function AdminClientsPage() {
       });
       if (res.ok) {
         fetchClients();
-        showMessage(`? Abonnement prolong� de ${days} jours`, "success");
+        showMessage(`Abonnement prolongé de ${days} jours`, "success");
       }
     } catch(e) { console.error(e); }
   };
@@ -263,7 +263,7 @@ export default function AdminClientsPage() {
     });
     fetchClients();
     fetchStats();
-    showMessage("? Statut modifi�", "success");
+    showMessage("Statut modifié", "success");
   };
 
   const deleteClient = async (id: number) => {
@@ -275,7 +275,7 @@ export default function AdminClientsPage() {
       });
       fetchClients();
       fetchStats();
-      showMessage("Client supprim�", "success");
+      showMessage("Client supprimé", "success");
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     }
   };
@@ -293,7 +293,7 @@ export default function AdminClientsPage() {
       fetchClients();
       fetchStats();
       setSelectedIds([]);
-      showMessage(`${selectedIds.length} client(s) supprim�(s)`, "success");
+      showMessage(`${selectedIds.length} client(s) supprimé(s)`, "success");
     }
   };
 
@@ -351,7 +351,7 @@ export default function AdminClientsPage() {
   // --- Chart data -----------------------------------------------------------
 
   const statusChartData = {
-    labels: ["Actifs", "Inactifs", "Expir�s"],
+    labels: ["Actifs", "Inactifs", "Expirés"],
     datasets: [{
       data: [stats.activeClients, stats.totalClients - stats.activeClients - stats.expiredClients, stats.expiredClients],
       backgroundColor: ["#10b981", "#ef4444", "#f59e0b"],
@@ -491,10 +491,10 @@ export default function AdminClientsPage() {
           {/* Stats cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "32px" }}>
             {[
-              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 21V19C17 16.8 15.2 15 13 15H5C2.8 15 1 16.8 1 19V21" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="#667eea" strokeWidth="1.5"/><path d="M23 21V19C22.9 16.9 21.3 15.2 19 15" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 3.13C18.1 3.63 19.6 5.5 19.6 7.63C19.6 9.76 18.1 11.63 16 12.13" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round"/></svg>', label: "Total clients", value: stats.totalClients, color: "#667eea", suffix: "" },
-              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 12V8H4V12M20 12L22 14V20H2V14L4 12M20 12H4" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="16" r="2" stroke="#10b981" strokeWidth="1.5"/></svg>', label: "Clients actifs", value: stats.activeClients, color: "#10b981", suffix: "" },
-              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8V12L15 15" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="12" r="9" stroke="#f59e0b" strokeWidth="1.5"/></svg>', label: "Abonnements expir�s", value: stats.expiredClients, color: "#f59e0b", suffix: "" },
-              { icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#10b981" strokeWidth="1.5"/><path d="M12 8V16M9 11H15" stroke="#10b981" strokeWidth="1.5"/></svg>', label: "CA total", value: stats.totalRevenue?.toLocaleString() || "0", color: "#10b981", suffix: "�" }
+              { icon: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', label: "Total clients", value: stats.totalClients, color: "#667eea", suffix: "" },
+              { icon: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg>', label: "Clients actifs", value: stats.activeClients, color: "#10b981", suffix: "" },
+              { icon: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>', label: "Abonnements expirés", value: stats.expiredClients, color: "#f59e0b", suffix: "" },
+              { icon: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><circle cx="12" cy="14.5" r="2"/></svg>', label: "CA total", value: stats.totalRevenue?.toLocaleString() || "0", color: "#10b981", suffix: "DT" }
             ].map((card, idx) => (
               <div key={idx} style={{
                 background: "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
@@ -516,19 +516,19 @@ export default function AdminClientsPage() {
           {/* Charts */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", marginBottom: "32px" }}>
             <div style={{ background: "#111", borderRadius: "20px", padding: "20px", border: "1px solid #222" }}>
-              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>R�partition des clients</h3>
+              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>Répartition des clients</h3>
               <div style={{ height: "220px" }}>
                 <Doughnut data={statusChartData} options={doughnutOptions} />
               </div>
             </div>
             <div style={{ background: "#111", borderRadius: "20px", padding: "20px", border: "1px solid #222" }}>
-              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>�volution des inscriptions</h3>
+              <h3 style={{ color: "white", marginBottom: "16px", fontSize: "16px" }}>Évolution des inscriptions</h3>
               <div style={{ height: "220px" }}>
                 {registrationsData.length > 0 ? (
                   <Line data={registrationsChartData} options={chartOptions} />
                 ) : (
                   <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#1a1a1a", borderRadius: "12px" }}>
-                    <p style={{ color: "#666" }}>Aucune donn�e disponible</p>
+                    <p style={{ color: "#666" }}>Aucune donnée disponible</p>
                   </div>
                 )}
               </div>
@@ -579,7 +579,7 @@ export default function AdminClientsPage() {
                   </th>
                   <th style={{ padding: "12px", textAlign: "left" }}>{t("common.name")}</th>
                   <th style={{ padding: "12px", textAlign: "left" }}>{t("common.email")}</th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Soci�t�</th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>Société</th>
                   <th style={{ padding: "12px", textAlign: "left" }}>{t("common.phone")}</th>
                   <th style={{ padding: "12px", textAlign: "center" }}>Abonnement</th>
                   <th style={{ padding: "12px", textAlign: "center" }}>{t("common.status")}</th>
@@ -623,8 +623,8 @@ export default function AdminClientsPage() {
                         <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
                           <button onClick={() => openEditModal(client)} style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modifier">??</button>
                           <button onClick={() => openModulesModal(client)} style={{ background: "#8b5cf6", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Modules">??</button>
-                          <button onClick={() => { const days = prompt("Jours � ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Prolonger">??</button>
-                          <button onClick={() => toggleStatus(client.id)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title={client.isActive ? "D�sactiver" : "Activer"}>
+                          <button onClick={() => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Prolonger">??</button>
+                          <button onClick={() => toggleStatus(client.id)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title={client.isActive ? "Désactiver" : "Activer"}>
                             {client.isActive ? "??" : "??"}
                           </button>
                           <button onClick={() => deleteClient(client.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "5px 10px", cursor: "pointer" }} title="Supprimer">???</button>
@@ -635,7 +635,7 @@ export default function AdminClientsPage() {
                 })}
               </tbody>
             </table>
-            {filteredClients.length === 0 && <p style={{ textAlign: "center", color: "#666", padding: "40px" }}>Aucun client trouv�</p>}
+            {filteredClients.length === 0 && <p style={{ textAlign: "center", color: "#666", padding: "40px" }}>Aucun client trouvé</p>}
           </div>
         </div>
       </div>
@@ -666,7 +666,7 @@ export default function AdminClientsPage() {
             )}
             <div style={{ marginBottom: "20px" }}>
               <label style={{ color: "#94a3b8", display: "block", marginBottom: "8px" }}>
-                {modal.editMode ? "Date fin abonnement" : "Dur�e d'abonnement (jours)"}
+                {modal.editMode ? "Date fin abonnement" : "Durée d'abonnement (jours)"}
               </label>
               {modal.editMode ? (
                 <input type="date" value={modal.form.subscriptionEnd || ""} onChange={e => setModal({ ...modal, form: { ...modal.form, subscriptionEnd: e.target.value } })} style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }} />
@@ -675,7 +675,7 @@ export default function AdminClientsPage() {
               )}
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
-              <button onClick={modal.editMode ? updateClient : createClient} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>{modal.editMode ? "Modifier" : "Cr�er"}</button>
+              <button onClick={modal.editMode ? updateClient : createClient} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>{modal.editMode ? "Modifier" : "Créer"}</button>
               <button onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "#333", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler</button>
             </div>
           </div>
