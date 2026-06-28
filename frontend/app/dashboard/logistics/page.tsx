@@ -268,7 +268,7 @@ export default function LogisticsPage() {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { isMobile } = useResponsive();
-  const { formatCurrency, getCurrencySymbol } = useAppSettings();
+  const { formatCurrency, getCurrencySymbol, formatDate } = useAppSettings();
 
   // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
@@ -984,7 +984,7 @@ export default function LogisticsPage() {
                                 <td style={{ padding: isMobile ? "6px" : "10px", color: theme.textSecondary, fontSize: isMobile ? "10px" : "13px" }}>
                                   <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                                     <IconCalendar size={10} color={theme.textSecondary} />
-                                    {shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : "-"}
+                                    {shipment.estimatedDelivery ? formatDate(shipment.estimatedDelivery) : "-"}
                                   </span>
                                 </td>
                                 <td style={{ padding: isMobile ? "6px" : "10px", textAlign: "center" }}>

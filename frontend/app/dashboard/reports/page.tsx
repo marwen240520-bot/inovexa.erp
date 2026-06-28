@@ -206,7 +206,7 @@ const animations = `
 export default function ReportsPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
-  const { formatCurrency } = useAppSettings();
+  const { formatCurrency, formatDate } = useAppSettings();
   const { theme } = useTheme();
   const { isMobile } = useResponsive();
 
@@ -767,7 +767,7 @@ export default function ReportsPage() {
                             </div>
                             <div style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
                               <IconClock size={10} color={theme.textSecondary} />
-                              {new Date(report.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
+                              {formatDate(report.createdAt)}
                             </div>
                           </div>
                         </div>

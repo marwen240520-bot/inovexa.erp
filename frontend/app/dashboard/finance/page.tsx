@@ -930,7 +930,7 @@ export default function FinancePage() {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const { isMobile } = useResponsive();
-  const { formatCurrency, getCurrencySymbol } = useAppSettings();
+  const { formatCurrency, getCurrencySymbol, formatDate } = useAppSettings();
 
   const t = translations[language as keyof typeof translations]?.finance || translations.fr.finance;
   const tCommon = translations[language as keyof typeof translations]?.common || translations.fr.common;
@@ -2247,7 +2247,7 @@ export default function FinancePage() {
                         return (
                           <tr key={i} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }} onMouseEnter={e => (e.currentTarget.style.background = theme.surfaceHover)} onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                             <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>
-                              {new Date(exp.date).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
+                              {formatDate(exp.date)}
                             </td>
                             <td style={{ padding: "8px 10px" }}>
                               <span style={{ background: `${cat?.color || "#64748b"}18`, color: cat?.color || "#64748b", padding: "2px 6px", borderRadius: "16px", fontSize: isMobile ? "9px" : "11px", fontWeight: "600" }}>
@@ -2337,7 +2337,7 @@ export default function FinancePage() {
                                 {inv.status === "paid" ? tCommon.paid : isOverdue ? tCommon.overdue : tCommon.pending}
                               </span>
                             </td>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "é"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>{inv.dueDate ? formatDate(inv.dueDate) : "é"}</td>
                             <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: isOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isOverdue ? "600" : "400" }}>{isOverdue ? `${daysOverdue}${tCommon.days}` : "é"}</td>
                           </tr>
                         );

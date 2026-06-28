@@ -494,7 +494,7 @@ const animations = `
 export default function InvoicesPage() {
   const router = useRouter();
   const { language } = useLanguage();
-  const { formatCurrency } = useAppSettings();
+  const { formatCurrency, formatDate } = useAppSettings();
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
   
@@ -1411,7 +1411,7 @@ export default function InvoicesPage() {
                           </span>
                         </td>
                         <td style={{ padding: "5px", color: isInvoiceOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isInvoiceOverdue ? "bold" : "normal", fontSize: isMobile ? "8px" : "9px" }}>
-                          {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString(locale) : "-"}
+                          {invoice.dueDate ? formatDate(invoice.dueDate) : "-"}
                           {isInvoiceOverdue && (
                             <span style={{ marginLeft: "3px", display: "inline-flex", verticalAlign: "middle" }}>
                               <Icons.AlertTriangle size={9} color="#ef4444" />

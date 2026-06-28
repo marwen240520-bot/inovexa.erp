@@ -329,7 +329,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
 export default function StockPage() {
   const router = useRouter();
   const { language } = useLanguage();
-  const { formatCurrency } = useAppSettings();
+  const { formatCurrency, formatDate } = useAppSettings();
   const { isMobile } = useResponsive();
   const { theme } = useTheme();
 
@@ -1057,7 +1057,7 @@ export default function StockPage() {
                             </span>
                           </div>
                           <div style={{ color: theme.textSecondary, fontSize: "11px", marginTop: "2px" }}>{m.reference}</div>
-                          <div style={{ color: theme.textSecondary, fontSize: "11px" }}>{new Date(m.date).toLocaleDateString()}</div>
+                          <div style={{ color: theme.textSecondary, fontSize: "11px" }}>{formatDate(m.date)}</div>
                         </div>
                       </div>
                     ))}
@@ -1076,7 +1076,7 @@ export default function StockPage() {
                     <tbody>
                       {getProductMovements(selectedProduct.id as number).map((m, idx) => (
                         <tr key={idx} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                          <td style={{ padding: "8px", color: theme.textSecondary, fontSize: "12px" }}>{new Date(m.date).toLocaleDateString()}</td>
+                          <td style={{ padding: "8px", color: theme.textSecondary, fontSize: "12px" }}>{formatDate(m.date)}</td>
                           <td style={{ padding: "8px" }}>
                             <span style={{ background: m.type === "in" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: m.type === "in" ? "#10b981" : "#ef4444", padding: "2px 8px", borderRadius: "12px", fontSize: "11px" }}>
                               {m.type === "in" ? `📥 ${t.entry}` : `📤 ${t.exit}`}

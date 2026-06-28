@@ -236,7 +236,7 @@ function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemI
 export default function SalesPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
-  const { formatCurrency } = useAppSettings();
+  const { formatCurrency, formatDate } = useAppSettings();
   const { isMobile } = useResponsive();
   const { theme } = useTheme();
 
@@ -955,7 +955,7 @@ export default function SalesPage() {
                           {!isMobile && <IconChevronDown size={10} color={getStatusColor(sale.status)} />}
                         </button>
                       </td>
-                      <td style={{ padding: "10px", color: theme.textSecondary, fontSize: tableFontSize }}>{new Date(sale.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}</td>
+                      <td style={{ padding: "10px", color: theme.textSecondary, fontSize: tableFontSize }}>{formatDate(sale.createdAt)}</td>
                       <td style={{ padding: "10px", textAlign: "center" }}>
                         <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
                           <button

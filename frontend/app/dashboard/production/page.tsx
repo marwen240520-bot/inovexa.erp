@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import AdvancedFilters from "@/components/ui/AdvancedFilters";
@@ -113,6 +114,7 @@ const formatNumber = (value: number | string | undefined | null): string => {
 export default function ProductionPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
+  const { formatDate } = useAppSettings();
   const { theme } = useTheme();
 
   // -- FIX: typed state arrays ------------------------------------------------
@@ -650,11 +652,11 @@ export default function ProductionPage() {
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", gap: "16px", flexWrap: "wrap" }}>
                       <span style={{ color: "#666", fontSize: "11px" }}>
-                        ?? {t("production.startDate")}: {order.startDate ? new Date(order.startDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "-"}
+                        ?? {t("production.startDate")}: {order.startDate ? formatDate(order.startDate) : "-"}
                       </span>
                       {order.endDate && (
                         <span style={{ color: "#666", fontSize: "11px" }}>
-                          ?? {t("production.endDate")}: {new Date(order.endDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}
+                          ?? {t("production.endDate")}: {formatDate(order.endDate)}
                         </span>
                       )}
                       {order.assignedTo && (
@@ -731,7 +733,7 @@ export default function ProductionPage() {
                   </div>
                   <div style={{ marginBottom: "16px", fontSize: "10px", color: "#666" }}>
                     {order.assignedTo && <div>?? {order.assignedTo}</div>}
-                    <div>?? {order.startDate ? new Date(order.startDate).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US") : "-"}</div>
+                    <div>?? {order.startDate ? formatDate(order.startDate) : "-"}</div>
                   </div>
                   <div style={{ display: "flex", gap: "8px" }}>
                     <button onClick={() => openEditModal(order)} style={{ flex: 1, padding: "8px", background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
