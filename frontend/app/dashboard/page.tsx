@@ -355,8 +355,9 @@ export default function DashboardPage() {
     const freshUser = await loadUserFromBackend();
     if (freshUser) {
       setUser(freshUser);
-      if (freshUser.profileImage) {
-        setProfileImage(freshUser.profileImage);
+      const fresh = freshUser.avatar || freshUser.profileImage;
+      if (fresh) {
+        setProfileImage(fresh);
         setImageError(false);
         setImageTimestamp(Date.now());
       } else { setProfileImage(null); }
@@ -365,9 +366,17 @@ export default function DashboardPage() {
       if (userData) {
         const u = JSON.parse(userData);
         setUser(u);
-        if (u.profileImage) { setProfileImage(u.profileImage); setImageError(false); setImageTimestamp(Date.now()); }
+        const img = u.avatar || u.profileImage; if (img) { setProfileImage(img); setImageError(false); setImageTimestamp(Date.now()); }
       }
     }
+  };
+
+  const avatarSrc = (img: string | null) => {
+    if (!img) return "";
+    const base = process.env.NEXT_PUBLIC_API_URL;
+    if (img.startsWith("http")) return `${img}?t=${imageTimestamp}`;
+    if (img.includes("/uploads/")) return `${base}${img}?t=${imageTimestamp}`;
+    return `${base}/uploads/avatars/${img}?t=${imageTimestamp}`;
   };
 
   const getLocale = () => {
@@ -576,8 +585,8 @@ export default function DashboardPage() {
     if (!token) router.push("/auth/login");
     const initPage = async () => {
       const freshUser = await loadUserFromBackend();
-      if (freshUser) { setUser(freshUser); if (freshUser.profileImage) { setProfileImage(freshUser.profileImage); setImageError(false); } }
-      else { const userData = localStorage.getItem("user"); if (userData) { const u = JSON.parse(userData); setUser(u); if (u.profileImage) { setProfileImage(u.profileImage); setImageError(false); } } }
+      if (freshUser) { setUser(freshUser); const fi = freshUser.avatar || freshUser.profileImage; if (fi) { setProfileImage(fi); setImageError(false); setImageTimestamp(Date.now()); } }
+      else { const userData = localStorage.getItem("user"); if (userData) { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Date.now()); } } }
       await fetchDashboardData();
       setRefreshTime(formatDateTime(new Date()));
       setTimeout(() => setAnimateCards(true), 100);
@@ -929,7 +938,7 @@ export default function DashboardPage() {
                   >
                     {profileImage && !imageError ? (
                       <img 
-                        src={`${process.env.NEXT_PUBLIC_API_URL}${profileImage}?t=${imageTimestamp}`} 
+                        src={avatarSrc(profileImage)} 
                         alt="Profile" 
                         style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover", border: `2px solid ${theme.primary}`, boxShadow: `0 4px 15px ${theme.primary}80` }}
                         onError={() => { setImageError(true); refreshUserData(); }} 
@@ -946,7 +955,7 @@ export default function DashboardPage() {
                     <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
                       <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
                         {profileImage && !imageError ? (
-                          <img src={`${process.env.NEXT_PUBLIC_API_URL}${profileImage}?t=${imageTimestamp}`} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
+                          <img src={avatarSrc(profileImage)} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
                         ) : (
                           <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
                         )}
