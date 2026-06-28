@@ -25,17 +25,19 @@ import { TransporteursModule } from './modules/transporteurs/transporteurs.modul
 import { ProductionModule } from './modules/production/production.module';
 import { IaModule } from './modules/ia/ia.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { DepartmentsModule } from './modules/departments/departments.module';
+import { ProjectsModule } from './modules/projects/projects.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-  type: 'postgres',
-  url: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  entities: [__dirname + '/**/*.entity{.ts,.js}'],
-  synchronize: false,
-  logging: false,
-}),
+      type: 'postgres',
+      url: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: false,
+      logging: false,
+    }),
     AuthModule,
     UsersModule,
     ProductsModule,
@@ -59,9 +61,10 @@ import { UploadModule } from './modules/upload/upload.module';
     ProductionModule,
     IaModule,
     UploadModule,
+    DepartmentsModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-
