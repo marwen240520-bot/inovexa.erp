@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useLanguage } from "../../contexts/LanguageContext";
+import Spinner from "@/components/ui/Spinner";
 
 // SVG Icons with better styling
 const DashboardIcon = ({ active = false }: { active?: boolean }) => (
@@ -178,23 +179,7 @@ export default function TransporteurLayout({
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div style={{ 
-        minHeight: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        background: "#0a0a0a"
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <SpinnerIcon />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <p style={{ color: "#94a3b8", marginTop: "14px", fontSize: "13px" }}>
-            {getTranslation("common.loading")}
-          </p>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (

@@ -1,6 +1,7 @@
 ﻿// contexts/LanguageContext.tsx
 "use client";
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import Spinner from "@/components/ui/Spinner";
 
 // Pour charger les fichiers depuis public, utilisez fetch
 // Ne pas importer directement depuis public
@@ -114,15 +115,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [language, isLoading]);
 
   if (isLoading) {
-    return (
-      <div style={{ background: "#0a0a0a", minHeight: "100vh", color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: "48px", height: "48px", border: "3px solid #1a1a1a", borderTopColor: "#667eea", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}></div>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <p>Chargement...</p>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen />;
   }
 
   return (
