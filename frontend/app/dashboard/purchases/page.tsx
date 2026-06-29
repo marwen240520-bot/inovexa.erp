@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -399,24 +398,8 @@ export default function PurchasesPage() {
         body: JSON.stringify(modal.form)
       });
       if (res.ok) {
-        // Mettre à jour le stock du produit après l'achat
-        const productId = modal.form.productId;
-        const quantity = modal.form.quantity ?? 1;
-        if (productId) {
-          try {
-            const product = products.find(p => p.id === productId);
-            if (product) {
-              const newQuantity = (product.quantity ?? 0) + quantity;
-              await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${productId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ quantity: newQuantity })
-              });
-            }
-          } catch (stockError) {
-            console.error("Erreur mise à jour stock:", stockError);
-          }
-        }
+        // Le stock est déjà mis à jour par le backend (purchases.service.create).
+        // Ne PAS refaire de PATCH /products ici, sinon le stock est incrémenté 2 fois.
         setModal({ open: false, form: {} });
         await fetchPurchases();
         await fetchProducts();
@@ -469,28 +452,12 @@ export default function PurchasesPage() {
   const deletePurchase = async (id: number) => {
     if (confirm(t("purchases.confirmDelete") || "Supprimer cet achat ?")) {
       const token = localStorage.getItem("token");
-      // Récupérer l'achat avant suppression pour déduire le stock
-      const purchase = allPurchases.find(p => p.id === id);
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Déduire la quantité du stock si le produit existe
-      if (purchase && purchase.productId) {
-        try {
-          const product = products.find(p => p.id === purchase.productId);
-          if (product) {
-            const newQuantity = Math.max(0, (product.quantity ?? 0) - (purchase.quantity ?? 0));
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${purchase.productId}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ quantity: newQuantity })
-            });
-          }
-        } catch (e) {
-          console.error("Erreur mise à jour stock après suppression:", e);
-        }
-      }
+      // Le stock est rétabli par le backend (purchases.service.delete).
+      // Pas de PATCH /products ici, sinon la quantité est déduite 2 fois.
       await fetchPurchases();
       await fetchProducts();
       showMessage(t("purchases.purchaseDeleted") || "Achat supprimé", "success");
@@ -503,26 +470,11 @@ export default function PurchasesPage() {
     if (confirm(`${t("purchases.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} achat(s) ?`)) {
       const token = localStorage.getItem("token");
       for (const id of selectedIds) {
-        const purchase = allPurchases.find(p => p.id === id);
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
-        if (purchase && purchase.productId) {
-          try {
-            const product = products.find(p => p.id === purchase.productId);
-            if (product) {
-              const newQuantity = Math.max(0, (product.quantity ?? 0) - (purchase.quantity ?? 0));
-              await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${purchase.productId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ quantity: newQuantity })
-              });
-            }
-          } catch (e) {
-            console.error("Erreur mise à jour stock:", e);
-          }
-        }
+        // Stock rétabli par le backend ; pas de PATCH /products (sinon double déduction).
       }
       await fetchPurchases();
       await fetchProducts();
@@ -658,7 +610,6 @@ export default function PurchasesPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
       <div style={{
         flex: 1,
         marginLeft: contentMarginLeft,

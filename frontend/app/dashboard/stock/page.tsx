@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -413,19 +412,11 @@ export default function StockPage() {
         productStockMap[p.id as number] = { quantity: p.quantity || 0, product: p };
       });
       
-      // Ajout des achats (entrées)
-      purchasesList.forEach(purchase => {
-        if (productStockMap[purchase.productId]) {
-          productStockMap[purchase.productId].quantity += purchase.quantity;
-        }
-      });
-      
-      // Soustractions des ventes (sorties)
-      salesList.forEach(sale => {
-        if (productStockMap[sale.productId]) {
-          productStockMap[sale.productId].quantity -= sale.quantity;
-        }
-      });
+      // NB: product.quantity est DÉJÀ le stock vivant : le backend l'incrémente
+      // à chaque achat et le décrémente à chaque vente. Il ne faut donc PAS
+      // ré-appliquer les achats/ventes ici (sinon chaque mouvement est compté
+      // deux fois → stock affiché doublé). On garde product.quantity tel quel ;
+      // les achats/ventes servent uniquement à construire l'historique ci-dessous.
 
       // Construction des mouvements de stock
       const movements: StockMovement[] = [];
@@ -611,7 +602,6 @@ export default function StockPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
       <div style={{ 
         flex: 1, 
         marginLeft: contentMarginLeft, 
