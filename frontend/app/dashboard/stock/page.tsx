@@ -6,6 +6,7 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import Spinner from "@/components/ui/Spinner";
+import Sidebar from "@/components/Sidebar";
 
 // --- Types --------------------------------------------------------------------
 interface Product {
@@ -602,6 +603,7 @@ export default function StockPage() {
       padding: 0,
       margin: 0
     }}>
+      <Sidebar />
       <div style={{ 
         flex: 1, 
         marginLeft: contentMarginLeft, 
