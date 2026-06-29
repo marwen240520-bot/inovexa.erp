@@ -1377,9 +1377,9 @@ export default function IAPage() {
                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} /> {t.online}
                         </span>
-                        <span>*</span>
+                        <span>.</span>
                         <span>{chatMessages.length} messages</span>
-                        <span>*</span>
+                        <span>.</span>
                         <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> {t.instantAnswers}</span>
                       </div>
                     </div>
