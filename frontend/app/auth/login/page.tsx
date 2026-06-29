@@ -462,7 +462,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
           }}>
             
             {/* LOGO ET TEXTE */}
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
+            <div className="login-rise lr-1" style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
               <div style={{ marginTop: "2px" }}> 
                 <img 
                   src="/images/logo.png" 
@@ -499,7 +499,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
             </div>
 
             {/* TITRE DE CONNEXION */}
-            <h1 style={{ 
+            <h1 className="login-rise lr-2" style={{ 
               fontSize: "42px",
               color: "white", 
               fontWeight: "800", 
@@ -526,7 +526,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
               </div>
             )}
 
-            <form onSubmit={handleLogin} style={{ maxWidth: "495px", width: "100%" }}>
+            <form onSubmit={handleLogin} className="login-rise lr-3" style={{ maxWidth: "495px", width: "100%" }}>
               <div style={{ marginBottom: "22px" }}>
                 <label style={{ color: "rgba(255,255,255,0.7)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
                   {t.email}
@@ -639,7 +639,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
               </button>
             </form>
 
-            <div style={{ marginTop: "33px" }}>
+            <div className="login-rise lr-4" style={{ marginTop: "33px" }}>
               <Link href="/" style={{ 
                 display: "inline-flex", 
                 alignItems: "center", 
@@ -802,10 +802,22 @@ const res = await fetch(`${baseURL}/auth/login`, {
           .login-hero { display: none !important; }
         }
 
+        /* === Entrée en cascade de la colonne formulaire (desktop) === */
+        .login-rise { animation: loginRise 0.65s cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .lr-1 { animation-delay: 0.08s; }
+        .lr-2 { animation-delay: 0.20s; }
+        .lr-3 { animation-delay: 0.34s; }
+        .lr-4 { animation-delay: 0.48s; }
+        @keyframes loginRise {
+          0%   { opacity: 0; transform: translateY(22px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
         /* === Respect de prefers-reduced-motion === */
         @media (prefers-reduced-motion: reduce) {
           .login-card-enter,
-          .login-hero-img { animation: none !important; }
+          .login-hero-img,
+          .login-rise { animation: none !important; }
         }
       ` }} />
     </div>
