@@ -224,7 +224,8 @@
     "confirmPassword": "Confirmar contraseña",
     "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
     "passwordMismatch": "Las contraseñas no coinciden",
-    "create": "Crear"
+    "create": "Crear",
+    "unassigned": "Sin asignar"
   },
   "admin": {
     "title": "Administrador",
@@ -474,7 +475,8 @@
     "activated": "Cliente activado",
     "deactivated": "Cliente desactivado",
     "listView": "Lista",
-    "gridView": "Cuadrícula"
+    "gridView": "Cuadrícula",
+    "newClients": "Nuevos clientes"
   },
   "stock": {
     "title": "Gestión de Inventario",
@@ -699,7 +701,10 @@
     "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
     "passwordMismatch": "Las contraseñas no coinciden",
     "listView": "Lista",
-    "gridView": "Cuadrícula"
+    "gridView": "Cuadrícula",
+    "fillRequiredFields": "Por favor complete los campos obligatorios",
+    "newPasswordOptional": "Nueva contraseña (opcional)",
+    "onTimeDelivery": "Entrega a tiempo"
   },
   "analytics": {
     "subtitle": "Visualización de datos y análisis empresarial",
@@ -811,7 +816,9 @@
     "q3": "T3",
     "q4": "T4",
     "myCustomCharts": "Mis gráficos personalizados",
-    "performance": "Rendimiento"
+    "performance": "Rendimiento",
+    "selectPeriod": "Seleccionar un período",
+    "totalProducts": "Total de productos"
   },
   "profile": {
     "personalInfo": "Información personal",
@@ -894,5 +901,10 @@
     "profit": "Beneficio",
     "margin": "Margen",
     "total": "Total"
+  },
+  "invoices": {
+    "paidInvoices": "Facturas pagadas",
+    "totalAmount": "Importe total",
+    "totalInvoices": "Total de facturas"
   }
 }

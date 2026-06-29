@@ -251,7 +251,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
             </div>
 
             {/* GLASS CARD WRAPPER */}
-            <div style={{
+            <div className="login-card-enter" style={{
               background: "rgba(255,255,255,0.03)",
               border: "1px solid rgba(168, 85, 247, 0.12)",
               borderRadius: "20px",
@@ -660,7 +660,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
           </div>
 
           {/* CÔTÉ DROIT - IMAGE */}
-          <div style={{ 
+          <div className="login-hero" style={{ 
             width: "50.5%",
             position: "relative",
             height: "100vh",
@@ -673,6 +673,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
             }} />
 
             <img 
+              className="login-hero-img"
               src="/images/1.png" 
               alt="Inovexa Futuristic" 
               style={{ 
@@ -775,6 +776,36 @@ const res = await fetch(`${baseURL}/auth/login`, {
           -webkit-text-fill-color: white;
           -webkit-box-shadow: 0 0 0px 1000px rgba(26, 26, 26, 0.95) inset;
           transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* === Animation d'entrée de la carte de connexion === */
+        .login-card-enter {
+          animation: cardEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes cardEnter {
+          0%   { opacity: 0; transform: translateY(24px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* === Effet Ken Burns lent sur l'image héro === */
+        .login-hero-img {
+          animation: heroFloat 18s ease-in-out infinite alternate;
+          transform-origin: center;
+        }
+        @keyframes heroFloat {
+          0%   { transform: scale(1.05) translateY(0); }
+          100% { transform: scale(1.12) translateY(-1.5%); }
+        }
+
+        /* === Masquer l'image héro (1.png) sur mobile === */
+        @media (max-width: 768px) {
+          .login-hero { display: none !important; }
+        }
+
+        /* === Respect de prefers-reduced-motion === */
+        @media (prefers-reduced-motion: reduce) {
+          .login-card-enter,
+          .login-hero-img { animation: none !important; }
         }
       ` }} />
     </div>

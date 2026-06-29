@@ -224,7 +224,8 @@
     "confirmPassword": "Confirm password",
     "passwordMinLength": "Password must be at least 6 characters",
     "passwordMismatch": "Passwords do not match",
-    "create": "Create"
+    "create": "Create",
+    "unassigned": "Unassigned"
   },
   "admin": {
     "title": "Administrator",
@@ -332,7 +333,8 @@
     "activated": "Client activated",
     "deactivated": "Client deactivated",
     "listView": "List",
-    "gridView": "Grid"
+    "gridView": "Grid",
+    "newClients": "New clients"
   },
   "stock": {
     "title": "Inventory Management",
@@ -557,7 +559,10 @@
     "passwordMinLength": "Password must be at least 6 characters",
     "passwordMismatch": "Passwords do not match",
     "listView": "List",
-    "gridView": "Grid"
+    "gridView": "Grid",
+    "fillRequiredFields": "Please fill in the required fields",
+    "newPasswordOptional": "New password (optional)",
+    "onTimeDelivery": "On-time delivery"
   },
   "analytics": {
     "subtitle": "Data visualization and business analysis",
@@ -669,7 +674,9 @@
     "q3": "Q3",
     "q4": "Q4",
     "myCustomCharts": "My custom charts",
-    "performance": "Performance"
+    "performance": "Performance",
+    "selectPeriod": "Select a period",
+    "totalProducts": "Total products"
   },
   "profile": {
     "personalInfo": "Personal information",
@@ -894,5 +901,10 @@
     "profit": "Profit",
     "margin": "Margin",
     "total": "Total"
+  },
+  "invoices": {
+    "paidInvoices": "Paid invoices",
+    "totalAmount": "Total amount",
+    "totalInvoices": "Total invoices"
   }
 }

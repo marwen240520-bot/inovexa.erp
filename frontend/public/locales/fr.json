@@ -224,7 +224,8 @@
     "confirmPassword": "Confirmer le mot de passe",
     "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
-    "create": "Créer"
+    "create": "Créer",
+    "unassigned": "Non assigné"
   },
   "admin": {
     "title": "Administrateur",
@@ -474,7 +475,8 @@
     "activated": "Client activé",
     "deactivated": "Client désactivé",
     "listView": "Liste",
-    "gridView": "Grille"
+    "gridView": "Grille",
+    "newClients": "Nouveaux clients"
   },
   "stock": {
     "title": "Gestion des stocks",
@@ -699,7 +701,10 @@
     "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "listView": "Liste",
-    "gridView": "Grille"
+    "gridView": "Grille",
+    "fillRequiredFields": "Veuillez remplir les champs obligatoires",
+    "newPasswordOptional": "Nouveau mot de passe (optionnel)",
+    "onTimeDelivery": "Livraison à temps"
   },
   "analytics": {
     "subtitle": "Visualisation des données et analyse commerciale",
@@ -811,7 +816,9 @@
     "q3": "T3",
     "q4": "T4",
     "myCustomCharts": "Mes graphiques personnalisés",
-    "performance": "Performance"
+    "performance": "Performance",
+    "selectPeriod": "Sélectionner une période",
+    "totalProducts": "Total produits"
   },
   "profile": {
     "personalInfo": "Informations personnelles",
@@ -894,5 +901,10 @@
     "profit": "Bénéfice",
     "margin": "Marge",
     "total": "Total"
+  },
+  "invoices": {
+    "paidInvoices": "Factures payées",
+    "totalAmount": "Montant total",
+    "totalInvoices": "Total factures"
   }
 }
