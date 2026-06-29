@@ -225,7 +225,9 @@
     "passwordMinLength": "Password must be at least 6 characters",
     "passwordMismatch": "Passwords do not match",
     "create": "Create",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "deselectAll": "Deselect all",
+    "selectedCount": "{count} selected"
   },
   "admin": {
     "title": "Administrator",

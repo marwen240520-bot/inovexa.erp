@@ -1,7 +1,9 @@
 ﻿"use client";
 import React from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemId }) {
+  const { t } = useLanguage();
   const allSelected = items.length > 0 && selectedIds.length === items.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < items.length;
 
@@ -26,12 +28,12 @@ export default function SelectAllCheckbox({ items, selectedIds, onSelect, onSele
           style={{ width: "18px", height: "18px", cursor: "pointer" }}
         />
         <span style={{ color: "#94a3b8", fontSize: "14px" }}>
-          {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
+          {allSelected ? t("common.deselectAll") : t("common.selectAll")}
         </span>
       </label>
       {selectedIds.length > 0 && (
         <span style={{ color: "#667eea", fontSize: "12px" }}>
-          {selectedIds.length} sélectionné(s)
+          {t("common.selectedCount").replace("{count}", String(selectedIds.length))}
         </span>
       )}
     </div>

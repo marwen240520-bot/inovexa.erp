@@ -286,7 +286,10 @@ export default function ProfilePage() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deletingImage, setDeletingImage] = useState(false);
-  const [imageTimestamp, setImageTimestamp] = useState(Date.now());
+  const [imageTimestamp, setImageTimestamp] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    return Number(localStorage.getItem("avatarVersion")) || 0;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement>(null);
@@ -477,7 +480,7 @@ export default function ProfilePage() {
         const filename = data.avatar || data.filename || data.url;
         if (filename) {
           setProfileImage(filename);
-          setImageTimestamp(Date.now());
+          const avatarV = Date.now(); setImageTimestamp(avatarV); localStorage.setItem("avatarVersion", String(avatarV));
           const freshUser = await loadUserFromBackend();
           if (freshUser) setUser(freshUser);
           showMessage("Photo de profil mise à jour", "success");
@@ -507,7 +510,7 @@ export default function ProfilePage() {
       
       if (res.ok) {
         setProfileImage(null);
-        setImageTimestamp(Date.now());
+        const avatarV = Date.now(); setImageTimestamp(avatarV); localStorage.setItem("avatarVersion", String(avatarV));
         const freshUser = await loadUserFromBackend();
         if (freshUser) setUser(freshUser);
         showMessage("Photo de profil supprimée", "success");

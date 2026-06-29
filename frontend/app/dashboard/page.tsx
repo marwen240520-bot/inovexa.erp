@@ -266,7 +266,10 @@ export default function DashboardPage() {
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const [user, setUser] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [imageTimestamp, setImageTimestamp] = useState(Date.now());
+  const [imageTimestamp, setImageTimestamp] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    return Number(localStorage.getItem("avatarVersion")) || 0;
+  });
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [stats, setStats] = useState({
@@ -359,14 +362,14 @@ export default function DashboardPage() {
       if (fresh) {
         setProfileImage(fresh);
         setImageError(false);
-        setImageTimestamp(Date.now());
+        setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0);
       } else { setProfileImage(null); }
     } else {
       const userData = localStorage.getItem("user");
       if (userData) {
         const u = JSON.parse(userData);
         setUser(u);
-        const img = u.avatar || u.profileImage; if (img) { setProfileImage(img); setImageError(false); setImageTimestamp(Date.now()); }
+        const img = u.avatar || u.profileImage; if (img) { setProfileImage(img); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); }
       }
     }
   };
@@ -585,8 +588,8 @@ export default function DashboardPage() {
     if (!token) router.push("/auth/login");
     const initPage = async () => {
       const freshUser = await loadUserFromBackend();
-      if (freshUser) { setUser(freshUser); const fi = freshUser.avatar || freshUser.profileImage; if (fi) { setProfileImage(fi); setImageError(false); setImageTimestamp(Date.now()); } }
-      else { const userData = localStorage.getItem("user"); if (userData) { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Date.now()); } } }
+      if (freshUser) { setUser(freshUser); const fi = freshUser.avatar || freshUser.profileImage; if (fi) { setProfileImage(fi); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } }
+      else { const userData = localStorage.getItem("user"); if (userData) { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } } }
       await fetchDashboardData();
       setRefreshTime(formatDateTime(new Date()));
       setTimeout(() => setAnimateCards(true), 100);
