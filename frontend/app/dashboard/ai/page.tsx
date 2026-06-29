@@ -94,6 +94,7 @@ const translations = {
     revenue: "Chiffre d'affaires", profit: "Bénéfice net", activeClients: "Clients actifs", products: "Produits",
     salesEvolution: "évolution des ventes", profitEvolution: "évolution du bénéfice", topProducts: "Top produits", topClients: "Top clients",
     forecastGrowth: "Croissance prévue", projectedRevenue: "CA projeté", projectedProfit: "Bénéfice projeté",
+    instantAnswers: "Réponses instantanées", vsPrevShort: "vs préc.", vsPrevPeriod: "vs période précédente", nextMonthShort: "prochain mois", nextMonthLong: "pour le prochain mois", estimateShort: "estimation", estimateMargin: "estimation à 35% de marge", recommendedLabel: "Recommandé :", unitsWord: "unités", breakdownTitle: "Répartition", keyKpis: "KPIs clés",
     threeMonths: "3 mois", sixMonths: "6 mois", twelveMonths: "12 mois",
     optimistic: "Optimiste", realistic: "Réaliste", pessimistic: "Pessimiste",
     salesForecast: "Prévisions des ventes", lowStock: "produit(s) en stock faible", outOfStock: "produit(s) en rupture",
@@ -123,6 +124,7 @@ const translations = {
     revenue: "Ingresos", profit: "Beneficio neto", activeClients: "Clientes activos", products: "Productos",
     salesEvolution: "Evolucién de ventas", profitEvolution: "Evolucién del beneficio", topProducts: "Top productos", topClients: "Top clientes",
     forecastGrowth: "Crecimiento previsto", projectedRevenue: "Ingreso proyectado", projectedProfit: "Beneficio proyectado",
+    instantAnswers: "Respuestas instantáneas", vsPrevShort: "vs ant.", vsPrevPeriod: "vs período anterior", nextMonthShort: "próximo mes", nextMonthLong: "para el próximo mes", estimateShort: "estimación", estimateMargin: "estimación con 35% de margen", recommendedLabel: "Recomendado:", unitsWord: "unidades", breakdownTitle: "Distribución", keyKpis: "KPIs clave",
     threeMonths: "3 meses", sixMonths: "6 meses", twelveMonths: "12 meses",
     optimistic: "Optimista", realistic: "Realista", pessimistic: "Pesimista",
     salesForecast: "Previsién de ventas", lowStock: "producto(s) con stock bajo", outOfStock: "producto(s) agotado(s)",
@@ -152,6 +154,7 @@ const translations = {
     revenue: "Revenue", profit: "Net profit", activeClients: "Active clients", products: "Products",
     salesEvolution: "Sales evolution", profitEvolution: "Profit evolution", topProducts: "Top products", topClients: "Top clients",
     forecastGrowth: "Forecast growth", projectedRevenue: "Projected revenue", projectedProfit: "Projected profit",
+    instantAnswers: "Instant answers", vsPrevShort: "vs prev.", vsPrevPeriod: "vs previous period", nextMonthShort: "next month", nextMonthLong: "for next month", estimateShort: "estimate", estimateMargin: "estimated at 35% margin", recommendedLabel: "Recommended:", unitsWord: "units", breakdownTitle: "Breakdown", keyKpis: "Key KPIs",
     threeMonths: "3 months", sixMonths: "6 months", twelveMonths: "12 months",
     optimistic: "Optimistic", realistic: "Realistic", pessimistic: "Pessimistic",
     salesForecast: "Sales forecast", lowStock: "low stock product(s)", outOfStock: "out of stock product(s)",
@@ -1379,7 +1382,7 @@ export default function IAPage() {
                         <span>*</span>
                         <span>{chatMessages.length} messages</span>
                         <span>*</span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> Réponses instantanées</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> {t.instantAnswers}</span>
                       </div>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
@@ -1557,9 +1560,9 @@ export default function IAPage() {
             <div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
                 {[
-                  { label: t.forecastGrowth, value: predictions?.revenueForecast?.growthRate + "%", color: "#10b981", icon: IconTrendingUp, sub: isMobile ? "vs préc." : "vs période précédente" },
-                  { label: t.projectedRevenue, value: formatCurrency(getForecastData()[0] || 0), color: "#10b981", icon: IconRevenue, sub: isMobile ? "prochain mois" : "pour le prochain mois" },
-                  { label: t.projectedProfit, value: formatCurrency((getForecastData()[0] || 0) * 0.35), color: "#f59e0b", icon: IconProfit, sub: isMobile ? "estimation" : "estimation é 35% de marge" }
+                  { label: t.forecastGrowth, value: predictions?.revenueForecast?.growthRate + "%", color: "#10b981", icon: IconTrendingUp, sub: isMobile ? t.vsPrevShort : t.vsPrevPeriod },
+                  { label: t.projectedRevenue, value: formatCurrency(getForecastData()[0] || 0), color: "#10b981", icon: IconRevenue, sub: isMobile ? t.nextMonthShort : t.nextMonthLong },
+                  { label: t.projectedProfit, value: formatCurrency((getForecastData()[0] || 0) * 0.35), color: "#f59e0b", icon: IconProfit, sub: isMobile ? t.estimateShort : t.estimateMargin }
                 ].map((card, idx) => (
                   <div key={idx} style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, textAlign: "center", border: `1px solid ${theme.border}`, transition: "transform 0.2s, box-shadow 0.2s", animation: `fadeInUp 0.4s ease ${0.1 + idx * 0.1}s` }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: card.color }}><card.icon size={isMobile ? 24 : 28} /></div>
@@ -1672,7 +1675,7 @@ export default function IAPage() {
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "10px", fontSize: "10px" }}>
                           <div><span style={{ color: theme.textSecondary }}>Stock:</span> <span style={{ color: rec.currentStock < 10 ? "#ef4444" : rec.currentStock < 20 ? "#f59e0b" : "#10b981", fontWeight: "bold" }}>{rec.currentStock} unités</span></div>
                           <div><span style={{ color: theme.textSecondary }}>Demande:</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.monthlyDemand}/mois</span></div>
-                          <div><span style={{ color: theme.textSecondary }}>Recommandé:</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.recommendedStock} unités</span></div>
+                          <div><span style={{ color: theme.textSecondary }}>{t.recommendedLabel}</span> <span style={{ color: "#10b981", fontWeight: "bold" }}>{rec.recommendedStock} {t.unitsWord}</span></div>
                         </div>
                         <button 
                           onClick={() => router.push("/dashboard/purchases")} 
@@ -1781,7 +1784,7 @@ export default function IAPage() {
             <div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gapMedium, marginBottom: responsive.gapMedium }}>
                 <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px" }}><IconAnalytics size={isMobile ? 12 : 14} /> Répartition</h3>
+                  <h3 style={{ color: theme.text, marginBottom: "12px", fontSize: isMobile ? "12px" : "13px" }}><IconAnalytics size={isMobile ? 12 : 14} /> {t.breakdownTitle}</h3>
                   <div style={{ height: isMobile ? "220px" : "200px" }}>
                     <Doughnut 
                       data={{ 
@@ -1817,7 +1820,7 @@ export default function IAPage() {
                 </div>
               </div>
               <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
-                <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "12px" : "14px" }}><IconDashboard size={isMobile ? 12 : 14} /> KPIs clés</h3>
+                <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "12px" : "14px" }}><IconDashboard size={isMobile ? 12 : 14} /> {t.keyKpis}</h3>
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "10px" : "16px" }}>
                   <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
                     <span style={{ display: "inline-flex", color: "#10b981" }}><IconPackage size={isMobile ? 20 : 24} /></span>

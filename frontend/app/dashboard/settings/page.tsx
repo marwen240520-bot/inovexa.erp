@@ -390,9 +390,9 @@ export default function SettingsPage() {
               onChange={(e) => setSettings({ ...settings, dateFormat: e.target.value })}
               style={{ width: "100%", padding: selectPadding, background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
             >
-              <option value="dd/mm/yyyy">DD/MM/YYYY (Ex: {formatDateExample(new Date())})</option>
-              <option value="mm/dd/yyyy">MM/DD/YYYY (Ex: {formatDateExample(new Date())})</option>
-              <option value="yyyy-mm-dd">YYYY-MM-DD (Ex: {formatDateExample(new Date())})</option>
+              <option value="dd/mm/yyyy">DD/MM/YYYY </option>
+              <option value="mm/dd/yyyy">MM/DD/YYYY </option>
+              <option value="yyyy-mm-dd">YYYY-MM-DD </option>
             </select>
           </div>
 
