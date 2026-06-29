@@ -205,15 +205,19 @@ interface ThemeColors {
   gradient: string;
 }
 
+// Session cache: prevents the sidebar from re-fetching on every navigation
+let sidebarCachedUser: User | null = null;
+let sidebarCachedModules: Record<string, boolean> | null = null;
+
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useLanguage();
   const { theme, themeId } = useTheme();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [userModules, setUserModules] = useState<Record<string, boolean> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(sidebarCachedUser);
+  const [userModules, setUserModules] = useState<Record<string, boolean> | null>(sidebarCachedModules);
+  const [loading, setLoading] = useState(sidebarCachedModules === null);
   const [navigationError, setNavigationError] = useState<string | null>(null);
   const [localTheme, setLocalTheme] = useState<ThemeColors | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -261,9 +265,9 @@ export default function Sidebar() {
     if (userData) {
       try {
         const u = JSON.parse(userData);
-        setUser(u);
+        setUser(u); sidebarCachedUser = u;
         const fromUser = normalizeModules(u.modules);
-        if (fromUser) setUserModules(fromUser);
+        if (fromUser) { setUserModules(fromUser); sidebarCachedModules = fromUser; }
         if (u.id && token) fetchUserModules(u.id, token);
         else setLoading(false);
       } catch { setLoading(false); }
@@ -278,7 +282,7 @@ export default function Sidebar() {
       });
       if (res.ok) {
         const mods = normalizeModules(await res.json());
-        if (mods) setUserModules(mods);
+        if (mods) { setUserModules(mods); sidebarCachedModules = mods; }
       }
     } catch {}
     setLoading(false);
