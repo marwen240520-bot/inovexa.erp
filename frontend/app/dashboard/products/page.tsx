@@ -723,22 +723,7 @@ export default function ProductsPage() {
             </h2>
             
             {/* Message d'information sur la quantité */}
-            {!modal.editMode && (
-              <div style={{ 
-                background: `${theme.primary}10`, 
-                padding: "8px 12px", 
-                borderRadius: "8px", 
-                marginBottom: "16px",
-                fontSize: isMobile ? "10px" : "12px",
-                color: theme.textSecondary,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px"
-              }}>
-                <IconInfo size={12} color={theme.primary} />
-                <span>La quantité sera gérée automatiquement via les achats et ventes.</span>
-              </div>
-            )}
+           
 
             {[
               { label: `${t("common.name")} *`, key: "name", type: "text", placeholder: t("products.productName") },
