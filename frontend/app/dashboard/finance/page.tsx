@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -1804,7 +1803,6 @@ export default function FinancePage() {
       margin: 0
     }}>
       {/* Sidebar - Fixed */}
-      <Sidebar />
 
       {/* Contenu principal */}
       <div style={{ 

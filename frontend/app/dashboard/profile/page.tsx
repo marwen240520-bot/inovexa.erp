@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme, THEMES } from "@/contexts/ThemeContext";
@@ -658,7 +657,6 @@ export default function ProfilePage() {
     }}>
       <style>{animations}</style>
       
-      <Sidebar />
       
       <div style={{ 
         marginLeft: contentMarginLeft,

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -559,7 +558,6 @@ export default function ClientsPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
       <div style={mainContainerStyle}>
         <div style={innerContainerStyle}>
           <style>{animations}</style>

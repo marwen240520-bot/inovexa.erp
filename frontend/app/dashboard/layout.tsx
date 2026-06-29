@@ -10,16 +10,11 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      setSidebarOpen(!mobile);
-    };
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -29,8 +24,9 @@ export default function DashboardLayout({
     pathname?.includes("/auth/login") || pathname?.includes("/auth/register");
 
   if (isAuthPage) return <>{children}</>;
-  // Avant le mount: on suppose desktop avec sidebar (évite le flash)
- const sidebarWidth = mounted && !isMobile && sidebarOpen ? 280 : 0;
+
+  // Rail de 280px en desktop ; 0 en mobile (la Sidebar affiche alors sa barre du bas).
+  const sidebarWidth = mounted && !isMobile ? 280 : 0;
 
   return (
     <div
@@ -41,53 +37,12 @@ export default function DashboardLayout({
         background: "#0a0a0a",
       }}
     >
-      {/* ── Sidebar desktop fixe ── */}
-      {mounted && !isMobile && (
-        <div
-          style={{
-            position: "fixed",
-            left: 0,
-            top: 0,
-            width: sidebarWidth,
-            height: "100vh",
-            zIndex: 100,
-            overflow: "hidden",
-            transition: "width 0.3s ease",
-          }}
-        >
-          <Sidebar />
-        </div>
-      )}
+      {/* Sidebar rendue UNE SEULE FOIS ici. Le layout persiste entre les pages,
+          donc elle ne se remonte plus a chaque navigation (fini le reload mobile).
+          Le composant se positionne lui-meme : rail fixe en desktop, barre du bas en mobile. */}
+      <Sidebar />
 
-      {/* ── Sidebar mobile overlay ── */}
-      {mounted && isMobile && sidebarOpen && (
-        <>
-          <div
-            onClick={() => setSidebarOpen(false)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.7)",
-              backdropFilter: "blur(4px)",
-              zIndex: 998,
-            }}
-          />
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: 280,
-              height: "100vh",
-              zIndex: 999,
-            }}
-          >
-            <Sidebar />
-          </div>
-        </>
-      )}
-
-      {/* ── Contenu principal ── */}
+      {/* Contenu principal */}
       <div
         style={{
           flex: 1,

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -342,7 +341,6 @@ export default function CategoriesPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
       <div style={{ 
         marginLeft: contentMarginLeft, 
         flex: 1, 

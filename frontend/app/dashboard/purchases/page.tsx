@@ -8,7 +8,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
-import Sidebar from "@/components/Sidebar";
 
 // --- Interfaces ----------------------------------------------------------------
 
@@ -611,7 +610,6 @@ export default function PurchasesPage() {
       padding: 0,
       margin: 0
     }}>
-      <Sidebar />
       <div style={{
         flex: 1,
         marginLeft: contentMarginLeft,

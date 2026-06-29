@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -1053,7 +1052,6 @@ export default function AnalyticsPage() {
       <style>{animations}</style>
 
       {/* Sidebar - comme sur les autres pages */}
-      <Sidebar />
 
       {/* Main Content */}
       <div style={{
