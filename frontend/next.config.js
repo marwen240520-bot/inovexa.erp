@@ -22,22 +22,22 @@ const API_ORIGIN   = `${API_PROTOCOL}//${API_HOST}`;
 // ─────────────────────────────────────────────
 //  Content Security Policy builder
 // ─────────────────────────────────────────────
+// 'unsafe-eval' n'est nécessaire QU'EN DÉVELOPPEMENT (HMR / Fast Refresh).
+// En production, le build Next 14 (devtool:false, aucune lib eval-prone)
+// n'utilise PAS eval → on durcit la CSP en le retirant.
+// Échappatoire : si une lazy-chunk fait réellement un eval en prod,
+// déployer avec la variable d'env CSP_ALLOW_EVAL=1 pour le réautoriser
+// (puis ouvrir la call stack de l'erreur eval pour identifier la lib fautive).
+const ALLOW_EVAL = IS_DEV || process.env.CSP_ALLOW_EVAL === '1';
+
 function buildCSP() {
   const directives = {
     'default-src': ["'self'"],
 
-    // 'unsafe-eval' is allowed in BOTH environments on purpose:
-    //   - dev  : required by Next.js HMR / Fast Refresh
-    //   - prod : some lazy-loaded vendor chunks (charting / animation libs)
-    //            evaluate code at runtime; without this they throw the
-    //            "CSP blocks the use of 'eval'" error you are seeing.
-    // To harden later: open DevTools on the live site, expand the eval
-    // error's call stack to find the offending library, replace it, then
-    // remove "'unsafe-eval'" from the production list below.
     'script-src': [
       "'self'",
-      "'unsafe-eval'",
       "'unsafe-inline'",
+      ...(ALLOW_EVAL ? ["'unsafe-eval'"] : []),
       'https://cdn.jsdelivr.net',
       'https://cdnjs.cloudflare.com',
     ],
