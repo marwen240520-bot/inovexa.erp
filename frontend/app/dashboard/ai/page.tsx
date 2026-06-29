@@ -1376,9 +1376,9 @@ export default function IAPage() {
                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} /> {t.online}
                         </span>
-                        <span>é</span>
+                        <span>*</span>
                         <span>{chatMessages.length} messages</span>
-                        <span>é</span>
+                        <span>*</span>
                         <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> Réponses instantanées</span>
                       </div>
                     </div>
@@ -1622,9 +1622,9 @@ export default function IAPage() {
               
               <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px", flexDirection: isMobile ? "column" : "row" }}>
-                  <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconPredictions size={isMobile ? 14 : 16} /> {t.salesForecast} é {selectedScenario === "optimistic" ? t.optimistic : selectedScenario === "realistic" ? t.realistic : t.pessimistic}</h3>
+                  <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconPredictions size={isMobile ? 14 : 16} /> {t.salesForecast}  {selectedScenario === "optimistic" ? t.optimistic : selectedScenario === "realistic" ? t.realistic : t.pessimistic}</h3>
                   <div style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, background: theme.surfaceHover, padding: "4px 10px", borderRadius: "20px" }}>
-                    ?? {t.confidence}: {predictions?.revenueForecast?.confidence || 0}%
+                     {t.confidence}: {predictions?.revenueForecast?.confidence || 0}%
                   </div>
                 </div>
                 <div style={{ height: isMobile ? "230px" : "auto" }}>
@@ -1648,7 +1648,7 @@ export default function IAPage() {
                 <h3 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "8px" }}><IconRecommendations size={isMobile ? 14 : 16} /> {t.recommendations}</h3>
                 {!isMobile && (
                   <div style={{ fontSize: "10px", color: theme.textSecondary, background: `${theme.accent}15`, padding: "4px 10px", borderRadius: "20px" }}>
-                    ?? Générées par IA
+                     Générées par IA
                   </div>
                 )}
               </div>
