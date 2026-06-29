@@ -39,6 +39,8 @@
     "import": "Importar",
     "export": "Exportar",
     "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "selectedCount": "{count} seleccionado(s)",
     "noData": "No hay datos",
     "noResults": "No se encontraron resultados",
     "error": "Error",
@@ -225,9 +227,7 @@
     "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
     "passwordMismatch": "Las contraseñas no coinciden",
     "create": "Crear",
-    "unassigned": "Sin asignar",
-    "deselectAll": "Deseleccionar todo",
-    "selectedCount": "{count} seleccionado(s)"
+    "unassigned": "Sin asignar"
   },
   "admin": {
     "title": "Administrador",

@@ -39,6 +39,8 @@
     "import": "Importer",
     "export": "Exporter",
     "selectAll": "Tout sélectionner",
+    "deselectAll": "Tout désélectionner",
+    "selectedCount": "{count} sélectionné(s)",
     "noData": "Aucune donnée",
     "noResults": "Aucun résultat trouvé",
     "error": "Erreur",
@@ -225,9 +227,7 @@
     "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "create": "Créer",
-    "unassigned": "Non assigné",
-    "deselectAll": "Tout désélectionner",
-    "selectedCount": "{count} sélectionné(s)"
+    "unassigned": "Non assigné"
   },
   "admin": {
     "title": "Administrateur",
