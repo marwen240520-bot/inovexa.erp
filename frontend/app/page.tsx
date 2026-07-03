@@ -201,7 +201,7 @@ export default function HomePage(): React.ReactElement {
   };
 
   const text: any = getTranslations();
-  const flagCodes: Record<string, string> = { en: "us", fr: "fr", es: "es" };
+  const flagCodes: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
 
   if (isLoading) {
     return React.createElement("div", { style: { background: "#000000", minHeight: "100vh" } });
