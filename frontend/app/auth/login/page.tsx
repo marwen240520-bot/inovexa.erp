@@ -709,7 +709,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
             }} />
 
             <img 
-              className="login-hero-img"
               src="/images/1.png" 
               alt="Inovexa Futuristic" 
               style={{ 
@@ -823,14 +822,12 @@ const res = await fetch(`${baseURL}/auth/login`, {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* === Effet Ken Burns lent sur l'image héro === */
-        .login-hero-img {
-          animation: heroFloat 18s ease-in-out infinite alternate;
-          transform-origin: center;
-        }
-        @keyframes heroFloat {
-          0%   { transform: scale(1.05) translateY(0); }
-          100% { transform: scale(1.12) translateY(-1.5%); }
+        /* === Image héro (1.png) : STRICTEMENT statique — aucune animation
+               ni transition, quelle que soit la règle appliquée ailleurs === */
+        .login-hero,
+        .login-hero * {
+          animation: none !important;
+          transition: none !important;
         }
 
         /* === Masquer l'image héro (1.png) sur mobile === */
@@ -852,7 +849,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
         /* === Respect de prefers-reduced-motion === */
         @media (prefers-reduced-motion: reduce) {
           .login-card-enter,
-          .login-hero-img,
           .login-rise { animation: none !important; }
         }
       ` }} />
