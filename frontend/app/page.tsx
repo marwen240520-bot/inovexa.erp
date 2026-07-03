@@ -6,11 +6,15 @@ import { useResponsive } from "@/hooks/useResponsive";
 
 // ─── Icônes SVG ────────────────────────────────────────────────────────────────
 
-const icon = (path: React.ReactNode, size = 22) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {path}
-  </svg>
-);
+const icon = (path: React.ReactNode, size = 22) => {
+  const IconComponent: React.FC = () => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {path}
+    </svg>
+  );
+  IconComponent.displayName = "Icon";
+  return IconComponent;
+};
 
 const IconTarget = icon(<><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></>);
 const IconBarChart = icon(<><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" /></>);
@@ -355,7 +359,7 @@ export default function HomePage(): React.ReactElement {
                     width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                     background: "rgba(168,85,247,.12)", border: "1px solid rgba(168,85,247,.2)",
                     display: "flex", alignItems: "center", justifyContent: "center", color: "#A855F7",
-                  }}>{Ico}</div>
+                  }}><Ico /></div>
                   <span style={{ color: "rgba(255,255,255,.9)", fontSize: 11, fontWeight: 800, letterSpacing: ".6px", lineHeight: 1.3 }}>{f.title}</span>
                 </div>
                 <p style={{ color: "rgba(255,255,255,.5)", fontSize: 12.5, lineHeight: 1.55, margin: 0 }}>{f.desc}</p>
