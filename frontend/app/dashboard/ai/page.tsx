@@ -465,17 +465,139 @@ export default function IAPage() {
   const getLowerBoundData = () => getForecastData().map(v => Math.round(v * 0.88));
 
   // ────────────────────────────────────────────────────────────────
-  //  Contexte RAG : instantané multi-modules envoyé au modèle
+  //  Contexte RAG v2 : agrégats précalculés + filtrage par question
+  //  - "aggregates" = chiffres exacts calculés côté client (le modèle
+  //    n'a plus à additionner des listes tronquées → zéro erreur).
+  //  - Les "samples" non pertinents pour la question sont omis
+  //    → prompt plus court, réponse plus rapide et moins chère.
   // ────────────────────────────────────────────────────────────────
-  const buildErpContext = () => {
+  const detectTopics = (question: string): Set<string> => {
+    const q = (question || "").toLowerCase();
+    const topics = new Set<string>();
+    const match = (words: string[]) => words.some(w => q.includes(w));
+    if (match(["produit", "stock", "rupture", "inventaire", "product", "inventory", "producto", "réappro", "reappro", "sku", "منتج", "مخزون"])) topics.add("products");
+    if (match(["vente", "ventes", "ca ", "chiffre", "revenu", "sale", "revenue", "venta", "ingreso", "مبيع"])) topics.add("sales");
+    if (match(["client", "customer", "fidel", "cliente", "عميل", "زبون"])) topics.add("clients");
+    if (match(["commande", "order", "livraison", "pedido", "logisti", "طلب"])) topics.add("orders");
+    if (match(["facture", "invoice", "impay", "unpaid", "factura", "créance", "creance", "échéance", "echeance", "فاتورة"])) topics.add("invoices");
+    if (match(["achat", "fournisseur", "purchase", "supplier", "compra", "proveedor", "شراء", "مورد"])) topics.add("purchases");
+    if (match(["employé", "employe", "rh", "salari", "équipe", "equipe", "employee", "hr", "staff", "empleado", "موظف"])) topics.add("employees");
+    if (match(["bénéfice", "benefice", "profit", "marge", "margin", "ebitda", "roi", "finance", "prévision", "prevision", "forecast", "ربح"])) { topics.add("sales"); topics.add("purchases"); topics.add("invoices"); }
+    return topics;
+  };
+
+  const buildErpContext = (question?: string) => {
     const r = rawData || {};
     const n = (v: any) => Number(v) || 0;
     const cap = (arr: any, k: number) => (Array.isArray(arr) ? arr.slice(0, k) : []);
     const last = (arr: any, k: number) => (Array.isArray(arr) ? arr.slice(-k).reverse() : []);
+    const arr = (x: any): any[] => (Array.isArray(x) ? x : []);
+
+    // ── Agrégats exacts précalculés ──
+    const salesArr = arr(r.sales);
+    const invoicesArr = arr(r.invoices);
+    const productsArr = arr(r.products);
+    const now = new Date();
+
+    // CA mensuel des 12 derniers mois (série exacte)
+    const monthlyRevenue: Record<string, number> = {};
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthlyRevenue[`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`] = 0;
+    }
+    salesArr.forEach((s: any) => {
+      const d = new Date(s.createdAt ?? s.date ?? 0);
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (key in monthlyRevenue) monthlyRevenue[key] += n(s.total);
+    });
+
+    // Top produits par CA (exact, sur toutes les ventes)
+    const revByProduct: Record<string, { revenue: number; qty: number }> = {};
+    salesArr.forEach((s: any) => {
+      const name = s.productName ?? s.product ?? "?";
+      if (!revByProduct[name]) revByProduct[name] = { revenue: 0, qty: 0 };
+      revByProduct[name].revenue += n(s.total);
+      revByProduct[name].qty += n(s.quantity);
+    });
+    const topProductsByRevenue = Object.entries(revByProduct)
+      .map(([name, v]) => ({ name, revenue: Math.round(v.revenue), qty: v.qty }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    // Créances : factures impayées / en retard (exact)
+    const unpaid = invoicesArr.filter((iv: any) => iv.status === "pending" || iv.status === "unpaid");
+    const overdue = unpaid.filter((iv: any) => iv.dueDate && new Date(iv.dueDate) < now);
+    const receivables = {
+      unpaidCount: unpaid.length,
+      unpaidTotal: Math.round(unpaid.reduce((s: number, iv: any) => s + n(iv.total), 0)),
+      overdueCount: overdue.length,
+      overdueTotal: Math.round(overdue.reduce((s: number, iv: any) => s + n(iv.total), 0)),
+    };
+
+    // Valeur du stock (exact)
+    const stockValue = Math.round(productsArr.reduce((s: number, p: any) => s + n(p.price) * n(p.quantity), 0));
+
+    // ── Filtrage des samples selon la question ──
+    const topics = detectTopics(question || "");
+    const wantAll = topics.size === 0; // question générale → tout envoyer
+    const want = (t: string) => wantAll || topics.has(t);
+
+    const samples: any = {};
+    if (want("products")) samples.products = cap(productsArr, 120).map((p: any) => ({
+      name: p.name,
+      category: p.category ?? p.categoryName ?? null,
+      price: n(p.price),
+      quantity: n(p.quantity),
+      ref: p.sku ?? p.reference ?? null,
+    }));
+    if (want("sales")) samples.recentSales = last(salesArr, 60).map((s: any) => ({
+      date: s.createdAt ?? s.date ?? null,
+      client: s.clientName ?? null,
+      product: s.productName ?? s.product ?? null,
+      qty: n(s.quantity),
+      total: n(s.total),
+    }));
+    if (want("clients")) samples.clients = cap(r.clients, 80).map((c: any) => ({
+      name: c.name,
+      status: c.status ?? null,
+      email: c.email ?? null,
+      phone: c.phone ?? null,
+    }));
+    if (want("orders")) samples.orders = last(r.orders, 60).map((o: any) => ({
+      ref: o.reference ?? o.id ?? null,
+      client: o.clientName ?? null,
+      status: o.status ?? null,
+      total: n(o.total),
+      date: o.createdAt ?? null,
+    }));
+    if (want("invoices")) samples.invoices = last(invoicesArr, 60).map((iv: any) => ({
+      ref: iv.reference ?? iv.number ?? iv.id ?? null,
+      client: iv.clientName ?? null,
+      status: iv.status ?? null,
+      total: n(iv.total),
+      dueDate: iv.dueDate ?? null,
+      date: iv.createdAt ?? null,
+    }));
+    if (want("purchases")) samples.purchases = last(r.purchases, 40).map((p: any) => ({
+      supplier: p.supplierName ?? p.supplier ?? null,
+      total: n(p.total),
+      date: p.createdAt ?? null,
+    }));
+    if (want("employees")) samples.employees = cap(r.employees, 40).map((e: any) => ({
+      name: e.name ?? `${e.firstName ?? ""} ${e.lastName ?? ""}`.trim(),
+      role: e.role ?? e.position ?? null,
+      department: e.department ?? null,
+    }));
 
     return {
-      generatedAt: new Date().toISOString(),
       currency: "DT (TND)",
+      aggregates: {
+        monthlyRevenue,
+        topProductsByRevenue,
+        receivables,
+        stockValue,
+      },
       stats,
       predictions,
       topProducts,
@@ -499,54 +621,8 @@ export default function IAPage() {
         purchases: (r.purchases || []).length,
         employees: (r.employees || []).length,
       },
-      samples: {
-        products: cap(r.products, 120).map((p: any) => ({
-          name: p.name,
-          category: p.category ?? p.categoryName ?? null,
-          price: n(p.price),
-          quantity: n(p.quantity),
-          ref: p.sku ?? p.reference ?? null,
-        })),
-        recentSales: last(r.sales, 60).map((s: any) => ({
-          date: s.createdAt ?? s.date ?? null,
-          client: s.clientName ?? null,
-          product: s.productName ?? s.product ?? null,
-          qty: n(s.quantity),
-          total: n(s.total),
-        })),
-        clients: cap(r.clients, 80).map((c: any) => ({
-          name: c.name,
-          status: c.status ?? null,
-          email: c.email ?? null,
-          phone: c.phone ?? null,
-        })),
-        orders: last(r.orders, 60).map((o: any) => ({
-          ref: o.reference ?? o.id ?? null,
-          client: o.clientName ?? null,
-          status: o.status ?? null,
-          total: n(o.total),
-          date: o.createdAt ?? null,
-        })),
-        invoices: last(r.invoices, 60).map((iv: any) => ({
-          ref: iv.reference ?? iv.number ?? iv.id ?? null,
-          client: iv.clientName ?? null,
-          status: iv.status ?? null,
-          total: n(iv.total),
-          dueDate: iv.dueDate ?? null,
-          date: iv.createdAt ?? null,
-        })),
-        purchases: last(r.purchases, 40).map((p: any) => ({
-          supplier: p.supplierName ?? p.supplier ?? null,
-          total: n(p.total),
-          date: p.createdAt ?? null,
-        })),
-        employees: cap(r.employees, 40).map((e: any) => ({
-          name: e.name ?? `${e.firstName ?? ""} ${e.lastName ?? ""}`.trim(),
-          role: e.role ?? e.position ?? null,
-          department: e.department ?? null,
-        })),
-      },
-      note: "Les listes 'samples' sont tronquees ; 'counts' donne les totaux reels.",
+      samples,
+      note: "Les listes 'samples' sont tronquees et filtrees selon la question ; 'counts' donne les totaux reels ; 'aggregates' contient des chiffres exacts deja calcules.",
     };
   };
 
@@ -590,24 +666,55 @@ export default function IAPage() {
 
     const actions = getContextualActions(userMessage);
 
-    // 1) Vrai assistant IA (route serveur + contexte RAG). 2) Repli local si indispo.
+    // 1) Vrai assistant IA en STREAMING temps réel (route serveur + contexte RAG filtré).
+    // 2) Repli local par mots-clés si indisponible.
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language, context: buildErpContext(), messages: history }),
+        body: JSON.stringify({ language, context: buildErpContext(userMessage), messages: history }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        const text = (data?.text || "").trim();
+
+      if (res.ok && res.body) {
+        // ── Lecture du flux : affichage progressif en TEMPS RÉEL ──
+        setIsTyping(false);
+        setIsStreaming(true);
+        setStreamingContent("");
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let full = "";
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            full += decoder.decode(value, { stream: true });
+            setStreamingContent(full);
+          }
+          full += decoder.decode();
+        } finally {
+          reader.releaseLock();
+        }
+
+        const text = full.trim();
         if (text) {
-          streamAssistant(text, actions);
+          setChatMessages(prev => [...prev, { role: "assistant", content: text, timestamp: new Date(), actions }]);
+          setLoadingAI(false);
+          setIsStreaming(false);
+          setStreamingContent("");
           return;
         }
+        // Flux vide → repli local.
+        setIsStreaming(false);
+        setStreamingContent("");
+        setIsTyping(true);
       }
-      // 503 (cle absente), reponse vide, etc. -> repli local ci-dessous.
+      // 503 (cle absente), erreur upstream, etc. -> repli local ci-dessous.
     } catch {
-      // Erreur reseau -> repli local.
+      // Erreur reseau ou flux interrompu -> repli local.
+      setIsStreaming(false);
+      setStreamingContent("");
+      setIsTyping(true);
     }
 
     // Repli hors-ligne : matcher par mots-cles existant.
@@ -1484,7 +1591,7 @@ export default function IAPage() {
               </div>
 
               {/* Zone de saisie améliorée pour mobile */}
-              <div style={{ padding: isMobile ? "12px" : "14px 18px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
+              <div style={{ padding: isMobile ? "12px" : "14px 18px", paddingBottom: isMobile ? "calc(12px + env(safe-area-inset-bottom, 0px))" : "14px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
                 <div style={{ display: "flex", gap: isMobile ? "8px" : "12px", alignItems: "flex-end" }}>
                   <textarea 
                     ref={textareaRef}
@@ -1493,6 +1600,8 @@ export default function IAPage() {
                     onChange={e => setChatInput(e.target.value)} 
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !isMobile) { e.preventDefault(); sendMessage(); } }} 
                     rows={isMobile ? 2 : 1} 
+                    enterKeyHint="send"
+                    aria-label={t.typeMessage}
                     style={{ 
                       flex: 1, 
                       padding: isMobile ? "10px 14px" : "10px 16px", 
@@ -1500,7 +1609,8 @@ export default function IAPage() {
                       border: `1px solid ${theme.border}`, 
                       borderRadius: "20px", 
                       color: theme.text, 
-                      fontSize: isMobile ? "14px" : "13px", 
+                      // 16px sur mobile : empêche le zoom automatique d'iOS au focus.
+                      fontSize: isMobile ? "16px" : "13px", 
                       outline: "none", 
                       resize: "none", 
                       fontFamily: "inherit", 
@@ -1520,6 +1630,7 @@ export default function IAPage() {
                       border: "none", 
                       borderRadius: "25px", 
                       padding: isMobile ? "10px 20px" : "9px 22px", 
+                      minHeight: isMobile ? "44px" : undefined,
                       cursor: (!chatInput.trim() || loadingAI) ? "not-allowed" : "pointer", 
                       fontSize: isMobile ? "13px" : "13px", 
                       display: "flex", 

@@ -1,10 +1,19 @@
 ﻿// app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // @ts-ignore
 import "./globals.css";
+
+// viewportFit: "cover" est indispensable pour que env(safe-area-inset-*)
+// fonctionne sur iPhone (encoche / Dynamic Island).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#000000",
+};
 
 export const metadata: Metadata = {
   title: "Inovexa-ERP ",

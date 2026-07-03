@@ -17,7 +17,9 @@ const translations = {
     invalidCredentials: "Email ou mot de passe incorrect",
     serverError: "Erreur de connexion au serveur",
     emailPlaceholder: "exemple@inovexa.com",
-    passwordPlaceholder: "Mot de passe"
+    passwordPlaceholder: "Mot de passe",
+    capsLock: "Verr. Maj activée",
+    rights: "Tous droits réservés"
   },
   en: {
     backToHome: "Back to home",
@@ -29,7 +31,9 @@ const translations = {
     invalidCredentials: "Invalid email or password",
     serverError: "Connection error",
     emailPlaceholder: "example@inovexa.com",
-    passwordPlaceholder: "Password"
+    passwordPlaceholder: "Password",
+    capsLock: "Caps Lock is on",
+    rights: "All rights reserved"
   },
   es: {
     backToHome: "Volver al inicio",
@@ -41,7 +45,9 @@ const translations = {
     invalidCredentials: "Correo o contraseña incorrectos",
     serverError: "Error de conexión",
     emailPlaceholder: "ejemplo@inovexa.com",
-    passwordPlaceholder: "Contraseña"
+    passwordPlaceholder: "Contraseña",
+    capsLock: "Bloq Mayús activado",
+    rights: "Todos los derechos reservados"
   }
 };
 
@@ -56,6 +62,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+
+  // Détection Verr. Maj sur le champ mot de passe (UX : évite les échecs de connexion silencieux)
+  const detectCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (typeof e.getModifierState === "function") {
+      setCapsLockOn(e.getModifierState("CapsLock"));
+    }
+  };
 
   const isSmallScreen = isMobile || isTablet;
 
@@ -262,7 +276,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
 
               {/* ERROR */}
               {error && (
-                <div style={{ 
+                <div role="alert" aria-live="assertive" style={{ 
                   background: "rgba(239,68,68,0.08)", 
                   border: "1px solid rgba(239,68,68,0.25)", 
                   color: "#f87171", 
@@ -348,6 +362,10 @@ const res = await fetch(`${baseURL}/auth/login`, {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={t.passwordPlaceholder}
                     autoComplete="current-password"
+                    enterKeyHint="go"
+                    aria-invalid={!!error}
+                    onKeyDown={detectCapsLock}
+                    onKeyUp={detectCapsLock}
                     style={{ 
                       width: "100%",
                       boxSizing: "border-box",
@@ -388,6 +406,11 @@ const res = await fetch(`${baseURL}/auth/login`, {
                     )}
                   </button>
                   </div>
+                  {capsLockOn && (
+                    <p role="status" style={{ color: "#FBBF24", fontSize: "12px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span aria-hidden="true">⇪</span> {t.capsLock}
+                    </p>
+                  )}
                 </div>
 
                 {/* SUBMIT BUTTON */}
@@ -443,7 +466,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
               textAlign: "center",
               letterSpacing: "1px",
             }}>
-              © 2026 INOVEXA. TOUS DROITS RÉSERVÉS
+              © 2026 INOVEXA. {t.rights.toUpperCase()}
             </p>
           </div>
         </div>
@@ -513,7 +536,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
 
             {/* FORMULAIRE */}
             {error && (
-              <div style={{ 
+              <div role="alert" aria-live="assertive" style={{ 
                 background: "rgba(239,68,68,0.1)", 
                 border: "1px solid rgba(239,68,68,0.2)", 
                 color: "#f87171", 
@@ -537,6 +560,10 @@ const res = await fetch(`${baseURL}/auth/login`, {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t.emailPlaceholder}
                   autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  autoFocus
+                  aria-invalid={!!error}
                   style={{ 
                     width: "100%",
                     boxSizing: "border-box",
@@ -572,6 +599,10 @@ const res = await fetch(`${baseURL}/auth/login`, {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t.passwordPlaceholder}
                   autoComplete="current-password"
+                  enterKeyHint="go"
+                  aria-invalid={!!error}
+                  onKeyDown={detectCapsLock}
+                  onKeyUp={detectCapsLock}
                   style={{ 
                     width: "100%",
                     boxSizing: "border-box",
@@ -609,6 +640,11 @@ const res = await fetch(`${baseURL}/auth/login`, {
                     )}
                   </button>
                   </div>
+                  {capsLockOn && (
+                    <p role="status" style={{ color: "#FBBF24", fontSize: "12.5px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span aria-hidden="true">⇪</span> {t.capsLock}
+                    </p>
+                  )}
               </div>
 
               <button
@@ -655,7 +691,7 @@ const res = await fetch(`${baseURL}/auth/login`, {
             </div>
 
             <p style={{ marginTop: "55px", color: "rgba(255,255,255,0.2)", fontSize: "11px", fontWeight: "600" }}>
-              © 2026 INOVEXA. TOUS DROITS RÉSERVÉS
+              © 2026 INOVEXA. {t.rights.toUpperCase()}
             </p>
           </div>
 
