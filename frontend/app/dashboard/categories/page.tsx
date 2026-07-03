@@ -241,39 +241,58 @@ export default function CategoriesPage() {
   };
 
   const createCategory = async () => {
+    // Validation côté client : évite les POST vides rejetés en 409 par le backend.
+    const name = String(modal.form?.name ?? "").trim();
+    if (!name) {
+      showMessage(t("common.fillRequiredFields") || "Veuillez remplir les champs obligatoires", "error");
+      return;
+    }
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(modal.form)
+        body: JSON.stringify({ ...modal.form, name, description: String(modal.form?.description ?? "").trim() })
       });
       if (res.ok) {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         await fetchCategories(); await fetchAllProducts();
         showMessage(t("categories.categoryCreated"), "success");
       } else {
-        const error = await res.json();
-        showMessage(error.message?.includes("already exists") ? t("categories.categoryExists") : t("common.error"), "error");
+        const error = await res.json().catch(() => ({} as any));
+        const msg = Array.isArray(error?.message) ? error.message[0] : error?.message;
+        showMessage(
+          msg?.includes("already exists") ? t("categories.categoryExists") : (msg || t("common.error")),
+          "error"
+        );
       }
     } catch(e) { showMessage(t("common.error"), "error"); }
   };
 
   const updateCategory = async () => {
+    const name = String(modal.form?.name ?? "").trim();
+    if (!name) {
+      showMessage(t("common.fillRequiredFields") || "Veuillez remplir les champs obligatoires", "error");
+      return;
+    }
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${modal.editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(modal.form)
+        body: JSON.stringify({ ...modal.form, name, description: String(modal.form?.description ?? "").trim() })
       });
       if (res.ok) {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         await fetchCategories();
         showMessage(t("categories.categoryUpdated"), "success");
       } else {
-        const error = await res.json();
-        showMessage(error.message?.includes("already exists") ? t("categories.categoryExists") : t("common.error"), "error");
+        const error = await res.json().catch(() => ({} as any));
+        const msg = Array.isArray(error?.message) ? error.message[0] : error?.message;
+        showMessage(
+          msg?.includes("already exists") ? t("categories.categoryExists") : (msg || t("common.error")),
+          "error"
+        );
       }
     } catch(e) { showMessage(t("common.error"), "error"); }
   };
@@ -603,7 +622,7 @@ export default function CategoriesPage() {
             </div>
 
             <div style={{ display: "flex", gap: "12px" }}>
-              <button onClick={modal.editMode ? updateCategory : createCategory} style={{ flex: 1, padding: "10px", background: theme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "500", transition: "opacity 0.2s", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
+              <button onClick={modal.editMode ? updateCategory : createCategory} disabled={!String(modal.form?.name ?? "").trim()} style={{ flex: 1, padding: "10px", background: theme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: !String(modal.form?.name ?? "").trim() ? "not-allowed" : "pointer", opacity: !String(modal.form?.name ?? "").trim() ? 0.5 : 1, fontWeight: "500", transition: "opacity 0.2s", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }} onMouseEnter={(e) => { if (String(modal.form?.name ?? "").trim()) e.currentTarget.style.opacity = "0.8"; }} onMouseLeave={(e) => { if (String(modal.form?.name ?? "").trim()) e.currentTarget.style.opacity = "1"; }}>
                 <IconSave size={16} />
                 {modal.editMode ? t("common.edit") : t("common.add")}
               </button>

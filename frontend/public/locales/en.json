@@ -227,7 +227,8 @@
     "passwordMinLength": "Password must be at least 6 characters",
     "passwordMismatch": "Passwords do not match",
     "create": "Create",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "fillRequiredFields": "Please fill in the required fields"
   },
   "admin": {
     "title": "Administrator",

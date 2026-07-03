@@ -390,12 +390,21 @@ export default function PurchasesPage() {
   // -- CRUD -------------------------------------------------------------------
 
   const createPurchase = async () => {
+    // Validation côté client : évite les POST vides rejetés en 400 par le backend
+    // ("Le produit est requis" quand aucun produit n'est sélectionné).
+    const f: any = modal.form || {};
+    const productName = String(f.productName ?? "").trim();
+    const quantity = Number(f.quantity);
+    if (!productName || !(quantity > 0)) {
+      showMessage(t("logistics.fillRequiredFields") || "Veuillez remplir les champs obligatoires", "error");
+      return;
+    }
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(modal.form)
+        body: JSON.stringify({ ...f, productName, supplierName: String(f.supplierName ?? "").trim() })
       });
       if (res.ok) {
         // Le stock est déjà mis à jour par le backend (purchases.service.create).
@@ -405,7 +414,9 @@ export default function PurchasesPage() {
         await fetchProducts();
         showMessage(t("purchases.purchaseCreated") || "Achat créé avec succès", "success");
       } else {
-        showMessage(t("common.error") || "Erreur lors de la création", "error");
+        const error = await res.json().catch(() => ({} as any));
+        const msg = Array.isArray(error?.message) ? error.message[0] : error?.message;
+        showMessage(msg || t("common.error") || "Erreur lors de la création", "error");
       }
     } catch (e) {
       showMessage(t("common.error") || "Erreur de connexion", "error");
@@ -1234,6 +1245,7 @@ export default function PurchasesPage() {
             <div style={{ display: "flex", gap: "10px" }}>
               <button
                 onClick={createPurchase}
+                disabled={!String((modal.form as any)?.productName ?? "").trim() || !(Number((modal.form as any)?.quantity) > 0)}
                 style={{
                   flex: 1,
                   padding: "12px",
@@ -1241,7 +1253,8 @@ export default function PurchasesPage() {
                   color: "white",
                   border: "none",
                   borderRadius: "12px",
-                  cursor: "pointer",
+                  cursor: (!String((modal.form as any)?.productName ?? "").trim() || !(Number((modal.form as any)?.quantity) > 0)) ? "not-allowed" : "pointer",
+                  opacity: (!String((modal.form as any)?.productName ?? "").trim() || !(Number((modal.form as any)?.quantity) > 0)) ? 0.5 : 1,
                   fontWeight: "600",
                   fontSize: isMobile ? "13px" : "14px",
                   display: "inline-flex",
@@ -1252,8 +1265,8 @@ export default function PurchasesPage() {
                   WebkitTapHighlightColor: "transparent",
                   transition: "opacity 0.2s",
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.88"}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.opacity = "0.88"; }}
+                onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.opacity = "1"; }}
               >
                 <IconSave size={14} color="white" />
                 {t("common.save") || "Enregistrer"}

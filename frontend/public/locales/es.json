@@ -227,7 +227,8 @@
     "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
     "passwordMismatch": "Las contraseñas no coinciden",
     "create": "Crear",
-    "unassigned": "Sin asignar"
+    "unassigned": "Sin asignar",
+    "fillRequiredFields": "Por favor complete los campos obligatorios"
   },
   "admin": {
     "title": "Administrador",
