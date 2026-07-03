@@ -1009,31 +1009,3 @@ tr:hover {
     padding: 16px;
   }
 }
-/* ════════════════════════════════════════════════════════════
-   MOBILE GLOBAL — s'applique a TOUTES les pages de l'app
-   (dashboard, admin, transporteur, etc.)
-   ════════════════════════════════════════════════════════════ */
-html {
-  -webkit-text-size-adjust: 100%; /* iOS : pas de gonflement du texte en rotation */
-}
-
-@media (max-width: 768px) {
-  /* Champs de saisie : 16px minimum = pas de zoom automatique iOS au focus */
-  input, select, textarea {
-    font-size: 16px !important;
-  }
-
-  /* Tableaux : defilement horizontal fluide sur mobile partout */
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    max-width: 100%;
-  }
-  th, td {
-    white-space: nowrap;
-  }
-
-  /* Les images ne debordent jamais de l'ecran */
-  img { max-width: 100%; }
-}
