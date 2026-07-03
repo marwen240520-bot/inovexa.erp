@@ -120,7 +120,7 @@ export default function SettingsPage() {
   const selectPadding = isMobile ? "12px" : "12px";
   const iconSize = isMobile ? 18 : 20;
 
-  const flagCodes = { fr: "fr", en: "us", es: "es" };
+  const flagCodes = { fr: "fr", en: "gb", es: "es" };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
