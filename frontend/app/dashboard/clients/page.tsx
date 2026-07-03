@@ -856,7 +856,7 @@ export default function ClientsPage() {
                           <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                             {(client.address?.length ?? 0) > 30
                               ? (client.address as string).substring(0, 27) + "é"
-                              : (client.address as string) || "é"}
+                              : (client.address as string) || "-"}
                           </td>
                         )}
                         <td style={{ padding: "10px 8px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize }}>
@@ -992,7 +992,7 @@ export default function ClientsPage() {
                   {/* Info rows */}
                   <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: "10px", marginBottom: "12px" }}>
                     {[
-                      { label: t("common.phone"), value: (client.phone as string) || "é", accent: false },
+                      { label: t("common.phone"), value: (client.phone as string) || "-", accent: false },
                       { label: t("clients.totalSpent"), value: formatCurrency(client.totalSpent), accent: true },
                     ].map((row, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: i === 0 ? "6px" : 0 }}>
