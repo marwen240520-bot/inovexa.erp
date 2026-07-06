@@ -305,7 +305,7 @@ export default function HomePage(): React.ReactElement {
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
-      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px", opacity: badgeVisible ? 1 : 0, transform: badgeVisible ? "translateY(0)" : "translateY(-18px)", transition: "opacity 0.6s ease, transform 0.6s ease" } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: isMobile ? "20px" : "26px", marginBottom: "28px", opacity: badgeVisible ? 1 : 0, transform: badgeVisible ? "translateY(0)" : "translateY(-18px)", transition: "opacity 0.6s ease, transform 0.6s ease" } },
         React.createElement("div", { className: "logo3d-scene", style: { width: isMobile ? "90px" : "105px", height: isMobile ? "90px" : "105px", position: "relative", flexShrink: 0 } },
           React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
             React.createElement("div", { className: "logo3d-halo" }),

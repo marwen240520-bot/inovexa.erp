@@ -3,52 +3,78 @@
 import React from "react";
 
 type SpinnerProps = {
-  /** Diamètre en px (défaut 44). */
+  /** Diamètre en px (défaut 44, 84 en fullScreen). */
   size?: number;
-  /** Épaisseur de l'anneau en px (défaut 3). */
+  /** Conservé pour compatibilité (non utilisé par le loader logo). */
   thickness?: number;
-  /** Centre le spinner dans un overlay plein écran (écrans de chargement de page). */
+  /** Centre le loader dans un overlay plein écran (écrans de chargement de page). */
   fullScreen?: boolean;
   className?: string;
   style?: React.CSSProperties;
 };
 
 /**
- * Spinner UNIQUE de l'application — sans texte, thémé via les variables CSS
- * (--theme-primary / --theme-background), donc cohérent dans tous les thèmes.
+ * Loader UNIQUE de l'application — le logo Inovexa en rotation 3D,
+ * cohérent avec l'animation du logo de la page d'accueil.
  *
  * Usage :
  *   - écran de chargement de page : <Spinner fullScreen />
  *   - inline (bouton, carte)      : <Spinner size={18} />
  */
 export default function Spinner({
-  size = 44,
-  thickness = 3,
+  size,
+  thickness, // eslint-disable-line @typescript-eslint/no-unused-vars
   fullScreen = false,
   className,
   style,
 }: SpinnerProps) {
-  const ring = (
+  const finalSize = size ?? (fullScreen ? 84 : 44);
+
+  const logo = (
     <span
       role="status"
       aria-label="loading"
       className={className}
       style={{
         display: "inline-block",
-        width: size,
-        height: size,
-        border: `${thickness}px solid rgba(102, 126, 234, 0.18)`,
-        borderTopColor: "var(--theme-primary, #667eea)",
-        borderRadius: "50%",
-        animation: "inovexa-spin 0.8s linear infinite",
-        boxSizing: "border-box",
+        width: finalSize,
+        height: finalSize,
+        perspective: `${finalSize * 8}px`,
         ...style,
       }}
-    />
+    >
+      <img
+        src="/images/logo.png"
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          animation: "inovexa-logo-spin 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite",
+          filter: "drop-shadow(0 0 12px rgba(138, 43, 226, 0.55))",
+          willChange: "transform",
+          userSelect: "none",
+        }}
+      />
+    </span>
   );
 
   const keyframes = (
-    <style>{"@keyframes inovexa-spin { to { transform: rotate(360deg); } }"}</style>
+    <style>{`
+      @keyframes inovexa-logo-spin {
+        0%   { transform: rotateY(0deg); }
+        100% { transform: rotateY(360deg); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        [role="status"] img { animation: inovexa-logo-pulse 1.6s ease-in-out infinite !important; }
+      }
+      @keyframes inovexa-logo-pulse {
+        0%, 100% { opacity: 0.45; }
+        50%      { opacity: 1; }
+      }
+    `}</style>
   );
 
   if (fullScreen) {
@@ -63,7 +89,7 @@ export default function Spinner({
           background: "var(--theme-background, #0a0a0a)",
         }}
       >
-        {ring}
+        {logo}
         {keyframes}
       </div>
     );
@@ -77,7 +103,7 @@ export default function Spinner({
         justifyContent: "center",
       }}
     >
-      {ring}
+      {logo}
       {keyframes}
     </span>
   );
