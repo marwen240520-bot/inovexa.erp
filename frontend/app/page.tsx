@@ -306,11 +306,18 @@ export default function HomePage(): React.ReactElement {
       }
     },
       React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px", opacity: badgeVisible ? 1 : 0, transform: badgeVisible ? "translateY(0)" : "translateY(-18px)", transition: "opacity 0.6s ease, transform 0.6s ease" } },
-        React.createElement("img", {
-          src: "/images/logo.png",
-          alt: "Inovexa Logo",
-          style: { width: isMobile ? "90px" : "105px", height: "auto", filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))" }
-        }),
+        React.createElement("div", { className: "logo3d-scene", style: { width: isMobile ? "90px" : "105px", height: isMobile ? "90px" : "105px", position: "relative", flexShrink: 0 } },
+          React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
+            React.createElement("div", { className: "logo3d-halo" }),
+            React.createElement("div", { className: "logo3d-ring logo3d-ring-1" }),
+            React.createElement("div", { className: "logo3d-ring logo3d-ring-2" }),
+            React.createElement("img", {
+              src: "/images/logo.png",
+              alt: "Inovexa Logo",
+              style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))", transform: "translateZ(26px)" }
+            })
+          )
+        ),
         React.createElement("div", null,
           React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "24px" : "27px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase" } },
             React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
@@ -393,6 +400,33 @@ export default function HomePage(): React.ReactElement {
       @keyframes wordGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(168,85,247,0.4)); } 50% { filter: drop-shadow(0 0 22px rgba(168,85,247,0.85)) drop-shadow(0 0 40px rgba(99,102,241,0.4)); } }
       @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
       @media (max-width: 640px) { .cta-button-shimmer { width: 100%; justify-content: center; } }
+
+      /* ── Animation 3D du logo ─────────────────────────────────────── */
+      .logo3d-scene { perspective: 700px; cursor: pointer; }
+      .logo3d { transform-style: preserve-3d; animation: logoFloat3D 7s ease-in-out infinite; will-change: transform; }
+      .logo3d-scene:hover .logo3d { animation: logoSpin3D 1.6s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
+      @keyframes logoFloat3D {
+        0%, 100% { transform: rotateY(-16deg) rotateX(8deg) translateY(0px); }
+        25%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
+        50%      { transform: rotateY(16deg)  rotateX(8deg) translateY(0px); }
+        75%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
+      }
+      @keyframes logoSpin3D {
+        0%   { transform: rotateY(0deg)   rotateX(6deg); }
+        100% { transform: rotateY(360deg) rotateX(6deg); }
+      }
+      .logo3d-halo { position: absolute; inset: -14%; border-radius: 50%; background: radial-gradient(circle, rgba(168,85,247,0.38) 0%, transparent 65%); transform: translateZ(-32px); animation: logoHaloPulse 3.2s ease-in-out infinite; pointer-events: none; }
+      @keyframes logoHaloPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+      .logo3d-ring { position: absolute; border-radius: 50%; pointer-events: none; }
+      .logo3d-ring-1 { inset: -13%; border: 1px solid rgba(168,85,247,0.5); box-shadow: 0 0 14px rgba(168,85,247,0.25) inset; animation: logoRingSpin1 9s linear infinite; }
+      .logo3d-ring-2 { inset: -24%; border: 1px solid rgba(99,102,241,0.35); animation: logoRingSpin2 14s linear infinite; }
+      .logo3d-ring-1::before { content: ""; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: #C084FC; box-shadow: 0 0 10px #A855F7, 0 0 22px rgba(168,85,247,0.6); }
+      .logo3d-ring-2::before { content: ""; position: absolute; bottom: -2px; left: 30%; width: 5px; height: 5px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 10px #6366F1; }
+      @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
+      @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo { animation: none !important; }
+      }
     ` } })
   );
 }
