@@ -1,10 +1,13 @@
 import { Repository } from 'typeorm';
 import { Sale } from './entities/sale.entity';
 import { Product } from '../products/product.entity';
+import { Client } from '../clients/entities/client.entity';
 export declare class SalesService {
     private saleRepository;
     private productRepository;
-    constructor(saleRepository: Repository<Sale>, productRepository: Repository<Product>);
+    private clientRepository;
+    constructor(saleRepository: Repository<Sale>, productRepository: Repository<Product>, clientRepository: Repository<Client>);
+    private ensureClientExists;
     findAll(userId: number, period?: string): Promise<Sale[]>;
     findOne(id: number, userId: number): Promise<Sale>;
     create(userId: number, data: any): Promise<{

@@ -39,6 +39,14 @@ __decorate([
     __metadata("design:type", String)
 ], Client.prototype, "address", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ default: 0, type: 'decimal', precision: 10, scale: 2 }),
+    __metadata("design:type", Number)
+], Client.prototype, "totalSpent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'active' }),
+    __metadata("design:type", String)
+], Client.prototype, "status", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], Client.prototype, "createdAt", void 0);

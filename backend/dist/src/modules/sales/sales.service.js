@@ -18,10 +18,26 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const sale_entity_1 = require("./entities/sale.entity");
 const product_entity_1 = require("../products/product.entity");
+const client_entity_1 = require("../clients/entities/client.entity");
 let SalesService = class SalesService {
-    constructor(saleRepository, productRepository) {
+    constructor(saleRepository, productRepository, clientRepository) {
         this.saleRepository = saleRepository;
         this.productRepository = productRepository;
+        this.clientRepository = clientRepository;
+    }
+    async ensureClientExists(userId, clientName) {
+        const name = (clientName || '').trim();
+        if (!name)
+            return null;
+        const existing = await this.clientRepository
+            .createQueryBuilder('c')
+            .where('c.userId = :userId', { userId })
+            .andWhere('LOWER(c.name) = LOWER(:name)', { name })
+            .getOne();
+        if (existing)
+            return existing;
+        const client = this.clientRepository.create({ userId, name, email: '' });
+        return this.clientRepository.save(client);
     }
     async findAll(userId, period) {
         let where = { userId };
@@ -58,8 +74,10 @@ let SalesService = class SalesService {
         }
         product.quantity = (product.quantity || 0) - (data.quantity || 0);
         await this.productRepository.save(product);
+        const client = await this.ensureClientExists(userId, data.clientName);
         const sale = this.saleRepository.create({
             ...data,
+            clientName: client ? client.name : (data.clientName || null),
             userId,
             total: (data.unitPrice || 0) * (data.quantity || 1)
         });
@@ -119,8 +137,10 @@ let SalesService = class SalesService {
                 }
                 product.quantity = (product.quantity || 0) - (data.quantity || 0);
                 await this.productRepository.save(product);
+                const client = await this.ensureClientExists(userId, data.clientName);
                 const sale = this.saleRepository.create({
                     ...data,
+                    clientName: client ? client.name : (data.clientName || null),
                     userId,
                     total: (data.unitPrice || 0) * (data.quantity || 1)
                 });
@@ -139,7 +159,9 @@ exports.SalesService = SalesService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(sale_entity_1.Sale)),
     __param(1, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(2, (0, typeorm_1.InjectRepository)(client_entity_1.Client)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], SalesService);
 //# sourceMappingURL=sales.service.js.map

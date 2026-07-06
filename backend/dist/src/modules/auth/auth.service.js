@@ -23,19 +23,51 @@ let AuthService = class AuthService {
     constructor(userRepository, jwtService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
+        this.dummyHash = bcrypt.hashSync('inovexa-dummy-password-x9f3', 10);
+        this.attempts = new Map();
+        this.MAX_ATTEMPTS = 5;
+        this.WINDOW_MS = 15 * 60 * 1000;
+        this.BLOCK_MS = 15 * 60 * 1000;
+    }
+    guardRateLimit(key) {
+        const now = Date.now();
+        const rec = this.attempts.get(key);
+        if (rec && rec.blockedUntil > now) {
+            const mins = Math.ceil((rec.blockedUntil - now) / 60000);
+            throw new common_1.HttpException(`Trop de tentatives. Réessayez dans ${mins} min.`, common_1.HttpStatus.TOO_MANY_REQUESTS);
+        }
+    }
+    registerFailure(key) {
+        const now = Date.now();
+        let rec = this.attempts.get(key);
+        if (!rec || rec.resetAt < now) {
+            rec = { count: 0, resetAt: now + this.WINDOW_MS, blockedUntil: 0 };
+        }
+        rec.count += 1;
+        if (rec.count >= this.MAX_ATTEMPTS) {
+            rec.blockedUntil = now + this.BLOCK_MS;
+        }
+        this.attempts.set(key, rec);
+    }
+    resetAttempts(key) {
+        this.attempts.delete(key);
     }
     async login(email, password) {
-        const user = await this.userRepository.findOne({ where: { email } });
-        if (!user) {
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        this.guardRateLimit(normalizedEmail);
+        const user = await this.userRepository
+            .createQueryBuilder('u')
+            .where('LOWER(u.email) = :email', { email: normalizedEmail })
+            .getOne();
+        const passwordValid = await bcrypt.compare(password || '', user ? user.password : this.dummyHash);
+        if (!user || !passwordValid) {
+            this.registerFailure(normalizedEmail);
             throw new common_1.UnauthorizedException('Email ou mot de passe incorrect');
         }
         if (!user.isActive) {
             throw new common_1.UnauthorizedException('Compte désactivé');
         }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            throw new common_1.UnauthorizedException('Email ou mot de passe incorrect');
-        }
+        this.resetAttempts(normalizedEmail);
         const payload = { userId: user.id, email: user.email, role: user.role };
         return {
             access_token: this.jwtService.sign(payload),
@@ -44,8 +76,9 @@ let AuthService = class AuthService {
                 email: user.email,
                 name: user.name,
                 role: user.role,
-                companyName: user.companyName
-            }
+                companyName: user.companyName,
+                modules: user.modules,
+            },
         };
     }
     async createClientByAdmin(body) {

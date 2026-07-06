@@ -2,6 +2,7 @@ import { LogisticsService } from './logistics.service';
 export declare class LogisticsController {
     private readonly logisticsService;
     constructor(logisticsService: LogisticsService);
+    getShipments(req: any): Promise<import("./entities/shipment.entity").Shipment[]>;
     getClientShipments(req: any): Promise<import("./entities/shipment.entity").Shipment[] | {
         error: string;
     }>;

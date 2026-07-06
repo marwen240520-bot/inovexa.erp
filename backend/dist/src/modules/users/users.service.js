@@ -18,6 +18,10 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bcrypt = require("bcrypt");
 const user_entity_1 = require("./entities/user.entity");
+const MODULE_KEYS = [
+    'dashboard', 'products', 'categories', 'stock', 'sales', 'purchases', 'orders', 'clients',
+    'suppliers', 'invoices', 'hr', 'finance', 'logistics', 'production', 'ai', 'reports', 'analytics', 'profile', 'settings',
+];
 let UsersService = class UsersService {
     constructor(userRepository) {
         this.userRepository = userRepository;
@@ -49,6 +53,20 @@ let UsersService = class UsersService {
         user.password = await bcrypt.hash(newPassword, 10);
         await this.userRepository.save(user);
         return { success: true, message: 'Mot de passe changé avec succès' };
+    }
+    async getUserModules(id) {
+        const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'modules'] });
+        const stored = (user && user.modules) || {};
+        if (Object.keys(stored).length === 0) {
+            const all = {};
+            MODULE_KEYS.forEach((k) => { all[k] = true; });
+            return all;
+        }
+        const result = { ...stored };
+        result.dashboard = true;
+        result.profile = true;
+        result.settings = true;
+        return result;
     }
 };
 exports.UsersService = UsersService;

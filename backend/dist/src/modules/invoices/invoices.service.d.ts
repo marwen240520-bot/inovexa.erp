@@ -1,8 +1,15 @@
 import { Repository } from 'typeorm';
 import { Invoice } from './entities/invoice.entity';
+import { Client } from '../clients/entities/client.entity';
+import { Supplier } from '../suppliers/supplier.entity';
 export declare class InvoicesService {
     private invoiceRepository;
-    constructor(invoiceRepository: Repository<Invoice>);
+    private clientRepository;
+    private supplierRepository;
+    constructor(invoiceRepository: Repository<Invoice>, clientRepository: Repository<Client>, supplierRepository: Repository<Supplier>);
+    private toIntOrNull;
+    private findOrCreateClient;
+    private findOrCreateSupplier;
     private getValidDate;
     findAll(userId: number): Promise<Invoice[]>;
     findByOperationNumber(operationNumber: string, userId: number): Promise<Invoice>;

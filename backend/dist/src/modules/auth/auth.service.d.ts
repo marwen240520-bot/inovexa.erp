@@ -4,7 +4,15 @@ import { User } from '../users/entities/user.entity';
 export declare class AuthService {
     private userRepository;
     private jwtService;
+    private readonly dummyHash;
+    private attempts;
+    private readonly MAX_ATTEMPTS;
+    private readonly WINDOW_MS;
+    private readonly BLOCK_MS;
     constructor(userRepository: Repository<User>, jwtService: JwtService);
+    private guardRateLimit;
+    private registerFailure;
+    private resetAttempts;
     login(email: string, password: string): Promise<{
         access_token: string;
         user: {
@@ -13,6 +21,7 @@ export declare class AuthService {
             name: string;
             role: string;
             companyName: string;
+            modules: Record<string, boolean>;
         };
     }>;
     createClientByAdmin(body: {

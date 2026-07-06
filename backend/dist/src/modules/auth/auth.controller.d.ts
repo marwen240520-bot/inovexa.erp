@@ -1,11 +1,9 @@
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
-    login(body: {
-        email: string;
-        password: string;
-    }): Promise<{
+    login(body: LoginDto): Promise<{
         access_token: string;
         user: {
             id: number;
@@ -13,6 +11,7 @@ export declare class AuthController {
             name: string;
             role: string;
             companyName: string;
+            modules: Record<string, boolean>;
         };
     }>;
 }

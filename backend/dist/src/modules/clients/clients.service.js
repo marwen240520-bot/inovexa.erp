@@ -21,11 +21,32 @@ let ClientsService = class ClientsService {
     constructor(clientRepository) {
         this.clientRepository = clientRepository;
     }
+    async getSalesTotalsByClientName(userId) {
+        const map = new Map();
+        try {
+            const rows = await this.clientRepository.manager.query(`SELECT LOWER("clientName") AS name, COALESCE(SUM(total), 0) AS total
+           FROM sales
+           WHERE "userId" = $1 AND "clientName" IS NOT NULL AND status != 'cancelled'
+           GROUP BY LOWER("clientName")`, [userId]);
+            for (const row of rows) {
+                if (row.name)
+                    map.set(row.name, Number(row.total) || 0);
+            }
+        }
+        catch (e) {
+        }
+        return map;
+    }
     async findAll(userId) {
-        return this.clientRepository.find({
+        const clients = await this.clientRepository.find({
             where: { userId },
             order: { createdAt: 'DESC' }
         });
+        const totals = await this.getSalesTotalsByClientName(userId);
+        return clients.map(c => ({
+            ...c,
+            totalSpent: totals.get((c.name || '').toLowerCase()) ?? 0,
+        }));
     }
     async findOne(id, userId) {
         const client = await this.clientRepository.findOne({ where: { id, userId } });

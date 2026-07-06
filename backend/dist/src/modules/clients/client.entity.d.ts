@@ -5,6 +5,8 @@ export declare class Client {
     email: string;
     phone: string;
     address: string;
+    totalSpent: number;
+    status: string;
     createdAt: Date;
     updatedAt: Date;
 }

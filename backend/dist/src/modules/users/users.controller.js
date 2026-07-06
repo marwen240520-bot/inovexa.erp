@@ -16,9 +16,11 @@ exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const users_service_1 = require("./users.service");
+const client_modules_service_1 = require("../client-modules/client-modules.service");
 let UsersController = class UsersController {
-    constructor(usersService) {
+    constructor(usersService, clientModulesService) {
         this.usersService = usersService;
+        this.clientModulesService = clientModulesService;
     }
     async getProfile(req) {
         return this.usersService.getProfile(req.user.userId);
@@ -28,6 +30,13 @@ let UsersController = class UsersController {
     }
     async changePassword(req, body) {
         return this.usersService.changePassword(req.user.userId, body.oldPassword, body.newPassword);
+    }
+    async getUserModules(id, req) {
+        const targetId = parseInt(id, 10);
+        if (req.user.role !== 'admin' && Number(req.user.userId) !== targetId) {
+            throw new common_1.ForbiddenException('Acces non autorise');
+        }
+        return this.usersService.getUserModules(targetId);
     }
 };
 exports.UsersController = UsersController;
@@ -54,9 +63,18 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.Get)(':id/modules'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserModules", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __metadata("design:paramtypes", [users_service_1.UsersService])
+    __metadata("design:paramtypes", [users_service_1.UsersService,
+        client_modules_service_1.ClientModulesService])
 ], UsersController);
 //# sourceMappingURL=users.controller.js.map

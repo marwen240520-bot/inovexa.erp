@@ -1,7 +1,9 @@
 import { UsersService } from './users.service';
+import { ClientModulesService } from '../client-modules/client-modules.service';
 export declare class UsersController {
     private readonly usersService;
-    constructor(usersService: UsersService);
+    private readonly clientModulesService;
+    constructor(usersService: UsersService, clientModulesService: ClientModulesService);
     getProfile(req: any): Promise<{
         id: number;
         email: string;
@@ -44,4 +46,5 @@ export declare class UsersController {
         success: boolean;
         message: string;
     }>;
+    getUserModules(id: string, req: any): Promise<Record<string, boolean>>;
 }

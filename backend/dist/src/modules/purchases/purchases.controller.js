@@ -29,6 +29,9 @@ let PurchasesController = class PurchasesController {
     async create(req, body) {
         return this.purchasesService.create(req.user.userId, body);
     }
+    async updateStatus(id, req, body) {
+        return this.purchasesService.updateStatus(parseInt(id), req.user.userId, body.status);
+    }
     async delete(id, req) {
         return this.purchasesService.delete(parseInt(id), req.user.userId);
     }
@@ -58,6 +61,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], PurchasesController.prototype, "create", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], PurchasesController.prototype, "updateStatus", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),

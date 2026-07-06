@@ -12,12 +12,14 @@ const typeorm_1 = require("@nestjs/typeorm");
 const invoices_controller_1 = require("./invoices.controller");
 const invoices_service_1 = require("./invoices.service");
 const invoice_entity_1 = require("./entities/invoice.entity");
+const client_entity_1 = require("../clients/entities/client.entity");
+const supplier_entity_1 = require("../suppliers/supplier.entity");
 let InvoicesModule = class InvoicesModule {
 };
 exports.InvoicesModule = InvoicesModule;
 exports.InvoicesModule = InvoicesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([invoice_entity_1.Invoice])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([invoice_entity_1.Invoice, client_entity_1.Client, supplier_entity_1.Supplier])],
         controllers: [invoices_controller_1.InvoicesController],
         providers: [invoices_service_1.InvoicesService],
         exports: [invoices_service_1.InvoicesService],

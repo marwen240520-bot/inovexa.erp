@@ -42,4 +42,5 @@ export declare class UsersService {
         success: boolean;
         message: string;
     }>;
+    getUserModules(id: number): Promise<Record<string, boolean>>;
 }

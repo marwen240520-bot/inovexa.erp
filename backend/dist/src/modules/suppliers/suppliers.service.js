@@ -21,8 +21,29 @@ let SuppliersService = class SuppliersService {
     constructor(supplierRepository) {
         this.supplierRepository = supplierRepository;
     }
+    async getPurchaseTotalsBySupplierName(userId) {
+        const map = new Map();
+        try {
+            const rows = await this.supplierRepository.manager.query(`SELECT LOWER("supplierName") AS name, COALESCE(SUM(total), 0) AS total
+           FROM purchases
+           WHERE "userId" = $1 AND "supplierName" IS NOT NULL AND status != 'cancelled'
+           GROUP BY LOWER("supplierName")`, [userId]);
+            for (const row of rows) {
+                if (row.name)
+                    map.set(row.name, Number(row.total) || 0);
+            }
+        }
+        catch (e) {
+        }
+        return map;
+    }
     async findAll(userId) {
-        return this.supplierRepository.find({ where: { userId } });
+        const suppliers = await this.supplierRepository.find({ where: { userId } });
+        const totals = await this.getPurchaseTotalsBySupplierName(userId);
+        return suppliers.map(s => ({
+            ...s,
+            totalPurchases: totals.get((s.name || '').toLowerCase()) ?? 0,
+        }));
     }
     async findOne(id, userId) {
         const supplier = await this.supplierRepository.findOne({ where: { id, userId } });

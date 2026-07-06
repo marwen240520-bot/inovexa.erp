@@ -31,9 +31,10 @@ const expenses_module_1 = require("./modules/expenses/expenses.module");
 const logistics_module_1 = require("./modules/logistics/logistics.module");
 const transporteur_module_1 = require("./modules/transporteur/transporteur.module");
 const transporteurs_module_1 = require("./modules/transporteurs/transporteurs.module");
-const production_module_1 = require("./modules/production/production.module");
 const ia_module_1 = require("./modules/ia/ia.module");
 const upload_module_1 = require("./modules/upload/upload.module");
+const departments_module_1 = require("./modules/departments/departments.module");
+const projects_module_1 = require("./modules/projects/projects.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,15 +43,11 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
-                host: process.env.DB_HOST || 'localhost',
-                port: parseInt(process.env.DB_PORT) || 5432,
-                username: process.env.DB_USERNAME || 'postgres',
-                password: process.env.DB_PASSWORD || 'postgres',
-                database: process.env.DB_DATABASE || 'inovexa_erp',
+                url: process.env.DATABASE_URL,
+                ssl: { rejectUnauthorized: false },
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
                 synchronize: false,
                 logging: false,
-                ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
             }),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
@@ -72,9 +69,10 @@ exports.AppModule = AppModule = __decorate([
             logistics_module_1.LogisticsModule,
             transporteur_module_1.TransporteurModule,
             transporteurs_module_1.TransporteursModule,
-            production_module_1.ProductionModule,
             ia_module_1.IaModule,
             upload_module_1.UploadModule,
+            departments_module_1.DepartmentsModule,
+            projects_module_1.ProjectsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

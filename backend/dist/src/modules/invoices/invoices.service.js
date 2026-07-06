@@ -17,9 +17,53 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const invoice_entity_1 = require("./entities/invoice.entity");
+const client_entity_1 = require("../clients/entities/client.entity");
+const supplier_entity_1 = require("../suppliers/supplier.entity");
 let InvoicesService = class InvoicesService {
-    constructor(invoiceRepository) {
+    constructor(invoiceRepository, clientRepository, supplierRepository) {
         this.invoiceRepository = invoiceRepository;
+        this.clientRepository = clientRepository;
+        this.supplierRepository = supplierRepository;
+    }
+    toIntOrNull(value) {
+        if (value === null || value === undefined || value === '')
+            return null;
+        const n = parseInt(String(value), 10);
+        return isNaN(n) ? null : n;
+    }
+    async findOrCreateClient(userId, name, extra = {}) {
+        const trimmed = (name || '').trim();
+        const existing = await this.clientRepository
+            .createQueryBuilder('c')
+            .where('c.userId = :userId', { userId })
+            .andWhere('LOWER(c.name) = LOWER(:name)', { name: trimmed })
+            .getOne();
+        if (existing)
+            return existing;
+        const client = this.clientRepository.create({
+            userId,
+            name: trimmed,
+            email: extra.email || '',
+            phone: extra.phone || null,
+            address: extra.address || null,
+        });
+        return this.clientRepository.save(client);
+    }
+    async findOrCreateSupplier(userId, name) {
+        const trimmed = (name || '').trim();
+        const existing = await this.supplierRepository
+            .createQueryBuilder('s')
+            .where('s.userId = :userId', { userId })
+            .andWhere('LOWER(s.name) = LOWER(:name)', { name: trimmed })
+            .getOne();
+        if (existing)
+            return existing;
+        const supplier = this.supplierRepository.create({
+            userId,
+            name: trimmed,
+            email: '',
+        });
+        return this.supplierRepository.save(supplier);
     }
     getValidDate(date) {
         if (!date)
@@ -56,15 +100,44 @@ let InvoicesService = class InvoicesService {
     }
     async create(userId, data) {
         const dueDate = this.getValidDate(data.dueDate);
+        const type = data.type || 'debit';
+        let clientId = this.toIntOrNull(data.clientId);
+        let supplierId = this.toIntOrNull(data.supplierId);
+        let clientName = (data.clientName || '').trim();
+        let supplierName = (data.supplierName || '').trim();
+        if (type === 'debit') {
+            if (!clientId && !clientName) {
+                throw new common_1.BadRequestException('Veuillez sélectionner un client ou saisir son nom');
+            }
+            if (!clientId && clientName) {
+                const client = await this.findOrCreateClient(userId, clientName, {
+                    email: data.clientEmail,
+                    phone: data.clientPhone,
+                    address: data.clientAddress,
+                });
+                clientId = client.id;
+                clientName = client.name;
+            }
+        }
+        if (type === 'credit') {
+            if (!supplierId && !supplierName) {
+                throw new common_1.BadRequestException('Veuillez sélectionner un fournisseur ou saisir son nom');
+            }
+            if (!supplierId && supplierName) {
+                const supplier = await this.findOrCreateSupplier(userId, supplierName);
+                supplierId = supplier.id;
+                supplierName = supplier.name;
+            }
+        }
         const invoice = this.invoiceRepository.create({
             userId,
             operationNumber: data.operationNumber,
             reference: data.reference,
-            type: data.type || 'debit',
-            clientId: data.clientId || null,
-            supplierId: data.supplierId || null,
-            clientName: data.clientName || '',
-            supplierName: data.supplierName || '',
+            type,
+            clientId,
+            supplierId,
+            clientName,
+            supplierName,
             clientEmail: data.clientEmail || '',
             clientAddress: data.clientAddress || '',
             clientPhone: data.clientPhone || '',
@@ -80,7 +153,15 @@ let InvoicesService = class InvoicesService {
             notes: data.notes || '',
             status: data.status || 'pending',
         });
-        return this.invoiceRepository.save(invoice);
+        try {
+            return await this.invoiceRepository.save(invoice);
+        }
+        catch (e) {
+            if (e?.code === '23505') {
+                throw new common_1.BadRequestException('Ce numéro d\'opération existe déjà');
+            }
+            throw new common_1.BadRequestException(`Erreur lors de la création de la facture: ${e?.detail || e?.message || 'données invalides'}`);
+        }
     }
     async update(id, userId, data) {
         const invoice = await this.findOne(id, userId);
@@ -89,13 +170,28 @@ let InvoicesService = class InvoicesService {
         if (data.type !== undefined)
             invoice.type = data.type;
         if (data.clientId !== undefined)
-            invoice.clientId = data.clientId;
+            invoice.clientId = this.toIntOrNull(data.clientId);
         if (data.supplierId !== undefined)
-            invoice.supplierId = data.supplierId;
+            invoice.supplierId = this.toIntOrNull(data.supplierId);
         if (data.clientName !== undefined)
             invoice.clientName = data.clientName;
         if (data.supplierName !== undefined)
             invoice.supplierName = data.supplierName;
+        const type = invoice.type || 'debit';
+        if (type === 'debit' && !invoice.clientId && (invoice.clientName || '').trim()) {
+            const client = await this.findOrCreateClient(userId, invoice.clientName, {
+                email: data.clientEmail,
+                phone: data.clientPhone,
+                address: data.clientAddress,
+            });
+            invoice.clientId = client.id;
+            invoice.clientName = client.name;
+        }
+        if (type === 'credit' && !invoice.supplierId && (invoice.supplierName || '').trim()) {
+            const supplier = await this.findOrCreateSupplier(userId, invoice.supplierName);
+            invoice.supplierId = supplier.id;
+            invoice.supplierName = supplier.name;
+        }
         if (data.clientEmail !== undefined)
             invoice.clientEmail = data.clientEmail;
         if (data.clientAddress !== undefined)
@@ -124,7 +220,12 @@ let InvoicesService = class InvoicesService {
             invoice.notes = data.notes;
         if (data.status !== undefined)
             invoice.status = data.status;
-        return this.invoiceRepository.save(invoice);
+        try {
+            return await this.invoiceRepository.save(invoice);
+        }
+        catch (e) {
+            throw new common_1.BadRequestException(`Erreur lors de la modification de la facture: ${e?.detail || e?.message || 'données invalides'}`);
+        }
     }
     async markAsPaid(id, userId) {
         const invoice = await this.findOne(id, userId);
@@ -193,6 +294,10 @@ exports.InvoicesService = InvoicesService;
 exports.InvoicesService = InvoicesService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(invoice_entity_1.Invoice)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(client_entity_1.Client)),
+    __param(2, (0, typeorm_1.InjectRepository)(supplier_entity_1.Supplier)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository])
 ], InvoicesService);
 //# sourceMappingURL=invoices.service.js.map

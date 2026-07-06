@@ -20,6 +20,12 @@ let LogisticsController = class LogisticsController {
     constructor(logisticsService) {
         this.logisticsService = logisticsService;
     }
+    async getShipments(req) {
+        if (req.user.role === 'transporteur') {
+            return this.logisticsService.findAllByTransporteur(req.user.userId);
+        }
+        return this.logisticsService.findAllByClient(req.user.userId);
+    }
     async getClientShipments(req) {
         if (req.user.role !== 'client') {
             return { error: 'Accès réservé aux clients' };
@@ -61,6 +67,13 @@ let LogisticsController = class LogisticsController {
     }
 };
 exports.LogisticsController = LogisticsController;
+__decorate([
+    (0, common_1.Get)('shipments'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], LogisticsController.prototype, "getShipments", null);
 __decorate([
     (0, common_1.Get)('client/shipments'),
     __param(0, (0, common_1.Request)()),
