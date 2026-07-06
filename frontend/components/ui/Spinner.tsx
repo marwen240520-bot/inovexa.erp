@@ -23,7 +23,6 @@ type SpinnerProps = {
  */
 export default function Spinner({
   size,
-  thickness, // eslint-disable-line @typescript-eslint/no-unused-vars
   fullScreen = false,
   className,
   style,
