@@ -1046,7 +1046,7 @@ export default function SalesPage() {
               {/* Saisie libre : si le client n'existe pas, il sera créé automatiquement dans le module Clients */}
               <input
                 type="text"
-                placeholder="Ou saisir le nom d'un nouveau client (créé automatiquement)"
+                placeholder={t("sales.newClientPlaceholder") || "Ou saisir le nom d'un nouveau client (créé automatiquement)"}
                 value={!selectedClient ? (modal.form.clientName || "") : ""}
                 onChange={(e) => {
                   const name = e.target.value;

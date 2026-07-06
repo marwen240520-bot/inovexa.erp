@@ -839,23 +839,23 @@ export default function ClientsPage() {
                         </td>
                         <td style={{ padding: "10px 8px", color: theme.text, fontWeight: "500", fontSize: tableFontSize }}>
                           {(client.name?.length ?? 0) > (isMobile ? 14 : 20)
-                            ? client.name.substring(0, isMobile ? 11 : 17) + "é"
+                            ? client.name.substring(0, isMobile ? 11 : 17) + "..."
                             : client.name}
                         </td>
                         <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                           {(client.email?.length ?? 0) > (isMobile ? 18 : 30)
-                            ? client.email.substring(0, isMobile ? 15 : 27) + "é"
+                            ? client.email.substring(0, isMobile ? 15 : 27) + "..."
                             : client.email}
                         </td>
                         {!isMobile && (
                           <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
-                            {(client.phone as string) || "é"}
+                            {(client.phone as string) || "-"}
                           </td>
                         )}
                         {!isMobile && (
                           <td style={{ padding: "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                             {(client.address?.length ?? 0) > 30
-                              ? (client.address as string).substring(0, 27) + "é"
+                              ? (client.address as string).substring(0, 27) + "..."
                               : (client.address as string) || "-"}
                           </td>
                         )}

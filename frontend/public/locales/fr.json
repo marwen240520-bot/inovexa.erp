@@ -524,7 +524,8 @@
     "allPeriods": "Toutes les périodes",
     "thisWeek": "Cette semaine",
     "thisMonth": "Ce mois-ci",
-    "allStatus": "Tous les statuts"
+    "allStatus": "Tous les statuts",
+    "newClientPlaceholder": "Ou saisir le nom d'un nouveau client (créé automatiquement)"
   },
   "purchases": {
     "subtitle": "Gestion des achats et fournisseurs",
@@ -546,7 +547,8 @@
     "pending": "En attente",
     "cancelled": "Annulé",
     "allStatus": "Tous les statuts",
-    "allSuppliers": "Tous les fournisseurs"
+    "allSuppliers": "Tous les fournisseurs",
+    "newSupplierPlaceholder": "Ou saisir le nom d'un nouveau fournisseur (créé automatiquement)"
   },
   "orders": {
     "subtitle": "Gestion des commandes clients",

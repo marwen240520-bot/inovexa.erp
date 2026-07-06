@@ -524,7 +524,8 @@
     "allPeriods": "Todos los períodos",
     "thisWeek": "Esta semana",
     "thisMonth": "Este mes",
-    "allStatus": "Todos los estados"
+    "allStatus": "Todos los estados",
+    "newClientPlaceholder": "O escriba el nombre de un nuevo cliente (creado automáticamente)"
   },
   "purchases": {
     "subtitle": "Gestión de compras y proveedores",
@@ -546,7 +547,8 @@
     "pending": "Pendiente",
     "cancelled": "Cancelado",
     "allStatus": "Todos los estados",
-    "allSuppliers": "Todos los proveedores"
+    "allSuppliers": "Todos los proveedores",
+    "newSupplierPlaceholder": "O escriba el nombre de un nuevo proveedor (creado automáticamente)"
   },
   "orders": {
     "subtitle": "Gestión de pedidos de clientes",

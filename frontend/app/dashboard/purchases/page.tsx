@@ -1115,7 +1115,7 @@ export default function PurchasesPage() {
               {/* Saisie libre : si le fournisseur n'existe pas, il sera créé automatiquement dans le module Fournisseurs */}
               <input
                 type="text"
-                placeholder="Ou saisir le nom d'un nouveau fournisseur (créé automatiquement)"
+                placeholder={t("purchases.newSupplierPlaceholder") || "Ou saisir le nom d'un nouveau fournisseur (créé automatiquement)"}
                 value={!modal.form.supplierId ? (modal.form.supplierName || "") : ""}
                 onChange={(e) => {
                   const name = e.target.value;
