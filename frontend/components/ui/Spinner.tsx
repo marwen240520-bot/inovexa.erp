@@ -61,7 +61,9 @@ export default function Spinner({
   );
 
   const keyframes = (
-    <style>{`
+    <style
+      dangerouslySetInnerHTML={{
+        __html: `
       @keyframes inovexa-logo-spin {
         0%   { transform: rotateY(0deg); }
         100% { transform: rotateY(360deg); }
@@ -73,7 +75,9 @@ export default function Spinner({
         0%, 100% { opacity: 0.45; }
         50%      { opacity: 1; }
       }
-    `}</style>
+    `,
+      }}
+    />
   );
 
   if (fullScreen) {
