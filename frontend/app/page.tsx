@@ -1,6 +1,6 @@
 ﻿"use client";
 import React from 'react';
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -203,6 +203,24 @@ export default function HomePage(): React.ReactElement {
   const text: any = getTranslations();
   const flagCodes: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
 
+  // ── Tilt 3D interactif de l'image dashboard (côté droit) ──
+  const imgTiltRef = useRef<HTMLDivElement>(null);
+  const handleHeroTilt = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = imgTiltRef.current;
+    if (!el) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    el.style.animation = "none";
+    el.style.transform = `scale(1.07) rotateY(${((x - 0.5) * 10).toFixed(2)}deg) rotateX(${((0.5 - y) * 8).toFixed(2)}deg)`;
+  };
+  const handleHeroTiltReset = () => {
+    const el = imgTiltRef.current;
+    if (!el) return;
+    el.style.transform = "";
+    el.style.animation = "";
+  };
+
   if (isLoading) {
     return React.createElement("div", { style: { background: "#000000", minHeight: "100vh" } });
   }
@@ -359,26 +377,42 @@ export default function HomePage(): React.ReactElement {
     
     // RIGHT SIDE
     !isMobile && React.createElement("div", {
+      onMouseMove: handleHeroTilt,
+      onMouseLeave: handleHeroTiltReset,
       style: {
         width: isTablet ? "100%" : "52%",
         position: "relative",
         height: isTablet ? "420px" : "100vh",
         background: "#000000",
-        flexShrink: 0
+        flexShrink: 0,
+        perspective: "1200px",
+        overflow: "hidden"
       }
     },
       React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "80%", background: "radial-gradient(circle, rgba(138, 43, 226, 0.22) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 1, pointerEvents: "none" } }),
-      React.createElement("img", {
-        src: "/images/1.png",
-        alt: "Inovexa Dashboard",
+      React.createElement("div", {
+        ref: imgTiltRef,
+        className: "img3d",
         style: {
-          width: "100%", height: "100%", objectFit: "cover",
-          filter: "brightness(0.88) contrast(1.06)",
-          maskImage: "linear-gradient(to right, transparent 0%, black 18%)",
-          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%)",
-          zIndex: 2, position: "relative"
+          width: "100%", height: "100%",
+          position: "relative", zIndex: 2,
+          transformStyle: "preserve-3d",
+          transition: "transform 0.18s ease-out",
+          willChange: "transform"
         }
-      }),
+      },
+        React.createElement("img", {
+          src: "/images/1.png",
+          alt: "Inovexa Dashboard",
+          style: {
+            width: "100%", height: "100%", objectFit: "cover",
+            filter: "brightness(0.88) contrast(1.06)",
+            maskImage: "linear-gradient(to right, transparent 0%, black 18%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%)"
+          }
+        }),
+        React.createElement("div", { className: "img3d-sheen" })
+      ),
       React.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: "120px", height: "100%", background: "linear-gradient(90deg, #000000 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } }),
       React.createElement("div", { style: { position: "absolute", bottom: 0, left: 0, width: "100%", height: "80px", background: "linear-gradient(0deg, #000000 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } })
     ),
@@ -426,6 +460,18 @@ export default function HomePage(): React.ReactElement {
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
       @media (prefers-reduced-motion: reduce) {
         .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo { animation: none !important; }
+      }
+
+      /* ── Animation 3D de l'image dashboard (côté droit) ─────────── */
+      .img3d { animation: imgFloat3D 11s ease-in-out infinite; }
+      @keyframes imgFloat3D {
+        0%, 100% { transform: scale(1.07) rotateY(-3.5deg) rotateX(1.6deg); }
+        50%      { transform: scale(1.07) rotateY(3.5deg)  rotateX(-1.6deg); }
+      }
+      .img3d-sheen { position: absolute; top: 0; left: -60%; width: 45%; height: 100%; background: linear-gradient(100deg, transparent 0%, rgba(168, 85, 247, 0.10) 45%, rgba(255, 255, 255, 0.07) 50%, rgba(168, 85, 247, 0.10) 55%, transparent 100%); transform: translateZ(2px) skewX(-12deg); animation: imgSheen 7s ease-in-out infinite; pointer-events: none; }
+      @keyframes imgSheen { 0%, 55% { left: -60%; } 85%, 100% { left: 130%; } }
+      @media (prefers-reduced-motion: reduce) {
+        .img3d, .img3d-sheen { animation: none !important; }
       }
     ` } })
   );
