@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Sale } from './entities/sale.entity';
 import { Product } from '../products/product.entity';
+import { Client } from '../clients/entities/client.entity';
 
 @Injectable()
 export class SalesService {
@@ -11,7 +12,23 @@ export class SalesService {
     private saleRepository: Repository<Sale>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    @InjectRepository(Client)
+    private clientRepository: Repository<Client>,
   ) {}
+
+  /** Si un nom de client est saisi et n'existe pas encore, le crée dans le module Clients. */
+  private async ensureClientExists(userId: number, clientName?: string): Promise<Client | null> {
+    const name = (clientName || '').trim();
+    if (!name) return null;
+    const existing = await this.clientRepository
+      .createQueryBuilder('c')
+      .where('c.userId = :userId', { userId })
+      .andWhere('LOWER(c.name) = LOWER(:name)', { name })
+      .getOne();
+    if (existing) return existing;
+    const client = this.clientRepository.create({ userId, name, email: '' });
+    return this.clientRepository.save(client);
+  }
 
   async findAll(userId: number, period?: string) {
     let where: any = { userId };
@@ -54,8 +71,12 @@ export class SalesService {
     product.quantity = (product.quantity || 0) - (data.quantity || 0);
     await this.productRepository.save(product);
     
+    // Auto-création du client si le nom saisi n'existe pas dans le module Clients
+    const client = await this.ensureClientExists(userId, data.clientName);
+    
     const sale = this.saleRepository.create({ 
       ...data, 
+      clientName: client ? client.name : (data.clientName || null),
       userId,
       total: (data.unitPrice || 0) * (data.quantity || 1)
     });
@@ -129,8 +150,12 @@ export class SalesService {
         product.quantity = (product.quantity || 0) - (data.quantity || 0);
         await this.productRepository.save(product);
         
+        // Auto-création du client importé s'il n'existe pas
+        const client = await this.ensureClientExists(userId, data.clientName);
+        
         const sale = this.saleRepository.create({
           ...data,
+          clientName: client ? client.name : (data.clientName || null),
           userId,
           total: (data.unitPrice || 0) * (data.quantity || 1)
         });

@@ -1043,6 +1043,21 @@ export default function SalesPage() {
                   {localT.sales.clientSelected}: {selectedClient.name}
                 </div>
               )}
+              {/* Saisie libre : si le client n'existe pas, il sera créé automatiquement dans le module Clients */}
+              <input
+                type="text"
+                placeholder="Ou saisir le nom d'un nouveau client (créé automatiquement)"
+                value={!selectedClient ? (modal.form.clientName || "") : ""}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setSelectedClient(null);
+                  setModal(prev => ({
+                    ...prev,
+                    form: { ...prev.form, clientId: undefined, clientName: name }
+                  }));
+                }}
+                style={{ width: "100%", marginTop: "8px", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "12px" : "13px", boxSizing: "border-box" }}
+              />
             </div>
 
             {/* Product Selection - CORRIGéE */}

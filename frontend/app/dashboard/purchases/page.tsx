@@ -1112,6 +1112,20 @@ export default function PurchasesPage() {
                   Fournisseur: {modal.form.supplierName}
                 </div>
               )}
+              {/* Saisie libre : si le fournisseur n'existe pas, il sera créé automatiquement dans le module Fournisseurs */}
+              <input
+                type="text"
+                placeholder="Ou saisir le nom d'un nouveau fournisseur (créé automatiquement)"
+                value={!modal.form.supplierId ? (modal.form.supplierName || "") : ""}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setModal(prev => ({
+                    ...prev,
+                    form: { ...prev.form, supplierId: undefined, supplierName: name }
+                  }));
+                }}
+                style={{ width: "100%", marginTop: "8px", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "12px" : "13px", boxSizing: "border-box" }}
+              />
             </div>
 
             {/* Produit - SELECT dynamique */}

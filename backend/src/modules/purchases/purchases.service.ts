@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Purchase } from './entities/purchase.entity';
 import { Product } from '../products/product.entity';
+import { Supplier } from '../suppliers/supplier.entity';
 
 @Injectable()
 export class PurchasesService {
@@ -11,7 +12,23 @@ export class PurchasesService {
     private purchaseRepository: Repository<Purchase>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    @InjectRepository(Supplier)
+    private supplierRepository: Repository<Supplier>,
   ) {}
+
+  /** Si un nom de fournisseur est saisi et n'existe pas encore, le crée dans le module Fournisseurs. */
+  private async ensureSupplierExists(userId: number, supplierName?: string): Promise<Supplier | null> {
+    const name = (supplierName || '').trim();
+    if (!name) return null;
+    const existing = await this.supplierRepository
+      .createQueryBuilder('s')
+      .where('s.userId = :userId', { userId })
+      .andWhere('LOWER(s.name) = LOWER(:name)', { name })
+      .getOne();
+    if (existing) return existing;
+    const supplier = this.supplierRepository.create({ userId, name, email: '' });
+    return this.supplierRepository.save(supplier);
+  }
 
   async findAll(userId: number, period?: string) {
     let where: any = { userId };
@@ -49,8 +66,12 @@ export class PurchasesService {
       throw new NotFoundException('Produit non trouve');
     }
 
+    // Auto-création du fournisseur si le nom saisi n'existe pas dans le module Fournisseurs
+    const supplier = await this.ensureSupplierExists(userId, data.supplierName);
+
     const purchase = this.purchaseRepository.create({
       ...data,
+      supplierName: supplier ? supplier.name : (data.supplierName || null),
       userId,
       productName: product.name,
       total: (data.unitPrice || 0) * (data.quantity || 1)

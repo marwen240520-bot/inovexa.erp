@@ -20,6 +20,12 @@ export class Client {
   @Column({ nullable: true })
   address: string;
 
+  @Column({ default: 0, type: 'decimal', precision: 10, scale: 2 })
+  totalSpent: number;
+
+  @Column({ default: 'active' })
+  status: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

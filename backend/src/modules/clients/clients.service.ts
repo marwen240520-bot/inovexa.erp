@@ -10,11 +10,38 @@ export class ClientsService {
     private clientRepository: Repository<Client>,
   ) {}
 
+  /** Somme des ventes par client (clé = nom du client en minuscules). */
+  private async getSalesTotalsByClientName(userId: number): Promise<Map<string, number>> {
+    const map = new Map<string, number>();
+    try {
+      const rows: Array<{ name: string; total: string }> =
+        await this.clientRepository.manager.query(
+          `SELECT LOWER("clientName") AS name, COALESCE(SUM(total), 0) AS total
+           FROM sales
+           WHERE "userId" = $1 AND "clientName" IS NOT NULL AND status != 'cancelled'
+           GROUP BY LOWER("clientName")`,
+          [userId],
+        );
+      for (const row of rows) {
+        if (row.name) map.set(row.name, Number(row.total) || 0);
+      }
+    } catch (e) {
+      // En cas d'erreur SQL, on retombe sur les valeurs stockées
+    }
+    return map;
+  }
+
   async findAll(userId: number) {
-    return this.clientRepository.find({ 
+    const clients = await this.clientRepository.find({ 
       where: { userId },
       order: { createdAt: 'DESC' }
     });
+    // Total dépensé dynamique : calculé en temps réel depuis la page Ventes
+    const totals = await this.getSalesTotalsByClientName(userId);
+    return clients.map(c => ({
+      ...c,
+      totalSpent: totals.get((c.name || '').toLowerCase()) ?? 0,
+    }));
   }
 
   async findOne(id: number, userId: number) {
