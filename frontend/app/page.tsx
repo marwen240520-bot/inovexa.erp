@@ -319,10 +319,10 @@ export default function HomePage(): React.ReactElement {
           )
         ),
         React.createElement("div", null,
-          React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "24px" : "27px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase" } },
+          React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "22px" : "24px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase" } },
             React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
           ),
-          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "12px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase" } }, "ERP")
+          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase" } }, "ERP")
         )
       ),
       React.createElement("h1", { style: { fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px", color: "white", fontWeight: "900", lineHeight: "1.1", marginBottom: "28px", letterSpacing: "-1.5px", textShadow: "0 0 30px rgba(168, 85, 247, 0.15)", opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(28px)", transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)" } }, text.title),
