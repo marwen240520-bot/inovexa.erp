@@ -319,7 +319,7 @@ export default function HomePage(): React.ReactElement {
           )
         ),
         React.createElement("div", null,
-          React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "22px" : "24px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase" } },
+          React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "18px" : "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase" } },
             React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
           ),
           React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase" } }, "ERP")
