@@ -1,5 +1,6 @@
-﻿// app/layout.tsx
+// app/layout.tsx
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
@@ -28,6 +29,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // ⚠️ CSP nonce — NE PAS SUPPRIMER.
+  // Lire les headers force le rendu dynamique de toutes les routes :
+  // Next.js injecte alors le nonce (posé par middleware.ts dans le
+  // header Content-Security-Policy) sur chacun de ses <script>.
+  // Sans cette ligne, les pages statiques prérendues seraient servies
+  // sans nonce et TOUS leurs scripts seraient bloqués par la CSP.
+  headers().get("x-nonce");
+
   return (
     <html lang="fr">
       <head>

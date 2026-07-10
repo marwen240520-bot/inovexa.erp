@@ -1,10 +1,11 @@
 // ============================================================
-//  next.config.js — Inovexa ERP v2.0.0 (FIXED CSP)
+//  next.config.js — Inovexa ERP v2.1.0
+//  ⚠️ CSP : désormais gérée par middleware.ts (nonce par requête).
+//     Ne PAS remettre de Content-Security-Policy ici, sinon le
+//     navigateur appliquera l'intersection des deux politiques.
 // ============================================================
 
 'use strict';
-
-const crypto = require('crypto');
 
 // ─────────────────────────────────────────────
 // Environment helpers
@@ -30,70 +31,10 @@ const API_PROTOCOL = (() => {
   }
 })();
 
-const API_WS = API_PROTOCOL === 'https:' ? `wss://${API_HOST}` : `ws://${API_HOST}`;
-const API_ORIGIN = `${API_PROTOCOL}//${API_HOST}`;
-
 // ─────────────────────────────────────────────
-// SAFE eval control (IMPORTANT FIX)
-// ─────────────────────────────────────────────
-const ALLOW_EVAL =
-  IS_DEV || process.env.CSP_ALLOW_EVAL === '1';
-
-// ─────────────────────────────────────────────
-// CSP builder (FIXED)
-// ─────────────────────────────────────────────
-function buildCSP() {
-  const directives = {
-    'default-src': ["'self'"],
-
-    'script-src': [
-      "'self'",
-      "'unsafe-inline'",
-      'https://cdn.jsdelivr.net',
-      'https://cdnjs.cloudflare.com',
-      ...(ALLOW_EVAL ? ["'unsafe-eval'"] : []),
-    ],
-
-    'style-src': ["'self'", "'unsafe-inline'"],
-
-    'img-src': [
-      "'self'",
-      'data:',
-      'blob:',
-      'https://flagcdn.com',
-      API_ORIGIN,
-    ],
-
-    'font-src': ["'self'", 'data:'],
-
-    'connect-src': [
-      "'self'",
-      'data:',
-      'blob:',
-      API_ORIGIN,
-      API_WS,
-    ],
-
-    'media-src': ["'self'"],
-    'object-src': ["'none'"],
-    'frame-src': ["'self'"],
-    'worker-src': ["'self'", 'blob:'],
-    'base-uri': ["'self'"],
-    'form-action': ["'self'"],
-
-    ...(IS_PROD ? { 'upgrade-insecure-requests': [] } : {}),
-  };
-
-  return Object.entries(directives)
-    .map(([k, v]) => (v.length ? `${k} ${v.join(' ')}` : k))
-    .join('; ');
-}
-
-// ─────────────────────────────────────────────
-// Security headers
+// Security headers (hors CSP → voir middleware.ts)
 // ─────────────────────────────────────────────
 const SECURITY_HEADERS = [
-  { key: 'Content-Security-Policy', value: buildCSP() },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
