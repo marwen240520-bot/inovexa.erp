@@ -34,7 +34,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
       url: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: false,
+      synchronize: true,
       logging: false,
     }),
     AuthModule,
