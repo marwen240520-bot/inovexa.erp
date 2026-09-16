@@ -1,7 +1,7 @@
 ﻿"use client";
 import React from 'react';
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -86,13 +86,13 @@ const featureIcons: React.ReactElement[] = [
   React.createElement(IconUsers, { size: 22, color: "#A855F7", key: "icon-users" })
 ];
 
-// ✅ Constante police logo (Orbitron avec fallback Poppins)
 const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function HomePage(): React.ReactElement {
   const router = useRouter();
+  const pathname = usePathname(); // ✅ Détecte chaque entrée sur cette page
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
 
@@ -104,7 +104,6 @@ export default function HomePage(): React.ReactElement {
   const [heroVisible, setHeroVisible] = useState<boolean>(false);
   const [subtitleVisible, setSubtitleVisible] = useState<boolean>(false);
   const [badgeVisible, setBadgeVisible] = useState<boolean>(false);
-  // ✅ NOUVEAU : déclenche l'animation du logo (montée depuis le bas)
   const [logoVisible, setLogoVisible] = useState<boolean>(false);
 
   const isCompact: boolean = isMobile || isTablet;
@@ -125,7 +124,20 @@ export default function HomePage(): React.ReactElement {
     return result;
   }, [isMobile]);
 
+  // ═════════════════════════════════════════════════════════════════════════════
+  //  ✅ ANIMATION RELANCÉE À CHAQUE ENTRÉE SUR LA PAGE
+  //  Réinitialise tous les états à chaque changement de pathname
+  // ═════════════════════════════════════════════════════════════════════════════
   useEffect((): (() => void) => {
+    // Reset tous les états d'animation à chaque montage/entrée
+    setIsLoading(true);
+    setIsExiting(false);
+    setLogoVisible(false);
+    setBadgeVisible(false);
+    setHeroVisible(false);
+    setSubtitleVisible(false);
+    setVisibleCards([false, false, false, false]);
+
     const token: string | null = localStorage.getItem("token");
     setIsLoggedIn(!!token);
 
@@ -139,7 +151,7 @@ export default function HomePage(): React.ReactElement {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, []);
+  }, [pathname]); // ✅ Se déclenche à chaque navigation vers cette page
 
   useEffect((): (() => void) | undefined => {
     if (!showLanguageMenu) return;
@@ -151,7 +163,6 @@ export default function HomePage(): React.ReactElement {
   // ─── Text animation triggers ────────────────────────────────────────────────
   useEffect((): (() => void) | undefined => {
     if (isLoading) return;
-    // ✅ Logo apparaît en premier, en montant depuis le bas
     const t0 = setTimeout(() => setLogoVisible(true), 100);
     const t1 = setTimeout(() => setBadgeVisible(true), 300);
     const t2 = setTimeout(() => setHeroVisible(true), 500);
@@ -528,7 +539,6 @@ export default function HomePage(): React.ReactElement {
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
-      // ✅ Logo + INOVEXA ERP : remonte depuis le bas
       React.createElement("div", {
         style: {
           display: "flex",
