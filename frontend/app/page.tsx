@@ -94,8 +94,8 @@ export default function HomePage(): React.ReactElement {
   const { isMobile, isTablet } = useResponsive();
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);       // loading initial (écran de chargement)
-  const [isExiting, setIsExiting] = useState<boolean>(false);      // fade-out de l'écran de chargement
+  const [isLoading, setIsLoading] = useState<boolean>(true);   // écran de chargement initial
+  const [isExiting, setIsExiting] = useState<boolean>(false);  // fade-out du loader
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
   const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false]);
   const [heroVisible, setHeroVisible] = useState<boolean>(false);
@@ -121,24 +121,25 @@ export default function HomePage(): React.ReactElement {
   }, [isMobile]);
 
   // ─── Loading initial : vérif token + délai minimum d'affichage ─────────────
-  useEffect((): void => {
+  useEffect((): (() => void) => {
     const token: string | null = localStorage.getItem("token");
     setIsLoggedIn(!!token);
 
-    // Durée minimum d'affichage du loader (ex: 1500ms)
-    const minDisplay = 1500;
-    const start = Date.now();
+    const minDisplay = 1500;  // durée minimum d'affichage du loader
+    const fadeDuration = 600; // durée du fade-out
 
-    const t = setTimeout(() => {
-      const elapsed = Date.now() - start;
-      const remaining = Math.max(0, minDisplay - elapsed);
-      setTimeout(() => {
-        setIsExiting(true);                       // commence le fade-out
-        setTimeout(() => setIsLoading(false), 600); // retire le loader après l'anim
-      }, remaining);
-    }, 50);
+    const t1 = setTimeout(() => {
+      setIsExiting(true);
+    }, minDisplay);
 
-    return () => clearTimeout(t);
+    const t2 = setTimeout(() => {
+      setIsLoading(false);
+    }, minDisplay + fadeDuration);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   useEffect((): (() => void) | undefined => {
