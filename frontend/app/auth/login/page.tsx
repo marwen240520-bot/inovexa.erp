@@ -135,7 +135,8 @@ const res = await fetch(`${baseURL}/auth/login`, {
       display: "flex", 
       flexDirection: isSmallScreen ? "column" : "row",
       overflow: "hidden",
-      fontFamily: "'Inter', sans-serif",
+      // ✅ Police modifiée : 'Poppins' au lieu de 'Inter'
+      fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: "relative",
     }}>
       
