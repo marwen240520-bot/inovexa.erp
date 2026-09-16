@@ -1,22 +1,8 @@
-```js
-// ============================================================
-//  next.config.js — Inovexa ERP v2.1.0
-//  ⚠️ CSP : désormais gérée par middleware.ts (nonce par requête).
-//     Ne PAS remettre de Content-Security-Policy ici, sinon le
-//     navigateur appliquera l'intersection des deux politiques.
-// ============================================================
-
 'use strict';
 
-// ─────────────────────────────────────────────
-// Environment helpers
-// ─────────────────────────────────────────────
 const IS_DEV = process.env.NODE_ENV === 'development';
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-// Backend API principal
-// Vercel doit définir NEXT_PUBLIC_API_URL.
-// Le fallback pointe également vers le nouveau backend Render.
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   'https://inovexa-erp-4.onrender.com';
@@ -37,9 +23,6 @@ const API_PROTOCOL = (() => {
   }
 })();
 
-// ─────────────────────────────────────────────
-// Security headers (hors CSP → voir middleware.ts)
-// ─────────────────────────────────────────────
 const SECURITY_HEADERS = [
   {
     key: 'X-DNS-Prefetch-Control',
@@ -75,62 +58,26 @@ const SECURITY_HEADERS = [
     : []),
 ];
 
-// ─────────────────────────────────────────────
-// Next.js config
-// ─────────────────────────────────────────────
 const nextConfig = {
   reactStrictMode: true,
-
   compress: true,
-
   output: 'standalone',
-
   generateEtags: true,
-
   staticPageGenerationTimeout: 120,
-
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 
-  // ───────────────────────────────────────────
-  // Environment variables
-  // ───────────────────────────────────────────
   env: {
     NEXT_PUBLIC_API_URL: API_URL,
-
     NEXT_PUBLIC_APP_NAME: 'Inovexa ERP',
-
     NEXT_PUBLIC_APP_VERSION: '2.0.0',
-
-    NEXT_PUBLIC_APP_DESCRIPTION:
-      'Solution ERP nouvelle génération',
+    NEXT_PUBLIC_APP_DESCRIPTION: 'Solution ERP nouvelle génération',
   },
 
-  // ───────────────────────────────────────────
-  // Images
-  // ───────────────────────────────────────────
   images: {
     formats: ['image/avif', 'image/webp'],
-
-    deviceSizes: [
-      640,
-      750,
-      828,
-      1080,
-      1200,
-      1920,
-    ],
-
-    imageSizes: [
-      16,
-      32,
-      64,
-      128,
-      256,
-      384,
-    ],
-
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 64, 128, 256, 384],
     minimumCacheTTL: IS_PROD ? 3600 : 60,
-
     dangerouslyAllowSVG: true,
 
     remotePatterns: [
@@ -150,13 +97,9 @@ const nextConfig = {
     ],
   },
 
-  // ───────────────────────────────────────────
-  // Webpack
-  // ───────────────────────────────────────────
   webpack(config, { isServer, dev }) {
     config.module.exprContextCritical = false;
 
-    // FIX: NO eval source maps in production
     config.devtool = dev
       ? 'cheap-module-source-map'
       : false;
@@ -183,22 +126,14 @@ const nextConfig = {
     return config;
   },
 
-  // ───────────────────────────────────────────
-  // Security / HTTP headers
-  // CSP is NOT here.
-  // CSP is handled by middleware.ts.
-  // ───────────────────────────────────────────
   async headers() {
     return [
       {
         source: '/:path*',
-
         headers: SECURITY_HEADERS,
       },
-
       {
         source: '/_next/static/:path*',
-
         headers: [
           {
             key: 'Cache-Control',
@@ -206,10 +141,8 @@ const nextConfig = {
           },
         ],
       },
-
       {
         source: '/api/:path*',
-
         headers: [
           {
             key: 'Cache-Control',
@@ -220,13 +153,9 @@ const nextConfig = {
     ];
   },
 
-  // ───────────────────────────────────────────
-  // Redirects
-  // ───────────────────────────────────────────
   async redirects() {
     return [];
   },
 };
 
 module.exports = nextConfig;
-```
