@@ -221,7 +221,7 @@ export default function HomePage(): React.ReactElement {
   const flagCodes: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
 
   // ═════════════════════════════════════════════════════════════════════════════
-  //  ÉCRAN DE CHARGEMENT (LOADER)
+  //  ÉCRAN DE CHARGEMENT (LOADER) — sans logo
   // ═════════════════════════════════════════════════════════════════════════════
   if (isLoading) {
     return React.createElement("div", {
@@ -242,44 +242,17 @@ export default function HomePage(): React.ReactElement {
       // Halo d'arrière-plan
       React.createElement("div", { className: "loader-halo" }),
 
-      // Logo 3D animé
-      React.createElement("div", {
-        className: "loader-logo",
-        style: {
-          width: "130px",
-          height: "130px",
-          position: "relative",
-          marginBottom: "28px"
-        }
-      },
-        React.createElement("div", { className: "loader-logo-halo" }),
-        React.createElement("div", { className: "loader-ring loader-ring-1" }),
-        React.createElement("div", { className: "loader-ring loader-ring-2" }),
-        React.createElement("img", {
-          src: "/images/logo.png",
-          alt: "Inovexa",
-          style: {
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            position: "relative",
-            zIndex: 2,
-            filter: "drop-shadow(0 0 24px rgba(138,43,226,0.85))"
-          }
-        })
-      ),
-
       // Texte "INOVEXA"
       React.createElement("h1", {
         className: "loader-brand",
         style: {
           color: "white",
-          fontSize: "26px",
+          fontSize: "38px",
           fontWeight: "300",
           margin: 0,
-          letterSpacing: "3px",
+          letterSpacing: "4px",
           textTransform: "uppercase",
-          marginBottom: "6px"
+          marginBottom: "10px"
         }
       },
         React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
@@ -292,11 +265,12 @@ export default function HomePage(): React.ReactElement {
           background: "linear-gradient(90deg, #A855F7, #6366F1)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
-          fontSize: "12px",
+          fontSize: "14px",
           fontWeight: "700",
-          letterSpacing: "8px",
+          letterSpacing: "12px",
           textTransform: "uppercase",
-          marginBottom: "42px"
+          marginBottom: "48px",
+          paddingLeft: "12px"
         }
       }, "ERP"),
 
@@ -350,53 +324,16 @@ export default function HomePage(): React.ReactElement {
         }
         @keyframes loaderHaloPulse { 0%,100% { opacity: .55; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.08); } }
 
-        .loader-logo { perspective: 700px; animation: loaderLogoFloat 3.6s ease-in-out infinite; }
-        @keyframes loaderLogoFloat {
-          0%,100% { transform: rotateY(-14deg) rotateX(6deg) translateY(0); }
-          50%     { transform: rotateY(14deg)  rotateX(-4deg) translateY(-6px); }
+        .loader-brand {
+          animation: loaderBrandGlow 2.4s ease-in-out infinite;
+          position: relative; z-index: 2;
         }
-        .loader-logo-halo {
-          position: absolute; inset: -20%; border-radius: 50%;
-          background: radial-gradient(circle, rgba(168,85,247,0.4) 0%, transparent 65%);
-          transform: translateZ(-40px);
-          animation: loaderLogoHaloPulse 2.8s ease-in-out infinite;
-        }
-        @keyframes loaderLogoHaloPulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
-
-        .loader-ring { position: absolute; border-radius: 50%; pointer-events: none; }
-        .loader-ring-1 {
-          inset: -14%;
-          border: 1px solid rgba(168,85,247,0.55);
-          box-shadow: 0 0 18px rgba(168,85,247,0.3) inset;
-          animation: loaderRingSpin 4.5s linear infinite;
-        }
-        .loader-ring-2 {
-          inset: -28%;
-          border: 1px solid rgba(99,102,241,0.4);
-          animation: loaderRingSpinReverse 7s linear infinite;
-        }
-        .loader-ring-1::before {
-          content: ""; position: absolute; top: -4px; left: 50%;
-          width: 8px; height: 8px; border-radius: 50%;
-          background: #C084FC;
-          box-shadow: 0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7);
-        }
-        .loader-ring-2::before {
-          content: ""; position: absolute; bottom: -3px; left: 30%;
-          width: 6px; height: 6px; border-radius: 50%;
-          background: #818CF8;
-          box-shadow: 0 0 14px #6366F1;
-        }
-        @keyframes loaderRingSpin       { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
-        @keyframes loaderRingSpinReverse{ from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-
-        .loader-brand { animation: loaderBrandGlow 2.4s ease-in-out infinite; }
         @keyframes loaderBrandGlow {
           0%,100% { text-shadow: 0 0 10px rgba(168,85,247,0.35); }
-          50%     { text-shadow: 0 0 24px rgba(168,85,247,0.9); }
+          50%     { text-shadow: 0 0 28px rgba(168,85,247,0.95), 0 0 48px rgba(99,102,241,0.4); }
         }
 
-        .loader-erp { animation: loaderErpPulse 2s ease-in-out infinite; }
+        .loader-erp { animation: loaderErpPulse 2s ease-in-out infinite; position: relative; z-index: 2; }
         @keyframes loaderErpPulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
 
         .loader-bar-track::after {
@@ -426,8 +363,7 @@ export default function HomePage(): React.ReactElement {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .loader-logo, .loader-ring-1, .loader-ring-2,
-          .loader-halo, .loader-logo-halo, .loader-dot, .loader-bar-fill {
+          .loader-halo, .loader-dot, .loader-bar-fill, .loader-brand, .loader-erp {
             animation: none !important;
           }
           .loader-bar-fill { width: 100%; }
@@ -447,7 +383,6 @@ export default function HomePage(): React.ReactElement {
       display: "flex",
       flexDirection: isCompact ? "column" : "row",
       overflow: "hidden",
-      // ✅ Police modifiée : 'Poppins' au lieu de 'Inter'
       fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: "relative"
     }
