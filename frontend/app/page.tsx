@@ -104,6 +104,8 @@ export default function HomePage(): React.ReactElement {
   const [heroVisible, setHeroVisible] = useState<boolean>(false);
   const [subtitleVisible, setSubtitleVisible] = useState<boolean>(false);
   const [badgeVisible, setBadgeVisible] = useState<boolean>(false);
+  // ✅ NOUVEAU : déclenche l'animation du logo (montée depuis le bas)
+  const [logoVisible, setLogoVisible] = useState<boolean>(false);
 
   const isCompact: boolean = isMobile || isTablet;
 
@@ -146,15 +148,18 @@ export default function HomePage(): React.ReactElement {
     return (): void => { document.removeEventListener("click", handler); };
   }, [showLanguageMenu]);
 
+  // ─── Text animation triggers ────────────────────────────────────────────────
   useEffect((): (() => void) | undefined => {
     if (isLoading) return;
-    const t1 = setTimeout(() => setBadgeVisible(true), 100);
-    const t2 = setTimeout(() => setHeroVisible(true), 300);
-    const t3 = setTimeout(() => setSubtitleVisible(true), 600);
+    // ✅ Logo apparaît en premier, en montant depuis le bas
+    const t0 = setTimeout(() => setLogoVisible(true), 100);
+    const t1 = setTimeout(() => setBadgeVisible(true), 300);
+    const t2 = setTimeout(() => setHeroVisible(true), 500);
+    const t3 = setTimeout(() => setSubtitleVisible(true), 800);
     const cardTimers = [0, 1, 2, 3].map((i) =>
-      setTimeout(() => setVisibleCards((prev) => { const next = [...prev]; next[i] = true; return next; }), 800 + i * 120)
+      setTimeout(() => setVisibleCards((prev) => { const next = [...prev]; next[i] = true; return next; }), 1000 + i * 120)
     );
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); cardTimers.forEach(clearTimeout); };
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); cardTimers.forEach(clearTimeout); };
   }, [isLoading]);
 
   const handleLanguageChange = (lang: string): void => {
@@ -237,7 +242,6 @@ export default function HomePage(): React.ReactElement {
     },
       React.createElement("div", { className: "loader-halo" }),
 
-      // Logo 3D animé
       React.createElement("div", {
         className: "loader-logo",
         style: {
@@ -264,7 +268,6 @@ export default function HomePage(): React.ReactElement {
         })
       ),
 
-      // Texte "INOVEXA" — ✅ Police Orbitron
       React.createElement("h1", {
         className: "loader-brand",
         style: {
@@ -281,7 +284,6 @@ export default function HomePage(): React.ReactElement {
         React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
       ),
 
-      // Sous-titre ERP — ✅ Police Orbitron
       React.createElement("div", {
         className: "loader-erp",
         style: {
@@ -526,7 +528,18 @@ export default function HomePage(): React.ReactElement {
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
-      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: isMobile ? "20px" : "26px", marginBottom: "28px", opacity: badgeVisible ? 1 : 0, transform: badgeVisible ? "translateY(0)" : "translateY(-18px)", transition: "opacity 0.6s ease, transform 0.6s ease" } },
+      // ✅ Logo + INOVEXA ERP : remonte depuis le bas
+      React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: isMobile ? "20px" : "26px",
+          marginBottom: "28px",
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? "translateY(0)" : "translateY(60px)",
+          transition: "opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1)"
+        }
+      },
         React.createElement("div", { className: "logo3d-scene", style: { width: isMobile ? "90px" : "105px", height: isMobile ? "90px" : "105px", position: "relative", flexShrink: 0 } },
           React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
             React.createElement("div", { className: "logo3d-halo" }),
@@ -540,11 +553,9 @@ export default function HomePage(): React.ReactElement {
           )
         ),
         React.createElement("div", null,
-          // ✅ INOVEXA — Police Orbitron
           React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "18px" : "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
             React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
           ),
-          // ✅ ERP — Police Orbitron
           React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
         )
       ),
