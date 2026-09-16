@@ -92,13 +92,10 @@ export default function HomePage(): React.ReactElement {
   const router = useRouter();
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
+
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // ✅ Nouveaux états pour le loader
-  const [showLoader, setShowLoader] = useState<boolean>(true);
-  const [loaderFadeOut, setLoaderFadeOut] = useState<boolean>(false);
-
+  const [isLoading, setIsLoading] = useState<boolean>(true);       // loading initial (écran de chargement)
+  const [isExiting, setIsExiting] = useState<boolean>(false);      // fade-out de l'écran de chargement
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
   const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false]);
   const [heroVisible, setHeroVisible] = useState<boolean>(false);
@@ -123,18 +120,25 @@ export default function HomePage(): React.ReactElement {
     return result;
   }, [isMobile]);
 
+  // ─── Loading initial : vérif token + délai minimum d'affichage ─────────────
   useEffect((): void => {
     const token: string | null = localStorage.getItem("token");
     setIsLoggedIn(!!token);
-    setIsLoading(false);
 
-    // ✅ Loader : durée minimale de 1.8s, puis fade-out de 0.7s
-    const minDuration = setTimeout(() => {
-      setLoaderFadeOut(true);
-      setTimeout(() => setShowLoader(false), 700);
-    }, 1800);
+    // Durée minimum d'affichage du loader (ex: 1500ms)
+    const minDisplay = 1500;
+    const start = Date.now();
 
-    return () => clearTimeout(minDuration);
+    const t = setTimeout(() => {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, minDisplay - elapsed);
+      setTimeout(() => {
+        setIsExiting(true);                       // commence le fade-out
+        setTimeout(() => setIsLoading(false), 600); // retire le loader après l'anim
+      }, remaining);
+    }, 50);
+
+    return () => clearTimeout(t);
   }, []);
 
   useEffect((): (() => void) | undefined => {
@@ -145,9 +149,8 @@ export default function HomePage(): React.ReactElement {
   }, [showLanguageMenu]);
 
   // ─── Text animation triggers ────────────────────────────────────────────────
-  // ✅ Les animations de la page démarrent SEULEMENT après la disparition du loader
   useEffect((): (() => void) | undefined => {
-    if (isLoading || showLoader) return;
+    if (isLoading) return;
     const t1 = setTimeout(() => setBadgeVisible(true), 100);
     const t2 = setTimeout(() => setHeroVisible(true), 300);
     const t3 = setTimeout(() => setSubtitleVisible(true), 600);
@@ -155,7 +158,7 @@ export default function HomePage(): React.ReactElement {
       setTimeout(() => setVisibleCards((prev) => { const next = [...prev]; next[i] = true; return next; }), 800 + i * 120)
     );
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); cardTimers.forEach(clearTimeout); };
-  }, [isLoading, showLoader]);
+  }, [isLoading]);
 
   const handleLanguageChange = (lang: string): void => {
     changeLanguage(lang);
@@ -216,16 +219,12 @@ export default function HomePage(): React.ReactElement {
   const text: any = getTranslations();
   const flagCodes: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
 
-  // ✅ Textes du loader selon la langue
-  const loaderText: Record<string, string> = {
-    fr: "Chargement",
-    en: "Loading",
-    es: "Cargando"
-  };
-
-  // ✅ LOADER PLEIN ÉCRAN (remplace l'ancien "return vide")
-  if (isLoading || showLoader) {
+  // ═════════════════════════════════════════════════════════════════════════════
+  //  ÉCRAN DE CHARGEMENT (LOADER)
+  // ═════════════════════════════════════════════════════════════════════════════
+  if (isLoading) {
     return React.createElement("div", {
+      className: "loader-screen" + (isExiting ? " loader-exit" : ""),
       style: {
         position: "fixed",
         inset: 0,
@@ -236,103 +235,218 @@ export default function HomePage(): React.ReactElement {
         justifyContent: "center",
         zIndex: 9999,
         fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-        opacity: loaderFadeOut ? 0 : 1,
-        transition: "opacity 0.7s ease",
-        pointerEvents: loaderFadeOut ? "none" : "auto"
+        overflow: "hidden"
       }
     },
       // Halo d'arrière-plan
-      React.createElement("div", { className: "loader-bg-glow" }),
+      React.createElement("div", { className: "loader-halo" }),
 
-      // Conteneur du logo 3D
+      // Logo 3D animé
       React.createElement("div", {
-        className: "loader-logo-scene",
-        style: { width: "140px", height: "140px", position: "relative", marginBottom: "32px" }
+        className: "loader-logo",
+        style: {
+          width: "130px",
+          height: "130px",
+          position: "relative",
+          marginBottom: "28px"
+        }
       },
-        React.createElement("div", { className: "loader-logo" },
-          React.createElement("div", { className: "loader-halo" }),
-          React.createElement("div", { className: "loader-ring loader-ring-1" }),
-          React.createElement("div", { className: "loader-ring loader-ring-2" }),
-          React.createElement("img", {
-            src: "/images/logo.png",
-            alt: "Inovexa",
-            style: {
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              position: "relative",
-              zIndex: 2,
-              filter: "drop-shadow(0 0 24px rgba(168,85,247,0.8))"
-            }
+        React.createElement("div", { className: "loader-logo-halo" }),
+        React.createElement("div", { className: "loader-ring loader-ring-1" }),
+        React.createElement("div", { className: "loader-ring loader-ring-2" }),
+        React.createElement("img", {
+          src: "/images/logo.png",
+          alt: "Inovexa",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            position: "relative",
+            zIndex: 2,
+            filter: "drop-shadow(0 0 24px rgba(138,43,226,0.85))"
+          }
+        })
+      ),
+
+      // Texte "INOVEXA"
+      React.createElement("h1", {
+        className: "loader-brand",
+        style: {
+          color: "white",
+          fontSize: "26px",
+          fontWeight: "300",
+          margin: 0,
+          letterSpacing: "3px",
+          textTransform: "uppercase",
+          marginBottom: "6px"
+        }
+      },
+        React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+      ),
+
+      // Sous-titre ERP
+      React.createElement("div", {
+        className: "loader-erp",
+        style: {
+          background: "linear-gradient(90deg, #A855F7, #6366F1)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          fontSize: "12px",
+          fontWeight: "700",
+          letterSpacing: "8px",
+          textTransform: "uppercase",
+          marginBottom: "42px"
+        }
+      }, "ERP"),
+
+      // Barre de progression
+      React.createElement("div", {
+        className: "loader-bar-track",
+        style: {
+          width: "220px",
+          height: "3px",
+          background: "rgba(168, 85, 247, 0.15)",
+          borderRadius: "999px",
+          overflow: "hidden",
+          position: "relative"
+        }
+      },
+        React.createElement("div", { className: "loader-bar-fill" })
+      ),
+
+      // Petits points animés
+      React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: "8px",
+          marginTop: "22px"
+        }
+      },
+        [0, 1, 2].map((i) =>
+          React.createElement("span", {
+            key: i,
+            className: "loader-dot",
+            style: { animationDelay: (i * 0.18) + "s" }
           })
         )
       ),
 
-      // Texte INOVEXA ERP
-      React.createElement("div", { style: { textAlign: "center", marginBottom: "28px" } },
-        React.createElement("h2", {
-          style: {
-            color: "white",
-            fontSize: "24px",
-            fontWeight: "300",
-            margin: 0,
-            letterSpacing: "3px",
-            textTransform: "uppercase"
-          }
-        },
-          React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
-        ),
-        React.createElement("div", {
-          className: "loader-erp-glow",
-          style: {
-            background: "linear-gradient(90deg, #A855F7, #6366F1)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            fontSize: "12px",
-            fontWeight: "700",
-            letterSpacing: "9px",
-            marginTop: "4px",
-            textTransform: "uppercase"
-          }
-        }, "ERP")
-      ),
+      // Styles du loader
+      React.createElement("style", { dangerouslySetInnerHTML: { __html: `
+        .loader-screen { animation: loaderFadeIn 0.4s ease both; }
+        .loader-exit { animation: loaderFadeOut 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes loaderFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes loaderFadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
 
-      // Barre de progression
-      React.createElement("div", {
-        style: {
-          width: "200px",
-          height: "3px",
-          background: "rgba(168, 85, 247, 0.15)",
-          borderRadius: "2px",
-          overflow: "hidden",
-          position: "relative",
-          marginBottom: "18px"
+        .loader-halo {
+          position: absolute; top: 50%; left: 50%;
+          width: 520px; height: 520px;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle, rgba(138,43,226,0.25) 0%, transparent 65%);
+          filter: blur(60px);
+          animation: loaderHaloPulse 3s ease-in-out infinite;
+          pointer-events: none;
         }
-      },
-        React.createElement("div", { className: "loader-bar" })
-      ),
+        @keyframes loaderHaloPulse { 0%,100% { opacity: .55; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.08); } }
 
-      // Texte de chargement
-      React.createElement("p", {
-        style: {
-          color: "rgba(255,255,255,0.5)",
-          fontSize: "12px",
-          fontWeight: "500",
-          letterSpacing: "3px",
-          textTransform: "uppercase",
-          margin: 0
+        .loader-logo { perspective: 700px; animation: loaderLogoFloat 3.6s ease-in-out infinite; }
+        @keyframes loaderLogoFloat {
+          0%,100% { transform: rotateY(-14deg) rotateX(6deg) translateY(0); }
+          50%     { transform: rotateY(14deg)  rotateX(-4deg) translateY(-6px); }
         }
-      }, (loaderText[language] || loaderText.en) + "...")
+        .loader-logo-halo {
+          position: absolute; inset: -20%; border-radius: 50%;
+          background: radial-gradient(circle, rgba(168,85,247,0.4) 0%, transparent 65%);
+          transform: translateZ(-40px);
+          animation: loaderLogoHaloPulse 2.8s ease-in-out infinite;
+        }
+        @keyframes loaderLogoHaloPulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+
+        .loader-ring { position: absolute; border-radius: 50%; pointer-events: none; }
+        .loader-ring-1 {
+          inset: -14%;
+          border: 1px solid rgba(168,85,247,0.55);
+          box-shadow: 0 0 18px rgba(168,85,247,0.3) inset;
+          animation: loaderRingSpin 4.5s linear infinite;
+        }
+        .loader-ring-2 {
+          inset: -28%;
+          border: 1px solid rgba(99,102,241,0.4);
+          animation: loaderRingSpinReverse 7s linear infinite;
+        }
+        .loader-ring-1::before {
+          content: ""; position: absolute; top: -4px; left: 50%;
+          width: 8px; height: 8px; border-radius: 50%;
+          background: #C084FC;
+          box-shadow: 0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7);
+        }
+        .loader-ring-2::before {
+          content: ""; position: absolute; bottom: -3px; left: 30%;
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #818CF8;
+          box-shadow: 0 0 14px #6366F1;
+        }
+        @keyframes loaderRingSpin       { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+        @keyframes loaderRingSpinReverse{ from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+
+        .loader-brand { animation: loaderBrandGlow 2.4s ease-in-out infinite; }
+        @keyframes loaderBrandGlow {
+          0%,100% { text-shadow: 0 0 10px rgba(168,85,247,0.35); }
+          50%     { text-shadow: 0 0 24px rgba(168,85,247,0.9); }
+        }
+
+        .loader-erp { animation: loaderErpPulse 2s ease-in-out infinite; }
+        @keyframes loaderErpPulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
+
+        .loader-bar-track::after {
+          content: ""; position: absolute; inset: 0;
+          background: linear-gradient(90deg, transparent, rgba(168,85,247,0.35), transparent);
+          animation: loaderTrackShimmer 1.8s linear infinite;
+        }
+        .loader-bar-fill {
+          position: absolute; left: 0; top: 0; height: 100%; width: 0;
+          background: linear-gradient(90deg, #A855F7, #6366F1, #C084FC);
+          border-radius: 999px;
+          box-shadow: 0 0 12px rgba(168,85,247,0.8);
+          animation: loaderBarFill 1.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+        }
+        @keyframes loaderBarFill { 0% { width: 0%; } 60% { width: 78%; } 100% { width: 100%; } }
+        @keyframes loaderTrackShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        .loader-dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #A855F7;
+          box-shadow: 0 0 10px rgba(168,85,247,0.8);
+          animation: loaderDotBounce 1.1s ease-in-out infinite;
+        }
+        @keyframes loaderDotBounce {
+          0%,80%,100% { transform: translateY(0);    opacity: .4; }
+          40%         { transform: translateY(-8px); opacity: 1;  }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .loader-logo, .loader-ring-1, .loader-ring-2,
+          .loader-halo, .loader-logo-halo, .loader-dot, .loader-bar-fill {
+            animation: none !important;
+          }
+          .loader-bar-fill { width: 100%; }
+        }
+      ` } })
     );
   }
 
+  // ═════════════════════════════════════════════════════════════════════════════
+  //  PAGE PRINCIPALE
+  // ═════════════════════════════════════════════════════════════════════════════
   return React.createElement("div", {
+    className: "home-page-enter",
     style: {
       minHeight: "100vh",
       background: "#000000",
       display: "flex",
       flexDirection: isCompact ? "column" : "row",
       overflow: "hidden",
+      // ✅ Police modifiée : 'Poppins' au lieu de 'Inter'
       fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: "relative"
     }
@@ -354,7 +468,7 @@ export default function HomePage(): React.ReactElement {
       });
     }),
     React.createElement("div", { className: "ambient-glow" }),
-    
+
     // Language Selector
     React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200 } },
       React.createElement("button", {
@@ -412,7 +526,7 @@ export default function HomePage(): React.ReactElement {
         })
       )
     ),
-    
+
     // LEFT SIDE
     React.createElement("div", {
       style: {
@@ -474,7 +588,7 @@ export default function HomePage(): React.ReactElement {
         React.createElement("p", { style: { color: "rgba(255,255,255,0.2)", fontSize: "9px", fontWeight: "600", margin: 0, letterSpacing: "0.5px" } }, "\u00A9 2026 INOVEXA. " + text.copyright.toUpperCase())
       )
     ),
-    
+
     // RIGHT SIDE
     !isMobile && React.createElement("div", {
       style: {
@@ -500,10 +614,15 @@ export default function HomePage(): React.ReactElement {
       React.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: "120px", height: "100%", background: "linear-gradient(90deg, #000000 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } }),
       React.createElement("div", { style: { position: "absolute", bottom: 0, left: 0, width: "100%", height: "80px", background: "linear-gradient(0deg, #000000 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } })
     ),
-    
+
     // Global Styles
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
       * { -webkit-tap-highlight-color: transparent; }
+
+      /* Entrée en fondu de la page après le loader */
+      .home-page-enter { animation: homePageIn 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+      @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
+
       .erp-text-glow { animation: textPulse 3s ease-in-out infinite; }
       @keyframes textPulse { 0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(168,85,247,0.3)); } 50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168,85,247,0.7)); } }
       .cta-button-shimmer { background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); box-shadow: 0 8px 32px rgba(168, 85, 247, 0.35); animation: buttonPulse 2.5s infinite; transition: transform 0.2s, filter 0.2s; }
@@ -543,112 +662,8 @@ export default function HomePage(): React.ReactElement {
       @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
       @media (prefers-reduced-motion: reduce) {
-        .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo { animation: none !important; }
-      }
-
-      /* ═══════════════════════════════════════════════════════════════
-         ── LOADER (écran de chargement) ─────────────────────────────
-         ═══════════════════════════════════════════════════════════════ */
-      .loader-bg-glow {
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 50% 50%, rgba(138,43,226,0.18) 0%, transparent 55%);
-        pointer-events: none;
-        animation: loaderBgPulse 3s ease-in-out infinite;
-      }
-      @keyframes loaderBgPulse {
-        0%, 100% { opacity: 0.5; }
-        50%      { opacity: 1; }
-      }
-
-      .loader-logo-scene { perspective: 800px; }
-      .loader-logo {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        transform-style: preserve-3d;
-        animation: loaderLogoFloat 3s ease-in-out infinite;
-      }
-      @keyframes loaderLogoFloat {
-        0%, 100% { transform: rotateY(-14deg) rotateX(6deg) scale(1); }
-        50%      { transform: rotateY(14deg)  rotateX(-4deg) scale(1.06); }
-      }
-
-      .loader-halo {
-        position: absolute;
-        inset: -18%;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(168,85,247,0.55) 0%, transparent 65%);
-        transform: translateZ(-40px);
-        animation: loaderHaloPulse 2s ease-in-out infinite;
-        pointer-events: none;
-      }
-      @keyframes loaderHaloPulse {
-        0%, 100% { opacity: 0.5; transform: translateZ(-40px) scale(0.92); }
-        50%      { opacity: 1;   transform: translateZ(-40px) scale(1.08); }
-      }
-
-      .loader-ring {
-        position: absolute;
-        border-radius: 50%;
-        pointer-events: none;
-      }
-      .loader-ring-1 {
-        inset: -16%;
-        border: 2px solid transparent;
-        border-top-color: #A855F7;
-        border-right-color: rgba(168,85,247,0.3);
-        animation: loaderSpin1 1.4s linear infinite;
-        box-shadow: 0 0 20px rgba(168,85,247,0.4);
-      }
-      .loader-ring-2 {
-        inset: -30%;
-        border: 1px solid transparent;
-        border-bottom-color: #6366F1;
-        border-left-color: rgba(99,102,241,0.3);
-        animation: loaderSpin2 2.2s linear infinite reverse;
-      }
-      @keyframes loaderSpin1 {
-        from { transform: rotate(0deg); }
-        to   { transform: rotate(360deg); }
-      }
-      @keyframes loaderSpin2 {
-        from { transform: rotate(0deg); }
-        to   { transform: rotate(360deg); }
-      }
-
-      .loader-erp-glow {
-        animation: loaderErpPulse 2s ease-in-out infinite;
-      }
-      @keyframes loaderErpPulse {
-        0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 4px rgba(168,85,247,0.4)); }
-        50%      { opacity: 1;   filter: drop-shadow(0 0 14px rgba(168,85,247,0.9)); }
-      }
-
-      .loader-bar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        width: 40%;
-        background: linear-gradient(90deg, #A855F7, #6366F1, #A855F7);
-        background-size: 200% 100%;
-        border-radius: 2px;
-        animation: loaderBarMove 1.6s ease-in-out infinite, loaderBarGradient 2s linear infinite;
-        box-shadow: 0 0 12px rgba(168,85,247,0.8);
-      }
-      @keyframes loaderBarMove {
-        0%   { left: -40%; }
-        100% { left: 100%; }
-      }
-      @keyframes loaderBarGradient {
-        0%   { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .loader-logo, .loader-halo, .loader-ring-1, .loader-ring-2,
-        .loader-bar, .loader-bg-glow, .loader-erp-glow { animation: none !important; }
+        .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo,
+        .home-page-enter { animation: none !important; }
       }
     ` } })
   );
