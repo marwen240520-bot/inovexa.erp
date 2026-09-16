@@ -45,7 +45,6 @@ const IconArrowRight = ({ size = 18, color = "currentColor" }: { size?: number; 
   </svg>
 );
 
-
 const IconChevronDown = ({ size = 12, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="6 9 12 15 18 9"/>
@@ -214,7 +213,8 @@ export default function HomePage(): React.ReactElement {
       display: "flex",
       flexDirection: isCompact ? "column" : "row",
       overflow: "hidden",
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      // ✅ Police modifiée : 'Poppins' au lieu de 'Inter'
+      fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: "relative"
     }
   },
@@ -252,7 +252,6 @@ export default function HomePage(): React.ReactElement {
           display: "flex", alignItems: "center", gap: "8px"
         }
       },
-        
         React.createElement("img", { src: "https://flagcdn.com/w20/" + flagCodes[language] + ".png", width: "15", alt: language, style: { borderRadius: "2px" } }),
         React.createElement("span", { style: { fontWeight: "700", letterSpacing: "0.5px" } }, language.toUpperCase()),
         React.createElement(IconChevronDown, { size: 11, color: "rgba(255,255,255,0.5)" })
