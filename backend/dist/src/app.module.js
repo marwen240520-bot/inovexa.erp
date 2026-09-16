@@ -44,9 +44,9 @@ exports.AppModule = AppModule = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
                 url: process.env.DATABASE_URL,
-                ssl: { rejectUnauthorized: false },
+                ssl: false,
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                synchronize: false,
+                synchronize: true,
                 logging: false,
             }),
             auth_module_1.AuthModule,
