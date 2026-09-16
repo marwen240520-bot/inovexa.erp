@@ -64,14 +64,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
-  // ─── État d'entrée : déclenche l'animation à l'ouverture ───────────────────
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
     return () => clearTimeout(t);
   }, []);
 
-  // Détection Verr. Maj sur le champ mot de passe (UX : évite les échecs de connexion silencieux)
   const detectCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (typeof e.getModifierState === "function") {
       setCapsLockOn(e.getModifierState("CapsLock"));
@@ -80,7 +78,6 @@ export default function LoginPage() {
 
   const isSmallScreen = isMobile || isTablet;
 
-  // Particules lumineuses
   const particles = useMemo(() => {
     return Array.from({ length: isMobile ? 10 : 20 }).map((_, i) => ({
       id: i,
@@ -149,7 +146,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
       }}
     >
       
-      {/* PARTICULES LUMINEUSES */}
       {particles.map((p) => (
         <div key={p.id} className="particle" style={{
           position: "absolute",
@@ -179,12 +175,10 @@ const res = await fetch(`${baseURL}/auth/login`, {
           minHeight: "100dvh",
         }}>
 
-          {/* TOP SAFE-AREA SPACER + HEADER */}
           <div style={{
             padding: "env(safe-area-inset-top, 20px) 24px 0",
             paddingTop: "max(env(safe-area-inset-top, 20px), 20px)",
           }}>
-            {/* Back link — top left */}
             <Link href="/" className="anim-item anim-back" style={{
               display: "inline-flex",
               alignItems: "center",
@@ -200,7 +194,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
             </Link>
           </div>
 
-          {/* SCROLLABLE CONTENT AREA */}
           <div style={{
             flex: 1,
             display: "flex",
@@ -231,6 +224,8 @@ const res = await fetch(`${baseURL}/auth/login`, {
                 <h2 style={{ 
                   color: "white", 
                   fontSize: "22px", 
+                  // ✅ Police Orbitron pour INOVEXA
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
                   fontWeight: "300", 
                   margin: 0, 
                   letterSpacing: "2px",
@@ -244,7 +239,9 @@ const res = await fetch(`${baseURL}/auth/login`, {
                   WebkitBackgroundClip: "text", 
                   WebkitTextFillColor: "transparent",
                   fontSize: "11px", 
-                  fontWeight: "700", 
+                  fontWeight: "700",
+                  // ✅ Police Orbitron pour ERP
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
                   letterSpacing: "7px", 
                   marginTop: "3px",
                   textTransform: "uppercase"
@@ -264,7 +261,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
               }}>
                 {t.signIn}
               </h1>
-              {/* Decorative accent line */}
               <div className="anim-accent" style={{
                 marginTop: "12px",
                 width: "48px",
@@ -284,7 +280,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
               WebkitBackdropFilter: "blur(12px)",
             }}>
 
-              {/* ERROR */}
               {error && (
                 <div role="alert" aria-live="assertive" style={{ 
                   background: "rgba(239,68,68,0.08)", 
@@ -304,7 +299,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
               )}
 
               <form onSubmit={handleLogin} style={{ width: "100%" }}>
-                {/* EMAIL */}
                 <div className="anim-item anim-field-1" style={{ marginBottom: "18px" }}>
                   <label style={{ 
                     color: "rgba(255,255,255,0.6)", 
@@ -352,7 +346,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
                   />
                 </div>
 
-                {/* PASSWORD */}
                 <div className="anim-item anim-field-2" style={{ marginBottom: "26px" }}>
                   <label style={{ 
                     color: "rgba(255,255,255,0.6)", 
@@ -423,7 +416,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
                   )}
                 </div>
 
-                {/* SUBMIT BUTTON */}
                 <button
                   type="submit"
                   disabled={loading}
@@ -467,7 +459,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
               </form>
             </div>
 
-            {/* FOOTER */}
             <p className="anim-item anim-footer" style={{ 
               marginTop: "28px", 
               color: "rgba(255,255,255,0.18)", 
@@ -484,7 +475,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
       ) : (
         /* ── DESKTOP LAYOUT ── */
         <>
-          {/* CÔTÉ GAUCHE - FORMULAIRE */}
           <div style={{ 
             width: "49.5%",
             padding: "0 0 0 20px", 
@@ -511,6 +501,8 @@ const res = await fetch(`${baseURL}/auth/login`, {
                 <h2 style={{ 
                   color: "white", 
                   fontSize: "28px", 
+                  // ✅ Police Orbitron pour INOVEXA
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
                   fontWeight: "300", 
                   margin: 0, 
                   letterSpacing: "2px",
@@ -523,7 +515,9 @@ const res = await fetch(`${baseURL}/auth/login`, {
                   WebkitBackgroundClip: "text", 
                   WebkitTextFillColor: "transparent",
                   fontSize: "14px", 
-                  fontWeight: "600", 
+                  fontWeight: "600",
+                  // ✅ Police Orbitron pour ERP
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
                   letterSpacing: "8px", 
                   marginTop: "1px",
                   textTransform: "uppercase"
@@ -544,7 +538,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
               {t.signIn}
             </h1>
 
-            {/* FORMULAIRE */}
             {error && (
               <div role="alert" aria-live="assertive" style={{ 
                 background: "rgba(239,68,68,0.1)", 
@@ -705,7 +698,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
             </p>
           </div>
 
-          {/* CÔTÉ DROIT - IMAGE */}
           <div className="login-hero anim-hero" style={{ 
             width: "50.5%",
             position: "relative",
@@ -823,7 +815,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
           transition: background-color 5000s ease-in-out 0s;
         }
 
-        /* === Animation d'entrée de la carte de connexion === */
         .login-card-enter {
           animation: cardEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
@@ -832,15 +823,12 @@ const res = await fetch(`${baseURL}/auth/login`, {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* === Image héro (1.png) : STRICTEMENT statique — aucune animation
-               ni transition, quelle que soit la règle appliquée ailleurs === */
         .login-hero,
         .login-hero * {
           animation: none !important;
           transition: none !important;
         }
 
-        /* === Masquer l'image héro (1.png) sur mobile === */
         @media (max-width: 768px) {
           .login-hero { display: none !important; }
         }
@@ -848,8 +836,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
         /* ═══════════════════════════════════════════════════════════════
            ANIMATION D'OUVERTURE DE PAGE — séquence en cascade
            ═══════════════════════════════════════════════════════════════ */
-
-        /* 1. Fondu global de la page */
         .page-enter { opacity: 0; }
         .page-mounted { animation: pageFadeIn 0.6s ease-out forwards; }
         @keyframes pageFadeIn {
@@ -857,7 +843,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
           to   { opacity: 1; }
         }
 
-        /* 2. Base commune pour tous les éléments animés */
         .anim-item {
           opacity: 0;
           transform: translateY(24px);
@@ -871,7 +856,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
           transform: translateY(0);
         }
 
-        /* 3. Délais en cascade (stagger) */
         .page-mounted .anim-logo    { transition-delay: 0.05s; }
         .page-mounted .anim-title   { transition-delay: 0.15s; }
         .page-mounted .anim-card    { transition-delay: 0.22s; }
@@ -881,25 +865,18 @@ const res = await fetch(`${baseURL}/auth/login`, {
         .page-mounted .anim-back    { transition-delay: 0.62s; }
         .page-mounted .anim-footer  { transition-delay: 0.72s; }
 
-        /* 4. Animation spéciale : logo glisse du haut */
-        .anim-logo {
-          transform: translateY(-28px) scale(0.94);
-        }
+        .anim-logo { transform: translateY(-28px) scale(0.94); }
         .page-mounted .anim-logo {
           transform: translateY(0) scale(1);
           transition-duration: 0.85s;
         }
 
-        /* 5. Animation spéciale : titre glisse depuis la gauche */
-        .anim-title {
-          transform: translateX(-32px);
-        }
+        .anim-title { transform: translateX(-32px); }
         .page-mounted .anim-title {
           transform: translateX(0);
           transition-duration: 0.85s;
         }
 
-        /* 6. Animation spéciale : carte avec effet de scale */
         .anim-card {
           transform: translateY(30px) scale(0.97);
           transform-origin: center top;
@@ -909,27 +886,17 @@ const res = await fetch(`${baseURL}/auth/login`, {
           transition-duration: 0.9s;
         }
 
-        /* 7. Animation spéciale : champs inputs */
         .anim-field-1,
-        .anim-field-2 {
-          transform: translateY(18px);
-        }
+        .anim-field-2 { transform: translateY(18px); }
 
-        /* 8. Animation spéciale : bouton avec pop */
-        .anim-button {
-          transform: translateY(20px) scale(0.96);
-        }
+        .anim-button { transform: translateY(20px) scale(0.96); }
         .page-mounted .anim-button {
           transform: translateY(0) scale(1);
           transition-duration: 0.75s;
         }
 
-        /* 9. Animation spéciale : footer */
-        .anim-footer {
-          transform: translateY(12px);
-        }
+        .anim-footer { transform: translateY(12px); }
 
-        /* 10. Image héro qui glisse depuis la droite (uniquement à l'ouverture) */
         .anim-hero {
           animation: heroSlideIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
@@ -937,14 +904,12 @@ const res = await fetch(`${baseURL}/auth/login`, {
           0%   { opacity: 0; transform: translateX(60px) scale(1.04); }
           100% { opacity: 1; transform: translateX(0)    scale(1); }
         }
-        /* Override la règle "login-hero statique" UNIQUEMENT pour l'animation d'entrée */
         .login-hero.anim-hero,
         .login-hero.anim-hero * {
           animation: heroSlideIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both !important;
           transition: none !important;
         }
 
-        /* 11. Ligne décorative accent qui s'étend */
         .anim-accent {
           animation: accentGrow 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
           transform-origin: left center;
@@ -954,7 +919,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
           100% { transform: scaleX(1); opacity: 1; }
         }
 
-        /* 12. Respect de prefers-reduced-motion */
         @media (prefers-reduced-motion: reduce) {
           .login-card-enter,
           .anim-item,
