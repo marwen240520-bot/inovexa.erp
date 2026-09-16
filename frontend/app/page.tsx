@@ -86,6 +86,9 @@ const featureIcons: React.ReactElement[] = [
   React.createElement(IconUsers, { size: 22, color: "#A855F7", key: "icon-users" })
 ];
 
+// ✅ Constante police logo (Orbitron avec fallback Poppins)
+const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function HomePage(): React.ReactElement {
@@ -94,8 +97,8 @@ export default function HomePage(): React.ReactElement {
   const { isMobile, isTablet } = useResponsive();
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);   // écran de chargement initial
-  const [isExiting, setIsExiting] = useState<boolean>(false);  // fade-out du loader
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isExiting, setIsExiting] = useState<boolean>(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
   const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false]);
   const [heroVisible, setHeroVisible] = useState<boolean>(false);
@@ -120,21 +123,15 @@ export default function HomePage(): React.ReactElement {
     return result;
   }, [isMobile]);
 
-  // ─── Loading initial : vérif token + délai minimum d'affichage ─────────────
   useEffect((): (() => void) => {
     const token: string | null = localStorage.getItem("token");
     setIsLoggedIn(!!token);
 
-    const minDisplay = 1500;  // durée minimum d'affichage du loader
-    const fadeDuration = 600; // durée du fade-out
+    const minDisplay = 1500;
+    const fadeDuration = 600;
 
-    const t1 = setTimeout(() => {
-      setIsExiting(true);
-    }, minDisplay);
-
-    const t2 = setTimeout(() => {
-      setIsLoading(false);
-    }, minDisplay + fadeDuration);
+    const t1 = setTimeout(() => { setIsExiting(true); }, minDisplay);
+    const t2 = setTimeout(() => { setIsLoading(false); }, minDisplay + fadeDuration);
 
     return () => {
       clearTimeout(t1);
@@ -149,7 +146,6 @@ export default function HomePage(): React.ReactElement {
     return (): void => { document.removeEventListener("click", handler); };
   }, [showLanguageMenu]);
 
-  // ─── Text animation triggers ────────────────────────────────────────────────
   useEffect((): (() => void) | undefined => {
     if (isLoading) return;
     const t1 = setTimeout(() => setBadgeVisible(true), 100);
@@ -239,7 +235,6 @@ export default function HomePage(): React.ReactElement {
         overflow: "hidden"
       }
     },
-      // Halo d'arrière-plan
       React.createElement("div", { className: "loader-halo" }),
 
       // Logo 3D animé
@@ -269,7 +264,7 @@ export default function HomePage(): React.ReactElement {
         })
       ),
 
-      // Texte "INOVEXA"
+      // Texte "INOVEXA" — ✅ Police Orbitron
       React.createElement("h1", {
         className: "loader-brand",
         style: {
@@ -279,13 +274,14 @@ export default function HomePage(): React.ReactElement {
           margin: 0,
           letterSpacing: "3px",
           textTransform: "uppercase",
-          marginBottom: "6px"
+          marginBottom: "6px",
+          fontFamily: LOGO_FONT
         }
       },
         React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
       ),
 
-      // Sous-titre ERP
+      // Sous-titre ERP — ✅ Police Orbitron
       React.createElement("div", {
         className: "loader-erp",
         style: {
@@ -296,11 +292,11 @@ export default function HomePage(): React.ReactElement {
           fontWeight: "700",
           letterSpacing: "8px",
           textTransform: "uppercase",
-          marginBottom: "42px"
+          marginBottom: "42px",
+          fontFamily: LOGO_FONT
         }
       }, "ERP"),
 
-      // Barre de progression
       React.createElement("div", {
         className: "loader-bar-track",
         style: {
@@ -315,13 +311,8 @@ export default function HomePage(): React.ReactElement {
         React.createElement("div", { className: "loader-bar-fill" })
       ),
 
-      // Petits points animés
       React.createElement("div", {
-        style: {
-          display: "flex",
-          gap: "8px",
-          marginTop: "22px"
-        }
+        style: { display: "flex", gap: "8px", marginTop: "22px" }
       },
         [0, 1, 2].map((i) =>
           React.createElement("span", {
@@ -332,7 +323,6 @@ export default function HomePage(): React.ReactElement {
         )
       ),
 
-      // Styles du loader
       React.createElement("style", { dangerouslySetInnerHTML: { __html: `
         .loader-screen { animation: loaderFadeIn 0.4s ease both; }
         .loader-exit { animation: loaderFadeOut 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
@@ -447,12 +437,10 @@ export default function HomePage(): React.ReactElement {
       display: "flex",
       flexDirection: isCompact ? "column" : "row",
       overflow: "hidden",
-      // ✅ Police modifiée : 'Poppins' au lieu de 'Inter'
       fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: "relative"
     }
   },
-    // Particles
     particles.map((p: Particle) => {
       return React.createElement("div", {
         key: p.id,
@@ -552,10 +540,12 @@ export default function HomePage(): React.ReactElement {
           )
         ),
         React.createElement("div", null,
-          React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "18px" : "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase" } },
+          // ✅ INOVEXA — Police Orbitron
+          React.createElement("h2", { style: { color: "white", fontSize: isMobile ? "18px" : "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
             React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
           ),
-          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase" } }, "ERP")
+          // ✅ ERP — Police Orbitron
+          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
         )
       ),
       React.createElement("h1", { style: { fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px", color: "white", fontWeight: "900", lineHeight: "1.1", marginBottom: "28px", letterSpacing: "-1.5px", textShadow: "0 0 30px rgba(168, 85, 247, 0.15)", opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(28px)", transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)" } }, text.title),
@@ -616,11 +606,9 @@ export default function HomePage(): React.ReactElement {
       React.createElement("div", { style: { position: "absolute", bottom: 0, left: 0, width: "100%", height: "80px", background: "linear-gradient(0deg, #000000 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } })
     ),
 
-    // Global Styles
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
       * { -webkit-tap-highlight-color: transparent; }
 
-      /* Entrée en fondu de la page après le loader */
       .home-page-enter { animation: homePageIn 0.8s cubic-bezier(0.22,1,0.36,1) both; }
       @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
 
@@ -639,7 +627,6 @@ export default function HomePage(): React.ReactElement {
       @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
       @media (max-width: 640px) { .cta-button-shimmer { width: 100%; justify-content: center; } }
 
-      /* ── Animation 3D du logo ─────────────────────────────────────── */
       .logo3d-scene { perspective: 700px; cursor: pointer; }
       .logo3d { transform-style: preserve-3d; animation: logoFloat3D 7s ease-in-out infinite; will-change: transform; }
       .logo3d-scene:hover .logo3d { animation: logoSpin3D 1.6s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
