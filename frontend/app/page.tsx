@@ -94,6 +94,11 @@ export default function HomePage(): React.ReactElement {
   const { isMobile, isTablet } = useResponsive();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // ✅ Nouveaux états pour le loader
+  const [showLoader, setShowLoader] = useState<boolean>(true);
+  const [loaderFadeOut, setLoaderFadeOut] = useState<boolean>(false);
+
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
   const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false]);
   const [heroVisible, setHeroVisible] = useState<boolean>(false);
@@ -122,6 +127,14 @@ export default function HomePage(): React.ReactElement {
     const token: string | null = localStorage.getItem("token");
     setIsLoggedIn(!!token);
     setIsLoading(false);
+
+    // ✅ Loader : durée minimale de 1.8s, puis fade-out de 0.7s
+    const minDuration = setTimeout(() => {
+      setLoaderFadeOut(true);
+      setTimeout(() => setShowLoader(false), 700);
+    }, 1800);
+
+    return () => clearTimeout(minDuration);
   }, []);
 
   useEffect((): (() => void) | undefined => {
@@ -132,8 +145,9 @@ export default function HomePage(): React.ReactElement {
   }, [showLanguageMenu]);
 
   // ─── Text animation triggers ────────────────────────────────────────────────
+  // ✅ Les animations de la page démarrent SEULEMENT après la disparition du loader
   useEffect((): (() => void) | undefined => {
-    if (isLoading) return;
+    if (isLoading || showLoader) return;
     const t1 = setTimeout(() => setBadgeVisible(true), 100);
     const t2 = setTimeout(() => setHeroVisible(true), 300);
     const t3 = setTimeout(() => setSubtitleVisible(true), 600);
@@ -141,7 +155,7 @@ export default function HomePage(): React.ReactElement {
       setTimeout(() => setVisibleCards((prev) => { const next = [...prev]; next[i] = true; return next; }), 800 + i * 120)
     );
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); cardTimers.forEach(clearTimeout); };
-  }, [isLoading]);
+  }, [isLoading, showLoader]);
 
   const handleLanguageChange = (lang: string): void => {
     changeLanguage(lang);
@@ -202,8 +216,114 @@ export default function HomePage(): React.ReactElement {
   const text: any = getTranslations();
   const flagCodes: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
 
-  if (isLoading) {
-    return React.createElement("div", { style: { background: "#000000", minHeight: "100vh" } });
+  // ✅ Textes du loader selon la langue
+  const loaderText: Record<string, string> = {
+    fr: "Chargement",
+    en: "Loading",
+    es: "Cargando"
+  };
+
+  // ✅ LOADER PLEIN ÉCRAN (remplace l'ancien "return vide")
+  if (isLoading || showLoader) {
+    return React.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "#000000",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+        opacity: loaderFadeOut ? 0 : 1,
+        transition: "opacity 0.7s ease",
+        pointerEvents: loaderFadeOut ? "none" : "auto"
+      }
+    },
+      // Halo d'arrière-plan
+      React.createElement("div", { className: "loader-bg-glow" }),
+
+      // Conteneur du logo 3D
+      React.createElement("div", {
+        className: "loader-logo-scene",
+        style: { width: "140px", height: "140px", position: "relative", marginBottom: "32px" }
+      },
+        React.createElement("div", { className: "loader-logo" },
+          React.createElement("div", { className: "loader-halo" }),
+          React.createElement("div", { className: "loader-ring loader-ring-1" }),
+          React.createElement("div", { className: "loader-ring loader-ring-2" }),
+          React.createElement("img", {
+            src: "/images/logo.png",
+            alt: "Inovexa",
+            style: {
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              position: "relative",
+              zIndex: 2,
+              filter: "drop-shadow(0 0 24px rgba(168,85,247,0.8))"
+            }
+          })
+        )
+      ),
+
+      // Texte INOVEXA ERP
+      React.createElement("div", { style: { textAlign: "center", marginBottom: "28px" } },
+        React.createElement("h2", {
+          style: {
+            color: "white",
+            fontSize: "24px",
+            fontWeight: "300",
+            margin: 0,
+            letterSpacing: "3px",
+            textTransform: "uppercase"
+          }
+        },
+          React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+        ),
+        React.createElement("div", {
+          className: "loader-erp-glow",
+          style: {
+            background: "linear-gradient(90deg, #A855F7, #6366F1)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            fontSize: "12px",
+            fontWeight: "700",
+            letterSpacing: "9px",
+            marginTop: "4px",
+            textTransform: "uppercase"
+          }
+        }, "ERP")
+      ),
+
+      // Barre de progression
+      React.createElement("div", {
+        style: {
+          width: "200px",
+          height: "3px",
+          background: "rgba(168, 85, 247, 0.15)",
+          borderRadius: "2px",
+          overflow: "hidden",
+          position: "relative",
+          marginBottom: "18px"
+        }
+      },
+        React.createElement("div", { className: "loader-bar" })
+      ),
+
+      // Texte de chargement
+      React.createElement("p", {
+        style: {
+          color: "rgba(255,255,255,0.5)",
+          fontSize: "12px",
+          fontWeight: "500",
+          letterSpacing: "3px",
+          textTransform: "uppercase",
+          margin: 0
+        }
+      }, (loaderText[language] || loaderText.en) + "...")
+    );
   }
 
   return React.createElement("div", {
@@ -213,7 +333,6 @@ export default function HomePage(): React.ReactElement {
       display: "flex",
       flexDirection: isCompact ? "column" : "row",
       overflow: "hidden",
-      // ✅ Police modifiée : 'Poppins' au lieu de 'Inter'
       fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: "relative"
     }
@@ -425,6 +544,111 @@ export default function HomePage(): React.ReactElement {
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
       @media (prefers-reduced-motion: reduce) {
         .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo { animation: none !important; }
+      }
+
+      /* ═══════════════════════════════════════════════════════════════
+         ── LOADER (écran de chargement) ─────────────────────────────
+         ═══════════════════════════════════════════════════════════════ */
+      .loader-bg-glow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 50%, rgba(138,43,226,0.18) 0%, transparent 55%);
+        pointer-events: none;
+        animation: loaderBgPulse 3s ease-in-out infinite;
+      }
+      @keyframes loaderBgPulse {
+        0%, 100% { opacity: 0.5; }
+        50%      { opacity: 1; }
+      }
+
+      .loader-logo-scene { perspective: 800px; }
+      .loader-logo {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        animation: loaderLogoFloat 3s ease-in-out infinite;
+      }
+      @keyframes loaderLogoFloat {
+        0%, 100% { transform: rotateY(-14deg) rotateX(6deg) scale(1); }
+        50%      { transform: rotateY(14deg)  rotateX(-4deg) scale(1.06); }
+      }
+
+      .loader-halo {
+        position: absolute;
+        inset: -18%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(168,85,247,0.55) 0%, transparent 65%);
+        transform: translateZ(-40px);
+        animation: loaderHaloPulse 2s ease-in-out infinite;
+        pointer-events: none;
+      }
+      @keyframes loaderHaloPulse {
+        0%, 100% { opacity: 0.5; transform: translateZ(-40px) scale(0.92); }
+        50%      { opacity: 1;   transform: translateZ(-40px) scale(1.08); }
+      }
+
+      .loader-ring {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      .loader-ring-1 {
+        inset: -16%;
+        border: 2px solid transparent;
+        border-top-color: #A855F7;
+        border-right-color: rgba(168,85,247,0.3);
+        animation: loaderSpin1 1.4s linear infinite;
+        box-shadow: 0 0 20px rgba(168,85,247,0.4);
+      }
+      .loader-ring-2 {
+        inset: -30%;
+        border: 1px solid transparent;
+        border-bottom-color: #6366F1;
+        border-left-color: rgba(99,102,241,0.3);
+        animation: loaderSpin2 2.2s linear infinite reverse;
+      }
+      @keyframes loaderSpin1 {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
+      @keyframes loaderSpin2 {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
+
+      .loader-erp-glow {
+        animation: loaderErpPulse 2s ease-in-out infinite;
+      }
+      @keyframes loaderErpPulse {
+        0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 4px rgba(168,85,247,0.4)); }
+        50%      { opacity: 1;   filter: drop-shadow(0 0 14px rgba(168,85,247,0.9)); }
+      }
+
+      .loader-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 40%;
+        background: linear-gradient(90deg, #A855F7, #6366F1, #A855F7);
+        background-size: 200% 100%;
+        border-radius: 2px;
+        animation: loaderBarMove 1.6s ease-in-out infinite, loaderBarGradient 2s linear infinite;
+        box-shadow: 0 0 12px rgba(168,85,247,0.8);
+      }
+      @keyframes loaderBarMove {
+        0%   { left: -40%; }
+        100% { left: 100%; }
+      }
+      @keyframes loaderBarGradient {
+        0%   { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .loader-logo, .loader-halo, .loader-ring-1, .loader-ring-2,
+        .loader-bar, .loader-bg-glow, .loader-erp-glow { animation: none !important; }
       }
     ` } })
   );
