@@ -110,12 +110,6 @@ const IconRefresh = ({ size = 16, color = "currentColor", style }: any) => (
   </svg>
 );
 
-const IconLoader = ({ size = 40, color = "currentColor", style }: any) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite", ...style }}>
-    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-  </svg>
-);
-
 const IconSearch = ({ size = 16, color = "currentColor", style }: any) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <circle cx="11" cy="11" r="8"/>
@@ -141,12 +135,6 @@ const IconX = ({ size = 16, color = "currentColor", style }: any) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <line x1="18" y1="6" x2="6" y2="18"/>
     <line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-
-const IconChevronRight = ({ size = 16, color = "currentColor", style }: any) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <polyline points="9 18 15 12 9 6"/>
   </svg>
 );
 
@@ -351,15 +339,16 @@ export default function StockPage() {
   const [showInfo, setShowInfo] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  // FIX: Margin left for desktop sidebar (280px)
+  // FIX: Dimensions alignées sur la page Produits
   const contentMarginLeft = isMobile ? "0" : "0px";
   const headerTitleSize = isMobile ? "20px" : "28px";
-  const cardPadding = isMobile ? "14px" : "20px";
-  const cardRadius = isMobile ? "14px" : "16px";
-  const gridGap = isMobile ? "10px" : "20px";
-  const sectionMargin = isMobile ? "16px" : "32px";
-  const statusFontSize = isMobile ? "10px" : "12px";
-  const legendFontSize = isMobile ? "10px" : "12px";
+  const cardPadding = isMobile ? "12px" : "20px";
+  const cardRadius = isMobile ? "12px" : "16px";
+  const gridGap = isMobile ? "12px" : "20px";
+  const sectionMargin = isMobile ? "12px" : "32px";
+  const statusFontSize = isMobile ? "9px" : "12px";
+  const legendFontSize = isMobile ? "9px" : "12px";
+  const tableFontSize = isMobile ? "10px" : "13px";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -414,9 +403,7 @@ export default function StockPage() {
       
       // NB: product.quantity est DÉJÀ le stock vivant : le backend l'incrémente
       // à chaque achat et le décrémente à chaque vente. Il ne faut donc PAS
-      // ré-appliquer les achats/ventes ici (sinon chaque mouvement est compté
-      // deux fois → stock affiché doublé). On garde product.quantity tel quel ;
-      // les achats/ventes servent uniquement à construire l'historique ci-dessous.
+      // ré-appliquer les achats/ventes ici.
 
       // Construction des mouvements de stock
       const movements: StockMovement[] = [];
@@ -551,25 +538,25 @@ export default function StockPage() {
 
   const statsCards = [
     {
-      icon: <IconBox size={isMobile ? 26 : 32} color={theme.primary} />,
+      icon: <IconBox size={isMobile ? 24 : 32} color={theme.primary} />,
       label: t.totalProducts,
       value: stats.total,
       color: theme.primary
     },
     {
-      icon: <IconCurrencyDollar size={isMobile ? 26 : 32} color={theme.accent} />,
+      icon: <IconCurrencyDollar size={isMobile ? 24 : 32} color={theme.accent} />,
       label: t.totalValue,
       value: formatCurrency(stats.value),
       color: theme.accent
     },
     {
-      icon: <IconAlertTriangle size={isMobile ? 26 : 32} color={stats.lowStock > 0 ? "#f59e0b" : theme.accent} />,
+      icon: <IconAlertTriangle size={isMobile ? 24 : 32} color={stats.lowStock > 0 ? "#f59e0b" : theme.accent} />,
       label: t.lowStock,
       value: stats.lowStock,
       color: stats.lowStock > 0 ? "#f59e0b" : theme.accent
     },
     {
-      icon: <IconBan size={isMobile ? 26 : 32} color={stats.outOfStock > 0 ? "#ef4444" : theme.accent} />,
+      icon: <IconBan size={isMobile ? 24 : 32} color={stats.outOfStock > 0 ? "#ef4444" : theme.accent} />,
       label: t.outOfStock,
       value: stats.outOfStock,
       color: stats.outOfStock > 0 ? "#ef4444" : theme.accent
@@ -589,7 +576,6 @@ export default function StockPage() {
     { value: "out", label: t.filterOut }
   ];
 
-  // FIX: Loading state with sidebar
   if (loading) {
     return <Spinner fullScreen />;
   }
@@ -605,7 +591,7 @@ export default function StockPage() {
       <div style={{ 
         flex: 1, 
         marginLeft: contentMarginLeft, 
-        paddingBottom: isMobile ? "80px" : "24px",
+        paddingBottom: isMobile ? "70px" : "24px",
         paddingTop: isMobile ? "0" : "24px",
         paddingRight: isMobile ? "0" : "24px",
         minHeight: "100vh",
@@ -619,22 +605,22 @@ export default function StockPage() {
             <div style={{
               position: "sticky", top: 0, zIndex: 50,
               background: theme.background,
-              padding: "12px 16px 10px",
+              padding: "10px 12px 8px",
               borderBottom: `1px solid ${theme.border}`,
             }}>
               {/* Search row */}
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <div style={{ flex: 1, position: "relative" }}>
-                  <IconSearch size={15} color={theme.textSecondary} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                  <IconSearch size={14} color={theme.textSecondary} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                   <input
                     type="text"
                     placeholder={t.searchPlaceholder}
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     style={{
-                      width: "100%", padding: "10px 12px 10px 36px",
+                      width: "100%", padding: "8px 10px 8px 32px",
                       background: theme.surface, border: `1px solid ${theme.border}`,
-                      borderRadius: "10px", color: theme.text, fontSize: "14px",
+                      borderRadius: "8px", color: theme.text, fontSize: "12px",
                       WebkitAppearance: "none", boxSizing: "border-box"
                     }}
                   />
@@ -644,15 +630,15 @@ export default function StockPage() {
                   className="filter-pill"
                   onClick={() => setShowFilterSheet(true)}
                   style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    padding: "10px 14px",
+                    display: "flex", alignItems: "center", gap: "4px",
+                    padding: "8px 12px",
                     background: filterStatus !== "all" ? `${theme.primary}20` : theme.surface,
                     border: `1px solid ${filterStatus !== "all" ? theme.primary : theme.border}`,
-                    borderRadius: "10px", color: filterStatus !== "all" ? theme.primary : theme.textSecondary,
-                    cursor: "pointer", fontSize: "13px", whiteSpace: "nowrap", transition: "all 0.2s"
+                    borderRadius: "8px", color: filterStatus !== "all" ? theme.primary : theme.textSecondary,
+                    cursor: "pointer", fontSize: "11px", whiteSpace: "nowrap", transition: "all 0.2s"
                   }}
                 >
-                  <IconFilter size={14} />
+                  <IconFilter size={12} />
                   {filterStatus !== "all" ? filterOptions.find(f => f.value === filterStatus)?.label.split(" ")[0] : "Filtrer"}
                 </button>
                 {/* Refresh */}
@@ -660,26 +646,26 @@ export default function StockPage() {
                   onClick={() => fetchAllData()}
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    width: "40px", height: "40px", flexShrink: 0,
+                    width: "36px", height: "36px", flexShrink: 0,
                     background: `${theme.primary}15`, border: `1px solid ${theme.primary}30`,
-                    borderRadius: "10px", color: theme.primary, cursor: "pointer"
+                    borderRadius: "8px", color: theme.primary, cursor: "pointer"
                   }}
                 >
-                  <IconRefresh size={16} />
+                  <IconRefresh size={14} />
                 </button>
               </div>
 
               {/* Active filter chip */}
               {filterStatus !== "all" && (
-                <div style={{ marginTop: "8px", display: "flex", gap: "6px" }}>
+                <div style={{ marginTop: "6px", display: "flex", gap: "6px" }}>
                   <span style={{
-                    display: "inline-flex", alignItems: "center", gap: "5px",
+                    display: "inline-flex", alignItems: "center", gap: "4px",
                     background: `${theme.primary}20`, color: theme.primary,
-                    padding: "3px 10px", borderRadius: "20px", fontSize: "11px"
+                    padding: "2px 8px", borderRadius: "20px", fontSize: "10px"
                   }}>
                     {filterOptions.find(f => f.value === filterStatus)?.label}
                     <button onClick={() => setFilterStatus("all")} style={{ background: "none", border: "none", color: theme.primary, cursor: "pointer", padding: "0", lineHeight: 1, display: "flex" }}>
-                      <IconX size={11} />
+                      <IconX size={10} />
                     </button>
                   </span>
                 </div>
@@ -688,17 +674,17 @@ export default function StockPage() {
           )}
 
           {/* -- MAIN CONTENT PADDING -- */}
-          <div style={{ padding: isMobile ? "16px 16px 0" : "0" }}>
+          <div style={{ padding: isMobile ? "12px 12px 0" : "0" }}>
 
             {/* Header */}
             <div style={{ marginBottom: sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                 <div>
-                  <h1 style={{ color: theme.text, fontSize: headerTitleSize, display: "flex", alignItems: "center", gap: "10px", margin: 0 }}>
+                  <h1 style={{ color: theme.text, fontSize: headerTitleSize, display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
                     <IconBarChart size={isMobile ? 20 : 28} color={theme.primary} />
                     {t.title}
                   </h1>
-                  <p style={{ color: theme.textSecondary, marginTop: "4px", fontSize: isMobile ? "11px" : "14px" }}>
+                  <p style={{ color: theme.textSecondary, marginTop: "2px", fontSize: isMobile ? "10px" : "14px" }}>
                     {t.subtitle}
                   </p>
                 </div>
@@ -712,27 +698,27 @@ export default function StockPage() {
 
             {/* Info Banner */}
             {showInfo && (
-              <div style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}30`, borderRadius: "12px", padding: "12px 16px", marginBottom: sectionMargin, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", animation: "fadeInUp 0.5s ease" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
-                  <IconBox size={18} color={theme.primary} />
-                  <span style={{ color: theme.text, fontSize: isMobile ? "11px" : "13px" }}>{t.infoMessage}</span>
+              <div style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}30`, borderRadius: "10px", padding: "10px 12px", marginBottom: sectionMargin, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", animation: "fadeInUp 0.5s ease" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
+                  <IconBox size={16} color={theme.primary} />
+                  <span style={{ color: theme.text, fontSize: isMobile ? "10px" : "13px" }}>{t.infoMessage}</span>
                 </div>
                 <button onClick={() => setShowInfo(false)} style={{ background: "transparent", border: "none", color: theme.textSecondary, cursor: "pointer", padding: "4px" }}>
-                  <IconX size={14} />
+                  <IconX size={12} />
                 </button>
               </div>
             )}
 
             {/* Period selector */}
-            <div style={{ marginBottom: sectionMargin, display: "flex", gap: "8px", flexWrap: "nowrap", overflowX: "auto", paddingBottom: "4px", animation: "fadeInUp 0.5s ease 0.1s", opacity: animateCards ? 1 : 0, scrollbarWidth: "none" }}>
+            <div style={{ marginBottom: sectionMargin, display: "flex", gap: "6px", flexWrap: "nowrap", overflowX: "auto", paddingBottom: "4px", animation: "fadeInUp 0.5s ease 0.1s", opacity: animateCards ? 1 : 0, scrollbarWidth: "none" }}>
               {periodButtons.map(period => (
                 <button key={period.value} onClick={() => setSelectedPeriod(period.value as any)} style={{
-                  padding: isMobile ? "7px 14px" : "8px 20px",
+                  padding: isMobile ? "6px 12px" : "8px 20px",
                   background: selectedPeriod === period.value ? theme.primary : "transparent",
                   border: `1px solid ${selectedPeriod === period.value ? theme.primary : theme.border}`,
                   borderRadius: "20px", color: selectedPeriod === period.value ? "white" : theme.textSecondary,
-                  cursor: "pointer", fontSize: isMobile ? "12px" : "13px", whiteSpace: "nowrap", flexShrink: 0,
-                  minHeight: "36px", transition: "all 0.2s"
+                  cursor: "pointer", fontSize: isMobile ? "11px" : "13px", whiteSpace: "nowrap", flexShrink: 0,
+                  minHeight: "32px", transition: "all 0.2s"
                 }}>
                   {period.label}
                 </button>
@@ -749,22 +735,22 @@ export default function StockPage() {
                   opacity: animateCards ? 1 : 0,
                   ...(isMobile && idx === statsCards.length - 1 && statsCards.length % 2 !== 0 ? { gridColumn: "span 2" } : {})
                 }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>{card.icon}</div>
-                  <div style={{ fontSize: isMobile ? "18px" : "26px", color: card.color, fontWeight: "bold", lineHeight: 1.2 }}>{card.value}</div>
-                  <div style={{ fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary, marginTop: "2px" }}>{card.label}</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>{card.icon}</div>
+                  <div style={{ fontSize: isMobile ? "16px" : "26px", color: card.color, fontWeight: "bold", lineHeight: 1.2 }}>{card.value}</div>
+                  <div style={{ fontSize: isMobile ? "9px" : "12px", color: theme.textSecondary, marginTop: "2px" }}>{card.label}</div>
                 </div>
               ))}
             </div>
 
-            {/* Period info - CORRIGÉ : affichage correct des ventes et achats */}
-            <div style={{ background: theme.surface, borderRadius: cardRadius, padding: "14px 16px", marginBottom: sectionMargin, border: `1px solid ${theme.border}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                <IconHistory size={16} color={theme.primary} />
-                <span style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px" }}>
+            {/* Period info */}
+            <div style={{ background: theme.surface, borderRadius: cardRadius, padding: "10px 12px", marginBottom: sectionMargin, border: `1px solid ${theme.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <IconHistory size={14} color={theme.primary} />
+                <span style={{ color: theme.text, fontSize: isMobile ? "10px" : "14px" }}>
                   <strong>{t.periodAnalyzed} :</strong>{" "}
                   {selectedPeriod === "week" ? t.last7Days : selectedPeriod === "month" ? t.last30Days : selectedPeriod === "year" ? t.last12Months : t.allData}
                 </span>
-                <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "11px" : "13px" }}>
+                <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "9px" : "13px" }}>
                    {sales.length} {t.salesCount} • {purchases.length} {t.purchasesCount}
                 </span>
               </div>
@@ -794,7 +780,7 @@ export default function StockPage() {
                 {filteredProducts.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "48px 0" }}>
                     <IconBox size={40} color={theme.textSecondary} style={{ margin: "0 auto 14px", display: "block" }} />
-                    <p style={{ color: theme.textSecondary, fontSize: "14px" }}>{searchTerm ? t.noResults : t.noProducts}</p>
+                    <p style={{ color: theme.textSecondary, fontSize: "12px" }}>{searchTerm ? t.noResults : t.noProducts}</p>
                   </div>
                 ) : filteredProducts.map((p) => {
                   const status = getStockStatus(p.currentStock);
@@ -804,21 +790,21 @@ export default function StockPage() {
                       key={p.id}
                       className="product-card-mobile"
                       style={{
-                        background: theme.surface, borderRadius: "14px",
+                        background: theme.surface, borderRadius: "12px",
                         border: `1px solid ${theme.border}`,
-                        padding: "14px 16px", transition: "all 0.2s"
+                        padding: "12px", transition: "all 0.2s"
                       }}
                     >
                       {/* Top row: name + status badge */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                        <div style={{ flex: 1, marginRight: "10px" }}>
-                          <div style={{ color: theme.text, fontWeight: "600", fontSize: "14px", lineHeight: 1.3 }}>{p.name}</div>
-                          {p.sku && <div style={{ color: theme.textSecondary, fontSize: "11px", marginTop: "2px" }}>SKU: {p.sku}</div>}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                        <div style={{ flex: 1, marginRight: "8px" }}>
+                          <div style={{ color: theme.text, fontWeight: "600", fontSize: "13px", lineHeight: 1.3 }}>{p.name}</div>
+                          {p.sku && <div style={{ color: theme.textSecondary, fontSize: "10px", marginTop: "2px" }}>SKU: {p.sku}</div>}
                         </div>
                         <span style={{
                           background: status.bgColor, color: status.color,
-                          padding: "4px 10px", borderRadius: "16px", fontSize: "11px",
-                          display: "inline-flex", alignItems: "center", gap: "4px",
+                          padding: "3px 8px", borderRadius: "14px", fontSize: "9px",
+                          display: "inline-flex", alignItems: "center", gap: "3px",
                           flexShrink: 0, fontWeight: "500"
                         }}>
                           {status.icon} {status.text}
@@ -829,35 +815,35 @@ export default function StockPage() {
                       <div style={{ display: "flex", alignItems: "center", gap: "0" }}>
                         {/* Stock qty */}
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: theme.textSecondary, fontSize: "10px", marginBottom: "2px" }}>{t.stock}</div>
-                          <div style={{ color: status.color, fontWeight: "700", fontSize: "16px" }}>{p.currentStock}</div>
+                          <div style={{ color: theme.textSecondary, fontSize: "9px", marginBottom: "2px" }}>{t.stock}</div>
+                          <div style={{ color: status.color, fontWeight: "700", fontSize: "14px" }}>{p.currentStock}</div>
                         </div>
                         {/* Divider */}
-                        <div style={{ width: "1px", height: "32px", background: theme.border, marginRight: "12px" }} />
+                        <div style={{ width: "1px", height: "28px", background: theme.border, marginRight: "10px" }} />
                         {/* Unit price */}
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: theme.textSecondary, fontSize: "10px", marginBottom: "2px" }}>{t.unitPrice}</div>
-                          <div style={{ color: theme.accent, fontWeight: "600", fontSize: "13px" }}>{formatCurrency(p.price || 0)}</div>
+                          <div style={{ color: theme.textSecondary, fontSize: "9px", marginBottom: "2px" }}>{t.unitPrice}</div>
+                          <div style={{ color: theme.accent, fontWeight: "600", fontSize: "11px" }}>{formatCurrency(p.price || 0)}</div>
                         </div>
                         {/* Divider */}
-                        <div style={{ width: "1px", height: "32px", background: theme.border, marginRight: "12px" }} />
+                        <div style={{ width: "1px", height: "28px", background: theme.border, marginRight: "10px" }} />
                         {/* Total value */}
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: theme.textSecondary, fontSize: "10px", marginBottom: "2px" }}>{t.stockValue}</div>
-                          <div style={{ color: theme.textSecondary, fontWeight: "600", fontSize: "13px" }}>{formatCurrency(value)}</div>
+                          <div style={{ color: theme.textSecondary, fontSize: "9px", marginBottom: "2px" }}>{t.stockValue}</div>
+                          <div style={{ color: theme.textSecondary, fontWeight: "600", fontSize: "11px" }}>{formatCurrency(value)}</div>
                         </div>
                         {/* History button */}
                         <button
                           onClick={() => { setSelectedProduct(p); setShowMovements(true); }}
                           style={{
-                            marginLeft: "10px", background: `${theme.primary}15`,
+                            marginLeft: "8px", background: `${theme.primary}15`,
                             border: `1px solid ${theme.primary}30`,
-                            borderRadius: "10px", width: "44px", height: "44px",
+                            borderRadius: "8px", width: "40px", height: "40px",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             color: theme.primary, cursor: "pointer", flexShrink: 0
                           }}
                         >
-                          <IconHistory size={18} />
+                          <IconHistory size={16} />
                         </button>
                       </div>
                     </div>
@@ -877,7 +863,7 @@ export default function StockPage() {
                         <th style={{ padding: "10px", textAlign: "right" }}>{t.stock}</th>
                         <th style={{ padding: "10px", textAlign: "right" }}>{t.value}</th>
                         <th style={{ padding: "10px", textAlign: "center" }}>{t.status}</th>
-                        <th style={{ padding: "10px", textAlign: "center" }}>{t.actions}</th>
+                        <th style={{ padding: "10px", textAlign: "center" }}>{t.history}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -917,9 +903,9 @@ export default function StockPage() {
             )}
 
             {/* Legend */}
-            <div style={{ marginTop: "24px", padding: "16px", background: theme.surface, borderRadius: cardRadius, border: `1px solid ${theme.border}` }}>
-              <h4 style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>{t.legend}</h4>
-              <div style={{ display: "flex", gap: isMobile ? "10px" : "24px", flexWrap: "wrap" }}>
+            <div style={{ marginTop: "16px", padding: "12px", background: theme.surface, borderRadius: cardRadius, border: `1px solid ${theme.border}` }}>
+              <h4 style={{ color: theme.text, fontSize: isMobile ? "11px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>{t.legend}</h4>
+              <div style={{ display: "flex", gap: isMobile ? "8px" : "24px", flexWrap: "wrap" }}>
                 {[
                   { icon: <IconBan size={12} color="#ef4444" />, label: t.outOfStockStatus, desc: t.outOfStockDesc, color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
                   { icon: <IconAlertTriangle size={12} color="#f59e0b" />, label: t.lowStockStatus, desc: t.lowStockDesc, color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
@@ -947,13 +933,13 @@ export default function StockPage() {
             onClick={e => e.stopPropagation()}
             style={{
               background: theme.surface, borderRadius: "20px 20px 0 0",
-              width: "100%", padding: "20px 20px 32px",
+              width: "100%", padding: "16px 16px 32px",
               animation: "slideUp 0.3s ease"
             }}
           >
             {/* Handle bar */}
-            <div style={{ width: "40px", height: "4px", background: theme.border, borderRadius: "2px", margin: "0 auto 20px" }} />
-            <h3 style={{ color: theme.text, fontSize: "16px", marginBottom: "16px" }}>Filtrer les produits</h3>
+            <div style={{ width: "40px", height: "4px", background: theme.border, borderRadius: "2px", margin: "0 auto 16px" }} />
+            <h3 style={{ color: theme.text, fontSize: "14px", marginBottom: "12px" }}>Filtrer les produits</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {filterOptions.map(f => (
                 <button
@@ -961,16 +947,16 @@ export default function StockPage() {
                   onClick={() => { setFilterStatus(f.value); setShowFilterSheet(false); }}
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "14px 16px",
+                    padding: "12px 14px",
                     background: filterStatus === f.value ? `${theme.primary}15` : "transparent",
                     border: `1px solid ${filterStatus === f.value ? theme.primary : theme.border}`,
-                    borderRadius: "12px", color: filterStatus === f.value ? theme.primary : theme.text,
-                    cursor: "pointer", fontSize: "14px", textAlign: "left", width: "100%",
+                    borderRadius: "10px", color: filterStatus === f.value ? theme.primary : theme.text,
+                    cursor: "pointer", fontSize: "13px", textAlign: "left", width: "100%",
                     fontWeight: filterStatus === f.value ? "600" : "400"
                   }}
                 >
                   {f.label}
-                  {filterStatus === f.value && <IconCheckCircle size={16} color={theme.primary} />}
+                  {filterStatus === f.value && <IconCheckCircle size={14} color={theme.primary} />}
                 </button>
               ))}
             </div>
@@ -1003,51 +989,51 @@ export default function StockPage() {
           >
             {/* Handle bar (mobile) */}
             {isMobile && (
-              <div style={{ padding: "12px 0 4px", display: "flex", justifyContent: "center" }}>
+              <div style={{ padding: "10px 0 4px", display: "flex", justifyContent: "center" }}>
                 <div style={{ width: "40px", height: "4px", background: theme.border, borderRadius: "2px" }} />
               </div>
             )}
             {/* Header */}
-            <div style={{ padding: isMobile ? "12px 20px 14px" : "16px 20px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: isMobile ? "10px 16px 12px" : "16px 20px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h3 style={{ color: theme.text, margin: 0, fontSize: isMobile ? "15px" : "17px" }}>{t.movementsTitle}</h3>
-                <p style={{ color: theme.textSecondary, margin: "2px 0 0", fontSize: "12px" }}>{selectedProduct.name}</p>
+                <h3 style={{ color: theme.text, margin: 0, fontSize: isMobile ? "14px" : "17px" }}>{t.movementsTitle}</h3>
+                <p style={{ color: theme.textSecondary, margin: "2px 0 0", fontSize: "11px" }}>{selectedProduct.name}</p>
               </div>
               <button
                 onClick={() => { setShowMovements(false); setSelectedProduct(null); }}
-                style={{ background: `${theme.border}60`, border: "none", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: theme.text, cursor: "pointer" }}
+                style={{ background: `${theme.border}60`, border: "none", borderRadius: "50%", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", color: theme.text, cursor: "pointer" }}
               >
-                <IconX size={16} />
+                <IconX size={14} />
               </button>
             </div>
 
             {/* Body */}
-            <div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>
+            <div style={{ padding: "14px 16px", overflowY: "auto", flex: 1 }}>
               {getProductMovements(selectedProduct.id as number).length > 0 ? (
                 isMobile ? (
                   /* Mobile: movement rows as cards */
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                     {getProductMovements(selectedProduct.id as number).map((m, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: theme.background, borderRadius: "12px", border: `1px solid ${theme.border}` }}>
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px", background: theme.background, borderRadius: "10px", border: `1px solid ${theme.border}` }}>
                         <div style={{
-                          width: "38px", height: "38px", borderRadius: "10px", flexShrink: 0,
+                          width: "34px", height: "34px", borderRadius: "8px", flexShrink: 0,
                           background: m.type === "in" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: "18px"
+                          fontSize: "16px"
                         }}>
                           {m.type === "in" ? "📥" : "📤"}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ color: m.type === "in" ? "#10b981" : "#ef4444", fontWeight: "600", fontSize: "13px" }}>
+                            <span style={{ color: m.type === "in" ? "#10b981" : "#ef4444", fontWeight: "600", fontSize: "12px" }}>
                               {m.type === "in" ? t.entry : t.exit}
                             </span>
-                            <span style={{ color: m.type === "in" ? "#10b981" : "#ef4444", fontWeight: "700", fontSize: "15px" }}>
+                            <span style={{ color: m.type === "in" ? "#10b981" : "#ef4444", fontWeight: "700", fontSize: "14px" }}>
                               {m.type === "in" ? "+" : "-"}{m.quantity}
                             </span>
                           </div>
-                          <div style={{ color: theme.textSecondary, fontSize: "11px", marginTop: "2px" }}>{m.reference}</div>
-                          <div style={{ color: theme.textSecondary, fontSize: "11px" }}>{formatDate(m.date)}</div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", marginTop: "2px" }}>{m.reference}</div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px" }}>{formatDate(m.date)}</div>
                         </div>
                       </div>
                     ))}
@@ -1086,10 +1072,10 @@ export default function StockPage() {
 
             {/* Mobile close button */}
             {isMobile && (
-              <div style={{ padding: "12px 20px 20px", borderTop: `1px solid ${theme.border}` }}>
+              <div style={{ padding: "12px 16px 16px", borderTop: `1px solid ${theme.border}` }}>
                 <button
                   onClick={() => { setShowMovements(false); setSelectedProduct(null); }}
-                  style={{ width: "100%", padding: "14px", background: theme.primary, border: "none", borderRadius: "12px", color: "white", fontSize: "15px", fontWeight: "600", cursor: "pointer" }}
+                  style={{ width: "100%", padding: "12px", background: theme.primary, border: "none", borderRadius: "10px", color: "white", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}
                 >
                   {t.close}
                 </button>
