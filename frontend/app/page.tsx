@@ -466,7 +466,7 @@ export default function HomePage(): React.ReactElement {
     React.createElement("div", { className: "ambient-glow" }),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE ET TAILLE AUGMENTÉE
+    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE (TEXTE RÉDUIT)
     // ═══════════════════════════════════════════════════════════════════════════
     isMobile && React.createElement("header", {
       className: "mobile-header",
@@ -491,13 +491,13 @@ export default function HomePage(): React.ReactElement {
         style: {
           display: "flex",
           alignItems: "center",
-          gap: "14px",
+          gap: "12px",
           opacity: logoVisible ? 1 : 0,
           transform: logoVisible ? "translateY(0)" : "translateY(-20px)",
           transition: "opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)"
         }
       },
-        // Logo image — TAILLE AUGMENTÉE (52px au lieu de 36px)
+        // Logo image (52px — conservé)
         React.createElement("div", {
           style: {
             width: "52px",
@@ -529,7 +529,7 @@ export default function HomePage(): React.ReactElement {
             }
           })
         ),
-        // Brand text — TAILLE AUGMENTÉE
+        // Brand text — ✅ RÉDUIT : 18px → 14px / 10px → 8px
         React.createElement("div", {
           style: {
             display: "flex",
@@ -540,9 +540,9 @@ export default function HomePage(): React.ReactElement {
           React.createElement("span", {
             style: {
               color: "white",
-              fontSize: "18px",
+              fontSize: "14px",
               fontWeight: "300",
-              letterSpacing: "2.5px",
+              letterSpacing: "2px",
               textTransform: "uppercase",
               fontFamily: LOGO_FONT
             }
@@ -555,10 +555,10 @@ export default function HomePage(): React.ReactElement {
               background: "linear-gradient(90deg, #A855F7, #6366F1)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              fontSize: "10px",
+              fontSize: "8px",
               fontWeight: "700",
-              letterSpacing: "6px",
-              marginTop: "3px",
+              letterSpacing: "5px",
+              marginTop: "2px",
               textTransform: "uppercase",
               fontFamily: LOGO_FONT
             }
@@ -636,7 +636,7 @@ export default function HomePage(): React.ReactElement {
       }
     },
       // ═════════════════════════════════════════════════════════════════════════
-      //  ✅ LOGO INLINE — UNIQUEMENT SUR TABLETTE/DESKTOP (pas sur mobile)
+      //  LOGO INLINE — TABLETTE/DESKTOP UNIQUEMENT
       // ═════════════════════════════════════════════════════════════════════════
       !isMobile && React.createElement("div", {
         style: {
@@ -668,7 +668,22 @@ export default function HomePage(): React.ReactElement {
           React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
         )
       ),
-      React.createElement("h1", { style: { fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px", color: "white", fontWeight: "900", lineHeight: "1.1", marginBottom: "28px", letterSpacing: "-1.5px", textShadow: "0 0 30px rgba(168, 85, 247, 0.15)", opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(28px)", transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)" } }, text.title),
+      // ✅ TITRE HERO avec marge supérieure sur mobile
+      React.createElement("h1", {
+        style: {
+          fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px",
+          color: "white",
+          fontWeight: "900",
+          lineHeight: "1.1",
+          marginBottom: "28px",
+          marginTop: isMobile ? "24px" : "0",
+          letterSpacing: "-1.5px",
+          textShadow: "0 0 30px rgba(168, 85, 247, 0.15)",
+          opacity: heroVisible ? 1 : 0,
+          transform: heroVisible ? "translateY(0)" : "translateY(28px)",
+          transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)"
+        }
+      }, text.title),
       React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: "36px", maxWidth: "460px" } },
         text.features.map((f: { title: string }, i: number) => {
           return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "16px", background: "rgba(168, 85, 247, 0.06)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
