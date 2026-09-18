@@ -204,31 +204,31 @@ const res = await fetch(`${baseURL}/auth/login`, {
             overflowY: "auto",
           }}>
 
-            {/* LOGO BLOCK */}
+            {/* LOGO BLOCK — ✅ LOGO AUGMENTÉ + TEXTE RÉDUIT */}
             <div className="anim-item anim-logo" style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              marginBottom: "36px",
+              gap: "12px",
+              marginBottom: "32px",
             }}>
               <img 
                 src="/images/logo.png" 
                 alt="Inovexa Logo" 
                 style={{ 
-                  width: "52px",
+                  width: "72px",
                   height: "auto", 
-                  filter: "drop-shadow(0 0 12px rgba(138,43,226,0.7))" 
+                  filter: "drop-shadow(0 0 14px rgba(138,43,226,0.75))" 
                 }} 
               />
               <div>
                 <h2 style={{ 
                   color: "white", 
-                  fontSize: "22px", 
+                  fontSize: "16px", 
                   // ✅ Police Orbitron pour INOVEXA
                   fontFamily: "'Orbitron', 'Poppins', sans-serif",
                   fontWeight: "300", 
                   margin: 0, 
-                  letterSpacing: "2px",
+                  letterSpacing: "1.8px",
                   textTransform: "uppercase",
                   lineHeight: 1,
                 }}>
@@ -238,11 +238,11 @@ const res = await fetch(`${baseURL}/auth/login`, {
                   background: "linear-gradient(90deg, #A855F7, #6366F1)",
                   WebkitBackgroundClip: "text", 
                   WebkitTextFillColor: "transparent",
-                  fontSize: "11px", 
+                  fontSize: "9px", 
                   fontWeight: "700",
                   // ✅ Police Orbitron pour ERP
                   fontFamily: "'Orbitron', 'Poppins', sans-serif",
-                  letterSpacing: "7px", 
+                  letterSpacing: "5px", 
                   marginTop: "3px",
                   textTransform: "uppercase"
                 }}>ERP</div>
