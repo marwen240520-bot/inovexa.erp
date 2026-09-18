@@ -466,7 +466,7 @@ export default function HomePage(): React.ReactElement {
     React.createElement("div", { className: "ambient-glow" }),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À DROITE ET PLUS GRAND
+    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE ET TAILLE AUGMENTÉE
     // ═══════════════════════════════════════════════════════════════════════════
     isMobile && React.createElement("header", {
       className: "mobile-header",
@@ -482,7 +482,7 @@ export default function HomePage(): React.ReactElement {
         borderBottom: "1px solid rgba(168, 85, 247, 0.2)",
         display: "flex",
         alignItems: "center",
-        justifyContent: "flex-end",
+        justifyContent: "flex-start",
         zIndex: 150,
         padding: "0 16px"
       }
@@ -491,49 +491,13 @@ export default function HomePage(): React.ReactElement {
         style: {
           display: "flex",
           alignItems: "center",
-          gap: "12px",
+          gap: "14px",
           opacity: logoVisible ? 1 : 0,
           transform: logoVisible ? "translateY(0)" : "translateY(-20px)",
           transition: "opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)"
         }
       },
-        // Brand text
-        React.createElement("div", {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            lineHeight: 1,
-            alignItems: "flex-end"
-          }
-        },
-          React.createElement("span", {
-            style: {
-              color: "white",
-              fontSize: "17px",
-              fontWeight: "300",
-              letterSpacing: "2px",
-              textTransform: "uppercase",
-              fontFamily: LOGO_FONT
-            }
-          },
-            React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
-          ),
-          React.createElement("span", {
-            className: "erp-text-glow",
-            style: {
-              background: "linear-gradient(90deg, #A855F7, #6366F1)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              fontSize: "9px",
-              fontWeight: "700",
-              letterSpacing: "6px",
-              marginTop: "3px",
-              textTransform: "uppercase",
-              fontFamily: LOGO_FONT
-            }
-          }, "ERP")
-        ),
-        // Logo image (plus grand)
+        // Logo image — TAILLE AUGMENTÉE (52px au lieu de 36px)
         React.createElement("div", {
           style: {
             width: "52px",
@@ -561,15 +525,50 @@ export default function HomePage(): React.ReactElement {
               objectFit: "contain",
               position: "relative",
               zIndex: 2,
-              filter: "drop-shadow(0 0 12px rgba(138,43,226,0.7))"
+              filter: "drop-shadow(0 0 12px rgba(138,43,226,0.75))"
             }
           })
+        ),
+        // Brand text — TAILLE AUGMENTÉE
+        React.createElement("div", {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: 1
+          }
+        },
+          React.createElement("span", {
+            style: {
+              color: "white",
+              fontSize: "18px",
+              fontWeight: "300",
+              letterSpacing: "2.5px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
+            }
+          },
+            React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+          ),
+          React.createElement("span", {
+            className: "erp-text-glow",
+            style: {
+              background: "linear-gradient(90deg, #A855F7, #6366F1)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontSize: "10px",
+              fontWeight: "700",
+              letterSpacing: "6px",
+              marginTop: "3px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
+            }
+          }, "ERP")
         )
       )
     ),
 
     // Language Selector
-    React.createElement("div", { style: { position: "fixed", top: "16px", right: isMobile ? "96px" : "16px", zIndex: 200, transition: "right 0.3s ease" } },
+    React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200 } },
       React.createElement("button", {
         onClick: (e: React.MouseEvent) => { e.stopPropagation(); setShowLanguageMenu(!showLanguageMenu); },
         style: {
@@ -636,7 +635,9 @@ export default function HomePage(): React.ReactElement {
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
-      // Logo inline — uniquement sur tablette/desktop
+      // ═════════════════════════════════════════════════════════════════════════
+      //  ✅ LOGO INLINE — UNIQUEMENT SUR TABLETTE/DESKTOP (pas sur mobile)
+      // ═════════════════════════════════════════════════════════════════════════
       !isMobile && React.createElement("div", {
         style: {
           display: "flex",
