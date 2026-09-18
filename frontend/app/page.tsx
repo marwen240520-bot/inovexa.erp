@@ -92,7 +92,7 @@ const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, san
 
 export default function HomePage(): React.ReactElement {
   const router = useRouter();
-  const pathname = usePathname(); // ✅ Détecte chaque entrée sur cette page
+  const pathname = usePathname();
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
 
@@ -124,12 +124,7 @@ export default function HomePage(): React.ReactElement {
     return result;
   }, [isMobile]);
 
-  // ═════════════════════════════════════════════════════════════════════════════
-  //  ✅ ANIMATION RELANCÉE À CHAQUE ENTRÉE SUR LA PAGE
-  //  Réinitialise tous les états à chaque changement de pathname
-  // ═════════════════════════════════════════════════════════════════════════════
   useEffect((): (() => void) => {
-    // Reset tous les états d'animation à chaque montage/entrée
     setIsLoading(true);
     setIsExiting(false);
     setLogoVisible(false);
@@ -151,7 +146,7 @@ export default function HomePage(): React.ReactElement {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [pathname]); // ✅ Se déclenche à chaque navigation vers cette page
+  }, [pathname]);
 
   useEffect((): (() => void) | undefined => {
     if (!showLanguageMenu) return;
@@ -160,7 +155,6 @@ export default function HomePage(): React.ReactElement {
     return (): void => { document.removeEventListener("click", handler); };
   }, [showLanguageMenu]);
 
-  // ─── Text animation triggers ────────────────────────────────────────────────
   useEffect((): (() => void) | undefined => {
     if (isLoading) return;
     const t0 = setTimeout(() => setLogoVisible(true), 100);
@@ -471,6 +465,108 @@ export default function HomePage(): React.ReactElement {
     }),
     React.createElement("div", { className: "ambient-glow" }),
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  ✅ MOBILE: HEADER FIXE AVEC LOGO EN HAUT
+    // ═══════════════════════════════════════════════════════════════════════════
+    isMobile && React.createElement("header", {
+      className: "mobile-header",
+      style: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: "64px",
+        background: "rgba(0, 0, 0, 0.85)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(168, 85, 247, 0.2)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 150,
+        padding: "0 16px"
+      }
+    },
+      React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? "translateY(0)" : "translateY(-20px)",
+          transition: "opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)"
+        }
+      },
+        // Logo image
+        React.createElement("div", {
+          style: {
+            width: "36px",
+            height: "36px",
+            position: "relative",
+            flexShrink: 0
+          }
+        },
+          React.createElement("div", {
+            style: {
+              position: "absolute",
+              inset: "-20%",
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(168,85,247,0.5) 0%, transparent 70%)",
+              animation: "headerHaloPulse 2.8s ease-in-out infinite",
+              pointerEvents: "none"
+            }
+          }),
+          React.createElement("img", {
+            src: "/images/logo.png",
+            alt: "Inovexa Logo",
+            style: {
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              position: "relative",
+              zIndex: 2,
+              filter: "drop-shadow(0 0 10px rgba(138,43,226,0.7))"
+            }
+          })
+        ),
+        // Brand text
+        React.createElement("div", {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: 1
+          }
+        },
+          React.createElement("span", {
+            style: {
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "300",
+              letterSpacing: "2px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
+            }
+          },
+            React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+          ),
+          React.createElement("span", {
+            className: "erp-text-glow",
+            style: {
+              background: "linear-gradient(90deg, #A855F7, #6366F1)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontSize: "8px",
+              fontWeight: "700",
+              letterSpacing: "5px",
+              marginTop: "2px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
+            }
+          }, "ERP")
+        )
+      )
+    ),
+
     // Language Selector
     React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200 } },
       React.createElement("button", {
@@ -533,13 +629,16 @@ export default function HomePage(): React.ReactElement {
     React.createElement("div", {
       style: {
         width: isCompact ? "100%" : "48%",
-        padding: isMobile ? "72px 24px 40px" : isTablet ? "80px 48px 48px" : "0 0 0 64px",
+        padding: isMobile ? "88px 24px 40px" : isTablet ? "80px 48px 48px" : "0 0 0 64px",
         display: "flex", flexDirection: "column", justifyContent: "center",
         zIndex: 10, position: "relative",
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
-      React.createElement("div", {
+      // ═════════════════════════════════════════════════════════════════════════
+      //  ✅ LOGO INLINE — UNIQUEMENT SUR TABLETTE/DESKTOP (pas sur mobile)
+      // ═════════════════════════════════════════════════════════════════════════
+      !isMobile && React.createElement("div", {
         style: {
           display: "flex",
           alignItems: "center",
@@ -647,6 +746,8 @@ export default function HomePage(): React.ReactElement {
       @keyframes wordGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(168,85,247,0.4)); } 50% { filter: drop-shadow(0 0 22px rgba(168,85,247,0.85)) drop-shadow(0 0 40px rgba(99,102,241,0.4)); } }
       @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
       @media (max-width: 640px) { .cta-button-shimmer { width: 100%; justify-content: center; } }
+
+      @keyframes headerHaloPulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
 
       .logo3d-scene { perspective: 700px; cursor: pointer; }
       .logo3d { transform-style: preserve-3d; animation: logoFloat3D 7s ease-in-out infinite; will-change: transform; }
