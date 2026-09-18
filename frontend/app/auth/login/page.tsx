@@ -204,20 +204,21 @@ const res = await fetch(`${baseURL}/auth/login`, {
             overflowY: "auto",
           }}>
 
-            {/* LOGO BLOCK — ✅ LOGO AUGMENTÉ + TEXTE RÉDUIT */}
+            {/* LOGO BLOCK — ✅ LOGO PLUS GRAND + GAP SUPPRIMÉ */}
             <div className="anim-item anim-logo" style={{
               display: "flex",
               alignItems: "center",
-              gap: "12px",
+              gap: "0px",
               marginBottom: "32px",
             }}>
               <img 
                 src="/images/logo.png" 
                 alt="Inovexa Logo" 
                 style={{ 
-                  width: "72px",
+                  width: "96px",
                   height: "auto", 
-                  filter: "drop-shadow(0 0 14px rgba(138,43,226,0.75))" 
+                  marginRight: "-8px",
+                  filter: "drop-shadow(0 0 16px rgba(138,43,226,0.8))" 
                 }} 
               />
               <div>
