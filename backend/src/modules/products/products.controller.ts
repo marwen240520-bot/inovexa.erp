@@ -12,10 +12,11 @@ export class ProductsController {
     return this.productsService.findAll(req.user.userId);
   }
 
-  // ⚠️ IMPORTANT: La route 'import' doit être AVANT ':id'
-  // Sinon NestJS interprète "import" comme un :id
+  // ⚠️ DOIT être AVANT ':id' sinon NestJS capture "import" comme :id
   @Post('import')
   async importProducts(@Request() req: any, @Body() body: { products: any[] }) {
+    console.log('[ProductsController] Body reçu:', JSON.stringify(body).substring(0, 500));
+    console.log('[ProductsController] Nombre de produits:', body?.products?.length);
     return this.productsService.importProducts(req.user.userId, body.products);
   }
 
