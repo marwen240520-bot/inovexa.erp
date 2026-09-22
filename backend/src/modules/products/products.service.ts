@@ -38,9 +38,9 @@ export class ProductsService {
     const productData = {
       name: data.name,
       sku: data.sku || '',
-      price: parseFloat(data.price) || 0,
-      quantity: Number(data.quantity) || 0,
-      categoryId: data.categoryId || null,
+      price: this.parseNumber(data.price),
+      quantity: this.parseNumber(data.quantity),
+      categoryId: this.parseCategoryId(data.categoryId),
       userId: userId,
     };
 
@@ -62,40 +62,34 @@ export class ProductsService {
       const data = products[i];
 
       try {
-        if (!data.name) {
+        if (!data || typeof data !== 'object') {
+          throw new Error('Ligne invalide');
+        }
+
+        // Validation du nom
+        if (!data.name || String(data.name).trim() === '') {
           throw new Error('Nom du produit manquant');
         }
 
         const productData = {
           name: String(data.name).trim(),
           sku: data.sku ? String(data.sku).trim() : '',
-          price: parseFloat(data.price) || 0,
-          quantity: Number(data.quantity) || 0,
-          categoryId:
-            data.categoryId !== undefined &&
-            data.categoryId !== null &&
-            data.categoryId !== ''
-              ? Number(data.categoryId)
-              : null,
+          price: this.parseNumber(data.price),
+          quantity: this.parseNumber(data.quantity),
+          categoryId: this.parseCategoryId(data.categoryId),
           userId: userId,
         };
 
         const product = this.productRepository.create(productData);
-
         await this.productRepository.save(product);
-
         success++;
       } catch (error) {
         errors++;
-
         errorDetails.push({
           row: i + 2,
           name: data?.name || '',
           sku: data?.sku || '',
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Erreur inconnue',
+          error: error instanceof Error ? error.message : 'Erreur inconnue',
         });
       }
     }
@@ -125,5 +119,30 @@ export class ProductsService {
     await this.productRepository.delete(id);
 
     return { success: true };
+  }
+
+  // ==================== Helpers privés ====================
+
+  private parseNumber(value: any): number {
+    if (value === null || value === undefined || value === '') return 0;
+    if (typeof value === 'number') return isNaN(value) ? 0 : value;
+    // Gérer les nombres avec virgule française "12,50"
+    const normalized = String(value).replace(',', '.').trim();
+    const num = Number(normalized);
+    return isNaN(num) ? 0 : num;
+  }
+
+  private parseCategoryId(value: any): number | null {
+    if (
+      value === null ||
+      value === undefined ||
+      value === '' ||
+      value === 'null' ||
+      value === 'undefined'
+    ) {
+      return null;
+    }
+    const num = Number(value);
+    return isNaN(num) ? null : num;
   }
 }
