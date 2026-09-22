@@ -41,6 +41,9 @@ interface ModalState {
   editId?: number | string | null;
 }
 
+// -- API URL helper -----------------------------------------
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
 // -- SVG Icons ----------------------------------------------
 const IconBox = ({ size = 20, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -146,14 +149,6 @@ const IconX = ({ size = 16, color = "currentColor" }: { size?: number; color?: s
   </svg>
 );
 
-const IconInfo = ({ size = 16, color = "currentColor", style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="12" y1="16" x2="12" y2="12"/>
-    <line x1="12" y1="8" x2="12.01" y2="8"/>
-  </svg>
-);
-
 // -- SelectAllCheckbox --------------------------------------
 function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemId }: {
   items: Product[];
@@ -209,7 +204,6 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState("list");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [importing, setImporting] = useState(false);
-  const [showInfo, setShowInfo] = useState(true);
 
   const headerTitleSize = isMobile ? "20px" : "28px";
   const cardPadding = isMobile ? "12px" : "20px";
@@ -222,10 +216,7 @@ export default function ProductsPage() {
   const modalWidth = isMobile ? "95%" : "500px";
   const modalPadding = isMobile ? "20px" : "32px";
   const gridMinWidth = isMobile ? "160px" : "280px";
-  // FIX: Set proper margin-left for desktop (280px for sidebar)
-  const contentMarginLeft = isMobile ? "0" : "0px";
 
-  // suppress unused warnings
   void isTablet; void isDesktop; void language; void importing;
 
   useEffect(() => {
@@ -241,7 +232,7 @@ export default function ProductsPage() {
   const fetchCategories = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/categories`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setCategories(Array.isArray(data) ? data : []);
       await fetchProducts();
@@ -255,7 +246,7 @@ export default function ProductsPage() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch(e) { console.error("Erreur chargement produits:", e); }
@@ -272,27 +263,27 @@ export default function ProductsPage() {
         categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
+      const res = await fetch(`${API_URL}/products`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json", 
-          Authorization: `Bearer ${token}` 
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(productData)
       });
-      
-      if (res.ok) { 
-        setModal({ open: false, form: {}, editMode: false, editId: null }); 
-        await fetchProducts(); 
-        showMessage(t("products.productCreated"), "success"); 
-      } else { 
-        const err = await res.json(); 
+
+      if (res.ok) {
+        setModal({ open: false, form: {}, editMode: false, editId: null });
+        await fetchProducts();
+        showMessage(t("products.productCreated"), "success");
+      } else {
+        const err = await res.json();
         console.error("Erreur création produit:", err);
-        showMessage(err.message || t("common.error"), "error"); 
+        showMessage(err.message || t("common.error"), "error");
       }
-    } catch(e) { 
+    } catch(e) {
       console.error("Exception création produit:", e);
-      showMessage(t("common.error"), "error"); 
+      showMessage(t("common.error"), "error");
     }
   };
 
@@ -306,27 +297,27 @@ export default function ProductsPage() {
         categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${modal.editId}`, {
+      const res = await fetch(`${API_URL}/products/${modal.editId}`, {
         method: "PUT",
-        headers: { 
-          "Content-Type": "application/json", 
-          Authorization: `Bearer ${token}` 
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(productData)
       });
-      
-      if (res.ok) { 
-        setModal({ open: false, form: {}, editMode: false, editId: null }); 
-        await fetchProducts(); 
-        showMessage(t("products.productUpdated"), "success"); 
-      } else { 
-        const err = await res.json(); 
+
+      if (res.ok) {
+        setModal({ open: false, form: {}, editMode: false, editId: null });
+        await fetchProducts();
+        showMessage(t("products.productUpdated"), "success");
+      } else {
+        const err = await res.json();
         console.error("Erreur mise à jour produit:", err);
-        showMessage(err.message || t("common.error"), "error"); 
+        showMessage(err.message || t("common.error"), "error");
       }
-    } catch(e) { 
+    } catch(e) {
       console.error("Exception mise à jour produit:", e);
-      showMessage(t("common.error"), "error"); 
+      showMessage(t("common.error"), "error");
     }
   };
 
@@ -334,9 +325,9 @@ export default function ProductsPage() {
     if (confirm(t("products.confirmDelete"))) {
       const token = localStorage.getItem("token");
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, { 
-          method: "DELETE", 
-          headers: { Authorization: `Bearer ${token}` } 
+        await fetch(`${API_URL}/products/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
         });
         await fetchProducts();
         showMessage(t("products.productDeleted"), "success");
@@ -355,14 +346,14 @@ export default function ProductsPage() {
       const token = localStorage.getItem("token");
       try {
         for (const id of selectedIds) {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, { 
-            method: "DELETE", 
-            headers: { Authorization: `Bearer ${token}` } 
+          await fetch(`${API_URL}/products/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
         await fetchProducts();
         setSelectedIds([]);
-        showMessage(`${count} produit(s) supprim(s)`, "success");
+        showMessage(`${count} produit(s) supprimé(s)`, "success");
       } catch(e) {
         console.error("Erreur suppression en masse:", e);
         showMessage(t("common.error"), "error");
@@ -374,60 +365,85 @@ export default function ProductsPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const productsWithZeroStock = data.map(p => ({ ...p, quantity: 0 }));
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/import`, {
+      const productsWithZeroStock = data.map(p => ({
+        ...p,
+        quantity: 0
+      }));
+
+      const res = await fetch(`${API_URL}/products/import`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json", 
-          Authorization: `Bearer ${token}` 
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ products: productsWithZeroStock })
       });
-      const result = await res.json();
-      if (res.ok) { 
-        showMessage(`${result.success} produit(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success"); 
-        await fetchProducts(); 
-      } else { 
-        showMessage(result.message || "Erreur lors de l'import", "error"); 
+
+      let result: any = null;
+      try { result = await res.json(); } catch { result = null; }
+
+      if (res.ok && result) {
+        const successCount = result.success ?? 0;
+        const errorCount = result.errors ?? 0;
+
+        if (errorCount > 0 && successCount === 0) {
+          // Tout a échoué
+          const firstErr = result.errorDetails?.[0]?.error || "";
+          showMessage(
+            `Aucun produit importé. ${errorCount} erreur(s).${firstErr ? " " + firstErr : ""}`,
+            "error"
+          );
+        } else if (errorCount > 0) {
+          // Partiel
+          showMessage(
+            `${successCount} produit(s) importé(s), ${errorCount} erreur(s)`,
+            "success"
+          );
+        } else {
+          showMessage(`${successCount} produit(s) importé(s) avec succès`, "success");
+        }
+        await fetchProducts();
+      } else {
+        showMessage(result?.message || "Erreur lors de l'import", "error");
       }
-    } catch(e) { 
+    } catch(e) {
       console.error("Erreur import:", e);
-      showMessage("Erreur de connexion lors de l'import", "error"); 
+      showMessage("Erreur de connexion lors de l'import", "error");
     }
     finally { setImporting(false); }
   };
 
-  const showMessage = (msg: string, type: string) => { 
-    setMessage(msg); 
-    setMessageType(type); 
-    setTimeout(() => setMessage(""), 3000); 
+  const showMessage = (msg: string, type: string) => {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => setMessage(""), 4000);
   };
 
   const openEditModal = (product: Product) => {
-    setModal({ 
-      open: true, 
-      editMode: true, 
-      editId: product.id, 
-      form: { 
-        name: product.name || "", 
-        sku: product.sku || "", 
-        price: product.price || 0, 
+    setModal({
+      open: true,
+      editMode: true,
+      editId: product.id,
+      form: {
+        name: product.name || "",
+        sku: product.sku || "",
+        price: product.price || 0,
         categoryId: product.categoryId || "",
-      } 
+      }
     });
   };
 
   const openCreateModal = () => {
-    setModal({ 
-      open: true, 
-      editMode: false, 
+    setModal({
+      open: true,
+      editMode: false,
       editId: null,
-      form: { 
-        name: "", 
-        sku: "", 
-        price: 0, 
-        categoryId: "" 
-      } 
+      form: {
+        name: "",
+        sku: "",
+        price: 0,
+        categoryId: ""
+      }
     });
   };
 
@@ -463,8 +479,8 @@ export default function ProductsPage() {
   };
 
   const statsCards = [
-    { Icon: IconBox,           label: t("products.totalProducts"), value: stats.total,                     color: theme.primary },
-    { Icon: IconDollar,        label: t("products.totalValue"),    value: formatCurrency(stats.totalValue), color: theme.accent },
+    { Icon: IconBox,    label: t("products.totalProducts"), value: stats.total,                     color: theme.primary },
+    { Icon: IconDollar, label: t("products.totalValue"),    value: formatCurrency(stats.totalValue), color: theme.accent },
   ];
 
   const animations = `
@@ -474,27 +490,26 @@ export default function ProductsPage() {
     @keyframes slideIn    { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
   `;
 
-  // FIX: Loading state with sidebar
   if (loading) {
     return <Spinner fullScreen />;
   }
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      background: theme.background, 
-      display: "flex", 
+    <div style={{
+      minHeight: "100vh",
+      background: theme.background,
+      display: "flex",
       position: "relative",
       padding: 0,
       margin: 0
     }}>
 
-      <div style={{ 
-        flex: 1, 
-        padding: isMobile ? "12px" : "24px", 
-        width: "100%", 
+      <div style={{
+        flex: 1,
+        padding: isMobile ? "12px" : "24px",
+        width: "100%",
         overflowX: "hidden",
-        marginLeft: contentMarginLeft,
+        marginLeft: "0px",
         paddingBottom: isMobile ? "70px" : "24px",
         minHeight: "100vh"
       }}>
@@ -711,7 +726,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Modal - Formulaire sans champ quantité */}
+      {/* Modal */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
@@ -719,9 +734,6 @@ export default function ProductsPage() {
               {modal.editMode ? <IconEdit size={18} /> : <IconPlus size={18} />}
               {modal.editMode ? t("products.editProduct") : t("products.addProduct")}
             </h2>
-            
-            {/* Message d'information sur la quantité */}
-           
 
             {[
               { label: `${t("common.name")} *`, key: "name", type: "text", placeholder: t("products.productName") },
@@ -734,7 +746,7 @@ export default function ProductsPage() {
                   onFocus={(e) => e.currentTarget.style.borderColor = theme.primary} onBlur={(e) => e.currentTarget.style.borderColor = theme.border} />
               </div>
             ))}
-            
+
             <div style={{ marginBottom: "12px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.category")}</label>
               <select value={String(modal.form.categoryId || "")} onChange={(e) => setModal({ ...modal, form: { ...modal.form, categoryId: e.target.value } })}
@@ -743,7 +755,7 @@ export default function ProductsPage() {
                 {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
               </select>
             </div>
-            
+
             <div style={{ marginBottom: "16px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.price")} *</label>
               <input type="number" step="0.01" placeholder={t("common.price")} value={modal.form.price || 0} onChange={(e) => setModal({ ...modal, form: { ...modal.form, price: parseFloat(e.target.value) || 0 } })}
