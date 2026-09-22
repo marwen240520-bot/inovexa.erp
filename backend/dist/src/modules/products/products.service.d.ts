@@ -6,6 +6,13 @@ export declare class ProductsService {
     findAll(userId: number): Promise<Product[]>;
     findOne(id: number, userId: number): Promise<Product>;
     create(userId: number, data: any): Promise<Product>;
+    importProducts(userId: number, products: any[]): Promise<{
+        success: number;
+        errors: number;
+        total: number;
+        errorDetails: any[];
+        message: string;
+    }>;
     update(id: number, userId: number, data: any): Promise<Product>;
     delete(id: number, userId: number): Promise<{
         success: boolean;

@@ -29,6 +29,9 @@ let ProductsController = class ProductsController {
     async create(req, body) {
         return this.productsService.create(req.user.userId, body);
     }
+    async importProducts(req, body) {
+        return this.productsService.importProducts(req.user.userId, body.products);
+    }
     async update(id, req, body) {
         return this.productsService.update(parseInt(id), req.user.userId, body);
     }
@@ -60,6 +63,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('import'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "importProducts", null);
 __decorate([
     (0, common_1.Put)(':id'),
     __param(0, (0, common_1.Param)('id')),
