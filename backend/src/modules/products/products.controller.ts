@@ -1,82 +1,55 @@
-﻿import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+﻿// products.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Product } from './product.entity';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ProductsService } from './products.service';
+@Injectable()
+export class ProductsService {
+  constructor(
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
+  ) {}
 
-@Controller('products')
-@UseGuards(JwtAuthGuard)
-export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
-
-  @Get()
-  async findAll(@Request() req: any) {
-    return this.productsService.findAll(req.user.userId);
+  async findAll(userId: number) {
+    return this.productRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' }
+    });
   }
 
-  @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-    @Request() req: any,
-  ) {
-    return this.productsService.findOne(
-      parseInt(id),
-      req.user.userId,
-    );
+  async findOne(id: number, userId: number) {
+    const product = await this.productRepository.findOne({ where: { id, userId } });
+    if (!product) throw new NotFoundException('Produit non trouvé');
+    return product;
   }
 
-  @Post()
-  async create(
-    @Request() req: any,
-    @Body() body: any,
-  ) {
-    return this.productsService.create(
-      req.user.userId,
-      body,
-    );
+  async create(userId: number, data: any) {
+    // ✅ SUPPRIMER quantity du traitement
+    // Laisser la base de données utiliser la valeur par défaut (0)
+    const productData = {
+      name: data.name,
+      sku: data.sku || '',
+      price: parseFloat(data.price) || 0,
+      categoryId: data.categoryId || null,
+      userId: userId
+    };
+    
+    const product = this.productRepository.create(productData);
+    return this.productRepository.save(product);
   }
 
-  @Post('import')
-  async importProducts(
-    @Request() req: any,
-    @Body() body: any,
-  ) {
-    return this.productsService.importProducts(
-      req.user.userId,
-      body.products,
-    );
+  async update(id: number, userId: number, data: any) {
+    const product = await this.findOne(id, userId);
+    // ✅ SUPPRIMER quantity des données de mise à jour
+    const { quantity, ...updateData } = data;
+    Object.assign(product, updateData);
+    return this.productRepository.save(product);
   }
 
-  @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Request() req: any,
-    @Body() body: any,
-  ) {
-    return this.productsService.update(
-      parseInt(id),
-      req.user.userId,
-      body,
-    );
-  }
-
-  @Delete(':id')
-  async delete(
-    @Param('id') id: string,
-    @Request() req: any,
-  ) {
-    return this.productsService.delete(
-      parseInt(id),
-      req.user.userId,
-    );
+  async delete(id: number, userId: number) {
+    const product = await this.findOne(id, userId);
+    await this.productRepository.delete(id);
+    return { success: true };
   }
 }
