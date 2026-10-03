@@ -425,29 +425,26 @@ export default function Sidebar() {
       background: `${ct.surface}f7`,
       backdropFilter: "blur(20px)",
       borderTop: `1px solid ${ct.primary}26`,
-      // ❌ SUPPRIMÉ : borderRadius: "24px 24px 0 0",
-      padding: "4px 8px 0px",   // ✅ padding-bottom à 0
-      paddingBottom: "env(safe-area-inset-bottom, 0px)", // ✅ safe area iOS
+      borderRadius: "24px 24px 0 0",
+      padding: "0px 8px",
       display: "flex",
       justifyContent: "space-around",
       alignItems: "center",
       zIndex: 1000,
       boxShadow: "0 -4px 24px rgba(0,0,0,0.35)",
-      margin: 0,
     },
     mobileNavBtn: {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      gap: "2px",
+      gap: "3px",
       background: "transparent",
       border: "none",
       cursor: "pointer",
-      padding: "4px 10px 2px",   // ✅ padding-bottom réduit
+      padding: "6px 10px",
       borderRadius: "12px",
       flex: 1,
       transition: "all 0.2s ease",
-      margin: 0,
     },
     mobileNavLabel: {
       fontSize: "10px",
@@ -473,7 +470,7 @@ export default function Sidebar() {
       background: `linear-gradient(180deg, ${ct.surface} 0%, ${ct.background} 100%)`,
       borderTop: `1px solid ${ct.primary}26`,
       borderRadius: "24px 24px 0 0",
-      padding: "20px 16px calc(20px + env(safe-area-inset-bottom, 0px))",
+      padding: "20px 16px 20px",
       zIndex: 1002,
       maxHeight: "75vh",
       overflowY: "auto",
@@ -944,4 +941,4 @@ export default function Sidebar() {
       )}
     </>
   );
-}
+}s
