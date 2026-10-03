@@ -876,73 +876,8 @@ export default function LoginPage() {
                 pointerEvents: "none"
               }} />
 
-              {/* Badge "Sécurisé" en haut à droite */}
-              <div style={{
-                position: "absolute",
-                top: "18px", right: "18px",
-                display: "flex",
-                alignItems: "center",
-                gap: "7px",
-                padding: "7px 13px",
-                background: "rgba(0,0,0,0.55)",
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
-                border: "1px solid rgba(168,85,247,0.4)",
-                borderRadius: "999px",
-                zIndex: 5,
-                color: "white",
-                fontSize: "10px",
-                fontWeight: "700",
-                letterSpacing: "1.2px",
-                textTransform: "uppercase"
-              }}>
-                <span style={{
-                  width: "6px", height: "6px",
-                  borderRadius: "50%",
-                  background: "#22c55e",
-                  boxShadow: "0 0 10px #22c55e",
-                  animation: "lgLivePulse 1.8s ease-in-out infinite"
-                }} />
-                
-              </div>
-
-              {/* Badge stats en bas à gauche */}
-              <div style={{
-                position: "absolute",
-                bottom: "20px", left: "20px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
-                padding: "12px 16px",
-                background: "rgba(0,0,0,0.5)",
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
-                border: "1px solid rgba(168,85,247,0.35)",
-                borderRadius: "14px",
-                zIndex: 5,
-                color: "white"
-              }}>
-                <span style={{
-                  fontSize: "9px",
-                  fontWeight: "700",
-                  letterSpacing: "1.5px",
-                  color: "rgba(192,132,252,0.95)",
-                  textTransform: "uppercase"
-                }}></span>
-                <span style={{
-                  fontSize: "18px",
-                  fontWeight: "800",
-                  background: "linear-gradient(135deg, #C084FC, #818CF8)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  letterSpacing: "-0.5px"
-                }}></span>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
+             
+              
       <style dangerouslySetInnerHTML={{ __html: `
         .erp-text-glow {
           animation: textPulse 3s ease-in-out infinite;
