@@ -780,24 +780,248 @@ export default function HomePage(): React.ReactElement {
       )
     ),
 
-    // RIGHT SIDE
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  RIGHT SIDE — Version améliorée
+    // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
+      className: "hero-visual-panel",
       style: {
         width: isTablet ? "100%" : "52%",
         position: "relative",
-        height: isTablet ? "420px" : "100vh",
+        height: isTablet ? "480px" : "100vh",
         background: "var(--hp-bg)",
-        flexShrink: 0
+        flexShrink: 0,
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: isTablet ? "32px" : "48px"
       }
     },
-      React.createElement("img", {
-        src: "/images/1.png",
-        alt: "Inovexa Dashboard",
+      // ── Halo ambiant derrière l'image ──
+      React.createElement("div", {
+        className: "hero-visual-halo",
         style: {
-          width: "100%", height: "100%", objectFit: "cover",
-          zIndex: 2, position: "relative"
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: "120%",
+          height: "120%",
+          transform: "translate(-50%, -50%)",
+          background: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.28) 0%, rgba(99,102,241,0.12) 35%, transparent 70%)",
+          filter: "blur(60px)",
+          pointerEvents: "none",
+          zIndex: 0,
+          animation: "heroHaloPulse 6s ease-in-out infinite"
         }
-      })
+      }),
+
+      // ── Grille décorative en arrière-plan ──
+      React.createElement("div", {
+        className: "hero-visual-grid",
+        style: {
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `
+            linear-gradient(rgba(168,85,247,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(168,85,247,0.06) 1px, transparent 1px)
+          `,
+          backgroundSize: "48px 48px",
+          maskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
+          pointerEvents: "none",
+          zIndex: 1,
+          opacity: 0.8
+        }
+      }),
+
+      // ── Cercles orbitaux animés ──
+      React.createElement("div", {
+        className: "hero-orbit hero-orbit-1",
+        style: {
+          position: "absolute",
+          top: "50%", left: "50%",
+          width: "88%", height: "88%",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          border: "1px solid rgba(168,85,247,0.18)",
+          pointerEvents: "none",
+          zIndex: 2,
+          animation: "heroOrbitSpin 28s linear infinite"
+        }
+      },
+        React.createElement("span", {
+          style: {
+            position: "absolute",
+            top: "-3px", left: "50%",
+            width: "8px", height: "8px",
+            borderRadius: "50%",
+            background: "#C084FC",
+            boxShadow: "0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7)"
+          }
+        })
+      ),
+      React.createElement("div", {
+        className: "hero-orbit hero-orbit-2",
+        style: {
+          position: "absolute",
+          top: "50%", left: "50%",
+          width: "68%", height: "68%",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          border: "1px solid rgba(99,102,241,0.15)",
+          pointerEvents: "none",
+          zIndex: 2,
+          animation: "heroOrbitSpinReverse 20s linear infinite"
+        }
+      },
+        React.createElement("span", {
+          style: {
+            position: "absolute",
+            bottom: "-3px", left: "30%",
+            width: "6px", height: "6px",
+            borderRadius: "50%",
+            background: "#818CF8",
+            boxShadow: "0 0 12px #6366F1"
+          }
+        })
+      ),
+
+      // ── Carte contenant l'image ──
+      React.createElement("div", {
+        className: "hero-image-card",
+        style: {
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          maxWidth: "640px",
+          maxHeight: isTablet ? "420px" : "78vh",
+          borderRadius: "28px",
+          overflow: "hidden",
+          border: "1px solid rgba(168,85,247,0.25)",
+          background: "linear-gradient(145deg, rgba(168,85,247,0.08), rgba(99,102,241,0.04))",
+          boxShadow: `
+            0 30px 80px -20px rgba(168,85,247,0.35),
+            0 0 0 1px rgba(168,85,247,0.1) inset,
+            0 0 60px -20px rgba(99,102,241,0.4) inset
+          `,
+          zIndex: 3,
+          transform: "perspective(1200px) rotateY(-4deg) rotateX(2deg)",
+          transition: "transform 0.6s cubic-bezier(0.22,1,0.36,1), box-shadow 0.6s ease",
+          animation: "heroCardFloat 7s ease-in-out infinite"
+        }
+      },
+        // Reflet brillant en haut
+        React.createElement("div", {
+          style: {
+            position: "absolute",
+            top: 0, left: 0, right: 0,
+            height: "1px",
+            background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.9), transparent)",
+            zIndex: 5
+          }
+        }),
+
+        // Image principale
+        React.createElement("img", {
+          src: "/images/1.png",
+          alt: "Inovexa Dashboard",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            position: "relative",
+            zIndex: 2,
+            filter: "var(--hp-img-filter, brightness(0.95) contrast(1.05))",
+            transition: "transform 0.8s cubic-bezier(0.22,1,0.36,1)"
+          },
+          className: "hero-image-content"
+        }),
+
+        // Overlay dégradé subtil
+        React.createElement("div", {
+          style: {
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.45) 100%)",
+            zIndex: 3,
+            pointerEvents: "none"
+          }
+        }),
+
+        // Badge "Live" en haut à droite
+        React.createElement("div", {
+          style: {
+            position: "absolute",
+            top: "18px", right: "18px",
+            display: "flex",
+            alignItems: "center",
+            gap: "7px",
+            padding: "7px 13px",
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: "1px solid rgba(168,85,247,0.4)",
+            borderRadius: "999px",
+            zIndex: 5,
+            color: "white",
+            fontSize: "10px",
+            fontWeight: "700",
+            letterSpacing: "1.2px",
+            textTransform: "uppercase"
+          }
+        },
+          React.createElement("span", {
+            style: {
+              width: "6px", height: "6px",
+              borderRadius: "50%",
+              background: "#22c55e",
+              boxShadow: "0 0 10px #22c55e",
+              animation: "livePulse 1.8s ease-in-out infinite"
+            }
+          }),
+          "Live"
+        ),
+
+        // Badge stats en bas à gauche
+        React.createElement("div", {
+          style: {
+            position: "absolute",
+            bottom: "20px", left: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+            padding: "12px 16px",
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: "1px solid rgba(168,85,247,0.35)",
+            borderRadius: "14px",
+            zIndex: 5,
+            color: "white"
+          }
+        },
+          React.createElement("span", {
+            style: {
+              fontSize: "9px",
+              fontWeight: "700",
+              letterSpacing: "1.5px",
+              color: "rgba(192,132,252,0.95)",
+              textTransform: "uppercase"
+            }
+          }, "Performance"),
+          React.createElement("span", {
+            style: {
+              fontSize: "18px",
+              fontWeight: "800",
+              background: "linear-gradient(135deg, #C084FC, #818CF8)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.5px"
+            }
+          }, "+98.4%")
+        )
+      )
     ),
 
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
@@ -852,9 +1076,65 @@ export default function HomePage(): React.ReactElement {
       .logo3d-ring-2::before { content: ""; position: absolute; bottom: -2px; left: 30%; width: 5px; height: 5px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 10px #6366F1; }
       @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
+
+      /* ═══════════════════════════════════════════════════════════
+         RIGHT SIDE — Hero visual panel (amélioré)
+         ═══════════════════════════════════════════════════════════ */
+      @keyframes heroHaloPulse {
+        0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+        50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
+      }
+      @keyframes heroOrbitSpin {
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to   { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+      @keyframes heroOrbitSpinReverse {
+        from { transform: translate(-50%, -50%) rotate(360deg); }
+        to   { transform: translate(-50%, -50%) rotate(0deg); }
+      }
+      @keyframes heroCardFloat {
+        0%, 100% { transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) translateY(0); }
+        50%      { transform: perspective(1200px) rotateY(-3deg) rotateX(1deg) translateY(-10px); }
+      }
+      @keyframes livePulse {
+        0%, 100% { opacity: 1;   transform: scale(1); }
+        50%      { opacity: 0.5; transform: scale(0.85); }
+      }
+      .hero-image-card:hover {
+        transform: perspective(1200px) rotateY(0deg) rotateX(0deg) translateY(-6px) scale(1.015) !important;
+        box-shadow:
+          0 40px 100px -20px rgba(168,85,247,0.55),
+          0 0 0 1px rgba(168,85,247,0.25) inset,
+          0 0 80px -20px rgba(99,102,241,0.6) inset !important;
+      }
+      .hero-image-card:hover .hero-image-content {
+        transform: scale(1.06);
+      }
+      .hp-light .hero-image-card {
+        box-shadow:
+          0 30px 80px -20px rgba(124,58,237,0.25),
+          0 0 0 1px rgba(124,58,237,0.12) inset !important;
+      }
+      .hp-light .hero-visual-halo {
+        background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.18) 0%, rgba(79,70,229,0.08) 35%, transparent 70%) !important;
+      }
+      .hp-light .hero-visual-grid {
+        background-image:
+          linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px) !important;
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo,
-        .home-page-enter { animation: none !important; }
+        .home-page-enter,
+        .hero-image-card,
+        .hero-orbit-1,
+        .hero-orbit-2,
+        .hero-visual-halo { animation: none !important; }
+      }
+      @media (max-width: 1024px) {
+        .hero-image-card { transform: none !important; }
+        .hero-image-card:hover { transform: translateY(-4px) scale(1.01) !important; }
       }
     ` } })
   );
