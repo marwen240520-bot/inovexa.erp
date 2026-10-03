@@ -4,6 +4,25 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // ==================== THÈMES DISPONIBLES ====================
 export const THEMES: Record<string, any> = {
+  light: {
+    id: "light",
+    name: "Clair",
+    nameEn: "Light",
+    nameEs: "Claro",
+    primary: "#4f46e5",
+    primaryRgb: "79, 70, 229",
+    secondary: "#7c3aed",
+    accent: "#059669",
+    background: "#f3f4f6",
+    surface: "#ffffff",
+    surfaceHover: "#f9fafb",
+    text: "#111827",
+    textSecondary: "#6b7280",
+    border: "#e5e7eb",
+    borderHover: "#d1d5db",
+    gradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+    icon: "☀️"
+  },
   dark: {
     id: "dark",
     name: "Sombre",
