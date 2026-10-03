@@ -110,6 +110,9 @@ export function middleware(request: NextRequest) {
     'base-uri': ["'self'"],
 
     'form-action': ["'self'"],
+
+    // Relevé des violations (fichier + ligne responsables) : voir app/api/csp-report/route.ts
+    'report-uri': ['/api/csp-report'],
   };
 
   if (IS_DEV) {
