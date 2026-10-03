@@ -354,6 +354,10 @@ export default function AdminClientsPage() {
       });
       const data = await res.json().catch(() => ({} as any));
       if (!res.ok || data?.error) {
+        // Erreur 500 : le serveur n'a pas pu traiter la demande (message technique inutile à l'utilisateur)
+        if (res.status >= 500) {
+          return "Erreur interne du serveur : la suppression a échoué. Vérifiez que le backend est à jour et consultez ses logs.";
+        }
         const msg = Array.isArray(data?.message) ? data.message[0] : data?.message;
         return msg || data?.error || "Erreur lors de la suppression";
       }

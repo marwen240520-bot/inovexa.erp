@@ -1,9 +1,8 @@
 ﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityMetadata } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
-import { Shipment } from '../logistics/entities/shipment.entity';
 import { seedDemoData, DEMO_ITEMS_PER_MODULE } from './demo-data';
 
 @Injectable()
@@ -145,48 +144,75 @@ export class AdminService {
   }
 
   /**
-   * Tables rattachées à un client (colonne `userId`), triées pour qu'une table qui
-   * référence une autre (clé étrangère) soit vidée AVANT celle qu'elle référence.
-   * Ex. : purchases -> products -> categories.
+   * Supprime TOUTES les données d'un client puis le client lui-même.
+   *
+   * On s'appuie sur les clés étrangères RÉELLES de la base (catalogue PostgreSQL) et non
+   * sur les entités TypeORM : la base contient des liens que les entités ignorent
+   * (ex. admin / customers / export / search -> users, voir scripts/correction.sql).
+   * Pour chaque ligne à supprimer, on supprime d'abord les lignes qui la référencent.
    */
-  private getUserOwnedTablesInDeleteOrder(): EntityMetadata[] {
-    const byTable = new Map<string, EntityMetadata>();
-    for (const meta of this.dataSource.entityMetadatas) {
-      if (meta.target === User) continue;
-      if (!meta.columns.some((c) => c.propertyName === 'userId')) continue;
-      if (!byTable.has(meta.tablePath)) byTable.set(meta.tablePath, meta);
-    }
-    const nodes = Array.from(byTable.values());
+  private async deleteClientData(manager: EntityManager, userId: number): Promise<void> {
+    const qi = (name: string) => `"${String(name).replace(/"/g, '""')}"`;
 
-    // refCount[t] = nombre de tables (du lot) qui ont une clé étrangère vers t
-    const refCount = new Map<string, number>(nodes.map((m) => [m.tablePath, 0]));
-    const refsOf = (m: EntityMetadata) =>
-      Array.from(
-        new Set(
-          m.foreignKeys
-            .map((fk) => fk.referencedEntityMetadata.tablePath)
-            .filter((t) => t !== m.tablePath && byTable.has(t)),
-        ),
-      );
-    for (const m of nodes) for (const t of refsOf(m)) refCount.set(t, (refCount.get(t) || 0) + 1);
+    // 1) Carte des clés étrangères (colonne simple) du schéma courant
+    const fks: Array<{
+      child_table: string; child_col: string; parent_table: string; parent_col: string;
+      on_delete: string; child_not_null: boolean;
+    }> = await manager.query(`
+      SELECT cl.relname  AS child_table,  ca.attname AS child_col,
+             pl.relname  AS parent_table, pa.attname AS parent_col,
+             c.confdeltype AS on_delete,  ca.attnotnull AS child_not_null
+        FROM pg_constraint c
+        JOIN pg_class cl     ON cl.oid = c.conrelid
+        JOIN pg_namespace ns ON ns.oid = cl.relnamespace
+        JOIN pg_class pl     ON pl.oid = c.confrelid
+        JOIN pg_attribute ca ON ca.attrelid = c.conrelid  AND ca.attnum = c.conkey[1]
+        JOIN pg_attribute pa ON pa.attrelid = c.confrelid AND pa.attnum = c.confkey[1]
+       WHERE c.contype = 'f' AND ns.nspname = current_schema() AND array_length(c.conkey, 1) = 1`);
 
-    const ordered: EntityMetadata[] = [];
-    const queue = nodes.filter((m) => (refCount.get(m.tablePath) || 0) === 0);
-    const seen = new Set(queue.map((m) => m.tablePath));
-    while (queue.length) {
-      const m = queue.shift()!;
-      ordered.push(m);
-      for (const t of refsOf(m)) {
-        refCount.set(t, (refCount.get(t) || 0) - 1);
-        if ((refCount.get(t) || 0) <= 0 && !seen.has(t)) {
-          seen.add(t);
-          queue.push(byTable.get(t)!);
-        }
+    // Les lignes enfants doivent être supprimées si la base refuse (NO ACTION / RESTRICT)
+    // ou si elle tenterait de mettre NULL dans une colonne NOT NULL. CASCADE est géré par la base.
+    const mustDeleteChildren = (fk: (typeof fks)[number]) =>
+      fk.on_delete === 'a' || fk.on_delete === 'r' ||
+      ((fk.on_delete === 'n' || fk.on_delete === 'd') && fk.child_not_null);
+
+    // 2) Suppression récursive : enfants d'abord, puis les lignes ciblées
+    const deleteWhere = async (table: string, where: string, path: string[]): Promise<void> => {
+      for (const fk of fks) {
+        if (fk.parent_table !== table || fk.child_table === table) continue;
+        if (!mustDeleteChildren(fk) || path.includes(fk.child_table)) continue;
+        await deleteWhere(
+          fk.child_table,
+          `${qi(fk.child_col)} IN (SELECT ${qi(fk.parent_col)} FROM ${qi(table)} WHERE ${where})`,
+          [...path, table],
+        );
       }
+      await manager.query(`DELETE FROM ${qi(table)} WHERE ${where}`, [userId]);
+    };
+
+    // 3) Points de départ : toute table ayant une colonne "userId", les expéditions (clientId)
+    //    et toute colonne qui référence users(id), quel que soit son nom.
+    const withUserId: Array<{ table_name: string }> = await manager.query(`
+      SELECT table_name FROM information_schema.columns
+       WHERE table_schema = current_schema() AND column_name = 'userId' AND table_name <> 'users'`);
+
+    const roots = new Map<string, { table: string; col: string }>();
+    const addRoot = (table: string, col: string) => roots.set(`${table}::${col}`, { table, col });
+    withUserId.forEach((r) => addRoot(r.table_name, 'userId'));
+    fks.filter((f) => f.parent_table === 'users').forEach((f) => addRoot(f.child_table, f.child_col));
+    addRoot('shipments', 'clientId');
+
+    const existing = new Set<string>(
+      (await manager.query(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()`,
+      )).map((r: any) => r.table_name),
+    );
+    for (const { table, col } of roots.values()) {
+      if (!existing.has(table) || table === 'users') continue;
+      await deleteWhere(table, `${qi(col)} = $1`, []);
     }
-    // Cycles éventuels : on ajoute le reste à la fin
-    for (const m of nodes) if (!seen.has(m.tablePath)) ordered.push(m);
-    return ordered;
+
+    await manager.query(`DELETE FROM "users" WHERE id = $1`, [userId]);
   }
 
   async deleteClient(id: number) {
@@ -195,23 +221,15 @@ export class AdminService {
 
     try {
       // Tout ou rien : si une étape échoue, rien n'est supprimé.
-      await this.dataSource.transaction(async (manager) => {
-        for (const meta of this.getUserOwnedTablesInDeleteOrder()) {
-          await manager
-            .createQueryBuilder()
-            .delete()
-            .from(meta.target)
-            .where('"userId" = :id', { id })
-            .execute();
-        }
-        // Les expéditions sont rattachées au client par `clientId` (et non `userId`)
-        await manager.delete(Shipment, { clientId: id });
-        await manager.delete(User, id);
-      });
+      await this.dataSource.transaction((manager) => this.deleteClientData(manager, id));
     } catch (err: any) {
+      const pg = err?.driverError || err;
       console.error(`Suppression du client ${id} impossible :`, err?.message || err);
+      const detail = [pg?.table && `table "${pg.table}"`, pg?.constraint && `contrainte "${pg.constraint}"`]
+        .filter(Boolean)
+        .join(', ');
       throw new ConflictException(
-        'Impossible de supprimer ce client : des données liées empêchent la suppression.',
+        `Impossible de supprimer ce client : des données liées empêchent la suppression${detail ? ` (${detail})` : ''}.`,
       );
     }
 
