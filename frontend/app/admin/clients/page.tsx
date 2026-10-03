@@ -254,13 +254,21 @@ export default function AdminClientsPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(modal.form)
       });
-      if (res.ok) {
+      const data = await res.json().catch(() => ({} as any));
+      if (res.ok && !data?.error) {
         setModal({ open: false, form: {}, editMode: false, editId: null });
         fetchClients();
         fetchStats();
-        showMessage("Client créé avec succès !", "success");
+        if (data?.demoData?.seeded) {
+          showMessage(`Client créé avec succès ! ${data.demoData.perModule} éléments de démo ajoutés dans chaque module.`, "success");
+        } else if (data?.demoData?.error) {
+          showMessage(`Client créé, mais ${data.demoData.error.charAt(0).toLowerCase()}${data.demoData.error.slice(1)}`, "error");
+        } else {
+          showMessage("Client créé avec succès !", "success");
+        }
       } else {
-        showMessage("Erreur lors de la création", "error");
+        const msg = Array.isArray(data?.message) ? data.message[0] : data?.message;
+        showMessage(msg || data?.error || "Erreur lors de la création", "error");
       }
     } catch(e) {
       showMessage("Erreur de connexion", "error");
@@ -738,7 +746,7 @@ export default function AdminClientsPage() {
             </h2>
             {(["name", "email", "companyName", "phone"] as const).map((field) => (
               <div key={field} style={{ marginBottom: "16px" }}>
-                <label style={{ color: "var(--theme-text-secondary)", display: "block", marginBottom: "8px" }}>{field}</label>
+                <label style={{ color: "var(--theme-text-secondary)", display: "block", marginBottom: "8px" }}>{({ name: "Nom", email: "Email", companyName: "Société", phone: "Téléphone" } as Record<string, string>)[field] || field}</label>
                 <input
                   type={field === "email" ? "email" : "text"}
                   value={(modal.form as any)[field] || ""}
@@ -763,6 +771,12 @@ export default function AdminClientsPage() {
                 <input type="number" value={modal.form.subscriptionDuration || 30} onChange={e => setModal({ ...modal, form: { ...modal.form, subscriptionDuration: parseInt(e.target.value) } })} style={{ width: "100%", padding: "12px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "10px", color: "var(--theme-text)" }} />
               )}
             </div>
+            {!modal.editMode && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px", padding: "12px 14px", background: "rgba(79,70,229,0.08)", border: "1px solid rgba(79,70,229,0.2)", borderRadius: "10px", color: "var(--theme-text)", fontSize: "13px", lineHeight: 1.5 }}>
+                <span style={{ flexShrink: 0 }}>✨</span>
+                <span>20 éléments de démonstration seront créés automatiquement dans chaque module (produits, clients, ventes, factures, RH, finance…).</span>
+              </div>
+            )}
             <div style={{ display: "flex", gap: "12px" }}>
               <button onClick={modal.editMode ? updateClient : createClient} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>{modal.editMode ? "Modifier" : "Créer"}</button>
               <button onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "var(--theme-border)", color: "var(--theme-text)", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler</button>
@@ -786,7 +800,7 @@ export default function AdminClientsPage() {
                     border: `1px solid ${isActive ? "#667eea" : "var(--theme-border)"}`, transition: "all 0.2s"
                   }}>
                     <span style={{ color: isActive ? "#818cf8" : "#64748b", display: "flex", flexShrink: 0 }}>{MODULE_ICON[m.id]}</span>
-                    <span style={{ color: isActive ? "#fff" : "var(--theme-text-secondary)", fontSize: "14px", flex: 1 }}>{m.label}</span>
+                    <span style={{ color: isActive ? "var(--theme-text)" : "var(--theme-text-secondary)", fontSize: "14px", flex: 1 }}>{m.label}</span>
                     <span style={{ color: isActive ? "#10b981" : "#475569", display: "flex", flexShrink: 0 }}>{isActive ? CHECK_ICON : DASH_ICON}</span>
                   </div>
                 );

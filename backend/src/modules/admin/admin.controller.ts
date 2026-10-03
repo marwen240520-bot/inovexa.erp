@@ -51,6 +51,7 @@ export class AdminController {
     companyName: string;
     phone?: string;
     subscriptionDuration: number;
+    seedDemoData?: boolean;
   }) {
     if (req.user.role !== 'admin') {
       return { error: 'Accès non autorisé' };

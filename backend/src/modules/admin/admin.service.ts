@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityMetadata } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
+import { Shipment } from '../logistics/entities/shipment.entity';
+import { seedDemoData, DEMO_ITEMS_PER_MODULE } from './demo-data';
 
 @Injectable()
 export class AdminService {
@@ -58,6 +60,8 @@ export class AdminService {
     companyName: string;
     phone?: string;
     subscriptionDuration: number;
+    /** Génère 20 éléments de démo dans chaque module (activé par défaut). */
+    seedDemoData?: boolean;
   }) {
     const hashedPassword = await bcrypt.hash(body.password, 10);
     
@@ -78,10 +82,28 @@ export class AdminService {
     });
     
     await this.userRepository.save(client);
+
+    // 20 éléments de démonstration dans chaque module du nouveau client.
+    // Le client est déjà créé : un échec ici ne doit pas annuler sa création.
+    let demoData: { seeded: boolean; perModule: number; total: number; error?: string } = {
+      seeded: false,
+      perModule: DEMO_ITEMS_PER_MODULE,
+      total: 0,
+    };
+    if (body.seedDemoData !== false) {
+      try {
+        const summary = await this.dataSource.transaction((manager) => seedDemoData(manager, client.id));
+        demoData = { seeded: true, perModule: summary.perModule, total: summary.total };
+      } catch (err: any) {
+        console.error(`Données de démo non créées pour le client ${client.id} :`, err?.message || err);
+        demoData = { ...demoData, error: 'Les données de démonstration n\'ont pas pu être créées.' };
+      }
+    }
     
     return {
       success: true,
       message: 'Client créé avec succès',
+      demoData,
       client: {
         id: client.id,
         email: client.email,
@@ -182,6 +204,8 @@ export class AdminService {
             .where('"userId" = :id', { id })
             .execute();
         }
+        // Les expéditions sont rattachées au client par `clientId` (et non `userId`)
+        await manager.delete(Shipment, { clientId: id });
         await manager.delete(User, id);
       });
     } catch (err: any) {
