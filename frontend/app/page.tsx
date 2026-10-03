@@ -496,7 +496,7 @@ export default function HomePage(): React.ReactElement {
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  //  PAGE PRINCIPALE — Layout unifié : contenu gauche + visuel droit empilés
+  //  PAGE PRINCIPALE
   // ═════════════════════════════════════════════════════════════════════════════
   return React.createElement("div", {
     className: "home-page-enter " + themeClass,
@@ -505,13 +505,12 @@ export default function HomePage(): React.ReactElement {
       minHeight: "100vh",
       background: "var(--hp-bg)",
       display: "flex",
-      flexDirection: "column",
+      flexDirection: isCompact ? "column" : "row",
       overflow: "hidden",
       fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: "relative"
     }
   },
-    // ── Particules flottantes en arrière-plan ──
     particles.map((p: Particle) => {
       return React.createElement("div", {
         key: p.id,
@@ -530,7 +529,7 @@ export default function HomePage(): React.ReactElement {
     React.createElement("div", { className: "ambient-glow" }),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  HEADER MOBILE
+    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE (TEXTE RÉDUIT)
     // ═══════════════════════════════════════════════════════════════════════════
     isMobile && React.createElement("header", {
       className: "mobile-header",
@@ -561,6 +560,7 @@ export default function HomePage(): React.ReactElement {
           transition: "opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)"
         }
       },
+        // Logo image (52px — conservé)
         React.createElement("div", {
           style: {
             width: "52px",
@@ -592,6 +592,7 @@ export default function HomePage(): React.ReactElement {
             }
           })
         ),
+        // Brand text — ✅ RÉDUIT : 18px → 14px / 10px → 8px
         React.createElement("div", {
           style: {
             display: "flex",
@@ -629,9 +630,7 @@ export default function HomePage(): React.ReactElement {
       )
     ),
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  Sélecteur de langue + thème
-    // ═══════════════════════════════════════════════════════════════════════════
+    // Language Selector
     React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200, display: "flex", alignItems: "center", gap: "10px" } },
       React.createElement(ThemeSwitcher, { variant: "icon", size: 38 }),
       React.createElement("div", { style: { position: "relative" } },
@@ -691,417 +690,84 @@ export default function HomePage(): React.ReactElement {
       )
     )),
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  CONTENU PRINCIPAL UNIFIÉ (gauche + droite fusionnés)
-    // ═══════════════════════════════════════════════════════════════════════════
+    // LEFT SIDE
     React.createElement("div", {
-      className: "hero-unified-container",
       style: {
-        position: "relative",
-        zIndex: 10,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
-        flex: 1,
-        padding: isMobile ? "96px 20px 40px" : isTablet ? "100px 40px 60px" : "80px 60px 60px",
-        gap: isMobile ? "40px" : isTablet ? "48px" : "56px"
+        width: isCompact ? "100%" : "48%",
+        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "0 0 0 64px",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        zIndex: 10, position: "relative",
+        minHeight: isMobile ? "100vh" : "auto"
       }
     },
-
-      // ─────────────────────────────────────────────────────────────
-      //  BLOC TEXTE (ancienne partie gauche)
-      // ─────────────────────────────────────────────────────────────
-      React.createElement("div", {
-        className: "hero-text-block",
+      // ═════════════════════════════════════════════════════════════════════════
+      //  LOGO INLINE — TABLETTE/DESKTOP UNIQUEMENT
+      // ═════════════════════════════════════════════════════════════════════════
+      !isMobile && React.createElement("div", {
         style: {
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
-          textAlign: "center",
-          maxWidth: "820px",
-          width: "100%"
+          gap: isMobile ? "20px" : "26px",
+          marginBottom: "28px",
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? "translateY(0)" : "translateY(60px)",
+          transition: "opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1)"
         }
       },
-        // Logo inline (desktop/tablette uniquement)
-        !isMobile && React.createElement("div", {
-          style: {
-            display: "flex",
-            alignItems: "center",
-            gap: "26px",
-            marginBottom: "28px",
-            opacity: logoVisible ? 1 : 0,
-            transform: logoVisible ? "translateY(0)" : "translateY(60px)",
-            transition: "opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1)"
-          }
-        },
-          React.createElement("div", { className: "logo3d-scene", style: { width: "105px", height: "105px", position: "relative", flexShrink: 0 } },
-            React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
-              React.createElement("div", { className: "logo3d-halo" }),
-              React.createElement("div", { className: "logo3d-ring logo3d-ring-1" }),
-              React.createElement("div", { className: "logo3d-ring logo3d-ring-2" }),
-              React.createElement("img", {
-                src: "/images/logo.png",
-                alt: "Inovexa Logo",
-                style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))", transform: "translateZ(26px)" }
-              })
-            )
-          ),
-          React.createElement("div", { style: { textAlign: "left" } },
-            React.createElement("h2", { style: { color: "var(--hp-text)", fontSize: "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
-              React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
-            ),
-            React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
-          )
-        ),
-
-        // Titre principal
-        React.createElement("h1", {
-          style: {
-            fontSize: isMobile ? "32px" : isTablet ? "48px" : "58px",
-            color: "var(--hp-text)",
-            fontWeight: "900",
-            lineHeight: "1.08",
-            marginBottom: "28px",
-            letterSpacing: "-1.5px",
-            textShadow: "0 0 30px rgba(168, 85, 247, 0.15)",
-            opacity: heroVisible ? 1 : 0,
-            transform: heroVisible ? "translateY(0)" : "translateY(28px)",
-            transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)"
-          }
-        }, text.title),
-
-        // Cartes de caractéristiques
-        React.createElement("div", {
-          style: {
-            display: "grid",
-            gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
-            gap: isMobile ? "10px" : "14px",
-            marginBottom: "36px",
-            maxWidth: "820px",
-            width: "100%"
-          }
-        },
-          text.features.map((f: { title: string }, i: number) => {
-            return React.createElement("div", {
-              key: i,
-              style: {
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "10px",
-                padding: isMobile ? "16px 12px" : "18px 14px",
-                background: "var(--hp-card-bg)",
-                border: "1px solid rgba(168, 85, 247, 0.18)",
-                borderRadius: "14px",
-                backdropFilter: "blur(8px)",
-                opacity: visibleCards[i] ? 1 : 0,
-                transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)",
-                transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)"
-              }
-            },
-              React.createElement("div", { style: { width: "38px", height: "38px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
-              React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "10px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3", textAlign: "center" } }, f.title)
-            );
-          })
-        ),
-
-        // Bouton CTA
-        React.createElement("div", {
-          style: {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "16px",
-            flexWrap: "wrap",
-            opacity: subtitleVisible ? 1 : 0,
-            transform: subtitleVisible ? "translateY(0)" : "translateY(16px)",
-            transition: "opacity 0.65s ease, transform 0.65s ease"
-          }
-        },
-          React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
-            React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
-              React.createElement("span", { style: { position: "relative", zIndex: 2 } }, isLoggedIn ? text.button : text.login),
-              React.createElement("span", { style: { position: "relative", zIndex: 2 } }, React.createElement(IconArrowRight, { size: 17, color: "white" })),
-              React.createElement("div", { className: "shimmer-effect" })
-            )
-          )
-        )
-      ),
-
-      // ─────────────────────────────────────────────────────────────
-      //  BLOC VISUEL (ancienne partie droite — carte image)
-      // ─────────────────────────────────────────────────────────────
-      React.createElement("div", {
-        className: "hero-visual-panel",
-        style: {
-          position: "relative",
-          width: "100%",
-          maxWidth: "900px",
-          height: isMobile ? "360px" : isTablet ? "460px" : "560px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0
-        }
-      },
-        // ── Halo ambiant principal ──
-        React.createElement("div", {
-          className: "hero-visual-halo",
-          style: {
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            width: "120%",
-            height: "120%",
-            transform: "translate(-50%, -50%)",
-            background: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.32) 0%, rgba(99,102,241,0.14) 35%, transparent 70%)",
-            filter: "blur(70px)",
-            pointerEvents: "none",
-            zIndex: 0,
-            animation: "heroHaloPulse 7s ease-in-out infinite"
-          }
-        }),
-
-        // ── Second halo décalé ──
-        React.createElement("div", {
-          className: "hero-visual-halo-2",
-          style: {
-            position: "absolute",
-            top: "35%",
-            left: "60%",
-            width: "70%",
-            height: "70%",
-            transform: "translate(-50%, -50%)",
-            background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 60%)",
-            filter: "blur(80px)",
-            pointerEvents: "none",
-            zIndex: 0,
-            animation: "heroHaloPulse2 9s ease-in-out infinite"
-          }
-        }),
-
-        // ── Grille décorative ──
-        React.createElement("div", {
-          className: "hero-visual-grid",
-          style: {
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `
-              linear-gradient(rgba(168,85,247,0.07) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(168,85,247,0.07) 1px, transparent 1px)
-            `,
-            backgroundSize: "52px 52px",
-            maskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
-            WebkitMaskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
-            pointerEvents: "none",
-            zIndex: 1,
-            opacity: 0.85
-          }
-        }),
-
-        // ── Anneau orbital externe ──
-        React.createElement("div", {
-          className: "hero-orbit hero-orbit-1",
-          style: {
-            position: "absolute",
-            top: "50%", left: "50%",
-            width: "92%", height: "92%",
-            transform: "translate(-50%, -50%)",
-            borderRadius: "50%",
-            border: "1px solid rgba(168,85,247,0.20)",
-            pointerEvents: "none",
-            zIndex: 2,
-            animation: "heroOrbitSpin 32s linear infinite"
-          }
-        },
-          React.createElement("span", {
-            style: {
-              position: "absolute",
-              top: "-4px", left: "50%",
-              width: "9px", height: "9px",
-              borderRadius: "50%",
-              background: "#C084FC",
-              boxShadow: "0 0 16px #A855F7, 0 0 32px rgba(168,85,247,0.8)"
-            }
-          }),
-          React.createElement("span", {
-            style: {
-              position: "absolute",
-              bottom: "-3px", right: "18%",
-              width: "6px", height: "6px",
-              borderRadius: "50%",
-              background: "#818CF8",
-              boxShadow: "0 0 12px #6366F1"
-            }
-          })
-        ),
-
-        // ── Anneau orbital interne ──
-        React.createElement("div", {
-          className: "hero-orbit hero-orbit-2",
-          style: {
-            position: "absolute",
-            top: "50%", left: "50%",
-            width: "72%", height: "72%",
-            transform: "translate(-50%, -50%)",
-            borderRadius: "50%",
-            border: "1px dashed rgba(99,102,241,0.18)",
-            pointerEvents: "none",
-            zIndex: 2,
-            animation: "heroOrbitSpinReverse 22s linear infinite"
-          }
-        },
-          React.createElement("span", {
-            style: {
-              position: "absolute",
-              bottom: "-3px", left: "28%",
-              width: "7px", height: "7px",
-              borderRadius: "50%",
-              background: "#818CF8",
-              boxShadow: "0 0 14px #6366F1, 0 0 26px rgba(99,102,241,0.6)"
-            }
-          })
-        ),
-
-        // ── Points lumineux flottants ──
-        ...[
-          { top: "12%", left: "8%", delay: "0s", size: "5px", color: "#C084FC" },
-          { top: "78%", left: "88%", delay: "1.2s", size: "4px", color: "#818CF8" },
-          { top: "22%", left: "92%", delay: "2.4s", size: "6px", color: "#A855F7" },
-          { top: "88%", left: "14%", delay: "3.6s", size: "5px", color: "#6366F1" },
-        ].map((dot, i) =>
-          React.createElement("span", {
-            key: "dot-" + i,
-            style: {
-              position: "absolute",
-              top: dot.top,
-              left: dot.left,
-              width: dot.size,
-              height: dot.size,
-              borderRadius: "50%",
-              background: dot.color,
-              boxShadow: "0 0 12px " + dot.color,
-              pointerEvents: "none",
-              zIndex: 2,
-              animation: "heroDotFloat 5s ease-in-out infinite",
-              animationDelay: dot.delay
-            }
-          })
-        ),
-
-        // ── Carte contenant l'image ──
-        React.createElement("div", {
-          className: "hero-image-card",
-          style: {
-            position: "relative",
-            width: "100%",
-            height: "100%",
-            maxWidth: "820px",
-            borderRadius: "32px",
-            overflow: "hidden",
-            border: "1px solid rgba(168,85,247,0.28)",
-            background: "linear-gradient(145deg, rgba(168,85,247,0.10), rgba(99,102,241,0.05))",
-            boxShadow: `
-              0 40px 100px -25px rgba(168,85,247,0.45),
-              0 0 0 1px rgba(168,85,247,0.12) inset,
-              0 0 80px -25px rgba(99,102,241,0.5) inset
-            `,
-            zIndex: 3,
-            transform: "perspective(1400px) rotateY(-2deg) rotateX(1deg)",
-            transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease",
-            animation: "heroCardFloat 8s ease-in-out infinite"
-          }
-        },
-          // Reflet brillant en haut
-          React.createElement("div", {
-            style: {
-              position: "absolute",
-              top: 0, left: 0, right: 0,
-              height: "1.5px",
-              background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.95), rgba(129,140,248,0.7), transparent)",
-              zIndex: 6
-            }
-          }),
-
-          // Reflet diagonal (glass shimmer)
-          React.createElement("div", {
-            className: "hero-image-glass",
-            style: {
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)",
-              backgroundSize: "200% 200%",
-              zIndex: 4,
-              pointerEvents: "none",
-              animation: "heroGlassShimmer 6s ease-in-out infinite"
-            }
-          }),
-
-          // Image principale
-          React.createElement("img", {
-            src: "/images/1.png",
-            alt: "Inovexa Dashboard",
-            style: {
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              position: "relative",
-              zIndex: 2,
-              filter: "var(--hp-img-filter, brightness(0.95) contrast(1.05))",
-              transition: "transform 0.9s cubic-bezier(0.22,1,0.36,1)"
-            },
-            className: "hero-image-content"
-          }),
-
-          // Overlay dégradé subtil en bas
-          React.createElement("div", {
-            style: {
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.28) 100%)",
-              zIndex: 3,
-              pointerEvents: "none"
-            }
-          }),
-
-          // Coins décoratifs néon
-          ...[
-            { top: "16px", left: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "12px 0 0 0" },
-            { top: "16px", right: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 12px 0 0" },
-            { bottom: "16px", left: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 0 12px" },
-            { bottom: "16px", right: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 12px 0" },
-          ].map((corner, i) =>
-            React.createElement("div", {
-              key: "corner-" + i,
-              style: {
-                position: "absolute",
-                width: "28px",
-                height: "28px",
-                zIndex: 5,
-                pointerEvents: "none",
-                opacity: 0.9,
-                ...corner
-              }
+        React.createElement("div", { className: "logo3d-scene", style: { width: isMobile ? "90px" : "105px", height: isMobile ? "90px" : "105px", position: "relative", flexShrink: 0 } },
+          React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
+            React.createElement("div", { className: "logo3d-halo" }),
+            React.createElement("div", { className: "logo3d-ring logo3d-ring-1" }),
+            React.createElement("div", { className: "logo3d-ring logo3d-ring-2" }),
+            React.createElement("img", {
+              src: "/images/logo.png",
+              alt: "Inovexa Logo",
+              style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))", transform: "translateZ(26px)" }
             })
           )
+        ),
+        React.createElement("div", null,
+          React.createElement("h2", { style: { color: "var(--hp-text)", fontSize: isMobile ? "18px" : "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
+            React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+          ),
+          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
         )
       ),
-
-      // ─────────────────────────────────────────────────────────────
-      //  FOOTER — liens légaux
-      // ─────────────────────────────────────────────────────────────
-      React.createElement("div", {
+      // ✅ TITRE HERO avec marge supérieure sur mobile
+      React.createElement("h1", {
         style: {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "10px",
-          marginTop: "8px"
+          fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px",
+          color: "var(--hp-text)",
+          fontWeight: "900",
+          lineHeight: "1.1",
+          marginBottom: "28px",
+          marginTop: isMobile ? "24px" : "0",
+          letterSpacing: "-1.5px",
+          textShadow: "0 0 30px rgba(168, 85, 247, 0.15)",
+          opacity: heroVisible ? 1 : 0,
+          transform: heroVisible ? "translateY(0)" : "translateY(28px)",
+          transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)"
         }
-      },
-        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", justifyContent: "center" } },
+      }, text.title),
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: "36px", maxWidth: "460px" } },
+        text.features.map((f: { title: string }, i: number) => {
+          return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
+            React.createElement("div", { style: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
+            React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "10px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title)
+          );
+        })
+      ),
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", opacity: subtitleVisible ? 1 : 0, transform: subtitleVisible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.65s ease, transform 0.65s ease" } },
+        React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
+          React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
+            React.createElement("span", { style: { position: "relative", zIndex: 2 } }, isLoggedIn ? text.button : text.login),
+            React.createElement("span", { style: { position: "relative", zIndex: 2 } }, React.createElement(IconArrowRight, { size: 17, color: "white" })),
+            React.createElement("div", { className: "shimmer-effect" })
+          )
+        )
+      ),
+      React.createElement("div", { style: { marginTop: isMobile ? "44px" : "52px", display: "flex", flexDirection: "column", gap: "10px" } },
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" } },
           React.createElement("a", { href: "https://inovexa-erp.com/privacy.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.7)", fontSize: "10px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" } },
             React.createElement(IconLock, { size: 10, color: "currentColor" }), text.privacy
           ),
@@ -1110,7 +776,269 @@ export default function HomePage(): React.ReactElement {
             React.createElement(IconFileText, { size: 10, color: "currentColor" }), text.terms
           )
         ),
-        React.createElement("p", { style: { color: "var(--hp-faint)", fontSize: "9px", fontWeight: "600", margin: 0, letterSpacing: "0.5px", textAlign: "center" } }, "\u00A9 2026 INOVEXA. " + text.copyright.toUpperCase())
+        React.createElement("p", { style: { color: "var(--hp-faint)", fontSize: "9px", fontWeight: "600", margin: 0, letterSpacing: "0.5px" } }, "\u00A9 2026 INOVEXA. " + text.copyright.toUpperCase())
+      )
+    ),
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  RIGHT SIDE — Version raffinée sans badges
+    // ═══════════════════════════════════════════════════════════════════════════
+    !isMobile && React.createElement("div", {
+      className: "hero-visual-panel",
+      style: {
+        width: isTablet ? "100%" : "52%",
+        position: "relative",
+        height: isTablet ? "520px" : "100vh",
+        background: "var(--hp-bg)",
+        flexShrink: 0,
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: isTablet ? "40px" : "56px"
+      }
+    },
+      // ── Halo ambiant principal ──
+      React.createElement("div", {
+        className: "hero-visual-halo",
+        style: {
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: "130%",
+          height: "130%",
+          transform: "translate(-50%, -50%)",
+          background: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.32) 0%, rgba(99,102,241,0.14) 35%, transparent 70%)",
+          filter: "blur(70px)",
+          pointerEvents: "none",
+          zIndex: 0,
+          animation: "heroHaloPulse 7s ease-in-out infinite"
+        }
+      }),
+
+      // ── Second halo décalé pour la profondeur ──
+      React.createElement("div", {
+        className: "hero-visual-halo-2",
+        style: {
+          position: "absolute",
+          top: "35%",
+          left: "60%",
+          width: "70%",
+          height: "70%",
+          transform: "translate(-50%, -50%)",
+          background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 60%)",
+          filter: "blur(80px)",
+          pointerEvents: "none",
+          zIndex: 0,
+          animation: "heroHaloPulse2 9s ease-in-out infinite"
+        }
+      }),
+
+      // ── Grille décorative ──
+      React.createElement("div", {
+        className: "hero-visual-grid",
+        style: {
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `
+            linear-gradient(rgba(168,85,247,0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(168,85,247,0.07) 1px, transparent 1px)
+          `,
+          backgroundSize: "52px 52px",
+          maskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
+          pointerEvents: "none",
+          zIndex: 1,
+          opacity: 0.85
+        }
+      }),
+
+      // ── Anneau orbital externe ──
+      React.createElement("div", {
+        className: "hero-orbit hero-orbit-1",
+        style: {
+          position: "absolute",
+          top: "50%", left: "50%",
+          width: "92%", height: "92%",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          border: "1px solid rgba(168,85,247,0.20)",
+          pointerEvents: "none",
+          zIndex: 2,
+          animation: "heroOrbitSpin 32s linear infinite"
+        }
+      },
+        React.createElement("span", {
+          style: {
+            position: "absolute",
+            top: "-4px", left: "50%",
+            width: "9px", height: "9px",
+            borderRadius: "50%",
+            background: "#C084FC",
+            boxShadow: "0 0 16px #A855F7, 0 0 32px rgba(168,85,247,0.8)"
+          }
+        }),
+        React.createElement("span", {
+          style: {
+            position: "absolute",
+            bottom: "-3px", right: "18%",
+            width: "6px", height: "6px",
+            borderRadius: "50%",
+            background: "#818CF8",
+            boxShadow: "0 0 12px #6366F1"
+          }
+        })
+      ),
+
+      // ── Anneau orbital interne ──
+      React.createElement("div", {
+        className: "hero-orbit hero-orbit-2",
+        style: {
+          position: "absolute",
+          top: "50%", left: "50%",
+          width: "72%", height: "72%",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          border: "1px dashed rgba(99,102,241,0.18)",
+          pointerEvents: "none",
+          zIndex: 2,
+          animation: "heroOrbitSpinReverse 22s linear infinite"
+        }
+      },
+        React.createElement("span", {
+          style: {
+            position: "absolute",
+            bottom: "-3px", left: "28%",
+            width: "7px", height: "7px",
+            borderRadius: "50%",
+            background: "#818CF8",
+            boxShadow: "0 0 14px #6366F1, 0 0 26px rgba(99,102,241,0.6)"
+          }
+        })
+      ),
+
+      // ── Points lumineux flottants autour ──
+      ...[
+        { top: "12%", left: "8%", delay: "0s", size: "5px", color: "#C084FC" },
+        { top: "78%", left: "88%", delay: "1.2s", size: "4px", color: "#818CF8" },
+        { top: "22%", left: "92%", delay: "2.4s", size: "6px", color: "#A855F7" },
+        { top: "88%", left: "14%", delay: "3.6s", size: "5px", color: "#6366F1" },
+      ].map((dot, i) =>
+        React.createElement("span", {
+          key: "dot-" + i,
+          style: {
+            position: "absolute",
+            top: dot.top,
+            left: dot.left,
+            width: dot.size,
+            height: dot.size,
+            borderRadius: "50%",
+            background: dot.color,
+            boxShadow: "0 0 12px " + dot.color,
+            pointerEvents: "none",
+            zIndex: 2,
+            animation: "heroDotFloat 5s ease-in-out infinite",
+            animationDelay: dot.delay
+          }
+        })
+      ),
+
+      // ── Carte contenant l'image ──
+      React.createElement("div", {
+        className: "hero-image-card",
+        style: {
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          maxWidth: "680px",
+          maxHeight: isTablet ? "440px" : "80vh",
+          borderRadius: "32px",
+          overflow: "hidden",
+          border: "1px solid rgba(168,85,247,0.28)",
+          background: "linear-gradient(145deg, rgba(168,85,247,0.10), rgba(99,102,241,0.05))",
+          boxShadow: `
+            0 40px 100px -25px rgba(168,85,247,0.45),
+            0 0 0 1px rgba(168,85,247,0.12) inset,
+            0 0 80px -25px rgba(99,102,241,0.5) inset
+          `,
+          zIndex: 3,
+          transform: "perspective(1400px) rotateY(-5deg) rotateX(2deg)",
+          transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease",
+          animation: "heroCardFloat 8s ease-in-out infinite"
+        }
+      },
+        // Reflet brillant en haut
+        React.createElement("div", {
+          style: {
+            position: "absolute",
+            top: 0, left: 0, right: 0,
+            height: "1.5px",
+            background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.95), rgba(129,140,248,0.7), transparent)",
+            zIndex: 6
+          }
+        }),
+
+        // Reflet diagonal (glass shimmer)
+        React.createElement("div", {
+          className: "hero-image-glass",
+          style: {
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)",
+            backgroundSize: "200% 200%",
+            zIndex: 4,
+            pointerEvents: "none",
+            animation: "heroGlassShimmer 6s ease-in-out infinite"
+          }
+        }),
+
+        // Image principale
+        React.createElement("img", {
+          src: "/images/1.png",
+          alt: "Inovexa Dashboard",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            position: "relative",
+            zIndex: 2,
+            filter: "var(--hp-img-filter, brightness(0.95) contrast(1.05))",
+            transition: "transform 0.9s cubic-bezier(0.22,1,0.36,1)"
+          },
+          className: "hero-image-content"
+        }),
+
+        // Overlay dégradé subtil en bas
+        React.createElement("div", {
+          style: {
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.28) 100%)",
+            zIndex: 3,
+            pointerEvents: "none"
+          }
+        }),
+
+        // Coins décoratifs néon
+        ...[
+          { top: "16px", left: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "12px 0 0 0" },
+          { top: "16px", right: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 12px 0 0" },
+          { bottom: "16px", left: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 0 12px" },
+          { bottom: "16px", right: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 12px 0" },
+        ].map((corner, i) =>
+          React.createElement("div", {
+            key: "corner-" + i,
+            style: {
+              position: "absolute",
+              width: "28px",
+              height: "28px",
+              zIndex: 5,
+              pointerEvents: "none",
+              opacity: 0.9,
+              ...corner
+            }
+          })
+        )
       )
     ),
 
@@ -1135,7 +1063,7 @@ export default function HomePage(): React.ReactElement {
       @keyframes buttonPulse { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); } 70% { box-shadow: 0 0 0 16px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
       .shimmer-effect { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); animation: shimmer 2.8s infinite; pointer-events: none; }
       @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
-      .ambient-glow { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: radial-gradient(circle at 50% 20%, rgba(138,43,226,0.10), transparent 50%); z-index: 0; pointer-events: none; }
+      .ambient-glow { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.09), transparent 42%); z-index: 0; pointer-events: none; }
       @keyframes floatParticle { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: 1; } 100% { transform: translateY(-85vh) translateX(25px); opacity: 0; } }
       .hero-word-glow { display: inline-block; animation: wordGlow 3.5s ease-in-out infinite; background: linear-gradient(135deg, #C084FC 0%, #818CF8 50%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: wordGlow 3.5s ease-in-out infinite, gradientShift 4s ease infinite; }
       @keyframes wordGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(168,85,247,0.4)); } 50% { filter: drop-shadow(0 0 22px rgba(168,85,247,0.85)) drop-shadow(0 0 40px rgba(99,102,241,0.4)); } }
@@ -1168,7 +1096,7 @@ export default function HomePage(): React.ReactElement {
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
 
       /* ═══════════════════════════════════════════════════════════
-         HERO VISUAL PANEL (fusionné)
+         RIGHT SIDE — Hero visual panel (raffiné, sans badges)
          ═══════════════════════════════════════════════════════════ */
       @keyframes heroHaloPulse {
         0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); }
@@ -1187,8 +1115,8 @@ export default function HomePage(): React.ReactElement {
         to   { transform: translate(-50%, -50%) rotate(0deg); }
       }
       @keyframes heroCardFloat {
-        0%, 100% { transform: perspective(1400px) rotateY(-2deg) rotateX(1deg) translateY(0); }
-        50%      { transform: perspective(1400px) rotateY(-1deg) rotateX(0.5deg) translateY(-12px); }
+        0%, 100% { transform: perspective(1400px) rotateY(-5deg) rotateX(2deg) translateY(0); }
+        50%      { transform: perspective(1400px) rotateY(-3.5deg) rotateX(1deg) translateY(-12px); }
       }
       @keyframes heroDotFloat {
         0%, 100% { opacity: 0.4; transform: translateY(0) scale(1); }
@@ -1200,14 +1128,14 @@ export default function HomePage(): React.ReactElement {
       }
 
       .hero-image-card:hover {
-        transform: perspective(1400px) rotateY(0deg) rotateX(0deg) translateY(-8px) scale(1.015) !important;
+        transform: perspective(1400px) rotateY(0deg) rotateX(0deg) translateY(-8px) scale(1.02) !important;
         box-shadow:
           0 50px 120px -25px rgba(168,85,247,0.65),
           0 0 0 1px rgba(168,85,247,0.3) inset,
           0 0 100px -25px rgba(99,102,241,0.7) inset !important;
       }
       .hero-image-card:hover .hero-image-content {
-        transform: scale(1.06);
+        transform: scale(1.07);
       }
 
       /* Thème clair */
@@ -1247,7 +1175,8 @@ export default function HomePage(): React.ReactElement {
         .hero-orbit-1,
         .hero-orbit-2,
         .hero-visual-halo,
-        .hero-visual-halo-2 { animation: none !important; }
+        .hero-visual-halo-2,
+        .heroDotFloat { animation: none !important; }
       }
       @media (max-width: 1024px) {
         .hero-image-card { transform: none !important; }
