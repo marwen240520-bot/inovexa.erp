@@ -936,7 +936,7 @@ export default function LoginPage() {
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   letterSpacing: "-0.5px"
-                }}>99.9%</span>
+                }}></span>
               </div>
             </div>
           </div>
