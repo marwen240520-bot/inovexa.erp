@@ -785,11 +785,11 @@ const SectionCard = ({ title, children, theme, style = {} }: any) => (
 const Modal = ({ open, onClose, title, children, theme, isMobile }: any) => {
   if (!open) return null;
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
       <div style={{
         background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: isMobile ? "20px" : "28px",
         width: isMobile ? "95%" : "500px", maxHeight: isMobile ? "85vh" : "88vh", overflowY: "auto",
-        border: `1px solid ${theme.border}`, boxShadow: "0 32px 80px rgba(0,0,0,0.4)",
+        border: `1px solid ${theme.border}`, boxShadow: "0 32px 80px rgba(17,24,39,0.18)",
         animation: "scaleIn 0.2s ease"
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>

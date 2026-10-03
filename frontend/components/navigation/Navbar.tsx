@@ -55,7 +55,7 @@ export function Navbar() {
   };
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>, isCurrent: boolean) => {
-    e.currentTarget.style.color = isCurrent ? '#667eea' : '#94a3b8';
+    e.currentTarget.style.color = isCurrent ? '#667eea' : 'var(--theme-text-secondary)';
   };
 
   const handleButtonMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -81,7 +81,7 @@ export function Navbar() {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
           <img src="/logo.png" style={{ width: '32px', height: '32px' }} alt="Logo" />
-          <span style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>Inovexa ERP</span>
+          <span style={{ color: 'var(--theme-text)', fontSize: '20px', fontWeight: 'bold' }}>Inovexa ERP</span>
         </Link>
 
         {/* Desktop Menu */}
@@ -92,7 +92,7 @@ export function Navbar() {
               href={item.href}
               onClick={(e) => scrollToSection(e, item.href)}
               style={{
-                color: item.current ? '#667eea' : '#94a3b8',
+                color: item.current ? '#667eea' : 'var(--theme-text-secondary)',
                 textDecoration: 'none',
                 fontSize: '14px',
                 fontWeight: item.current ? '600' : '400',
@@ -135,7 +135,7 @@ export function Navbar() {
             display: 'none',
             background: 'none',
             border: 'none',
-            color: 'white',
+            color: 'var(--theme-text)',
             fontSize: '24px',
             cursor: 'pointer'
           }}
@@ -147,8 +147,8 @@ export function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div style={{
-          background: '#111',
-          borderTop: '1px solid #222',
+          background: 'var(--theme-surface)',
+          borderTop: '1px solid var(--theme-border)',
           padding: '16px 24px',
           display: 'flex',
           flexDirection: 'column',
@@ -160,7 +160,7 @@ export function Navbar() {
               href={item.href}
               onClick={(e) => scrollToSection(e, item.href)}
               style={{
-                color: item.current ? '#667eea' : '#94a3b8',
+                color: item.current ? '#667eea' : 'var(--theme-text-secondary)',
                 textDecoration: 'none',
                 fontSize: '16px',
                 padding: '8px 0',

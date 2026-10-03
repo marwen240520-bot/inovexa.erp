@@ -369,12 +369,12 @@ export default function Sidebar() {
 
   // Styles avec typage correct
   const defaultStyles: ThemeColors = {
-    background: "#0a0a0a",
-    surface: "#111111",
-    primary: "#667eea",
-    textSecondary: "#94a3b8",
-    border: "#222222",
-    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    background: "#f3f4f6",
+    surface: "#ffffff",
+    primary: "#4f46e5",
+    textSecondary: "#6b7280",
+    border: "#e5e7eb",
+    gradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
   };
 
   const ct = localTheme || defaultStyles;
@@ -386,7 +386,7 @@ export default function Sidebar() {
       bottom: 0,
       left: 0,
       right: 0,
-      background: "rgba(17,17,17,0.97)",
+      background: `${ct.surface}f7`,
       backdropFilter: "blur(20px)",
       borderTop: `1px solid ${ct.primary}26`,
       borderRadius: "24px 24px 0 0",
@@ -422,7 +422,7 @@ export default function Sidebar() {
       left: 0,
       right: 0,
       bottom: 0,
-      background: "rgba(0,0,0,0.6)",
+      background: "rgba(15,23,42,0.5)",
       backdropFilter: "blur(6px)",
       zIndex: 1001,
     },
@@ -466,8 +466,8 @@ export default function Sidebar() {
     },
     sidebar: {
       width: "280px",
-      background: `linear-gradient(180deg, ${ct.background} 0%, ${ct.surface} 100%)`,
-      borderRight: `1px solid ${ct.primary}18`,
+      background: ct.surface,
+      borderRight: `1px solid ${ct.border}`,
       position: "fixed",
       height: "100vh",
       overflowY: "auto",
@@ -479,7 +479,7 @@ export default function Sidebar() {
       flexDirection: "column",
       transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       transform: "translateX(0)", // Always open
-      boxShadow: "2px 0 20px rgba(0,0,0,0.1)",
+      boxShadow: "2px 0 24px rgba(17,24,39,0.06)",
     },
     header: {
       padding: "20px 16px 18px",
@@ -494,11 +494,16 @@ export default function Sidebar() {
       cursor: "pointer",
     },
     logoImage: {
-      width: "60px",
-      height: "60px",
-      borderRadius: "10px",
+      width: "56px",
+      height: "56px",
+      padding: "4px",
+      borderRadius: "16px",
       display: "block",
       flexShrink: 0,
+      objectFit: "contain",
+      boxSizing: "border-box",
+      background: "linear-gradient(135deg, #1e1b4b, #4338ca)",
+      boxShadow: "0 6px 16px rgba(67,56,202,0.28)",
     },
     brandContainer: { flex: 1, minWidth: 0 },
     logoTitle: {
@@ -596,7 +601,7 @@ export default function Sidebar() {
       fontSize: "13px",
       boxShadow: "0 8px 32px rgba(239,68,68,0.25)",
       backdropFilter: "blur(12px)",
-      border: "1px solid rgba(255,255,255,0.15)",
+      border: "1px solid var(--theme-border)",
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
@@ -858,13 +863,13 @@ export default function Sidebar() {
                 />
                 <div style={{
                   position: "absolute",
-                  bottom: "-1px",
-                  right: "-1px",
-                  width: "6px",
-                  height: "6px",
+                  bottom: "-2px",
+                  right: "-2px",
+                  width: "10px",
+                  height: "10px",
                   borderRadius: "50%",
                   background: "#22c55e",
-                  border: `1.5px solid ${ct.background}`,
+                  border: `2px solid ${ct.surface}`,
                 }} />
               </div>
 
@@ -872,7 +877,7 @@ export default function Sidebar() {
                 <div style={styles.logoTitle}>Inovexa ERP</div>
                 <div style={{
                   ...styles.logoRole,
-                  color: role === "admin" ? "#f59e0b" : role === "transporteur" ? "#10b981" : ct.primary,
+                  color: role === "admin" ? "#d97706" : role === "transporteur" ? "#10b981" : ct.primary,
                 }}>
                   {role === "admin" && (
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">

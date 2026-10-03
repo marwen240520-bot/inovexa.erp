@@ -263,7 +263,7 @@ export default function TransporteurDashboard() {
     if (status === "delivered") return "#10b981";
     if (status === "in_transit") return "#3b82f6";
     if (status === "pending") return "#f59e0b";
-    return "#94a3b8";
+    return "var(--theme-text-secondary)";
   };
 
   const getStatusText = (status: string): string => {
@@ -477,7 +477,7 @@ export default function TransporteurDashboard() {
   return (
     <div style={{ 
       padding: isMobile ? "16px" : "22px", 
-      background: "#0a0a0a", 
+      background: "var(--theme-background)", 
       minHeight: "100vh",
       paddingBottom: isMobile ? "80px" : "22px"
     }}>
@@ -522,7 +522,7 @@ export default function TransporteurDashboard() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "14px" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "11px", flexWrap: "wrap" }}>
-              <h1 style={{ color: "white", fontSize: isMobile ? "20px" : "25px", margin: 0, display: "flex", alignItems: "center", gap: "11px" }}>
+              <h1 style={{ color: "var(--theme-text)", fontSize: isMobile ? "20px" : "25px", margin: 0, display: "flex", alignItems: "center", gap: "11px" }}>
                 <Ic.Truck size={isMobile ? 24 : 28} color="#667eea" />
                 {getGreeting()}, {user?.name?.split(' ')[0] || "Transporteur"} !
               </h1>
@@ -534,14 +534,14 @@ export default function TransporteurDashboard() {
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", marginTop: "7px" }}>
-              <p style={{ color: "#94a3b8", margin: 0, display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "11px" : "13px" }}>
-                <Ic.Calendar size={isMobile ? 11 : 13} color="#94a3b8" /> {getCurrentDate()}
-                <span style={{ color: "#666" }}>•</span>
-                <Ic.Clock2 size={isMobile ? 11 : 13} color="#94a3b8" /> {getFormattedTime()}
+              <p style={{ color: "var(--theme-text-secondary)", margin: 0, display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "11px" : "13px" }}>
+                <Ic.Calendar size={isMobile ? 11 : 13} color="var(--theme-text-secondary)" /> {getCurrentDate()}
+                <span style={{ color: "var(--theme-text-secondary)" }}>•</span>
+                <Ic.Clock2 size={isMobile ? 11 : 13} color="var(--theme-text-secondary)" /> {getFormattedTime()}
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: stats.pending > 0 ? "#f59e0b" : "#10b981", animation: stats.pending > 0 ? "pulse 1.5s infinite" : "none" }}></span>
-                <span style={{ color: "#666", fontSize: isMobile ? "10px" : "11px" }}>
+                <span style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "11px" }}>
                   {stats.pending > 0 ? `${stats.pending} ${getTranslation("dashboard.pending_notification")}` : getTranslation("dashboard.all_up_to_date")}
                 </span>
               </div>
@@ -549,14 +549,14 @@ export default function TransporteurDashboard() {
           </div>
 
           <div style={{ display: "flex", gap: "11px", alignItems: "center" }}>
-            <button onClick={fetchData} style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: "36px", padding: isMobile ? "6px 12px" : "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "11px" : "12px" }}>
-              <Ic.RefreshCw size={isMobile ? 12 : 14} color="#94a3b8" />
-              {!isMobile && <span style={{ color: "#94a3b8" }}>{getTranslation("dashboard.refresh")}</span>}
+            <button onClick={fetchData} style={{ background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "36px", padding: isMobile ? "6px 12px" : "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "11px" : "12px" }}>
+              <Ic.RefreshCw size={isMobile ? 12 : 14} color="var(--theme-text-secondary)" />
+              {!isMobile && <span style={{ color: "var(--theme-text-secondary)" }}>{getTranslation("dashboard.refresh")}</span>}
             </button>
 
             <div style={{ position: "relative" }}>
-              <button onClick={() => setShowNotifications(!showNotifications)} style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: "36px", padding: isMobile ? "6px 10px" : "7px 11px", cursor: "pointer", position: "relative" }}>
-                <Ic.Bell size={isMobile ? 16 : 18} color="#94a3b8" />
+              <button onClick={() => setShowNotifications(!showNotifications)} style={{ background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "36px", padding: isMobile ? "6px 10px" : "7px 11px", cursor: "pointer", position: "relative" }}>
+                <Ic.Bell size={isMobile ? 16 : 18} color="var(--theme-text-secondary)" />
                 {notifications.filter(n => !n.read).length > 0 && (
                   <span style={{ position: "absolute", top: "-4px", right: "-4px", background: "#ef4444", color: "white", fontSize: "9px", borderRadius: "9px", padding: "2px 5px", minWidth: "16px", textAlign: "center" }}>
                     {notifications.filter(n => !n.read).length}
@@ -565,22 +565,22 @@ export default function TransporteurDashboard() {
               </button>
 
               {showNotifications && (
-                <div style={{ position: "absolute", top: "45px", right: 0, width: isMobile ? "280px" : "252px", background: "#111", border: "1px solid #222", borderRadius: "11px", overflow: "hidden", zIndex: 100 }}>
-                  <div style={{ padding: "11px 14px", borderBottom: "1px solid #222", color: "white", fontWeight: "bold", fontSize: "13px", display: "flex", alignItems: "center", gap: "7px" }}>
+                <div style={{ position: "absolute", top: "45px", right: 0, width: isMobile ? "280px" : "252px", background: "var(--theme-surface)", border: "1px solid var(--theme-border)", borderRadius: "11px", overflow: "hidden", zIndex: 100 }}>
+                  <div style={{ padding: "11px 14px", borderBottom: "1px solid var(--theme-border)", color: "var(--theme-text)", fontWeight: "bold", fontSize: "13px", display: "flex", alignItems: "center", gap: "7px" }}>
                     <Ic.Bell size={14} color="#667eea" />
                     {getTranslation("dashboard.notifications_title")}
                   </div>
                   {notifications.length === 0 ? (
-                    <div style={{ padding: "18px", color: "#666", fontSize: "12px", textAlign: "center" }}>{getTranslation("dashboard.all_up_to_date")}</div>
+                    <div style={{ padding: "18px", color: "var(--theme-text-secondary)", fontSize: "12px", textAlign: "center" }}>{getTranslation("dashboard.all_up_to_date")}</div>
                   ) : notifications.map(n => (
-                    <div key={n.id} style={{ padding: "11px 14px", borderBottom: "1px solid #222", background: n.read ? "transparent" : "rgba(102,126,234,0.1)" }}>
+                    <div key={n.id} style={{ padding: "11px 14px", borderBottom: "1px solid var(--theme-border)", background: n.read ? "transparent" : "rgba(102,126,234,0.1)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
                         <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: `${n.color}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           {getNotifIcon(n.type, n.color)}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: "#94a3b8", fontSize: "11px" }}>{n.message}</div>
-                          <div style={{ color: "#666", fontSize: "9px", marginTop: "4px" }}>{n.time}</div>
+                          <div style={{ color: "var(--theme-text-secondary)", fontSize: "11px" }}>{n.message}</div>
+                          <div style={{ color: "var(--theme-text-secondary)", fontSize: "9px", marginTop: "4px" }}>{n.time}</div>
                         </div>
                       </div>
                     </div>
@@ -606,11 +606,11 @@ export default function TransporteurDashboard() {
             onMouseEnter={() => setHoveredCard(idx)}
             onMouseLeave={() => setHoveredCard(null)}
             style={{
-              background: "linear-gradient(135deg, #111, #1a1a1a)", 
+              background: "linear-gradient(135deg, var(--theme-surface), var(--theme-surface-hover))", 
               borderRadius: "18px", 
               padding: isMobile ? "14px" : "18px", 
               textAlign: "center",
-              border: `1px solid ${hoveredCard === idx ? card.color : "#222"}`,
+              border: `1px solid ${hoveredCard === idx ? card.color : "var(--theme-border)"}`,
               transition: "all 0.3s", 
               transform: !isMobile && hoveredCard === idx ? "translateY(-5px)" : "translateY(0)",
               cursor: "pointer"
@@ -618,7 +618,7 @@ export default function TransporteurDashboard() {
           >
             <card.Icon size={isMobile ? 24 : 30} color={card.color} />
             <div className="stats-card-value" style={{ fontSize: isMobile ? "22px" : "29px", color: card.color, fontWeight: "bold" }}>{card.value}{card.suffix || ""}</div>
-            <div style={{ fontSize: isMobile ? "10px" : "11px", color: "#94a3b8", marginTop: "4px" }}>{card.label}</div>
+            <div style={{ fontSize: isMobile ? "10px" : "11px", color: "var(--theme-text-secondary)", marginTop: "4px" }}>{card.label}</div>
             <div style={{ fontSize: isMobile ? "8px" : "9px", color: card.color, marginTop: "6px", opacity: 0.8 }}>{card.trend}</div>
           </div>
         ))}
@@ -626,18 +626,18 @@ export default function TransporteurDashboard() {
 
       {/* Chart Section - Responsive */}
       <div className="chart-container" style={{ 
-        background: "#111", 
+        background: "var(--theme-surface)", 
         borderRadius: "18px", 
         padding: isMobile ? "16px" : "22px", 
-        border: "1px solid #222", 
+        border: "1px solid var(--theme-border)", 
         marginBottom: "22px" 
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "22px", flexWrap: "wrap", gap: "11px" }}>
-          <h3 style={{ color: "white", margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: isMobile ? "14px" : "16px" }}>
+          <h3 style={{ color: "var(--theme-text)", margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: isMobile ? "14px" : "16px" }}>
             <Ic.BarChart size={isMobile ? 16 : 18} color="#667eea" />
             {getTranslation("dashboard.delivery_evolution")}
           </h3>
-          <div className="filter-buttons" style={{ display: "flex", gap: "7px", background: "#1a1a1a", padding: "4px", borderRadius: "32px" }}>
+          <div className="filter-buttons" style={{ display: "flex", gap: "7px", background: "var(--theme-surface-hover)", padding: "4px", borderRadius: "32px" }}>
             {[
               { id: "week", label: getTranslation("dashboard.week") },
               { id: "month", label: getTranslation("dashboard.month") },
@@ -650,7 +650,7 @@ export default function TransporteurDashboard() {
                   padding: isMobile ? "4px 12px" : "6px 16px", 
                   borderRadius: "28px",
                   background: selectedPeriod === period.id ? "#667eea" : "transparent",
-                  color: selectedPeriod === period.id ? "white" : "#94a3b8",
+                  color: selectedPeriod === period.id ? "white" : "var(--theme-text-secondary)",
                   border: "none", 
                   cursor: "pointer", 
                   fontSize: isMobile ? "11px" : "12px"
@@ -664,14 +664,14 @@ export default function TransporteurDashboard() {
 
         <div style={{ 
           minHeight: isMobile ? "250px" : "320px", 
-          background: "#0a0a0a", 
+          background: "var(--theme-background)", 
           borderRadius: "12px", 
           padding: isMobile ? "20px 12px 12px" : "30px 20px 20px",
           overflowX: "auto"
         }}>
           {periodData.labels.length === 0 ? (
-            <div style={{ textAlign: "center", padding: isMobile ? "40px" : "60px", color: "#666" }}>
-              <Ic.BarChart size={isMobile ? 30 : 40} color="#333" />
+            <div style={{ textAlign: "center", padding: isMobile ? "40px" : "60px", color: "var(--theme-text-secondary)" }}>
+              <Ic.BarChart size={isMobile ? 30 : 40} color="var(--theme-border)" />
               <p style={{ fontSize: isMobile ? "12px" : "14px" }}>{getTranslation("dashboard.no_data")}</p>
             </div>
           ) : (
@@ -704,14 +704,14 @@ export default function TransporteurDashboard() {
                   );
                 })}
               </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? "16px" : "32px", marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #1a1a1a", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? "16px" : "32px", marginTop: "24px", paddingTop: "16px", borderTop: "1px solid var(--theme-surface-hover)", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <div style={{ width: "20px", height: "10px", background: "linear-gradient(90deg, #667eea, #764ba2)", borderRadius: "3px" }} />
-                  <span style={{ color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("dashboard.assigned_shipments")}</span>
+                  <span style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("dashboard.assigned_shipments")}</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <div style={{ width: "20px", height: "10px", background: "linear-gradient(90deg, #10b981, #059669)", borderRadius: "3px" }} />
-                  <span style={{ color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("dashboard.completed_shipments")}</span>
+                  <span style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("dashboard.completed_shipments")}</span>
                 </div>
               </div>
             </>
@@ -720,9 +720,9 @@ export default function TransporteurDashboard() {
       </div>
 
       {/* Deliveries list - Responsive */}
-      <div style={{ background: "#111", borderRadius: "18px", padding: isMobile ? "16px" : "22px", border: "1px solid #222" }}>
+      <div style={{ background: "var(--theme-surface)", borderRadius: "18px", padding: isMobile ? "16px" : "22px", border: "1px solid var(--theme-border)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "11px" }}>
-          <h3 style={{ color: "white", margin: 0, display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "12px" : "13px" }}>
+          <h3 style={{ color: "var(--theme-text)", margin: 0, display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "12px" : "13px" }}>
             <Ic.Truck size={isMobile ? 14 : 16} color="#667eea" />
             {getTranslation("dashboard.my_deliveries")}
             <span style={{ background: "#667eea20", color: "#667eea", padding: "2px 9px", borderRadius: "18px", fontSize: isMobile ? "10px" : "11px" }}>{shipments.length}</span>
@@ -737,9 +737,9 @@ export default function TransporteurDashboard() {
               <button key={btn.key} onClick={() => setSelectedChart(btn.key)} style={{ 
                 padding: isMobile ? "3px 8px" : "4px 11px", 
                 borderRadius: "14px", 
-                background: selectedChart === btn.key ? btn.color : "#1a1a1a", 
+                background: selectedChart === btn.key ? btn.color : "var(--theme-surface-hover)", 
                 border: "none", 
-                color: "white", 
+                color: selectedChart === btn.key ? "white" : "var(--theme-text)", 
                 cursor: "pointer", 
                 fontSize: isMobile ? "9px" : "10px" 
               }}>
@@ -751,9 +751,9 @@ export default function TransporteurDashboard() {
 
         {shipments.length === 0 ? (
           <div style={{ textAlign: "center", padding: isMobile ? "40px" : "54px" }}>
-            <Ic.Truck size={isMobile ? 40 : 58} color="#94a3b8" />
-            <p style={{ color: "#94a3b8", fontSize: isMobile ? "12px" : "14px", marginTop: "14px" }}>{getTranslation("dashboard.no_deliveries")}</p>
-            <p style={{ color: "#666", fontSize: isMobile ? "10px" : "12px", marginTop: "7px" }}>{getTranslation("dashboard.admin_will_assign")}</p>
+            <Ic.Truck size={isMobile ? 40 : 58} color="var(--theme-text-secondary)" />
+            <p style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "12px" : "14px", marginTop: "14px" }}>{getTranslation("dashboard.no_deliveries")}</p>
+            <p style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px", marginTop: "7px" }}>{getTranslation("dashboard.admin_will_assign")}</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "11px", maxHeight: isMobile ? "400px" : "450px", overflowY: "auto" }}>
@@ -770,7 +770,7 @@ export default function TransporteurDashboard() {
                   onMouseEnter={() => setHoveredShipment(shipment.id)}
                   onMouseLeave={() => setHoveredShipment(null)}
                   style={{ 
-                    background: hoveredShipment === shipment.id ? "#1a1a1a" : "transparent", 
+                    background: hoveredShipment === shipment.id ? "var(--theme-surface-hover)" : "transparent", 
                     borderRadius: "14px", 
                     padding: isMobile ? "12px" : "14px", 
                     borderLeft: `4px solid ${getStatusColor(shipment.status)}`, 
@@ -779,11 +779,11 @@ export default function TransporteurDashboard() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "11px" }}>
                     <div>
-                      <div style={{ color: "white", fontWeight: "bold", fontSize: isMobile ? "12px" : "14px", fontFamily: "monospace" }}>{shipment.trackingNumber}</div>
-                      <div style={{ color: "#94a3b8", fontSize: isMobile ? "10px" : "11px", marginTop: "5px", display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap" }}>
-                        <Ic.User size={isMobile ? 10 : 11} color="#94a3b8" /> {shipment.clientName || getTranslation("shipments.unknown_client")}
-                        <span style={{ color: "#666" }}>•</span>
-                        <Ic.MapPin size={isMobile ? 10 : 11} color="#94a3b8" /> {(shipment.address || "").substring(0, isMobile ? 20 : 30) || getTranslation("shipments.no_address")}
+                      <div style={{ color: "var(--theme-text)", fontWeight: "bold", fontSize: isMobile ? "12px" : "14px", fontFamily: "monospace" }}>{shipment.trackingNumber}</div>
+                      <div style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "11px", marginTop: "5px", display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap" }}>
+                        <Ic.User size={isMobile ? 10 : 11} color="var(--theme-text-secondary)" /> {shipment.clientName || getTranslation("shipments.unknown_client")}
+                        <span style={{ color: "var(--theme-text-secondary)" }}>•</span>
+                        <Ic.MapPin size={isMobile ? 10 : 11} color="var(--theme-text-secondary)" /> {(shipment.address || "").substring(0, isMobile ? 20 : 30) || getTranslation("shipments.no_address")}
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "11px", flexWrap: "wrap" }}>
@@ -796,7 +796,7 @@ export default function TransporteurDashboard() {
                         onChange={(e) => updateStatus(shipment.id, e.target.value)}
                         style={{ 
                           padding: isMobile ? "4px 8px" : "5px 11px", 
-                          background: "#1a1a1a", 
+                          background: "var(--theme-surface-hover)", 
                           border: `1px solid ${getStatusColor(shipment.status)}`, 
                           borderRadius: "7px", 
                           color: getStatusColor(shipment.status), 

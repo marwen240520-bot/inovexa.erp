@@ -153,10 +153,10 @@ const FormField = ({
   const [focused, setFocused] = useState(false);
   const filled = value.trim().length > 0;
 
-  let borderColor = "#2a2a2a";
+  let borderColor = "var(--theme-surface-hover)";
   if (focused) borderColor = "#667eea";
   else if (hasChanged && filled) borderColor = "#10b981";
-  else if (filled) borderColor = "#333";
+  else if (filled) borderColor = "var(--theme-border)";
 
   const boxShadow = focused ? "0 0 0 3px rgba(102,126,234,0.15)" : "none";
 
@@ -165,7 +165,7 @@ const FormField = ({
       <label style={{
         fontSize: isMobile ? "11px" : "12px",
         fontWeight: 500,
-        color: focused ? "#667eea" : "#94a3b8",
+        color: focused ? "#667eea" : "var(--theme-text-secondary)",
         display: "flex",
         alignItems: "center",
         gap: "5px",
@@ -188,10 +188,10 @@ const FormField = ({
             width: "100%",
             boxSizing: "border-box",
             padding: isMobile ? "10px 12px 10px 36px" : "11px 12px 11px 38px",
-            background: focused ? "#161616" : "#111",
+            background: focused ? "var(--theme-surface)" : "var(--theme-surface)",
             border: `1px solid ${borderColor}`,
             borderRadius: "10px",
-            color: "white",
+            color: "var(--theme-text)",
             fontSize: isMobile ? "12px" : "13px",
             outline: "none",
             boxShadow,
@@ -426,7 +426,7 @@ export default function TransporteurProfilePage() {
   return (
     <div style={{
       padding: isMobile ? "16px" : "22px",
-      background: "#0a0a0a",
+      background: "var(--theme-background)",
       minHeight: "100vh",
       paddingBottom: isMobile ? "80px" : "22px",
     }}>
@@ -435,17 +435,17 @@ export default function TransporteurProfilePage() {
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideDown { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 60px; } }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-        input::placeholder { color: #444; }
-        .tab-btn:hover { background: rgba(255,255,255,0.05) !important; }
+        input::placeholder { color: var(--theme-border-hover); }
+        .tab-btn:hover { background: var(--theme-surface-hover) !important; }
       `}</style>
 
       {/* Header */}
       <div style={{ marginBottom: isMobile ? "20px" : "28px", animation: animateCards ? "fadeInDown 0.5s ease" : "none" }}>
-        <h1 style={{ color: "white", fontSize: isMobile ? "20px" : "24px", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+        <h1 style={{ color: "var(--theme-text)", fontSize: isMobile ? "20px" : "24px", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ color: "#667eea" }}><Icons.User size={isMobile ? 22 : 26} /></span>
           {getTranslation("profile.title")}
         </h1>
-        <p style={{ color: "#94a3b8", marginTop: "4px", fontSize: isMobile ? "11px" : "13px" }}>
+        <p style={{ color: "var(--theme-text-secondary)", marginTop: "4px", fontSize: isMobile ? "11px" : "13px" }}>
           {getTranslation("profile.subtitle")}
         </p>
       </div>
@@ -473,8 +473,8 @@ export default function TransporteurProfilePage() {
 
       {/* Avatar bar */}
       <div style={{
-        background: "#111",
-        border: "1px solid #1e1e1e",
+        background: "var(--theme-surface)",
+        border: "1px solid var(--theme-surface-hover)",
         borderRadius: "18px 18px 0 0",
         padding: isMobile ? "16px" : "20px 24px",
         display: "flex",
@@ -504,7 +504,7 @@ export default function TransporteurProfilePage() {
         </div>
 
         <div style={{ flex: 1 }}>
-          <h2 style={{ color: "white", fontSize: isMobile ? "17px" : "19px", margin: "0 0 4px" }}>
+          <h2 style={{ color: "var(--theme-text)", fontSize: isMobile ? "17px" : "19px", margin: "0 0 4px" }}>
             {form.name || user?.name}
           </h2>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start" }}>
@@ -545,7 +545,7 @@ export default function TransporteurProfilePage() {
       <div style={{
         display: "flex",
         gap: "4px",
-        borderBottom: "1px solid #1e1e1e",
+        borderBottom: "1px solid var(--theme-surface-hover)",
         background: "#0e0e0e",
         padding: "0 8px",
         overflowX: isMobile ? "auto" : "visible",
@@ -558,7 +558,7 @@ export default function TransporteurProfilePage() {
             onClick={() => setActiveTab(tab.id)}
             style={{
               padding: isMobile ? "11px 16px" : "12px 22px",
-              background: activeTab === tab.id ? "#111" : "transparent",
+              background: activeTab === tab.id ? "var(--theme-surface)" : "transparent",
               border: "none",
               borderBottom: activeTab === tab.id ? "2px solid #667eea" : "2px solid transparent",
               borderRadius: "8px 8px 0 0",
@@ -580,7 +580,7 @@ export default function TransporteurProfilePage() {
 
       {/* Tab: Informations */}
       {activeTab === "info" && (
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderTop: "none", borderRadius: "0 0 18px 18px", padding: isMobile ? "20px" : "28px" }}>
+        <div style={{ background: "var(--theme-surface)", border: "1px solid var(--theme-surface-hover)", borderTop: "none", borderRadius: "0 0 18px 18px", padding: isMobile ? "20px" : "28px" }}>
 
           {/* Bannière modifications non enregistrées */}
           {hasChanges && (
@@ -606,7 +606,7 @@ export default function TransporteurProfilePage() {
 
             {/* Section Identité */}
             <div>
-              <p style={{ color: "#444", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 14px" }}>
+              <p style={{ color: "var(--theme-border-hover)", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 14px" }}>
                 {getTranslation("profile.identity")}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -634,11 +634,11 @@ export default function TransporteurProfilePage() {
             </div>
 
             {/* Séparateur */}
-            <div style={{ height: "1px", background: "#1a1a1a" }} />
+            <div style={{ height: "1px", background: "var(--theme-surface-hover)" }} />
 
             {/* Section Contact */}
             <div>
-              <p style={{ color: "#444", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 14px" }}>
+              <p style={{ color: "var(--theme-border-hover)", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 14px" }}>
                 {getTranslation("profile.contact")}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -668,7 +668,7 @@ export default function TransporteurProfilePage() {
             </div>
 
             {/* Séparateur */}
-            <div style={{ height: "1px", background: "#1a1a1a" }} />
+            <div style={{ height: "1px", background: "var(--theme-surface-hover)" }} />
 
             {/* Actions */}
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -678,15 +678,15 @@ export default function TransporteurProfilePage() {
                   style={{
                     padding: isMobile ? "10px 16px" : "11px 20px",
                     background: "transparent",
-                    border: "1px solid #2a2a2a",
+                    border: "1px solid var(--theme-surface-hover)",
                     borderRadius: "10px",
-                    color: "#666",
+                    color: "var(--theme-text-secondary)",
                     cursor: "pointer",
                     fontSize: isMobile ? "12px" : "13px",
                     transition: "border-color 0.2s, color 0.2s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#444"; e.currentTarget.style.color = "#999"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2a2a2a"; e.currentTarget.style.color = "#666"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--theme-border-hover)"; e.currentTarget.style.color = "var(--theme-text-secondary)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--theme-surface-hover)"; e.currentTarget.style.color = "var(--theme-text-secondary)"; }}
                 >
                   {getTranslation("profile.cancel")}
                 </button>
@@ -702,10 +702,10 @@ export default function TransporteurProfilePage() {
                     ? "linear-gradient(135deg, #10b981, #059669)"
                     : hasChanges
                     ? "linear-gradient(135deg, #667eea, #764ba2)"
-                    : "#1a1a1a",
+                    : "var(--theme-surface-hover)",
                   border: "none",
                   borderRadius: "10px",
-                  color: hasChanges ? "white" : "#444",
+                  color: hasChanges ? "white" : "var(--theme-border-hover)",
                   cursor: hasChanges && !saving ? "pointer" : "not-allowed",
                   fontWeight: 600,
                   fontSize: isMobile ? "12px" : "13px",
@@ -734,7 +734,7 @@ export default function TransporteurProfilePage() {
 
       {/* Tab: Statistiques */}
       {activeTab === "stats" && (
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderTop: "none", borderRadius: "0 0 18px 18px", padding: isMobile ? "20px" : "28px" }}>
+        <div style={{ background: "var(--theme-surface)", border: "1px solid var(--theme-surface-hover)", borderTop: "none", borderRadius: "0 0 18px 18px", padding: isMobile ? "20px" : "28px" }}>
 
           <div style={{
             display: "grid",
@@ -742,27 +742,27 @@ export default function TransporteurProfilePage() {
             gap: isMobile ? "12px" : "18px",
             marginBottom: "24px",
           }}>
-            <div style={{ background: "#1a1a1a", padding: isMobile ? "14px" : "18px", borderRadius: "14px", textAlign: "center", border: "1px solid #222" }}>
+            <div style={{ background: "var(--theme-surface-hover)", padding: isMobile ? "14px" : "18px", borderRadius: "14px", textAlign: "center", border: "1px solid var(--theme-border)" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: "#667eea" }}><Icons.Package size={isMobile ? 22 : 26} /></div>
               <div style={{ fontSize: isMobile ? "26px" : "32px", color: "#667eea", fontWeight: "bold" }}>{stats.total}</div>
-              <div style={{ color: "#94a3b8", fontSize: isMobile ? "10px" : "11px", marginTop: "2px" }}>{getTranslation("profile.totalShipments")}</div>
+              <div style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "11px", marginTop: "2px" }}>{getTranslation("profile.totalShipments")}</div>
             </div>
-            <div style={{ background: "#1a1a1a", padding: isMobile ? "14px" : "18px", borderRadius: "14px", textAlign: "center", border: "1px solid #222" }}>
+            <div style={{ background: "var(--theme-surface-hover)", padding: isMobile ? "14px" : "18px", borderRadius: "14px", textAlign: "center", border: "1px solid var(--theme-border)" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: "#10b981" }}><Icons.CheckCircle size={isMobile ? 22 : 26} /></div>
               <div style={{ fontSize: isMobile ? "26px" : "32px", color: "#10b981", fontWeight: "bold" }}>{stats.delivered}</div>
-              <div style={{ color: "#94a3b8", fontSize: isMobile ? "10px" : "11px", marginTop: "2px" }}>{getTranslation("profile.completedShipments")}</div>
+              <div style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "11px", marginTop: "2px" }}>{getTranslation("profile.completedShipments")}</div>
             </div>
           </div>
 
           {/* Taux de réussite */}
           <div style={{ marginBottom: "18px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <span style={{ color: "#94a3b8", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Icons.TrendingUp size={13} /> {getTranslation("profile.successRate")}
               </span>
               <span style={{ color: "#10b981", fontWeight: "bold", fontSize: isMobile ? "12px" : "13px" }}>{successRate}%</span>
             </div>
-            <div style={{ background: "#1a1a1a", borderRadius: "9px", height: "7px", overflow: "hidden" }}>
+            <div style={{ background: "var(--theme-surface-hover)", borderRadius: "9px", height: "7px", overflow: "hidden" }}>
               <div style={{ width: `${successRate}%`, background: "linear-gradient(90deg, #10b981, #059669)", height: "7px", borderRadius: "9px", transition: "width 1s ease" }} />
             </div>
           </div>
@@ -770,22 +770,22 @@ export default function TransporteurProfilePage() {
           {/* Performance */}
           <div style={{ marginBottom: "22px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <span style={{ color: "#94a3b8", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Icons.Award size={13} /> {getTranslation("profile.performanceScore")}
               </span>
               <span style={{ color: "#f59e0b", fontWeight: "bold", fontSize: isMobile ? "12px" : "13px" }}>{performanceScore} / 5</span>
             </div>
-            <div style={{ background: "#1a1a1a", borderRadius: "9px", height: "7px", overflow: "hidden" }}>
+            <div style={{ background: "var(--theme-surface-hover)", borderRadius: "9px", height: "7px", overflow: "hidden" }}>
               <div style={{ width: `${parseFloat(performanceScore) * 20}%`, background: "linear-gradient(90deg, #f59e0b, #d97706)", height: "7px", borderRadius: "9px", transition: "width 1s ease" }} />
             </div>
           </div>
 
           {/* Conseil */}
-          <div style={{ padding: isMobile ? "12px 14px" : "14px 18px", background: "#1a1a1a", borderRadius: "12px", display: "flex", alignItems: "flex-start", gap: "12px", border: "1px solid #222" }}>
+          <div style={{ padding: isMobile ? "12px 14px" : "14px 18px", background: "var(--theme-surface-hover)", borderRadius: "12px", display: "flex", alignItems: "flex-start", gap: "12px", border: "1px solid var(--theme-border)" }}>
             <span style={{ color: "#f59e0b", flexShrink: 0, marginTop: "1px" }}><Icons.Lightbulb size={isMobile ? 16 : 18} /></span>
             <div>
-              <div style={{ color: "white", fontWeight: 600, fontSize: isMobile ? "12px" : "13px" }}>{getTranslation("profile.tipTitle")}</div>
-              <div style={{ color: "#94a3b8", fontSize: isMobile ? "10px" : "11px", marginTop: "4px" }}>
+              <div style={{ color: "var(--theme-text)", fontWeight: 600, fontSize: isMobile ? "12px" : "13px" }}>{getTranslation("profile.tipTitle")}</div>
+              <div style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "11px", marginTop: "4px" }}>
                 {stats.pending > 0
                   ? `${stats.pending} ${stats.pending === 1 ? "livraison en attente" : "livraisons en attente"}`
                   : "Bravo ! Toutes vos livraisons sont à jour"}

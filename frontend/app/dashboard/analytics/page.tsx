@@ -134,7 +134,7 @@ function MobileBottomSheetModal({ isOpen, onClose, children, title, theme }: {
       <div
         onClick={onClose}
         style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+          position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)",
           zIndex: 1000, backdropFilter: "blur(4px)",
           animation: "fadeInBg 0.25s ease"
         }}
@@ -603,7 +603,7 @@ function CustomChartModal({ isOpen, onClose, onCreate, modulesData, trends, topP
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeInBg 0.2s ease" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeInBg 0.2s ease" }}>
       <div style={{ background: theme.surface, padding: "32px", borderRadius: "24px", width: "700px", maxWidth: "90%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}`, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
           <h2 style={{ color: theme.text, display: "flex", alignItems: "center", gap: "12px" }}>

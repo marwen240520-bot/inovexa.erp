@@ -111,7 +111,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const applyTheme = (selectedTheme: any) => {
+  const applyTheme = (input: any) => {
+    // Sécurité : si le thème demandé n'existe pas, on retombe sur le clair
+    const selectedTheme = input || THEMES.light || THEMES.dark;
     const root = document.documentElement;
     root.style.setProperty('--theme-primary', selectedTheme.primary);
     root.style.setProperty('--theme-primary-rgb', selectedTheme.primaryRgb);

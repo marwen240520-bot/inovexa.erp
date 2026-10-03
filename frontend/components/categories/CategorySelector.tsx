@@ -21,10 +21,10 @@ export function CategorySelector({ selected, onSelect }) {
           style={{
             width: '100%',
             padding: '12px',
-            background: '#1a1a1a',
-            border: '1px solid #333',
+            background: 'var(--theme-surface-hover)',
+            border: '1px solid var(--theme-border)',
             borderRadius: '10px',
-            color: 'white'
+            color: 'var(--theme-text)'
           }}
         />
       </div>
@@ -36,8 +36,8 @@ export function CategorySelector({ selected, onSelect }) {
             onClick={() => onSelect(cat.id)}
             style={{
               padding: '16px',
-              background: selected === cat.id ? `linear-gradient(135deg, ${cat.color}20 0%, #1a1a1a 100%)` : '#1a1a1a',
-              border: selected === cat.id ? `2px solid ${cat.color}` : '1px solid #333',
+              background: selected === cat.id ? `linear-gradient(135deg, ${cat.color}20 0%, var(--theme-surface-hover) 100%)` : 'var(--theme-surface-hover)',
+              border: selected === cat.id ? `2px solid ${cat.color}` : '1px solid var(--theme-border)',
               borderRadius: '12px',
               cursor: 'pointer',
               transition: 'all 0.2s'
@@ -46,8 +46,8 @@ export function CategorySelector({ selected, onSelect }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
               <div style={{ fontSize: '32px' }}>{cat.icon}</div>
               <div>
-                <div style={{ color: 'white', fontWeight: 'bold' }}>{cat.name}</div>
-                <div style={{ color: '#94a3b8', fontSize: '12px' }}>{cat.description}</div>
+                <div style={{ color: 'var(--theme-text)', fontWeight: 'bold' }}>{cat.name}</div>
+                <div style={{ color: 'var(--theme-text-secondary)', fontSize: '12px' }}>{cat.description}</div>
               </div>
             </div>
 
@@ -55,12 +55,12 @@ export function CategorySelector({ selected, onSelect }) {
               <div style={{ fontSize: '11px', color: '#667eea', marginBottom: '4px' }}>📦 Modules principaux</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {cat.modules.main.slice(0, 3).map(m => (
-                  <span key={m.id} style={{ background: '#2a2a2a', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: '#94a3b8' }}>
+                  <span key={m.id} style={{ background: 'var(--theme-surface-hover)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: 'var(--theme-text-secondary)' }}>
                     {m.icon} {m.name}
                   </span>
                 ))}
                 {cat.modules.main.length > 3 && (
-                  <span style={{ background: '#2a2a2a', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: '#94a3b8' }}>
+                  <span style={{ background: 'var(--theme-surface-hover)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: 'var(--theme-text-secondary)' }}>
                     +{cat.modules.main.length - 3}
                   </span>
                 )}
@@ -69,12 +69,12 @@ export function CategorySelector({ selected, onSelect }) {
               <div style={{ fontSize: '11px', color: '#f59e0b', marginTop: '8px', marginBottom: '4px' }}>🚀 Modules avancés</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {cat.modules.advanced.slice(0, 2).map(m => (
-                  <span key={m.id} style={{ background: '#2a2a2a', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: '#f59e0b' }}>
+                  <span key={m.id} style={{ background: 'var(--theme-surface-hover)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: '#f59e0b' }}>
                     {m.icon} {m.name}
                   </span>
                 ))}
                 {cat.modules.advanced.length > 2 && (
-                  <span style={{ background: '#2a2a2a', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: '#f59e0b' }}>
+                  <span style={{ background: 'var(--theme-surface-hover)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', color: '#f59e0b' }}>
                     +{cat.modules.advanced.length - 2}
                   </span>
                 )}

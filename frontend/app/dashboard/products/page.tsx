@@ -728,7 +728,7 @@ export default function ProductsPage() {
 
       {/* Modal */}
       {modal.open && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "18px" : "22px", display: "flex", alignItems: "center", gap: "8px" }}>
               {modal.editMode ? <IconEdit size={18} /> : <IconPlus size={18} />}

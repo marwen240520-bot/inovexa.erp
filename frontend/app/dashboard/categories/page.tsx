@@ -489,7 +489,7 @@ export default function CategoriesPage() {
                               <button onClick={() => openEditModal(c)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", transition: "opacity 0.2s", display: "flex", alignItems: "center" }} title={t("common.edit")} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
                                 <IconEdit size={13} />
                               </button>
-                              <button onClick={() => deleteCategory(c.id, hasProducts)} style={{ background: hasProducts ? theme.borderHover : "#c33", color: "white", border: "none", borderRadius: "6px", padding: "5px 8px", cursor: hasProducts ? "not-allowed" : "pointer", transition: "opacity 0.2s", opacity: hasProducts ? 0.5 : 1, display: "flex", alignItems: "center" }} title={hasProducts ? t("categories.cannotDelete") : t("common.delete")} disabled={hasProducts}>
+                              <button onClick={() => deleteCategory(c.id, hasProducts)} style={{ background: hasProducts ? theme.borderHover : "#c33", color: (hasProducts) ? "var(--theme-text)" : "white", border: "none", borderRadius: "6px", padding: "5px 8px", cursor: hasProducts ? "not-allowed" : "pointer", transition: "opacity 0.2s", opacity: hasProducts ? 0.5 : 1, display: "flex", alignItems: "center" }} title={hasProducts ? t("categories.cannotDelete") : t("common.delete")} disabled={hasProducts}>
                                 <IconTrash size={13} />
                               </button>
                             </div>
@@ -565,7 +565,7 @@ export default function CategoriesPage() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteCategory(c.id, hasProducts); }}
-                        style={{ padding: "8px 12px", background: hasProducts ? theme.borderHover : "#c33", color: "white", border: "none", borderRadius: "8px", cursor: hasProducts ? "not-allowed" : "pointer", transition: "opacity 0.2s", opacity: hasProducts ? 0.5 : 1, display: "flex", alignItems: "center" }}
+                        style={{ padding: "8px 12px", background: hasProducts ? theme.borderHover : "#c33", color: (hasProducts) ? "var(--theme-text)" : "white", border: "none", borderRadius: "8px", cursor: hasProducts ? "not-allowed" : "pointer", transition: "opacity 0.2s", opacity: hasProducts ? 0.5 : 1, display: "flex", alignItems: "center" }}
                         title={hasProducts ? t("categories.cannotDelete") : t("common.delete")}
                         disabled={hasProducts}
                       >
@@ -604,7 +604,7 @@ export default function CategoriesPage() {
 
       {/* -- Modal Ajout/Modification -- */}
       {modal.open && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "24px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "20px", fontSize: isMobile ? "18px" : "24px", display: "flex", alignItems: "center", gap: "10px" }}>
               {modal.editMode ? <IconEdit size={20} /> : <IconPlus size={20} />}
@@ -637,7 +637,7 @@ export default function CategoriesPage() {
 
       {/* -- Modal Produits de la catégorie -- */}
       {showProductsModal && selectedCategory && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, animation: "fadeIn 0.2s ease", padding: "16px" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, animation: "fadeIn 0.2s ease", padding: "16px" }}>
           <div style={{ background: theme.surface, padding: "20px", borderRadius: "24px", width: productsModalWidth, maxWidth: "95%", maxHeight: "80vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
               <h2 style={{ color: theme.text, fontSize: isMobile ? "16px" : "20px", display: "flex", alignItems: "center", gap: "8px" }}>

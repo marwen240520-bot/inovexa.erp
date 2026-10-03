@@ -2,7 +2,7 @@
 
 export default function GlobalError({
   error,
-  reset,
+  reset: _reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
@@ -12,18 +12,18 @@ export default function GlobalError({
       <body>
         <div style={{
           minHeight: "100vh",
-          background: "#0a0a0a",
+          background: "#f3f4f6",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
           gap: "20px"
         }}>
-          <h1 style={{ color: "white" }}>Erreur globale</h1>
-          <p style={{ color: "#94a3b8" }}>{error.message}</p>
-          <button onClick={reset} style={{
+          <h1 style={{ color: "#111827" }}>Erreur globale</h1>
+          <p style={{ color: "#6b7280" }}>{error.message}</p>
+          <button onClick={() => window.location.reload()} style={{
             padding: "10px 20px",
-            background: "#667eea",
+            background: "#4f46e5",
             color: "white",
             border: "none",
             borderRadius: "8px",

@@ -16,7 +16,7 @@ export default function Error({
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0a0a0a",
+      background: "var(--theme-background)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -25,8 +25,8 @@ export default function Error({
       padding: "20px"
     }}>
       <div style={{ fontSize: "64px" }}>😵</div>
-      <h1 style={{ color: "white", fontSize: "24px" }}>Une erreur est survenue</h1>
-      <p style={{ color: "#94a3b8", textAlign: "center", maxWidth: "500px" }}>
+      <h1 style={{ color: "var(--theme-text)", fontSize: "24px" }}>Une erreur est survenue</h1>
+      <p style={{ color: "var(--theme-text-secondary)", textAlign: "center", maxWidth: "500px" }}>
         {error.message || "Erreur inattendue"}
       </p>
       <button

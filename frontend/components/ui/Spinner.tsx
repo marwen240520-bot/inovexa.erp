@@ -89,7 +89,7 @@ export default function Spinner({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "var(--theme-background, #0a0a0a)",
+          background: "var(--theme-background, var(--theme-background))",
         }}
       >
         {logo}

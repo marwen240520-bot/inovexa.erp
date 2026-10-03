@@ -926,7 +926,7 @@ export default function StockPage() {
       {/* -- MOBILE: Filter Bottom Sheet -- */}
       {isMobile && showFilterSheet && (
         <div
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200, display: "flex", alignItems: "flex-end" }}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end" }}
           onClick={() => setShowFilterSheet(false)}
         >
           <div
@@ -968,7 +968,7 @@ export default function StockPage() {
       {showMovements && selectedProduct && (
         <div
           style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
+            position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)",
             display: "flex",
             alignItems: isMobile ? "flex-end" : "center",
             justifyContent: isMobile ? "stretch" : "center",

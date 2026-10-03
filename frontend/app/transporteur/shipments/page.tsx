@@ -292,7 +292,7 @@ export default function TransporteurShipmentsPage() {
     if (status === "in_transit") return "#3b82f6";
     if (status === "pending") return "#f59e0b";
     if (status === "cancelled") return "#ef4444";
-    return "#94a3b8";
+    return "var(--theme-text-secondary)";
   };
 
   const getStatusText = (status: string): string => {
@@ -308,7 +308,7 @@ export default function TransporteurShipmentsPage() {
     if (status === "in_transit") return <Ic.Truck size={size} color="#3b82f6" />;
     if (status === "pending") return <Ic.Clock size={size} color="#f59e0b" />;
     if (status === "cancelled") return <Ic.XCircle size={size} color="#ef4444" />;
-    return <Ic.Package size={size} color="#94a3b8" />;
+    return <Ic.Package size={size} color="var(--theme-text-secondary)" />;
   };
 
   const filterByPeriod = (shipment: Shipment): boolean => {
@@ -386,7 +386,7 @@ export default function TransporteurShipmentsPage() {
   return (
     <div style={{ 
       padding: isMobile ? "16px" : "22px", 
-      background: "#0a0a0a", 
+      background: "var(--theme-background)", 
       minHeight: "100vh",
       paddingBottom: isMobile ? "80px" : "22px"
     }}>
@@ -403,11 +403,11 @@ export default function TransporteurShipmentsPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "22px", flexWrap: "wrap", gap: "14px" }}>
         <div>
-          <h1 style={{ color: "white", fontSize: isMobile ? "20px" : "25px", margin: 0, display: "flex", alignItems: "center", gap: "11px" }}>
+          <h1 style={{ color: "var(--theme-text)", fontSize: isMobile ? "20px" : "25px", margin: 0, display: "flex", alignItems: "center", gap: "11px" }}>
             <Ic.Truck size={isMobile ? 22 : 26} color="#667eea" />
             {getTranslation("shipments.title")}
           </h1>
-          <p style={{ color: "#94a3b8", marginTop: "4px", fontSize: isMobile ? "11px" : "13px" }}>{getTranslation("shipments.subtitle")}</p>
+          <p style={{ color: "var(--theme-text-secondary)", marginTop: "4px", fontSize: isMobile ? "11px" : "13px" }}>{getTranslation("shipments.subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: "7px" }}>
           {[
@@ -419,10 +419,10 @@ export default function TransporteurShipmentsPage() {
               onClick={() => setViewMode(mode as "list" | "grid")}
               style={{ 
                 padding: isMobile ? "5px 12px" : "7px 18px", 
-                background: viewMode === mode ? "#667eea" : "#1a1a1a", 
-                border: "1px solid #333", 
+                background: viewMode === mode ? "#667eea" : "var(--theme-surface-hover)", 
+                border: "1px solid var(--theme-border)", 
                 borderRadius: "7px", 
-                color: "white", 
+                color: (viewMode === mode) ? "white" : "var(--theme-text)", 
                 cursor: "pointer", 
                 fontSize: isMobile ? "11px" : "13px", 
                 display: "flex", 
@@ -430,7 +430,7 @@ export default function TransporteurShipmentsPage() {
                 gap: "7px" 
               }}
             >
-              <Icon size={isMobile ? 13 : 15} color="white" />
+              <Icon size={isMobile ? 13 : 15} color={viewMode === mode ? "white" : "var(--theme-text)"} />
               {!isMobile && label}
             </button>
           ))}
@@ -450,12 +450,12 @@ export default function TransporteurShipmentsPage() {
           { Icon: Ic.Truck, value: stats.inTransit, color: "#3b82f6", label: getTranslation("shipments.in_transit") },
           { Icon: Ic.CheckCircle, value: stats.delivered, color: "#10b981", label: getTranslation("shipments.delivered") },
         ].map(({ Icon, value, color, label }, i) => (
-          <div key={i} style={{ background: "#111", borderRadius: "14px", padding: isMobile ? "12px" : "14px", textAlign: "center", border: "1px solid #222" }}>
+          <div key={i} style={{ background: "var(--theme-surface)", borderRadius: "14px", padding: isMobile ? "12px" : "14px", textAlign: "center", border: "1px solid var(--theme-border)" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: "7px" }}>
               <Icon size={isMobile ? 22 : 26} color={color} />
             </div>
             <div style={{ fontSize: isMobile ? "18px" : "22px", color, fontWeight: "bold" }}>{value}</div>
-            <div style={{ fontSize: isMobile ? "9px" : "10px", color: "#94a3b8" }}>{label}</div>
+            <div style={{ fontSize: isMobile ? "9px" : "10px", color: "var(--theme-text-secondary)" }}>{label}</div>
           </div>
         ))}
       </div>
@@ -465,36 +465,36 @@ export default function TransporteurShipmentsPage() {
         <div className="filters-row" style={{ display: "flex", gap: "11px", flexWrap: "wrap", marginBottom: "14px", alignItems: "center" }}>
           <div style={{ position: "relative", flex: isMobile ? "1" : "2", width: isMobile ? "100%" : "auto" }}>
             <span style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)" }}>
-              <Ic.Search size={isMobile ? 13 : 15} color="#666" />
+              <Ic.Search size={isMobile ? 13 : 15} color="var(--theme-text-secondary)" />
             </span>
             <input
               type="text"
               placeholder={getTranslation("shipments.search_placeholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: "100%", padding: isMobile ? "10px 10px 10px 34px" : "11px 11px 11px 36px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "11px", color: "white", fontSize: isMobile ? "12px" : "13px" }}
+              style={{ width: "100%", padding: isMobile ? "10px 10px 10px 34px" : "11px 11px 11px 36px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "11px", color: "var(--theme-text)", fontSize: isMobile ? "12px" : "13px" }}
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: "11px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#666", cursor: "pointer" }}>
-                <Ic.X size={isMobile ? 12 : 14} color="#666" />
+              <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: "11px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--theme-text-secondary)", cursor: "pointer" }}>
+                <Ic.X size={isMobile ? 12 : 14} color="var(--theme-text-secondary)" />
               </button>
             )}
           </div>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "11px", color: "white", cursor: "pointer", minWidth: isMobile ? "auto" : "126px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "11px", color: "var(--theme-text)", cursor: "pointer", minWidth: isMobile ? "auto" : "126px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
             <option value="all">{getTranslation("shipments.all_statuses")}</option>
             <option value="pending">{getTranslation("shipments.status_pending")}</option>
             <option value="in_transit">{getTranslation("shipments.status_in_transit")}</option>
             <option value="delivered">{getTranslation("shipments.status_delivered")}</option>
             <option value="cancelled">{getTranslation("shipments.status_cancelled")}</option>
           </select>
-          <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "11px", color: "white", cursor: "pointer", minWidth: isMobile ? "auto" : "126px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
+          <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "11px", color: "var(--theme-text)", cursor: "pointer", minWidth: isMobile ? "auto" : "126px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
             <option value="all">{getTranslation("shipments.all_periods")}</option>
             <option value="day">{getTranslation("shipments.today")}</option>
             <option value="week">{getTranslation("shipments.this_week")}</option>
             <option value="month">{getTranslation("shipments.this_month")}</option>
             <option value="year">{getTranslation("shipments.this_year")}</option>
           </select>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "11px", color: "white", cursor: "pointer", minWidth: isMobile ? "auto" : "144px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "11px", color: "var(--theme-text)", cursor: "pointer", minWidth: isMobile ? "auto" : "144px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
             <option value="date">{getTranslation("shipments.sort_by_date")}</option>
             <option value="tracking">{getTranslation("shipments.sort_by_tracking")}</option>
             <option value="client">{getTranslation("shipments.sort_by_client")}</option>
@@ -504,24 +504,24 @@ export default function TransporteurShipmentsPage() {
           </select>
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-            style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "11px", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto", justifyContent: "center" }}
+            style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "11px", color: "var(--theme-text-secondary)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto", justifyContent: "center" }}
           >
-            {sortOrder === "asc" ? <Ic.ArrowUp size={14} color="#94a3b8" /> : <Ic.ArrowDown size={14} color="#94a3b8" />}
+            {sortOrder === "asc" ? <Ic.ArrowUp size={14} color="var(--theme-text-secondary)" /> : <Ic.ArrowDown size={14} color="var(--theme-text-secondary)" />}
             {!isMobile && (sortOrder === "asc" ? getTranslation("shipments.ascending") : getTranslation("shipments.descending"))}
           </button>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "7px" }}>
-          <div style={{ color: "#94a3b8", fontSize: isMobile ? "11px" : "12px" }}>{filteredShipments.length} {getTranslation("shipments.results")}</div>
+          <div style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "11px" : "12px" }}>{filteredShipments.length} {getTranslation("shipments.results")}</div>
         </div>
       </div>
 
       {/* Empty state */}
       {filteredShipments.length === 0 && (
-        <div style={{ textAlign: "center", padding: isMobile ? "40px" : "54px", background: "#111", borderRadius: "18px", border: "1px solid #222" }}>
+        <div style={{ textAlign: "center", padding: isMobile ? "40px" : "54px", background: "var(--theme-surface)", borderRadius: "18px", border: "1px solid var(--theme-border)" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px", opacity: 0.3 }}>
-            <Ic.SearchLg size={isMobile ? 35 : 43} color="#94a3b8" />
+            <Ic.SearchLg size={isMobile ? 35 : 43} color="var(--theme-text-secondary)" />
           </div>
-          <p style={{ color: "#94a3b8", fontSize: isMobile ? "12px" : "14px" }}>
+          <p style={{ color: "var(--theme-text-secondary)", fontSize: isMobile ? "12px" : "14px" }}>
             {searchTerm || filterPeriod !== "all" || filterStatus !== "all" ? getTranslation("shipments.no_results") : getTranslation("shipments.no_shipments")}
           </p>
           {(searchTerm || filterPeriod !== "all" || filterStatus !== "all") && (
@@ -535,10 +535,10 @@ export default function TransporteurShipmentsPage() {
 
       {/* LIST VIEW */}
       {viewMode === "list" && filteredShipments.length > 0 && (
-        <div style={{ background: "#111", borderRadius: "18px", padding: isMobile ? "16px" : "22px", border: "1px solid #222", overflowX: "auto" }}>
+        <div style={{ background: "var(--theme-surface)", borderRadius: "18px", padding: isMobile ? "16px" : "22px", border: "1px solid var(--theme-border)", overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? "700px" : "810px" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid #222", color: "#94a3b8" }}>
+              <tr style={{ borderBottom: "1px solid var(--theme-border)", color: "var(--theme-text-secondary)" }}>
                 <th style={{ padding: "11px", textAlign: "left", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("shipments.tracking_number")}</th>
                 <th style={{ padding: "11px", textAlign: "left", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("shipments.client")}</th>
                 <th style={{ padding: "11px", textAlign: "right", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("shipments.amount")}</th>
@@ -551,13 +551,13 @@ export default function TransporteurShipmentsPage() {
             </thead>
             <tbody>
               {paginatedShipments.map((s) => (
-                <tr key={s.id} style={{ borderBottom: "1px solid #1a1a1a" }}>
-                  <td style={{ padding: "11px", color: "white", fontWeight: "500", fontFamily: "monospace", fontSize: isMobile ? "10px" : "12px" }}>{s.trackingNumber}</td>
-                  <td style={{ padding: "11px", color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{s.clientName || getTranslation("shipments.unknown_client")}</td>
+                <tr key={s.id} style={{ borderBottom: "1px solid var(--theme-surface-hover)" }}>
+                  <td style={{ padding: "11px", color: "var(--theme-text)", fontWeight: "500", fontFamily: "monospace", fontSize: isMobile ? "10px" : "12px" }}>{s.trackingNumber}</td>
+                  <td style={{ padding: "11px", color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{s.clientName || getTranslation("shipments.unknown_client")}</td>
                   <td style={{ padding: "11px", textAlign: "right", color: "#10b981", fontWeight: "bold", fontSize: isMobile ? "10px" : "12px" }}>{formatAmount(s.amount)}</td>
-                  <td style={{ padding: "11px", color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{s.phone || "-"}</td>
-                  <td style={{ padding: "11px", color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{s.address?.substring(0, isMobile ? 20 : 32) || "-"}</td>
-                  <td style={{ padding: "11px", color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{new Date(s.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}</td>
+                  <td style={{ padding: "11px", color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{s.phone || "-"}</td>
+                  <td style={{ padding: "11px", color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{s.address?.substring(0, isMobile ? 20 : 32) || "-"}</td>
+                  <td style={{ padding: "11px", color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{new Date(s.createdAt).toLocaleDateString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US")}</td>
                   <td style={{ padding: "11px", textAlign: "center" }}>
                     <span style={{ background: `${getStatusColor(s.status)}20`, color: getStatusColor(s.status), padding: isMobile ? "3px 8px" : "4px 11px", borderRadius: "18px", fontSize: isMobile ? "9px" : "11px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
                       {getStatusIcon(s.status, isMobile ? 10 : 12)} {getStatusText(s.status)}
@@ -568,7 +568,7 @@ export default function TransporteurShipmentsPage() {
                       value={s.status} 
                       onChange={(e) => updateStatus(s.id, e.target.value)} 
                       disabled={updating === s.id} 
-                      style={{ padding: isMobile ? "4px 8px" : "5px 11px", background: "#1a1a1a", border: `1px solid ${getStatusColor(s.status)}`, borderRadius: "7px", color: getStatusColor(s.status), cursor: updating === s.id ? "wait" : "pointer", fontSize: isMobile ? "9px" : "11px" }}
+                      style={{ padding: isMobile ? "4px 8px" : "5px 11px", background: "var(--theme-surface-hover)", border: `1px solid ${getStatusColor(s.status)}`, borderRadius: "7px", color: getStatusColor(s.status), cursor: updating === s.id ? "wait" : "pointer", fontSize: isMobile ? "9px" : "11px" }}
                     >
                       <option value="pending">{getTranslation("shipments.status_pending")}</option>
                       <option value="in_transit">{getTranslation("shipments.status_in_transit")}</option>
@@ -580,19 +580,19 @@ export default function TransporteurShipmentsPage() {
             </tbody>
           </table>
           {totalPages > 1 && (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "7px", marginTop: "22px", paddingTop: "14px", borderTop: "1px solid #222", flexWrap: "wrap" }}>
-              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
-                <Ic.ChevronsLeft size={14} color="white" />
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "7px", marginTop: "22px", paddingTop: "14px", borderTop: "1px solid var(--theme-border)", flexWrap: "wrap" }}>
+              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
+                <Ic.ChevronsLeft size={14} color="var(--theme-text)" />
               </button>
-              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
-                <Ic.ChevronLeft size={14} color="white" />
+              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
+                <Ic.ChevronLeft size={14} color="var(--theme-text)" />
               </button>
-              <span style={{ padding: "6px 10px", color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("shipments.page")} {currentPage} {getTranslation("shipments.of")} {totalPages}</span>
-              <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
-                <Ic.ChevronRight size={14} color="white" />
+              <span style={{ padding: "6px 10px", color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("shipments.page")} {currentPage} {getTranslation("shipments.of")} {totalPages}</span>
+              <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
+                <Ic.ChevronRight size={14} color="var(--theme-text)" />
               </button>
-              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
-                <Ic.ChevronsRight size={14} color="white" />
+              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
+                <Ic.ChevronsRight size={14} color="var(--theme-text)" />
               </button>
             </div>
           )}
@@ -604,39 +604,39 @@ export default function TransporteurShipmentsPage() {
         <>
           <div className="grid-cards" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(324px, 1fr))", gap: "18px" }}>
             {paginatedShipments.map((s) => (
-              <div key={s.id} style={{ background: "#111", borderRadius: "14px", padding: "16px", border: `1px solid ${getStatusColor(s.status)}` }}>
+              <div key={s.id} style={{ background: "var(--theme-surface)", borderRadius: "14px", padding: "16px", border: `1px solid ${getStatusColor(s.status)}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "11px", marginBottom: "14px" }}>
                   <div style={{ width: "45px", height: "45px", borderRadius: "23px", background: `${getStatusColor(s.status)}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {getStatusIcon(s.status, 22)}
                   </div>
                   <div>
-                    <div style={{ color: "white", fontWeight: "bold", fontSize: "13px", fontFamily: "monospace" }}>{s.trackingNumber}</div>
-                    <div style={{ color: "#94a3b8", fontSize: "10px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
-                      <Ic.User size={10} color="#94a3b8" /> {s.clientName || getTranslation("shipments.unknown_client")}
+                    <div style={{ color: "var(--theme-text)", fontWeight: "bold", fontSize: "13px", fontFamily: "monospace" }}>{s.trackingNumber}</div>
+                    <div style={{ color: "var(--theme-text-secondary)", fontSize: "10px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Ic.User size={10} color="var(--theme-text-secondary)" /> {s.clientName || getTranslation("shipments.unknown_client")}
                     </div>
                   </div>
                 </div>
                 <div style={{ marginBottom: "11px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
-                    <span style={{ color: "#666", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.DollarSign size={10} color="#555" /> {getTranslation("shipments.amount")}</span>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.DollarSign size={10} color="#555" /> {getTranslation("shipments.amount")}</span>
                     <span style={{ color: "#10b981", fontSize: "10px" }}>{formatAmount(s.amount)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
-                    <span style={{ color: "#666", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.Phone size={10} color="#555" /> {getTranslation("shipments.phone")}</span>
-                    <span style={{ color: "#94a3b8", fontSize: "10px" }}>{s.phone || "-"}</span>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.Phone size={10} color="#555" /> {getTranslation("shipments.phone")}</span>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "10px" }}>{s.phone || "-"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
-                    <span style={{ color: "#666", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.MapPin size={10} color="#555" /> {getTranslation("shipments.address")}</span>
-                    <span style={{ color: "#94a3b8", fontSize: "10px", textAlign: "right" }}>{s.address?.substring(0, 20) || "-"}</span>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.MapPin size={10} color="#555" /> {getTranslation("shipments.address")}</span>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "10px", textAlign: "right" }}>{s.address?.substring(0, 20) || "-"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "#666", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.BarChart size={10} color="#555" /> {getTranslation("shipments.status")}</span>
+                    <span style={{ color: "var(--theme-text-secondary)", fontSize: "9px", display: "flex", alignItems: "center", gap: "4px" }}><Ic.BarChart size={10} color="#555" /> {getTranslation("shipments.status")}</span>
                     <span style={{ background: `${getStatusColor(s.status)}20`, color: getStatusColor(s.status), padding: "2px 7px", borderRadius: "11px", fontSize: "8px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
                       {getStatusIcon(s.status, 9)} {getStatusText(s.status)}
                     </span>
                   </div>
                 </div>
-                <select value={s.status} onChange={(e) => updateStatus(s.id, e.target.value)} disabled={updating === s.id} style={{ width: "100%", padding: "7px 11px", marginTop: "7px", background: "#1a1a1a", border: `1px solid ${getStatusColor(s.status)}`, borderRadius: "7px", color: getStatusColor(s.status), cursor: updating === s.id ? "wait" : "pointer", fontSize: "10px" }}>
+                <select value={s.status} onChange={(e) => updateStatus(s.id, e.target.value)} disabled={updating === s.id} style={{ width: "100%", padding: "7px 11px", marginTop: "7px", background: "var(--theme-surface-hover)", border: `1px solid ${getStatusColor(s.status)}`, borderRadius: "7px", color: getStatusColor(s.status), cursor: updating === s.id ? "wait" : "pointer", fontSize: "10px" }}>
                   <option value="pending">{getTranslation("shipments.status_pending")}</option>
                   <option value="in_transit">{getTranslation("shipments.status_in_transit")}</option>
                   <option value="delivered">{getTranslation("shipments.status_delivered")}</option>
@@ -645,19 +645,19 @@ export default function TransporteurShipmentsPage() {
             ))}
           </div>
           {totalPages > 1 && (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "7px", marginTop: "22px", paddingTop: "14px", borderTop: "1px solid #222", flexWrap: "wrap" }}>
-              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
-                <Ic.ChevronsLeft size={14} color="white" />
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "7px", marginTop: "22px", paddingTop: "14px", borderTop: "1px solid var(--theme-border)", flexWrap: "wrap" }}>
+              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
+                <Ic.ChevronsLeft size={14} color="var(--theme-text)" />
               </button>
-              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
-                <Ic.ChevronLeft size={14} color="white" />
+              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}>
+                <Ic.ChevronLeft size={14} color="var(--theme-text)" />
               </button>
-              <span style={{ padding: "6px 10px", color: "#94a3b8", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("shipments.page")} {currentPage} {getTranslation("shipments.of")} {totalPages}</span>
-              <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
-                <Ic.ChevronRight size={14} color="white" />
+              <span style={{ padding: "6px 10px", color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "12px" }}>{getTranslation("shipments.page")} {currentPage} {getTranslation("shipments.of")} {totalPages}</span>
+              <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
+                <Ic.ChevronRight size={14} color="var(--theme-text)" />
               </button>
-              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "5px", color: "white", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
-                <Ic.ChevronsRight size={14} color="white" />
+              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} style={{ padding: "6px 10px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "5px", color: "var(--theme-text)", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}>
+                <Ic.ChevronsRight size={14} color="var(--theme-text)" />
               </button>
             </div>
           )}

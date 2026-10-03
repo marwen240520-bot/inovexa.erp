@@ -160,7 +160,7 @@ export default function TransporteurLayout({
       path: "/transporteur/settings", 
       label: getTranslation("transporteur.settings.title"), 
       icon: SettingsIcon,
-      color: "#94a3b8",
+      color: "var(--theme-text-secondary)",
       bgColor: "rgba(148,163,184,0.15)"
     }
   ];
@@ -191,15 +191,15 @@ export default function TransporteurLayout({
           bottom: 0,
           left: 0,
           right: 0,
-          background: "rgba(17,17,17,0.95)",
+          background: "rgba(255,255,255,0.96)",
           backdropFilter: "blur(20px)",
-          borderTop: "1px solid rgba(102,126,234,0.15)",
+          borderTop: "1px solid var(--theme-border)",
           borderRadius: "24px 24px 0 0",
           padding: "8px 16px",
           display: "flex",
           justifyContent: "space-around",
           zIndex: 100,
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.3)"
+          boxShadow: "0 -4px 20px rgba(17,24,39,0.08)"
         }}>
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
@@ -224,7 +224,7 @@ export default function TransporteurLayout({
                 }}
               >
                 <div style={{
-                  color: isActive ? item.color : "#94a3b8",
+                  color: isActive ? item.color : "var(--theme-text-secondary)",
                   transform: isActive ? "scale(1.1)" : "scale(1)",
                   transition: "all 0.2s"
                 }}>
@@ -232,7 +232,7 @@ export default function TransporteurLayout({
                 </div>
                 <span style={{
                   fontSize: "10px",
-                  color: isActive ? item.color : "#94a3b8",
+                  color: isActive ? item.color : "var(--theme-text-secondary)",
                   fontWeight: isActive ? "600" : "400"
                 }}>
                   {item.label}
@@ -269,8 +269,8 @@ export default function TransporteurLayout({
       {!isMobile && (
         <div style={{
           width: "260px",
-          background: "linear-gradient(180deg, #0f0f0f 0%, #0a0a0a 100%)",
-          borderRight: "1px solid rgba(102,126,234,0.08)",
+          background: "var(--theme-surface)",
+          borderRight: "1px solid var(--theme-border)",
           position: "fixed",
           height: "100vh",
           left: 0,
@@ -292,11 +292,14 @@ export default function TransporteurLayout({
                 src="/images/logo.png" 
                 alt="Inovexa Logo"
                 style={{
-                  width: "66px",
-                  height: "66px",
+                  width: "56px",
+                  height: "56px",
+                  padding: "4px",
+                  boxSizing: "border-box",
                   objectFit: "contain",
-                  filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))",
-                  borderRadius: "10px"
+                  background: "linear-gradient(135deg, #1e1b4b, #4338ca)",
+                  boxShadow: "0 6px 16px rgba(67,56,202,0.28)",
+                  borderRadius: "16px"
                 }}
                 onError={() => setLogoError(true)}
               />
@@ -318,7 +321,7 @@ export default function TransporteurLayout({
             )}
             <div>
               <div style={{ 
-                color: "white", 
+                color: "var(--theme-text)", 
                 fontSize: "18px", 
                 fontWeight: "800", 
                 letterSpacing: "1px"
@@ -362,7 +365,7 @@ export default function TransporteurLayout({
                     padding: "12px 16px",
                     marginBottom: "8px",
                     borderRadius: "14px",
-                    background: isActive ? item.bgColor : (hoveredItem === item.path ? "rgba(255,255,255,0.03)" : "transparent"),
+                    background: isActive ? item.bgColor : (hoveredItem === item.path ? "var(--theme-surface-hover)" : "transparent"),
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -372,7 +375,7 @@ export default function TransporteurLayout({
                   }}
                 >
                   <span style={{ 
-                    color: isActive ? item.color : "#94a3b8",
+                    color: isActive ? item.color : "var(--theme-text-secondary)",
                     display: "flex",
                     alignItems: "center"
                   }}>
@@ -381,7 +384,7 @@ export default function TransporteurLayout({
                   <span style={{ 
                     fontSize: "14px", 
                     fontWeight: isActive ? "600" : "400",
-                    color: isActive ? item.color : "#94a3b8"
+                    color: isActive ? item.color : "var(--theme-text-secondary)"
                   }}>
                     {item.label}
                   </span>
@@ -422,7 +425,7 @@ export default function TransporteurLayout({
         marginLeft: !isMobile ? "260px" : 0,
         marginBottom: isMobile ? "70px" : 0,
         minHeight: "100vh",
-        background: "#0a0a0a"
+        background: "var(--theme-background)"
       }}>
         {children}
       </div>
@@ -446,7 +449,7 @@ export default function TransporteurLayout({
         }
         
         ::-webkit-scrollbar-track {
-          background: #1a1a1a;
+          background: var(--theme-surface-hover);
         }
         
         ::-webkit-scrollbar-thumb {

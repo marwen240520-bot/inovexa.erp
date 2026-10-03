@@ -303,7 +303,7 @@ export default function ImportButton({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.8)",
+          background: "rgba(15,23,42,0.5)",
           backdropFilter: "blur(4px)",
           display: "flex",
           alignItems: "center",
@@ -317,7 +317,7 @@ export default function ImportButton({
       >
         <div
           style={{
-            background: "#111",
+            background: "var(--theme-surface)",
             borderRadius: "20px",
             width: "90%",
             maxWidth: "1200px",
@@ -325,15 +325,15 @@ export default function ImportButton({
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            border: "1px solid #333",
+            border: "1px solid var(--theme-border)",
             animation: "scaleIn 0.2s ease"
           }}
         >
           <div
             style={{
               padding: "20px 24px",
-              borderBottom: "1px solid #222",
-              background: "#1a1a1a",
+              borderBottom: "1px solid var(--theme-border)",
+              background: "var(--theme-surface-hover)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -342,10 +342,10 @@ export default function ImportButton({
             }}
           >
             <div>
-              <h3 style={{ color: "white", margin: 0, fontSize: "18px" }}>
+              <h3 style={{ color: "var(--theme-text)", margin: 0, fontSize: "18px" }}>
                 📋 {getTranslatedText("preview")}
               </h3>
-              <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "12px", color: "#666" }}>
+              <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "12px", color: "var(--theme-text-secondary)" }}>
                 <span>📄 {previewData.fileName}</span>
                 <span>📊 {previewData.totalRows} {getTranslatedText("totalRows")}</span>
                 <span>💾 {formatFileSize(previewData.fileSize)}</span>
@@ -374,17 +374,17 @@ export default function ImportButton({
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid #222" }}>
+                  <tr style={{ borderBottom: "1px solid var(--theme-border)" }}>
                     {previewData.headers.map((header, idx) => (
                       <th
                         key={idx}
                         style={{
                           padding: "12px",
                           textAlign: "left",
-                          color: "#94a3b8",
+                          color: "var(--theme-text-secondary)",
                           fontWeight: "500",
                           fontSize: "13px",
-                          background: "#1a1a1a",
+                          background: "var(--theme-surface-hover)",
                           position: "sticky",
                           top: 0
                         }}
@@ -399,10 +399,10 @@ export default function ImportButton({
                     <tr
                       key={rowIdx}
                       style={{
-                        borderBottom: "1px solid #1a1a1a",
+                        borderBottom: "1px solid var(--theme-surface-hover)",
                         transition: "background 0.2s"
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#1a1a1a"}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-surface-hover)"}
                       onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                     >
                       {previewData.headers.map((header, colIdx) => (
@@ -410,7 +410,7 @@ export default function ImportButton({
                           key={colIdx}
                           style={{
                             padding: "12px",
-                            color: "#94a3b8",
+                            color: "var(--theme-text-secondary)",
                             fontSize: "13px",
                             maxWidth: "250px",
                             overflow: "hidden",
@@ -433,9 +433,9 @@ export default function ImportButton({
                 style={{
                   textAlign: "center",
                   padding: "16px",
-                  color: "#666",
+                  color: "var(--theme-text-secondary)",
                   fontSize: "12px",
-                  borderTop: "1px solid #1a1a1a",
+                  borderTop: "1px solid var(--theme-surface-hover)",
                   marginTop: "16px"
                 }}
               >
@@ -471,7 +471,7 @@ export default function ImportButton({
           <div
             style={{
               padding: "20px 24px",
-              borderTop: "1px solid #222",
+              borderTop: "1px solid var(--theme-border)",
               display: "flex",
               gap: "12px",
               justifyContent: "flex-end"
@@ -481,15 +481,15 @@ export default function ImportButton({
               onClick={cancelImport}
               style={{
                 padding: "10px 24px",
-                background: "#333",
+                background: "var(--theme-border)",
                 border: "none",
                 borderRadius: "8px",
-                color: "#94a3b8",
+                color: "var(--theme-text-secondary)",
                 cursor: "pointer",
                 transition: "all 0.2s"
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "#444"}
-              onMouseLeave={(e) => e.currentTarget.style.background = "#333"}
+              onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-border-hover)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "var(--theme-border)"}
             >
               {getTranslatedText("cancel")}
             </button>
@@ -549,10 +549,10 @@ export default function ImportButton({
         disabled={isImporting}
         style={{
           padding: iconOnly ? "8px" : "10px 20px",
-          background: "#1a1a1a",
-          border: "1px solid #333",
+          background: "var(--theme-surface-hover)",
+          border: "1px solid var(--theme-border)",
           borderRadius: iconOnly ? "8px" : "8px",
-          color: "white",
+          color: "var(--theme-text)",
           cursor: isImporting ? "wait" : "pointer",
           display: "inline-flex",
           alignItems: "center",
@@ -566,14 +566,14 @@ export default function ImportButton({
         }}
         onMouseEnter={(e) => {
           if (!isImporting) {
-            e.currentTarget.style.background = "#2a2a2a";
+            e.currentTarget.style.background = "var(--theme-surface-hover)";
             e.currentTarget.style.borderColor = "#667eea";
           }
         }}
         onMouseLeave={(e) => {
           if (!isImporting) {
-            e.currentTarget.style.background = "#1a1a1a";
-            e.currentTarget.style.borderColor = "#333";
+            e.currentTarget.style.background = "var(--theme-surface-hover)";
+            e.currentTarget.style.borderColor = "var(--theme-border)";
           }
         }}
       >
@@ -612,25 +612,25 @@ export default function ImportButton({
             position: "fixed",
             bottom: "20px",
             right: "20px",
-            background: "#1a1a1a",
+            background: "var(--theme-surface-hover)",
             border: "1px solid #667eea",
             borderRadius: "12px",
             padding: "12px 20px",
             zIndex: 10001,
             minWidth: "250px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            boxShadow: "0 10px 30px rgba(17,24,39,0.18)",
             animation: "fadeIn 0.2s ease"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ color: "white", fontSize: "12px" }}>📥 Import en cours...</span>
+            <span style={{ color: "var(--theme-text)", fontSize: "12px" }}>📥 Import en cours...</span>
             <span style={{ color: "#667eea", fontSize: "12px" }}>{progress}%</span>
           </div>
           <div
             style={{
               width: "100%",
               height: "4px",
-              background: "#333",
+              background: "var(--theme-border)",
               borderRadius: "2px",
               overflow: "hidden"
             }}

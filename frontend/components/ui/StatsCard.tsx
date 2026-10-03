@@ -4,7 +4,7 @@ export default function StatsCard({ icon, value, label, color, trend, trendValue
   const getTrendColor = () => {
     if (trend === "up") return "#10b981";
     if (trend === "down") return "#ef4444";
-    return "#94a3b8";
+    return "var(--theme-text-secondary)";
   };
 
   const getTrendIcon = () => {
@@ -17,10 +17,10 @@ export default function StatsCard({ icon, value, label, color, trend, trendValue
     <div 
       onClick={onClick}
       style={{
-        background: "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
+        background: "linear-gradient(135deg, var(--theme-surface) 0%, var(--theme-surface-hover) 100%)",
         borderRadius: "16px",
         padding: "20px",
-        border: "1px solid #222",
+        border: "1px solid var(--theme-border)",
         cursor: onClick ? "pointer" : "default",
         transition: "all 0.2s",
         position: "relative",
@@ -51,7 +51,7 @@ export default function StatsCard({ icon, value, label, color, trend, trendValue
         )}
       </div>
       <div style={{ fontSize: "28px", color: color || "white", fontWeight: "bold" }}>{value}</div>
-      <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px" }}>{label}</div>
+      <div style={{ fontSize: "12px", color: "var(--theme-text-secondary)", marginTop: "4px" }}>{label}</div>
     </div>
   );
 }

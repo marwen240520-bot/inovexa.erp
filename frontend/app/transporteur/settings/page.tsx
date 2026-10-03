@@ -250,10 +250,10 @@ export default function TransporteurSettingsPage() {
   const fontSizeExtraSmall = isMobile ? "9px" : "10px";
 
   const sectionStyle = {
-    background: "#111",
+    background: "var(--theme-surface)",
     borderRadius: "14px",
     padding: sectionPadding,
-    border: "1px solid #222",
+    border: "1px solid var(--theme-border)",
     marginBottom: sectionMarginBottom,
     opacity: animateCards ? 1 : 0,
     transition: !isMobile ? "transform 0.3s" : "none",
@@ -266,7 +266,7 @@ export default function TransporteurSettingsPage() {
   return (
     <div style={{ 
       padding: isMobile ? "16px" : "22px", 
-      background: "#0a0a0a", 
+      background: "var(--theme-background)", 
       minHeight: "100vh",
       paddingBottom: isMobile ? "80px" : "22px"
     }}>
@@ -291,11 +291,11 @@ export default function TransporteurSettingsPage() {
         animation: animateCards ? "fadeInDown 0.5s ease" : "none", 
         opacity: animateCards ? 1 : 0 
       }}>
-        <h1 style={{ color: "white", fontSize: titleFontSize, marginBottom: "7px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <h1 style={{ color: "var(--theme-text)", fontSize: titleFontSize, marginBottom: "7px", display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ color: "#667eea" }}><Icons.Settings size={isMobile ? 18 : 22} /></span>
           {getTranslation("transporteur.settings.title")}
         </h1>
-        <p style={{ color: "#94a3b8", marginBottom: "16px", fontSize: fontSizeSmall }}>{getTranslation("transporteur.settings.subtitle")}</p>
+        <p style={{ color: "var(--theme-text-secondary)", marginBottom: "16px", fontSize: fontSizeSmall }}>{getTranslation("transporteur.settings.subtitle")}</p>
       </div>
 
       {/* Message */}
@@ -337,10 +337,10 @@ export default function TransporteurSettingsPage() {
               onClick={() => handleLanguageChange(lang as LanguageOption)}
               style={{ 
                 padding: isMobile ? "8px 16px" : "9px 22px", 
-                background: settings.language === lang ? "#667eea" : "#1a1a1a", 
-                border: `1px solid ${settings.language === lang ? "#667eea" : "#333"}`, 
+                background: settings.language === lang ? "#667eea" : "var(--theme-surface-hover)", 
+                border: `1px solid ${settings.language === lang ? "#667eea" : "var(--theme-border)"}`, 
                 borderRadius: "7px", 
-                color: "white", 
+                color: (settings.language === lang) ? "white" : "var(--theme-text)", 
                 cursor: "pointer", 
                 fontWeight: settings.language === lang ? "600" : "400", 
                 transition: "all 0.2s", 
@@ -357,8 +357,8 @@ export default function TransporteurSettingsPage() {
             </button>
           ))}
         </div>
-        <div style={{ marginTop: "11px", padding: "7px 11px", background: "#1a1a1a", borderRadius: "7px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-          <span style={{ color: "#94a3b8", fontSize: fontSizeExtraSmall }}>
+        <div style={{ marginTop: "11px", padding: "7px 11px", background: "var(--theme-surface-hover)", borderRadius: "7px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          <span style={{ color: "var(--theme-text-secondary)", fontSize: fontSizeExtraSmall }}>
             {getTranslation("transporteur.settings.current_language")}: {settings.language === "fr" ? "Français" : settings.language === "en" ? "English" : "Español"}
           </span>
         </div>
@@ -377,14 +377,14 @@ export default function TransporteurSettingsPage() {
         <select
           value={settings.dateFormat}
           onChange={(e) => { const v = e.target.value; setSettings({ ...settings, dateFormat: v }); savePreference("dateFormat", v); }}
-          style={{ width: "100%", padding: inputPadding, background: "#1a1a1a", border: "1px solid #333", borderRadius: "9px", color: "white", cursor: "pointer", fontSize: fontSizeSmall }}
+          style={{ width: "100%", padding: inputPadding, background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "9px", color: "var(--theme-text)", cursor: "pointer", fontSize: fontSizeSmall }}
         >
           <option value="dd/mm/yyyy">DD/MM/YYYY ({getTranslation("transporteur.settings.example")}: {formatDateExample()})</option>
           <option value="mm/dd/yyyy">MM/DD/YYYY ({getTranslation("transporteur.settings.example")}: {formatDateExample()})</option>
           <option value="yyyy-mm-dd">YYYY-MM-DD ({getTranslation("transporteur.settings.example")}: {formatDateExample()})</option>
         </select>
-        <div style={{ marginTop: "11px", padding: "7px 11px", background: "#1a1a1a", borderRadius: "7px" }}>
-          <span style={{ color: "#94a3b8", fontSize: fontSizeExtraSmall }}>{getTranslation("transporteur.settings.current_date")}: </span>
+        <div style={{ marginTop: "11px", padding: "7px 11px", background: "var(--theme-surface-hover)", borderRadius: "7px" }}>
+          <span style={{ color: "var(--theme-text-secondary)", fontSize: fontSizeExtraSmall }}>{getTranslation("transporteur.settings.current_date")}: </span>
           <span style={{ color: "#667eea", fontWeight: "bold" }}>{formatDateExample()}</span>
         </div>
       </div>
@@ -405,23 +405,23 @@ export default function TransporteurSettingsPage() {
             placeholder={getTranslation("transporteur.settings.old_password")}
             value={passwordForm.oldPassword}
             onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
-            style={{ width: "100%", padding: inputPadding, background: "#1a1a1a", border: "1px solid #333", borderRadius: "9px", color: "white", marginBottom: "11px", fontSize: fontSizeSmall, boxSizing: "border-box" }}
+            style={{ width: "100%", padding: inputPadding, background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "9px", color: "var(--theme-text)", marginBottom: "11px", fontSize: fontSizeSmall, boxSizing: "border-box" }}
           />
           <input
             type="password"
             placeholder={getTranslation("transporteur.settings.new_password")}
             value={passwordForm.newPassword}
             onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-            style={{ width: "100%", padding: inputPadding, background: "#1a1a1a", border: "1px solid #333", borderRadius: "9px", color: "white", marginBottom: "11px", fontSize: fontSizeSmall, boxSizing: "border-box" }}
+            style={{ width: "100%", padding: inputPadding, background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "9px", color: "var(--theme-text)", marginBottom: "11px", fontSize: fontSizeSmall, boxSizing: "border-box" }}
           />
           <input
             type="password"
             placeholder={getTranslation("transporteur.settings.confirm_password")}
             value={passwordForm.confirmPassword}
             onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-            style={{ width: "100%", padding: inputPadding, background: "#1a1a1a", border: "1px solid #333", borderRadius: "9px", color: "white", fontSize: fontSizeSmall, boxSizing: "border-box" }}
+            style={{ width: "100%", padding: inputPadding, background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "9px", color: "var(--theme-text)", fontSize: fontSizeSmall, boxSizing: "border-box" }}
           />
-          <p style={{ color: "#666", fontSize: fontSizeExtraSmall, marginTop: "7px" }}>{getTranslation("transporteur.settings.password_min_length")}</p>
+          <p style={{ color: "var(--theme-text-secondary)", fontSize: fontSizeExtraSmall, marginTop: "7px" }}>{getTranslation("transporteur.settings.password_min_length")}</p>
         </div>
         <button
           onClick={changePassword}

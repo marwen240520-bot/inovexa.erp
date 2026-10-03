@@ -34,7 +34,7 @@ export default function DashboardLayout({
         display: "flex",
         minHeight: "100vh",
         position: "relative",
-        background: "#0a0a0a",
+        background: "var(--theme-background)",
       }}
     >
       {/* Sidebar rendue UNE SEULE FOIS ici. Le layout persiste entre les pages,
@@ -61,7 +61,7 @@ export default function DashboardLayout({
           * { box-sizing: border-box; }
 
           ::-webkit-scrollbar { width: 6px; height: 6px; }
-          ::-webkit-scrollbar-track { background: #1a1a1a; }
+          ::-webkit-scrollbar-track { background: var(--theme-surface-hover); }
           ::-webkit-scrollbar-thumb { background: #667eea; border-radius: 10px; }
           ::-webkit-scrollbar-thumb:hover { background: #764ba2; }
         `,

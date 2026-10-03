@@ -7,7 +7,7 @@ export default function Badge({ children, type = "default", size = "md", animate
     danger: { background: "rgba(239,68,68,0.15)", color: "#ef4444" },
     info: { background: "rgba(59,130,246,0.15)", color: "#3b82f6" },
     primary: { background: "rgba(102,126,234,0.15)", color: "#667eea" },
-    default: { background: "#1a1a1a", color: "#94a3b8" }
+    default: { background: "var(--theme-surface-hover)", color: "var(--theme-text-secondary)" }
   };
 
   const sizes = {

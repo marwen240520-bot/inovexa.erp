@@ -144,7 +144,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0,0,0,0.9)',
+      background: 'rgba(15,23,42,0.5)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -152,30 +152,30 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
       backdropFilter: 'blur(8px)'
     }}>
       <div style={{
-        background: '#111',
+        background: 'var(--theme-surface)',
         borderRadius: '32px',
         width: '650px',
         maxHeight: '90vh',
         overflowY: 'auto',
-        border: '1px solid #222',
+        border: '1px solid var(--theme-border)',
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
       }}>
         {/* Header */}
         <div style={{
           padding: '24px 32px',
-          borderBottom: '1px solid #222',
+          borderBottom: '1px solid var(--theme-border)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
           <div>
-            <h2 style={{ color: 'white', fontSize: '24px', marginBottom: '4px' }}>➕ Nouveau client</h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px' }}>Créez un compte client avec son type d'ERP</p>
+            <h2 style={{ color: 'var(--theme-text)', fontSize: '24px', marginBottom: '4px' }}>➕ Nouveau client</h2>
+            <p style={{ color: 'var(--theme-text-secondary)', fontSize: '14px' }}>Créez un compte client avec son type d'ERP</p>
           </div>
           <button onClick={onClose} style={{
-            background: '#1a1a1a',
+            background: 'var(--theme-surface-hover)',
             border: 'none',
-            color: '#94a3b8',
+            color: 'var(--theme-text-secondary)',
             fontSize: '24px',
             cursor: 'pointer',
             width: '36px',
@@ -190,11 +190,11 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
         <form onSubmit={handleSubmit} style={{ padding: '32px' }}>
           {/* Informations personnelles */}
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ color: 'white', fontSize: '16px', marginBottom: '16px' }}>👤 Informations personnelles</h3>
+            <h3 style={{ color: 'var(--theme-text)', fontSize: '16px', marginBottom: '16px' }}>👤 Informations personnelles</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Nom complet *</label>
+                <label style={{ color: 'var(--theme-text-secondary)', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Nom complet *</label>
                 <input
                   type="text"
                   value={form.name}
@@ -202,17 +202,17 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                   style={{
                     width: '100%',
                     padding: '12px 16px',
-                    background: '#1a1a1a',
-                    border: `1px solid ${errors.name ? '#ef4444' : '#333'}`,
+                    background: 'var(--theme-surface-hover)',
+                    border: `1px solid ${errors.name ? '#ef4444' : 'var(--theme-border)'}`,
                     borderRadius: '12px',
-                    color: 'white',
+                    color: 'var(--theme-text)',
                     fontSize: '14px'
                   }}
                 />
                 {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.name}</p>}
               </div>
               <div>
-                <label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Nom de la société</label>
+                <label style={{ color: 'var(--theme-text-secondary)', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Nom de la société</label>
                 <input
                   type="text"
                   value={form.companyName}
@@ -220,10 +220,10 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                   style={{
                     width: '100%',
                     padding: '12px 16px',
-                    background: '#1a1a1a',
-                    border: '1px solid #333',
+                    background: 'var(--theme-surface-hover)',
+                    border: '1px solid var(--theme-border)',
                     borderRadius: '12px',
-                    color: 'white',
+                    color: 'var(--theme-text)',
                     fontSize: '14px'
                   }}
                 />
@@ -231,7 +231,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Email *</label>
+              <label style={{ color: 'var(--theme-text-secondary)', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Email *</label>
               <input
                 type="email"
                 value={form.email}
@@ -239,10 +239,10 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  background: '#1a1a1a',
-                  border: `1px solid ${errors.email ? '#ef4444' : '#333'}`,
+                  background: 'var(--theme-surface-hover)',
+                  border: `1px solid ${errors.email ? '#ef4444' : 'var(--theme-border)'}`,
                   borderRadius: '12px',
-                  color: 'white',
+                  color: 'var(--theme-text)',
                   fontSize: '14px'
                 }}
               />
@@ -251,7 +251,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Mot de passe *</label>
+                <label style={{ color: 'var(--theme-text-secondary)', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Mot de passe *</label>
                 <input
                   type="password"
                   value={form.password}
@@ -259,17 +259,17 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                   style={{
                     width: '100%',
                     padding: '12px 16px',
-                    background: '#1a1a1a',
-                    border: `1px solid ${errors.password ? '#ef4444' : '#333'}`,
+                    background: 'var(--theme-surface-hover)',
+                    border: `1px solid ${errors.password ? '#ef4444' : 'var(--theme-border)'}`,
                     borderRadius: '12px',
-                    color: 'white',
+                    color: 'var(--theme-text)',
                     fontSize: '14px'
                   }}
                 />
                 {errors.password && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.password}</p>}
               </div>
               <div>
-                <label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Confirmer mot de passe *</label>
+                <label style={{ color: 'var(--theme-text-secondary)', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Confirmer mot de passe *</label>
                 <input
                   type="password"
                   value={form.confirmPassword}
@@ -277,10 +277,10 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                   style={{
                     width: '100%',
                     padding: '12px 16px',
-                    background: '#1a1a1a',
-                    border: `1px solid ${errors.confirmPassword ? '#ef4444' : '#333'}`,
+                    background: 'var(--theme-surface-hover)',
+                    border: `1px solid ${errors.confirmPassword ? '#ef4444' : 'var(--theme-border)'}`,
                     borderRadius: '12px',
-                    color: 'white',
+                    color: 'var(--theme-text)',
                     fontSize: '14px'
                   }}
                 />
@@ -289,7 +289,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
             </div>
 
             <div>
-              <label style={{ color: '#94a3b8', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Téléphone</label>
+              <label style={{ color: 'var(--theme-text-secondary)', display: 'block', marginBottom: '8px', fontSize: '14px' }}>Téléphone</label>
               <input
                 type="tel"
                 value={form.phone}
@@ -297,10 +297,10 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  background: '#1a1a1a',
-                  border: '1px solid #333',
+                  background: 'var(--theme-surface-hover)',
+                  border: '1px solid var(--theme-border)',
                   borderRadius: '12px',
-                  color: 'white',
+                  color: 'var(--theme-text)',
                   fontSize: '14px'
                 }}
               />
@@ -309,7 +309,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
 
           {/* Type d'ERP */}
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ color: 'white', fontSize: '16px', marginBottom: '16px' }}>🏢 Type d'ERP</h3>
+            <h3 style={{ color: 'var(--theme-text)', fontSize: '16px', marginBottom: '16px' }}>🏢 Type d'ERP</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '16px' }}>
               {ERP_TYPES.map((erp) => (
@@ -318,19 +318,19 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                   onClick={() => handleErpChange(erp.value)}
                   style={{
                     padding: '16px',
-                    background: form.erpType === erp.value ? `rgba(${parseInt(erp.color.slice(1,3), 16)}, ${parseInt(erp.color.slice(3,5), 16)}, ${parseInt(erp.color.slice(5,7), 16)}, 0.1)` : '#1a1a1a',
-                    border: `2px solid ${form.erpType === erp.value ? erp.color : '#333'}`,
+                    background: form.erpType === erp.value ? `rgba(${parseInt(erp.color.slice(1,3), 16)}, ${parseInt(erp.color.slice(3,5), 16)}, ${parseInt(erp.color.slice(5,7), 16)}, 0.1)` : 'var(--theme-surface-hover)',
+                    border: `2px solid ${form.erpType === erp.value ? erp.color : 'var(--theme-border)'}`,
                     borderRadius: '16px',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                 >
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>{erp.label.split(' ')[0]}</div>
-                  <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>{erp.label}</div>
-                  <div style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '8px' }}>{erp.description}</div>
+                  <div style={{ color: 'var(--theme-text)', fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>{erp.label}</div>
+                  <div style={{ color: 'var(--theme-text-secondary)', fontSize: '11px', marginBottom: '8px' }}>{erp.description}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                     {erp.modules.slice(0, 2).map((mod) => (
-                      <span key={mod} style={{ background: '#333', color: '#94a3b8', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>{mod}</span>
+                      <span key={mod} style={{ background: 'var(--theme-border)', color: 'var(--theme-text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>{mod}</span>
                     ))}
                   </div>
                 </div>
@@ -339,12 +339,12 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
 
             {/* Modules détaillés */}
             <div style={{
-              background: '#1a1a1a',
+              background: 'var(--theme-surface-hover)',
               borderRadius: '16px',
               padding: '16px',
               border: `1px solid ${selectedErp.color}`
             }}>
-              <p style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '12px' }}>📋 Modules inclus :</p>
+              <p style={{ color: 'var(--theme-text-secondary)', fontSize: '12px', marginBottom: '12px' }}>📋 Modules inclus :</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {selectedErp.modules.map((mod) => (
                   <span key={mod} style={{ background: `rgba(${parseInt(selectedErp.color.slice(1,3), 16)}, ${parseInt(selectedErp.color.slice(3,5), 16)}, ${parseInt(selectedErp.color.slice(5,7), 16)}, 0.2)`, color: selectedErp.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>
@@ -357,7 +357,7 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
 
           {/* Abonnement */}
           <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ color: 'white', fontSize: '16px', marginBottom: '16px' }}>📅 Durée d'abonnement</h3>
+            <h3 style={{ color: 'var(--theme-text)', fontSize: '16px', marginBottom: '16px' }}>📅 Durée d'abonnement</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '16px' }}>
               {DURATION_OPTIONS.map((dur) => (
@@ -367,21 +367,21 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
                   style={{
                     textAlign: 'center',
                     padding: '12px',
-                    background: form.subscriptionDuration === dur.value ? '#667eea' : '#1a1a1a',
-                    border: `1px solid ${form.subscriptionDuration === dur.value ? '#667eea' : '#333'}`,
+                    background: form.subscriptionDuration === dur.value ? '#667eea' : 'var(--theme-surface-hover)',
+                    border: `1px solid ${form.subscriptionDuration === dur.value ? '#667eea' : 'var(--theme-border)'}`,
                     borderRadius: '12px',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                 >
                   <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>{dur.value}j</div>
-                  <div style={{ color: '#94a3b8', fontSize: '11px' }}>{dur.price}</div>
+                  <div style={{ color: 'var(--theme-text-secondary)', fontSize: '11px' }}>{dur.price}</div>
                 </div>
               ))}
             </div>
 
             <div style={{
-              background: '#1a1a1a',
+              background: 'var(--theme-surface-hover)',
               borderRadius: '12px',
               padding: '16px',
               display: 'flex',
@@ -389,11 +389,11 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
               alignItems: 'center'
             }}>
               <div>
-                <span style={{ color: '#94a3b8', fontSize: '14px' }}>Total à payer</span>
-                <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>{selectedDuration?.price}</div>
+                <span style={{ color: 'var(--theme-text-secondary)', fontSize: '14px' }}>Total à payer</span>
+                <div style={{ color: 'var(--theme-text)', fontSize: '20px', fontWeight: 'bold' }}>{selectedDuration?.price}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ color: '#94a3b8', fontSize: '12px' }}>Date d'expiration</span>
+                <span style={{ color: 'var(--theme-text-secondary)', fontSize: '12px' }}>Date d'expiration</span>
                 <div style={{ color: '#10b981', fontSize: '14px' }}>
                   {new Date(Date.now() + form.subscriptionDuration * 24 * 60 * 60 * 1000).toLocaleDateString()}
                 </div>
@@ -428,8 +428,8 @@ export default function ClientFormModal({ isOpen, onClose, onSubmit, loading }: 
               style={{
                 flex: 1,
                 padding: '14px',
-                background: '#333',
-                color: '#94a3b8',
+                background: 'var(--theme-border)',
+                color: 'var(--theme-text-secondary)',
                 border: 'none',
                 borderRadius: '12px',
                 fontSize: '16px',

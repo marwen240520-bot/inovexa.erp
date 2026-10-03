@@ -8,7 +8,7 @@ export function SelectionBar({ selectedCount, onSelectAll, onClearAll, onDeleteS
       position: "fixed",
       bottom: "20px",
       right: "20px",
-      background: "#1a1a1a",
+      background: "var(--theme-surface-hover)",
       border: "1px solid #667eea",
       borderRadius: "12px",
       padding: "12px 20px",
@@ -16,17 +16,17 @@ export function SelectionBar({ selectedCount, onSelectAll, onClearAll, onDeleteS
       alignItems: "center",
       gap: "16px",
       zIndex: 1000,
-      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+      boxShadow: "0 4px 12px rgba(17,24,39,0.18)",
       backdropFilter: "blur(10px)"
     }}>
-      <span style={{ color: "white" }}>✅ {selectedCount} sélectionné(s)</span>
+      <span style={{ color: "var(--theme-text)" }}>✅ {selectedCount} sélectionné(s)</span>
       <button onClick={onDeleteSelected} style={{ background: "#c33", color: "white", border: "none", borderRadius: "6px", padding: "6px 12px", cursor: "pointer" }}>
         🗑️ Supprimer
       </button>
       <button onClick={onExportSelected} style={{ background: "#10b981", color: "white", border: "none", borderRadius: "6px", padding: "6px 12px", cursor: "pointer" }}>
         📥 Exporter
       </button>
-      <button onClick={onClearAll} style={{ background: "#333", color: "white", border: "none", borderRadius: "6px", padding: "6px 12px", cursor: "pointer" }}>
+      <button onClick={onClearAll} style={{ background: "var(--theme-border)", color: "var(--theme-text)", border: "none", borderRadius: "6px", padding: "6px 12px", cursor: "pointer" }}>
         ✖ Annuler
       </button>
     </div>

@@ -35,7 +35,7 @@ interface ClientListProps {
 
 export default function ClientList({ clients, onExtend, onToggle, onDelete }: ClientListProps) {
   const getStatusColor = (status: string | undefined, isActive: boolean, subscriptionEnd: string | null) => {
-    if (!isActive) return { bg: '#333', color: '#94a3b8', text: 'Inactif' };
+    if (!isActive) return { bg: 'var(--theme-border)', color: 'var(--theme-text-secondary)', text: 'Inactif' };
     if (subscriptionEnd && new Date(subscriptionEnd) < new Date()) return { bg: '#ef444420', color: '#ef4444', text: 'Expiré' };
     return { bg: '#10b98120', color: '#10b981', text: 'Actif' };
   };
@@ -53,7 +53,7 @@ export default function ClientList({ clients, onExtend, onToggle, onDelete }: Cl
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ borderBottom: '1px solid #222', color: '#94a3b8' }}>
+          <tr style={{ borderBottom: '1px solid var(--theme-border)', color: 'var(--theme-text-secondary)' }}>
             <th style={{ padding: '16px 12px', textAlign: 'left' }}>Client</th>
             <th style={{ padding: '16px 12px', textAlign: 'left' }}>Société</th>
             <th style={{ padding: '16px 12px', textAlign: 'left' }}>Type ERP</th>
@@ -70,14 +70,14 @@ export default function ClientList({ clients, onExtend, onToggle, onDelete }: Cl
             const daysLeft = getDaysLeft(c.subscriptionEnd);
             
             return (
-              <tr key={c.id} style={{ borderBottom: '1px solid #1a1a1a', transition: 'background 0.2s' }}>
+              <tr key={c.id} style={{ borderBottom: '1px solid var(--theme-surface-hover)', transition: 'background 0.2s' }}>
                 <td style={{ padding: '16px 12px' }}>
                   <div>
-                    <div style={{ color: 'white', fontWeight: '500' }}>{c.name}</div>
-                    <div style={{ color: '#666', fontSize: '12px' }}>ID: {c.id}</div>
+                    <div style={{ color: 'var(--theme-text)', fontWeight: '500' }}>{c.name}</div>
+                    <div style={{ color: 'var(--theme-text-secondary)', fontSize: '12px' }}>ID: {c.id}</div>
                   </div>
                 </td>
-                <td style={{ padding: '16px 12px', color: '#94a3b8' }}>{c.companyName || '-'}</td>
+                <td style={{ padding: '16px 12px', color: 'var(--theme-text-secondary)' }}>{c.companyName || '-'}</td>
                 <td style={{ padding: '16px 12px' }}>
                   <span style={{
                     background: `${ERP_TYPES[c.erpType]?.color || '#667eea'}20`,
@@ -92,8 +92,8 @@ export default function ClientList({ clients, onExtend, onToggle, onDelete }: Cl
                 </td>
                 <td style={{ padding: '16px 12px' }}>
                   <div>
-                    <div style={{ color: '#94a3b8', fontSize: '12px' }}>{c.email}</div>
-                    <div style={{ color: '#666', fontSize: '11px' }}>{c.phone || 'Pas de téléphone'}</div>
+                    <div style={{ color: 'var(--theme-text-secondary)', fontSize: '12px' }}>{c.email}</div>
+                    <div style={{ color: 'var(--theme-text-secondary)', fontSize: '11px' }}>{c.phone || 'Pas de téléphone'}</div>
                   </div>
                 </td>
                 <td style={{ padding: '16px 12px', textAlign: 'center' }}>
@@ -102,7 +102,7 @@ export default function ClientList({ clients, onExtend, onToggle, onDelete }: Cl
                       {c.subscriptionEnd ? new Date(c.subscriptionEnd).toLocaleDateString() : '-'}
                     </div>
                     {!isExpired && daysLeft !== null && daysLeft > 0 && (
-                      <div style={{ color: '#666', fontSize: '11px' }}>{daysLeft} jours restants</div>
+                      <div style={{ color: 'var(--theme-text-secondary)', fontSize: '11px' }}>{daysLeft} jours restants</div>
                     )}
                   </div>
                 </td>

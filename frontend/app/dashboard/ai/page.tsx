@@ -1626,7 +1626,7 @@ export default function IAPage() {
                     disabled={loadingAI || !chatInput.trim()} 
                     style={{ 
                       background: (!chatInput.trim() || loadingAI) ? theme.border : theme.gradient, 
-                      color: "white", 
+                      color: (!chatInput.trim() || loadingAI) ? "var(--theme-text)" : "white", 
                       border: "none", 
                       borderRadius: "25px", 
                       padding: isMobile ? "10px 20px" : "9px 22px", 

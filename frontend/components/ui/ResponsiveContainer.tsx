@@ -48,10 +48,10 @@ export default function ResponsiveContainer({
   // Styles de fond
   const backgroundStyles = {
     transparent: { background: "transparent" },
-    dark: { background: "#0a0a0a" },
+    dark: { background: "var(--theme-background)" },
     darker: { background: "#050505" },
     card: { 
-      background: "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
+      background: "linear-gradient(135deg, var(--theme-surface) 0%, var(--theme-surface-hover) 100%)",
       borderRadius: "20px",
       border: "1px solid rgba(102,126,234,0.1)"
     }
@@ -129,10 +129,10 @@ export function Section({
   
   const backgroundStyles = {
     transparent: { background: "transparent" },
-    dark: { background: "#0a0a0a" },
+    dark: { background: "var(--theme-background)" },
     darker: { background: "#050505" },
     gradient: { 
-      background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)"
+      background: "linear-gradient(135deg, var(--theme-background) 0%, var(--theme-surface-hover) 100%)"
     }
   };
   
@@ -155,7 +155,7 @@ export function Section({
               <h2 style={{
                 fontSize: isMobile ? "24px" : "32px",
                 fontWeight: "bold",
-                background: "linear-gradient(135deg, #fff 0%, #94a3b8 100%)",
+                background: "linear-gradient(135deg, #fff 0%, var(--theme-text-secondary) 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 marginBottom: "12px"
@@ -166,7 +166,7 @@ export function Section({
             {subtitle && (
               <p style={{
                 fontSize: isMobile ? "14px" : "16px",
-                color: "#94a3b8",
+                color: "var(--theme-text-secondary)",
                 maxWidth: "600px",
                 margin: "0 auto"
               }}>

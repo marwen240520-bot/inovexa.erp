@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -103,6 +103,11 @@ const profileTranslations = {
 
 // ==================== SVG ICONS ====================
 const Icons = {
+  Sun: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+  ),
   Moon: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -343,6 +348,7 @@ export default function ProfilePage() {
 
   const getThemeIcon = (themeId: string) => {
     const icons: Record<string, JSX.Element> = {
+      light: <Icons.Sun />,
       dark: <Icons.Moon />,
       blue: <Icons.Waves />,
       sunset: <Icons.Sunset />,
@@ -728,7 +734,7 @@ export default function ProfilePage() {
                   padding: "8px", 
                   minWidth: isMobile ? "calc(100% + 20px)" : "210px", 
                   zIndex: 100, 
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.3)", 
+                  boxShadow: "0 10px 30px rgba(17,24,39,0.18)", 
                   animation: "fadeInUp 0.2s ease",
                   maxHeight: "400px",
                   overflowY: "auto"
@@ -866,7 +872,7 @@ export default function ProfilePage() {
                       top: "50%", 
                       left: "50%", 
                       transform: "translate(-50%, -50%)", 
-                      background: "rgba(0,0,0,0.7)", 
+                      background: "rgba(15,23,42,0.5)", 
                       borderRadius: "50%", 
                       display: "flex", 
                       alignItems: "center", 

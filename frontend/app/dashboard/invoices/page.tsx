@@ -1384,7 +1384,7 @@ export default function InvoicesPage() {
                         </td>
                         <td style={{ padding: "5px", color: theme.text, fontWeight: "500", fontFamily: "monospace", fontSize: isMobile ? "9px" : "10px" }}>
                           {invoice.reference}
-                          <span style={{ fontSize: "7px", color: "#666", marginLeft: "4px" }}>({itemCount})</span>
+                          <span style={{ fontSize: "7px", color: "var(--theme-text-secondary)", marginLeft: "4px" }}>({itemCount})</span>
                         </td>
                         <td style={{ padding: "5px", color: theme.textSecondary, fontFamily: "monospace", fontSize: isMobile ? "8px" : "9px" }}>{invoice.operationNumber}</td>
                         <td style={{ padding: "5px", textAlign: "center" }}>
@@ -1457,7 +1457,7 @@ export default function InvoicesPage() {
 
       {/* --- MODAL CRéATION -------------------------------------------------------- */}
       {modalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "10px" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "10px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "16px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "18px" : "22px", display: "flex", alignItems: "center", gap: "8px" }}>
               <Icons.Invoice size={20} color={theme.primary} />
@@ -1472,10 +1472,10 @@ export default function InvoicesPage() {
               <div>
                 <label style={{ color: theme.text, fontSize: "11px", display: "block", marginBottom: "4px" }}>{t.type} *</label>
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <button type="button" onClick={() => setModalForm({ ...modalForm, type: "debit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: modalForm.type === "debit" ? "#ef4444" : theme.surfaceHover, border: `1px solid ${modalForm.type === "debit" ? "#ef4444" : theme.border}`, borderRadius: "6px", color: "white", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                  <button type="button" onClick={() => setModalForm({ ...modalForm, type: "debit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: modalForm.type === "debit" ? "#ef4444" : theme.surfaceHover, border: `1px solid ${modalForm.type === "debit" ? "#ef4444" : theme.border}`, borderRadius: "6px", color: (modalForm.type === "debit") ? "white" : "var(--theme-text)", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                     <Icons.ArrowUpRight size={13} color="white" /> {t.debit}
                   </button>
-                  <button type="button" onClick={() => setModalForm({ ...modalForm, type: "credit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: modalForm.type === "credit" ? theme.accent : theme.surfaceHover, border: `1px solid ${modalForm.type === "credit" ? theme.accent : theme.border}`, borderRadius: "6px", color: "white", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                  <button type="button" onClick={() => setModalForm({ ...modalForm, type: "credit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: modalForm.type === "credit" ? theme.accent : theme.surfaceHover, border: `1px solid ${modalForm.type === "credit" ? theme.accent : theme.border}`, borderRadius: "6px", color: (modalForm.type === "credit") ? "white" : "var(--theme-text)", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                     <Icons.ArrowDownLeft size={13} color="white" /> {t.credit}
                   </button>
                 </div>
@@ -1604,7 +1604,7 @@ export default function InvoicesPage() {
 
       {/* --- MODAL éDITION --------------------------------------------------------- */}
       {editModalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "10px" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "10px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "16px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "18px" : "22px", display: "flex", alignItems: "center", gap: "8px" }}>
               <Icons.Edit size={20} color={theme.primary} />
@@ -1619,10 +1619,10 @@ export default function InvoicesPage() {
               <div>
                 <label style={{ color: theme.textSecondary, fontSize: "11px", display: "block", marginBottom: "4px" }}>{t.type} *</label>
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <button type="button" onClick={() => setEditModalForm({ ...editModalForm, type: "debit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: editModalForm.type === "debit" ? "#ef4444" : theme.surfaceHover, border: `1px solid ${editModalForm.type === "debit" ? "#ef4444" : theme.border}`, borderRadius: "6px", color: "white", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                  <button type="button" onClick={() => setEditModalForm({ ...editModalForm, type: "debit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: editModalForm.type === "debit" ? "#ef4444" : theme.surfaceHover, border: `1px solid ${editModalForm.type === "debit" ? "#ef4444" : theme.border}`, borderRadius: "6px", color: (editModalForm.type === "debit") ? "white" : "var(--theme-text)", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                     <Icons.ArrowUpRight size={13} color="white" /> {t.debit}
                   </button>
-                  <button type="button" onClick={() => setEditModalForm({ ...editModalForm, type: "credit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: editModalForm.type === "credit" ? theme.accent : theme.surfaceHover, border: `1px solid ${editModalForm.type === "credit" ? theme.accent : theme.border}`, borderRadius: "6px", color: "white", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                  <button type="button" onClick={() => setEditModalForm({ ...editModalForm, type: "credit", clientId: "", supplierId: "", clientName: "", supplierName: "" })} style={{ flex: 1, padding: "8px", background: editModalForm.type === "credit" ? theme.accent : theme.surfaceHover, border: `1px solid ${editModalForm.type === "credit" ? theme.accent : theme.border}`, borderRadius: "6px", color: (editModalForm.type === "credit") ? "white" : "var(--theme-text)", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                     <Icons.ArrowDownLeft size={13} color="white" /> {t.credit}
                   </button>
                 </div>
@@ -1766,7 +1766,7 @@ export default function InvoicesPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0,0,0,0.9)",
+            background: "rgba(15,23,42,0.5)",
             display: "flex",
             alignItems: isMobile ? "flex-start" : "center",
             justifyContent: "center",
@@ -1882,7 +1882,7 @@ export default function InvoicesPage() {
                 padding: isMobile ? "14px" : "30px",
                 background: "white",
                 fontFamily: "Arial, sans-serif",
-                color: "#111",
+                color: "var(--theme-surface)",
                 fontSize: isMobile ? "11px" : "13px"
               }}
             >
@@ -1926,7 +1926,7 @@ export default function InvoicesPage() {
                             fontSize: isMobile ? "16px" : "26px",
                             margin: 0
                           }}>INOVEXA</h1>
-                          <p style={{ color: "#333", fontSize: isMobile ? "9px" : "12px", margin: "2px 0 0" }}>ERP</p>
+                          <p style={{ color: "var(--theme-border)", fontSize: isMobile ? "9px" : "12px", margin: "2px 0 0" }}>ERP</p>
                         </div>
                       </div>
                       <div style={{ textAlign: isMobile ? "left" : "right" }}>
@@ -1969,19 +1969,19 @@ export default function InvoicesPage() {
                         }}>
                           {viewInvoice.type === "debit" ? t.client : t.supplier}
                         </h4>
-                        <p style={{ margin: "4px 0", fontWeight: "bold", color: "#111", fontSize: isMobile ? "12px" : "13px" }}>{clientInfo || "-"}</p>
+                        <p style={{ margin: "4px 0", fontWeight: "bold", color: "var(--theme-surface)", fontSize: isMobile ? "12px" : "13px" }}>{clientInfo || "-"}</p>
                         {viewInvoice.clientEmail && (
-                          <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "#111", display: "flex", alignItems: "center", gap: "4px" }}>
+                          <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "var(--theme-surface)", display: "flex", alignItems: "center", gap: "4px" }}>
                             <Icons.Mail size={isMobile ? 10 : 12} color="#667eea" /> {viewInvoice.clientEmail}
                           </p>
                         )}
                         {viewInvoice.clientPhone && (
-                          <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "#111", display: "flex", alignItems: "center", gap: "4px" }}>
+                          <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "var(--theme-surface)", display: "flex", alignItems: "center", gap: "4px" }}>
                             <Icons.Phone size={isMobile ? 10 : 12} color="#667eea" /> {viewInvoice.clientPhone}
                           </p>
                         )}
-                        {viewInvoice.clientAddress && <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "#111" }}>{viewInvoice.clientAddress}</p>}
-                        {viewInvoice.clientSiret && <p style={{ margin: "2px 0", fontSize: isMobile ? "9px" : "11px", color: "#111" }}>SIRET: {viewInvoice.clientSiret}</p>}
+                        {viewInvoice.clientAddress && <p style={{ margin: "2px 0", fontSize: isMobile ? "10px" : "12px", color: "var(--theme-surface)" }}>{viewInvoice.clientAddress}</p>}
+                        {viewInvoice.clientSiret && <p style={{ margin: "2px 0", fontSize: isMobile ? "9px" : "11px", color: "var(--theme-surface)" }}>SIRET: {viewInvoice.clientSiret}</p>}
                       </div>
                       <div>
                         <h4 style={{
@@ -1991,20 +1991,20 @@ export default function InvoicesPage() {
                           textTransform: "uppercase",
                           letterSpacing: "1px"
                         }}>{t.details}</h4>
-                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "var(--theme-surface)" }}>
                           <strong>{t.invoiceNumber}:</strong> {viewInvoice.reference}
                         </p>
-                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "var(--theme-surface)" }}>
                           <strong>{t.operationNumber}:</strong> {viewInvoice.operationNumber}
                         </p>
-                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "var(--theme-surface)" }}>
                           <strong>{t.dateLabel}:</strong> {dateObj.toLocaleDateString(locale)}
                         </p>
-                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                        <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "var(--theme-surface)" }}>
                           <strong>{t.dueDateLabel}:</strong> {dueDateObj ? dueDateObj.toLocaleDateString(locale) : "-"}
                         </p>
                         {viewInvoice.paymentTerms && (
-                          <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "#111" }}>
+                          <p style={{ margin: "3px 0", fontSize: isMobile ? "11px" : "13px", color: "var(--theme-surface)" }}>
                             <strong>{t.paymentTerms}:</strong> {viewInvoice.paymentTerms}
                           </p>
                         )}
@@ -2014,7 +2014,7 @@ export default function InvoicesPage() {
                     {/* Tableau des articles adapté mobile */}
                     <h3 style={{
                       marginBottom: isMobile ? "10px" : "14px",
-                      color: "#111",
+                      color: "var(--theme-surface)",
                       fontSize: isMobile ? "13px" : "16px"
                     }}>{t.productsList}</h3>
 
@@ -2039,19 +2039,19 @@ export default function InvoicesPage() {
                             const itemTTC = item.totalTTC || (itemHT * (1 + taxRate / 100));
                             return (
                               <tr key={i} style={{ borderBottom: "1px solid #e0e0e0" }}>
-                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", color: "var(--theme-surface)", fontSize: isMobile ? "9px" : "12px" }}>
                                   {item.description || "-"}
                                 </td>
-                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "var(--theme-surface)", fontSize: isMobile ? "9px" : "12px" }}>
                                   {item.quantity || 1}
                                 </td>
-                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "var(--theme-surface)", fontSize: isMobile ? "9px" : "12px" }}>
                                   {formatCurrency(item.unitPriceHT || 0)}
                                 </td>
-                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "var(--theme-surface)", fontSize: isMobile ? "9px" : "12px" }}>
                                   {formatCurrency(itemHT)}
                                 </td>
-                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "#111", fontSize: isMobile ? "9px" : "12px" }}>
+                                <td style={{ padding: isMobile ? "6px 8px" : "10px 12px", textAlign: "right", color: "var(--theme-surface)", fontSize: isMobile ? "9px" : "12px" }}>
                                   {formatCurrency(itemTTC)}
                                 </td>
                               </tr>
@@ -2072,11 +2072,11 @@ export default function InvoicesPage() {
                       background: isMobile ? "#f8f8f8" : "transparent",
                       borderRadius: isMobile ? "8px" : "0"
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: isMobile ? "4px 0" : "7px 0", color: "#111", fontSize: isMobile ? "11px" : "13px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: isMobile ? "4px 0" : "7px 0", color: "var(--theme-surface)", fontSize: isMobile ? "11px" : "13px" }}>
                         <span>{t.totalHT}</span>
                         <span>{formatCurrency(subtotalHT)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: isMobile ? "4px 0" : "7px 0", color: "#111", fontSize: isMobile ? "11px" : "13px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: isMobile ? "4px 0" : "7px 0", color: "var(--theme-surface)", fontSize: isMobile ? "11px" : "13px" }}>
                         <span>{t.tax} ({taxRate}%)</span>
                         <span>{formatCurrency(taxAmount)}</span>
                       </div>
@@ -2088,7 +2088,7 @@ export default function InvoicesPage() {
                         marginTop: isMobile ? "4px" : "8px",
                         fontWeight: "bold",
                         fontSize: isMobile ? "15px" : "18px",
-                        color: "#111"
+                        color: "var(--theme-surface)"
                       }}>
                         <span>{t.totalTTC}</span>
                         <span style={{ color: "#667eea" }}>{formatCurrency(totalTTC)}</span>
@@ -2103,8 +2103,8 @@ export default function InvoicesPage() {
                         borderRadius: isMobile ? "6px" : "8px",
                         marginBottom: isMobile ? "12px" : "20px"
                       }}>
-                        <strong style={{ color: "#111", fontSize: isMobile ? "10px" : "12px" }}>{t.notes}:</strong>
-                        <p style={{ margin: "4px 0 0", color: "#111", fontSize: isMobile ? "10px" : "12px" }}>{viewInvoice.notes}</p>
+                        <strong style={{ color: "var(--theme-surface)", fontSize: isMobile ? "10px" : "12px" }}>{t.notes}:</strong>
+                        <p style={{ margin: "4px 0 0", color: "var(--theme-surface)", fontSize: isMobile ? "10px" : "12px" }}>{viewInvoice.notes}</p>
                       </div>
                     )}
 
@@ -2113,9 +2113,9 @@ export default function InvoicesPage() {
                       textAlign: "center",
                       marginTop: isMobile ? "16px" : "30px",
                       paddingTop: isMobile ? "12px" : "20px",
-                      borderTop: "1px solid #ddd"
+                      borderTop: "1px solid var(--theme-text)"
                     }}>
-                      <p style={{ fontSize: isMobile ? "10px" : "12px", color: "#333" }}>{t.thankYou}</p>
+                      <p style={{ fontSize: isMobile ? "10px" : "12px", color: "var(--theme-border)" }}>{t.thankYou}</p>
                       <p style={{ fontSize: isMobile ? "9px" : "11px", color: "#555", marginTop: "4px" }}>INOVEXA ERP</p>
                     </div>
                   </>

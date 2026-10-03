@@ -23,7 +23,7 @@ export default function DataTable({
   const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div style={{ background: "#111", borderRadius: "20px", padding: "24px", border: "1px solid #222" }}>
+    <div style={{ background: "var(--theme-surface)", borderRadius: "20px", padding: "24px", border: "1px solid var(--theme-border)" }}>
       {searchable && (
         <div style={{ marginBottom: "20px" }}>
           <input 
@@ -31,7 +31,7 @@ export default function DataTable({
             placeholder={searchPlaceholder} 
             value={searchTerm} 
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            style={{ width: "100%", padding: "12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white" }}
+            style={{ width: "100%", padding: "12px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "10px", color: "var(--theme-text)" }}
           />
         </div>
       )}
@@ -39,7 +39,7 @@ export default function DataTable({
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #222", color: "#94a3b8" }}>
+            <tr style={{ borderBottom: "1px solid var(--theme-border)", color: "var(--theme-text-secondary)" }}>
               {columns.map(col => (
                 <th key={col.key} style={{ padding: "12px", textAlign: col.align || "left", width: col.width }}>{col.label}</th>
               ))}
@@ -50,11 +50,11 @@ export default function DataTable({
             {paginatedData.map((row, idx) => (
               <tr 
                 key={idx} 
-                style={{ borderBottom: "1px solid #1a1a1a", cursor: onRowClick ? "pointer" : "default" }}
+                style={{ borderBottom: "1px solid var(--theme-surface-hover)", cursor: onRowClick ? "pointer" : "default" }}
                 onClick={() => onRowClick && onRowClick(row)}
               >
                 {columns.map(col => (
-                  <td key={col.key} style={{ padding: "12px", textAlign: col.align || "left", color: col.color ? row[col.key] > 0 ? "#10b981" : "#94a3b8" : "#fff" }}>
+                  <td key={col.key} style={{ padding: "12px", textAlign: col.align || "left", color: col.color ? row[col.key] > 0 ? "#10b981" : "var(--theme-text-secondary)" : "#fff" }}>
                     {col.render ? col.render(row[col.key], row) : row[col.key]}
                   </td>
                 ))}
@@ -70,15 +70,15 @@ export default function DataTable({
           <button 
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
             disabled={currentPage === 1}
-            style={{ padding: "8px 12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", color: "white", cursor: "pointer", opacity: currentPage === 1 ? 0.5 : 1 }}
+            style={{ padding: "8px 12px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "6px", color: "var(--theme-text)", cursor: "pointer", opacity: currentPage === 1 ? 0.5 : 1 }}
           >
             ◀
           </button>
-          <span style={{ color: "#94a3b8", padding: "8px 12px" }}>Page {currentPage} / {totalPages}</span>
+          <span style={{ color: "var(--theme-text-secondary)", padding: "8px 12px" }}>Page {currentPage} / {totalPages}</span>
           <button 
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
             disabled={currentPage === totalPages}
-            style={{ padding: "8px 12px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", color: "white", cursor: "pointer", opacity: currentPage === totalPages ? 0.5 : 1 }}
+            style={{ padding: "8px 12px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "6px", color: "var(--theme-text)", cursor: "pointer", opacity: currentPage === totalPages ? 0.5 : 1 }}
           >
             ▶
           </button>

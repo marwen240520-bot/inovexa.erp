@@ -43,7 +43,7 @@ export default function Breadcrumb() {
           <div key={index} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ color: "#94a3b8" }}>/</span>
             {isLast ? (
-              <span style={{ color: "white", fontSize: "14px", fontWeight: "500" }}>{getLabel(path)}</span>
+              <span style={{ color: "var(--theme-text)", fontSize: "14px", fontWeight: "500" }}>{getLabel(path)}</span>
             ) : (
               <Link href={href} style={{ color: "#667eea", textDecoration: "none", fontSize: "14px" }}>
                 {getLabel(path)}

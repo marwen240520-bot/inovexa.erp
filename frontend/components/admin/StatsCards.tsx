@@ -17,48 +17,48 @@ export default function StatsCards({ stats }) {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
-      <div style={{ background: '#111', borderRadius: '20px', padding: '20px', border: '1px solid #222' }}>
+      <div style={{ background: 'var(--theme-surface)', borderRadius: '20px', padding: '20px', border: '1px solid var(--theme-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
           <span style={{ fontSize: '32px' }}>👥</span>
           <div>
-            <div style={{ fontSize: '28px', color: 'white', fontWeight: 'bold' }}>{totalClients}</div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>Total clients</div>
+            <div style={{ fontSize: '28px', color: 'var(--theme-text)', fontWeight: 'bold' }}>{totalClients}</div>
+            <div style={{ fontSize: '14px', color: 'var(--theme-text-secondary)' }}>Total clients</div>
           </div>
         </div>
       </div>
 
-      <div style={{ background: '#111', borderRadius: '20px', padding: '20px', border: '1px solid #222' }}>
+      <div style={{ background: 'var(--theme-surface)', borderRadius: '20px', padding: '20px', border: '1px solid var(--theme-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
           <span style={{ fontSize: '32px' }}>✅</span>
           <div>
             <div style={{ fontSize: '28px', color: '#10b981', fontWeight: 'bold' }}>{activeClients}</div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>Clients actifs</div>
+            <div style={{ fontSize: '14px', color: 'var(--theme-text-secondary)' }}>Clients actifs</div>
           </div>
         </div>
-        <div style={{ height: '4px', background: '#222', borderRadius: '2px', marginTop: '8px' }}>
+        <div style={{ height: '4px', background: 'var(--theme-border)', borderRadius: '2px', marginTop: '8px' }}>
           <div style={{ width: `${activationRate}%`, height: '4px', background: '#10b981', borderRadius: '2px' }}></div>
         </div>
-        <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>Taux d'activation: {activationRate}%</div>
+        <div style={{ fontSize: '12px', color: 'var(--theme-text-secondary)', marginTop: '8px' }}>Taux d'activation: {activationRate}%</div>
       </div>
 
-      <div style={{ background: '#111', borderRadius: '20px', padding: '20px', border: '1px solid #222' }}>
+      <div style={{ background: 'var(--theme-surface)', borderRadius: '20px', padding: '20px', border: '1px solid var(--theme-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
           <span style={{ fontSize: '32px' }}>⚠️</span>
           <div>
             <div style={{ fontSize: '28px', color: '#f59e0b', fontWeight: 'bold' }}>{expiredClients}</div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>Abonnements expirés</div>
+            <div style={{ fontSize: '14px', color: 'var(--theme-text-secondary)' }}>Abonnements expirés</div>
           </div>
         </div>
       </div>
 
-      <div style={{ background: '#111', borderRadius: '20px', padding: '20px', border: '1px solid #222' }}>
-        <div style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '12px' }}>📊 Répartition par type</div>
+      <div style={{ background: 'var(--theme-surface)', borderRadius: '20px', padding: '20px', border: '1px solid var(--theme-border)' }}>
+        <div style={{ fontSize: '14px', color: 'var(--theme-text-secondary)', marginBottom: '12px' }}>📊 Répartition par type</div>
         {stats.clientsByType?.map((type, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ color: ERP_TYPES[type.type]?.color || '#667eea', fontSize: '12px' }}>
               {ERP_TYPES[type.type]?.label || type.type}
             </span>
-            <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>{type.count}</span>
+            <span style={{ color: 'var(--theme-text)', fontSize: '12px', fontWeight: 'bold' }}>{type.count}</span>
           </div>
         ))}
       </div>

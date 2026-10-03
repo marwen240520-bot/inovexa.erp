@@ -44,8 +44,8 @@ export default function SidebarTransporteur() {
   const menuItems: MenuItem[] = [
     { path: "/transporteur/dashboard", label: t("transporteur.dashboard.title") || "Tableau de bord", icon: "📊", color: "#667eea" },
     { path: "/transporteur/shipments", label: t("transporteur.shipments.title") || "Mes livraisons", icon: "📦", color: "#10b981" },
-    { path: "/transporteur/profile", label: t("transporteur.profile.title") || "Mon profil", icon: "👤", color: "#94a3b8" },
-    { path: "/transporteur/settings", label: t("transporteur.settings.title") || "Paramètres", icon: "⚙️", color: "#94a3b8" }
+    { path: "/transporteur/profile", label: t("transporteur.profile.title") || "Mon profil", icon: "👤", color: "var(--theme-text-secondary)" },
+    { path: "/transporteur/settings", label: t("transporteur.settings.title") || "Paramètres", icon: "⚙️", color: "var(--theme-text-secondary)" }
   ];
 
   const logout = () => {
@@ -102,7 +102,7 @@ export default function SidebarTransporteur() {
           width: 4px;
         }
         ::-webkit-scrollbar-track {
-          background: #1a1a1a;
+          background: var(--theme-surface-hover);
           border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb {
@@ -116,7 +116,7 @@ export default function SidebarTransporteur() {
 
       <div style={{
         width: sidebarOpen ? "280px" : "80px",
-        background: "linear-gradient(180deg, #0a0a0a 0%, #0f0f0f 100%)",
+        background: "linear-gradient(180deg, var(--theme-background) 0%, #0f0f0f 100%)",
         borderRight: "1px solid rgba(102,126,234,0.15)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         position: "fixed",
@@ -205,7 +205,7 @@ export default function SidebarTransporteur() {
               background: "rgba(102,126,234,0.1)", 
               border: "1px solid rgba(102,126,234,0.3)", 
               borderRadius: "10px", 
-              color: "#94a3b8", 
+              color: "var(--theme-text-secondary)", 
               cursor: "pointer", 
               padding: "8px 12px",
               transition: "all 0.2s ease",
@@ -220,7 +220,7 @@ export default function SidebarTransporteur() {
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(102,126,234,0.1)";
-              e.currentTarget.style.color = "#94a3b8";
+              e.currentTarget.style.color = "var(--theme-text-secondary)";
               e.currentTarget.style.transform = "scale(1)";
             }}
           >
@@ -250,7 +250,7 @@ export default function SidebarTransporteur() {
                     : isHovered 
                       ? "rgba(102,126,234,0.08)" 
                       : "transparent", 
-                  color: isActive ? item.color : isHovered ? "#fff" : "#94a3b8", 
+                  color: isActive ? item.color : isHovered ? "#fff" : "var(--theme-text-secondary)", 
                   cursor: "pointer", 
                   display: "flex", 
                   alignItems: "center", 
@@ -352,7 +352,7 @@ export default function SidebarTransporteur() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0,0,0,0.6)",
+            background: "rgba(15,23,42,0.5)",
             backdropFilter: "blur(4px)",
             zIndex: 99,
             animation: "fadeIn 0.3s ease"
