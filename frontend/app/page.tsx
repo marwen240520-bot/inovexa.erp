@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
-import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // ─── Pro SVG Icons ─────────────────────────────────────────────────────────────
@@ -121,6 +121,13 @@ const HP_LIGHT: Record<string, string> = {
 };
 
 /** Variables de couleur de l'accueil pour n'importe quel thème */
+/** Modules de l'application affichés en pastilles sur l'accueil */
+const HOME_MODULES: Record<string, string[]> = {
+  fr: ["Ventes", "Achats", "Stock", "Facturation", "Clients & fournisseurs", "RH", "Finance", "Logistique", "Rapports", "Assistant IA"],
+  en: ["Sales", "Purchases", "Inventory", "Invoicing", "Clients & suppliers", "HR", "Finance", "Logistics", "Reports", "AI assistant"],
+  es: ["Ventas", "Compras", "Inventario", "Facturación", "Clientes y proveedores", "RR. HH.", "Finanzas", "Logística", "Informes", "Asistente IA"],
+};
+
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return HP_DARK;
   if (themeId === "light") return HP_LIGHT;
@@ -632,7 +639,7 @@ export default function HomePage(): React.ReactElement {
 
     // Language Selector
     React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200, display: "flex", alignItems: "center", gap: "10px" } },
-      React.createElement(ThemeSwitcher, { variant: "icon", size: 38 }),
+      React.createElement(ThemeToggle, { variant: "home", size: 38 }),
       React.createElement("div", { style: { position: "relative" } },
       React.createElement("button", {
         onClick: (e: React.MouseEvent) => { e.stopPropagation(); setShowLanguageMenu(!showLanguageMenu); },
@@ -757,6 +764,12 @@ export default function HomePage(): React.ReactElement {
           );
         })
       ),
+      // ── Modules (pastilles) ──
+      React.createElement("div", { "aria-label": "Modules", style: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: isMobile ? "28px" : "34px", maxWidth: "520px", opacity: subtitleVisible ? 1 : 0, transition: "opacity 0.6s ease 0.1s" } },
+        (HOME_MODULES[language] || HOME_MODULES.en).map((label: string) =>
+          React.createElement("span", { key: label, style: { padding: isMobile ? "6px 11px" : "7px 13px", borderRadius: "999px", fontSize: isMobile ? "11px" : "12px", fontWeight: "600", color: "var(--hp-feature-text)", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.22)", whiteSpace: "nowrap" } }, label)
+        )
+      ),
       React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", opacity: subtitleVisible ? 1 : 0, transform: subtitleVisible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.65s ease, transform 0.65s ease" } },
         React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
           React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
@@ -765,6 +778,10 @@ export default function HomePage(): React.ReactElement {
             React.createElement("div", { className: "shimmer-effect" })
           )
         )
+      ),
+      // ── Aperçu de l'application (mobile : l'image du panneau de droite n'est pas affichée) ──
+      isMobile && React.createElement("div", { style: { marginTop: "32px", borderRadius: "20px", overflow: "hidden", border: "1px solid rgba(168,85,247,0.28)", boxShadow: "0 24px 60px -20px rgba(168,85,247,0.45)", background: "var(--hp-card-bg)" } },
+        React.createElement("img", { src: "/images/1.png", alt: "Inovexa", loading: "lazy", style: { width: "100%", display: "block", objectFit: "cover" } })
       ),
       React.createElement("div", { style: { marginTop: isMobile ? "44px" : "52px", display: "flex", flexDirection: "column", gap: "10px" } },
         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" } },

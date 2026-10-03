@@ -350,10 +350,10 @@ export default function StockPage() {
   const cardPadding = isMobile ? "12px" : "20px";
   const cardRadius = isMobile ? "12px" : "16px";
   const gridGap = isMobile ? "12px" : "20px";
-  const sectionMargin = isMobile ? "12px" : "32px";
-  const statusFontSize = isMobile ? "9px" : "12px";
-  const legendFontSize = isMobile ? "9px" : "12px";
-  const tableFontSize = isMobile ? "10px" : "13px";
+  const sectionMargin = isMobile ? "16px" : "32px";
+  const statusFontSize = isMobile ? "11px" : "12px";
+  const legendFontSize = isMobile ? "11px" : "12px";
+  const tableFontSize = isMobile ? "12px" : "13px";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -605,27 +605,45 @@ export default function StockPage() {
         <div style={{ maxWidth: "1400px", margin: "0 auto", padding: isMobile ? "0" : "0 24px" }}>
           <style>{animations}</style>
 
-          {/* -- STICKY SEARCH BAR (mobile only) -- */}
+          {/* -- MAIN CONTENT PADDING -- */}
+          <div style={{ padding: isMobile ? "12px 12px 0" : "0" }}>
+
+            {/* Header */}
+            <div style={{ marginBottom: sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <h1 style={{ color: theme.text, fontSize: headerTitleSize, fontWeight: 600, display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+                    <IconBarChart size={isMobile ? 20 : 28} color={theme.primary} />
+                    {t.title}
+                  </h1>
+                  <p style={{ color: theme.textSecondary, marginTop: "2px", fontSize: isMobile ? "12px" : "14px" }}>
+                    {t.subtitle}
+                  </p>
+                </div>
+                {!isMobile && (
+                  <button onClick={() => fetchAllData()} style={{ padding: "8px 16px", background: `${theme.primary}15`, border: `1px solid ${theme.primary}30`, borderRadius: "10px", color: theme.primary, cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <IconRefresh size={14} /> {t.refresh}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* -- Recherche / filtre (mobile) : dans le flux, sous le titre, comme les autres pages -- */}
           {isMobile && (
-            <div style={{
-              position: "sticky", top: 0, zIndex: 50,
-              background: theme.background,
-              padding: "10px 12px 8px",
-              borderBottom: `1px solid ${theme.border}`,
-            }}>
+            <div style={{ marginBottom: sectionMargin }}>
               {/* Search row */}
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <div style={{ flex: 1, position: "relative" }}>
-                  <IconSearch size={14} color={theme.textSecondary} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                  <IconSearch size={16} color={theme.textSecondary} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                   <input
                     type="text"
                     placeholder={t.searchPlaceholder}
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     style={{
-                      width: "100%", padding: "8px 10px 8px 32px",
+                      width: "100%", padding: "12px 12px 12px 36px", minHeight: "44px",
                       background: theme.surface, border: `1px solid ${theme.border}`,
-                      borderRadius: "8px", color: theme.text, fontSize: "12px",
+                      borderRadius: "12px", color: theme.text, fontSize: "16px",
                       WebkitAppearance: "none", boxSizing: "border-box"
                     }}
                   />
@@ -636,11 +654,11 @@ export default function StockPage() {
                   onClick={() => setShowFilterSheet(true)}
                   style={{
                     display: "flex", alignItems: "center", gap: "4px",
-                    padding: "8px 12px",
+                    padding: "10px 14px", minHeight: "44px",
                     background: filterStatus !== "all" ? `${theme.primary}20` : theme.surface,
                     border: `1px solid ${filterStatus !== "all" ? theme.primary : theme.border}`,
                     borderRadius: "8px", color: filterStatus !== "all" ? theme.primary : theme.textSecondary,
-                    cursor: "pointer", fontSize: "11px", whiteSpace: "nowrap", transition: "all 0.2s"
+                    cursor: "pointer", fontSize: "13px", whiteSpace: "nowrap", transition: "all 0.2s"
                   }}
                 >
                   <IconFilter size={12} />
@@ -651,7 +669,7 @@ export default function StockPage() {
                   onClick={() => fetchAllData()}
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    width: "36px", height: "36px", flexShrink: 0,
+                    width: "44px", height: "44px", flexShrink: 0,
                     background: `${theme.primary}15`, border: `1px solid ${theme.primary}30`,
                     borderRadius: "8px", color: theme.primary, cursor: "pointer"
                   }}
@@ -678,35 +696,12 @@ export default function StockPage() {
             </div>
           )}
 
-          {/* -- MAIN CONTENT PADDING -- */}
-          <div style={{ padding: isMobile ? "12px 12px 0" : "0" }}>
-
-            {/* Header */}
-            <div style={{ marginBottom: sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-                <div>
-                  <h1 style={{ color: theme.text, fontSize: headerTitleSize, display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
-                    <IconBarChart size={isMobile ? 20 : 28} color={theme.primary} />
-                    {t.title}
-                  </h1>
-                  <p style={{ color: theme.textSecondary, marginTop: "2px", fontSize: isMobile ? "10px" : "14px" }}>
-                    {t.subtitle}
-                  </p>
-                </div>
-                {!isMobile && (
-                  <button onClick={() => fetchAllData()} style={{ padding: "8px 16px", background: `${theme.primary}15`, border: `1px solid ${theme.primary}30`, borderRadius: "10px", color: theme.primary, cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <IconRefresh size={14} /> {t.refresh}
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Info Banner */}
             {showInfo && (
               <div style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}30`, borderRadius: "10px", padding: "10px 12px", marginBottom: sectionMargin, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", animation: "fadeInUp 0.5s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
                   <IconBox size={16} color={theme.primary} />
-                  <span style={{ color: theme.text, fontSize: isMobile ? "10px" : "13px" }}>{t.infoMessage}</span>
+                  <span style={{ color: theme.text, fontSize: isMobile ? "12px" : "13px" }}>{t.infoMessage}</span>
                 </div>
                 <button onClick={() => setShowInfo(false)} style={{ background: "transparent", border: "none", color: theme.textSecondary, cursor: "pointer", padding: "4px" }}>
                   <IconX size={12} />
@@ -742,7 +737,7 @@ export default function StockPage() {
                 }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>{card.icon}</div>
                   <div style={{ fontSize: isMobile ? "16px" : "26px", color: card.color, fontWeight: "bold", lineHeight: 1.2 }}>{card.value}</div>
-                  <div style={{ fontSize: isMobile ? "9px" : "12px", color: theme.textSecondary, marginTop: "2px" }}>{card.label}</div>
+                  <div style={{ fontSize: isMobile ? "11px" : "12px", color: theme.textSecondary, marginTop: "2px" }}>{card.label}</div>
                 </div>
               ))}
             </div>
@@ -751,11 +746,11 @@ export default function StockPage() {
             <div style={{ background: theme.surface, borderRadius: cardRadius, padding: "10px 12px", marginBottom: sectionMargin, border: `1px solid ${theme.border}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                 <IconHistory size={14} color={theme.primary} />
-                <span style={{ color: theme.text, fontSize: isMobile ? "10px" : "14px" }}>
+                <span style={{ color: theme.text, fontSize: isMobile ? "12px" : "14px" }}>
                   <strong>{t.periodAnalyzed} :</strong>{" "}
                   {selectedPeriod === "week" ? t.last7Days : selectedPeriod === "month" ? t.last30Days : selectedPeriod === "year" ? t.last12Months : t.allData}
                 </span>
-                <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "9px" : "13px" }}>
+                <span style={{ color: theme.textSecondary, marginLeft: "auto", fontSize: isMobile ? "11px" : "13px" }}>
                    {sales.length} {t.salesCount} • {purchases.length} {t.purchasesCount}
                 </span>
               </div>
@@ -910,7 +905,7 @@ export default function StockPage() {
             {/* Legend */}
             <div style={{ marginTop: "16px", padding: "12px", background: theme.surface, borderRadius: cardRadius, border: `1px solid ${theme.border}` }}>
               <h4 style={{ color: theme.text, fontSize: isMobile ? "11px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>{t.legend}</h4>
-              <div style={{ display: "flex", gap: isMobile ? "8px" : "24px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: isMobile ? "11px" : "24px", flexWrap: "wrap" }}>
                 {[
                   { icon: <IconBan size={12} color="#ef4444" />, label: t.outOfStockStatus, desc: t.outOfStockDesc, color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
                   { icon: <IconAlertTriangle size={12} color="#f59e0b" />, label: t.lowStockStatus, desc: t.lowStockDesc, color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },

@@ -1,6 +1,6 @@
 ﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../users/entities/user.entity';
-import { Category } from '../categories/category.entity';
+import { Category } from '../categories/entities/category.entity';
 
 @Entity('products')
 export class Product {
@@ -24,6 +24,11 @@ export class Product {
 
   @Column({ default: 0 })
   quantity: number;
+
+  // Photo du produit : image réduite encodée en « data URL » (data:image/jpeg;base64,...) ou lien http(s).
+  // Stockée en base : le disque de l'hébergeur est effacé à chaque déploiement.
+  @Column({ type: 'text', nullable: true })
+  imageUrl: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

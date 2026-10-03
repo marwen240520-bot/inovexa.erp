@@ -8,6 +8,14 @@ export class Order {
   @Column()
   userId: number;
 
+  // Colonnes héritées de l'ancienne entité (liens ajoutés en base par scripts/correction.sql) :
+  // conservées pour que la synchronisation ne les supprime jamais.
+  @Column({ nullable: true })
+  clientId: number;
+
+  @Column({ nullable: true })
+  productId: number;
+
   @Column({ nullable: true })
   clientName: string;
 

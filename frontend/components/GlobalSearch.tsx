@@ -32,6 +32,8 @@ const TEXTS: Record<string, any> = {
     none: "Aucun résultat pour",
     tooShort: "Saisissez au moins 2 caractères",
     error: "La recherche a échoué. Réessayez.",
+    errAuth: "Session expirée : reconnectez-vous pour rechercher.",
+    errNetwork: "Impossible de joindre le serveur. Vérifiez votre connexion internet.",
     clear: "Effacer la recherche",
     groups: { clients: "Clients", suppliers: "Fournisseurs", products: "Produits", categories: "Catégories", invoices: "Factures", sales: "Ventes", purchases: "Achats", orders: "Commandes", employees: "Employés", shipments: "Expéditions" },
   },
@@ -42,6 +44,8 @@ const TEXTS: Record<string, any> = {
     none: "No results for",
     tooShort: "Type at least 2 characters",
     error: "Search failed. Please try again.",
+    errAuth: "Session expired: please sign in again to search.",
+    errNetwork: "Cannot reach the server. Check your internet connection.",
     clear: "Clear search",
     groups: { clients: "Clients", suppliers: "Suppliers", products: "Products", categories: "Categories", invoices: "Invoices", sales: "Sales", purchases: "Purchases", orders: "Orders", employees: "Employees", shipments: "Shipments" },
   },
@@ -52,10 +56,68 @@ const TEXTS: Record<string, any> = {
     none: "Sin resultados para",
     tooShort: "Escriba al menos 2 caracteres",
     error: "La búsqueda falló. Inténtelo de nuevo.",
+    errAuth: "Sesión caducada: vuelva a iniciar sesión para buscar.",
+    errNetwork: "No se puede conectar con el servidor. Compruebe su conexión.",
     clear: "Borrar búsqueda",
     groups: { clients: "Clientes", suppliers: "Proveedores", products: "Productos", categories: "Categorías", invoices: "Facturas", sales: "Ventas", purchases: "Compras", orders: "Pedidos", employees: "Empleados", shipments: "Envíos" },
   },
 };
+
+/** Recherche de secours : utilise les listes que les pages chargent déjà (clients, factures, produits…) */
+const LOCAL_SOURCES: Record<SearchType, {
+  url: string; path: string; fields: string[];
+  title: (r: any) => string; subtitle: (r: any) => string;
+}> = (() => {
+  const money = (n: any) => `${Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €`;
+  const join = (...p: any[]) => p.filter((x) => x !== null && x !== undefined && String(x).trim() !== "").join(" · ");
+  return {
+    clients: { url: "clients", path: "/dashboard/clients", fields: ["name", "email", "phone", "address"], title: (r) => r.name, subtitle: (r) => join(r.email, r.phone) },
+    suppliers: { url: "suppliers", path: "/dashboard/suppliers", fields: ["name", "contact", "email", "phone", "address"], title: (r) => r.name, subtitle: (r) => join(r.contact, r.email, r.phone) },
+    products: { url: "products", path: "/dashboard/products", fields: ["name", "sku"], title: (r) => r.name, subtitle: (r) => join(r.sku && `SKU ${r.sku}`, money(r.price), `stock ${r.quantity ?? 0}`) },
+    categories: { url: "categories", path: "/dashboard/categories", fields: ["name", "description"], title: (r) => r.name, subtitle: (r) => join(r.description) },
+    invoices: { url: "invoices", path: "/dashboard/invoices", fields: ["reference", "operationNumber", "clientName", "supplierName", "description"], title: (r) => r.reference || r.operationNumber, subtitle: (r) => join(r.clientName || r.supplierName, money(r.amount), r.status) },
+    sales: { url: "sales", path: "/dashboard/sales", fields: ["productName", "clientName"], title: (r) => r.productName || `Vente #${r.id}`, subtitle: (r) => join(r.clientName, money(r.total), r.status) },
+    purchases: { url: "purchases", path: "/dashboard/purchases", fields: ["productName", "supplierName"], title: (r) => r.productName || `Achat #${r.id}`, subtitle: (r) => join(r.supplierName, money(r.total), r.status) },
+    orders: { url: "orders", path: "/dashboard/orders", fields: ["productName", "clientName"], title: (r) => r.productName || `Commande #${r.id}`, subtitle: (r) => join(r.clientName, money(r.total), r.status) },
+    employees: { url: "employees", path: "/dashboard/hr", fields: ["name", "email", "position", "department", "phone"], title: (r) => r.name, subtitle: (r) => join(r.position, r.department, r.email) },
+    shipments: { url: "", path: "/dashboard/logistics", fields: [], title: () => "", subtitle: () => "" },
+  };
+})();
+
+const normalizeText = (v: any) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+let localCache: { at: number; token: string | null; data: Partial<Record<SearchType, any[]>> } | null = null;
+
+async function loadLocalLists(token: string | null, signal: AbortSignal): Promise<Partial<Record<SearchType, any[]>>> {
+  if (localCache && localCache.token === token && Date.now() - localCache.at < 60_000) return localCache.data;
+  const types = (Object.keys(LOCAL_SOURCES) as SearchType[]).filter((t) => LOCAL_SOURCES[t].url);
+  const settled = await Promise.allSettled(
+    types.map(async (t) => {
+      const res = await fetch(`${API}/${LOCAL_SOURCES[t].url}`, { headers: { Authorization: `Bearer ${token}` }, signal });
+      if (!res.ok) throw new Error(String(res.status));
+      const json = await res.json();
+      return [t, Array.isArray(json) ? json : []] as const;
+    }),
+  );
+  const data: Partial<Record<SearchType, any[]>> = {};
+  let ok = 0;
+  settled.forEach((r) => { if (r.status === "fulfilled") { data[r.value[0]] = r.value[1]; ok++; } });
+  if (ok === 0) throw new Error("local-unavailable");
+  localCache = { at: Date.now(), token, data };
+  return data;
+}
+
+function searchLocalLists(data: Partial<Record<SearchType, any[]>>, query: string, limit = 5): Hit[] {
+  const q = normalizeText(query);
+  const hits: Hit[] = [];
+  (Object.keys(LOCAL_SOURCES) as SearchType[]).forEach((type) => {
+    const src = LOCAL_SOURCES[type];
+    (data[type] || [])
+      .filter((r) => src.fields.some((f) => normalizeText(r?.[f]).includes(q)))
+      .slice(0, limit)
+      .forEach((r) => hits.push({ type, id: r.id, title: String(src.title(r) ?? ""), subtitle: String(src.subtitle(r) ?? ""), path: src.path }));
+  });
+  return hits;
+}
 
 const GROUP_ORDER: SearchType[] = ["clients", "suppliers", "products", "invoices", "sales", "purchases", "orders", "employees", "shipments", "categories"];
 
@@ -92,7 +154,7 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [hits, setHits] = useState<Hit[]>([]);
   const [searched, setSearched] = useState("");
   const [active, setActive] = useState(0);
@@ -106,7 +168,7 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
   useEffect(() => {
     if (trimmed.length < 2) {
       abortRef.current?.abort();
-      setHits([]); setLoading(false); setError(false); setSearched("");
+      setHits([]); setLoading(false); setError(null); setSearched("");
       return;
     }
     setLoading(true);
@@ -116,21 +178,51 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
       abortRef.current = controller;
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API}/workspace-search?q=${encodeURIComponent(trimmed)}&limit=5`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = await res.json();
         const modules = getCachedModules();
         const allowed = (type: SearchType) =>
           !modules || Object.keys(modules).length === 0 || modules[MODULE_OF[type]] === true;
-        const list: Hit[] = (Array.isArray(data?.results) ? data.results : []).filter((h: Hit) => allowed(h.type));
-        list.sort((a, b) => GROUP_ORDER.indexOf(a.type) - GROUP_ORDER.indexOf(b.type));
-        setHits(list); setError(false); setSearched(trimmed); setActive(0);
+        let list: Hit[] | null = null;
+        let serverProblem: "auth" | "network" | "server" | null = null;
+
+        // 1) Recherche côté serveur (une seule requête)
+        try {
+          const res = await fetch(`${API}/workspace-search?q=${encodeURIComponent(trimmed)}&limit=5`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          });
+          if (res.ok) {
+            const data = await res.json();
+            list = Array.isArray(data?.results) ? data.results : [];
+          } else {
+            serverProblem = res.status === 401 || res.status === 403 ? "auth" : "server";
+          }
+        } catch (e: any) {
+          if (e?.name === "AbortError") throw e;
+          serverProblem = "network";
+        }
+
+        // 2) Secours : le serveur n'a pas la route de recherche (ancienne version) ou a un souci
+        //    -> on cherche dans les listes que les pages chargent déjà
+        if (list === null && serverProblem !== "auth") {
+          try {
+            const lists = await loadLocalLists(token, controller.signal);
+            list = searchLocalLists(lists, trimmed);
+          } catch (e: any) {
+            if (e?.name === "AbortError") throw e;
+          }
+        }
+
+        if (list === null) {
+          setError(serverProblem === "auth" ? t.errAuth : serverProblem === "network" ? t.errNetwork : t.error);
+          setHits([]); setSearched(trimmed);
+          return;
+        }
+        const filtered = list.filter((h: Hit) => allowed(h.type));
+        filtered.sort((a, b) => GROUP_ORDER.indexOf(a.type) - GROUP_ORDER.indexOf(b.type));
+        setHits(filtered); setError(null); setSearched(trimmed); setActive(0);
       } catch (e: any) {
         if (e?.name === "AbortError") return;
-        setError(true); setHits([]); setSearched(trimmed);
+        setError(t.error); setHits([]); setSearched(trimmed);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -270,7 +362,7 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
           ) : loading && hits.length === 0 ? (
             <div style={{ padding: "14px 16px", fontSize: 13, color: "var(--theme-text-secondary)" }}>{t.searching}</div>
           ) : error ? (
-            <div style={{ padding: "14px 16px", fontSize: 13, color: "#ef4444" }}>{t.error}</div>
+            <div style={{ padding: "14px 16px", fontSize: 13, color: "#ef4444" }}>{error}</div>
           ) : hits.length === 0 && searched === trimmed ? (
             <div style={{ padding: "16px", fontSize: 14 }}>
               {t.none} « <strong>{trimmed}</strong> »

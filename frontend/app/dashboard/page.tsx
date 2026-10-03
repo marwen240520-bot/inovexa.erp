@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import {
   Chart as ChartJS,
@@ -937,6 +938,8 @@ export default function DashboardPage() {
 
               {/* Image de profil */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                <ThemeToggle size={isMobile ? 36 : 40} />
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                 <div style={{ position: "relative" }}>
                   <div 
@@ -984,6 +987,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+              </div>
               </div>
               </div>
             </div>

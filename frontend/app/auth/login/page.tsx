@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -43,6 +44,8 @@ function buildLgVars(themeId: string, theme: any): Record<string, string> {
 const translations = {
   fr: {
     backToHome: "Retour à l'accueil",
+    remember: "Se souvenir de mon e-mail",
+    forgotHint: "Mot de passe oublié ? Contactez votre administrateur.",
     signIn: "Connectez-vous à votre espace",
     email: "Email",
     password: "Mot de passe",
@@ -57,6 +60,8 @@ const translations = {
   },
   en: {
     backToHome: "Back to home",
+    remember: "Remember my email",
+    forgotHint: "Forgot your password? Contact your administrator.",
     signIn: "Sign in to your workspace",
     email: "Email",
     password: "Password",
@@ -71,6 +76,8 @@ const translations = {
   },
   es: {
     backToHome: "Volver al inicio",
+    remember: "Recordar mi correo",
+    forgotHint: "¿Olvidó su contraseña? Contacte a su administrador.",
     signIn: "Inicia sesión en tu espacio",
     email: "Correo electrónico",
     password: "Contraseña",
@@ -87,7 +94,7 @@ const translations = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { language } = useLanguage();
+  const { language, changeLanguage } = useLanguage();
   const { theme, themeId } = useTheme();
   const isLight = isLightTheme(theme);
   const themeVars = buildLgVars(themeId, theme) as React.CSSProperties;
@@ -96,6 +103,15 @@ export default function LoginPage() {
   const t = translations[language as keyof typeof translations] || translations.fr;
   
   const [email, setEmail] = useState("");
+  const [remember, setRemember] = useState(true);
+  // Pré-remplit l'e-mail mémorisé lors d'une précédente connexion
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("remember_email");
+      if (saved) setEmail(saved);
+      else if (localStorage.getItem("remember_email_off")) setRemember(false);
+    } catch {}
+  }, []);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -126,6 +142,10 @@ export default function LoginPage() {
       const data = await res.json().catch(() => ({} as any));
 
       if (res.ok) {
+        try {
+          if (remember) { localStorage.setItem("remember_email", email.trim().toLowerCase()); localStorage.removeItem("remember_email_off"); }
+          else { localStorage.removeItem("remember_email"); localStorage.setItem("remember_email_off", "1"); }
+        } catch {}
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("user", JSON.stringify(data.user));
         
@@ -168,6 +188,21 @@ export default function LoginPage() {
       }}
     >
       
+      {/* Thème et langue */}
+      <div style={{ position: "fixed", top: "max(env(safe-area-inset-top, 0px), 14px)", right: "14px", zIndex: 60, display: "flex", alignItems: "center", gap: "8px" }}>
+        <ThemeToggle size={40} />
+        <select
+          aria-label="Language"
+          value={language}
+          onChange={(e) => changeLanguage(e.target.value)}
+          style={{ height: "40px", padding: "0 12px", borderRadius: "999px", border: "1px solid var(--theme-border)", background: "var(--theme-surface)", color: "var(--theme-text)", fontSize: "13px", fontWeight: 600, cursor: "pointer", outline: "none" }}
+        >
+          <option value="fr">FR</option>
+          <option value="en">EN</option>
+          <option value="es">ES</option>
+        </select>
+      </div>
+
       {/* ── MOBILE LAYOUT ── */}
       {isSmallScreen ? (
         <div style={{
@@ -196,6 +231,11 @@ export default function LoginPage() {
               <span style={{ fontSize: "16px" }}>←</span>
               <span>{t.backToHome}</span>
             </Link>
+          </div>
+
+          {/* Aperçu de l'application */}
+          <div style={{ padding: "4px 24px 0" }}>
+            <img src="/images/1.png" alt="" loading="lazy" style={{ width: "100%", height: isMobile ? "130px" : "190px", objectFit: "cover", objectPosition: "top left", borderRadius: "18px", display: "block", border: "1px solid rgba(168,85,247,0.25)", boxShadow: "0 18px 40px -18px rgba(168,85,247,0.45)" }} />
           </div>
 
           <div style={{
@@ -396,7 +436,15 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                <button
+                {/* Se souvenir de l'e-mail + aide mot de passe */}
+<div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "4px 0 18px" }}>
+  <label style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "var(--lg-label)", fontSize: "13.5px", cursor: "pointer", minHeight: "28px" }}>
+    <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#8b5cf6", cursor: "pointer" }} />
+    {t.remember}
+  </label>
+  <span style={{ color: "var(--lg-muted)", fontSize: "12.5px", lineHeight: 1.5 }}>{t.forgotHint}</span>
+</div>
+<button
                   type="submit"
                   disabled={loading}
                   style={{
@@ -603,7 +651,15 @@ export default function LoginPage() {
                   )}
               </div>
 
-              <button
+              {/* Se souvenir de l'e-mail + aide mot de passe */}
+<div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "4px 0 18px" }}>
+  <label style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "var(--lg-label)", fontSize: "13.5px", cursor: "pointer", minHeight: "28px" }}>
+    <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#8b5cf6", cursor: "pointer" }} />
+    {t.remember}
+  </label>
+  <span style={{ color: "var(--lg-muted)", fontSize: "12.5px", lineHeight: 1.5 }}>{t.forgotHint}</span>
+</div>
+<button
                 type="submit"
                 disabled={loading}
                 style={{

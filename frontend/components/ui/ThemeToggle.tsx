@@ -17,11 +17,7 @@ const LABELS: Record<string, { toDark: string; toLight: string }> = {
   es: { toDark: "Cambiar al tema oscuro", toLight: "Cambiar al tema claro" },
 };
 
-/**
- * Bouton soleil / lune : bascule entre le thème clair et le thème sombre.
- * (Les autres thèmes — bleu, coucher de soleil — sont sélectionnables depuis la page Profil ;
- *  depuis l'un d'eux, ce bouton ramène au thème clair.)
- */
+/** Bouton soleil / lune : bascule entre le thème clair et le thème sombre. */
 export default function ThemeToggle({ size = 40, variant = "default", style }: ThemeToggleProps) {
   const { themeId, setTheme } = useTheme();
   const { language } = useLanguage();

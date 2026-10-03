@@ -619,7 +619,7 @@ export default function TransporteurDashboard() {
             <card.Icon size={isMobile ? 24 : 30} color={card.color} />
             <div className="stats-card-value" style={{ fontSize: isMobile ? "22px" : "29px", color: card.color, fontWeight: "bold" }}>{card.value}{card.suffix || ""}</div>
             <div style={{ fontSize: isMobile ? "10px" : "11px", color: "var(--theme-text-secondary)", marginTop: "4px" }}>{card.label}</div>
-            <div style={{ fontSize: isMobile ? "8px" : "9px", color: card.color, marginTop: "6px", opacity: 0.8 }}>{card.trend}</div>
+            <div style={{ fontSize: isMobile ? "8px" : "9px", color: card.color, marginTop: "6px" }}>{card.trend}</div>
           </div>
         ))}
       </div>
@@ -699,7 +699,7 @@ export default function TransporteurDashboard() {
                           {completedHeight > 20 && <span style={{ position: "relative", top: "-18px", display: "block", textAlign: "center", fontSize: "8px", color: "#10b981" }}>{completedValue}</span>}
                         </div>
                       </div>
-                      <div style={{ marginTop: "8px", color: "#555", fontSize: isMobile ? "8px" : "9px", textAlign: "center" }}>{label}</div>
+                      <div style={{ marginTop: "8px", color: "var(--theme-text-secondary)", fontSize: isMobile ? "10px" : "11px", textAlign: "center" }}>{label}</div>
                     </div>
                   );
                 })}

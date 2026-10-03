@@ -2,7 +2,7 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ExpensesController } from './expenses.controller';
 import { ExpensesService } from './expenses.service';
-import { Expense } from './entities/expense.entity';
+import { Expense } from '../finance/entities/expense.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Expense])],

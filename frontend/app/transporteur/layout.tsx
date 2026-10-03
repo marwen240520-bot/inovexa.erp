@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useLanguage } from "../../contexts/LanguageContext";
 import Spinner from "@/components/ui/Spinner";
-import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 // SVG Icons with better styling
 const DashboardIcon = ({ active = false }: { active?: boolean }) => (
@@ -293,8 +293,8 @@ export default function TransporteurLayout({
                 src="/images/logo.png" 
                 alt="Inovexa Logo"
                 style={{
-                  width: "60px",
-                  height: "60px",
+                  width: "88px",
+                  height: "88px",
                   objectFit: "contain"
                 }}
                 onError={() => setLogoError(true)}
@@ -394,9 +394,6 @@ export default function TransporteurLayout({
             padding: "20px 16px",
             borderTop: "1px solid var(--theme-border)"
           }}>
-            <div style={{ marginBottom: "10px" }}>
-              <ThemeSwitcher variant="sidebar" />
-            </div>
             <div
               onClick={logout}
               onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
@@ -418,6 +415,11 @@ export default function TransporteurLayout({
           </div>
         </div>
       )}
+
+      {/* Bouton de thème (clair / sombre) */}
+      <div style={{ position: "fixed", top: "12px", right: "14px", zIndex: 900 }}>
+        <ThemeToggle size={38} />
+      </div>
 
       {/* Main Content */}
       <div style={{

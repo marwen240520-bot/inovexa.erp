@@ -171,7 +171,7 @@ const FormField = ({
         gap: "5px",
         transition: "color 0.2s",
       }}>
-        <span style={{ color: focused ? "#667eea" : "#555" }}>{icon}</span>
+        <span style={{ color: focused ? "var(--theme-primary-text)" : "var(--theme-text-secondary)" }}>{icon}</span>
         {label}
         {required && <span style={{ color: "#ef4444", fontSize: "10px" }}>*</span>}
       </label>
@@ -203,7 +203,7 @@ const FormField = ({
           left: "11px",
           top: "50%",
           transform: "translateY(-50%)",
-          color: focused ? "#667eea" : "#555",
+          color: focused ? "var(--theme-primary-text)" : "var(--theme-text-secondary)",
           transition: "color 0.2s",
           pointerEvents: "none",
           display: "flex",

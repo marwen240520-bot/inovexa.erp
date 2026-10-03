@@ -8,6 +8,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
+import ImageUpload from "@/components/ui/ImageUpload";
+import { IMAGE_ACCEPT, fileStem, normalizeKey, resizeImageToDataUrl } from "@/lib/imageUtils";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
 // -- Types --------------------------------------------------
@@ -18,6 +20,7 @@ interface Product {
   price?: number;
   quantity?: number;
   categoryId?: number | string;
+  imageUrl?: string | null;
   [key: string]: any;
 }
 
@@ -266,7 +269,8 @@ export default function ProductsPage() {
         name: modal.form.name,
         sku: modal.form.sku || "",
         price: modal.form.price || 0,
-        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
+        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null,
+        imageUrl: modal.form.imageUrl || null
       };
 
       const res = await fetch(`${API_URL}/products`, {
@@ -300,7 +304,8 @@ export default function ProductsPage() {
         name: modal.form.name,
         sku: modal.form.sku || "",
         price: modal.form.price || 0,
-        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null
+        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null,
+        imageUrl: modal.form.imageUrl || null
       };
 
       const res = await fetch(`${API_URL}/products/${modal.editId}`, {
@@ -396,6 +401,37 @@ export default function ProductsPage() {
     setTimeout(() => setMessage(""), 4000);
   };
 
+  // Import groupé de photos : chaque fichier est rapproché d'un produit par son nom de fichier
+  // (« REF-001.jpg » -> SKU REF-001, ou « Clavier sans fil.png » -> produit « Clavier sans fil »).
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const importPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setPhotoBusy(true);
+    const token = localStorage.getItem("token");
+    let done = 0; const unmatched: string[] = []; const failed: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        const key = normalizeKey(fileStem(file.name));
+        const target = products.find((p) => p.sku && normalizeKey(String(p.sku)) === key) || products.find((p) => normalizeKey(p.name) === key);
+        if (!target) { unmatched.push(file.name); continue; }
+        try {
+          const imageUrl = await resizeImageToDataUrl(file);
+          const res = await fetch(`${API_URL}/products/${target.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ imageUrl }),
+          });
+          if (res.ok) done++; else failed.push(file.name);
+        } catch { failed.push(file.name); }
+      }
+      if (done > 0) await fetchProducts();
+      const parts = [`${done} photo(s) associée(s)`];
+      if (unmatched.length) parts.push(`${unmatched.length} sans produit correspondant (${unmatched.slice(0, 3).join(", ")}${unmatched.length > 3 ? "…" : ""})`);
+      if (failed.length) parts.push(`${failed.length} en échec`);
+      showMessage(parts.join(" — "), done > 0 ? "success" : "error");
+    } finally { setPhotoBusy(false); }
+  };
+
   const openEditModal = (product: Product) => {
     setModal({
       open: true,
@@ -406,6 +442,7 @@ export default function ProductsPage() {
         sku: product.sku || "",
         price: product.price || 0,
         categoryId: product.categoryId || "",
+        imageUrl: product.imageUrl || "",
       }
     });
   };
@@ -515,6 +552,11 @@ export default function ProductsPage() {
                 {!isMobile && (
                   <>
                     <ImportButton onImport={importProducts} label={t("common.import")} />
+                    <label title="Importer des photos de produits (le nom du fichier = SKU ou nom du produit)" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: buttonPadding, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: photoBusy ? "wait" : "pointer", fontSize: isMobile ? "11px" : "14px", whiteSpace: "nowrap" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                      {photoBusy ? "…" : "Photos"}
+                      <input type="file" accept={IMAGE_ACCEPT} multiple disabled={photoBusy} onChange={(e) => { importPhotos(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
+                    </label>
                     <ExportButtons data={filteredProducts} filename="produits" />
                     <button onClick={openCreateModal} style={{ background: theme.gradient, color: "white", padding: buttonPadding, border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "4px" }}>
                       <IconPlus size={14} />{t("common.add")}
@@ -526,6 +568,11 @@ export default function ProductsPage() {
             {isMobile && (
               <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
                 <ImportButton onImport={importProducts} label={<IconBox size={14} />} />
+                <label title="Importer des photos de produits (le nom du fichier = SKU ou nom du produit)" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: buttonPadding, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: photoBusy ? "wait" : "pointer", fontSize: isMobile ? "11px" : "14px", whiteSpace: "nowrap" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                      {photoBusy ? "…" : "Photos"}
+                      <input type="file" accept={IMAGE_ACCEPT} multiple disabled={photoBusy} onChange={(e) => { importPhotos(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
+                    </label>
                 <ExportButtons data={filteredProducts} filename="produits" />
                 <button onClick={openCreateModal} style={{ background: theme.gradient, color: "white", padding: buttonPadding, border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "11px", display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconPlus size={12} />{t("common.add")}
@@ -618,7 +665,11 @@ export default function ProductsPage() {
                           </td>
                           <td style={{ padding: "8px", color: theme.text, fontWeight: "500", fontSize: tableFontSize }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              {(p.quantity || 0) <= 0 ? <IconXCircle size={14} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={14} color="#f59e0b" /> : <IconPackage size={14} color="#10b981" />}
+                              {p.imageUrl && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={p.imageUrl} alt="" loading="lazy" style={{ width: isMobile ? 32 : 40, height: isMobile ? 32 : 40, borderRadius: 8, objectFit: "cover", flexShrink: 0, border: `1px solid ${theme.border}` }} />
+                              )}
+                              {!p.imageUrl && ((p.quantity || 0) <= 0 ? <IconXCircle size={14} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={14} color="#f59e0b" /> : <IconPackage size={14} color="#10b981" />)}
                               <span style={{ wordBreak: "break-word" }}>{p.name?.length > (isMobile ? 12 : 20) ? p.name.substring(0, isMobile ? 10 : 17) + "..." : p.name}</span>
                             </div>
                           </td>
@@ -662,7 +713,10 @@ export default function ProductsPage() {
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                       <div style={{ color: theme.primary, flexShrink: 0 }}>
-                        {(p.quantity || 0) <= 0 ? <IconXCircle size={isMobile ? 28 : 36} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={isMobile ? 28 : 36} color="#f59e0b" /> : <IconBox size={isMobile ? 28 : 36} />}
+                        {p.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.imageUrl} alt="" loading="lazy" style={{ width: isMobile ? 48 : 60, height: isMobile ? 48 : 60, borderRadius: 10, objectFit: "cover", display: "block", border: `1px solid ${theme.border}` }} />
+                        ) : (p.quantity || 0) <= 0 ? <IconXCircle size={isMobile ? 28 : 36} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={isMobile ? 28 : 36} color="#f59e0b" /> : <IconBox size={isMobile ? 28 : 36} />}
                       </div>
                       <div style={{ overflow: "hidden" }}>
                         <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "12px" : "14px", wordBreak: "break-word" }}>{p.name?.length > (isMobile ? 15 : 20) ? p.name.substring(0, isMobile ? 12 : 17) + "..." : p.name}</div>
@@ -711,6 +765,11 @@ export default function ProductsPage() {
               {modal.editMode ? <IconEdit size={18} /> : <IconPlus size={18} />}
               {modal.editMode ? t("products.editProduct") : t("products.addProduct")}
             </h2>
+
+            <div style={{ marginBottom: "14px" }}>
+              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "11px" : "13px" }}>Photo du produit</label>
+              <ImageUpload value={modal.form.imageUrl} onChange={(img) => setModal((m) => ({ ...m, form: { ...m.form, imageUrl: img } }))} />
+            </div>
 
             {[
               { label: `${t("common.name")} *`, key: "name", type: "text", placeholder: t("products.productName") },

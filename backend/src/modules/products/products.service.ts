@@ -38,6 +38,7 @@ export class ProductsService {
       price: this.parseNumber(data.price),
       quantity: this.parseNumber(data.quantity),
       categoryId: this.parseCategoryId(data.categoryId),
+      imageUrl: this.cleanImage(data.imageUrl),
       userId: userId,
     };
     const product = this.productRepository.create(productData);
@@ -76,6 +77,7 @@ export class ProductsService {
         const price = this.findField(data, ['price', 'Price', 'PRICE', 'prix', 'Prix', 'PRIX']);
         const quantity = this.findField(data, ['quantity', 'Quantity', 'QUANTITY', 'quantite', 'quantité', 'stock', 'qty']);
         const categoryId = this.findField(data, ['categoryId', 'category_id', 'categorieId', 'categorie_id']);
+        const image = this.findField(data, ['imageUrl', 'image_url', 'image', 'photo', 'picture', 'url image', 'lien image', 'image url']);
 
         const productData = {
           name: String(name).trim(),
@@ -83,6 +85,7 @@ export class ProductsService {
           price: this.parseNumber(price),
           quantity: this.parseNumber(quantity),
           categoryId: this.parseCategoryId(categoryId),
+          imageUrl: this.cleanImage(image),
           userId: userId,
         };
 
@@ -111,7 +114,9 @@ export class ProductsService {
 
   async update(id: number, userId: number, data: any) {
     const product = await this.findOne(id, userId);
-    const { quantity, ...updateData } = data;
+    // On n'autorise pas la modification de l'identité / du propriétaire ni du stock (calculé par achats et ventes)
+    const { quantity, id: _id, userId: _userId, user: _user, category: _category, createdAt: _c, updatedAt: _u, ...updateData } = data || {};
+    if ('imageUrl' in updateData) updateData.imageUrl = this.cleanImage(updateData.imageUrl);
     Object.assign(product, updateData);
     return this.productRepository.save(product);
   }
@@ -145,6 +150,26 @@ export class ProductsService {
     }
 
     return undefined;
+  }
+
+  /** Taille maximale d'une photo stockée (en caractères) : ~1,4 Mo en base64 */
+  private static readonly MAX_IMAGE_LENGTH = 1_900_000;
+
+  /**
+   * Accepte uniquement une image encodée (data:image/png|jpeg|webp|gif;base64,…) ou un lien http(s).
+   * Tout le reste (javascript:, data:text/html, fichier, trop volumineux…) est refusé.
+   * Valeur vide -> null (suppression de la photo).
+   */
+  private cleanImage(value: any): string | null {
+    if (value === null || value === undefined) return null;
+    const v = String(value).trim();
+    if (v === '' || v === 'null' || v === 'undefined') return null;
+    if (v.length > ProductsService.MAX_IMAGE_LENGTH) {
+      throw new BadRequestException('Image trop volumineuse (réduisez-la avant l\'envoi)');
+    }
+    if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(v)) return v;
+    if (/^https?:\/\/[^\s<>"']+$/i.test(v)) return v;
+    throw new BadRequestException('Format d\'image non pris en charge (utilisez PNG, JPEG, WebP ou GIF)');
   }
 
   private parseNumber(value: any): number {

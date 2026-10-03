@@ -752,7 +752,7 @@ const KpiCard = ({ icon, label, value, detail, accentColor, index, theme, isMobi
       </div>
       <div style={{ fontSize: isMobile ? "18px" : "22px", color: accentColor, fontWeight: "700", letterSpacing: "-0.5px" }}>{value}</div>
       <div style={{ fontSize: "12px", fontWeight: "600", color: theme.textSecondary, marginTop: "5px" }}>{label}</div>
-      <div style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "4px", opacity: 0.65 }}>{detail}</div>
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "4px" }}>{detail}</div>
     </div>
   );
 };
@@ -762,7 +762,7 @@ const StatBadge = ({ icon, value, label, theme }: any) => (
   <div style={{ display: "flex", alignItems: "center", gap: "8px", background: theme.surfaceHover, padding: "7px 14px", borderRadius: "20px" }}>
     <span style={{ color: theme.textSecondary, display: "flex" }}>{icon}</span>
     <span style={{ fontSize: "12px", color: theme.textSecondary }}>{value}</span>
-    <span style={{ fontSize: "11px", color: theme.textSecondary, opacity: 0.6 }}>{label}</span>
+    <span style={{ fontSize: "12px", color: theme.textSecondary }}>{label}</span>
   </div>
 );
 
@@ -2394,7 +2394,7 @@ export default function FinancePage() {
                     <div style={{ fontSize: isMobile ? "20px" : "26px", fontWeight: "800", color: r.status === "good" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4444", letterSpacing: "-1px" }}>{r.value.toFixed(1)}</div>
                     <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "600", color: theme.text, marginTop: "4px" }}>{r.name}</div>
                     <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary, marginTop: "2px" }}>{tCommon.target}: {r.target}{r.name.includes(t.currentRatio) ? "" : "%"}</div>
-                    <div style={{ fontSize: isMobile ? "7px" : "9px", color: theme.textSecondary, marginTop: "4px", opacity: 0.7, wordBreak: "break-word" }}>{r.description}</div>
+                    <div style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, marginTop: "4px", wordBreak: "break-word" }}>{r.description}</div>
                   </div>
                 ))}
               </div>

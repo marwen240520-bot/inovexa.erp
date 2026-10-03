@@ -1,0 +1,81 @@
+/* ──────────────────────────────────────────────────────────────────────────────
+ * theme-remap.css  —  FICHIER GÉNÉRÉ (palettes calculées par contraste WCAG)
+ *
+ * Les pages utilisent beaucoup de couleurs codées en dur (#667eea, #10b981, #f59e0b, #ef4444…) pensées
+ * pour fond sombre : sur fond blanc elles sont trop claires (vert 3,8:1, ambre 2,1:1…).
+ * Ces règles les remplacent, pour tous les thèmes SAUF « Sombre » (inchangé), par les couleurs
+ * propres à chaque thème (variables --theme-success, --theme-warning, --theme-danger, --theme-info…),
+ * définies dans contexts/ThemeContext.tsx et toutes ≥ 4,5:1 sur les fonds du thème.
+ * ────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --theme-primary-text: #4f46e5;
+  --theme-success: #0a7151;
+  --theme-success-solid: #0c835d;
+  --theme-warning: #905a0a;
+  --theme-warning-solid: #a2660a;
+  --theme-danger: #c91010;
+  --theme-danger-solid: #e11010;
+  --theme-info: #095be6;
+  --theme-info-solid: #176af6;
+  --theme-accent2: #7338f6;
+  --theme-accent2-solid: #8350f6;
+}
+
+/* primary-text */
+html:not([data-theme="dark"]) :is([style^="color: rgb(102, 126, 234)"], [style*="; color: rgb(102, 126, 234)"], [style^="color: rgb(99, 102, 241)"], [style*="; color: rgb(99, 102, 241)"], [style^="color: rgb(129, 140, 248)"], [style*="; color: rgb(129, 140, 248)"], [style^="color: rgb(79, 70, 229)"], [style*="; color: rgb(79, 70, 229)"], [style^="color: rgb(124, 58, 237)"], [style*="; color: rgb(124, 58, 237)"], [style^="color: rgb(118, 75, 162)"], [style*="; color: rgb(118, 75, 162)"]) { color: var(--theme-primary-text) !important; }
+html:not([data-theme="dark"]) :is([stroke="#667eea" i], [stroke="#6366f1" i], [stroke="#818cf8" i], [stroke="#4f46e5" i], [stroke="#7c3aed" i], [stroke="#764ba2" i]) { stroke: var(--theme-primary-text); }
+html:not([data-theme="dark"]) :is([fill="#667eea" i], [fill="#6366f1" i], [fill="#818cf8" i], [fill="#4f46e5" i], [fill="#7c3aed" i], [fill="#764ba2" i]) { fill: var(--theme-primary-text); }
+html:not([data-theme="dark"]) :is([style*="background: rgb(102, 126, 234)"], [style*="background-color: rgb(102, 126, 234)"], [style*="background: rgb(99, 102, 241)"], [style*="background-color: rgb(99, 102, 241)"], [style*="background: rgb(129, 140, 248)"], [style*="background-color: rgb(129, 140, 248)"], [style*="background: rgb(79, 70, 229)"], [style*="background-color: rgb(79, 70, 229)"], [style*="background: rgb(124, 58, 237)"], [style*="background-color: rgb(124, 58, 237)"], [style*="background: rgb(118, 75, 162)"], [style*="background-color: rgb(118, 75, 162)"]) { background: var(--theme-primary) !important; }
+
+/* accent2 */
+html:not([data-theme="dark"]) :is([style^="color: rgb(139, 92, 246)"], [style*="; color: rgb(139, 92, 246)"], [style^="color: rgb(168, 85, 247)"], [style*="; color: rgb(168, 85, 247)"], [style^="color: rgb(167, 139, 250)"], [style*="; color: rgb(167, 139, 250)"], [style^="color: rgb(192, 132, 252)"], [style*="; color: rgb(192, 132, 252)"]) { color: var(--theme-accent2) !important; }
+html:not([data-theme="dark"]) :is([stroke="#8b5cf6" i], [stroke="#a855f7" i], [stroke="#a78bfa" i], [stroke="#c084fc" i]) { stroke: var(--theme-accent2); }
+html:not([data-theme="dark"]) :is([fill="#8b5cf6" i], [fill="#a855f7" i], [fill="#a78bfa" i], [fill="#c084fc" i]) { fill: var(--theme-accent2); }
+html:not([data-theme="dark"]) :is([style*="background: rgb(139, 92, 246)"], [style*="background-color: rgb(139, 92, 246)"], [style*="background: rgb(168, 85, 247)"], [style*="background-color: rgb(168, 85, 247)"], [style*="background: rgb(167, 139, 250)"], [style*="background-color: rgb(167, 139, 250)"], [style*="background: rgb(192, 132, 252)"], [style*="background-color: rgb(192, 132, 252)"]) { background: var(--theme-accent2-solid) !important; }
+
+/* success */
+html:not([data-theme="dark"]) :is([style^="color: rgb(16, 185, 129)"], [style*="; color: rgb(16, 185, 129)"], [style^="color: rgb(34, 197, 94)"], [style*="; color: rgb(34, 197, 94)"], [style^="color: rgb(5, 150, 105)"], [style*="; color: rgb(5, 150, 105)"], [style^="color: rgb(52, 211, 153)"], [style*="; color: rgb(52, 211, 153)"], [style^="color: rgb(22, 163, 74)"], [style*="; color: rgb(22, 163, 74)"], [style^="color: rgb(74, 222, 128)"], [style*="; color: rgb(74, 222, 128)"]) { color: var(--theme-success) !important; }
+html:not([data-theme="dark"]) :is([stroke="#10b981" i], [stroke="#22c55e" i], [stroke="#059669" i], [stroke="#34d399" i], [stroke="#16a34a" i], [stroke="#4ade80" i]) { stroke: var(--theme-success); }
+html:not([data-theme="dark"]) :is([fill="#10b981" i], [fill="#22c55e" i], [fill="#059669" i], [fill="#34d399" i], [fill="#16a34a" i], [fill="#4ade80" i]) { fill: var(--theme-success); }
+html:not([data-theme="dark"]) :is([style*="background: rgb(16, 185, 129)"], [style*="background-color: rgb(16, 185, 129)"], [style*="background: rgb(34, 197, 94)"], [style*="background-color: rgb(34, 197, 94)"], [style*="background: rgb(5, 150, 105)"], [style*="background-color: rgb(5, 150, 105)"], [style*="background: rgb(52, 211, 153)"], [style*="background-color: rgb(52, 211, 153)"], [style*="background: rgb(22, 163, 74)"], [style*="background-color: rgb(22, 163, 74)"], [style*="background: rgb(74, 222, 128)"], [style*="background-color: rgb(74, 222, 128)"]) { background: var(--theme-success-solid) !important; }
+
+/* warning */
+html:not([data-theme="dark"]) :is([style^="color: rgb(245, 158, 11)"], [style*="; color: rgb(245, 158, 11)"], [style^="color: rgb(217, 119, 6)"], [style*="; color: rgb(217, 119, 6)"], [style^="color: rgb(251, 191, 36)"], [style*="; color: rgb(251, 191, 36)"], [style^="color: rgb(234, 179, 8)"], [style*="; color: rgb(234, 179, 8)"], [style^="color: rgb(249, 115, 22)"], [style*="; color: rgb(249, 115, 22)"], [style^="color: rgb(251, 146, 60)"], [style*="; color: rgb(251, 146, 60)"]) { color: var(--theme-warning) !important; }
+html:not([data-theme="dark"]) :is([stroke="#f59e0b" i], [stroke="#d97706" i], [stroke="#fbbf24" i], [stroke="#eab308" i], [stroke="#f97316" i], [stroke="#fb923c" i]) { stroke: var(--theme-warning); }
+html:not([data-theme="dark"]) :is([fill="#f59e0b" i], [fill="#d97706" i], [fill="#fbbf24" i], [fill="#eab308" i], [fill="#f97316" i], [fill="#fb923c" i]) { fill: var(--theme-warning); }
+html:not([data-theme="dark"]) :is([style*="background: rgb(245, 158, 11)"], [style*="background-color: rgb(245, 158, 11)"], [style*="background: rgb(217, 119, 6)"], [style*="background-color: rgb(217, 119, 6)"], [style*="background: rgb(251, 191, 36)"], [style*="background-color: rgb(251, 191, 36)"], [style*="background: rgb(234, 179, 8)"], [style*="background-color: rgb(234, 179, 8)"], [style*="background: rgb(249, 115, 22)"], [style*="background-color: rgb(249, 115, 22)"], [style*="background: rgb(251, 146, 60)"], [style*="background-color: rgb(251, 146, 60)"]) { background: var(--theme-warning-solid) !important; }
+
+/* danger */
+html:not([data-theme="dark"]) :is([style^="color: rgb(239, 68, 68)"], [style*="; color: rgb(239, 68, 68)"], [style^="color: rgb(248, 113, 113)"], [style*="; color: rgb(248, 113, 113)"], [style^="color: rgb(220, 38, 38)"], [style*="; color: rgb(220, 38, 38)"], [style^="color: rgb(255, 107, 107)"], [style*="; color: rgb(255, 107, 107)"]) { color: var(--theme-danger) !important; }
+html:not([data-theme="dark"]) :is([stroke="#ef4444" i], [stroke="#f87171" i], [stroke="#dc2626" i], [stroke="#ff6b6b" i]) { stroke: var(--theme-danger); }
+html:not([data-theme="dark"]) :is([fill="#ef4444" i], [fill="#f87171" i], [fill="#dc2626" i], [fill="#ff6b6b" i]) { fill: var(--theme-danger); }
+html:not([data-theme="dark"]) :is([style*="background: rgb(239, 68, 68)"], [style*="background-color: rgb(239, 68, 68)"], [style*="background: rgb(248, 113, 113)"], [style*="background-color: rgb(248, 113, 113)"], [style*="background: rgb(220, 38, 38)"], [style*="background-color: rgb(220, 38, 38)"], [style*="background: rgb(255, 107, 107)"], [style*="background-color: rgb(255, 107, 107)"]) { background: var(--theme-danger-solid) !important; }
+
+/* info */
+html:not([data-theme="dark"]) :is([style^="color: rgb(59, 130, 246)"], [style*="; color: rgb(59, 130, 246)"], [style^="color: rgb(96, 165, 250)"], [style*="; color: rgb(96, 165, 250)"], [style^="color: rgb(14, 165, 233)"], [style*="; color: rgb(14, 165, 233)"], [style^="color: rgb(37, 99, 235)"], [style*="; color: rgb(37, 99, 235)"], [style^="color: rgb(6, 182, 212)"], [style*="; color: rgb(6, 182, 212)"], [style^="color: rgb(56, 189, 248)"], [style*="; color: rgb(56, 189, 248)"], [style^="color: rgb(20, 184, 166)"], [style*="; color: rgb(20, 184, 166)"]) { color: var(--theme-info) !important; }
+html:not([data-theme="dark"]) :is([stroke="#3b82f6" i], [stroke="#60a5fa" i], [stroke="#0ea5e9" i], [stroke="#2563eb" i], [stroke="#06b6d4" i], [stroke="#38bdf8" i], [stroke="#14b8a6" i]) { stroke: var(--theme-info); }
+html:not([data-theme="dark"]) :is([fill="#3b82f6" i], [fill="#60a5fa" i], [fill="#0ea5e9" i], [fill="#2563eb" i], [fill="#06b6d4" i], [fill="#38bdf8" i], [fill="#14b8a6" i]) { fill: var(--theme-info); }
+html:not([data-theme="dark"]) :is([style*="background: rgb(59, 130, 246)"], [style*="background-color: rgb(59, 130, 246)"], [style*="background: rgb(96, 165, 250)"], [style*="background-color: rgb(96, 165, 250)"], [style*="background: rgb(14, 165, 233)"], [style*="background-color: rgb(14, 165, 233)"], [style*="background: rgb(37, 99, 235)"], [style*="background-color: rgb(37, 99, 235)"], [style*="background: rgb(6, 182, 212)"], [style*="background-color: rgb(6, 182, 212)"], [style*="background: rgb(56, 189, 248)"], [style*="background-color: rgb(56, 189, 248)"], [style*="background: rgb(20, 184, 166)"], [style*="background-color: rgb(20, 184, 166)"]) { background: var(--theme-info-solid) !important; }
+
+/* dégradé violet codé en dur -> dégradé du thème */
+html:not([data-theme="dark"]) [style*="rgb(102, 126, 234) 0%, rgb(118, 75, 162) 100%"] { background: var(--theme-gradient) !important; }
+
+
+/* gris codés en dur (#94a3b8, #666, #888…) -> texte secondaire du thème (lisible sur ses fonds) */
+html:not([data-theme="dark"]) :is([style^="color: rgb(148, 163, 184)"], [style*="; color: rgb(148, 163, 184)"], [style^="color: rgb(100, 116, 139)"], [style*="; color: rgb(100, 116, 139)"], [style^="color: rgb(102, 102, 102)"], [style*="; color: rgb(102, 102, 102)"], [style^="color: rgb(136, 136, 136)"], [style*="; color: rgb(136, 136, 136)"], [style^="color: rgb(153, 153, 153)"], [style*="; color: rgb(153, 153, 153)"], [style^="color: rgb(156, 163, 175)"], [style*="; color: rgb(156, 163, 175)"], [style^="color: rgb(107, 114, 128)"], [style*="; color: rgb(107, 114, 128)"], [style^="color: rgb(119, 119, 119)"], [style*="; color: rgb(119, 119, 119)"], [style^="color: rgb(170, 170, 170)"], [style*="; color: rgb(170, 170, 170)"]) { color: var(--theme-text-secondary) !important; }
+
+/* classes de tendance définies dans les blocs <style> des pages */
+html:not([data-theme="dark"]) .trend-up { color: var(--theme-success) !important; }
+html:not([data-theme="dark"]) .trend-down { color: var(--theme-danger) !important; }
+
+/* teintes foncées utilisées pour le thème clair (admin mobile, formulaires…) : elles suivent aussi le thème choisi */
+html:not([data-theme="dark"]) :is([style^="color: rgb(180, 83, 9)"], [style*="; color: rgb(180, 83, 9)"], [style^="color: rgb(146, 64, 14)"], [style*="; color: rgb(146, 64, 14)"]) { color: var(--theme-warning) !important; }
+html:not([data-theme="dark"]) :is([style^="color: rgb(4, 120, 87)"], [style*="; color: rgb(4, 120, 87)"], [style^="color: rgb(21, 128, 61)"], [style*="; color: rgb(21, 128, 61)"]) { color: var(--theme-success) !important; }
+html:not([data-theme="dark"]) :is([style^="color: rgb(185, 28, 28)"], [style*="; color: rgb(185, 28, 28)"], [style^="color: rgb(153, 27, 27)"], [style*="; color: rgb(153, 27, 27)"]) { color: var(--theme-danger) !important; }
+html:not([data-theme="dark"]) :is([style^="color: rgb(67, 56, 202)"], [style*="; color: rgb(67, 56, 202)"], [style^="color: rgb(55, 48, 163)"], [style*="; color: rgb(55, 48, 163)"]) { color: var(--theme-primary-text) !important; }
+html:not([data-theme="dark"]) :is([style^="color: rgb(29, 78, 216)"], [style*="; color: rgb(29, 78, 216)"], [style^="color: rgb(3, 105, 161)"], [style*="; color: rgb(3, 105, 161)"], [style^="color: rgb(14, 116, 144)"], [style*="; color: rgb(14, 116, 144)"]) { color: var(--theme-info) !important; }
+html:not([data-theme="dark"]) :is([style^="color: rgb(109, 40, 217)"], [style*="; color: rgb(109, 40, 217)"], [style^="color: rgb(126, 34, 206)"], [style*="; color: rgb(126, 34, 206)"]) { color: var(--theme-accent2) !important; }
+
+/* dégradé violet codé en dur, forme sans pourcentages (#667eea, #764ba2) */
+html:not([data-theme="dark"]) :is([style*="rgb(102, 126, 234), rgb(118, 75, 162)"], [style*="rgb(102, 126, 234) 0%, rgb(118, 75, 162)"], [style*="rgb(99, 102, 241), rgb(139, 92, 246)"], [style*="rgb(99, 102, 241) 0%, rgb(139, 92, 246)"]) { background: var(--theme-gradient) !important; }

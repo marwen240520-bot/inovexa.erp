@@ -3,7 +3,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, CSSProperties } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
 const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
@@ -455,7 +454,6 @@ export default function Sidebar() {
       justifyContent: "space-between",
       marginBottom: "16px",
       paddingBottom: "12px",
-      borderBottom: `1px solid ${ct.primary}14`,
     },
     mobileMoreTitle: {
       fontSize: "13px",
@@ -477,7 +475,6 @@ export default function Sidebar() {
     sidebar: {
       width: "280px",
       background: ct.surface,
-      borderRight: `1px solid ${ct.border}`,
       position: "fixed",
       height: "100vh",
       overflowY: "auto",
@@ -489,12 +486,9 @@ export default function Sidebar() {
       flexDirection: "column",
       transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       transform: "translateX(0)", // Always open
-      boxShadow: "2px 0 24px rgba(17,24,39,0.06)",
     },
     header: {
-      padding: "20px 16px 18px",
-      borderBottom: `1px solid ${ct.primary}14`,
-      background: `linear-gradient(135deg, ${ct.primary}0d 0%, transparent 100%)`,
+      padding: "22px 16px 14px",
       flexShrink: 0,
     },
     logoWrapper: {
@@ -504,8 +498,8 @@ export default function Sidebar() {
       cursor: "pointer",
     },
     logoImage: {
-      width: "60px",
-      height: "60px",
+      width: "92px",
+      height: "92px",
       display: "block",
       flexShrink: 0,
       objectFit: "contain",
@@ -513,7 +507,7 @@ export default function Sidebar() {
     brandContainer: { flex: 1, minWidth: 0 },
     logoTitle: {
       fontWeight: 700,
-      fontSize: "17px",
+      fontSize: "19px",
       letterSpacing: "-0.02em",
       
     },
@@ -521,7 +515,7 @@ export default function Sidebar() {
       fontSize: "10px",
       fontWeight: 500,
       letterSpacing: "0.04em",
-      opacity: 0.72,
+      opacity: 1,
       marginTop: "1px",
       display: "flex",
       alignItems: "center",
@@ -558,10 +552,8 @@ export default function Sidebar() {
       borderRadius: "0 3px 3px 0",
     },
     divider: {
-      height: "1px",
-      margin: "10px 0",
-      opacity: 0.5,
-      background: `linear-gradient(90deg, transparent, ${ct.primary}30, transparent)`,
+      height: 0,
+      margin: "8px 0",
     },
     logoutBtn: {
       display: "flex",
@@ -730,8 +722,6 @@ export default function Sidebar() {
                   );
                 })}
                 <div style={styles.divider} />
-                <ThemeSwitcher variant="sidebar" />
-                <div style={{ height: 10 }} />
                 <div
                   onClick={logout}
                   style={{
@@ -870,10 +860,10 @@ export default function Sidebar() {
                 />
                 <div style={{
                   position: "absolute",
-                  bottom: "-2px",
-                  right: "-2px",
-                  width: "10px",
-                  height: "10px",
+                  bottom: "12px",
+                  right: "12px",
+                  width: "12px",
+                  height: "12px",
                   borderRadius: "50%",
                   background: "#22c55e",
                   border: `2px solid ${ct.surface}`,
@@ -904,8 +894,6 @@ export default function Sidebar() {
           <nav style={styles.nav}>
             {menuItems.map((item) => renderNavItem(item))}
             <div style={styles.divider} />
-            <ThemeSwitcher variant="sidebar" />
-            <div style={{ height: 8 }} />
             <div
               onClick={logout}
               style={styles.logoutBtn}

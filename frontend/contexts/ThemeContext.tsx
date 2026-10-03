@@ -13,16 +13,27 @@ export const THEMES: Record<string, any> = {
     primary: "#4f46e5",
     primaryRgb: "79, 70, 229",
     secondary: "#7c3aed",
-    accent: "#059669",
+    accent: "#047253",
     background: "#f3f4f6",
     surface: "#ffffff",
     surfaceHover: "#f9fafb",
     text: "#111827",
-    textSecondary: "#6b7280",
+    textSecondary: "#4b5563",
     navText: "#111827",
     border: "#e5e7eb",
     borderHover: "#d1d5db",
     gradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+    primaryText: "#4f46e5",
+    success: "#0a7151",
+    successSolid: "#0c835d",
+    warning: "#905a0a",
+    warningSolid: "#a2660a",
+    danger: "#c91010",
+    dangerSolid: "#e11010",
+    info: "#095be6",
+    infoSolid: "#176af6",
+    accent2: "#7338f6",
+    accent2Solid: "#8350f6",
     icon: "☀️"
   },
   dark: {
@@ -43,135 +54,25 @@ export const THEMES: Record<string, any> = {
     border: "#222222",
     borderHover: "#333333",
     gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    primaryText: "#667eea",
+    success: "#10b981",
+    successSolid: "#10b981",
+    warning: "#f59e0b",
+    warningSolid: "#f59e0b",
+    danger: "#ef4444",
+    dangerSolid: "#ef4444",
+    info: "#3b82f6",
+    infoSolid: "#3b82f6",
+    accent2: "#8b5cf6",
+    accent2Solid: "#8b5cf6",
     icon: "🌙"
   },
 
   
-  blue: {
-    id: "blue",
-    mode: "dark",
-    name: "Bleu Océan",
-    nameEn: "Ocean Blue",
-    nameEs: "Azul Océano",
-    primary: "#0284c7",
-    primaryRgb: "2, 132, 199",
-    secondary: "#0369a1",
-    accent: "#0ea5e9",
-    background: "#082f49",
-    surface: "#0f172a",
-    surfaceHover: "#1e293b",
-    text: "#f8fafc",
-    textSecondary: "#94a3b8",
-    border: "#334155",
-    borderHover: "#475569",
-    gradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-    icon: "🌊"
-  },
-  sunset: {
-    id: "sunset",
-    mode: "dark",
-    name: "Coucher de Soleil",
-    nameEn: "Sunset",
-    nameEs: "Atardecer",
-    primary: "#ea580c",
-    primaryRgb: "234, 88, 12",
-    secondary: "#f97316",
-    accent: "#fb923c",
-    background: "#1c1917",
-    surface: "#292524",
-    surfaceHover: "#3f3e3d",
-    text: "#fff7ed",
-    textSecondary: "#fdba74",
-    border: "#44403c",
-    borderHover: "#57534e",
-    gradient: "linear-gradient(135deg, #ea580c 0%, #f97316 100%)",
-    icon: "🌅"
-  },
-  purple: {
-    id: "purple",
-    mode: "dark",
-    name: "Violet",
-    nameEn: "Purple",
-    nameEs: "Púrpura",
-    primary: "#8b5cf6",
-    primaryRgb: "139, 92, 246",
-    secondary: "#a855f7",
-    accent: "#c084fc",
-    background: "#1e1b4b",
-    surface: "#2e1065",
-    surfaceHover: "#3b0764",
-    text: "#faf5ff",
-    textSecondary: "#d8b4fe",
-    border: "#4c1d95",
-    borderHover: "#6d28d9",
-    gradient: "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
-    icon: "🔮"
-  },
-  green: {
-    id: "green",
-    mode: "dark",
-    name: "Forêt",
-    nameEn: "Forest",
-    nameEs: "Bosque",
-    primary: "#059669",
-    primaryRgb: "5, 150, 105",
-    secondary: "#10b981",
-    accent: "#34d399",
-    background: "#022c22",
-    surface: "#064e3b",
-    surfaceHover: "#065f46",
-    text: "#ecfdf5",
-    textSecondary: "#6ee7b7",
-    border: "#047857",
-    borderHover: "#059669",
-    gradient: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-    icon: "🌲"
-  },
-  rose: {
-    id: "rose",
-    mode: "dark",
-    name: "Rose",
-    nameEn: "Rose",
-    nameEs: "Rosa",
-    primary: "#e11d48",
-    primaryRgb: "225, 29, 72",
-    secondary: "#f43f5e",
-    accent: "#fb7185",
-    background: "#1a060f",
-    surface: "#2b0d1a",
-    surfaceHover: "#3a1224",
-    text: "#fff1f2",
-    textSecondary: "#fda4af",
-    border: "#5b1a31",
-    borderHover: "#7f1d3a",
-    gradient: "linear-gradient(135deg, #e11d48 0%, #f43f5e 100%)",
-    icon: "🌹"
-  },
-  lightPremium: {
-    id: "lightPremium",
-    mode: "light",
-    name: "Premium Clair",
-    nameEn: "Premium Light",
-    nameEs: "Premium Claro",
-    primary: "#a16207",
-    primaryRgb: "161, 98, 7",
-    secondary: "#b45309",
-    accent: "#0f766e",
-    background: "#faf7f2",
-    surface: "#ffffff",
-    surfaceHover: "#fbf8f3",
-    text: "#1c1917",
-    textSecondary: "#78716c",
-    navText: "#1c1917",
-    border: "#e7e0d5",
-    borderHover: "#d6cdbd",
-    gradient: "linear-gradient(135deg, #a16207 0%, #b45309 100%)",
-    icon: "✨"
-  }
 };
 
 /** Ordre d'affichage dans le sélecteur de thème */
-export const THEME_ORDER = ["light", "lightPremium", "dark", "blue", "purple", "green", "sunset", "rose"];
+export const THEME_ORDER = ["light", "dark"];
 
 /** true si le thème est de type « clair » (fond clair, texte foncé) */
 export const isLightTheme = (theme: any): boolean => !!theme && theme.mode === "light";
@@ -225,6 +126,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--theme-border', selectedTheme.border);
     root.style.setProperty('--theme-border-hover', selectedTheme.borderHover);
     root.style.setProperty('--theme-gradient', selectedTheme.gradient);
+    // Couleurs d'état propres à chaque thème (texte lisible + version « pleine » pour texte blanc dessus)
+    const tone = (key: string, fallback: string) => selectedTheme[key] || fallback;
+    root.style.setProperty('--theme-primary-text', tone('primaryText', selectedTheme.primary));
+    root.style.setProperty('--theme-success', tone('success', '#10b981'));
+    root.style.setProperty('--theme-success-solid', tone('successSolid', '#10b981'));
+    root.style.setProperty('--theme-warning', tone('warning', '#f59e0b'));
+    root.style.setProperty('--theme-warning-solid', tone('warningSolid', '#f59e0b'));
+    root.style.setProperty('--theme-danger', tone('danger', '#ef4444'));
+    root.style.setProperty('--theme-danger-solid', tone('dangerSolid', '#ef4444'));
+    root.style.setProperty('--theme-info', tone('info', '#3b82f6'));
+    root.style.setProperty('--theme-info-solid', tone('infoSolid', '#3b82f6'));
+    root.style.setProperty('--theme-accent2', tone('accent2', '#8b5cf6'));
+    root.style.setProperty('--theme-accent2-solid', tone('accent2Solid', '#8b5cf6'));
   };
 
   const setThemeById = (id: string) => {

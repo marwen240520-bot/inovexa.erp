@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // @ts-ignore
 import "./globals.css";
+import "./theme-remap.css";
 
 // viewportFit: "cover" est indispensable pour que env(safe-area-inset-*)
 // fonctionne sur iPhone (encoche / Dynamic Island).

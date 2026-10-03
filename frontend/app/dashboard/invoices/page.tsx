@@ -10,6 +10,7 @@ import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
+import { normalizeInvoiceAmounts } from "@/lib/invoiceAmounts";
 // --- SVG ICONS ----------------------------------------------------------------
 const Icons = {
   Invoice: ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => (
@@ -584,14 +585,11 @@ export default function InvoicesPage() {
       });
       let data = await res.json();
       data = Array.isArray(data) ? data : [];
-      const formattedData = data.map((inv: any) => ({
-        ...inv,
-        items: inv.items && Array.isArray(inv.items) ? inv.items : [],
-        subtotalHT: inv.subtotalHT || inv.subtotal || 0,
-        taxAmount: inv.taxAmount || (inv.amount * (inv.taxRate || 20) / 100) || 0,
-        amount: inv.amount || 0,
-        createdAt: inv.createdAt || new Date().toISOString()
-      }));
+      // Toutes les factures passent par la normalisation : lignes (prix unitaire HT, sous-totaux HT / TTC)
+      // et totaux sont toujours renseignés, quelle que soit l'origine de la facture (formulaire, import, démo, ancien format)
+      const formattedData = data.map((inv: any) =>
+        normalizeInvoiceAmounts({ ...inv, createdAt: inv.createdAt || new Date().toISOString() })
+      );
       setInvoices(formattedData);
       calculateStats(formattedData);
     } catch (e) {

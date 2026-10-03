@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import ExportButtons from "@/components/ui/ExportButtons";
 import SelectAllCheckbox from "@/components/ui/SelectAllCheckbox";
 import {
@@ -612,7 +613,8 @@ export default function AdminClientsPage() {
                 </h1>
                 <p style={{ color: "var(--theme-text-secondary)", marginTop: "4px" }}>{t("admin.clients")}</p>
               </div>
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", width: isMobile ? "100%" : "auto" }}>
+                <ThemeToggle size={44} />
                 <ExportButtons data={filteredClients} filename="clients" />
                 <button onClick={() => setModal({ open: true, editMode: false, editId: null, form: { email: "", password: "", name: "", companyName: "", phone: "", subscriptionDuration: 30 } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

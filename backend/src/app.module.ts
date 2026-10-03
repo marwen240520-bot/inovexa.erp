@@ -20,6 +20,10 @@ import { SearchModule } from './modules/search/search.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { WorkspaceSearchModule } from './modules/workspace-search/workspace-search.module';
+import { assertUniqueEntityTables } from './common/assert-unique-entities';
+
+// Échoue tout de suite, avec un message clair, si deux entités visent la même table
+assertUniqueEntityTables(__dirname);
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { TransporteurModule } from './modules/transporteur/transporteur.module';
 import { TransporteursModule } from './modules/transporteurs/transporteurs.module';
