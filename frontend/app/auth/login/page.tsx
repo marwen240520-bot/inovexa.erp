@@ -45,6 +45,8 @@ const translations = {
   fr: {
     backToHome: "Retour à l'accueil",
     remember: "Se souvenir de mon e-mail",
+    welcome: "Accédez à votre espace de gestion.",
+    forgot: "Mot de passe oublié ?",
     forgotHint: "Mot de passe oublié ? Contactez votre administrateur.",
     signIn: "Connectez-vous à votre espace",
     email: "Email",
@@ -61,6 +63,8 @@ const translations = {
   en: {
     backToHome: "Back to home",
     remember: "Remember my email",
+    welcome: "Access your management workspace.",
+    forgot: "Forgot password?",
     forgotHint: "Forgot your password? Contact your administrator.",
     signIn: "Sign in to your workspace",
     email: "Email",
@@ -77,6 +81,8 @@ const translations = {
   es: {
     backToHome: "Volver al inicio",
     remember: "Recordar mi correo",
+    welcome: "Acceda a su espacio de gestión.",
+    forgot: "¿Olvidó su contraseña?",
     forgotHint: "¿Olvidó su contraseña? Contacte a su administrador.",
     signIn: "Inicia sesión en tu espacio",
     email: "Correo electrónico",
@@ -104,6 +110,7 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState("");
   const [remember, setRemember] = useState(true);
+  const [showForgot, setShowForgot] = useState(false);
   // Pré-remplit l'e-mail mémorisé lors d'une précédente connexion
   useEffect(() => {
     try {
@@ -485,7 +492,7 @@ export default function LoginPage() {
         /* ── DESKTOP LAYOUT ── */
         <>
           <div style={{ 
-            width: "49.5%",
+            width: "44%",
             padding: "0 0 0 20px", 
             display: "flex",
             flexDirection: "column",
@@ -538,12 +545,13 @@ export default function LoginPage() {
               color: "var(--lg-text)", 
               fontWeight: "800", 
               lineHeight: "1.2",
-              marginBottom: "30px",
+              marginBottom: "10px",
               letterSpacing: "-1.5px",
               marginTop: "20px"
             }}>
               {t.signIn}
             </h1>
+            <p style={{ color: "var(--lg-muted)", fontSize: "15.5px", margin: "0 0 28px", lineHeight: 1.5 }}>{t.welcome}</p>
 
             {error && (
               <div role="alert" aria-live="assertive" style={{ 
@@ -564,6 +572,8 @@ export default function LoginPage() {
                 <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
                   {t.email}
                 </label>
+                <div style={{ position: "relative" }}>
+                <span aria-hidden="true" style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: "var(--lg-muted)", display: "flex", pointerEvents: "none" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg></span>
                 <input
                   type="email"
                   value={email}
@@ -577,7 +587,7 @@ export default function LoginPage() {
                   style={{ 
                     width: "100%",
                     boxSizing: "border-box",
-                    padding: "15.4px",
+                    padding: "15.4px 15.4px 15.4px 46px",
                     background: "var(--lg-input-bg)",
                     border: "1px solid var(--lg-input-border)", 
                     borderRadius: "12px", 
@@ -587,6 +597,7 @@ export default function LoginPage() {
                   }}
                   required
                 />
+                </div>
               </div>
 
               <div style={{ marginBottom: "30.8px" }}>
@@ -594,6 +605,7 @@ export default function LoginPage() {
                   {t.password}
                 </label>
                 <div style={{ position: "relative" }}>
+                  <span aria-hidden="true" style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: "var(--lg-muted)", display: "flex", pointerEvents: "none" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg></span>
                   <input
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -608,6 +620,7 @@ export default function LoginPage() {
                     width: "100%",
                     boxSizing: "border-box",
                     padding: "15.4px",
+                    paddingLeft: "46px",
                     paddingRight: "46px",
                     background: "var(--lg-input-bg)",
                     border: "1px solid var(--lg-input-border)", 
@@ -639,19 +652,27 @@ export default function LoginPage() {
                   )}
               </div>
 
-              {/* Se souvenir de l'e-mail + aide mot de passe */}
-<div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "4px 0 18px" }}>
-  <label style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "var(--lg-label)", fontSize: "13.5px", cursor: "pointer", minHeight: "28px" }}>
-    <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#8b5cf6", cursor: "pointer" }} />
-    {t.remember}
-  </label>
-  <span style={{ color: "var(--lg-muted)", fontSize: "12.5px", lineHeight: 1.5 }}>{t.forgotHint}</span>
-</div>
-<button
+              {/* Se souvenir de l'e-mail + mot de passe oublié */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", margin: "0 0 14px" }}>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "var(--lg-label)", fontSize: "13.5px", cursor: "pointer", minHeight: "28px" }}>
+                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#8b5cf6", cursor: "pointer" }} />
+                  {t.remember}
+                </label>
+                <button type="button" onClick={() => setShowForgot((v) => !v)} aria-expanded={showForgot} style={{ background: "none", border: "none", color: "#8b5cf6", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", padding: "4px 0" }}>{t.forgot}</button>
+              </div>
+              {showForgot && (
+                <div role="note" style={{ background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.3)", color: "var(--lg-text)", borderRadius: "10px", padding: "10px 12px", fontSize: "13px", lineHeight: 1.5, margin: "0 0 16px" }}>{t.forgotHint}</div>
+              )}
+              <button
                 type="submit"
                 disabled={loading}
                 style={{
                   width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  boxShadow: "0 12px 26px -12px rgba(139, 92, 246, 0.65)",
                   padding: "17.6px",
                   fontSize: "16.5px",
                   borderRadius: "12px",
@@ -666,6 +687,7 @@ export default function LoginPage() {
                 <span>
                   {loading ? t.loggingIn : t.login}
                 </span>
+                {!loading && <span aria-hidden="true">→</span>}
               </button>
             </form>
 
@@ -692,7 +714,7 @@ export default function LoginPage() {
               RIGHT SIDE — Hero visuel amélioré (aligné sur la home page)
               ═══════════════════════════════════════════════════════════════ */}
           <div className="login-hero" style={{
-            width: "50.5%",
+            width: "56%",
             height: "100vh",
             background: "var(--lg-bg)",
             display: "flex",

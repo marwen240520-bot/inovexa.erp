@@ -196,11 +196,14 @@ export default function HomePage(): React.ReactElement {
     const token: string | null = localStorage.getItem("token");
     setIsLoggedIn(!!token);
 
-    const minDisplay = 1500;
-    const fadeDuration = 600;
+    let seen = false;
+    try { seen = sessionStorage.getItem("hp_loaded") === "1"; } catch { /* stockage indisponible */ }
+    const minDisplay = seen ? 0 : 900;
+    const fadeDuration = seen ? 0 : 300;
 
     const t1 = setTimeout(() => { setIsExiting(true); }, minDisplay);
-    const t2 = setTimeout(() => { setIsLoading(false); }, minDisplay + fadeDuration);
+    // L'indicateur « déjà vu » n'est posé qu'à la FIN du chargement (sinon le double appel d'effet de React en développement le posait trop tôt)
+    const t2 = setTimeout(() => { setIsLoading(false); try { sessionStorage.setItem("hp_loaded", "1"); } catch { /* ignoré */ } }, minDisplay + fadeDuration);
 
     return () => {
       clearTimeout(t1);
@@ -237,46 +240,49 @@ export default function HomePage(): React.ReactElement {
       fr: {
         title: React.createElement(React.Fragment, null, "L'avenir de la ", React.createElement("span", { className: "hero-word-glow" }, "gestion d'entreprise"), " commence ici."),
         subtitle: "INOVEXA",
+        lead: "Ventes, achats, stock, facturation, RH et finance réunis dans une seule plateforme, simple et sécurisée.",
         button: "Accéder au Dashboard",
         login: "Commencer maintenant",
         copyright: "Tous droits réservés",
         privacy: "Politique de confidentialité",
         terms: "Conditions d'utilisation",
         features: [
-          { title: "SOLUTIONS INTÉGRÉES" },
-          { title: "ANALYSES TEMPS RÉEL" },
-          { title: "SÉCURISÉ & FIABLE" },
-          { title: "VOTRE ÉQUIPE" }
+          { title: "SOLUTIONS INTÉGRÉES", desc: "Ventes, achats, stock, factures" },
+          { title: "ANALYSES TEMPS RÉEL", desc: "Tableaux de bord en direct" },
+          { title: "SÉCURISÉ & FIABLE", desc: "Données protégées, partout" },
+          { title: "VOTRE ÉQUIPE", desc: "RH, finance et logistique" }
         ]
       },
       es: {
         title: React.createElement(React.Fragment, null, "El futuro de la ", React.createElement("span", { className: "hero-word-glow" }, "gestión empresarial"), " comienza aquí."),
         subtitle: "INOVEXA",
+        lead: "Ventas, compras, inventario, facturación, RR. HH. y finanzas en una sola plataforma, simple y segura.",
         button: "Panel de Control",
         login: "Empezar ahora",
         copyright: "Todos los derechos reservados",
         privacy: "Política de privacidad",
         terms: "Términos de uso",
         features: [
-          { title: "SOLUCIONES INTEGRADAS" },
-          { title: "ANÁLISIS EN TIEMPO REAL" },
-          { title: "SEGURO & CONFIABLE" },
-          { title: "SU EQUIPO" }
+          { title: "SOLUCIONES INTEGRADAS", desc: "Ventas, compras, stock, facturas" },
+          { title: "ANÁLISIS EN TIEMPO REAL", desc: "Paneles y objetivos en vivo" },
+          { title: "SEGURO & CONFIABLE", desc: "Datos protegidos, en todo lugar" },
+          { title: "SU EQUIPO", desc: "RR. HH., finanzas y logística" }
         ]
       },
       en: {
         title: React.createElement(React.Fragment, null, "The future of ", React.createElement("span", { className: "hero-word-glow" }, "business management"), " starts here."),
         subtitle: "INOVEXA",
+        lead: "Sales, purchases, inventory, invoicing, HR and finance in a single, simple and secure platform.",
         button: "Go to Dashboard",
         login: "Get Started Now",
         copyright: "All rights reserved",
         privacy: "Privacy Policy",
         terms: "Terms of Use",
         features: [
-          { title: "INTEGRATED SOLUTIONS" },
-          { title: "REAL-TIME INSIGHTS" },
-          { title: "SECURE & RELIABLE" },
-          { title: "EMPOWER YOUR TEAM" }
+          { title: "INTEGRATED SOLUTIONS", desc: "Sales, purchases, stock, invoices" },
+          { title: "REAL-TIME INSIGHTS", desc: "Live dashboards and goals" },
+          { title: "SECURE & RELIABLE", desc: "Protected data, anywhere" },
+          { title: "EMPOWER YOUR TEAM", desc: "HR, finance and logistics" }
         ]
       }
     };
@@ -302,202 +308,27 @@ export default function HomePage(): React.ReactElement {
         alignItems: "center",
         justifyContent: "center",
         zIndex: 9999,
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-        overflow: "hidden"
+        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif"
       }
     },
-      React.createElement("div", { className: "loader-halo" }),
-
-      React.createElement("div", {
-        className: "loader-logo",
-        style: {
-          width: "130px",
-          height: "130px",
-          position: "relative",
-          marginBottom: "28px"
-        }
-      },
-        React.createElement("div", { className: "loader-logo-halo" }),
-        React.createElement("div", { className: "loader-ring loader-ring-1" }),
-        React.createElement("div", { className: "loader-ring loader-ring-2" }),
-        React.createElement("img", {
-          src: "/images/logo.png",
-          alt: "Inovexa",
-          style: {
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            position: "relative",
-            zIndex: 2,
-            filter: "drop-shadow(0 0 24px rgba(138,43,226,0.85))"
-          }
-        })
-      ),
-
-      React.createElement("h1", {
-        className: "loader-brand",
-        style: {
-          color: "var(--hp-text)",
-          fontSize: "26px",
-          fontWeight: "300",
-          margin: 0,
-          letterSpacing: "3px",
-          textTransform: "uppercase",
-          marginBottom: "6px",
-          fontFamily: LOGO_FONT
-        }
-      },
+      React.createElement("img", { src: "/images/logo.png", alt: "Inovexa", style: { width: "96px", height: "96px", objectFit: "contain", marginBottom: "16px" } }),
+      React.createElement("h1", { style: { color: "var(--hp-text)", fontSize: "22px", fontWeight: "300", margin: 0, letterSpacing: "3px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
         React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
       ),
-
-      React.createElement("div", {
-        className: "loader-erp",
-        style: {
-          background: "linear-gradient(90deg, #A855F7, #6366F1)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          fontSize: "12px",
-          fontWeight: "700",
-          letterSpacing: "8px",
-          textTransform: "uppercase",
-          marginBottom: "42px",
-          fontFamily: LOGO_FONT
-        }
-      }, "ERP"),
-
-      React.createElement("div", {
-        className: "loader-bar-track",
-        style: {
-          width: "220px",
-          height: "3px",
-          background: "rgba(168, 85, 247, 0.15)",
-          borderRadius: "999px",
-          overflow: "hidden",
-          position: "relative"
-        }
-      },
+      React.createElement("div", { style: { color: "var(--hp-muted)", fontSize: "11px", fontWeight: "600", letterSpacing: "7px", textTransform: "uppercase", margin: "6px 0 26px", fontFamily: LOGO_FONT } }, "ERP"),
+      React.createElement("div", { style: { width: "160px", height: "3px", borderRadius: "999px", background: "rgba(168, 85, 247, 0.18)", overflow: "hidden" } },
         React.createElement("div", { className: "loader-bar-fill" })
       ),
-
-      React.createElement("div", {
-        style: { display: "flex", gap: "8px", marginTop: "22px" }
-      },
-        [0, 1, 2].map((i) =>
-          React.createElement("span", {
-            key: i,
-            className: "loader-dot",
-            style: { animationDelay: (i * 0.18) + "s" }
-          })
-        )
-      ),
-
       React.createElement("style", { dangerouslySetInnerHTML: { __html: `
-        .loader-screen { animation: loaderFadeIn 0.4s ease both; }
-        .hp-light .loader-brand { text-shadow: none !important; animation: none !important; }
-        .loader-exit { animation: loaderFadeOut 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        @keyframes loaderFadeIn  { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes loaderFadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
-
-        .loader-halo {
-          position: absolute; top: 50%; left: 50%;
-          width: 520px; height: 520px;
-          transform: translate(-50%, -50%);
-          background: radial-gradient(circle, rgba(138,43,226,0.25) 0%, transparent 65%);
-          filter: blur(60px);
-          animation: loaderHaloPulse 3s ease-in-out infinite;
-          pointer-events: none;
-        }
-        @keyframes loaderHaloPulse { 0%,100% { opacity: .55; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.08); } }
-
-        .loader-logo { perspective: 700px; animation: loaderLogoFloat 3.6s ease-in-out infinite; }
-        @keyframes loaderLogoFloat {
-          0%,100% { transform: rotateY(-14deg) rotateX(6deg) translateY(0); }
-          50%     { transform: rotateY(14deg)  rotateX(-4deg) translateY(-6px); }
-        }
-        .loader-logo-halo {
-          position: absolute; inset: -20%; border-radius: 50%;
-          background: radial-gradient(circle, rgba(168,85,247,0.4) 0%, transparent 65%);
-          transform: translateZ(-40px);
-          animation: loaderLogoHaloPulse 2.8s ease-in-out infinite;
-        }
-        @keyframes loaderLogoHaloPulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
-
-        .loader-ring { position: absolute; border-radius: 50%; pointer-events: none; }
-        .loader-ring-1 {
-          inset: -14%;
-          border: 1px solid rgba(168,85,247,0.55);
-          box-shadow: 0 0 18px rgba(168,85,247,0.3) inset;
-          animation: loaderRingSpin 4.5s linear infinite;
-        }
-        .loader-ring-2 {
-          inset: -28%;
-          border: 1px solid rgba(99,102,241,0.4);
-          animation: loaderRingSpinReverse 7s linear infinite;
-        }
-        .loader-ring-1::before {
-          content: ""; position: absolute; top: -4px; left: 50%;
-          width: 8px; height: 8px; border-radius: 50%;
-          background: #C084FC;
-          box-shadow: 0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7);
-        }
-        .loader-ring-2::before {
-          content: ""; position: absolute; bottom: -3px; left: 30%;
-          width: 6px; height: 6px; border-radius: 50%;
-          background: #818CF8;
-          box-shadow: 0 0 14px #6366F1;
-        }
-        @keyframes loaderRingSpin       { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
-        @keyframes loaderRingSpinReverse{ from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-
-        .loader-brand { animation: loaderBrandGlow 2.4s ease-in-out infinite; }
-        @keyframes loaderBrandGlow {
-          0%,100% { text-shadow: 0 0 10px rgba(168,85,247,0.35); }
-          50%     { text-shadow: 0 0 24px rgba(168,85,247,0.9); }
-        }
-
-        .loader-erp { animation: loaderErpPulse 2s ease-in-out infinite; }
-        @keyframes loaderErpPulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
-
-        .loader-bar-track::after {
-          content: ""; position: absolute; inset: 0;
-          background: linear-gradient(90deg, transparent, rgba(168,85,247,0.35), transparent);
-          animation: loaderTrackShimmer 1.8s linear infinite;
-        }
-        .loader-bar-fill {
-          position: absolute; left: 0; top: 0; height: 100%; width: 0;
-          background: linear-gradient(90deg, #A855F7, #6366F1, #C084FC);
-          border-radius: 999px;
-          box-shadow: 0 0 12px rgba(168,85,247,0.8);
-          animation: loaderBarFill 1.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
-        }
-        @keyframes loaderBarFill { 0% { width: 0%; } 60% { width: 78%; } 100% { width: 100%; } }
-        @keyframes loaderTrackShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-
-        .loader-dot {
-          width: 7px; height: 7px; border-radius: 50%;
-          background: #A855F7;
-          box-shadow: 0 0 10px rgba(168,85,247,0.8);
-          animation: loaderDotBounce 1.1s ease-in-out infinite;
-        }
-        @keyframes loaderDotBounce {
-          0%,80%,100% { transform: translateY(0);    opacity: .4; }
-          40%         { transform: translateY(-8px); opacity: 1;  }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .loader-logo, .loader-ring-1, .loader-ring-2,
-          .loader-halo, .loader-logo-halo, .loader-dot, .loader-bar-fill {
-            animation: none !important;
-          }
-          .loader-bar-fill { width: 100%; }
-        }
+        .loader-screen { transition: opacity 0.3s ease; }
+        .loader-exit { opacity: 0; }
+        .loader-bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #A855F7, #6366F1); animation: loaderBarFill 0.9s ease-out forwards; }
+        @keyframes loaderBarFill { from { width: 0; } to { width: 100%; } }
+        @media (prefers-reduced-motion: reduce) { .loader-bar-fill { animation: none; width: 100%; } }
       ` } })
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════════
-  //  PAGE PRINCIPALE
-  // ═════════════════════════════════════════════════════════════════════════════
   return React.createElement("div", {
     className: "home-page-enter " + themeClass,
     style: {
@@ -693,8 +524,9 @@ export default function HomePage(): React.ReactElement {
     // LEFT SIDE
     React.createElement("div", {
       style: {
-        width: isCompact ? "100%" : "48%",
-        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "0 0 0 64px",
+        width: isCompact ? "100%" : "44%",
+        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "20px 0 20px 64px",
+        boxSizing: "border-box",
         display: "flex", flexDirection: "column", justifyContent: "center",
         zIndex: 10, position: "relative",
         minHeight: isMobile ? "100vh" : "auto"
@@ -708,7 +540,7 @@ export default function HomePage(): React.ReactElement {
           display: "flex",
           alignItems: "center",
           gap: isMobile ? "20px" : "26px",
-          marginBottom: "28px",
+          marginBottom: "clamp(10px, 2vh, 28px)",
           opacity: logoVisible ? 1 : 0,
           transform: logoVisible ? "translateY(0)" : "translateY(60px)",
           transition: "opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1)"
@@ -736,11 +568,11 @@ export default function HomePage(): React.ReactElement {
       // ✅ TITRE HERO avec marge supérieure sur mobile
       React.createElement("h1", {
         style: {
-          fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px",
+          fontSize: isMobile ? "32px" : isTablet ? "44px" : "clamp(36px, 5.2vh, 52px)",
           color: "var(--hp-text)",
           fontWeight: "900",
           lineHeight: "1.1",
-          marginBottom: "28px",
+          marginBottom: isMobile ? "28px" : "22px",
           marginTop: isMobile ? "24px" : "0",
           letterSpacing: "-1.5px",
           textShadow: "0 0 30px rgba(168, 85, 247, 0.15)",
@@ -749,11 +581,15 @@ export default function HomePage(): React.ReactElement {
           transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)"
         }
       }, text.title),
-      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: "36px", maxWidth: "460px" } },
-        text.features.map((f: { title: string }, i: number) => {
-          return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
+      !isMobile && React.createElement("p", { style: { color: "var(--hp-muted)", fontSize: "15px", lineHeight: 1.55, margin: "0 0 clamp(16px, 3vh, 26px)", maxWidth: "500px", opacity: heroVisible ? 1 : 0, transition: "opacity 0.75s ease 0.15s" } }, text.lead),
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: isMobile ? "36px" : "clamp(20px, 3.4vh, 32px)", maxWidth: isMobile ? "460px" : "540px" } },
+        text.features.map((f: { title: string; desc?: string }, i: number) => {
+          return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "13px 16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
             React.createElement("div", { style: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
-            React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "10px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title)
+            React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "4px" } },
+              React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "11px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title),
+              !isMobile && f.desc && React.createElement("span", { style: { color: "var(--hp-muted)", fontSize: "12px", lineHeight: 1.45, fontWeight: "400" } }, f.desc)
+            )
           );
         })
       ),
@@ -766,7 +602,7 @@ export default function HomePage(): React.ReactElement {
           )
         )
       ),
-      React.createElement("div", { style: { marginTop: isMobile ? "44px" : "52px", display: "flex", flexDirection: "column", gap: "10px" } },
+      React.createElement("div", { style: { marginTop: isMobile ? "44px" : "clamp(22px, 4vh, 52px)", display: "flex", flexDirection: "column", gap: "10px" } },
         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" } },
           React.createElement("a", { href: "https://inovexa-erp.com/privacy.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.7)", fontSize: "10px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" } },
             React.createElement(IconLock, { size: 10, color: "currentColor" }), text.privacy
@@ -785,7 +621,7 @@ export default function HomePage(): React.ReactElement {
     // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
       style: {
-        width: isTablet ? "100%" : "52%",
+        width: isTablet ? "100%" : "56%",
         height: isTablet ? "520px" : "100vh",
         background: "var(--hp-bg)",
         flexShrink: 0,
