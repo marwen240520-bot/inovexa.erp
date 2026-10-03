@@ -875,9 +875,11 @@ export default function LoginPage() {
                 zIndex: 3,
                 pointerEvents: "none"
               }} />
+            </div>
+          </div>
+        </>
+      )}
 
-             
-              
       <style dangerouslySetInnerHTML={{ __html: `
         .erp-text-glow {
           animation: textPulse 3s ease-in-out infinite;
