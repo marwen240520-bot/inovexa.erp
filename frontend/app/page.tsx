@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import HeroPreview from "@/components/ui/HeroPreview";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // ─── Pro SVG Icons ─────────────────────────────────────────────────────────────
@@ -621,26 +622,25 @@ export default function HomePage(): React.ReactElement {
     ),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  RIGHT SIDE — image seule : aucune animation, aucun effet, aucun cadre
+    //  RIGHT SIDE — titre + capture du tableau de bord + légende (statique : aucune animation, aucun effet)
     // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
       style: {
         width: isTablet ? "100%" : "56%",
-        height: isTablet ? "520px" : "100vh",
-        background: "var(--hp-bg)",
+        height: isTablet ? "auto" : "100vh",
+        minHeight: isTablet ? "520px" : undefined,
+        background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--hp-bg)",
+        borderLeft: isTablet ? "none" : "1px solid rgba(139, 92, 246, 0.18)",
+        borderTop: isTablet ? "1px solid rgba(139, 92, 246, 0.18)" : "none",
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: isTablet ? "24px" : "40px",
+        padding: isTablet ? "32px 24px" : "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
         boxSizing: "border-box"
       }
     },
-      React.createElement("img", {
-        src: "/images/1.png",
-        alt: "Inovexa Dashboard",
-        style: { maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }
-      })
+      React.createElement(HeroPreview, { compact: isTablet })
     ),
 
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `

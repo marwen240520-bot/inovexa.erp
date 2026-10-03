@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import HeroPreview from "@/components/ui/HeroPreview";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -725,19 +726,16 @@ export default function LoginPage() {
           <div className="login-hero" style={{
             width: "56%",
             height: "100vh",
-            background: "var(--lg-bg)",
+            background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--lg-bg)",
+            borderLeft: "1px solid rgba(139, 92, 246, 0.18)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "40px",
+            padding: "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
             boxSizing: "border-box"
           }}>
-            {/* Image seule : aucune animation, aucun effet, aucun cadre */}
-            <img
-              src="/images/1.png"
-              alt="Inovexa"
-              style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }}
-            />
+            {/* Titre + capture + légende (statique : aucune animation, aucun effet) */}
+            <HeroPreview />
           </div>
         </>
       )}
