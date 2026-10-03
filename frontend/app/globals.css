@@ -2,20 +2,20 @@
 
 /* ==================== VARIABLES DE THÈME ==================== */
 :root {
-  /* Thème sombre par défaut */
-  --theme-primary: #667eea;
-  --theme-primary-rgb: 102, 126, 234;
-  --theme-secondary: #764ba2;
-  --theme-accent: #10b981;
-  --theme-background: #0a0a0a;
-  --theme-surface: #111111;
-  --theme-surface-hover: #1a1a1a;
-  --theme-text: #ffffff;
-  --theme-text-secondary: #94a3b8;
-  --theme-border: #222222;
-  --theme-border-hover: #333333;
-  --theme-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --theme-gradient-rgb: 102, 126, 234;
+  /* Thème clair par défaut */
+  --theme-primary: #4f46e5;
+  --theme-primary-rgb: 79, 70, 229;
+  --theme-secondary: #7c3aed;
+  --theme-accent: #059669;
+  --theme-background: #f3f4f6;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f9fafb;
+  --theme-text: #111827;
+  --theme-text-secondary: #6b7280;
+  --theme-border: #e5e7eb;
+  --theme-border-hover: #d1d5db;
+  --theme-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --theme-gradient-rgb: 79, 70, 229;
   /* Variables pour le layout */
   --sidebar-width: 280px;
 }

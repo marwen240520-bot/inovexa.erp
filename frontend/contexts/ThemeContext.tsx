@@ -75,8 +75,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 // Provider avec fallback
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeId] = useState("dark");
-  const [theme, setTheme] = useState(THEMES.dark);
+  const [themeId, setThemeId] = useState("light");
+  const [theme, setTheme] = useState(THEMES.light);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -87,7 +87,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme(THEMES[savedTheme]);
       applyTheme(THEMES[savedTheme]);
     } else {
-      applyTheme(THEMES.dark);
+      // Thème clair par défaut
+      applyTheme(THEMES.light);
     }
   }, []);
 
@@ -131,10 +132,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
-    console.warn('useTheme called outside of ThemeProvider, using default dark theme');
+    console.warn('useTheme called outside of ThemeProvider, using default light theme');
     return {
-      theme: THEMES.dark,
-      themeId: "dark",
+      theme: THEMES.light,
+      themeId: "light",
       setTheme: () => {}
     };
   }
