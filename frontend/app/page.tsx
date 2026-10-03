@@ -1,303 +1,848 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+﻿"use client";
+import React from 'react';
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useResponsive } from "@/hooks/useResponsive";
 
-// ─── Icônes ────────────────────────────────────────────────────────────────────
-type IconProps = { size?: number; color?: string };
-const svgProps = (size: number, color: string, sw = 1.75) => ({
-  width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color,
-  strokeWidth: sw, strokeLinecap: "round" as const, strokeLinejoin: "round" as const,
-});
+// ─── Pro SVG Icons ─────────────────────────────────────────────────────────────
 
-const IconTarget = ({ size = 22, color = "currentColor" }: IconProps) => (
-  <svg {...svgProps(size, color)}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>
-);
-const IconBarChart = ({ size = 22, color = "currentColor" }: IconProps) => (
-  <svg {...svgProps(size, color)}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" /></svg>
-);
-const IconShield = ({ size = 22, color = "currentColor" }: IconProps) => (
-  <svg {...svgProps(size, color)}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></svg>
-);
-const IconUsers = ({ size = 22, color = "currentColor" }: IconProps) => (
-  <svg {...svgProps(size, color)}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-);
-const IconArrowRight = ({ size = 18, color = "currentColor" }: IconProps) => (
-  <svg {...svgProps(size, color, 2.5)}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-);
-const IconChevronDown = ({ size = 12, color = "currentColor" }: IconProps) => (
-  <svg {...svgProps(size, color, 2.5)}><polyline points="6 9 12 15 18 9" /></svg>
+const IconTarget = ({ size = 22, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+  </svg>
 );
 
-const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
-const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
-const FLAGS: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
-const LANG_LABELS: Record<string, string> = { fr: "Français", en: "English", es: "Español" };
+const IconBarChart = ({ size = 22, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"/>
+    <line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="14"/>
+    <line x1="2" y1="20" x2="22" y2="20"/>
+  </svg>
+);
 
-const TEXTS: Record<string, any> = {
-  fr: {
-    badge: "ERP nouvelle génération",
-    before: "L'avenir de la ", glow: "gestion d'entreprise", after: " commence ici.",
-    desc: "Ventes, stock, achats, finance et RH réunis dans une seule plateforme simple et sécurisée.",
-    button: "Accéder au Dashboard", login: "Commencer maintenant",
-    copyright: "Tous droits réservés", privacy: "Politique de confidentialité", terms: "Conditions d'utilisation",
-    features: ["Solutions intégrées", "Analyses temps réel", "Sécurisé & fiable", "Votre équipe"],
-  },
-  es: {
-    badge: "ERP de nueva generación",
-    before: "El futuro de la ", glow: "gestión empresarial", after: " comienza aquí.",
-    desc: "Ventas, inventario, compras, finanzas y RR. HH. en una sola plataforma simple y segura.",
-    button: "Panel de Control", login: "Empezar ahora",
-    copyright: "Todos los derechos reservados", privacy: "Política de privacidad", terms: "Términos de uso",
-    features: ["Soluciones integradas", "Análisis en tiempo real", "Seguro y confiable", "Su equipo"],
-  },
-  en: {
-    badge: "Next-generation ERP",
-    before: "The future of ", glow: "business management", after: " starts here.",
-    desc: "Sales, inventory, purchasing, finance and HR together in one simple, secure platform.",
-    button: "Go to Dashboard", login: "Get Started Now",
-    copyright: "All rights reserved", privacy: "Privacy Policy", terms: "Terms of Use",
-    features: ["Integrated solutions", "Real-time insights", "Secure & reliable", "Empower your team"],
-  },
+const IconShield = ({ size = 22, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
+
+const IconUsers = ({ size = 22, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
+const IconArrowRight = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/>
+    <polyline points="12 5 19 12 12 19"/>
+  </svg>
+);
+
+const IconChevronDown = ({ size = 12, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
+
+const IconLock = ({ size = 11, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+const IconFileText = ({ size = 11, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+  </svg>
+);
+
+// ─── Interface pour les particules ─────────────────────────────────────────────
+interface Particle {
+  id: number;
+  left: string;
+  top: string;
+  duration: string;
+  delay: string;
+  size: string;
+}
+
+// ─── Feature icons list ─────────────────────────────────────────────────────────
+
+const featureIcons: React.ReactElement[] = [
+  React.createElement(IconTarget, { size: 22, color: "#A855F7", key: "icon-target" }),
+  React.createElement(IconBarChart, { size: 22, color: "#A855F7", key: "icon-barchart" }),
+  React.createElement(IconShield, { size: 22, color: "#A855F7", key: "icon-shield" }),
+  React.createElement(IconUsers, { size: 22, color: "#A855F7", key: "icon-users" })
+];
+
+// Variante sombre = apparence d'origine ; variante claire = même mise en page, couleurs claires
+const HP_DARK: Record<string, string> = {
+  "--hp-bg": "#000000",
+  "--hp-text": "white",
+  "--hp-muted": "rgba(255,255,255,0.5)",
+  "--hp-header-bg": "rgba(0, 0, 0, 0.85)",
+  "--hp-chip-bg": "rgba(255,255,255,0.06)",
+  "--hp-menu-bg": "rgba(10,10,10,0.95)",
+  "--hp-shadow": "rgba(0,0,0,0.9)",
+  "--hp-menu-text": "rgba(255,255,255,0.8)",
+  "--hp-feature-text": "rgba(255,255,255,0.85)",
+  "--hp-dot": "rgba(255,255,255,0.15)",
+  "--hp-faint": "rgba(255,255,255,0.2)",
+  "--hp-card-bg": "rgba(168, 85, 247, 0.06)",
+  "--hp-img-filter": "brightness(0.88) contrast(1.06)",
+};
+const HP_LIGHT: Record<string, string> = {
+  "--hp-bg": "#f8f7ff",
+  "--hp-text": "#111827",
+  "--hp-muted": "#6b7280",
+  "--hp-header-bg": "rgba(255, 255, 255, 0.88)",
+  "--hp-chip-bg": "#ffffff",
+  "--hp-menu-bg": "rgba(255,255,255,0.98)",
+  "--hp-shadow": "rgba(17,24,39,0.18)",
+  "--hp-menu-text": "#374151",
+  "--hp-feature-text": "#1f2937",
+  "--hp-dot": "#d1d5db",
+  "--hp-faint": "#9ca3af",
+  "--hp-card-bg": "#ffffff",
+  "--hp-img-filter": "brightness(1) contrast(1.03) saturate(1.05)",
 };
 
+const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+
 export default function HomePage(): React.ReactElement {
+  const router = useRouter();
   const pathname = usePathname();
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
-  const isCompact = isMobile || isTablet;
+  const { themeId } = useTheme();
+  // Thème clair par défaut ; tout autre thème utilise l'apparence sombre d'origine
+  const isLight = themeId === "light";
+  const themeVars = (isLight ? HP_LIGHT : HP_DARK) as React.CSSProperties;
+  const themeClass = isLight ? "hp-light" : "hp-dark";
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isExiting, setIsExiting] = useState(false);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isExiting, setIsExiting] = useState<boolean>(false);
+  const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
+  const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false]);
+  const [heroVisible, setHeroVisible] = useState<boolean>(false);
+  const [subtitleVisible, setSubtitleVisible] = useState<boolean>(false);
+  const [badgeVisible, setBadgeVisible] = useState<boolean>(false);
+  const [logoVisible, setLogoVisible] = useState<boolean>(false);
 
-  useEffect(() => {
+  const isCompact: boolean = isMobile || isTablet;
+
+  const particles: Particle[] = useMemo((): Particle[] => {
+    const count: number = isMobile ? 10 : 20;
+    const result: Particle[] = [];
+    for (let i = 0; i < count; i++) {
+      result.push({
+        id: i,
+        left: Math.random() * 100 + "%",
+        top: Math.random() * 100 + "%",
+        duration: 8 + Math.random() * 15 + "s",
+        delay: Math.random() * 5 + "s",
+        size: 1 + Math.random() * 3 + "px"
+      });
+    }
+    return result;
+  }, [isMobile]);
+
+  useEffect((): (() => void) => {
     setIsLoading(true);
     setIsExiting(false);
-    setIsLoggedIn(!!localStorage.getItem("token"));
-    const t1 = setTimeout(() => setIsExiting(true), 1200);
-    const t2 = setTimeout(() => setIsLoading(false), 1700);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    setLogoVisible(false);
+    setBadgeVisible(false);
+    setHeroVisible(false);
+    setSubtitleVisible(false);
+    setVisibleCards([false, false, false, false]);
+
+    const token: string | null = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+
+    const minDisplay = 1500;
+    const fadeDuration = 600;
+
+    const t1 = setTimeout(() => { setIsExiting(true); }, minDisplay);
+    const t2 = setTimeout(() => { setIsLoading(false); }, minDisplay + fadeDuration);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [pathname]);
 
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     if (!showLanguageMenu) return;
-    const handler = () => setShowLanguageMenu(false);
-    const t = setTimeout(() => document.addEventListener("click", handler), 0);
-    return () => { clearTimeout(t); document.removeEventListener("click", handler); };
+    const handler = (): void => { setShowLanguageMenu(false); };
+    setTimeout((): void => { document.addEventListener("click", handler); }, 0);
+    return (): void => { document.removeEventListener("click", handler); };
   }, [showLanguageMenu]);
 
-  const text = TEXTS[language] || TEXTS.en;
-  const ctaHref = isLoggedIn ? "/dashboard" : "/auth/login";
+  useEffect((): (() => void) | undefined => {
+    if (isLoading) return;
+    const t0 = setTimeout(() => setLogoVisible(true), 100);
+    const t1 = setTimeout(() => setBadgeVisible(true), 300);
+    const t2 = setTimeout(() => setHeroVisible(true), 500);
+    const t3 = setTimeout(() => setSubtitleVisible(true), 800);
+    const cardTimers = [0, 1, 2, 3].map((i) =>
+      setTimeout(() => setVisibleCards((prev) => { const next = [...prev]; next[i] = true; return next; }), 1000 + i * 120)
+    );
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); cardTimers.forEach(clearTimeout); };
+  }, [isLoading]);
 
-  // ─── Écran de chargement ───────────────────────────────────────────────────
+  const handleLanguageChange = (lang: string): void => {
+    changeLanguage(lang);
+    setShowLanguageMenu(false);
+  };
+
+  const getTranslations = (): any => {
+    const translations: any = {
+      fr: {
+        title: React.createElement(React.Fragment, null, "L'avenir de la ", React.createElement("span", { className: "hero-word-glow" }, "gestion d'entreprise"), " commence ici."),
+        subtitle: "INOVEXA",
+        button: "Accéder au Dashboard",
+        login: "Commencer maintenant",
+        copyright: "Tous droits réservés",
+        privacy: "Politique de confidentialité",
+        terms: "Conditions d'utilisation",
+        features: [
+          { title: "SOLUTIONS INTÉGRÉES" },
+          { title: "ANALYSES TEMPS RÉEL" },
+          { title: "SÉCURISÉ & FIABLE" },
+          { title: "VOTRE ÉQUIPE" }
+        ]
+      },
+      es: {
+        title: React.createElement(React.Fragment, null, "El futuro de la ", React.createElement("span", { className: "hero-word-glow" }, "gestión empresarial"), " comienza aquí."),
+        subtitle: "INOVEXA",
+        button: "Panel de Control",
+        login: "Empezar ahora",
+        copyright: "Todos los derechos reservados",
+        privacy: "Política de privacidad",
+        terms: "Términos de uso",
+        features: [
+          { title: "SOLUCIONES INTEGRADAS" },
+          { title: "ANÁLISIS EN TIEMPO REAL" },
+          { title: "SEGURO & CONFIABLE" },
+          { title: "SU EQUIPO" }
+        ]
+      },
+      en: {
+        title: React.createElement(React.Fragment, null, "The future of ", React.createElement("span", { className: "hero-word-glow" }, "business management"), " starts here."),
+        subtitle: "INOVEXA",
+        button: "Go to Dashboard",
+        login: "Get Started Now",
+        copyright: "All rights reserved",
+        privacy: "Privacy Policy",
+        terms: "Terms of Use",
+        features: [
+          { title: "INTEGRATED SOLUTIONS" },
+          { title: "REAL-TIME INSIGHTS" },
+          { title: "SECURE & RELIABLE" },
+          { title: "EMPOWER YOUR TEAM" }
+        ]
+      }
+    };
+    return translations[language] || translations.en;
+  };
+
+  const text: any = getTranslations();
+  const flagCodes: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  //  ÉCRAN DE CHARGEMENT (LOADER)
+  // ═════════════════════════════════════════════════════════════════════════════
   if (isLoading) {
-    return (
-      <div className={"hp-loader" + (isExiting ? " hp-loader-exit" : "")}>
-        <div className="hp-loader-tile">
-          <img src="/images/logo.png" alt="Inovexa" />
-        </div>
-        <div className="hp-loader-brand" style={{ fontFamily: LOGO_FONT }}>
-          <b>INOV</b>EXA <span>ERP</span>
-        </div>
-        <div className="hp-loader-bar"><div /></div>
-        <style dangerouslySetInnerHTML={{ __html: STYLES }} />
-      </div>
+    return React.createElement("div", {
+      className: "loader-screen " + themeClass + (isExiting ? " loader-exit" : ""),
+      style: {
+        ...themeVars,
+        position: "fixed",
+        inset: 0,
+        background: "var(--hp-bg)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+        overflow: "hidden"
+      }
+    },
+      React.createElement("div", { className: "loader-halo" }),
+
+      React.createElement("div", {
+        className: "loader-logo",
+        style: {
+          width: "130px",
+          height: "130px",
+          position: "relative",
+          marginBottom: "28px"
+        }
+      },
+        React.createElement("div", { className: "loader-logo-halo" }),
+        React.createElement("div", { className: "loader-ring loader-ring-1" }),
+        React.createElement("div", { className: "loader-ring loader-ring-2" }),
+        React.createElement("img", {
+          src: "/images/logo.png",
+          alt: "Inovexa",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            position: "relative",
+            zIndex: 2,
+            filter: "drop-shadow(0 0 24px rgba(138,43,226,0.85))"
+          }
+        })
+      ),
+
+      React.createElement("h1", {
+        className: "loader-brand",
+        style: {
+          color: "var(--hp-text)",
+          fontSize: "26px",
+          fontWeight: "300",
+          margin: 0,
+          letterSpacing: "3px",
+          textTransform: "uppercase",
+          marginBottom: "6px",
+          fontFamily: LOGO_FONT
+        }
+      },
+        React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+      ),
+
+      React.createElement("div", {
+        className: "loader-erp",
+        style: {
+          background: "linear-gradient(90deg, #A855F7, #6366F1)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          fontSize: "12px",
+          fontWeight: "700",
+          letterSpacing: "8px",
+          textTransform: "uppercase",
+          marginBottom: "42px",
+          fontFamily: LOGO_FONT
+        }
+      }, "ERP"),
+
+      React.createElement("div", {
+        className: "loader-bar-track",
+        style: {
+          width: "220px",
+          height: "3px",
+          background: "rgba(168, 85, 247, 0.15)",
+          borderRadius: "999px",
+          overflow: "hidden",
+          position: "relative"
+        }
+      },
+        React.createElement("div", { className: "loader-bar-fill" })
+      ),
+
+      React.createElement("div", {
+        style: { display: "flex", gap: "8px", marginTop: "22px" }
+      },
+        [0, 1, 2].map((i) =>
+          React.createElement("span", {
+            key: i,
+            className: "loader-dot",
+            style: { animationDelay: (i * 0.18) + "s" }
+          })
+        )
+      ),
+
+      React.createElement("style", { dangerouslySetInnerHTML: { __html: `
+        .loader-screen { animation: loaderFadeIn 0.4s ease both; }
+        .hp-light img[src="/images/logo.png"] { background: linear-gradient(135deg, #1e1b4b, #4338ca); border-radius: 22%; padding: 5%; box-sizing: border-box; }
+        .hp-light .loader-brand { text-shadow: none !important; animation: none !important; }
+        .loader-exit { animation: loaderFadeOut 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes loaderFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes loaderFadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+
+        .loader-halo {
+          position: absolute; top: 50%; left: 50%;
+          width: 520px; height: 520px;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle, rgba(138,43,226,0.25) 0%, transparent 65%);
+          filter: blur(60px);
+          animation: loaderHaloPulse 3s ease-in-out infinite;
+          pointer-events: none;
+        }
+        @keyframes loaderHaloPulse { 0%,100% { opacity: .55; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.08); } }
+
+        .loader-logo { perspective: 700px; animation: loaderLogoFloat 3.6s ease-in-out infinite; }
+        @keyframes loaderLogoFloat {
+          0%,100% { transform: rotateY(-14deg) rotateX(6deg) translateY(0); }
+          50%     { transform: rotateY(14deg)  rotateX(-4deg) translateY(-6px); }
+        }
+        .loader-logo-halo {
+          position: absolute; inset: -20%; border-radius: 50%;
+          background: radial-gradient(circle, rgba(168,85,247,0.4) 0%, transparent 65%);
+          transform: translateZ(-40px);
+          animation: loaderLogoHaloPulse 2.8s ease-in-out infinite;
+        }
+        @keyframes loaderLogoHaloPulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+
+        .loader-ring { position: absolute; border-radius: 50%; pointer-events: none; }
+        .loader-ring-1 {
+          inset: -14%;
+          border: 1px solid rgba(168,85,247,0.55);
+          box-shadow: 0 0 18px rgba(168,85,247,0.3) inset;
+          animation: loaderRingSpin 4.5s linear infinite;
+        }
+        .loader-ring-2 {
+          inset: -28%;
+          border: 1px solid rgba(99,102,241,0.4);
+          animation: loaderRingSpinReverse 7s linear infinite;
+        }
+        .loader-ring-1::before {
+          content: ""; position: absolute; top: -4px; left: 50%;
+          width: 8px; height: 8px; border-radius: 50%;
+          background: #C084FC;
+          box-shadow: 0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7);
+        }
+        .loader-ring-2::before {
+          content: ""; position: absolute; bottom: -3px; left: 30%;
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #818CF8;
+          box-shadow: 0 0 14px #6366F1;
+        }
+        @keyframes loaderRingSpin       { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+        @keyframes loaderRingSpinReverse{ from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+
+        .loader-brand { animation: loaderBrandGlow 2.4s ease-in-out infinite; }
+        @keyframes loaderBrandGlow {
+          0%,100% { text-shadow: 0 0 10px rgba(168,85,247,0.35); }
+          50%     { text-shadow: 0 0 24px rgba(168,85,247,0.9); }
+        }
+
+        .loader-erp { animation: loaderErpPulse 2s ease-in-out infinite; }
+        @keyframes loaderErpPulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
+
+        .loader-bar-track::after {
+          content: ""; position: absolute; inset: 0;
+          background: linear-gradient(90deg, transparent, rgba(168,85,247,0.35), transparent);
+          animation: loaderTrackShimmer 1.8s linear infinite;
+        }
+        .loader-bar-fill {
+          position: absolute; left: 0; top: 0; height: 100%; width: 0;
+          background: linear-gradient(90deg, #A855F7, #6366F1, #C084FC);
+          border-radius: 999px;
+          box-shadow: 0 0 12px rgba(168,85,247,0.8);
+          animation: loaderBarFill 1.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+        }
+        @keyframes loaderBarFill { 0% { width: 0%; } 60% { width: 78%; } 100% { width: 100%; } }
+        @keyframes loaderTrackShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        .loader-dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #A855F7;
+          box-shadow: 0 0 10px rgba(168,85,247,0.8);
+          animation: loaderDotBounce 1.1s ease-in-out infinite;
+        }
+        @keyframes loaderDotBounce {
+          0%,80%,100% { transform: translateY(0);    opacity: .4; }
+          40%         { transform: translateY(-8px); opacity: 1;  }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .loader-logo, .loader-ring-1, .loader-ring-2,
+          .loader-halo, .loader-logo-halo, .loader-dot, .loader-bar-fill {
+            animation: none !important;
+          }
+          .loader-bar-fill { width: 100%; }
+        }
+      ` } })
     );
   }
 
-  // ─── Page ──────────────────────────────────────────────────────────────────
-  return (
-    <div className="hp-root">
-      <div className="hp-blob hp-blob-1" />
-      <div className="hp-blob hp-blob-2" />
+  // ═════════════════════════════════════════════════════════════════════════════
+  //  PAGE PRINCIPALE
+  // ═════════════════════════════════════════════════════════════════════════════
+  return React.createElement("div", {
+    className: "home-page-enter " + themeClass,
+    style: {
+      ...themeVars,
+      minHeight: "100vh",
+      background: "var(--hp-bg)",
+      display: "flex",
+      flexDirection: isCompact ? "column" : "row",
+      overflow: "hidden",
+      fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+      position: "relative"
+    }
+  },
+    particles.map((p: Particle) => {
+      return React.createElement("div", {
+        key: p.id,
+        style: {
+          position: "absolute", left: p.left, top: p.top,
+          width: p.size, height: p.size,
+          background: "rgba(168, 85, 247, 0.6)",
+          borderRadius: "50%",
+          boxShadow: "0 0 8px rgba(168, 85, 247, 0.8)",
+          animation: "floatParticle " + p.duration + " linear infinite",
+          animationDelay: p.delay,
+          zIndex: 1, pointerEvents: "none"
+        }
+      });
+    }),
+    React.createElement("div", { className: "ambient-glow" }),
 
-      {/* En-tête */}
-      <header className="hp-header">
-        <div className="hp-brand">
-          <div className="hp-logo-tile"><img src="/images/logo.png" alt="Inovexa" /></div>
-          <div className="hp-brand-text" style={{ fontFamily: LOGO_FONT }}>
-            <span className="hp-brand-name"><b>INOV</b>EXA</span>
-            <span className="hp-brand-erp">ERP</span>
-          </div>
-        </div>
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE (TEXTE RÉDUIT)
+    // ═══════════════════════════════════════════════════════════════════════════
+    isMobile && React.createElement("header", {
+      className: "mobile-header",
+      style: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: "72px",
+        background: "var(--hp-header-bg)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(168, 85, 247, 0.2)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        zIndex: 150,
+        padding: "0 16px"
+      }
+    },
+      React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? "translateY(0)" : "translateY(-20px)",
+          transition: "opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)"
+        }
+      },
+        // Logo image (52px — conservé)
+        React.createElement("div", {
+          style: {
+            width: "52px",
+            height: "52px",
+            position: "relative",
+            flexShrink: 0
+          }
+        },
+          React.createElement("div", {
+            style: {
+              position: "absolute",
+              inset: "-20%",
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(168,85,247,0.5) 0%, transparent 70%)",
+              animation: "headerHaloPulse 2.8s ease-in-out infinite",
+              pointerEvents: "none"
+            }
+          }),
+          React.createElement("img", {
+            src: "/images/logo.png",
+            alt: "Inovexa Logo",
+            style: {
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              position: "relative",
+              zIndex: 2,
+              filter: "drop-shadow(0 0 12px rgba(138,43,226,0.75))"
+            }
+          })
+        ),
+        // Brand text — ✅ RÉDUIT : 18px → 14px / 10px → 8px
+        React.createElement("div", {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: 1
+          }
+        },
+          React.createElement("span", {
+            style: {
+              color: "var(--hp-text)",
+              fontSize: "14px",
+              fontWeight: "300",
+              letterSpacing: "2px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
+            }
+          },
+            React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+          ),
+          React.createElement("span", {
+            className: "erp-text-glow",
+            style: {
+              background: "linear-gradient(90deg, #A855F7, #6366F1)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontSize: "8px",
+              fontWeight: "700",
+              letterSpacing: "5px",
+              marginTop: "2px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
+            }
+          }, "ERP")
+        )
+      )
+    ),
 
-        <div className="hp-lang">
-          <button
-            className="hp-lang-btn"
-            onClick={(e) => { e.stopPropagation(); setShowLanguageMenu(!showLanguageMenu); }}
-            aria-haspopup="listbox"
-            aria-expanded={showLanguageMenu}
-          >
-            <img src={`https://flagcdn.com/w20/${FLAGS[language] || "gb"}.png`} width={18} height={13} alt="" />
-            <span>{(language || "en").toUpperCase()}</span>
-            <IconChevronDown />
-          </button>
-          {showLanguageMenu && (
-            <div className="hp-lang-menu" onClick={(e) => e.stopPropagation()}>
-              {Object.keys(FLAGS).map((lang) => (
-                <button
-                  key={lang}
-                  className={"hp-lang-item" + (lang === language ? " active" : "")}
-                  onClick={() => { changeLanguage(lang); setShowLanguageMenu(false); }}
-                >
-                  <img src={`https://flagcdn.com/w20/${FLAGS[lang]}.png`} width={18} height={13} alt="" />
-                  {LANG_LABELS[lang]}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </header>
+    // Language Selector
+    React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200, display: "flex", alignItems: "center", gap: "10px" } },
+      React.createElement(ThemeToggle, { variant: "home", size: 38 }),
+      React.createElement("div", { style: { position: "relative" } },
+      React.createElement("button", {
+        onClick: (e: React.MouseEvent) => { e.stopPropagation(); setShowLanguageMenu(!showLanguageMenu); },
+        style: {
+          background: "var(--hp-chip-bg)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(168, 85, 247, 0.25)",
+          borderRadius: "36px",
+          color: "var(--hp-text)",
+          padding: "8px 14px",
+          cursor: "pointer",
+          fontSize: "11px",
+          display: "flex", alignItems: "center", gap: "8px"
+        }
+      },
+        React.createElement("img", { src: "https://flagcdn.com/w20/" + flagCodes[language] + ".png", width: "15", alt: language, style: { borderRadius: "2px" } }),
+        React.createElement("span", { style: { fontWeight: "700", letterSpacing: "0.5px" } }, language.toUpperCase()),
+        React.createElement(IconChevronDown, { size: 11, color: "var(--hp-muted)" })
+      ),
+      showLanguageMenu && React.createElement("div", {
+        onClick: (e: React.MouseEvent) => { e.stopPropagation(); },
+        style: {
+          position: "absolute", top: "46px", right: "0",
+          background: "var(--hp-menu-bg)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(168, 85, 247, 0.3)",
+          borderRadius: "14px", padding: "6px",
+          display: "flex", flexDirection: "column",
+          minWidth: "120px",
+          boxShadow: "0 20px 40px var(--hp-shadow), 0 0 0 1px rgba(168,85,247,0.1)",
+          zIndex: 201
+        }
+      },
+        ["fr", "en", "es"].map((lang: string) => {
+          return React.createElement("button", {
+            key: lang,
+            onClick: () => handleLanguageChange(lang),
+            style: {
+              background: language === lang ? "rgba(168, 85, 247, 0.2)" : "transparent",
+              border: "none",
+              color: language === lang ? "#A855F7" : "var(--hp-menu-text)",
+              padding: "10px 12px",
+              borderRadius: "9px",
+              cursor: "pointer",
+              textAlign: "left",
+              fontSize: "12px",
+              fontWeight: language === lang ? "700" : "400",
+              display: "flex", alignItems: "center", gap: "10px"
+            }
+          },
+            React.createElement("img", { src: "https://flagcdn.com/w20/" + flagCodes[lang] + ".png", width: "15", alt: lang, style: { borderRadius: "2px" } }),
+            lang === "fr" ? "Français" : lang === "en" ? "English" : "Español"
+          );
+        })
+      )
+    )),
 
-      {/* Contenu */}
-      <main className={"hp-main" + (isCompact ? " compact" : "")}>
-        <section className="hp-hero">
-          <span className="hp-badge"><i /> {text.badge}</span>
-          <h1 className="hp-title">
-            {text.before}<span className="hp-title-grad">{text.glow}</span>{text.after}
-          </h1>
-          <p className="hp-desc">{text.desc}</p>
+    // LEFT SIDE
+    React.createElement("div", {
+      style: {
+        width: isCompact ? "100%" : "48%",
+        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "0 0 0 64px",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        zIndex: 10, position: "relative",
+        minHeight: isMobile ? "100vh" : "auto"
+      }
+    },
+      // ═════════════════════════════════════════════════════════════════════════
+      //  LOGO INLINE — TABLETTE/DESKTOP UNIQUEMENT
+      // ═════════════════════════════════════════════════════════════════════════
+      !isMobile && React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: isMobile ? "20px" : "26px",
+          marginBottom: "28px",
+          opacity: logoVisible ? 1 : 0,
+          transform: logoVisible ? "translateY(0)" : "translateY(60px)",
+          transition: "opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1)"
+        }
+      },
+        React.createElement("div", { className: "logo3d-scene", style: { width: isMobile ? "90px" : "105px", height: isMobile ? "90px" : "105px", position: "relative", flexShrink: 0 } },
+          React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
+            React.createElement("div", { className: "logo3d-halo" }),
+            React.createElement("div", { className: "logo3d-ring logo3d-ring-1" }),
+            React.createElement("div", { className: "logo3d-ring logo3d-ring-2" }),
+            React.createElement("img", {
+              src: "/images/logo.png",
+              alt: "Inovexa Logo",
+              style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))", transform: "translateZ(26px)" }
+            })
+          )
+        ),
+        React.createElement("div", null,
+          React.createElement("h2", { style: { color: "var(--hp-text)", fontSize: isMobile ? "18px" : "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
+            React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+          ),
+          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
+        )
+      ),
+      // ✅ TITRE HERO avec marge supérieure sur mobile
+      React.createElement("h1", {
+        style: {
+          fontSize: isMobile ? "32px" : isTablet ? "44px" : "52px",
+          color: "var(--hp-text)",
+          fontWeight: "900",
+          lineHeight: "1.1",
+          marginBottom: "28px",
+          marginTop: isMobile ? "24px" : "0",
+          letterSpacing: "-1.5px",
+          textShadow: "0 0 30px rgba(168, 85, 247, 0.15)",
+          opacity: heroVisible ? 1 : 0,
+          transform: heroVisible ? "translateY(0)" : "translateY(28px)",
+          transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)"
+        }
+      }, text.title),
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: "36px", maxWidth: "460px" } },
+        text.features.map((f: { title: string }, i: number) => {
+          return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
+            React.createElement("div", { style: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
+            React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "10px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title)
+          );
+        })
+      ),
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", opacity: subtitleVisible ? 1 : 0, transform: subtitleVisible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.65s ease, transform 0.65s ease" } },
+        React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
+          React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
+            React.createElement("span", { style: { position: "relative", zIndex: 2 } }, isLoggedIn ? text.button : text.login),
+            React.createElement("span", { style: { position: "relative", zIndex: 2 } }, React.createElement(IconArrowRight, { size: 17, color: "white" })),
+            React.createElement("div", { className: "shimmer-effect" })
+          )
+        )
+      ),
+      React.createElement("div", { style: { marginTop: isMobile ? "44px" : "52px", display: "flex", flexDirection: "column", gap: "10px" } },
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" } },
+          React.createElement("a", { href: "https://inovexa-erp.com/privacy.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.7)", fontSize: "10px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" } },
+            React.createElement(IconLock, { size: 10, color: "currentColor" }), text.privacy
+          ),
+          React.createElement("span", { style: { color: "var(--hp-dot)", fontSize: "10px" } }, "•"),
+          React.createElement("a", { href: "https://inovexa-erp.com/terms.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.7)", fontSize: "10px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" } },
+            React.createElement(IconFileText, { size: 10, color: "currentColor" }), text.terms
+          )
+        ),
+        React.createElement("p", { style: { color: "var(--hp-faint)", fontSize: "9px", fontWeight: "600", margin: 0, letterSpacing: "0.5px" } }, "\u00A9 2026 INOVEXA. " + text.copyright.toUpperCase())
+      )
+    ),
 
-          <div className="hp-features">
-            {text.features.map((title: string, i: number) => {
-              const Icon = FEATURE_ICONS[i];
-              return (
-                <div className="hp-feature" key={i}>
-                  <span className="hp-feature-icon"><Icon size={20} color="#4f46e5" /></span>
-                  <span className="hp-feature-title">{title}</span>
-                </div>
-              );
-            })}
-          </div>
+    // RIGHT SIDE
+    !isMobile && React.createElement("div", {
+      style: {
+        width: isTablet ? "100%" : "52%",
+        position: "relative",
+        height: isTablet ? "420px" : "100vh",
+        background: "var(--hp-bg)",
+        flexShrink: 0
+      }
+    },
+      React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "80%", background: "radial-gradient(circle, rgba(138, 43, 226, 0.22) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 1, pointerEvents: "none" } }),
+      React.createElement("img", {
+        src: "/images/1.png",
+        alt: "Inovexa Dashboard",
+        style: {
+          width: "100%", height: "100%", objectFit: "cover",
+          filter: "var(--hp-img-filter)",
+          maskImage: "linear-gradient(to right, transparent 0%, black 18%)",
+          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%)",
+          zIndex: 2, position: "relative"
+        }
+      }),
+      React.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: "120px", height: "100%", background: "linear-gradient(90deg, var(--hp-bg) 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } }),
+      React.createElement("div", { style: { position: "absolute", bottom: 0, left: 0, width: "100%", height: "80px", background: "linear-gradient(0deg, var(--hp-bg) 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } })
+    ),
 
-          <Link href={ctaHref} className="hp-cta">
-            {isLoggedIn ? text.button : text.login}
-            <IconArrowRight />
-          </Link>
-        </section>
+    React.createElement("style", { dangerouslySetInnerHTML: { __html: `
+      * { -webkit-tap-highlight-color: transparent; }
+      /* ── Variante claire ── */
+      .hp-light img[src="/images/logo.png"] { background: linear-gradient(135deg, #1e1b4b, #4338ca); border-radius: 22%; padding: 5%; box-sizing: border-box; }
+      .hp-light .hero-word-glow { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #9333ea 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; filter: none !important; animation: none !important; }
+      .hp-light a[href*="inovexa-erp.com"] { color: #7c3aed !important; }
+      .hp-light .ambient-glow { background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.12), transparent 45%) !important; }
+      .hp-light .loader-halo { filter: blur(70px); }
+      .hp-light.loader-screen .loader-brand { text-shadow: none; }
 
-        <section className="hp-visual">
-          <div className="hp-visual-frame">
-            <img src="/images/1.png" alt="Inovexa Dashboard" />
-          </div>
-        </section>
-      </main>
 
-      <footer className="hp-footer">
-        <div className="hp-footer-links">
-          <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
-          <span>·</span>
-          <a href="https://inovexa-erp.com/terms.html" target="_blank" rel="noopener noreferrer">{text.terms}</a>
-        </div>
-        <div className="hp-copy">© {new Date().getFullYear()} INOVEXA. {text.copyright}</div>
-      </footer>
+      .home-page-enter { animation: homePageIn 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+      @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
 
-      <style dangerouslySetInnerHTML={{ __html: STYLES }} />
-    </div>
+      .erp-text-glow { animation: textPulse 3s ease-in-out infinite; }
+      @keyframes textPulse { 0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(168,85,247,0.3)); } 50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168,85,247,0.7)); } }
+      .cta-button-shimmer { background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); box-shadow: 0 8px 32px rgba(168, 85, 247, 0.35); animation: buttonPulse 2.5s infinite; transition: transform 0.2s, filter 0.2s; }
+      .cta-button-shimmer:hover { transform: translateY(-2px); filter: brightness(1.1); }
+      .cta-button-shimmer:active { transform: translateY(0px); filter: brightness(0.95); }
+      @keyframes buttonPulse { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); } 70% { box-shadow: 0 0 0 16px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
+      .shimmer-effect { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); animation: shimmer 2.8s infinite; pointer-events: none; }
+      @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+      .ambient-glow { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.09), transparent 42%); z-index: 0; pointer-events: none; }
+      @keyframes floatParticle { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: 1; } 100% { transform: translateY(-85vh) translateX(25px); opacity: 0; } }
+      .hero-word-glow { display: inline-block; animation: wordGlow 3.5s ease-in-out infinite; background: linear-gradient(135deg, #C084FC 0%, #818CF8 50%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: wordGlow 3.5s ease-in-out infinite, gradientShift 4s ease infinite; }
+      @keyframes wordGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(168,85,247,0.4)); } 50% { filter: drop-shadow(0 0 22px rgba(168,85,247,0.85)) drop-shadow(0 0 40px rgba(99,102,241,0.4)); } }
+      @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      @media (max-width: 640px) { .cta-button-shimmer { width: 100%; justify-content: center; } }
+
+      @keyframes headerHaloPulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
+
+      .logo3d-scene { perspective: 700px; cursor: pointer; }
+      .logo3d { transform-style: preserve-3d; animation: logoFloat3D 7s ease-in-out infinite; will-change: transform; }
+      .logo3d-scene:hover .logo3d { animation: logoSpin3D 1.6s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
+      @keyframes logoFloat3D {
+        0%, 100% { transform: rotateY(-16deg) rotateX(8deg) translateY(0px); }
+        25%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
+        50%      { transform: rotateY(16deg)  rotateX(8deg) translateY(0px); }
+        75%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
+      }
+      @keyframes logoSpin3D {
+        0%   { transform: rotateY(0deg)   rotateX(6deg); }
+        100% { transform: rotateY(360deg) rotateX(6deg); }
+      }
+      .logo3d-halo { position: absolute; inset: -14%; border-radius: 50%; background: radial-gradient(circle, rgba(168,85,247,0.38) 0%, transparent 65%); transform: translateZ(-32px); animation: logoHaloPulse 3.2s ease-in-out infinite; pointer-events: none; }
+      @keyframes logoHaloPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+      .logo3d-ring { position: absolute; border-radius: 50%; pointer-events: none; }
+      .logo3d-ring-1 { inset: -13%; border: 1px solid rgba(168,85,247,0.5); box-shadow: 0 0 14px rgba(168,85,247,0.25) inset; animation: logoRingSpin1 9s linear infinite; }
+      .logo3d-ring-2 { inset: -24%; border: 1px solid rgba(99,102,241,0.35); animation: logoRingSpin2 14s linear infinite; }
+      .logo3d-ring-1::before { content: ""; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: #C084FC; box-shadow: 0 0 10px #A855F7, 0 0 22px rgba(168,85,247,0.6); }
+      .logo3d-ring-2::before { content: ""; position: absolute; bottom: -2px; left: 30%; width: 5px; height: 5px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 10px #6366F1; }
+      @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
+      @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo,
+        .home-page-enter { animation: none !important; }
+      }
+    ` } })
   );
 }
-
-const STYLES = `
-  .hp-root, .hp-loader {
-    --hp-primary: #4f46e5; --hp-secondary: #7c3aed;
-    --hp-bg: var(--theme-background, #f3f4f6); --hp-surface: var(--theme-surface, #ffffff);
-    --hp-text: var(--theme-text, #111827); --hp-muted: var(--theme-text-secondary, #6b7280);
-    --hp-border: var(--theme-border, #e5e7eb);
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-  .hp-root {
-    position: relative; min-height: 100vh; overflow-x: hidden;
-    background: linear-gradient(180deg, var(--hp-surface) 0%, var(--hp-bg) 100%);
-    color: var(--hp-text); display: flex; flex-direction: column;
-    animation: hpIn .7s cubic-bezier(.22,1,.36,1) both;
-  }
-  @keyframes hpIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-  .hp-blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
-  .hp-blob-1 { width: 520px; height: 520px; top: -160px; left: -140px; background: rgba(99,102,241,.18); }
-  .hp-blob-2 { width: 460px; height: 460px; bottom: -120px; right: -100px; background: rgba(168,85,247,.16); }
-
-  /* Header */
-  .hp-header { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding: 22px clamp(20px, 5vw, 64px); }
-  .hp-brand { display: flex; align-items: center; gap: 14px; }
-  .hp-logo-tile { width: 56px; height: 56px; border-radius: 16px; padding: 4px; background: linear-gradient(135deg, #1e1b4b, #4338ca); box-shadow: 0 8px 22px rgba(67,56,202,.28); flex-shrink: 0; }
-  .hp-logo-tile img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .hp-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-  .hp-brand-name { font-size: 22px; letter-spacing: 3px; font-weight: 300; color: var(--hp-text); }
-  .hp-brand-name b { font-weight: 800; }
-  .hp-brand-erp { font-size: 11px; letter-spacing: 7px; font-weight: 700; margin-top: 4px; background: linear-gradient(90deg, var(--hp-secondary), var(--hp-primary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-
-  /* Langue */
-  .hp-lang { position: relative; }
-  .hp-lang-btn { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; cursor: pointer; font: 600 13px 'Poppins', sans-serif; color: var(--hp-text); background: var(--hp-surface); border: 1px solid var(--hp-border); box-shadow: 0 1px 3px rgba(17,24,39,.06); transition: border-color .2s, box-shadow .2s; }
-  .hp-lang-btn:hover { border-color: #c7d2fe; box-shadow: 0 4px 14px rgba(79,70,229,.12); }
-  .hp-lang-btn img, .hp-lang-item img { border-radius: 2px; object-fit: cover; }
-  .hp-lang-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 160px; padding: 6px; background: var(--hp-surface); border: 1px solid var(--hp-border); border-radius: 14px; box-shadow: 0 16px 40px rgba(17,24,39,.14); z-index: 20; }
-  .hp-lang-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: none; border-radius: 10px; background: transparent; cursor: pointer; font: 500 13px 'Poppins', sans-serif; color: var(--hp-text); text-align: left; }
-  .hp-lang-item:hover { background: #eef2ff; }
-  .hp-lang-item.active { background: #eef2ff; color: var(--hp-primary); font-weight: 600; }
-
-  /* Main */
-  .hp-main { position: relative; z-index: 2; flex: 1; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; gap: clamp(24px, 4vw, 64px); padding: 12px clamp(20px, 5vw, 64px) 24px; max-width: 1400px; width: 100%; margin: 0 auto; }
-  .hp-main.compact { grid-template-columns: 1fr; padding-top: 0; }
-
-  .hp-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--hp-primary); background: #eef2ff; border: 1px solid #e0e7ff; }
-  .hp-badge i { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
-
-  .hp-title { margin: 18px 0 14px; font-size: clamp(32px, 4.4vw, 56px); line-height: 1.12; font-weight: 800; letter-spacing: -1px; color: var(--hp-text); }
-  .hp-title-grad { background: linear-gradient(135deg, var(--hp-primary) 0%, var(--hp-secondary) 55%, #c026d3 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-  .hp-desc { margin: 0 0 28px; max-width: 520px; font-size: 16px; line-height: 1.65; color: var(--hp-muted); }
-
-  .hp-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 520px; margin-bottom: 32px; }
-  .hp-feature { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--hp-surface); border: 1px solid var(--hp-border); border-radius: 16px; box-shadow: 0 1px 3px rgba(17,24,39,.04); transition: transform .2s, box-shadow .2s, border-color .2s; }
-  .hp-feature:hover { transform: translateY(-2px); border-color: #c7d2fe; box-shadow: 0 10px 24px rgba(79,70,229,.12); }
-  .hp-feature-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: #eef2ff; flex-shrink: 0; }
-  .hp-feature-title { font-size: 13px; font-weight: 600; color: var(--hp-text); line-height: 1.3; }
-
-  .hp-cta { display: inline-flex; align-items: center; gap: 10px; padding: 16px 34px; border-radius: 14px; font-size: 15px; font-weight: 600; text-decoration: none; color: #fff; background: linear-gradient(135deg, var(--hp-primary), var(--hp-secondary)); box-shadow: 0 10px 28px rgba(79,70,229,.32); transition: transform .2s, box-shadow .2s, filter .2s; }
-  .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(79,70,229,.42); filter: brightness(1.05); }
-  .hp-cta:active { transform: translateY(0); }
-  .hp-cta svg { transition: transform .2s; }
-  .hp-cta:hover svg { transform: translateX(4px); }
-
-  /* Visuel */
-  .hp-visual { display: flex; justify-content: center; }
-  .hp-visual-frame { position: relative; width: 100%; max-width: 620px; aspect-ratio: 1044 / 935; border-radius: 28px; overflow: hidden; padding: 10px; background: linear-gradient(135deg, #c7d2fe, #e9d5ff); box-shadow: 0 30px 70px rgba(79,70,229,.25), 0 6px 18px rgba(17,24,39,.08); }
-  .hp-visual-frame img { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; display: block; }
-
-  /* Footer */
-  .hp-footer { position: relative; z-index: 2; padding: 20px clamp(20px, 5vw, 64px) 26px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--hp-border); background: rgba(255,255,255,.5); backdrop-filter: blur(6px); }
-  .hp-footer-links { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--hp-muted); }
-  .hp-footer-links a { color: var(--hp-primary); text-decoration: none; font-weight: 500; }
-  .hp-footer-links a:hover { text-decoration: underline; }
-  .hp-copy { font-size: 12px; color: var(--hp-muted); }
-
-  /* Loader */
-  .hp-loader { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 40%, #ffffff 0%, #eef2ff 100%); transition: opacity .5s ease, transform .5s ease; }
-  .hp-loader-exit { opacity: 0; transform: scale(1.03); }
-  .hp-loader-tile { width: 120px; height: 120px; padding: 8px; border-radius: 30px; background: linear-gradient(135deg, #1e1b4b, #4338ca); box-shadow: 0 18px 50px rgba(67,56,202,.35); animation: hpFloat 2.4s ease-in-out infinite; }
-  .hp-loader-tile img { width: 100%; height: 100%; object-fit: contain; }
-  @keyframes hpFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-  .hp-loader-brand { margin-top: 26px; font-size: 24px; letter-spacing: 3px; font-weight: 300; color: #111827; }
-  .hp-loader-brand b { font-weight: 800; }
-  .hp-loader-brand span { font-size: 12px; letter-spacing: 7px; font-weight: 700; margin-left: 8px; color: #4f46e5; }
-  .hp-loader-bar { margin-top: 30px; width: 200px; height: 4px; border-radius: 999px; background: #e0e7ff; overflow: hidden; }
-  .hp-loader-bar div { height: 100%; width: 40%; border-radius: 999px; background: linear-gradient(90deg, #4f46e5, #7c3aed); animation: hpBar 1.2s ease-in-out infinite; }
-  @keyframes hpBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
-
-  @media (max-width: 640px) {
-    .hp-logo-tile { width: 46px; height: 46px; border-radius: 13px; }
-    .hp-brand-name { font-size: 18px; }
-    .hp-features { grid-template-columns: 1fr; }
-    .hp-cta { width: 100%; justify-content: center; }
-    .hp-visual-frame { border-radius: 22px; padding: 8px; }
-    .hp-footer { flex-direction: column; align-items: flex-start; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .hp-root, .hp-loader-tile, .hp-loader-bar div { animation: none !important; }
-  }
-`;

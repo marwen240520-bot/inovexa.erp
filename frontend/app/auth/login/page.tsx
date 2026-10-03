@@ -1,10 +1,28 @@
-"use client";
-import { useState, useEffect } from "react";
+﻿"use client";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useResponsive } from "@/hooks/useResponsive";
 
 // Traductions
+// Variante sombre = apparence d'origine ; variante claire = même mise en page, couleurs claires
+const LG_DARK: Record<string, string> = {
+  "--lg-bg": "#000000", "--lg-text": "white", "--lg-muted": "rgba(255,255,255,0.4)",
+  "--lg-label": "rgba(255,255,255,0.65)", "--lg-faint": "rgba(255,255,255,0.2)",
+  "--lg-card": "rgba(255,255,255,0.03)", "--lg-input-bg": "rgba(255,255,255,0.05)",
+  "--lg-input-border": "rgba(138, 43, 226, 0.2)", "--lg-error": "#f87171", "--lg-warn": "#FBBF24",
+  "--lg-placeholder": "rgba(255, 255, 255, 0.2)", "--lg-autofill": "rgba(26, 26, 26, 0.95)",
+};
+const LG_LIGHT: Record<string, string> = {
+  "--lg-bg": "#f8f7ff", "--lg-text": "#111827", "--lg-muted": "#6b7280",
+  "--lg-label": "#374151", "--lg-faint": "#9ca3af",
+  "--lg-card": "#ffffff", "--lg-input-bg": "#ffffff",
+  "--lg-input-border": "rgba(124, 58, 237, 0.28)", "--lg-error": "#b91c1c", "--lg-warn": "#b45309",
+  "--lg-placeholder": "#9ca3af", "--lg-autofill": "#ffffff",
+};
+
 const translations = {
   fr: {
     backToHome: "Retour à l'accueil",
@@ -53,6 +71,11 @@ const translations = {
 export default function LoginPage() {
   const router = useRouter();
   const { language } = useLanguage();
+  const { themeId } = useTheme();
+  const isLight = themeId === "light";
+  const themeVars = (isLight ? LG_LIGHT : LG_DARK) as React.CSSProperties;
+  const themeClass = isLight ? "lg-light" : "lg-dark";
+  const { isMobile, isTablet } = useResponsive();
   const t = translations[language as keyof typeof translations] || translations.fr;
   
   const [email, setEmail] = useState("");
@@ -73,6 +96,19 @@ export default function LoginPage() {
       setCapsLockOn(e.getModifierState("CapsLock"));
     }
   };
+
+  const isSmallScreen = isMobile || isTablet;
+
+  const particles = useMemo(() => {
+    return Array.from({ length: isMobile ? 10 : 20 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      duration: `${8 + Math.random() * 15}s`,
+      delay: `${Math.random() * 5}s`,
+      size: `${1 + Math.random() * 3}px`
+    }));
+  }, [isMobile]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,184 +155,811 @@ const res = await fetch(`${baseURL}/auth/login`, {
   };
 
   return (
-    <div className={"lg-root" + (mounted ? " mounted" : "")}>
-      <div className="lg-panel">
-        <div className="lg-panel-inner">
-          <Link href="/" className="lg-back">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-            {t.backToHome}
-          </Link>
+    <div
+      className={"root-container page-enter " + themeClass + (mounted ? " page-mounted" : "")}
+      style={{ 
+        ...themeVars,
+        background: "var(--lg-bg)",
+        display: "flex", 
+        flexDirection: isSmallScreen ? "column" : "row",
+        overflow: "hidden",
+        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+        position: "relative",
+      }}
+    >
+      
+      {particles.map((p) => (
+        <div key={p.id} className="particle" style={{
+          position: "absolute",
+          left: p.left,
+          top: p.top,
+          width: p.size,
+          height: p.size,
+          background: "rgba(168, 85, 247, 0.6)",
+          borderRadius: "50%",
+          boxShadow: "0 0 8px rgba(168, 85, 247, 0.8)",
+          animation: `floatParticle ${p.duration} linear infinite`,
+          animationDelay: p.delay,
+          zIndex: 1
+        }} />
+      ))}
 
-          <div className="lg-card">
-            <div className="lg-brand">
-              <div className="lg-logo-tile"><img src="/images/logo.png" alt="Inovexa" /></div>
-              <div className="lg-brand-text">
-                <span className="lg-brand-name"><b>INOV</b>EXA</span>
-                <span className="lg-brand-erp">ERP</span>
+      <div className="ambient-glow" />
+
+      {/* ── MOBILE LAYOUT ── */}
+      {isSmallScreen ? (
+        <div style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 10,
+          padding: "0",
+          minHeight: "100dvh",
+        }}>
+
+          <div style={{
+            padding: "env(safe-area-inset-top, 20px) 24px 0",
+            paddingTop: "max(env(safe-area-inset-top, 20px), 20px)",
+          }}>
+            <Link href="/" className="anim-item anim-back" style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              color: "var(--lg-muted)",
+              fontSize: "13px",
+              textDecoration: "none",
+              padding: "10px 0",
+              WebkitTapHighlightColor: "transparent",
+            }}>
+              <span style={{ fontSize: "16px" }}>←</span>
+              <span>{t.backToHome}</span>
+            </Link>
+          </div>
+
+          <div style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: "32px 24px",
+            paddingBottom: "max(env(safe-area-inset-bottom, 24px), 40px)",
+            overflowY: "auto",
+          }}>
+
+            {/* LOGO BLOCK — ✅ LOGO PLUS GRAND + GAP SUPPRIMÉ */}
+            <div className="anim-item anim-logo" style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0px",
+              marginBottom: "32px",
+            }}>
+              <img 
+                src="/images/logo.png" 
+                alt="Inovexa Logo" 
+                style={{ 
+                  width: "96px",
+                  height: "auto", 
+                  marginRight: "-8px",
+                  filter: "drop-shadow(0 0 16px rgba(138,43,226,0.8))" 
+                }} 
+              />
+              <div>
+                <h2 style={{ 
+                  color: "var(--lg-text)", 
+                  fontSize: "16px", 
+                  // ✅ Police Orbitron pour INOVEXA
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
+                  fontWeight: "300", 
+                  margin: 0, 
+                  letterSpacing: "1.8px",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                }}>
+                  <span style={{ fontWeight: "800" }}>INOV</span>EXA
+                </h2>
+                <div className="erp-text-glow" style={{ 
+                  background: "linear-gradient(90deg, #A855F7, #6366F1)",
+                  WebkitBackgroundClip: "text", 
+                  WebkitTextFillColor: "transparent",
+                  fontSize: "9px", 
+                  fontWeight: "700",
+                  // ✅ Police Orbitron pour ERP
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
+                  letterSpacing: "5px", 
+                  marginTop: "3px",
+                  textTransform: "uppercase"
+                }}>ERP</div>
               </div>
             </div>
 
-            <h1 className="lg-title">{t.signIn}</h1>
+            {/* TITLE */}
+            <div className="anim-item anim-title" style={{ marginBottom: "32px" }}>
+              <h1 style={{ 
+                fontSize: "32px",
+                color: "var(--lg-text)", 
+                fontWeight: "800", 
+                lineHeight: "1.15",
+                letterSpacing: "-1px",
+                margin: 0,
+              }}>
+                {t.signIn}
+              </h1>
+              <div className="anim-accent" style={{
+                marginTop: "12px",
+                width: "48px",
+                height: "3px",
+                background: "linear-gradient(90deg, #A855F7, #6366F1)",
+                borderRadius: "2px",
+              }} />
+            </div>
+
+            {/* GLASS CARD WRAPPER */}
+            <div className="login-card-enter anim-item anim-card" style={{
+              background: "var(--lg-card)",
+              border: "1px solid rgba(168, 85, 247, 0.12)",
+              borderRadius: "20px",
+              padding: "28px 24px",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+            }}>
+
+              {error && (
+                <div role="alert" aria-live="assertive" style={{ 
+                  background: "rgba(239,68,68,0.08)", 
+                  border: "1px solid rgba(239,68,68,0.25)", 
+                  color: "var(--lg-error)", 
+                  padding: "12px 14px", 
+                  borderRadius: "12px", 
+                  marginBottom: "20px", 
+                  fontSize: "13px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}>
+                  <span style={{ fontSize: "15px" }}>⚠</span>
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} style={{ width: "100%" }}>
+                <div className="anim-item anim-field-1" style={{ marginBottom: "18px" }}>
+                  <label style={{ 
+                    color: "var(--lg-label)", 
+                    display: "block", 
+                    marginBottom: "8px", 
+                    fontSize: "12px", 
+                    fontWeight: "600",
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                  }}>
+                    {t.email}
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t.emailPlaceholder}
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    inputMode="email"
+                    style={{ 
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "16px",
+                      background: "var(--lg-input-bg)",
+                      border: "1px solid var(--lg-input-border)", 
+                      borderRadius: "12px", 
+                      color: "var(--lg-text)",
+                      fontSize: "16px",
+                      transition: "all 0.25s ease",
+                      WebkitAppearance: "none",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#A855F7";
+                      e.currentTarget.style.background = "rgba(168, 85, 247, 0.07)";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168, 85, 247, 0.1)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "var(--lg-input-border)";
+                      e.currentTarget.style.background = "var(--lg-input-bg)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                    required
+                  />
+                </div>
+
+                <div className="anim-item anim-field-2" style={{ marginBottom: "26px" }}>
+                  <label style={{ 
+                    color: "var(--lg-label)", 
+                    display: "block", 
+                    marginBottom: "8px", 
+                    fontSize: "12px", 
+                    fontWeight: "600",
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                  }}>
+                    {t.password}
+                  </label>
+                  <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t.passwordPlaceholder}
+                    autoComplete="current-password"
+                    enterKeyHint="go"
+                    aria-invalid={!!error}
+                    onKeyDown={detectCapsLock}
+                    onKeyUp={detectCapsLock}
+                    style={{ 
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "16px",
+                      paddingRight: "46px",
+                      background: "var(--lg-input-bg)",
+                      border: "1px solid var(--lg-input-border)", 
+                      borderRadius: "12px", 
+                      color: "var(--lg-text)",
+                      fontSize: "16px",
+                      transition: "all 0.25s ease",
+                      WebkitAppearance: "none",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#A855F7";
+                      e.currentTarget.style.background = "rgba(168, 85, 247, 0.07)";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168, 85, 247, 0.1)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "var(--lg-input-border)";
+                      e.currentTarget.style.background = "var(--lg-input-bg)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    tabIndex={-1}
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--lg-muted)", display: "flex", alignItems: "center" }}
+                  >
+                    {showPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    )}
+                  </button>
+                  </div>
+                  {capsLockOn && (
+                    <p role="status" style={{ color: "var(--lg-warn)", fontSize: "12px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span aria-hidden="true">⇪</span> {t.capsLock}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="cta-button-shimmer anim-item anim-button"
+                  style={{
+                    width: "100%",
+                    padding: "18px",
+                    fontSize: "16px",
+                    borderRadius: "14px",
+                    position: "relative",
+                    zIndex: 2,
+                    overflow: "hidden",
+                    border: "none",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    color: "white",
+                    fontWeight: "700",
+                    background: loading
+                      ? "rgba(168, 85, 247, 0.4)"
+                      : "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
+                    boxShadow: loading ? "none" : "0 8px 24px rgba(168, 85, 247, 0.35)",
+                    transition: "all 0.25s ease",
+                    letterSpacing: "0.3px",
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "manipulation",
+                  }}
+                >
+                  <span style={{ position: "relative", zIndex: 3, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    {loading && (
+                      <span className="spinner" style={{
+                        width: "16px", height: "16px",
+                        border: "2px solid rgba(255,255,255,0.3)",
+                        borderTopColor: "white",
+                        borderRadius: "50%",
+                        display: "inline-block",
+                      }} />
+                    )}
+                    {loading ? t.loggingIn : t.login}
+                  </span>
+                  {!loading && <div className="shimmer-effect" />}
+                </button>
+              </form>
+            </div>
+
+            <p className="anim-item anim-footer" style={{ 
+              marginTop: "28px", 
+              color: "var(--lg-faint)", 
+              fontSize: "10px", 
+              fontWeight: "600",
+              textAlign: "center",
+              letterSpacing: "1px",
+            }}>
+              © 2026 INOVEXA. {t.rights.toUpperCase()}
+            </p>
+          </div>
+        </div>
+
+      ) : (
+        /* ── DESKTOP LAYOUT ── */
+        <>
+          <div style={{ 
+            width: "49.5%",
+            padding: "0 0 0 20px", 
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            zIndex: 10
+          }}>
+            
+            {/* LOGO ET TEXTE */}
+            <div className="anim-item anim-logo" style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
+              <div style={{ marginTop: "2px" }}> 
+                <img 
+                  src="/images/logo.png" 
+                  alt="Inovexa Logo" 
+                  style={{ 
+                    width: "126px",
+                    height: "auto", 
+                    filter: "drop-shadow(0 0 15px rgba(138,43,226,0.6))" 
+                  }} 
+                />
+              </div>
+              <div>
+                <h2 style={{ 
+                  color: "var(--lg-text)", 
+                  fontSize: "28px", 
+                  // ✅ Police Orbitron pour INOVEXA
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
+                  fontWeight: "300", 
+                  margin: 0, 
+                  letterSpacing: "2px",
+                  textTransform: "uppercase"
+                }}>
+                  <span style={{ fontWeight: "800" }}>INOV</span>EXA
+                </h2>
+                <div className="erp-text-glow" style={{ 
+                  background: "linear-gradient(90deg, #A855F7, #6366F1)",
+                  WebkitBackgroundClip: "text", 
+                  WebkitTextFillColor: "transparent",
+                  fontSize: "14px", 
+                  fontWeight: "600",
+                  // ✅ Police Orbitron pour ERP
+                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
+                  letterSpacing: "8px", 
+                  marginTop: "1px",
+                  textTransform: "uppercase"
+                }}>ERP</div>
+              </div>
+            </div>
+
+            {/* TITRE DE CONNEXION */}
+            <h1 className="anim-item anim-title" style={{ 
+              fontSize: "42px",
+              color: "var(--lg-text)", 
+              fontWeight: "800", 
+              lineHeight: "1.2",
+              marginBottom: "30px",
+              letterSpacing: "-1.5px",
+              marginTop: "20px"
+            }}>
+              {t.signIn}
+            </h1>
 
             {error && (
-              <div className="lg-error" role="alert">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                <span>{error}</span>
+              <div role="alert" aria-live="assertive" style={{ 
+                background: "rgba(239,68,68,0.1)", 
+                border: "1px solid rgba(239,68,68,0.2)", 
+                color: "var(--lg-error)", 
+                padding: "12px", 
+                borderRadius: "12px", 
+                marginBottom: "20px", 
+                fontSize: "13px" 
+              }}>
+                {error}
               </div>
             )}
 
-            <form onSubmit={handleLogin} noValidate={false}>
-              <label className="lg-label" htmlFor="lg-email">{t.email}</label>
-              <div className="lg-field">
-                <svg className="lg-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="3" /><polyline points="22 7 12 13 2 7" /></svg>
+            <form onSubmit={handleLogin} style={{ maxWidth: "495px", width: "100%" }}>
+              <div className="anim-item anim-field-1" style={{ marginBottom: "22px" }}>
+                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
+                  {t.email}
+                </label>
                 <input
-                  id="lg-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t.emailPlaceholder}
                   autoComplete="email"
                   autoCapitalize="none"
-                  inputMode="email"
+                  spellCheck={false}
+                  autoFocus
+                  aria-invalid={!!error}
+                  style={{ 
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "15.4px",
+                    background: "var(--lg-input-bg)",
+                    border: "1px solid var(--lg-input-border)", 
+                    borderRadius: "12px", 
+                    color: "var(--lg-text)",
+                    fontSize: "15.4px",
+                    transition: "all 0.3s ease",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#A855F7";
+                    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(168, 85, 247, 0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "var(--lg-input-border)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                   required
                 />
               </div>
 
-              <label className="lg-label" htmlFor="lg-password">{t.password}</label>
-              <div className="lg-field">
-                <svg className="lg-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="3" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                <input
-                  id="lg-password"
+              <div className="anim-item anim-field-2" style={{ marginBottom: "30.8px" }}>
+                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
+                  {t.password}
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={detectCapsLock}
-                  onKeyUp={detectCapsLock}
                   placeholder={t.passwordPlaceholder}
                   autoComplete="current-password"
+                  enterKeyHint="go"
+                  aria-invalid={!!error}
+                  onKeyDown={detectCapsLock}
+                  onKeyUp={detectCapsLock}
+                  style={{ 
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "15.4px",
+                      paddingRight: "46px",
+                    background: "var(--lg-input-bg)",
+                    border: "1px solid var(--lg-input-border)", 
+                    borderRadius: "12px", 
+                    color: "var(--lg-text)",
+                    fontSize: "15.4px",
+                    transition: "all 0.3s ease",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#A855F7";
+                    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(168, 85, 247, 0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "var(--lg-input-border)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                   required
-                  style={{ paddingRight: "46px" }}
                 />
-                <button
-                  type="button"
-                  className="lg-eye"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    tabIndex={-1}
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--lg-muted)", display: "flex", alignItems: "center" }}
+                  >
+                    {showPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    )}
+                  </button>
+                  </div>
+                  {capsLockOn && (
+                    <p role="status" style={{ color: "var(--lg-warn)", fontSize: "12.5px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span aria-hidden="true">⇪</span> {t.capsLock}
+                    </p>
                   )}
-                </button>
               </div>
 
-              {capsLockOn && (
-                <div className="lg-caps">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5" /><polyline points="5 12 12 5 19 12" /></svg>
-                  {t.capsLock}
-                </div>
-              )}
-
-              <button type="submit" className="lg-submit" disabled={loading}>
-                {loading ? (<><span className="lg-spinner" />{t.loggingIn}</>) : t.login}
+              <button
+                type="submit"
+                disabled={loading}
+                className="cta-button-shimmer anim-item anim-button"
+                style={{
+                  width: "100%",
+                  padding: "17.6px",
+                  fontSize: "16.5px",
+                  borderRadius: "12px",
+                  position: "relative",
+                  zIndex: 2,
+                  overflow: "hidden",
+                  border: "none",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  color: "white",
+                  fontWeight: "700",
+                  background: "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
+                  boxShadow: "0 10px 30px rgba(168, 85, 247, 0.3)",
+                  opacity: loading ? 0.7 : 1
+                }}
+              >
+                <span style={{ position: "relative", zIndex: 3 }}>
+                  {loading ? t.loggingIn : t.login}
+                </span>
+                <div className="shimmer-effect"></div>
               </button>
             </form>
+
+            <div className="anim-item anim-back" style={{ marginTop: "33px" }}>
+              <Link href="/" style={{ 
+                display: "inline-flex", 
+                alignItems: "center", 
+                gap: "8px",
+                color: "var(--lg-muted)", 
+                fontSize: "14.3px",
+                textDecoration: "none",
+                transition: "all 0.3s ease"
+              }}>
+                <span style={{ fontSize: "17.6px" }}>←</span>
+                <span>{t.backToHome}</span>
+              </Link>
+            </div>
+
+            <p className="anim-item anim-footer" style={{ marginTop: "55px", color: "var(--lg-faint)", fontSize: "11px", fontWeight: "600" }}>
+              © 2026 INOVEXA. {t.rights.toUpperCase()}
+            </p>
           </div>
 
-          <div className="lg-copy">© {new Date().getFullYear()} INOVEXA. {t.rights}</div>
-        </div>
-      </div>
+          <div className="login-hero anim-hero" style={{ 
+            width: "50.5%",
+            position: "relative",
+            height: "100vh",
+            background: "var(--lg-bg)"
+          }}>
+            <div style={{
+              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+              width: "80%", height: "80%", background: "radial-gradient(circle, rgba(138, 43, 226, 0.2) 0%, transparent 70%)",
+              filter: "blur(60px)", zIndex: 1
+            }} />
 
-      <div className="lg-visual">
-        <div className="lg-visual-blob lg-visual-blob-1" />
-        <div className="lg-visual-blob lg-visual-blob-2" />
-        <div className="lg-visual-frame">
-          <img src="/images/1.png" alt="Inovexa Dashboard" />
-        </div>
-      </div>
+            <img 
+              src="/images/1.png" 
+              alt="Inovexa Futuristic" 
+              style={{ 
+                width: "100%", height: "100%", objectFit: "cover",
+                filter: "brightness(0.9) contrast(1.05)",
+                maskImage: "linear-gradient(to right, transparent 0%, black 15%)",
+                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%)",
+                zIndex: 2, position: "relative"
+              }}
+            />
+            
+            <div style={{ 
+              position: "absolute", top: 0, left: 0, width: "100px", 
+              background: "linear-gradient(90deg, var(--lg-bg) 0%, transparent 100%)", 
+              height: "100%", zIndex: 3 
+            }} />
+          </div>
+        </>
+      )}
 
-      <style dangerouslySetInnerHTML={{ __html: STYLES }} />
+      <style dangerouslySetInnerHTML={{ __html: `
+        .erp-text-glow {
+          animation: textPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes textPulse {
+          0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.3)); }
+          50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6)); }
+        }
+
+        .cta-button-shimmer {
+          animation: buttonPulse 2s infinite;
+          transition: all 0.3s ease;
+          position: relative;
+        }
+
+        @keyframes buttonPulse {
+          0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); }
+          70% { box-shadow: 0 0 0 15px rgba(168, 85, 247, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+        }
+
+        .shimmer-effect {
+          position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          animation: shimmer 2.5s infinite;
+        }
+
+        @keyframes shimmer { 
+          0% { left: -100%; } 
+          100% { left: 100%; } 
+        }
+
+        .cta-button-shimmer:hover { 
+          transform: translateY(-2px); 
+          filter: brightness(1.1); 
+        }
+
+        .cta-button-shimmer:active {
+          transform: translateY(0px);
+          filter: brightness(0.95);
+        }
+
+        .ambient-glow {
+          position: absolute; width: 100%; height: 100%;
+          background: radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.08), transparent 40%);
+          z-index: 0;
+        }
+
+        @keyframes floatParticle {
+          0% { transform: translateY(0) translateX(0); opacity: 0; }
+          15% { opacity: 1; }
+          100% { transform: translateY(-80vh) translateX(30px); opacity: 0; }
+        }
+
+        .particle {
+          pointer-events: none;
+        }
+
+        .root-container {
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+          animation: spin 0.8s linear infinite;
+        }
+
+        /* ── Variante claire ── */
+        .lg-light img[src="/images/logo.png"] { background: linear-gradient(135deg, #1e1b4b, #4338ca); border-radius: 22%; padding: 5%; box-sizing: border-box; margin-right: 6px !important; }
+        .lg-light .particle { opacity: 0.45; }
+        .lg-light h1 span, .lg-light h2 span { text-shadow: none; }
+
+        input::placeholder {
+          color: var(--lg-placeholder);
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+          -webkit-text-fill-color: var(--lg-text);
+          -webkit-box-shadow: 0 0 0px 1000px var(--lg-autofill) inset;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .login-card-enter {
+          animation: cardEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes cardEnter {
+          0%   { opacity: 0; transform: translateY(24px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .login-hero,
+        .login-hero * {
+          animation: none !important;
+          transition: none !important;
+        }
+
+        @media (max-width: 768px) {
+          .login-hero { display: none !important; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           ANIMATION D'OUVERTURE DE PAGE — séquence en cascade
+           ═══════════════════════════════════════════════════════════════ */
+        .page-enter { opacity: 0; }
+        .page-mounted { animation: pageFadeIn 0.6s ease-out forwards; }
+        @keyframes pageFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        .anim-item {
+          opacity: 0;
+          transform: translateY(24px);
+          transition: 
+            opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+          will-change: opacity, transform;
+        }
+        .page-mounted .anim-item {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .page-mounted .anim-logo    { transition-delay: 0.05s; }
+        .page-mounted .anim-title   { transition-delay: 0.15s; }
+        .page-mounted .anim-card    { transition-delay: 0.22s; }
+        .page-mounted .anim-field-1 { transition-delay: 0.32s; }
+        .page-mounted .anim-field-2 { transition-delay: 0.42s; }
+        .page-mounted .anim-button  { transition-delay: 0.52s; }
+        .page-mounted .anim-back    { transition-delay: 0.62s; }
+        .page-mounted .anim-footer  { transition-delay: 0.72s; }
+
+        .anim-logo { transform: translateY(-28px) scale(0.94); }
+        .page-mounted .anim-logo {
+          transform: translateY(0) scale(1);
+          transition-duration: 0.85s;
+        }
+
+        .anim-title { transform: translateX(-32px); }
+        .page-mounted .anim-title {
+          transform: translateX(0);
+          transition-duration: 0.85s;
+        }
+
+        .anim-card {
+          transform: translateY(30px) scale(0.97);
+          transform-origin: center top;
+        }
+        .page-mounted .anim-card {
+          transform: translateY(0) scale(1);
+          transition-duration: 0.9s;
+        }
+
+        .anim-field-1,
+        .anim-field-2 { transform: translateY(18px); }
+
+        .anim-button { transform: translateY(20px) scale(0.96); }
+        .page-mounted .anim-button {
+          transform: translateY(0) scale(1);
+          transition-duration: 0.75s;
+        }
+
+        .anim-footer { transform: translateY(12px); }
+
+        .anim-hero {
+          animation: heroSlideIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes heroSlideIn {
+          0%   { opacity: 0; transform: translateX(60px) scale(1.04); }
+          100% { opacity: 1; transform: translateX(0)    scale(1); }
+        }
+        .login-hero.anim-hero,
+        .login-hero.anim-hero * {
+          animation: heroSlideIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+          transition: none !important;
+        }
+
+        .anim-accent {
+          animation: accentGrow 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+          transform-origin: left center;
+        }
+        @keyframes accentGrow {
+          0%   { transform: scaleX(0); opacity: 0; }
+          100% { transform: scaleX(1); opacity: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .login-card-enter,
+          .anim-item,
+          .anim-hero,
+          .anim-accent,
+          .page-mounted { 
+            animation: none !important; 
+            transition: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+      ` }} />
     </div>
   );
 }
-
-const STYLES = `
-  .lg-root {
-    --lg-primary: #4f46e5; --lg-secondary: #7c3aed;
-    --lg-bg: var(--theme-background, #f3f4f6); --lg-surface: var(--theme-surface, #ffffff);
-    --lg-text: var(--theme-text, #111827); --lg-muted: var(--theme-text-secondary, #6b7280);
-    --lg-border: var(--theme-border, #e5e7eb);
-    min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--lg-surface); color: var(--lg-text);
-    opacity: 0; transition: opacity .5s ease;
-  }
-  .lg-root.mounted { opacity: 1; }
-
-  .lg-panel { display: flex; align-items: center; justify-content: center; padding: 32px clamp(20px, 5vw, 64px);
-    background: radial-gradient(circle at 0% 0%, rgba(99,102,241,.10), transparent 45%), var(--lg-surface); }
-  .lg-panel-inner { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 22px; }
-
-  .lg-back { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; font-size: 13px; font-weight: 500; color: var(--lg-muted); text-decoration: none; padding: 6px 10px 6px 6px; border-radius: 10px; transition: color .2s, background .2s; }
-  .lg-back:hover { color: var(--lg-primary); background: #eef2ff; }
-
-  .lg-card { background: var(--lg-surface); border: 1px solid var(--lg-border); border-radius: 24px; padding: clamp(24px, 4vw, 36px); box-shadow: 0 20px 50px rgba(17,24,39,.08), 0 2px 6px rgba(17,24,39,.04); }
-
-  .lg-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-  .lg-logo-tile { width: 56px; height: 56px; border-radius: 16px; padding: 4px; background: linear-gradient(135deg, #1e1b4b, #4338ca); box-shadow: 0 8px 22px rgba(67,56,202,.28); flex-shrink: 0; }
-  .lg-logo-tile img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .lg-brand-text { display: flex; flex-direction: column; line-height: 1.1; font-family: 'Orbitron', 'Poppins', sans-serif; }
-  .lg-brand-name { font-size: 22px; letter-spacing: 3px; font-weight: 300; }
-  .lg-brand-name b { font-weight: 800; }
-  .lg-brand-erp { font-size: 11px; letter-spacing: 7px; font-weight: 700; margin-top: 4px; background: linear-gradient(90deg, var(--lg-secondary), var(--lg-primary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-
-  .lg-title { margin: 0 0 22px; font-size: clamp(22px, 3vw, 28px); font-weight: 700; letter-spacing: -.4px; line-height: 1.25; }
-
-  .lg-error { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; margin-bottom: 18px; border-radius: 12px; font-size: 13px; font-weight: 500; line-height: 1.4; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; }
-  .lg-error svg { flex-shrink: 0; margin-top: 1px; }
-
-  .lg-label { display: block; margin: 0 0 7px; font-size: 13px; font-weight: 600; color: var(--lg-text); }
-  .lg-field { position: relative; margin-bottom: 18px; }
-  .lg-field-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; transition: color .2s; }
-  .lg-field input { width: 100%; box-sizing: border-box; padding: 14px 16px 14px 44px; font: 400 15px 'Poppins', sans-serif; color: var(--lg-text); background: #f9fafb; border: 1.5px solid var(--lg-border); border-radius: 12px; outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
-  .lg-field input::placeholder { color: #9ca3af; }
-  .lg-field input:hover { border-color: #d1d5db; }
-  .lg-field input:focus { background: #fff; border-color: var(--lg-primary); box-shadow: 0 0 0 4px rgba(79,70,229,.14); }
-  .lg-field:focus-within .lg-field-icon { color: var(--lg-primary); }
-  .lg-eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: #9ca3af; border-radius: 10px; cursor: pointer; transition: color .2s, background .2s; }
-  .lg-eye:hover { color: var(--lg-primary); background: #eef2ff; }
-
-  .lg-caps { display: inline-flex; align-items: center; gap: 6px; margin: -6px 0 16px; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; }
-
-  .lg-submit { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; margin-top: 6px; font: 600 15px 'Poppins', sans-serif; color: #fff; border: none; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, var(--lg-primary), var(--lg-secondary)); box-shadow: 0 10px 26px rgba(79,70,229,.32); transition: transform .2s, box-shadow .2s, filter .2s, opacity .2s; }
-  .lg-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(79,70,229,.42); filter: brightness(1.05); }
-  .lg-submit:active:not(:disabled) { transform: translateY(0); }
-  .lg-submit:disabled { opacity: .7; cursor: not-allowed; }
-  .lg-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: lgSpin .7s linear infinite; }
-  @keyframes lgSpin { to { transform: rotate(360deg); } }
-
-  .lg-copy { text-align: center; font-size: 12px; color: var(--lg-muted); }
-
-  /* Visuel droite */
-  .lg-visual { position: relative; display: flex; align-items: center; justify-content: center; padding: 40px; overflow: hidden;
-    background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 50%, #fae8ff 100%); }
-  .lg-visual-blob { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; }
-  .lg-visual-blob-1 { width: 420px; height: 420px; top: -120px; right: -100px; background: rgba(99,102,241,.35); }
-  .lg-visual-blob-2 { width: 380px; height: 380px; bottom: -120px; left: -80px; background: rgba(217,70,239,.25); }
-  .lg-visual-frame { position: relative; width: 100%; max-width: 640px; aspect-ratio: 1044 / 935; padding: 10px; border-radius: 28px; overflow: hidden; background: rgba(255,255,255,.7); box-shadow: 0 30px 70px rgba(79,70,229,.28), 0 6px 18px rgba(17,24,39,.08); }
-  .lg-visual-frame img { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; display: block; }
-
-  @media (max-width: 960px) {
-    .lg-root { grid-template-columns: 1fr; }
-    .lg-visual { display: none; }
-    .lg-panel { min-height: 100vh; background: radial-gradient(circle at 100% 0%, rgba(168,85,247,.12), transparent 50%), radial-gradient(circle at 0% 0%, rgba(99,102,241,.12), transparent 50%), var(--lg-bg); }
-  }
-  @media (max-width: 480px) {
-    .lg-panel { padding: 20px 16px; align-items: flex-start; }
-    .lg-card { border-radius: 20px; }
-    .lg-logo-tile { width: 48px; height: 48px; border-radius: 14px; }
-    .lg-brand-name { font-size: 19px; }
-  }
-  @media (prefers-reduced-motion: reduce) { .lg-root, .lg-spinner { transition: none !important; animation: none !important; } }
-`;
