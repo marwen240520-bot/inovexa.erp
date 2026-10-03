@@ -45,9 +45,9 @@ const translations = {
   fr: {
     backToHome: "Retour à l'accueil",
     remember: "Se souvenir de mon e-mail",
+    area: "Espace client",
+    secure: "Connexion sécurisée",
     welcome: "Accédez à votre espace de gestion.",
-    forgot: "Mot de passe oublié ?",
-    forgotHint: "Mot de passe oublié ? Contactez votre administrateur.",
     signIn: "Connectez-vous à votre espace",
     email: "Email",
     password: "Mot de passe",
@@ -63,9 +63,9 @@ const translations = {
   en: {
     backToHome: "Back to home",
     remember: "Remember my email",
+    area: "Client area",
+    secure: "Secure sign-in",
     welcome: "Access your management workspace.",
-    forgot: "Forgot password?",
-    forgotHint: "Forgot your password? Contact your administrator.",
     signIn: "Sign in to your workspace",
     email: "Email",
     password: "Password",
@@ -81,9 +81,9 @@ const translations = {
   es: {
     backToHome: "Volver al inicio",
     remember: "Recordar mi correo",
+    area: "Área de clientes",
+    secure: "Conexión segura",
     welcome: "Acceda a su espacio de gestión.",
-    forgot: "¿Olvidó su contraseña?",
-    forgotHint: "¿Olvidó su contraseña? Contacte a su administrador.",
     signIn: "Inicia sesión en tu espacio",
     email: "Correo electrónico",
     password: "Contraseña",
@@ -110,7 +110,6 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState("");
   const [remember, setRemember] = useState(true);
-  const [showForgot, setShowForgot] = useState(false);
   // Pré-remplit l'e-mail mémorisé lors d'une précédente connexion
   useEffect(() => {
     try {
@@ -539,19 +538,25 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Carte de connexion */}
+            <div style={{ width: "100%", maxWidth: "520px", boxSizing: "border-box", background: "var(--lg-card)", border: "1px solid var(--lg-input-border)", borderRadius: "22px", padding: "clamp(20px, 3.4vh, 32px) 34px clamp(18px, 3vh, 28px)", boxShadow: "0 24px 56px -30px rgba(76, 29, 149, 0.35)" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "5px 12px", borderRadius: "999px", border: "1px solid rgba(139,92,246,0.3)", background: "rgba(139,92,246,0.08)", color: "var(--lg-label)", fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(10px, 1.8vh, 16px)" }}>
+              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#A855F7" }} />
+              {t.area}
+            </div>
             {/* TITRE DE CONNEXION */}
             <h1 style={{ 
-              fontSize: "42px",
+              fontSize: "clamp(28px, 4.2vh, 34px)",
               color: "var(--lg-text)", 
               fontWeight: "800", 
               lineHeight: "1.2",
-              marginBottom: "10px",
-              letterSpacing: "-1.5px",
-              marginTop: "20px"
+              marginBottom: "8px",
+              letterSpacing: "-1px",
+              marginTop: "0"
             }}>
               {t.signIn}
             </h1>
-            <p style={{ color: "var(--lg-muted)", fontSize: "15.5px", margin: "0 0 28px", lineHeight: 1.5 }}>{t.welcome}</p>
+            <p style={{ color: "var(--lg-muted)", fontSize: "15px", margin: "0 0 clamp(14px, 2.6vh, 24px)", lineHeight: 1.5 }}>{t.welcome}</p>
 
             {error && (
               <div role="alert" aria-live="assertive" style={{ 
@@ -567,14 +572,15 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} style={{ maxWidth: "495px", width: "100%" }}>
-              <div style={{ marginBottom: "22px" }}>
-                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
+            <form onSubmit={handleLogin} style={{ width: "100%" }}>
+              <div style={{ marginBottom: "clamp(12px, 2vh, 20px)" }}>
+                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "7px", fontSize: "13px", fontWeight: "500" }}>
                   {t.email}
                 </label>
                 <div style={{ position: "relative" }}>
                 <span aria-hidden="true" style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: "var(--lg-muted)", display: "flex", pointerEvents: "none" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg></span>
                 <input
+                  className="lg-input"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -587,7 +593,7 @@ export default function LoginPage() {
                   style={{ 
                     width: "100%",
                     boxSizing: "border-box",
-                    padding: "15.4px 15.4px 15.4px 46px",
+                    padding: "clamp(12px, 1.9vh, 15.4px) 15.4px clamp(12px, 1.9vh, 15.4px) 46px",
                     background: "var(--lg-input-bg)",
                     border: "1px solid var(--lg-input-border)", 
                     borderRadius: "12px", 
@@ -600,13 +606,14 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: "30.8px" }}>
-                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
+              <div style={{ marginBottom: "clamp(10px, 1.6vh, 16px)" }}>
+                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "7px", fontSize: "13px", fontWeight: "500" }}>
                   {t.password}
                 </label>
                 <div style={{ position: "relative" }}>
                   <span aria-hidden="true" style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: "var(--lg-muted)", display: "flex", pointerEvents: "none" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg></span>
                   <input
+                  className="lg-input"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -619,7 +626,7 @@ export default function LoginPage() {
                   style={{ 
                     width: "100%",
                     boxSizing: "border-box",
-                    padding: "15.4px",
+                    padding: "clamp(12px, 1.9vh, 15.4px)",
                     paddingLeft: "46px",
                     paddingRight: "46px",
                     background: "var(--lg-input-bg)",
@@ -652,17 +659,14 @@ export default function LoginPage() {
                   )}
               </div>
 
-              {/* Se souvenir de l'e-mail + mot de passe oublié */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", margin: "0 0 14px" }}>
+              {/* Se souvenir de l'e-mail */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "12px", flexWrap: "wrap", margin: "0 0 clamp(12px, 2vh, 18px)" }}>
                 <label style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "var(--lg-label)", fontSize: "13.5px", cursor: "pointer", minHeight: "28px" }}>
                   <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#8b5cf6", cursor: "pointer" }} />
                   {t.remember}
                 </label>
-                <button type="button" onClick={() => setShowForgot((v) => !v)} aria-expanded={showForgot} style={{ background: "none", border: "none", color: "#8b5cf6", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", padding: "4px 0" }}>{t.forgot}</button>
+                
               </div>
-              {showForgot && (
-                <div role="note" style={{ background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.3)", color: "var(--lg-text)", borderRadius: "10px", padding: "10px 12px", fontSize: "13px", lineHeight: 1.5, margin: "0 0 16px" }}>{t.forgotHint}</div>
-              )}
               <button
                 type="submit"
                 disabled={loading}
@@ -673,7 +677,7 @@ export default function LoginPage() {
                   justifyContent: "center",
                   gap: "10px",
                   boxShadow: "0 12px 26px -12px rgba(139, 92, 246, 0.65)",
-                  padding: "17.6px",
+                  padding: "clamp(13px, 2vh, 17px)",
                   fontSize: "16.5px",
                   borderRadius: "12px",
                   border: "none",
@@ -689,9 +693,14 @@ export default function LoginPage() {
                 </span>
                 {!loading && <span aria-hidden="true">→</span>}
               </button>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "16px", color: "var(--lg-muted)", fontSize: "12.5px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>
+                {t.secure}
+              </div>
             </form>
+            </div>
 
-            <div style={{ marginTop: "33px" }}>
+            <div style={{ marginTop: "clamp(12px, 2vh, 20px)" }}>
               <Link href="/" style={{ 
                 display: "inline-flex", 
                 alignItems: "center", 
@@ -705,7 +714,7 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <p style={{ marginTop: "55px", color: "var(--lg-faint)", fontSize: "11px", fontWeight: "600" }}>
+            <p style={{ marginTop: "clamp(12px, 2.4vh, 26px)", color: "var(--lg-faint)", fontSize: "11px", fontWeight: "600" }}>
               © 2026 INOVEXA. {t.rights.toUpperCase()}
             </p>
           </div>
@@ -749,6 +758,8 @@ export default function LoginPage() {
 
         /* ── Variante claire ── */
         .lg-light h1 span, .lg-light h2 span { text-shadow: none; }
+
+        .lg-input:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
 
         input::placeholder {
           color: var(--lg-placeholder);

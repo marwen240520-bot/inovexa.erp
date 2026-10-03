@@ -16,10 +16,24 @@ import { Shipment } from '../logistics/entities/shipment.entity';
 import { Objective } from '../objectives/entities/objective.entity';
 import { periodBounds } from '../objectives/objectives.service';
 
-/** Nombre d'éléments de démonstration créés dans CHAQUE module d'un nouveau client. */
-export const DEMO_ITEMS_PER_MODULE = 20;
+/** Chaque module d'un nouveau client reçoit un nombre aléatoire d'éléments de démonstration entre ces deux bornes. */
+export const DEMO_MIN_ITEMS = 50;
+export const DEMO_MAX_ITEMS = 100;
+/** Valeur minimale (conservée pour compatibilité avec le code qui lisait l'ancienne constante). */
+export const DEMO_ITEMS_PER_MODULE = DEMO_MIN_ITEMS;
 
-const N = DEMO_ITEMS_PER_MODULE;
+export type DemoModuleKey =
+  | 'categories' | 'products' | 'clients' | 'suppliers' | 'finance_flow' | 'orders' | 'invoices'
+  | 'departments' | 'employees' | 'budgets' | 'bank_accounts' | 'shipments' | 'objectives';
+
+export interface DemoOptions {
+  /** Générateur aléatoire (Math.random par défaut) — injectable pour les tests. */
+  random?: () => number;
+  /** Nombre d'éléments imposé pour un module (sinon tirage entre DEMO_MIN_ITEMS et DEMO_MAX_ITEMS).
+   *  `finance_flow` = ventes, achats et dépenses (liés entre eux pour garantir un bénéfice positif). */
+  counts?: Partial<Record<DemoModuleKey, number>>;
+}
+
 const pad = (n: number, size = 3) => String(n).padStart(size, '0');
 const pick = <T>(list: T[], i: number): T => list[i % list.length];
 const range = (count: number) => Array.from({ length: count }, (_, i) => i);
@@ -32,8 +46,8 @@ const daysAgo = (days: number): Date => {
   d.setDate(d.getDate() - days);
   return d;
 };
-/** Répartit 20 éléments sur ~6 mois : 0, 9, 18 ... jours. */
-const spread = (i: number) => daysAgo(i * 9 + 1);
+/** Répartit `n` éléments sur ~6 mois : l'élément 0 est le plus ancien, le dernier date d'hier. */
+const dateAt = (i: number, n: number): Date => daysAgo(1 + Math.round(((n - 1 - i) * 179) / Math.max(1, n - 1)));
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 
 // ───────────────────────── Jeux de données ─────────────────────────
@@ -105,53 +119,90 @@ const BANK_NAMES = ['Banque de Tunis', 'BIAT', 'Attijari Bank', 'Amen Bank', 'ST
 const slug = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
 
+// ───────────────────────── Variantes (pour dépasser les 20 éléments de base) ─────────────────────────
+
+const CATEGORY_VARIANTS = ['Entrée de gamme', 'Premium', 'Accessoires', 'Professionnel', 'Occasion', 'Éco', 'Import'];
+const PRODUCT_SERIES = ['Série B', 'Série C', 'Série D', 'Série E'];
+const POSITION_LEVELS = ['junior', 'confirmé', 'senior', 'principal'];
+
+/** Nom unique pour le i-ème élément : les 20 premiers gardent leur nom d'origine, les suivants reçoivent un suffixe. */
+const variantName = (base: string[], i: number, suffix: (round: number, i: number) => string) => {
+  const round = Math.floor(i / base.length);
+  const name = base[i % base.length];
+  return round === 0 ? name : `${name}${suffix(round, i)}`;
+};
+const cityVariant = (round: number, i: number) => ` ${CITIES[(round * 3 + i) % CITIES.length]}`;
+
 // ───────────────────────── Génération ─────────────────────────
 
 export interface DemoDataSummary {
+  /** Moyenne arrondie d'éléments par module */
   perModule: number;
+  min: number;
+  max: number;
   modules: Record<string, number>;
   total: number;
 }
 
 /**
- * Crée DEMO_ITEMS_PER_MODULE éléments dans chaque module pour le client `userId`.
+ * Crée entre DEMO_MIN_ITEMS et DEMO_MAX_ITEMS éléments (tirage au hasard, module par module) pour le client `userId`.
  * À appeler dans une transaction : tout est créé ou rien.
+ *
+ * Ventes, achats et dépenses forment un seul flux (même nombre de lignes, mêmes dates) : pour chaque ligne,
+ * vente > achat + dépense, donc le bénéfice est positif quel que soit le regroupement (jour, mois, année).
  */
-export async function seedDemoData(manager: EntityManager, userId: number): Promise<DemoDataSummary> {
+export async function seedDemoData(manager: EntityManager, userId: number, options: DemoOptions = {}): Promise<DemoDataSummary> {
+  const random = options.random || Math.random;
+  const count = (key: DemoModuleKey): number => {
+    const forced = options.counts?.[key];
+    if (forced !== undefined) return Math.max(1, Math.round(forced));
+    return DEMO_MIN_ITEMS + Math.floor(random() * (DEMO_MAX_ITEMS - DEMO_MIN_ITEMS + 1));
+  };
   const created: Record<string, number> = {};
   const mark = (key: string, rows: unknown[]) => { created[key] = rows.length; };
 
   // 1. Catégories
+  const nCategories = count('categories');
   const categories = await manager.save(
     Category,
-    CATEGORIES.slice(0, N).map((name, i) =>
-      manager.create(Category, { userId, name, description: `Catégorie ${name}`, createdAt: spread(N - 1 - i) }),
-    ),
+    range(nCategories).map((i) => {
+      const name = variantName(CATEGORIES, i, (r) => ` — ${CATEGORY_VARIANTS[(r - 1) % CATEGORY_VARIANTS.length]}`);
+      return manager.create(Category, { userId, name, description: `Catégorie ${name}`, createdAt: dateAt(i, nCategories) });
+    }),
   );
   mark('categories', categories);
 
   // 2. Produits (liés aux catégories)
+  const nProducts = count('products');
   const products = await manager.save(
     Product,
-    PRODUCTS.slice(0, N).map(([name, price, quantity], i) =>
-      manager.create(Product, {
+    range(nProducts).map((i) => {
+      const [baseName, basePrice, baseStock] = PRODUCTS[i % PRODUCTS.length];
+      const round = Math.floor(i / PRODUCTS.length);
+      const name = round === 0 ? baseName : `${baseName} · ${PRODUCT_SERIES[(round - 1) % PRODUCT_SERIES.length]}`;
+      const price = round === 0 ? basePrice : round2(basePrice * (1 + 0.12 * round));
+      // quelques stocks bas ou nuls pour alimenter les alertes
+      const quantity = round === 0 ? baseStock : i % 9 === 4 ? i % 5 : Math.max(0, baseStock + ((i * 17) % 45) - 10);
+      return manager.create(Product, {
         userId,
         categoryId: categories[i % categories.length].id,
         name,
         sku: `SKU-${pad(i + 1)}`,
         price,
         quantity,
-        createdAt: spread(N - 1 - i),
-      }),
-    ),
+        createdAt: dateAt(i, nProducts),
+      });
+    }),
   );
   mark('products', products);
 
   // 3. Clients
+  const nClients = count('clients');
   const clients = await manager.save(
     Client,
-    CLIENT_NAMES.slice(0, N).map((name, i) =>
-      manager.create(Client, {
+    range(nClients).map((i) => {
+      const name = variantName(CLIENT_NAMES, i, cityVariant);
+      return manager.create(Client, {
         userId,
         name,
         email: `contact@${slug(name)}.tn`,
@@ -159,17 +210,19 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
         address: `${10 + i} rue de la République, ${pick(CITIES, i)}`,
         totalSpent: round2(300 + ((i * 731) % 4200)),
         status: i % 7 === 6 ? 'inactive' : 'active',
-        createdAt: spread(N - 1 - i),
-      }),
-    ),
+        createdAt: dateAt(i, nClients),
+      });
+    }),
   );
   mark('clients', clients);
 
   // 4. Fournisseurs
+  const nSuppliers = count('suppliers');
   const suppliers = await manager.save(
     Supplier,
-    SUPPLIER_NAMES.slice(0, N).map((name, i) =>
-      manager.create(Supplier, {
+    range(nSuppliers).map((i) => {
+      const name = variantName(SUPPLIER_NAMES, i, cityVariant);
+      return manager.create(Supplier, {
         userId,
         name,
         contact: `${pick(FIRST_NAMES, i)} ${pick(LAST_NAMES, i + 3)}`,
@@ -178,9 +231,9 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
         address: `Zone industrielle ${i + 1}, ${pick(CITIES, i + 2)}`,
         totalPurchases: round2(500 + ((i * 977) % 9000)),
         status: i % 9 === 8 ? 'inactive' : 'active',
-        createdAt: spread(N - 1 - i),
-      }),
-    ),
+        createdAt: dateAt(i, nSuppliers),
+      });
+    }),
   );
   mark('suppliers', suppliers);
 
@@ -190,13 +243,14 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
   // (tableau de bord, finance, rapports, analyses).
   //   achat   <= 40 % de la vente   (quantité achetée <= 60 % de la quantité vendue, coût 35-40 % du prix)
   //   dépense <= 17 % de la vente
-  const plan = range(N).map((i) => {
+  const nFlow = count('finance_flow');
+  const plan = range(nFlow).map((i) => {
     const product = products[(i * 3) % products.length];
     const price = Number(product.price);
     const target = 600 + ((i * 337) % 2400); // chiffre d'affaires visé : 600 à 3 000
     const quantity = Math.min(40, Math.max(1, Math.round(target / price)));
     const total = round2(quantity * price);
-    return { i, product, price, quantity, total, date: spread(N - 1 - i) };
+    return { i, product, price, quantity, total, date: dateAt(i, nFlow) };
   });
 
   // 5. Ventes
@@ -240,9 +294,10 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
   mark('purchases', purchases);
 
   // 7. Commandes
+  const nOrders = count('orders');
   const orders = await manager.save(
     Order,
-    range(N).map((i) => {
+    range(nOrders).map((i) => {
       const product = products[(i * 11) % products.length];
       const quantity = 1 + ((i * 2) % 6);
       const unitPrice = Number(product.price);
@@ -254,16 +309,17 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
         unitPrice,
         total: round2(quantity * unitPrice),
         status: pick(ORDER_STATUSES, i),
-        createdAt: spread(N - 1 - i),
+        createdAt: dateAt(i, nOrders),
       });
     }),
   );
   mark('orders', orders);
 
   // 8. Factures (numéros d'opération uniques à l'échelle de la base)
+  const nInvoices = count('invoices');
   const invoices = await manager.save(
     Invoice,
-    range(N).map((i) => {
+    range(nInvoices).map((i) => {
       const isDebit = i % 4 !== 3; // 3 factures sur 4 sont des ventes (débit)
       const product = products[(i * 5) % products.length];
       const quantity = 1 + (i % 4);
@@ -273,9 +329,10 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
       const taxAmount = round2((subtotalHT * taxRate) / 100);
       const client = clients[i % clients.length];
       const supplier = suppliers[i % suppliers.length];
-      const issued = spread(N - 1 - i);
+      const issued = dateAt(i, nInvoices);
       const due = new Date(issued);
       due.setDate(due.getDate() + 30);
+      const status = pick(['paid', 'paid', 'pending', 'paid', 'overdue'], i);
       return manager.create(Invoice, {
         userId,
         operationNumber: `OP-${userId}-${pad(i + 1, 4)}`,
@@ -298,8 +355,8 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
         dueDate: due,
         paymentTerms: 'Net 30',
         notes: 'Facture de démonstration',
-        status: pick(['paid', 'paid', 'pending', 'paid', 'overdue'], i),
-        paymentMethod: pick(['paid', 'paid', 'pending', 'paid', 'overdue'], i) === 'paid' ? pick(['transfer', 'card', 'cash', 'check', 'mobile', 'draft'], i) : null,
+        status,
+        paymentMethod: status === 'paid' ? pick(['transfer', 'card', 'cash', 'check', 'mobile', 'draft'], i) : null,
         createdAt: issued,
       });
     }),
@@ -307,24 +364,30 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
   mark('invoices', invoices);
 
   // 9. Services (départements) puis employés
+  const nDepartments = count('departments');
   const departments = await manager.save(
     Department,
-    DEPARTMENTS.slice(0, N).map((name, i) =>
-      manager.create(Department, { userId, name, description: `Service ${name}`, createdAt: spread(N - 1 - i) }),
-    ),
+    range(nDepartments).map((i) => {
+      const name = variantName(DEPARTMENTS, i, cityVariant);
+      return manager.create(Department, { userId, name, description: `Service ${name}`, createdAt: dateAt(i, nDepartments) });
+    }),
   );
   mark('departments', departments);
 
+  const nEmployees = count('employees');
   const employees = await manager.save(
     Employee,
-    range(N).map((i) => {
+    range(nEmployees).map((i) => {
       const hired = daysAgo(120 + i * 55);
       const nowIso = new Date().toISOString();
+      const first = pick(FIRST_NAMES, i);
+      const last = pick(LAST_NAMES, Math.floor(i / 10) + 3 * (i % 10)); // 100 combinaisons prénom / nom sans doublon
+      const level = Math.floor(i / POSITIONS.length);
       return manager.create(Employee, {
         userId,
-        name: `${pick(FIRST_NAMES, i)} ${pick(LAST_NAMES, i * 3 + 1)}`,
-        email: `${slug(pick(FIRST_NAMES, i))}.${slug(pick(LAST_NAMES, i * 3 + 1))}${i + 1}@entreprise.tn`,
-        position: POSITIONS[i],
+        name: `${first} ${last}`,
+        email: `${slug(first)}.${slug(last)}${i + 1}@entreprise.tn`,
+        position: level === 0 ? POSITIONS[i % POSITIONS.length] : `${POSITIONS[i % POSITIONS.length]} ${POSITION_LEVELS[(level - 1) % POSITION_LEVELS.length]}`,
         department: departments[i % departments.length].name,
         salary: 1200 + ((i * 213) % 3300),
         phone: `${pick([20, 22, 24, 25, 28, 50, 52, 55, 90, 98], i + 4)}${pad(300 + i * 29 % 700)}${pad(i * 71 % 1000)}`.slice(0, 8),
@@ -364,41 +427,45 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
   mark('expenses', expenses);
 
   const year = new Date().getFullYear();
+  const nBudgets = count('budgets');
   const budgets = await manager.save(
     Budget,
-    range(N).map((i) =>
+    range(nBudgets).map((i) =>
       manager.create(Budget, {
         userId,
         category: EXPENSE_CATEGORIES[i % EXPENSE_CATEGORIES.length],
         amount: 2000 + ((i * 457) % 18000),
-        year: i < 10 ? year : year - 1,
-        department: DEPARTMENTS[i % DEPARTMENTS.length],
+        year: year - (Math.floor(i / departments.length) % 3),
+        department: departments[i % departments.length].name,
       }),
     ),
   );
   mark('budgets', budgets);
 
+  const nBank = count('bank_accounts');
   const bankAccounts = await manager.save(
     BankAccount,
-    range(N).map((i) =>
-      manager.create(BankAccount, {
+    range(nBank).map((i) => {
+      const savings = i % 3 === 2;
+      return manager.create(BankAccount, {
         userId,
-        name: `${pick(BANK_NAMES, i)} ${i < 10 ? 'Courant' : 'Épargne'}`,
-        type: i < 10 ? 'checking' : 'savings',
+        name: `${pick(BANK_NAMES, i)} ${savings ? 'Épargne' : 'Courant'} ${pad(Math.floor(i / BANK_NAMES.length) + 1, 2)}`,
+        type: savings ? 'savings' : 'checking',
         balance: round2(1500 + ((i * 3917) % 48000)),
-        accountNumber: `${pad(10 + i, 2)}${pad(userId % 1000)}${pad(i * 7919 % 100000, 5)}`,
-        iban: `TN59${pad(10 + i, 2)}${pad(userId % 1000)}${pad(i * 7919 % 10000000, 7)}0000${pad(i, 2)}`,
-      }),
-    ),
+        accountNumber: `${pad(10 + i, 3)}${pad(userId % 1000)}${pad(i * 7919 % 100000, 5)}`,
+        iban: `TN59${pad(10 + i, 3)}${pad(userId % 1000)}${pad(i * 7919 % 10000000, 7)}0000${pad(i, 3)}`,
+      });
+    }),
   );
   mark('bank_accounts', bankAccounts);
 
   // 11. Expéditions (rattachées au client via clientId = id de l'utilisateur)
+  const nShipments = count('shipments');
   const shipments = await manager.save(
     Shipment,
-    range(N).map((i) => {
-      const created = spread(N - 1 - i);
-      const eta = new Date(created);
+    range(nShipments).map((i) => {
+      const createdAt = dateAt(i, nShipments);
+      const eta = new Date(createdAt);
       eta.setDate(eta.getDate() + 3 + (i % 4));
       return manager.create(Shipment, {
         clientId: userId,
@@ -411,35 +478,134 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
         amount: round2(8 + ((i * 13) % 60)),
         status: pick(SHIPMENT_STATUSES, i),
         estimatedDelivery: eta,
-        createdAt: created,
+        createdAt,
       });
     }),
   );
   mark('shipments', shipments);
 
-  // 12. Objectifs : calculés d'après les ventes de démo, pour que les barres de progression soient parlantes
-  const today = new Date();
-  const thisYear = today.getFullYear();
-  const inYear = <T extends { date: Date }>(rows: T[]) => rows.filter((r) => r.date.getFullYear() === thisYear);
-  const revenueYear = inYear(plan).reduce((s, p) => s + p.total, 0);
-  const costYear = purchases.filter((p) => new Date(p.createdAt).getFullYear() === thisYear).reduce((s, p) => s + Number(p.total), 0);
-  const quarter = periodBounds('quarter', today);
-  const salesInQuarter = plan.filter((p) => p.date.toISOString().slice(0, 10) >= quarter.start && p.date.toISOString().slice(0, 10) <= quarter.end).length;
-  const roundUp = (n: number, step: number) => Math.max(step, Math.ceil(n / step) * step);
-  const yearRange = periodBounds('year', today), month = periodBounds('month', today), q = quarter;
+  // 12. Objectifs : calculés d'après les données de démo, pour que les barres de progression soient parlantes
+  const nObjectives = count('objectives');
   const objectives = await manager.save(
     Objective,
-    [
-      { title: "Chiffre d'affaires de l'année", metric: 'revenue', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: roundUp(revenueYear * 1.25, 1000) },
-      { title: "Bénéfice de l'année", metric: 'profit', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: roundUp((revenueYear - costYear) * 1.1, 500) },
-      { title: 'Ventes du trimestre', metric: 'sales_count', period: 'quarter', ...{ startDate: q.start, endDate: q.end }, targetValue: Math.max(5, salesInQuarter + 4) },
-      { title: 'Nouveaux clients du mois', metric: 'new_clients', period: 'month', ...{ startDate: month.start, endDate: month.end }, targetValue: 5 },
-      { title: 'Recruter 2 commerciaux', metric: 'manual', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: 2, currentValue: 1, unit: 'recrutements' },
-      { title: 'Ouvrir un second point de vente', metric: 'manual', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: 1, currentValue: 0, unit: 'ouverture' },
-    ].map((o) => manager.create(Objective, { userId, ...o })),
+    buildDemoObjectives(nObjectives, { sales, purchases, clients, orders, invoices, shipments }).map((o) => manager.create(Objective, { userId, ...o })),
   );
   mark('objectives', objectives);
 
-  const total = Object.values(created).reduce((a, b) => a + b, 0);
-  return { perModule: N, modules: created, total };
+  const values = Object.values(created);
+  const total = values.reduce((a, b) => a + b, 0);
+  return { perModule: Math.round(total / values.length), min: Math.min(...values), max: Math.max(...values), modules: created, total };
+}
+
+// ───────────────────────── Objectifs de démonstration ─────────────────────────
+
+type ObjectiveSeed = {
+  title: string; metric: string; period: string; startDate: string; endDate: string;
+  targetValue: number; currentValue?: number; unit?: string | null;
+};
+
+const METRIC_TITLES: Record<string, string> = {
+  revenue: "Chiffre d'affaires", profit: 'Bénéfice', sales_count: 'Ventes réalisées', new_clients: 'Nouveaux clients',
+  orders_count: 'Commandes reçues', purchases_count: "Nombre d'achats", average_basket: 'Panier moyen',
+  invoices_paid_amount: 'Factures encaissées', shipments_delivered: 'Livraisons effectuées',
+};
+const MONEY = ['revenue', 'profit', 'average_basket', 'invoices_paid_amount'];
+
+// [titre, unité, cible, progression actuelle en % de la cible]
+const MANUAL_GOALS: Array<[string, string, number, number]> = [
+  ['Recruter des commerciaux', 'recrutements', 3, 0.34], ['Ouvrir un point de vente', 'ouverture', 1, 0],
+  ['Lancer la boutique en ligne', 'lancement', 1, 0.5], ['Obtenir la certification ISO 9001', 'certification', 1, 0],
+  ['Former les équipes', 'formations', 8, 0.75], ['Signer des contrats cadres', 'contrats', 6, 0.5],
+  ['Satisfaction clients', 'points', 90, 0.92], ['Numériser les archives', 'dossiers', 600, 0.64],
+  ['Visiter les clients stratégiques', 'visites', 40, 0.65], ['Organiser un salon professionnel', 'événement', 1, 1],
+  ['Renouveler le parc informatique', 'postes', 14, 0.36], ['Réduire les impayés', 'dossiers', 25, 0.8],
+  ['Négocier avec les fournisseurs', 'accords', 10, 0.4], ['Publier du contenu marketing', 'publications', 48, 0.58],
+  ['Mettre à jour le catalogue', 'références', 120, 1],
+];
+const MANUAL_SCOPES = ['cette année', 'ce trimestre', 'trimestre prochain'];
+
+function buildDemoObjectives(
+  target: number,
+  data: { sales: any[]; purchases: any[]; clients: any[]; orders: any[]; invoices: any[]; shipments: any[] },
+): ObjectiveSeed[] {
+  const today = new Date();
+  const y = today.getUTCFullYear(), m = today.getUTCMonth();
+  const todayIso = isoDay(today);
+  const inRange = (d: any, a: string, b: string) => { const x = isoDay(new Date(d)); return x >= a && x <= b; };
+  const month = (offset: number) => periodBounds('month', new Date(Date.UTC(y, m + offset, 15)));
+  const quarter = (offset: number) => periodBounds('quarter', new Date(Date.UTC(y, m + offset * 3, 15)));
+  const year = periodBounds('year', today);
+
+  const actual = (metric: string, a: string, b: string): number => {
+    const sales = data.sales.filter((s) => inRange(s.createdAt, a, b));
+    const revenue = sales.reduce((t, s) => t + Number(s.total), 0);
+    const cost = data.purchases.filter((p) => inRange(p.createdAt, a, b)).reduce((t, p) => t + Number(p.total), 0);
+    switch (metric) {
+      case 'revenue': return revenue;
+      case 'profit': return revenue - cost;
+      case 'sales_count': return sales.length;
+      case 'average_basket': return sales.length ? revenue / sales.length : 0;
+      case 'new_clients': return data.clients.filter((c) => inRange(c.createdAt, a, b)).length;
+      case 'orders_count': return data.orders.filter((o) => inRange(o.createdAt, a, b)).length;
+      case 'purchases_count': return data.purchases.filter((p) => inRange(p.createdAt, a, b)).length;
+      case 'invoices_paid_amount': return data.invoices.filter((i) => i.status === 'paid' && inRange(i.createdAt, a, b)).reduce((t, i) => t + Number(i.amount), 0);
+      case 'shipments_delivered': return data.shipments.filter((s) => s.status === 'delivered' && inRange(s.createdAt, a, b)).length;
+      default: return 0;
+    }
+  };
+  const nice = (metric: string, v: number): number => {
+    if (!MONEY.includes(metric)) return Math.max(2, Math.ceil(v));
+    const step = v > 50000 ? 1000 : v > 5000 ? 500 : v > 500 ? 100 : 50;
+    return Math.max(step, Math.ceil(v / step) * step);
+  };
+  const monthLabel = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const quarterLabel = (iso: string) => `T${Math.floor(Number(iso.slice(5, 7)) - 1) / 3 + 1 | 0} ${iso.slice(0, 4)}`;
+
+  // Passé : objectifs tantôt atteints, tantôt manqués ; en cours : à suivre ; futur : à venir
+  const PAST = [0.82, 1.18, 0.95, 1.3, 0.7, 1.08];
+  const auto: ObjectiveSeed[] = [];
+  const make = (metric: string, period: string, b: { start: string; end: string }, label: string, k: number) => {
+    const a = actual(metric, b.start, b.end);
+    let t: number;
+    if (b.end < todayIso) t = nice(metric, a * PAST[k % PAST.length] || 3);          // période terminée
+    else if (b.start > todayIso) t = nice(metric, (a || actual(metric, year.start, todayIso) / Math.max(1, m + 1)) * 1.1 || 5); // à venir
+    else t = nice(metric, Math.max(a * 1.5, a + (MONEY.includes(metric) ? 500 : 3))); // en cours
+    auto.push({ title: `${METRIC_TITLES[metric]} — ${label}`, metric, period, startDate: b.start, endDate: b.end, targetValue: t, currentValue: 0, unit: null });
+  };
+
+  // Objectifs de l'année en tête de liste
+  ['revenue', 'profit', 'sales_count', 'average_basket', 'new_clients', 'invoices_paid_amount', 'shipments_delivered', 'purchases_count']
+    .forEach((metric, k) => {
+      const a = actual(metric, year.start, year.end);
+      auto.push({ title: `${METRIC_TITLES[metric]} — ${y}`, metric, period: 'year', startDate: year.start, endDate: year.end, targetValue: nice(metric, a * (1.25 - 0.03 * k) || 10), currentValue: 0, unit: null });
+    });
+  // Trimestres : précédent, en cours, suivant
+  [-1, 0, 1].forEach((off) => ['revenue', 'profit', 'sales_count', 'orders_count', 'new_clients', 'invoices_paid_amount'].forEach((metric, k) => { const b = quarter(off); make(metric, 'quarter', b, quarterLabel(b.start), k + off + 1); }));
+  // Mois : 6 derniers mois, mois en cours, mois suivant
+  [-6, -5, -4, -3, -2, -1, 0, 1].forEach((off) => ['revenue', 'profit', 'sales_count', 'new_clients', 'orders_count'].forEach((metric, k) => { const b = month(off); make(metric, 'month', b, monthLabel(b.start), k + off + 6); }));
+
+  // Indicateurs moins courants : mois en cours et mois suivant
+  [0, 1].forEach((off) => ['purchases_count', 'shipments_delivered', 'average_basket'].forEach((metric, k) => { const b = month(off); make(metric, 'month', b, monthLabel(b.start), k + off + 2); }));
+
+  // Objectifs libres : mêmes 15 objectifs sur 3 horizons
+  const manual: ObjectiveSeed[] = [];
+  MANUAL_SCOPES.forEach((scope, s) => {
+    const b = s === 0 ? year : quarter(s - 1);
+    MANUAL_GOALS.forEach(([title, unit, goal, progress]) => {
+      const current = Math.round(goal * Math.min(1, progress * (s === 2 ? 0 : 1) + (s === 1 ? 0.1 : 0)));
+      manual.push({ title: `${title} (${scope})`, metric: 'manual', period: s === 0 ? 'year' : 'quarter', startDate: b.start, endDate: b.end, targetValue: goal, currentValue: current, unit });
+    });
+  });
+
+  // Mélange déterministe : on garde ~70 % d'objectifs automatiques (au plus 'auto.length') et le reste en objectifs libres
+  const manualCount = Math.min(manual.length, Math.max(Math.round(target * 0.3), target - auto.length));
+  const autoCount = Math.min(auto.length, target - manualCount);
+  // On répartit les objectifs libres (un sur ~3) entre les automatiques pour un affichage varié
+  const list: ObjectiveSeed[] = [];
+  let ai = 0, mi = 0;
+  while (list.length < autoCount + manualCount) {
+    const wantManual = mi < manualCount && (ai >= autoCount || (list.length + 1) % 3 === 0);
+    if (wantManual) list.push(manual[mi++]); else if (ai < autoCount) list.push(auto[ai++]); else list.push(manual[mi++]);
+  }
+  return list;
 }

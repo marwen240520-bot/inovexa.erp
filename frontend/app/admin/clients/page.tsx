@@ -262,7 +262,7 @@ export default function AdminClientsPage() {
         fetchClients();
         fetchStats();
         if (data?.demoData?.seeded) {
-          showMessage(`Client créé avec succès ! ${data.demoData.perModule} éléments de démo ajoutés dans chaque module.`, "success");
+          showMessage(`Client créé avec succès ! ${data.demoData.min && data.demoData.max ? `${data.demoData.min} à ${data.demoData.max}` : data.demoData.perModule} éléments de démo ajoutés dans chaque module.`, "success");
         } else if (data?.demoData?.error) {
           showMessage(`Client créé, mais ${data.demoData.error.charAt(0).toLowerCase()}${data.demoData.error.slice(1)}`, "error");
         } else {
@@ -382,10 +382,10 @@ export default function AdminClientsPage() {
     showMessage("Client supprimé", "success");
   };
 
-  // Remplace TOUTES les données du client par un jeu de démonstration (20 éléments par module)
+  // Remplace TOUTES les données du client par un jeu de démonstration (50 à 100 éléments par module)
   const resetDemoData = async (client: Client) => {
     const label = client.companyName || client.name;
-    if (!confirm(`Régénérer les données de démonstration de « ${label} » ?\n\nATTENTION : toutes les données actuelles de ce client (produits, ventes, factures, employés...) seront SUPPRIMÉES et remplacées par 20 éléments de démo par module.`)) return;
+    if (!confirm(`Régénérer les données de démonstration de « ${label} » ?\n\nATTENTION : toutes les données actuelles de ce client (produits, ventes, factures, employés...) seront SUPPRIMÉES et remplacées par 50 à 100 éléments de démo par module.`)) return;
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${client.id}/reset-demo-data`, {
@@ -394,7 +394,7 @@ export default function AdminClientsPage() {
       });
       const data = await res.json().catch(() => ({} as any));
       if (res.ok && !data?.error) {
-        showMessage(`Données de démo régénérées pour « ${label} » (20 éléments par module)`, "success");
+        showMessage(`Données de démo régénérées pour « ${label} » (50 à 100 éléments par module)`, "success");
       } else if (res.status >= 500) {
         showMessage("Erreur interne du serveur : opération échouée. Vérifiez que le backend est à jour.", "error");
       } else {
@@ -878,7 +878,7 @@ export default function AdminClientsPage() {
             {!modal.editMode && (
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "16px", padding: "12px 14px", background: "rgba(79,70,229,0.08)", border: "1px solid rgba(79,70,229,0.2)", borderRadius: "10px", color: "var(--theme-text)", fontSize: "13px", lineHeight: 1.5 }}>
                 <span style={{ flexShrink: 0 }}>✨</span>
-                <span>20 éléments de démonstration seront créés automatiquement dans chaque module (produits, clients, ventes, factures, RH, finance…).</span>
+                <span>Entre 50 et 100 éléments de démonstration seront créés automatiquement dans chaque module (produits, clients, ventes, factures, RH, finance…).</span>
               </div>
             )}
             <div style={modalFooterStyle}>

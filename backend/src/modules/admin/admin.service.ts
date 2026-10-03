@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
-import { seedDemoData, DEMO_ITEMS_PER_MODULE } from './demo-data';
+import { seedDemoData, DEMO_MIN_ITEMS, DEMO_MAX_ITEMS } from './demo-data';
 
 @Injectable()
 export class AdminService {
@@ -59,7 +59,7 @@ export class AdminService {
     companyName: string;
     phone?: string;
     subscriptionDuration: number;
-    /** Génère 20 éléments de démo dans chaque module (activé par défaut). */
+    /** Génère 50 à 100 éléments de démo dans chaque module (activé par défaut). */
     seedDemoData?: boolean;
   }) {
     const hashedPassword = await bcrypt.hash(body.password, 10);
@@ -82,17 +82,19 @@ export class AdminService {
     
     await this.userRepository.save(client);
 
-    // 20 éléments de démonstration dans chaque module du nouveau client.
+    // Entre 50 et 100 éléments de démonstration dans chaque module du nouveau client.
     // Le client est déjà créé : un échec ici ne doit pas annuler sa création.
-    let demoData: { seeded: boolean; perModule: number; total: number; error?: string } = {
+    let demoData: { seeded: boolean; perModule: number; min: number; max: number; total: number; error?: string } = {
       seeded: false,
-      perModule: DEMO_ITEMS_PER_MODULE,
+      perModule: DEMO_MIN_ITEMS,
+      min: DEMO_MIN_ITEMS,
+      max: DEMO_MAX_ITEMS,
       total: 0,
     };
     if (body.seedDemoData !== false) {
       try {
         const summary = await this.dataSource.transaction((manager) => seedDemoData(manager, client.id));
-        demoData = { seeded: true, perModule: summary.perModule, total: summary.total };
+        demoData = { seeded: true, perModule: summary.perModule, min: summary.min, max: summary.max, total: summary.total };
       } catch (err: any) {
         console.error(`Données de démo non créées pour le client ${client.id} :`, err?.message || err);
         demoData = { ...demoData, error: 'Les données de démonstration n\'ont pas pu être créées.' };
@@ -244,7 +246,7 @@ export class AdminService {
 
   /**
    * Remplace TOUTES les données du client par un nouveau jeu de démonstration
-   * (20 éléments par module, bénéfice positif). Opération destructive : à confirmer côté interface.
+   * (50 à 100 éléments par module, bénéfice positif). Opération destructive : à confirmer côté interface.
    */
   async resetDemoData(id: number) {
     const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
@@ -258,7 +260,7 @@ export class AdminService {
       return {
         success: true,
         message: 'Données de démonstration régénérées',
-        demoData: { seeded: true, perModule: summary.perModule, total: summary.total },
+        demoData: { seeded: true, perModule: summary.perModule, min: summary.min, max: summary.max, total: summary.total },
       };
     } catch (err: any) {
       throw this.describeDbError(err, 'régénérer les données de ce client');

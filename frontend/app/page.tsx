@@ -240,7 +240,7 @@ export default function HomePage(): React.ReactElement {
       fr: {
         title: React.createElement(React.Fragment, null, "L'avenir de la ", React.createElement("span", { className: "hero-word-glow" }, "gestion d'entreprise"), " commence ici."),
         subtitle: "INOVEXA",
-        lead: "Ventes, achats, stock, facturation, RH et finance réunis dans une seule plateforme, simple et sécurisée.",
+        eyebrow: "ERP · Gestion d'entreprise",
         button: "Accéder au Dashboard",
         login: "Commencer maintenant",
         copyright: "Tous droits réservés",
@@ -256,7 +256,7 @@ export default function HomePage(): React.ReactElement {
       es: {
         title: React.createElement(React.Fragment, null, "El futuro de la ", React.createElement("span", { className: "hero-word-glow" }, "gestión empresarial"), " comienza aquí."),
         subtitle: "INOVEXA",
-        lead: "Ventas, compras, inventario, facturación, RR. HH. y finanzas en una sola plataforma, simple y segura.",
+        eyebrow: "ERP · Gestión empresarial",
         button: "Panel de Control",
         login: "Empezar ahora",
         copyright: "Todos los derechos reservados",
@@ -272,7 +272,7 @@ export default function HomePage(): React.ReactElement {
       en: {
         title: React.createElement(React.Fragment, null, "The future of ", React.createElement("span", { className: "hero-word-glow" }, "business management"), " starts here."),
         subtitle: "INOVEXA",
-        lead: "Sales, purchases, inventory, invoicing, HR and finance in a single, simple and secure platform.",
+        eyebrow: "ERP · Business management",
         button: "Go to Dashboard",
         login: "Get Started Now",
         copyright: "All rights reserved",
@@ -565,6 +565,11 @@ export default function HomePage(): React.ReactElement {
           React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
         )
       ),
+      // ── Pastille au-dessus du titre (ordinateur / tablette) ──
+      !isMobile && React.createElement("div", { style: { display: "inline-flex", alignItems: "center", gap: "8px", alignSelf: "flex-start", padding: "6px 14px", borderRadius: "999px", border: "1px solid rgba(168, 85, 247, 0.3)", background: "var(--hp-card-bg)", color: "var(--hp-feature-text)", fontSize: "11.5px", fontWeight: "700", letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(12px, 2.2vh, 20px)", opacity: heroVisible ? 1 : 0, transition: "opacity 0.75s ease" } },
+        React.createElement("span", { style: { width: "7px", height: "7px", borderRadius: "50%", background: "#A855F7" } }),
+        text.eyebrow
+      ),
       // ✅ TITRE HERO avec marge supérieure sur mobile
       React.createElement("h1", {
         style: {
@@ -581,10 +586,9 @@ export default function HomePage(): React.ReactElement {
           transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)"
         }
       }, text.title),
-      !isMobile && React.createElement("p", { style: { color: "var(--hp-muted)", fontSize: "15px", lineHeight: 1.55, margin: "0 0 clamp(16px, 3vh, 26px)", maxWidth: "500px", opacity: heroVisible ? 1 : 0, transition: "opacity 0.75s ease 0.15s" } }, text.lead),
       React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: isMobile ? "36px" : "clamp(20px, 3.4vh, 32px)", maxWidth: isMobile ? "460px" : "540px" } },
         text.features.map((f: { title: string; desc?: string }, i: number) => {
-          return React.createElement("div", { key: i, style: { display: "flex", flexDirection: "column", gap: "8px", padding: isMobile ? "14px" : "13px 16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", backdropFilter: "blur(8px)", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
+          return React.createElement("div", { key: i, className: "hp-feature-card", style: { display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start", gap: isMobile ? "8px" : "14px", padding: isMobile ? "14px" : "14px 16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
             React.createElement("div", { style: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
             React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "4px" } },
               React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "11px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title),
@@ -602,7 +606,7 @@ export default function HomePage(): React.ReactElement {
           )
         )
       ),
-      React.createElement("div", { style: { marginTop: isMobile ? "44px" : "clamp(22px, 4vh, 52px)", display: "flex", flexDirection: "column", gap: "10px" } },
+      React.createElement("div", { style: { marginTop: isMobile ? "44px" : "clamp(18px, 3.4vh, 44px)", paddingTop: isMobile ? 0 : "16px", borderTop: isMobile ? "none" : "1px solid rgba(168, 85, 247, 0.16)", maxWidth: isMobile ? "none" : "540px", display: "flex", flexDirection: "column", gap: "10px" } },
         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" } },
           React.createElement("a", { href: "https://inovexa-erp.com/privacy.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.7)", fontSize: "10px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" } },
             React.createElement(IconLock, { size: 10, color: "currentColor" }), text.privacy
@@ -650,6 +654,7 @@ export default function HomePage(): React.ReactElement {
 
 
       .home-page-enter { animation: none; }
+      .hp-feature-card:hover { transform: translateY(-2px) !important; border-color: rgba(168, 85, 247, 0.45) !important; }
       @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
 
       .erp-text-glow { animation: textPulse 3s ease-in-out infinite; }
