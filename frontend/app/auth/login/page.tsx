@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -7,6 +7,7 @@ import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // Traductions
+// Variante sombre = apparence d'origine ; variante claire = même mise en page, couleurs claires
 const LG_DARK: Record<string, string> = {
   "--lg-bg": "#000000", "--lg-text": "white", "--lg-muted": "rgba(255,255,255,0.4)",
   "--lg-label": "rgba(255,255,255,0.65)", "--lg-faint": "rgba(255,255,255,0.2)",
@@ -24,6 +25,7 @@ const LG_LIGHT: Record<string, string> = {
   "--lg-img-filter": "brightness(1) contrast(1.03) saturate(1.05)",
 };
 
+/** Variables de couleur du login pour n'importe quel thème */
 function buildLgVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return LG_DARK;
   if (themeId === "light") return LG_LIGHT;
@@ -348,44 +350,44 @@ export default function LoginPage() {
                     {t.password}
                   </label>
                   <div style={{ position: "relative" }}>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t.passwordPlaceholder}
-                      autoComplete="current-password"
-                      enterKeyHint="go"
-                      aria-invalid={!!error}
-                      onKeyDown={detectCapsLock}
-                      onKeyUp={detectCapsLock}
-                      style={{ 
-                        width: "100%",
-                        boxSizing: "border-box",
-                        padding: "16px",
-                        paddingRight: "46px",
-                        background: "var(--lg-input-bg)",
-                        border: "1px solid var(--lg-input-border)", 
-                        borderRadius: "12px", 
-                        color: "var(--lg-text)",
-                        fontSize: "16px",
-                        WebkitAppearance: "none",
-                        outline: "none",
-                      }}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                      tabIndex={-1}
-                      style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--lg-muted)", display: "flex", alignItems: "center" }}
-                    >
-                      {showPassword ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                      )}
-                    </button>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t.passwordPlaceholder}
+                    autoComplete="current-password"
+                    enterKeyHint="go"
+                    aria-invalid={!!error}
+                    onKeyDown={detectCapsLock}
+                    onKeyUp={detectCapsLock}
+                    style={{ 
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "16px",
+                      paddingRight: "46px",
+                      background: "var(--lg-input-bg)",
+                      border: "1px solid var(--lg-input-border)", 
+                      borderRadius: "12px", 
+                      color: "var(--lg-text)",
+                      fontSize: "16px",
+                      WebkitAppearance: "none",
+                      outline: "none",
+                    }}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    tabIndex={-1}
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--lg-muted)", display: "flex", alignItems: "center" }}
+                  >
+                    {showPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    )}
+                  </button>
                   </div>
                   {capsLockOn && (
                     <p role="status" style={{ color: "var(--lg-warn)", fontSize: "12px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -444,18 +446,16 @@ export default function LoginPage() {
         </div>
 
       ) : (
-        /* ── DESKTOP LAYOUT — 50% / 50% ── */
+        /* ── DESKTOP LAYOUT ── */
         <>
-          {/* ═══════════ PARTIE GAUCHE (50%) ═══════════ */}
           <div style={{ 
-            width: "50%",
-            padding: "0 40px 0 60px", 
+            width: "49.5%",
+            padding: "0 0 0 20px", 
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
             zIndex: 10,
             position: "relative",
-            boxSizing: "border-box",
           }}>
             
             {/* LOGO ET TEXTE */}
@@ -559,29 +559,29 @@ export default function LoginPage() {
                 </label>
                 <div style={{ position: "relative" }}>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t.passwordPlaceholder}
-                    autoComplete="current-password"
-                    enterKeyHint="go"
-                    aria-invalid={!!error}
-                    onKeyDown={detectCapsLock}
-                    onKeyUp={detectCapsLock}
-                    style={{ 
-                      width: "100%",
-                      boxSizing: "border-box",
-                      padding: "15.4px",
-                      paddingRight: "46px",
-                      background: "var(--lg-input-bg)",
-                      border: "1px solid var(--lg-input-border)", 
-                      borderRadius: "12px", 
-                      color: "var(--lg-text)",
-                      fontSize: "15.4px",
-                      outline: "none",
-                    }}
-                    required
-                  />
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.passwordPlaceholder}
+                  autoComplete="current-password"
+                  enterKeyHint="go"
+                  aria-invalid={!!error}
+                  onKeyDown={detectCapsLock}
+                  onKeyUp={detectCapsLock}
+                  style={{ 
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "15.4px",
+                    paddingRight: "46px",
+                    background: "var(--lg-input-bg)",
+                    border: "1px solid var(--lg-input-border)", 
+                    borderRadius: "12px", 
+                    color: "var(--lg-text)",
+                    fontSize: "15.4px",
+                    outline: "none",
+                  }}
+                  required
+                />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
@@ -595,12 +595,12 @@ export default function LoginPage() {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                     )}
                   </button>
-                </div>
-                {capsLockOn && (
-                  <p role="status" style={{ color: "var(--lg-warn)", fontSize: "12.5px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span aria-hidden="true">⇪</span> {t.capsLock}
-                  </p>
-                )}
+                  </div>
+                  {capsLockOn && (
+                    <p role="status" style={{ color: "var(--lg-warn)", fontSize: "12.5px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span aria-hidden="true">⇪</span> {t.capsLock}
+                    </p>
+                  )}
               </div>
 
               <button
@@ -644,9 +644,11 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* ═══════════ PARTIE DROITE (50%) ═══════════ */}
-          <div className="login-hero" style={{ 
-            width: "50%",
+          {/* ═══════════════════════════════════════════════════════════════
+              RIGHT SIDE — Hero visuel amélioré (aligné sur la home page)
+              ═══════════════════════════════════════════════════════════════ */}
+          <div className="login-hero anim-hero" style={{ 
+            width: "50.5%",
             position: "relative",
             height: "100vh",
             background: "var(--lg-bg)",
@@ -654,11 +656,10 @@ export default function LoginPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "48px",
-            boxSizing: "border-box",
+            padding: "48px"
           }}>
             {/* Halo ambiant */}
-            <div style={{
+            <div className="lg-hero-halo" style={{
               position: "absolute",
               top: "50%", left: "50%",
               width: "120%", height: "120%",
@@ -667,10 +668,69 @@ export default function LoginPage() {
               filter: "blur(60px)",
               pointerEvents: "none",
               zIndex: 0,
+              animation: "lgHaloPulse 6s ease-in-out infinite"
             }} />
 
+            {/* Grille décorative */}
+            <div className="lg-hero-grid" style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `
+                linear-gradient(rgba(168,85,247,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168,85,247,0.06) 1px, transparent 1px)
+              `,
+              backgroundSize: "48px 48px",
+              maskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
+              WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
+              pointerEvents: "none",
+              zIndex: 1,
+              opacity: 0.8
+            }} />
+
+            {/* Cercles orbitaux */}
+            <div className="lg-hero-orbit lg-hero-orbit-1" style={{
+              position: "absolute",
+              top: "50%", left: "50%",
+              width: "88%", height: "88%",
+              transform: "translate(-50%, -50%)",
+              borderRadius: "50%",
+              border: "1px solid rgba(168,85,247,0.18)",
+              pointerEvents: "none",
+              zIndex: 2,
+              animation: "lgOrbitSpin 28s linear infinite"
+            }}>
+              <span style={{
+                position: "absolute",
+                top: "-3px", left: "50%",
+                width: "8px", height: "8px",
+                borderRadius: "50%",
+                background: "#C084FC",
+                boxShadow: "0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7)"
+              }} />
+            </div>
+            <div className="lg-hero-orbit lg-hero-orbit-2" style={{
+              position: "absolute",
+              top: "50%", left: "50%",
+              width: "68%", height: "68%",
+              transform: "translate(-50%, -50%)",
+              borderRadius: "50%",
+              border: "1px solid rgba(99,102,241,0.15)",
+              pointerEvents: "none",
+              zIndex: 2,
+              animation: "lgOrbitSpinReverse 20s linear infinite"
+            }}>
+              <span style={{
+                position: "absolute",
+                bottom: "-3px", left: "30%",
+                width: "6px", height: "6px",
+                borderRadius: "50%",
+                background: "#818CF8",
+                boxShadow: "0 0 12px #6366F1"
+              }} />
+            </div>
+
             {/* Carte contenant l'image */}
-            <div style={{
+            <div className="lg-hero-card" style={{
               position: "relative",
               width: "100%",
               height: "100%",
@@ -686,11 +746,24 @@ export default function LoginPage() {
                 0 0 60px -20px rgba(99,102,241,0.4) inset
               `,
               zIndex: 3,
+              transform: "perspective(1200px) rotateY(-4deg) rotateX(2deg)",
+              transition: "transform 0.6s cubic-bezier(0.22,1,0.36,1), box-shadow 0.6s ease",
+              animation: "lgCardFloat 7s ease-in-out infinite"
             }}>
+              {/* Reflet haut */}
+              <div style={{
+                position: "absolute",
+                top: 0, left: 0, right: 0,
+                height: "1px",
+                background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.9), transparent)",
+                zIndex: 5
+              }} />
+
               {/* Image */}
               <img 
                 src="/images/1.png" 
                 alt="Inovexa Futuristic" 
+                className="lg-hero-image"
                 style={{ 
                   width: "100%", 
                   height: "100%", 
@@ -699,6 +772,7 @@ export default function LoginPage() {
                   position: "relative",
                   zIndex: 2,
                   filter: "var(--lg-img-filter, brightness(0.95) contrast(1.05))",
+                  transition: "transform 0.8s cubic-bezier(0.22,1,0.36,1)"
                 }}
               />
 
@@ -746,6 +820,75 @@ export default function LoginPage() {
 
         @media (max-width: 768px) {
           .login-hero { display: none !important; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           HERO VISUEL — partie droite (desktop)
+           ═══════════════════════════════════════════════════════════════ */
+        .login-hero {
+          animation: lgHeroSlideIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes lgHeroSlideIn {
+          0%   { opacity: 0; transform: translateX(60px) scale(1.04); }
+          100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        @keyframes lgHaloPulse {
+          0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+          50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
+        }
+        @keyframes lgOrbitSpin {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes lgOrbitSpinReverse {
+          from { transform: translate(-50%, -50%) rotate(360deg); }
+          to   { transform: translate(-50%, -50%) rotate(0deg); }
+        }
+        @keyframes lgCardFloat {
+          0%, 100% { transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) translateY(0); }
+          50%      { transform: perspective(1200px) rotateY(-3deg) rotateX(1deg) translateY(-10px); }
+        }
+        .lg-hero-card:hover {
+          transform: perspective(1200px) rotateY(0deg) rotateX(0deg) translateY(-6px) scale(1.015) !important;
+          box-shadow:
+            0 40px 100px -20px rgba(168,85,247,0.55),
+            0 0 0 1px rgba(168,85,247,0.25) inset,
+            0 0 80px -20px rgba(99,102,241,0.6) inset !important;
+        }
+        .lg-hero-card:hover .lg-hero-image {
+          transform: scale(1.06);
+        }
+        .lg-light .lg-hero-card {
+          box-shadow:
+            0 30px 80px -20px rgba(124,58,237,0.25),
+            0 0 0 1px rgba(124,58,237,0.12) inset !important;
+        }
+        .lg-light .lg-hero-halo {
+          background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.18) 0%, rgba(79,70,229,0.08) 35%, transparent 70%) !important;
+        }
+        .lg-light .lg-hero-grid {
+          background-image:
+            linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px) !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .anim-hero,
+          .lg-hero-card,
+          .lg-hero-orbit-1,
+          .lg-hero-orbit-2,
+          .lg-hero-halo { 
+            animation: none !important; 
+            transition: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .lg-hero-card { transform: none !important; }
+          .lg-hero-card:hover { transform: translateY(-4px) scale(1.01) !important; }
         }
       ` }} />
     </div>
