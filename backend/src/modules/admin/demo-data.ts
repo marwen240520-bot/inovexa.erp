@@ -13,6 +13,8 @@ import { Expense } from '../finance/entities/expense.entity';
 import { Budget } from '../finance/entities/budget.entity';
 import { BankAccount } from '../finance/entities/bank-account.entity';
 import { Shipment } from '../logistics/entities/shipment.entity';
+import { Objective } from '../objectives/entities/objective.entity';
+import { periodBounds } from '../objectives/objectives.service';
 
 /** Nombre d'éléments de démonstration créés dans CHAQUE module d'un nouveau client. */
 export const DEMO_ITEMS_PER_MODULE = 20;
@@ -414,6 +416,27 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
     }),
   );
   mark('shipments', shipments);
+
+  // 12. Objectifs : calculés d'après les ventes de démo, pour que les barres de progression soient parlantes
+  const today = new Date();
+  const thisYear = today.getFullYear();
+  const inYear = <T extends { date: Date }>(rows: T[]) => rows.filter((r) => r.date.getFullYear() === thisYear);
+  const revenueYear = inYear(plan).reduce((s, p) => s + p.total, 0);
+  const costYear = purchases.filter((p) => new Date(p.createdAt).getFullYear() === thisYear).reduce((s, p) => s + Number(p.total), 0);
+  const quarter = periodBounds('quarter', today);
+  const salesInQuarter = plan.filter((p) => p.date.toISOString().slice(0, 10) >= quarter.start && p.date.toISOString().slice(0, 10) <= quarter.end).length;
+  const roundUp = (n: number, step: number) => Math.max(step, Math.ceil(n / step) * step);
+  const yearRange = periodBounds('year', today), month = periodBounds('month', today), q = quarter;
+  const objectives = await manager.save(
+    Objective,
+    [
+      { title: "Chiffre d'affaires de l'année", metric: 'revenue', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: roundUp(revenueYear * 1.25, 1000) },
+      { title: "Bénéfice de l'année", metric: 'profit', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: roundUp((revenueYear - costYear) * 1.1, 500) },
+      { title: 'Ventes du trimestre', metric: 'sales_count', period: 'quarter', ...{ startDate: q.start, endDate: q.end }, targetValue: Math.max(5, salesInQuarter + 4) },
+      { title: 'Nouveaux clients du mois', metric: 'new_clients', period: 'month', ...{ startDate: month.start, endDate: month.end }, targetValue: 5 },
+    ].map((o) => manager.create(Objective, { userId, ...o })),
+  );
+  mark('objectives', objectives);
 
   const total = Object.values(created).reduce((a, b) => a + b, 0);
   return { perModule: N, modules: created, total };

@@ -8,7 +8,8 @@ export class Expense {
   @Column()
   userId: number;
 
-  @Column()
+  // Décimal(10,2) : c'est le type réel de la colonne en base. Le transformer renvoie un nombre (et non une chaîne).
+  @Column('decimal', { precision: 10, scale: 2, transformer: { to: (v: number) => v, from: (v: string | null) => (v === null || v === undefined ? v : parseFloat(v)) } })
   amount: number;
 
   @Column()

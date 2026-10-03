@@ -16,6 +16,12 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
   </svg>
 );
 
+// Libellés des modules ajoutés après les fichiers de traduction (fr / en / es)
+const EXTRA_LABELS: Record<string, Record<string, string>> = {
+  "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida" },
+  "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
+};
+
 const ICONS: Record<string, JSX.Element> = {
   dashboard: (
     <Icon>
@@ -45,6 +51,21 @@ const ICONS: Record<string, JSX.Element> = {
       <line x1="12" y1="20" x2="12" y2="4"/>
       <line x1="6" y1="20" x2="6" y2="14"/>
       <line x1="2" y1="20" x2="22" y2="20"/>
+    </Icon>
+  ),
+  pos: (
+    <Icon>
+      <rect x="4" y="2" width="16" height="20" rx="2"/>
+      <rect x="8" y="6" width="8" height="4" rx="1"/>
+      <line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/><line x1="16" y1="14" x2="16.01" y2="14"/>
+      <line x1="8" y1="18" x2="8.01" y2="18"/><line x1="12" y1="18" x2="16" y2="18"/>
+    </Icon>
+  ),
+  objectives: (
+    <Icon>
+      <circle cx="12" cy="12" r="10"/>
+      <circle cx="12" cy="12" r="6"/>
+      <circle cx="12" cy="12" r="2"/>
     </Icon>
   ),
   sales: (
@@ -218,7 +239,7 @@ export function getCachedModules(): Record<string, boolean> | null {
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { theme, themeId } = useTheme();
 
   const [user, setUser] = useState<User | null>(sidebarCachedUser);
@@ -298,6 +319,9 @@ export default function Sidebar() {
   const isModuleActive = (id: string) => {
     if (CORE_MODULES.includes(id)) return true;            // toujours accessibles
     if (!userModules || Object.keys(userModules).length === 0) return true; // client non configuré : tout ouvert
+    // Modules ajoutés plus tard : visibles par défaut pour les clients dont la liste a été configurée avant leur création
+    if (id === "objectives") return userModules.objectives !== false;
+    if (id === "pos") return userModules.pos !== undefined ? userModules.pos === true : (userModules.sales === true || userModules.purchases === true);
     return userModules[id] === true;                       // sinon : actif seulement si explicitement true
   };
 
@@ -324,6 +348,7 @@ export default function Sidebar() {
   };
 
   const getLabel = (key: string) => {
+    if (EXTRA_LABELS[key]) return EXTRA_LABELS[key][language] || EXTRA_LABELS[key].fr;
     try {
       const v = t(key);
       return v === key ? key.split(".").pop() ?? key : v;
@@ -341,6 +366,7 @@ export default function Sidebar() {
     { id: "stock",      path: "/dashboard/stock",      label: "common.stock",      iconKey: "stock" },
     { id: "sales",      path: "/dashboard/sales",      label: "common.sales",      iconKey: "sales" },
     { id: "purchases",  path: "/dashboard/purchases",  label: "common.purchases",  iconKey: "purchases" },
+    { id: "pos",        path: "/dashboard/pos",        label: "common.pos",        iconKey: "pos" },
     { id: "orders",     path: "/dashboard/orders",     label: "common.orders",     iconKey: "orders" },
     { id: "clients",    path: "/dashboard/clients",    label: "common.clients",    iconKey: "clients" },
     { id: "suppliers",  path: "/dashboard/suppliers",  label: "common.suppliers",  iconKey: "suppliers" },
@@ -351,6 +377,7 @@ export default function Sidebar() {
     { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },
     { id: "reports",    path: "/dashboard/reports",    label: "common.reports",    iconKey: "reports" },
     { id: "analytics",  path: "/dashboard/analytics",  label: "common.analytics",  iconKey: "analytics" },
+    { id: "objectives", path: "/dashboard/objectives", label: "common.objectives", iconKey: "objectives" },
     { id: "profile",    path: "/dashboard/profile",    label: "common.profile",    iconKey: "profile" },
     { id: "settings",   path: "/dashboard/settings",   label: "common.settings",   iconKey: "settings" },
   ];

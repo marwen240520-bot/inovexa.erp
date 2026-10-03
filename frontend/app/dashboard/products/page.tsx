@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -404,29 +404,65 @@ export default function ProductsPage() {
   // Import groupé de photos : chaque fichier est rapproché d'un produit par son nom de fichier
   // (« REF-001.jpg » -> SKU REF-001, ou « Clavier sans fil.png » -> produit « Clavier sans fil »).
   const [photoBusy, setPhotoBusy] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const photoTargetRef = useRef<Product | null>(null);
+
+  // Associe une image à UN produit (réduite automatiquement avant l'envoi)
+  const attachPhoto = async (target: Product, file: File): Promise<boolean> => {
+    const token = localStorage.getItem("token");
+    try {
+      const imageUrl = await resizeImageToDataUrl(file);
+      const res = await fetch(`${API_URL}/products/${target.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ imageUrl }),
+      });
+      return res.ok;
+    } catch { return false; }
+  };
+
+  // Bouton « photo » d'un produit : ouvre la galerie / l'appareil photo pour CE produit
+  const pickPhotoFor = (product: Product) => {
+    photoTargetRef.current = product;
+    photoInputRef.current?.click();
+  };
+  const onSinglePhotoChosen = async (file?: File) => {
+    const target = photoTargetRef.current;
+    if (!file || !target) return;
+    setPhotoBusy(true);
+    const ok = await attachPhoto(target, file);
+    if (ok) await fetchProducts();
+    showMessage(ok ? `Photo enregistrée pour « ${target.name} »` : "Impossible d'enregistrer la photo", ok ? "success" : "error");
+    setPhotoBusy(false);
+    photoTargetRef.current = null;
+  };
+
+  // Bouton « Photos » :
+  //  - un seul produit coché + une photo choisie -> la photo va à ce produit, quel que soit le nom du fichier ;
+  //  - sinon, chaque fichier est rapproché d'un produit par son nom (SKU ou nom du produit).
   const importPhotos = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setPhotoBusy(true);
-    const token = localStorage.getItem("token");
-    let done = 0; const unmatched: string[] = []; const failed: string[] = [];
     try {
+      if (selectedIds.length === 1 && files.length === 1) {
+        const target = products.find((p) => String(p.id) === String(selectedIds[0]));
+        if (target) {
+          const ok = await attachPhoto(target, files[0]);
+          if (ok) await fetchProducts();
+          showMessage(ok ? `Photo enregistrée pour « ${target.name} »` : "Impossible d'enregistrer la photo", ok ? "success" : "error");
+          return;
+        }
+      }
+      let done = 0; const unmatched: string[] = []; const failed: string[] = [];
       for (const file of Array.from(files)) {
         const key = normalizeKey(fileStem(file.name));
         const target = products.find((p) => p.sku && normalizeKey(String(p.sku)) === key) || products.find((p) => normalizeKey(p.name) === key);
         if (!target) { unmatched.push(file.name); continue; }
-        try {
-          const imageUrl = await resizeImageToDataUrl(file);
-          const res = await fetch(`${API_URL}/products/${target.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ imageUrl }),
-          });
-          if (res.ok) done++; else failed.push(file.name);
-        } catch { failed.push(file.name); }
+        if (await attachPhoto(target, file)) done++; else failed.push(file.name);
       }
       if (done > 0) await fetchProducts();
       const parts = [`${done} photo(s) associée(s)`];
-      if (unmatched.length) parts.push(`${unmatched.length} sans produit correspondant (${unmatched.slice(0, 3).join(", ")}${unmatched.length > 3 ? "…" : ""})`);
+      if (unmatched.length) parts.push(`${unmatched.length} sans produit correspondant (${unmatched.slice(0, 3).join(", ")}${unmatched.length > 3 ? "…" : ""}) — cochez un seul produit pour lui associer une photo quel que soit son nom`);
       if (failed.length) parts.push(`${failed.length} en échec`);
       showMessage(parts.join(" — "), done > 0 ? "success" : "error");
     } finally { setPhotoBusy(false); }
@@ -552,7 +588,7 @@ export default function ProductsPage() {
                 {!isMobile && (
                   <>
                     <ImportButton onImport={importProducts} label={t("common.import")} />
-                    <label title="Importer des photos de produits (le nom du fichier = SKU ou nom du produit)" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: buttonPadding, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: photoBusy ? "wait" : "pointer", fontSize: isMobile ? "11px" : "14px", whiteSpace: "nowrap" }}>
+                    <label title="Photos : cochez UN produit puis choisissez sa photo, ou choisissez plusieurs images nommées comme le SKU / le nom du produit" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: buttonPadding, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: photoBusy ? "wait" : "pointer", fontSize: isMobile ? "11px" : "14px", whiteSpace: "nowrap" }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
                       {photoBusy ? "…" : "Photos"}
                       <input type="file" accept={IMAGE_ACCEPT} multiple disabled={photoBusy} onChange={(e) => { importPhotos(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
@@ -568,7 +604,7 @@ export default function ProductsPage() {
             {isMobile && (
               <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
                 <ImportButton onImport={importProducts} label={<IconBox size={14} />} />
-                <label title="Importer des photos de produits (le nom du fichier = SKU ou nom du produit)" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: buttonPadding, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: photoBusy ? "wait" : "pointer", fontSize: isMobile ? "11px" : "14px", whiteSpace: "nowrap" }}>
+                <label title="Photos : cochez UN produit puis choisissez sa photo, ou choisissez plusieurs images nommées comme le SKU / le nom du produit" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: buttonPadding, background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: photoBusy ? "wait" : "pointer", fontSize: isMobile ? "11px" : "14px", whiteSpace: "nowrap" }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
                       {photoBusy ? "…" : "Photos"}
                       <input type="file" accept={IMAGE_ACCEPT} multiple disabled={photoBusy} onChange={(e) => { importPhotos(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
@@ -624,6 +660,11 @@ export default function ProductsPage() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", flexWrap: "wrap", gap: "8px" }}>
               <SelectAllCheckbox items={filteredProducts} selectedIds={selectedIds} onSelect={setSelectedIds} onSelectAll={(ids) => setSelectedIds(ids)} getItemId={(item) => item.id} />
+              {selectedIds.length === 1 && (
+                <button onClick={() => { const target = products.find((p) => String(p.id) === String(selectedIds[0])); if (target) pickPhotoFor(target); }} disabled={photoBusy} style={{ background: theme.primary, color: "white", border: "none", borderRadius: "6px", padding: "6px 12px", cursor: photoBusy ? "wait" : "pointer", fontSize: isMobile ? "11px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>Ajouter une photo à ce produit
+                </button>
+              )}
               {selectedIds.length > 0 && (
                 <button onClick={deleteSelected} style={{ background: "#c33", color: "white", border: "none", borderRadius: "6px", padding: "6px 12px", cursor: "pointer", fontSize: isMobile ? "11px" : "14px", display: "flex", alignItems: "center", gap: "4px" }}>
                   <IconTrash size={12} />{t("common.delete")} ({selectedIds.length})
@@ -665,11 +706,14 @@ export default function ProductsPage() {
                           </td>
                           <td style={{ padding: "8px", color: theme.text, fontWeight: "500", fontSize: tableFontSize }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              {p.imageUrl && (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={p.imageUrl} alt="" loading="lazy" style={{ width: isMobile ? 32 : 40, height: isMobile ? 32 : 40, borderRadius: 8, objectFit: "cover", flexShrink: 0, border: `1px solid ${theme.border}` }} />
-                              )}
-                              {!p.imageUrl && ((p.quantity || 0) <= 0 ? <IconXCircle size={14} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={14} color="#f59e0b" /> : <IconPackage size={14} color="#10b981" />)}
+                              <button type="button" onClick={() => pickPhotoFor(p)} title={p.imageUrl ? "Changer la photo" : "Ajouter une photo"} aria-label={p.imageUrl ? "Changer la photo" : "Ajouter une photo"} style={{ width: isMobile ? 34 : 42, height: isMobile ? 34 : 42, borderRadius: 8, flexShrink: 0, padding: 0, overflow: "hidden", cursor: "pointer", border: `1px ${p.imageUrl ? "solid" : "dashed"} ${theme.border}`, background: theme.surfaceHover, color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {p.imageUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={p.imageUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                ) : (
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                                )}
+                              </button>
                               <span style={{ wordBreak: "break-word" }}>{p.name?.length > (isMobile ? 12 : 20) ? p.name.substring(0, isMobile ? 10 : 17) + "..." : p.name}</span>
                             </div>
                           </td>
@@ -683,6 +727,7 @@ export default function ProductsPage() {
                           </td>
                           <td style={{ padding: "8px", textAlign: "center" }}>
                             <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                              <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ background: theme.primary, color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
                               <button onClick={() => openEditModal(p)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconEdit size={11} /></button>
                               <button onClick={() => deleteProduct(p.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconTrash size={11} /></button>
                             </div>
@@ -736,6 +781,7 @@ export default function ProductsPage() {
                       ))}
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
+                      <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ flex: 1, padding: "5px", background: theme.primary, color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
                       <button onClick={() => openEditModal(p)} style={{ flex: 1, padding: "5px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
                         <IconEdit size={10} />{!isMobile && t("common.edit")}
                       </button>
@@ -758,6 +804,8 @@ export default function ProductsPage() {
       </div>
 
       {/* Modal */}
+      <input ref={photoInputRef} type="file" accept={IMAGE_ACCEPT} style={{ display: "none" }} onChange={(e) => { onSinglePhotoChosen(e.target.files?.[0]); e.target.value = ""; }} />
+
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
           <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>

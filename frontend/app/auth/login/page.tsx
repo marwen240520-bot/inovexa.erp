@@ -188,8 +188,8 @@ export default function LoginPage() {
       }}
     >
       
-      {/* Thème et langue */}
-      <div style={{ position: "fixed", top: "max(env(safe-area-inset-top, 0px), 14px)", right: "14px", zIndex: 60, display: "flex", alignItems: "center", gap: "8px" }}>
+      {/* Thème et langue (ordinateur seulement) */}
+      {!isSmallScreen && <div style={{ position: "fixed", top: "max(env(safe-area-inset-top, 0px), 14px)", right: "14px", zIndex: 60, display: "flex", alignItems: "center", gap: "8px" }}>
         <ThemeToggle size={40} />
         <select
           aria-label="Language"
@@ -201,7 +201,7 @@ export default function LoginPage() {
           <option value="en">EN</option>
           <option value="es">ES</option>
         </select>
-      </div>
+      </div>}
 
       {/* ── MOBILE LAYOUT ── */}
       {isSmallScreen ? (
@@ -233,10 +233,6 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* Aperçu de l'application */}
-          <div style={{ padding: "4px 24px 0" }}>
-            <img src="/images/1.png" alt="" loading="lazy" style={{ width: "100%", height: isMobile ? "130px" : "190px", objectFit: "cover", objectPosition: "top left", borderRadius: "18px", display: "block", border: "1px solid rgba(168,85,247,0.25)", boxShadow: "0 18px 40px -18px rgba(168,85,247,0.45)" }} />
-          </div>
 
           <div style={{
             flex: 1,
@@ -436,15 +432,7 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                {/* Se souvenir de l'e-mail + aide mot de passe */}
-<div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "4px 0 18px" }}>
-  <label style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "var(--lg-label)", fontSize: "13.5px", cursor: "pointer", minHeight: "28px" }}>
-    <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#8b5cf6", cursor: "pointer" }} />
-    {t.remember}
-  </label>
-  <span style={{ color: "var(--lg-muted)", fontSize: "12.5px", lineHeight: 1.5 }}>{t.forgotHint}</span>
-</div>
-<button
+                <button
                   type="submit"
                   disabled={loading}
                   style={{

@@ -29,6 +29,10 @@ export class Sale {
   @Column({ default: 'pending' })
   status: string;
 
+  // Moyen de paiement (caisse rapide) : cash | card | transfer | check | draft | mobile | other
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  paymentMethod: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

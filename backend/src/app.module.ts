@@ -31,17 +31,28 @@ import { IaModule } from './modules/ia/ia.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { runPreSyncFixes } from './common/pre-sync-fixes';
+import { PosModule } from './modules/pos/pos.module';
+import { ObjectivesModule } from './modules/objectives/objectives.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      ssl: false,
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
-      logging: false,
+    TypeOrmModule.forRootAsync({
+      useFactory: async () => {
+        // Convertit sur place les colonnes dont le type diffère de l'entité (évite le « drop + recréation » de TypeORM)
+        await runPreSyncFixes(process.env.DATABASE_URL);
+        return {
+          type: 'postgres' as const,
+          url: process.env.DATABASE_URL,
+          ssl: false,
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true,
+          logging: false,
+        };
+      },
     }),
+    PosModule,
+    ObjectivesModule,
     AuthModule,
     UsersModule,
     ProductsModule,

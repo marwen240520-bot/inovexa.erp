@@ -764,8 +764,8 @@ export default function HomePage(): React.ReactElement {
           );
         })
       ),
-      // ── Modules (pastilles) ──
-      React.createElement("div", { "aria-label": "Modules", style: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: isMobile ? "28px" : "34px", maxWidth: "520px", opacity: subtitleVisible ? 1 : 0, transition: "opacity 0.6s ease 0.1s" } },
+      // ── Modules (pastilles) — ordinateur et tablette seulement ──
+      !isMobile && React.createElement("div", { "aria-label": "Modules", style: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: isMobile ? "28px" : "34px", maxWidth: "520px", opacity: subtitleVisible ? 1 : 0, transition: "opacity 0.6s ease 0.1s" } },
         (HOME_MODULES[language] || HOME_MODULES.en).map((label: string) =>
           React.createElement("span", { key: label, style: { padding: isMobile ? "6px 11px" : "7px 13px", borderRadius: "999px", fontSize: isMobile ? "11px" : "12px", fontWeight: "600", color: "var(--hp-feature-text)", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.22)", whiteSpace: "nowrap" } }, label)
         )
@@ -778,10 +778,6 @@ export default function HomePage(): React.ReactElement {
             React.createElement("div", { className: "shimmer-effect" })
           )
         )
-      ),
-      // ── Aperçu de l'application (mobile : l'image du panneau de droite n'est pas affichée) ──
-      isMobile && React.createElement("div", { style: { marginTop: "32px", borderRadius: "20px", overflow: "hidden", border: "1px solid rgba(168,85,247,0.28)", boxShadow: "0 24px 60px -20px rgba(168,85,247,0.45)", background: "var(--hp-card-bg)" } },
-        React.createElement("img", { src: "/images/1.png", alt: "Inovexa", loading: "lazy", style: { width: "100%", display: "block", objectFit: "cover" } })
       ),
       React.createElement("div", { style: { marginTop: isMobile ? "44px" : "52px", display: "flex", flexDirection: "column", gap: "10px" } },
         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" } },

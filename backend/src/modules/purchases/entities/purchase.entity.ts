@@ -30,6 +30,9 @@ export class Purchase {
   @Column({ default: 'pending' })
   status: string;
 
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  paymentMethod: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
