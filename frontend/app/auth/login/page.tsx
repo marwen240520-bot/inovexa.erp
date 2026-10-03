@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import HeroPreview from "@/components/ui/HeroPreview";
+import LanguageMenu from "@/components/ui/LanguageMenu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -101,7 +102,7 @@ const translations = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { language, changeLanguage } = useLanguage();
+  const { language } = useLanguage();
   const { theme, themeId } = useTheme();
   const isLight = isLightTheme(theme);
   const themeVars = buildLgVars(themeId, theme) as React.CSSProperties;
@@ -198,16 +199,7 @@ export default function LoginPage() {
       {/* Thème et langue (ordinateur seulement) */}
       {!isSmallScreen && <div style={{ position: "fixed", top: "max(env(safe-area-inset-top, 0px), 14px)", right: "14px", zIndex: 60, display: "flex", alignItems: "center", gap: "8px" }}>
         <ThemeToggle size={40} />
-        <select
-          aria-label="Language"
-          value={language}
-          onChange={(e) => changeLanguage(e.target.value)}
-          style={{ height: "40px", padding: "0 12px", borderRadius: "999px", border: "1px solid var(--theme-border)", background: "var(--theme-surface)", color: "var(--theme-text)", fontSize: "13px", fontWeight: 600, cursor: "pointer", outline: "none" }}
-        >
-          <option value="fr">FR</option>
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-        </select>
+        <LanguageMenu />
       </div>}
 
       {/* ── MOBILE LAYOUT ── */}
@@ -221,81 +213,35 @@ export default function LoginPage() {
           minHeight: "100dvh",
         }}>
 
-          <div style={{
-            padding: "env(safe-area-inset-top, 20px) 24px 0",
-            paddingTop: "max(env(safe-area-inset-top, 20px), 20px)",
-          }}>
-            <Link href="/" style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              color: "var(--lg-muted)",
-              fontSize: "13px",
-              textDecoration: "none",
-              padding: "10px 0",
-              WebkitTapHighlightColor: "transparent",
-            }}>
-              <span style={{ fontSize: "16px" }}>←</span>
-              <span>{t.backToHome}</span>
+          {/* En-tête fixe : même présentation que la page d'accueil (logo + nom à gauche, thème et langue à droite) */}
+          <header style={{ position: "fixed", top: 0, left: 0, right: 0, height: "72px", background: "var(--lg-bg)", borderBottom: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", padding: "0 16px", zIndex: 150 }}>
+            <Link href="/" aria-label={t.backToHome} style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", WebkitTapHighlightColor: "transparent" }}>
+              <img src="/images/logo.png" alt="Inovexa Logo" style={{ width: "52px", height: "52px", objectFit: "contain", flexShrink: 0 }} />
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+                <span style={{ color: "var(--lg-text)", fontSize: "14px", fontWeight: 300, letterSpacing: "2px", textTransform: "uppercase", fontFamily: "'Orbitron', 'Poppins', sans-serif" }}>
+                  <span style={{ fontWeight: 800 }}>INOV</span>EXA
+                </span>
+                <span style={{ background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "8px", fontWeight: 700, letterSpacing: "5px", marginTop: "2px", textTransform: "uppercase", fontFamily: "'Orbitron', 'Poppins', sans-serif" }}>ERP</span>
+              </div>
             </Link>
-          </div>
-
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
+              <ThemeToggle size={38} />
+              <LanguageMenu />
+            </div>
+          </header>
 
           <div style={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            padding: "32px 24px",
+            padding: "96px 24px 40px",
             paddingBottom: "max(env(safe-area-inset-bottom, 24px), 40px)",
             overflowY: "auto",
           }}>
 
-            {/* LOGO BLOCK */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0px",
-              marginBottom: "32px",
-            }}>
-              <img 
-                src="/images/logo.png" 
-                alt="Inovexa Logo" 
-                style={{ 
-                  width: "96px",
-                  height: "auto", 
-                  marginRight: "-8px",
-                }} 
-              />
-              <div>
-                <h2 style={{ 
-                  color: "var(--lg-text)", 
-                  fontSize: "16px", 
-                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
-                  fontWeight: "300", 
-                  margin: 0, 
-                  letterSpacing: "1.8px",
-                  textTransform: "uppercase",
-                  lineHeight: 1,
-                }}>
-                  <span style={{ fontWeight: "800" }}>INOV</span>EXA
-                </h2>
-                <div style={{ 
-                  background: "linear-gradient(90deg, #A855F7, #6366F1)",
-                  WebkitBackgroundClip: "text", 
-                  WebkitTextFillColor: "transparent",
-                  fontSize: "9px", 
-                  fontWeight: "700",
-                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
-                  letterSpacing: "5px", 
-                  marginTop: "3px",
-                  textTransform: "uppercase"
-                }}>ERP</div>
-              </div>
-            </div>
-
             {/* TITLE */}
-            <div style={{ marginBottom: "32px" }}>
+            <div className="lg-anim" style={{ marginBottom: "32px" }}>
               <h1 style={{ 
                 fontSize: "32px",
                 color: "var(--lg-text)", 
@@ -316,7 +262,7 @@ export default function LoginPage() {
             </div>
 
             {/* GLASS CARD WRAPPER */}
-            <div style={{
+            <div className="lg-card" style={{
               background: "var(--lg-card)",
               border: "1px solid rgba(168, 85, 247, 0.12)",
               borderRadius: "20px",
@@ -326,7 +272,7 @@ export default function LoginPage() {
             }}>
 
               {error && (
-                <div role="alert" aria-live="assertive" style={{ 
+                <div className="lg-error" role="alert" aria-live="assertive" style={{ 
                   background: "rgba(239,68,68,0.08)", 
                   border: "1px solid rgba(239,68,68,0.25)", 
                   color: "var(--lg-error)", 
@@ -343,7 +289,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <form onSubmit={handleLogin} style={{ width: "100%" }}>
+              <form className="lg-form" onSubmit={handleLogin} style={{ width: "100%" }}>
                 <div style={{ marginBottom: "18px" }}>
                   <label style={{ 
                     color: "var(--lg-label)", 
@@ -440,6 +386,7 @@ export default function LoginPage() {
                 </div>
 
                 <button
+                  className="lg-btn"
                   type="submit"
                   disabled={loading}
                   style={{
@@ -475,8 +422,15 @@ export default function LoginPage() {
               </form>
             </div>
 
+            <div style={{ marginTop: "22px", textAlign: "center" }}>
+              <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "var(--lg-muted)", fontSize: "14px", textDecoration: "none", padding: "8px 4px" }}>
+                <span style={{ fontSize: "16px" }}>←</span>
+                <span>{t.backToHome}</span>
+              </Link>
+            </div>
+
             <p style={{ 
-              marginTop: "28px", 
+              marginTop: "20px", 
               color: "var(--lg-faint)", 
               fontSize: "10px", 
               fontWeight: "600",
@@ -502,7 +456,7 @@ export default function LoginPage() {
           }}>
             
             {/* LOGO ET TEXTE */}
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
+            <div className="lg-anim-left" style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
               <div style={{ marginTop: "2px" }}> 
                 <img 
                   src="/images/logo.png" 
@@ -540,7 +494,7 @@ export default function LoginPage() {
             </div>
 
             {/* Carte de connexion */}
-            <div style={{ width: "100%", maxWidth: "520px", boxSizing: "border-box", background: "var(--lg-card)", border: "1px solid var(--lg-input-border)", borderRadius: "22px", padding: "clamp(20px, 3.4vh, 32px) 34px clamp(18px, 3vh, 28px)", boxShadow: "0 24px 56px -30px rgba(76, 29, 149, 0.35)" }}>
+            <div className="lg-card" style={{ width: "100%", maxWidth: "520px", boxSizing: "border-box", background: "var(--lg-card)", border: "1px solid var(--lg-input-border)", borderRadius: "22px", padding: "clamp(20px, 3.4vh, 32px) 34px clamp(18px, 3vh, 28px)", boxShadow: "0 24px 56px -30px rgba(76, 29, 149, 0.35)" }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "5px 12px", borderRadius: "999px", border: "1px solid rgba(139,92,246,0.3)", background: "rgba(139,92,246,0.08)", color: "var(--lg-label)", fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(10px, 1.8vh, 16px)" }}>
               <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#A855F7" }} />
               {t.area}
@@ -560,7 +514,7 @@ export default function LoginPage() {
             <p style={{ color: "var(--lg-muted)", fontSize: "15px", margin: "0 0 clamp(14px, 2.6vh, 24px)", lineHeight: 1.5 }}>{t.welcome}</p>
 
             {error && (
-              <div role="alert" aria-live="assertive" style={{ 
+              <div className="lg-error" role="alert" aria-live="assertive" style={{ 
                 background: "rgba(239,68,68,0.1)", 
                 border: "1px solid rgba(239,68,68,0.2)", 
                 color: "var(--lg-error)", 
@@ -573,7 +527,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} style={{ width: "100%" }}>
+            <form className="lg-form" onSubmit={handleLogin} style={{ width: "100%" }}>
               <div style={{ marginBottom: "clamp(12px, 2vh, 20px)" }}>
                 <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "7px", fontSize: "13px", fontWeight: "500" }}>
                   {t.email}
@@ -669,6 +623,7 @@ export default function LoginPage() {
                 
               </div>
               <button
+                className="lg-btn"
                 type="submit"
                 disabled={loading}
                 style={{
@@ -756,6 +711,30 @@ export default function LoginPage() {
 
         /* ── Variante claire ── */
         .lg-light h1 span, .lg-light h2 span { text-shadow: none; }
+
+        /* ── Animations (la capture du tableau de bord reste statique) ── */
+        @keyframes lgFadeUp   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+        @keyframes lgFadeLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
+        @keyframes lgShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
+        @keyframes lgSheen { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        .lg-anim      { opacity: 0; animation: lgFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards; }
+        .lg-anim-left { opacity: 0; animation: lgFadeLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .lg-card      { opacity: 0; animation: lgFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards; }
+        .lg-card > *, .lg-form > * { opacity: 0; animation: lgFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .lg-card > :nth-child(1), .lg-form > :nth-child(1) { animation-delay: 0.3s; }
+        .lg-card > :nth-child(2), .lg-form > :nth-child(2) { animation-delay: 0.38s; }
+        .lg-card > :nth-child(3), .lg-form > :nth-child(3) { animation-delay: 0.46s; }
+        .lg-card > :nth-child(4), .lg-form > :nth-child(4) { animation-delay: 0.54s; }
+        .lg-card > :nth-child(5), .lg-form > :nth-child(5) { animation-delay: 0.62s; }
+        .lg-card > :nth-child(6), .lg-form > :nth-child(6) { animation-delay: 0.7s; }
+        .lg-card > .lg-error { opacity: 1; animation: lgShake 0.5s ease; }
+        .lg-btn { transition: transform 0.15s ease, box-shadow 0.25s ease; }
+        .lg-btn:hover:not(:disabled) { background-size: 200% 100% !important; transform: translateY(-2px); box-shadow: 0 16px 30px -12px rgba(139, 92, 246, 0.8) !important; animation: lgSheen 1.6s linear infinite; }
+        .lg-btn:active:not(:disabled) { transform: scale(0.98); }
+        @media (prefers-reduced-motion: reduce) {
+          .lg-anim, .lg-anim-left, .lg-card, .lg-card > *, .lg-form > * { animation: none !important; opacity: 1 !important; }
+          .lg-btn, .lg-btn:hover:not(:disabled) { animation: none !important; transition: none; }
+        }
 
         .lg-input:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
 

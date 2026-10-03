@@ -640,7 +640,7 @@ export default function HomePage(): React.ReactElement {
         boxSizing: "border-box"
       }
     },
-      React.createElement(HeroPreview, { compact: isTablet })
+      React.createElement(HeroPreview)
     ),
 
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
