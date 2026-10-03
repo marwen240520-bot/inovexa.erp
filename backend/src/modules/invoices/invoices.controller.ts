@@ -22,6 +22,12 @@ export class InvoicesController {
     return this.invoicesService.findByOperationNumber(operationNumber, req.user.userId);
   }
 
+  // ⚠️ Route d'import : le front appelle POST /invoices/import
+  @Post('import')
+  async importInvoices(@Request() req: any, @Body() body: { invoices: any[] }) {
+    return this.invoicesService.importInvoices(req.user.userId, body?.invoices);
+  }
+
   @Post()
   async create(@Request() req: any, @Body() body: any) {
     return this.invoicesService.create(req.user.userId, body);

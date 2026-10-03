@@ -1,8 +1,9 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 
+import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
 @Injectable()
 export class ClientsService {
   constructor(
@@ -67,21 +68,35 @@ export class ClientsService {
     return this.clientRepository.save(client);
   }
 
-  async importClients(userId: number, clients: any[]) {
+  async importClients(userId: number, rows: any[]) {
+    if (!Array.isArray(rows) || rows.length === 0) throw new BadRequestException('Aucun client à importer');
+    const details: ImportErrorDetail[] = [];
     let success = 0;
-    let errors = 0;
-    
-    for (const client of clients) {
+    let processed = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (isEmptyRow(row)) continue;
+      processed++;
       try {
-        const newClient = this.clientRepository.create({ ...client, userId });
-        await this.clientRepository.save(newClient);
+        const name = toText(pick(row, ['name', 'nom', 'client', 'nom client', 'raison sociale', 'societe', 'entreprise', 'company', 'full name']));
+        if (!name) throw new Error(`Nom du client manquant (colonnes reçues : ${Object.keys(row).join(', ')})`);
+        const entity = this.clientRepository.create({
+          userId,
+          name,
+          email: toText(pick(row, ['email', 'e-mail', 'mail', 'courriel', 'adresse email'])) || '',
+          phone: toText(pick(row, ['phone', 'telephone', 'tel', 'mobile', 'gsm', 'portable'])) || undefined,
+          address: toText(pick(row, ['address', 'adresse', 'ville'])) || undefined,
+          totalSpent: toNumber(pick(row, ['totalSpent', 'total spent', 'total depense', 'montant total', 'total'])),
+          status: normalizeStatus(pick(row, ['status', 'statut', 'etat']), ACTIVE_STATUS, 'active'),
+        });
+        await this.clientRepository.save(entity);
         success++;
-      } catch(e) {
-        errors++;
+      } catch (e) {
+        details.push({ row: i + 2, error: errorMessage(e) });
       }
     }
-    
-    return { success, errors, total: clients.length };
+    return buildImportResult('client(s)', processed, success, details);
   }
 
   async delete(id: number, userId: number) {

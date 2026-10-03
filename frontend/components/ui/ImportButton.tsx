@@ -2,9 +2,10 @@
 import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { parseImportFile } from "@/lib/importParsers";
 
 interface ImportButtonProps {
-  onImport: (data: any[]) => void;
+  onImport: (data: any[]) => void | Promise<void>;
   onError?: (error: string) => void;
   label?: string | React.ReactNode;
   accept?: string;
@@ -29,9 +30,9 @@ export default function ImportButton({
   onImport, 
   onError,
   label, 
-  accept = ".json,.csv,.xlsx,.xls",
+  accept = ".json,.csv,.tsv,.txt,.xlsx,.xls",
   maxSize = 10,
-  allowedFormats = ["json", "csv", "xlsx", "xls"],
+  allowedFormats = ["json", "csv", "tsv", "txt", "xlsx", "xls"],
   mapping = {},
   preview = true,
   onValidate,
@@ -64,101 +65,8 @@ export default function ImportButton({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const parseCSV = (content: string, delimiter: string = ","): any[] => {
-    const lines = content.split(/\r?\n/).filter(line => line.trim());
-    if (lines.length === 0) return [];
-    
-    const headers = parseCSVLine(lines[0], delimiter);
-    const result: any[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i], delimiter);
-      if (values.length === headers.length) {
-        const obj: any = {};
-        headers.forEach((header, idx) => {
-          let value = values[idx]?.trim();
-          if (value && !isNaN(Number(value)) && value !== "") {
-            obj[header.trim()] = Number(value);
-          } else if (value === "true" || value === "false") {
-            obj[header.trim()] = value === "true";
-          } else {
-            obj[header.trim()] = value || "";
-          }
-        });
-        result.push(obj);
-      }
-    }
-    return result;
-  };
-
-  const parseCSVLine = (line: string, delimiter: string = ","): string[] => {
-    const result: string[] = [];
-    let current = "";
-    let inQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === delimiter && !inQuotes) {
-        result.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-    result.push(current.trim());
-    return result.map(val => val.replace(/^"|"$/g, ""));
-  };
-
-  const parseJSON = (content: string): any[] => {
-    const data = JSON.parse(content);
-    if (Array.isArray(data)) return data;
-    if (typeof data === "object" && data !== null) return [data];
-    throw new Error("Le fichier JSON doit contenir un tableau ou un objet");
-  };
-
-  const parseExcel = async (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const content = e.target?.result as string;
-          const data = parseCSV(content);
-          resolve(data);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = () => reject(new Error("Erreur de lecture du fichier"));
-      reader.readAsText(file);
-    });
-  };
-
-  const processFile = async (file: File): Promise<any[]> => {
-    const fileExtension = file.name.split('.').pop()?.toLowerCase() || "";
-    const content = await readFileContent(file);
-    
-    switch (fileExtension) {
-      case "json":
-        return parseJSON(content);
-      case "csv":
-        return parseCSV(content);
-      case "xlsx":
-      case "xls":
-        return await parseExcel(file);
-      default:
-        throw new Error(`Format non supporté: ${fileExtension}`);
-    }
-  };
-
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = () => reject(new Error("Erreur de lecture du fichier"));
-      reader.readAsText(file, "UTF-8");
-    });
-  };
+  // Lecture du fichier : CSV (, ; tab |), Excel .xlsx, JSON, tableau HTML exporté par l'application
+  const processFile = (file: File): Promise<any[]> => parseImportFile(file);
 
   const applyMapping = (data: any[]): any[] => {
     if (Object.keys(selectedColumns).length === 0) return data;
@@ -243,9 +151,7 @@ export default function ImportButton({
         setShowPreview(true);
         setShowModal(true);
       } else {
-        onImport(processedData);
-        setSuccess(`${data.length} enregistrement(s) importé(s) avec succès`);
-        setTimeout(() => setSuccess(null), 3000);
+        await onImport(processedData);
       }
     } catch (error: any) {
       clearInterval(progressInterval);
@@ -260,13 +166,22 @@ export default function ImportButton({
     }
   };
 
-  const confirmImport = () => {
-    if (importData.length > 0) {
-      onImport(importData);
-      setSuccess(`${importData.length} enregistrement(s) importé(s) avec succès`);
+  const confirmImport = async () => {
+    if (importData.length === 0 || isImporting) return;
+    setIsImporting(true);
+    try {
+      // Le résultat réel (succès / erreurs ligne par ligne) est affiché par la page appelante
+      await onImport(importData);
       setShowPreview(false);
       setShowModal(false);
-      setTimeout(() => setSuccess(null), 3000);
+      setImportData([]);
+      setPreviewData(null);
+    } catch (err: any) {
+      const msg = err?.message || "Erreur lors de l'import";
+      setError(msg);
+      if (onError) onError(msg);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -495,20 +410,22 @@ export default function ImportButton({
             </button>
             <button
               onClick={confirmImport}
+              disabled={isImporting}
               style={{
                 padding: "10px 24px",
                 background: "linear-gradient(135deg, #667eea, #764ba2)",
                 border: "none",
                 borderRadius: "8px",
                 color: "white",
-                cursor: "pointer",
+                opacity: isImporting ? 0.7 : 1,
+                cursor: isImporting ? "wait" : "pointer",
                 transition: "all 0.2s",
                 fontWeight: "500"
               }}
               onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
               onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
             >
-              ✅ {getTranslatedText("confirm")}
+              {isImporting ? `⏳ ${getTranslatedText("importing")}` : `✅ ${getTranslatedText("confirm")}`}
             </button>
           </div>
         </div>

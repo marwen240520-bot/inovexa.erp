@@ -5,6 +5,7 @@ import { Invoice } from './entities/invoice.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Supplier } from '../suppliers/supplier.entity';
 
+import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
 @Injectable()
 export class InvoicesService {
   constructor(
@@ -284,4 +285,64 @@ export class InvoicesService {
       yearlyTotal
     };
   }
+
+  async importInvoices(userId: number, rows: any[]) {
+    if (!Array.isArray(rows) || rows.length === 0) throw new BadRequestException('Aucune facture à importer');
+    const details: ImportErrorDetail[] = [];
+    let success = 0;
+    let processed = 0;
+    const batch = Date.now().toString(36).toUpperCase();
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (isEmptyRow(row)) continue;
+      processed++;
+      try {
+        const typeLabel = normalizeStatus(
+          pick(row, ['type', 'sens', 'nature']),
+          { debit: ['vente', 'client', 'sale', 'debit', 'débit'], credit: ['achat', 'fournisseur', 'purchase', 'credit', 'crédit'] },
+          'debit',
+        );
+        const taxRate = toNumber(pick(row, ['taxRate', 'tax rate', 'tva', 'taux tva', 'taux de tva']), 20);
+        let subtotalHT = toNumber(pick(row, ['subtotalHT', 'subtotal', 'montant ht', 'total ht', 'ht']), NaN);
+        let amount = toNumber(pick(row, ['amount', 'montant', 'total ttc', 'ttc', 'total', 'montant ttc']), NaN);
+        if (!Number.isFinite(subtotalHT) && !Number.isFinite(amount)) throw new Error('Montant manquant (colonne « amount », « montant » ou « total »)');
+        if (!Number.isFinite(subtotalHT)) subtotalHT = Math.round((amount / (1 + taxRate / 100)) * 100) / 100;
+        const taxAmount = Math.round(subtotalHT * taxRate) / 100;
+        if (!Number.isFinite(amount)) amount = Math.round((subtotalHT + taxAmount) * 100) / 100;
+
+        const description = toText(pick(row, ['description', 'libelle', 'objet', 'designation']));
+        const data = {
+          operationNumber: toText(pick(row, ['operationNumber', 'operation number', 'numero operation', 'n operation'])) || `OP-${userId}-${batch}-${i + 1}`,
+          reference: toText(pick(row, ['reference', 'ref', 'numero', 'numero facture', 'n facture', 'invoice number'])) || `FAC-${new Date().getFullYear()}-${batch}-${i + 1}`,
+          type: typeLabel,
+          clientName: toText(pick(row, ['clientName', 'client name', 'client', 'nom client', 'customer'])) || '',
+          supplierName: toText(pick(row, ['supplierName', 'supplier name', 'fournisseur', 'nom fournisseur', 'supplier'])) || '',
+          clientEmail: toText(pick(row, ['clientEmail', 'email client', 'email'])) || '',
+          clientPhone: toText(pick(row, ['clientPhone', 'telephone client', 'telephone', 'tel'])) || '',
+          clientAddress: toText(pick(row, ['clientAddress', 'adresse client', 'adresse'])) || '',
+          description: description || '',
+          items: description ? [{ description, quantity: 1, unitPrice: subtotalHT, total: subtotalHT }] : [],
+          subtotalHT,
+          taxRate,
+          taxAmount,
+          amount,
+          dueDate: toDate(pick(row, ['dueDate', 'due date', 'echeance', 'date echeance', "date d'echeance"])),
+          paymentTerms: toText(pick(row, ['paymentTerms', 'conditions de paiement', 'paiement'])) || 'Net 30',
+          notes: toText(pick(row, ['notes', 'note', 'remarque', 'commentaire'])) || '',
+          status: normalizeStatus(
+            pick(row, ['status', 'statut', 'etat']),
+            { paid: ['payee', 'payée', 'paye', 'payé', 'reglee', 'réglée', 'paid'], pending: ['en attente', 'impayee', 'impayée', 'pending'], overdue: ['en retard', 'overdue'] },
+            'pending',
+          ),
+        };
+        await this.create(userId, data);
+        success++;
+      } catch (e) {
+        details.push({ row: i + 2, error: errorMessage(e) });
+      }
+    }
+    return buildImportResult('facture(s)', processed, success, details);
+  }
+
 }

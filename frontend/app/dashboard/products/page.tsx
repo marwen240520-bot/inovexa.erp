@@ -9,6 +9,7 @@ import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
+import { summarizeImport, importHttpError } from "@/lib/importResult";
 // -- Types --------------------------------------------------
 interface Product {
   id: number | string;
@@ -365,52 +366,23 @@ export default function ProductsPage() {
     setImporting(true);
     const token = localStorage.getItem("token");
     try {
-      const productsWithZeroStock = data.map(p => ({
-        ...p,
-        quantity: 0
-      }));
-
       const res = await fetch(`${API_URL}/products/import`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ products: productsWithZeroStock })
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ products: data.map((p) => ({ ...p, quantity: 0 })) })
       });
-
-      let result: any = null;
-      try { result = await res.json(); } catch { result = null; }
-
+      const result = await res.json().catch(() => null);
       if (res.ok && result) {
-        const successCount = result.success ?? 0;
-        const errorCount = result.errors ?? 0;
-
-        if (errorCount > 0 && successCount === 0) {
-          // Tout a échoué
-          const firstErr = result.errorDetails?.[0]?.error || "";
-          showMessage(
-            `Aucun produit importé. ${errorCount} erreur(s).${firstErr ? " " + firstErr : ""}`,
-            "error"
-          );
-        } else if (errorCount > 0) {
-          // Partiel
-          showMessage(
-            `${successCount} produit(s) importé(s), ${errorCount} erreur(s)`,
-            "success"
-          );
-        } else {
-          showMessage(`${successCount} produit(s) importé(s) avec succès`, "success");
-        }
-        await fetchProducts();
+        const summary = summarizeImport(result, "produit");
+        showMessage(summary.message, summary.type);
+        if (Number(result.success) > 0) await fetchProducts();
       } else {
-        showMessage(result?.message || "Erreur lors de l'import", "error");
+        showMessage(importHttpError(res.status, result), "error");
       }
-    } catch(e) {
-      console.error("Erreur import:", e);
+    } catch (error) {
+      console.error("Erreur import:", error);
       showMessage("Erreur de connexion lors de l'import", "error");
-    }
-    finally { setImporting(false); }
+    } finally { setImporting(false); }
   };
 
   const showMessage = (msg: string, type: string) => {

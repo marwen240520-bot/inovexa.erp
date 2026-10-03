@@ -1,8 +1,9 @@
-﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 
+import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
 @Injectable()
 export class EmployeesService {
   constructor(
@@ -63,24 +64,51 @@ export class EmployeesService {
     return { total, active, onLeave, inactive, totalPayroll, avgSalary };
   }
 
-  async importEmployees(userId: number, employees: any[]) {
+  async importEmployees(userId: number, rows: any[]) {
+    if (!Array.isArray(rows) || rows.length === 0) throw new BadRequestException('Aucun employé à importer');
+    const details: ImportErrorDetail[] = [];
     let success = 0;
-    let errors = 0;
-    
-    for (const emp of employees) {
+    let processed = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (isEmptyRow(row)) continue;
+      processed++;
       try {
-        const newEmployee = this.employeeRepository.create({
-          ...emp,
+        let name = toText(pick(row, ['name', 'nom complet', 'full name', 'fullname', 'employe', 'employee', 'nom et prenom']));
+        if (!name) {
+          // Colonnes séparées "Prénom" + "Nom"
+          const first = toText(pick(row, ['prenom', 'firstname', 'first name']));
+          const last = toText(pick(row, ['nom', 'lastname', 'last name', 'nom de famille']));
+          name = [first, last].filter(Boolean).join(' ') || null;
+        }
+        if (!name) throw new Error(`Nom de l'employé manquant (colonnes reçues : ${Object.keys(row).join(', ')})`);
+
+        const hire = toDate(pick(row, ['hireDate', 'hire date', 'date embauche', "date d'embauche", 'embauche', 'date']));
+        const now = new Date().toISOString();
+        const entity = this.employeeRepository.create({
           userId,
-          hireDate: emp.hireDate ? new Date(emp.hireDate) : null
-        });
-        await this.employeeRepository.save(newEmployee);
+          name,
+          email: toText(pick(row, ['email', 'e-mail', 'mail', 'courriel'])) || '',
+          position: toText(pick(row, ['position', 'poste', 'fonction', 'job title', 'titre'])) || undefined,
+          department: toText(pick(row, ['department', 'departement', 'service'])) || undefined,
+          salary: toNumber(pick(row, ['salary', 'salaire', 'salaire brut', 'remuneration'])),
+          phone: toText(pick(row, ['phone', 'telephone', 'tel', 'mobile', 'gsm'])) || undefined,
+          hireDate: hire ? hire.toISOString().slice(0, 10) : undefined,
+          status: normalizeStatus(
+            pick(row, ['status', 'statut', 'etat']),
+            { active: ['actif', 'active'], inactive: ['inactif', 'inactive'], on_leave: ['conge', 'en conge', 'on leave', 'leave', 'on_leave'] },
+            'active',
+          ),
+          createdAt: now,
+          updatedAt: now,
+        } as any);
+        await this.employeeRepository.save(entity);
         success++;
-      } catch(e) {
-        errors++;
+      } catch (e) {
+        details.push({ row: i + 2, error: errorMessage(e) });
       }
     }
-    
-    return { success, errors, message: `${success} employé(s) importé(s), ${errors} erreur(s)` };
+    return buildImportResult('employé(s)', processed, success, details);
   }
 }

@@ -9,6 +9,7 @@ import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
+import { summarizeImport, importHttpError } from "@/lib/importResult";
 // --- Interfaces ----------------------------------------------------------------
 
 interface Purchase {
@@ -505,21 +506,18 @@ export default function PurchasesPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ purchases: data })
       });
-      const result = await res.json();
-      if (res.ok) {
-        showMessage(
-          `${result.success} achat(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
-          "success"
-        );
-        fetchPurchases();
+      const result = await res.json().catch(() => null);
+      if (res.ok && result) {
+        const summary = summarizeImport(result, "achat");
+        showMessage(summary.message, summary.type);
+        if (Number(result.success) > 0) await fetchPurchases();
       } else {
-        showMessage(result.message || "Erreur lors de l'import", "error");
+        showMessage(importHttpError(res.status, result), "error");
       }
     } catch (error) {
+      console.error("Erreur import:", error);
       showMessage("Erreur de connexion lors de l'import", "error");
-    } finally {
-      setImporting(false);
-    }
+    } finally { setImporting(false); }
   };
 
   const showMessage = (msg: string, type: string) => {

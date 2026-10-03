@@ -22,6 +22,12 @@ export class SuppliersController {
     return this.suppliersService.findOne(parseInt(id), req.user.userId);
   }
 
+  // ⚠️ Route d'import : le front appelle POST /suppliers/import
+  @Post('import')
+  async importSuppliers(@Request() req: any, @Body() body: { suppliers: any[] }) {
+    return this.suppliersService.importSuppliers(req.user.userId, body?.suppliers);
+  }
+
   @Post()
   async create(@Request() req: any, @Body() body: any) {
     return this.suppliersService.create(req.user.userId, body);

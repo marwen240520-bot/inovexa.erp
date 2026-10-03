@@ -144,14 +144,14 @@ export class AdminService {
   }
 
   /**
-   * Supprime TOUTES les données d'un client puis le client lui-même.
+   * Supprime TOUTES les données d'un client (sans supprimer son compte).
    *
    * On s'appuie sur les clés étrangères RÉELLES de la base (catalogue PostgreSQL) et non
    * sur les entités TypeORM : la base contient des liens que les entités ignorent
    * (ex. admin / customers / export / search -> users, voir scripts/correction.sql).
    * Pour chaque ligne à supprimer, on supprime d'abord les lignes qui la référencent.
    */
-  private async deleteClientData(manager: EntityManager, userId: number): Promise<void> {
+  private async purgeClientData(manager: EntityManager, userId: number): Promise<void> {
     const qi = (name: string) => `"${String(name).replace(/"/g, '""')}"`;
 
     // 1) Carte des clés étrangères (colonne simple) du schéma courant
@@ -211,8 +211,18 @@ export class AdminService {
       if (!existing.has(table) || table === 'users') continue;
       await deleteWhere(table, `${qi(col)} = $1`, []);
     }
+  }
 
-    await manager.query(`DELETE FROM "users" WHERE id = $1`, [userId]);
+  /** Message d'erreur lisible (avec table / contrainte PostgreSQL si disponibles) */
+  private describeDbError(err: any, action: string): ConflictException {
+    const pg = err?.driverError || err;
+    console.error(`${action} impossible :`, err?.message || err);
+    const detail = [pg?.table && `table "${pg.table}"`, pg?.constraint && `contrainte "${pg.constraint}"`]
+      .filter(Boolean)
+      .join(', ');
+    return new ConflictException(
+      `Impossible de ${action} : des données liées empêchent l'opération${detail ? ` (${detail})` : ''}.`,
+    );
   }
 
   async deleteClient(id: number) {
@@ -221,19 +231,38 @@ export class AdminService {
 
     try {
       // Tout ou rien : si une étape échoue, rien n'est supprimé.
-      await this.dataSource.transaction((manager) => this.deleteClientData(manager, id));
+      await this.dataSource.transaction(async (manager) => {
+        await this.purgeClientData(manager, id);
+        await manager.query(`DELETE FROM "users" WHERE id = $1`, [id]);
+      });
     } catch (err: any) {
-      const pg = err?.driverError || err;
-      console.error(`Suppression du client ${id} impossible :`, err?.message || err);
-      const detail = [pg?.table && `table "${pg.table}"`, pg?.constraint && `contrainte "${pg.constraint}"`]
-        .filter(Boolean)
-        .join(', ');
-      throw new ConflictException(
-        `Impossible de supprimer ce client : des données liées empêchent la suppression${detail ? ` (${detail})` : ''}.`,
-      );
+      throw this.describeDbError(err, 'supprimer ce client');
     }
 
     return { success: true, message: 'Client supprimé' };
+  }
+
+  /**
+   * Remplace TOUTES les données du client par un nouveau jeu de démonstration
+   * (20 éléments par module, bénéfice positif). Opération destructive : à confirmer côté interface.
+   */
+  async resetDemoData(id: number) {
+    const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
+    if (!client) throw new NotFoundException('Client non trouvé');
+
+    try {
+      const summary = await this.dataSource.transaction(async (manager) => {
+        await this.purgeClientData(manager, id);
+        return seedDemoData(manager, id);
+      });
+      return {
+        success: true,
+        message: 'Données de démonstration régénérées',
+        demoData: { seeded: true, perModule: summary.perModule, total: summary.total },
+      };
+    } catch (err: any) {
+      throw this.describeDbError(err, 'régénérer les données de ce client');
+    }
   }
 
   async toggleClientStatus(id: number) {

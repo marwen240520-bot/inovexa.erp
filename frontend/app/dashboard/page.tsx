@@ -744,7 +744,6 @@ export default function DashboardPage() {
   };
 
   const profit = stats.totalSales - stats.totalPurchases;
-  const margin = stats.totalSales > 0 ? (profit / stats.totalSales * 100).toFixed(1) : 0;
 
   const getInitials = (name: string) => {
     if (!name) return "?";
@@ -1100,18 +1099,7 @@ export default function DashboardPage() {
             <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Icon name="BarChart2" size="1em" color={theme.primary} /> {t("dashboard.strategicKpis")}
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? "12px" : "16px" }}>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
-                    <Icon name="Target" size="0.9em" color={theme.accent} /> {t("dashboard.profitMargin")}
-                  </span>
-                  <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "9px" : "11px" }}>{margin}%</span>
-                </div>
-                <div style={{ background: theme.surfaceHover, borderRadius: "8px", height: "4px", overflow: "hidden" }}>
-                  <div style={{ width: `${Math.min(parseFloat(String(margin)), 100)}%`, background: `linear-gradient(90deg, ${theme.accent}, #059669)`, height: "4px", borderRadius: "8px", transition: "width 0.5s" }}></div>
-                </div>
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: isMobile ? "12px" : "16px" }}>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                   <span style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>

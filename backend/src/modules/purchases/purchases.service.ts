@@ -5,6 +5,7 @@ import { Purchase } from './entities/purchase.entity';
 import { Product } from '../products/product.entity';
 import { Supplier } from '../suppliers/supplier.entity';
 
+import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
 @Injectable()
 export class PurchasesService {
   constructor(
@@ -108,4 +109,74 @@ export class PurchasesService {
     await this.purchaseRepository.delete(id);
     return { success: true, message: 'Achat supprimé, stock rétabli' };
   }
+
+  async importPurchases(userId: number, rows: any[]) {
+    if (!Array.isArray(rows) || rows.length === 0) throw new BadRequestException('Aucun achat à importer');
+    const details: ImportErrorDetail[] = [];
+    let success = 0;
+    let processed = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (isEmptyRow(row)) continue;
+      processed++;
+      try {
+        const quantity = toNumber(pick(row, ['quantity', 'quantite', 'qty', 'qte']), 1);
+        if (quantity <= 0) throw new Error('Quantité invalide (doit être supérieure à 0)');
+
+        const productId = toNumber(pick(row, ['productId', 'product id', 'id produit', 'produit id']), 0);
+        const sku = toText(pick(row, ['sku', 'reference', 'ref', 'code']));
+        const productName = toText(pick(row, ['productName', 'product name', 'product', 'produit', 'nom produit', 'article', 'designation', 'libelle']));
+        let product: Product | null = null;
+        if (productId) product = await this.productRepository.findOne({ where: { id: productId, userId } });
+        if (!product && sku) product = await this.productRepository.findOne({ where: { sku, userId } });
+        if (!product && productName) {
+          product = await this.productRepository
+            .createQueryBuilder('p')
+            .where('p.userId = :userId', { userId })
+            .andWhere('LOWER(p.name) = LOWER(:name)', { name: productName })
+            .getOne();
+        }
+        if (!product) {
+          throw new Error(`Produit introuvable (${productName || sku || productId || 'non renseigné'}). Importez ou créez d'abord vos produits.`);
+        }
+
+        // Prix unitaire, ou déduit du total, ou à défaut le prix du produit
+        const total = toNumber(pick(row, ['total', 'montant', 'montant total', 'amount']), NaN);
+        const unitPrice = toNumber(
+          pick(row, ['unitPrice', 'unit price', 'prix unitaire', "prix d'achat", 'pu', 'prix', 'price']),
+          Number.isFinite(total) ? total / quantity : Number(product.price) || 0,
+        );
+        const supplierName = toText(pick(row, ['supplierName', 'supplier name', 'supplier', 'fournisseur', 'nom fournisseur']));
+        const supplier = await this.ensureSupplierExists(userId, supplierName || undefined);
+        const date = toDate(pick(row, ['createdAt', 'date', 'date achat', 'purchase date']));
+
+        const purchase = this.purchaseRepository.create({
+          userId,
+          productId: product.id,
+          productName: product.name,
+          supplierName: supplier ? supplier.name : supplierName || undefined,
+          quantity,
+          unitPrice,
+          total: Math.round(unitPrice * quantity * 100) / 100,
+          status: normalizeStatus(
+            pick(row, ['status', 'statut', 'etat']),
+            { received: ['recu', 'reçu', 'recue', 'reçue', 'livre', 'livré', 'received', 'delivered', 'paid', 'payee'], ordered: ['commande', 'commandé', 'ordered'], pending: ['en attente', 'pending'], cancelled: ['annule', 'annulé', 'cancelled', 'canceled'] },
+            'pending',
+          ),
+          ...(date ? { createdAt: date } : {}),
+        });
+        await this.purchaseRepository.save(purchase);
+
+        // Même règle que la création manuelle : un achat augmente le stock
+        product.quantity = (product.quantity || 0) + quantity;
+        await this.productRepository.save(product);
+        success++;
+      } catch (e) {
+        details.push({ row: i + 2, error: errorMessage(e) });
+      }
+    }
+    return buildImportResult('achat(s)', processed, success, details);
+  }
+
 }

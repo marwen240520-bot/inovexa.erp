@@ -9,6 +9,7 @@ import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
+import { summarizeImport, importHttpError } from "@/lib/importResult";
 // --- SVG Icon Components -------------------------------------------------------
 
 const IconUsers = ({ size = 20, color = "currentColor", style = undefined as React.CSSProperties | undefined }) => (
@@ -382,17 +383,18 @@ export default function ClientsPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ clients: data }),
+        body: JSON.stringify({ clients: data })
       });
-      const result = await res.json();
-      if (res.ok) {
-        showMessage(
-          `${result.success} client(s) importé(s) avec succés${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
-          "success"
-        );
-        fetchClients();
-      } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
+      const result = await res.json().catch(() => null);
+      if (res.ok && result) {
+        const summary = summarizeImport(result, "client");
+        showMessage(summary.message, summary.type);
+        if (Number(result.success) > 0) await fetchClients();
+      } else {
+        showMessage(importHttpError(res.status, result), "error");
+      }
     } catch (error) {
+      console.error("Erreur import:", error);
       showMessage("Erreur de connexion lors de l'import", "error");
     } finally { setImporting(false); }
   };

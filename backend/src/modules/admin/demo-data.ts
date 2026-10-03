@@ -182,45 +182,56 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
   );
   mark('suppliers', suppliers);
 
+  // Plan commun ventes / achats / dépenses.
+  // RÈGLE : pour chaque ligne i, vente > achat + dépense, afin que le bénéfice soit positif
+  // quel que soit le regroupement (jour, mois, trimestre, année) et dans tous les modules
+  // (tableau de bord, finance, rapports, analyses).
+  //   achat   <= 40 % de la vente   (quantité achetée <= 60 % de la quantité vendue, coût 35-40 % du prix)
+  //   dépense <= 17 % de la vente
+  const plan = range(N).map((i) => {
+    const product = products[(i * 3) % products.length];
+    const price = Number(product.price);
+    const target = 600 + ((i * 337) % 2400); // chiffre d'affaires visé : 600 à 3 000
+    const quantity = Math.min(40, Math.max(1, Math.round(target / price)));
+    const total = round2(quantity * price);
+    return { i, product, price, quantity, total, date: spread(N - 1 - i) };
+  });
+
   // 5. Ventes
   const sales = await manager.save(
     Sale,
-    range(N).map((i) => {
-      const product = products[(i * 3) % products.length];
-      const quantity = 1 + (i % 5);
-      const unitPrice = Number(product.price);
-      return manager.create(Sale, {
+    plan.map(({ i, product, price, quantity, total, date }) =>
+      manager.create(Sale, {
         userId,
         productId: product.id,
         clientName: clients[i % clients.length].name,
         productName: product.name,
         quantity,
-        unitPrice,
-        total: round2(quantity * unitPrice),
+        unitPrice: price,
+        total,
         status: pick(SALE_STATUSES, i),
-        createdAt: spread(N - 1 - i),
-      });
-    }),
+        createdAt: date,
+      }),
+    ),
   );
   mark('sales', sales);
 
-  // 6. Achats
+  // 6. Achats (même produit que la vente correspondante, coût nettement inférieur)
   const purchases = await manager.save(
     Purchase,
-    range(N).map((i) => {
-      const product = products[(i * 7) % products.length];
-      const quantity = 5 + (i % 6) * 5;
-      const unitPrice = round2(Number(product.price) * 0.6);
+    plan.map(({ i, product, price, quantity, date }) => {
+      const purchaseQty = Math.max(1, Math.floor(quantity * 0.6));
+      const unitPrice = round2(price * (0.35 + 0.01 * (i % 6)));
       return manager.create(Purchase, {
         userId,
         productId: product.id,
         productName: product.name,
         supplierName: suppliers[i % suppliers.length].name,
-        quantity,
+        quantity: purchaseQty,
         unitPrice,
-        total: round2(quantity * unitPrice),
+        total: round2(purchaseQty * unitPrice),
         status: pick(PURCHASE_STATUSES, i),
-        createdAt: spread(N - 1 - i),
+        createdAt: date,
       });
     }),
   );
@@ -323,22 +334,23 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
   mark('employees', employees);
 
   // 10. Finance : dépenses, budgets, comptes bancaires
-  // (colonnes numériques des dépenses = entiers : on arrondit)
+  // Dépense = 10 à 17 % de la vente du même jour (colonnes numériques = entiers : on arrondit).
   const expenses = await manager.save(
     Expense,
-    range(N).map((i) => {
-      const amountHT = 80 + ((i * 197) % 1900);
+    plan.map(({ i, total, date }) => {
       const taxRate = 19;
-      const taxAmount = Math.round((amountHT * taxRate) / 100);
+      const amount = Math.max(60, Math.round(total * (0.10 + 0.01 * (i % 8))));
+      const amountHT = Math.round(amount / (1 + taxRate / 100));
+      const label = EXPENSE_CATEGORIES[i % EXPENSE_CATEGORIES.length];
       return manager.create(Expense, {
         userId,
-        category: EXPENSE_CATEGORIES[i % EXPENSE_CATEGORIES.length],
-        description: `${EXPENSE_CATEGORIES[i % EXPENSE_CATEGORIES.length]} - ${pick(VENDORS, i)}`,
+        category: label,
+        description: `${label} - ${pick(VENDORS, i)}`,
         amountHT,
         taxRate,
-        taxAmount,
-        amount: amountHT + taxAmount,
-        date: spread(N - 1 - i),
+        taxAmount: amount - amountHT,
+        amount,
+        date,
         paymentMethod: pick(PAYMENT_METHODS, i),
         vendor: pick(VENDORS, i),
         invoiceNumber: `F-${userId}-${pad(i + 1, 4)}`,

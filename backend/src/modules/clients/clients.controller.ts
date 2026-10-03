@@ -17,6 +17,12 @@ export class ClientsController {
     return this.clientsService.findOne(parseInt(id), req.user.userId);
   }
 
+  // ⚠️ Route d'import : le front appelle POST /clients/import
+  @Post('import')
+  async importClients(@Request() req: any, @Body() body: { clients: any[] }) {
+    return this.clientsService.importClients(req.user.userId, body?.clients);
+  }
+
   @Post()
   async create(@Request() req: any, @Body() body: any) {
     // Ajouter userId au body

@@ -5,6 +5,7 @@ import { Sale } from './entities/sale.entity';
 import { Product } from '../products/product.entity';
 import { Client } from '../clients/entities/client.entity';
 
+import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
 @Injectable()
 export class SalesService {
   constructor(
@@ -127,45 +128,70 @@ export class SalesService {
     };
   }
 
-  async importSales(userId: number, salesData: any[]) {
+  async importSales(userId: number, rows: any[]) {
+    if (!Array.isArray(rows) || rows.length === 0) throw new BadRequestException('Aucune vente à importer');
+    const details: ImportErrorDetail[] = [];
     let success = 0;
-    let errors = 0;
-    
-    for (const data of salesData) {
+    let processed = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (isEmptyRow(row)) continue;
+      processed++;
       try {
-        const product = await this.productRepository.findOne({ 
-          where: { id: data.productId, userId } 
-        });
-        
+        const quantity = toNumber(pick(row, ['quantity', 'quantite', 'qty', 'qte']), 1);
+        if (quantity <= 0) throw new Error('Quantité invalide (doit être supérieure à 0)');
+
+        // Le produit peut être désigné par son id, son SKU/référence ou son nom
+        const productId = toNumber(pick(row, ['productId', 'product id', 'id produit', 'produit id']), 0);
+        const sku = toText(pick(row, ['sku', 'reference', 'ref', 'code']));
+        const productName = toText(pick(row, ['productName', 'product name', 'product', 'produit', 'nom produit', 'article', 'designation', 'libelle']));
+        let product: Product | null = null;
+        if (productId) product = await this.productRepository.findOne({ where: { id: productId, userId } });
+        if (!product && sku) product = await this.productRepository.findOne({ where: { sku, userId } });
+        if (!product && productName) {
+          product = await this.productRepository
+            .createQueryBuilder('p')
+            .where('p.userId = :userId', { userId })
+            .andWhere('LOWER(p.name) = LOWER(:name)', { name: productName })
+            .getOne();
+        }
         if (!product) {
-          errors++;
-          continue;
+          throw new Error(`Produit introuvable (${productName || sku || productId || 'non renseigné'}). Importez ou créez d'abord vos produits.`);
         }
-        
-        if ((product.quantity || 0) < (data.quantity || 0)) {
-          errors++;
-          continue;
+        if ((product.quantity || 0) < quantity) {
+          throw new Error(`Stock insuffisant pour « ${product.name} » (disponible : ${product.quantity || 0}, demandé : ${quantity}). Enregistrez d'abord vos achats.`);
         }
-        
-        product.quantity = (product.quantity || 0) - (data.quantity || 0);
-        await this.productRepository.save(product);
-        
-        // Auto-création du client importé s'il n'existe pas
-        const client = await this.ensureClientExists(userId, data.clientName);
-        
+
+        const unitPrice = toNumber(pick(row, ['unitPrice', 'unit price', 'prix unitaire', 'pu', 'prix', 'price']), Number(product.price) || 0);
+        const clientName = toText(pick(row, ['clientName', 'client name', 'client', 'nom client', 'customer']));
+        const client = await this.ensureClientExists(userId, clientName || undefined);
+        const date = toDate(pick(row, ['createdAt', 'date', 'date vente', 'sale date']));
+
         const sale = this.saleRepository.create({
-          ...data,
-          clientName: client ? client.name : (data.clientName || null),
           userId,
-          total: (data.unitPrice || 0) * (data.quantity || 1)
+          productId: product.id,
+          productName: product.name,
+          clientName: client ? client.name : clientName || undefined,
+          quantity,
+          unitPrice,
+          total: Math.round(unitPrice * quantity * 100) / 100,
+          status: normalizeStatus(
+            pick(row, ['status', 'statut', 'etat']),
+            { completed: ['terminee', 'terminé', 'payee', 'payée', 'livree', 'livrée', 'completed', 'paid', 'delivered'], pending: ['en attente', 'pending'], cancelled: ['annulee', 'annulée', 'cancelled', 'canceled'] },
+            'pending',
+          ),
+          ...(date ? { createdAt: date } : {}),
         });
         await this.saleRepository.save(sale);
+
+        product.quantity = (product.quantity || 0) - quantity;
+        await this.productRepository.save(product);
         success++;
       } catch (e) {
-        errors++;
+        details.push({ row: i + 2, error: errorMessage(e) });
       }
     }
-    
-    return { success, errors };
+    return buildImportResult('vente(s)', processed, success, details);
   }
 }

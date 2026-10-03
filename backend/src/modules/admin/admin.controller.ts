@@ -89,6 +89,14 @@ export class AdminController {
     return this.adminService.deleteClient(parseInt(id));
   }
 
+  @Post('clients/:id/reset-demo-data')
+  async resetDemoData(@Param('id') id: string, @Request() req: any) {
+    if (req.user.role !== 'admin') {
+      return { error: 'Accès non autorisé' };
+    }
+    return this.adminService.resetDemoData(parseInt(id));
+  }
+
   @Patch('clients/:id/toggle')
   async toggleClientStatus(@Param('id') id: string, @Request() req: any) {
     if (req.user.role !== 'admin') {

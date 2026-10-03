@@ -9,6 +9,7 @@ import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
+import { summarizeImport, importHttpError } from "@/lib/importResult";
 // --- SVG Icon Components -------------------------------------------------------
 
 const IconBuilding2 = ({ size = 20, color = "currentColor", style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
@@ -430,15 +431,16 @@ export default function SuppliersPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ suppliers: data })
       });
-      const result = await res.json();
-      if (res.ok) {
-        showMessage(
-          `${result.success} fournisseur(s) importé(s)${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`,
-          "success"
-        );
-        fetchSuppliers();
-      } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
+      const result = await res.json().catch(() => null);
+      if (res.ok && result) {
+        const summary = summarizeImport(result, "fournisseur");
+        showMessage(summary.message, summary.type);
+        if (Number(result.success) > 0) await fetchSuppliers();
+      } else {
+        showMessage(importHttpError(res.status, result), "error");
+      }
     } catch (error) {
+      console.error("Erreur import:", error);
       showMessage("Erreur de connexion lors de l'import", "error");
     } finally { setImporting(false); }
   };

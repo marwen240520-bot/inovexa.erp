@@ -82,6 +82,7 @@ const ACT = {
   modules: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>),
   extend: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>),
   power: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>),
+  refresh: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>),
   trash: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>),
 };
 
@@ -378,6 +379,31 @@ export default function AdminClientsPage() {
     await Promise.all([fetchClients(), fetchStats()]);
     setSelectedIds(prev => prev.filter(sid => sid !== id));
     showMessage("Client supprimé", "success");
+  };
+
+  // Remplace TOUTES les données du client par un jeu de démonstration (20 éléments par module)
+  const resetDemoData = async (client: Client) => {
+    const label = client.companyName || client.name;
+    if (!confirm(`Régénérer les données de démonstration de « ${label} » ?\n\nATTENTION : toutes les données actuelles de ce client (produits, ventes, factures, employés...) seront SUPPRIMÉES et remplacées par 20 éléments de démo par module.`)) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${client.id}/reset-demo-data`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json().catch(() => ({} as any));
+      if (res.ok && !data?.error) {
+        showMessage(`Données de démo régénérées pour « ${label} » (20 éléments par module)`, "success");
+      } else if (res.status >= 500) {
+        showMessage("Erreur interne du serveur : opération échouée. Vérifiez que le backend est à jour.", "error");
+      } else {
+        const msg = Array.isArray(data?.message) ? data.message[0] : data?.message;
+        showMessage(msg || data?.error || "Erreur lors de la régénération", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      showMessage("Erreur de connexion au serveur", "error");
+    }
   };
 
   const deleteSelected = async () => {
@@ -728,6 +754,7 @@ export default function AdminClientsPage() {
                           <button onClick={() => openModulesModal(client)} style={actionBtn("#8b5cf6")} title="Modules">{ACT.modules}</button>
                           <button onClick={() => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={actionBtn("#10b981")} title="Prolonger">{ACT.extend}</button>
                           <button onClick={() => toggleStatus(client.id)} style={actionBtn("#f59e0b")} title={client.isActive ? "Désactiver" : "Activer"}>{ACT.power}</button>
+                          <button onClick={() => resetDemoData(client)} style={actionBtn("#0ea5e9")} title="Régénérer les données de démo">{ACT.refresh}</button>
                           <button onClick={() => deleteClient(client.id)} style={actionBtn("#c33")} title="Supprimer">{ACT.trash}</button>
                         </div>
                       </td>

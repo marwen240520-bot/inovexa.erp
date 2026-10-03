@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './product.entity';
 
+import { toNumber } from '../../common/import-utils';
 @Injectable()
 export class ProductsService {
   constructor(
@@ -147,11 +148,8 @@ export class ProductsService {
   }
 
   private parseNumber(value: any): number {
-    if (value === null || value === undefined || value === '') return 0;
-    if (typeof value === 'number') return isNaN(value) ? 0 : value;
-    const normalized = String(value).replace(/\s/g, '').replace(',', '.').trim();
-    const num = Number(normalized);
-    return isNaN(num) ? 0 : num;
+    // Tolère « 1 200,50 € », « 12,5 », « 1.200,50 »...
+    return toNumber(value, 0);
   }
 
   private parseCategoryId(value: any): number | null {

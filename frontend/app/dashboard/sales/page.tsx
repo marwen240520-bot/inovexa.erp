@@ -9,6 +9,7 @@ import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
+import { summarizeImport, importHttpError } from "@/lib/importResult";
 // --- Translations ------------------------------------------------------------
 const translations = {
   fr: {
@@ -362,13 +363,18 @@ export default function SalesPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ sales: data })
       });
-      const result = await res.json();
-      if (res.ok) {
-        showMessage(`${result.success} vente(s) importée(s) avec succés${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
-        fetchSales();
-      } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
-    } catch (error) { showMessage("Erreur de connexion lors de l'import", "error"); }
-    finally { setImporting(false); }
+      const result = await res.json().catch(() => null);
+      if (res.ok && result) {
+        const summary = summarizeImport(result, "vente");
+        showMessage(summary.message, summary.type);
+        if (Number(result.success) > 0) await fetchSales();
+      } else {
+        showMessage(importHttpError(res.status, result), "error");
+      }
+    } catch (error) {
+      console.error("Erreur import:", error);
+      showMessage("Erreur de connexion lors de l'import", "error");
+    } finally { setImporting(false); }
   };
 
   const createSale = async () => {

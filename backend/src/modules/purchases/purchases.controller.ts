@@ -17,6 +17,12 @@ export class PurchasesController {
     return this.purchasesService.findOne(parseInt(id), req.user.userId);
   }
 
+  // ⚠️ Route d'import : le front appelle POST /purchases/import
+  @Post('import')
+  async importPurchases(@Request() req: any, @Body() body: { purchases: any[] }) {
+    return this.purchasesService.importPurchases(req.user.userId, body?.purchases);
+  }
+
   @Post()
   async create(@Request() req: any, @Body() body: any) {
     return this.purchasesService.create(req.user.userId, body);

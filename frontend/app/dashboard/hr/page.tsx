@@ -15,6 +15,7 @@ import {
 import { Doughnut } from "react-chartjs-2";
 import Spinner from "@/components/ui/Spinner";
 
+import { summarizeImport, importHttpError } from "@/lib/importResult";
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
   ArcElement, PointElement, LineElement, Filler
@@ -479,12 +480,16 @@ export default function HRPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ employees: data })
       });
-      const result = await res.json();
-      if (res.ok) {
-        showMessage(`${result.success} employé(s) importé(s) avec succés${result.errors > 0 ? `, ${result.errors} erreur(s)` : ""}`, "success");
-        fetchEmployees();
-      } else { showMessage(result.message || "Erreur lors de l'import", "error"); }
+      const result = await res.json().catch(() => null);
+      if (res.ok && result) {
+        const summary = summarizeImport(result, "employé");
+        showMessage(summary.message, summary.type);
+        if (Number(result.success) > 0) await fetchEmployees();
+      } else {
+        showMessage(importHttpError(res.status, result), "error");
+      }
     } catch (error) {
+      console.error("Erreur import:", error);
       showMessage("Erreur de connexion lors de l'import", "error");
     } finally { setImporting(false); }
   };

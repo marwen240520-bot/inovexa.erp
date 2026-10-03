@@ -9,6 +9,7 @@ import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
+import { summarizeImport, importHttpError } from "@/lib/importResult";
 // --- SVG ICONS ----------------------------------------------------------------
 const Icons = {
   Invoice: ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => (
@@ -698,23 +699,26 @@ export default function InvoicesPage() {
   };
 
   const importInvoices = async (data: any[]) => {
-    const token = localStorage.getItem("token");
     setLoading(true);
+    const token = localStorage.getItem("token");
     try {
-      for (const invoice of data) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(invoice)
-        });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ invoices: data })
+      });
+      const result = await res.json().catch(() => null);
+      if (res.ok && result) {
+        const summary = summarizeImport(result, "facture");
+        showMessage(summary.message, summary.type);
+        if (Number(result.success) > 0) await fetchInvoices();
+      } else {
+        showMessage(importHttpError(res.status, result), "error");
       }
-      await fetchInvoices();
-      showMessage(`${data.length} facture(s) importée(s)`, "success");
-    } catch (e) {
-      console.error("Erreur import:", e);
-      showMessage("Erreur lors de l'import", "error");
-    }
-    setLoading(false);
+    } catch (error) {
+      console.error("Erreur import:", error);
+      showMessage("Erreur de connexion lors de l'import", "error");
+    } finally { setLoading(false); }
   };
 
   const createInvoice = async () => {
