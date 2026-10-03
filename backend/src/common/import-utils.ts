@@ -136,3 +136,24 @@ export const errorMessage = (e: unknown): string => {
     'Erreur inconnue'
   );
 };
+
+/** Moyens de paiement reconnus (code -> libellés acceptés à l'import / à la saisie) */
+export const PAYMENT_METHODS: Record<string, string[]> = {
+  cash: ['especes', 'espece', 'cash', 'liquide', 'comptant', 'efectivo'],
+  card: ['carte', 'carte bancaire', 'cb', 'credit card', 'debit card', 'card', 'tarjeta', 'visa', 'mastercard'],
+  transfer: ['virement', 'virement bancaire', 'bank transfer', 'wire', 'transfer', 'transferencia', 'rib'],
+  check: ['cheque', 'chèque', 'check', 'chq'],
+  draft: ['traite', 'effet', 'lettre de change', 'draft', 'bill of exchange', 'letra'],
+  mobile: ['mobile', 'paiement mobile', 'mobile payment', 'd17', 'flouci', 'e-dinar', 'edinar', 'pago movil'],
+  other: ['autre', 'other', 'otro'],
+};
+
+/** Valeur canonique d'un moyen de paiement. Vide -> null ; inconnu -> "other". */
+export function normalizePaymentMethod(value: unknown): string | null {
+  if (isBlank(value)) return null;
+  const key = normKey(value);
+  for (const [code, labels] of Object.entries(PAYMENT_METHODS)) {
+    if (code === key || labels.map(normKey).includes(key)) return code;
+  }
+  return 'other';
+}

@@ -5,7 +5,7 @@ import { Invoice } from './entities/invoice.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Supplier } from '../suppliers/supplier.entity';
 
-import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
+import { normalizePaymentMethod, pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
 @Injectable()
 export class InvoicesService {
   constructor(
@@ -151,6 +151,7 @@ export class InvoicesService {
       taxAmount: data.taxAmount || 0,
       dueDate: dueDate,
       paymentTerms: data.paymentTerms || 'Net 30',
+      paymentMethod: normalizePaymentMethod(data.paymentMethod),
       notes: data.notes || '',
       status: data.status || 'pending',
     });
@@ -206,6 +207,7 @@ export class InvoicesService {
     if (data.taxAmount !== undefined) invoice.taxAmount = data.taxAmount;
     if (data.dueDate !== undefined) invoice.dueDate = this.getValidDate(data.dueDate);
     if (data.paymentTerms !== undefined) invoice.paymentTerms = data.paymentTerms;
+    if (data.paymentMethod !== undefined) invoice.paymentMethod = normalizePaymentMethod(data.paymentMethod);
     if (data.notes !== undefined) invoice.notes = data.notes;
     if (data.status !== undefined) invoice.status = data.status;
     
@@ -218,15 +220,17 @@ export class InvoicesService {
     }
   }
 
-  async markAsPaid(id: number, userId: number) {
+  async markAsPaid(id: number, userId: number, paymentMethod?: string) {
     const invoice = await this.findOne(id, userId);
     invoice.status = 'paid';
+    if (paymentMethod) invoice.paymentMethod = normalizePaymentMethod(paymentMethod);
     return this.invoiceRepository.save(invoice);
   }
 
-  async markAsPaidByOperationNumber(operationNumber: string, userId: number) {
+  async markAsPaidByOperationNumber(operationNumber: string, userId: number, paymentMethod?: string) {
     const invoice = await this.findByOperationNumber(operationNumber, userId);
     invoice.status = 'paid';
+    if (paymentMethod) invoice.paymentMethod = normalizePaymentMethod(paymentMethod);
     return this.invoiceRepository.save(invoice);
   }
 
@@ -322,13 +326,14 @@ export class InvoicesService {
           clientPhone: toText(pick(row, ['clientPhone', 'telephone client', 'telephone', 'tel'])) || '',
           clientAddress: toText(pick(row, ['clientAddress', 'adresse client', 'adresse'])) || '',
           description: description || '',
-          items: description ? [{ description, quantity: 1, unitPrice: subtotalHT, total: subtotalHT }] : [],
+          items: [{ description: description || 'Prestation / marchandises', quantity: 1, unitPriceHT: subtotalHT, totalHT: subtotalHT, totalTTC: amount }],
           subtotalHT,
           taxRate,
           taxAmount,
           amount,
           dueDate: toDate(pick(row, ['dueDate', 'due date', 'echeance', 'date echeance', "date d'echeance"])),
-          paymentTerms: toText(pick(row, ['paymentTerms', 'conditions de paiement', 'paiement'])) || 'Net 30',
+          paymentTerms: toText(pick(row, ['paymentTerms', 'payment terms', 'conditions de paiement', 'conditions de reglement', 'delai de paiement'])) || 'Net 30',
+          paymentMethod: pick(row, ['paymentMethod', 'payment method', 'moyen de paiement', 'mode de paiement', 'mode de reglement', 'reglement', 'paiement']),
           notes: toText(pick(row, ['notes', 'note', 'remarque', 'commentaire'])) || '',
           status: normalizeStatus(
             pick(row, ['status', 'statut', 'etat']),

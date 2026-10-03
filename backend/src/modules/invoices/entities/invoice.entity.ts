@@ -65,6 +65,10 @@ export class Invoice {
   @Column({ default: 'Net 30' })
   paymentTerms: string;
 
+  // Moyen de paiement : cash | card | transfer | check | draft | mobile | other
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  paymentMethod: string | null;
+
   @Column({ type: 'text', nullable: true })
   notes: string;
 

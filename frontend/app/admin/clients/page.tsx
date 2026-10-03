@@ -568,14 +568,33 @@ export default function AdminClientsPage() {
     return <Spinner fullScreen />;
   }
 
+  // Fenêtres modales : centrées sur ordinateur, feuille plein écran collée en bas sur mobile
+  // (z-index supérieur à la barre de navigation mobile, boutons toujours visibles)
+  const modalOverlayStyle: CSSProperties = {
+    position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)",
+    display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", zIndex: 3000,
+  };
+  const modalPanelStyle = (width: number): CSSProperties =>
+    isMobile
+      ? {
+          background: "var(--theme-surface)", width: "100%", maxHeight: "calc(100dvh - 12px)", overflowY: "auto",
+          borderRadius: "20px 20px 0 0", padding: "20px 16px", paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -10px 40px rgba(17,24,39,0.25)", WebkitOverflowScrolling: "touch",
+        }
+      : { background: "var(--theme-surface)", padding: "32px", borderRadius: "24px", width: `${width}px`, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto" };
+  const modalFooterStyle: CSSProperties = {
+    display: "flex", gap: "12px",
+    ...(isMobile ? { position: "sticky", bottom: "-16px", background: "var(--theme-surface)", padding: "12px 0 4px", marginTop: "8px" } : {}),
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--theme-background)", display: "flex" }}>
       <Sidebar />
       <div style={{ marginLeft: isMobile ? 0 : "280px", flex: 1, padding: isMobile ? "16px" : "32px", paddingBottom: isMobile ? "90px" : "32px", width: "100%", minWidth: 0 }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto", display: "flex", flexDirection: "column" }}>
 
           {/* Header */}
-          <div style={{ marginBottom: "32px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
+          <div style={{ marginBottom: isMobile ? "16px" : "32px", animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
             <style>{`
               @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
               @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -583,7 +602,7 @@ export default function AdminClientsPage() {
             `}</style>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
               <div>
-                <h1 style={{ color: "var(--theme-text)", fontSize: "28px", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+                <h1 style={{ color: "var(--theme-text)", fontSize: isMobile ? "22px" : "28px", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M2 17L12 22L22 17" stroke="#667eea" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -593,7 +612,7 @@ export default function AdminClientsPage() {
                 </h1>
                 <p style={{ color: "var(--theme-text-secondary)", marginTop: "4px" }}>{t("admin.clients")}</p>
               </div>
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
                 <ExportButtons data={filteredClients} filename="clients" />
                 <button onClick={() => setModal({ open: true, editMode: false, editId: null, form: { email: "", password: "", name: "", companyName: "", phone: "", subscriptionDuration: 30 } })} style={{ background: "#667eea", color: "white", padding: "10px 20px", border: "none", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -606,19 +625,20 @@ export default function AdminClientsPage() {
           </div>
 
           {message && (
-            <div style={{
-              background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
-              border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`,
-              color: messageType === "success" ? "#10b981" : "#f87171",
-              padding: "12px", borderRadius: "12px", marginBottom: "20px", textAlign: "center",
-              animation: "fadeInUp 0.3s ease"
+            <div role="status" style={{
+              position: "fixed", top: "12px", left: "12px", right: "12px", maxWidth: "560px", margin: "0 auto", zIndex: 4000,
+              background: "var(--theme-surface)",
+              border: `1.5px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`,
+              color: messageType === "success" ? "#047857" : "#b91c1c",
+              padding: "12px 16px", borderRadius: "12px", textAlign: "center", fontWeight: 500, fontSize: isMobile ? "14px" : "15px",
+              boxShadow: "0 10px 30px rgba(17,24,39,0.18)", animation: "fadeInDown 0.3s ease"
             }}>
               {message}
             </div>
           )}
 
           {/* Stats cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "32px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fit, minmax(200px, 1fr))", gap: isMobile ? "10px" : "20px", marginBottom: isMobile ? "16px" : "32px" }}>
             {[
               { icon: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', label: "Total clients", value: stats.totalClients, color: "#667eea", suffix: "" },
               { icon: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg>', label: "Clients actifs", value: stats.activeClients, color: "#10b981", suffix: "" },
@@ -627,7 +647,7 @@ export default function AdminClientsPage() {
             ].map((card, idx) => (
               <div key={idx} style={{
                 background: "linear-gradient(135deg, var(--theme-surface) 0%, var(--theme-surface-hover) 100%)",
-                borderRadius: "16px", padding: "20px", textAlign: "center", border: "1px solid var(--theme-border)",
+                borderRadius: "16px", padding: isMobile ? "12px 8px" : "20px", textAlign: "center", border: "1px solid var(--theme-border)",
                 animation: `fadeInUp 0.5s ease ${0.1 + idx * 0.1}s`,
                 opacity: animateCards ? 1 : 0,
                 transition: "transform 0.3s"
@@ -635,24 +655,24 @@ export default function AdminClientsPage() {
               onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
               >
-                <div style={{ marginBottom: "8px" }} dangerouslySetInnerHTML={{ __html: card.icon }} />
-                <div style={{ fontSize: "28px", color: card.color, fontWeight: "bold" }}>{card.value} {card.suffix}</div>
-                <div style={{ fontSize: "12px", color: "var(--theme-text-secondary)" }}>{card.label}</div>
+                <div style={{ marginBottom: isMobile ? "4px" : "8px" }} dangerouslySetInnerHTML={{ __html: isMobile ? card.icon.replace('width="30" height="30"', 'width="24" height="24"') : card.icon }} />
+                <div style={{ fontSize: isMobile ? "20px" : "28px", color: card.color, fontWeight: "bold" }}>{card.value} {card.suffix}</div>
+                <div style={{ fontSize: isMobile ? "12px" : "12px", color: "var(--theme-text)", opacity: 0.8 }}>{card.label}</div>
               </div>
             ))}
           </div>
 
           {/* Charts */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "24px", marginBottom: "32px" }}>
-            <div style={{ background: "var(--theme-surface)", borderRadius: "20px", padding: "20px", border: "1px solid var(--theme-border)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: isMobile ? "14px" : "24px", marginBottom: isMobile ? "16px" : "32px", order: isMobile ? 5 : 0 }}>
+            <div style={{ background: "var(--theme-surface)", borderRadius: "20px", padding: isMobile ? "14px" : "20px", border: "1px solid var(--theme-border)" }}>
               <h3 style={{ color: "var(--theme-text)", marginBottom: "16px", fontSize: "16px" }}>Répartition des clients</h3>
-              <div style={{ height: "220px" }}>
+              <div style={{ height: isMobile ? "190px" : "220px" }}>
                 <Doughnut data={statusChartData} options={doughnutOptions} />
               </div>
             </div>
             <div style={{ background: "var(--theme-surface)", borderRadius: "20px", padding: "20px", border: "1px solid var(--theme-border)" }}>
               <h3 style={{ color: "var(--theme-text)", marginBottom: "16px", fontSize: "16px" }}>Évolution des inscriptions</h3>
-              <div style={{ height: "220px" }}>
+              <div style={{ height: isMobile ? "190px" : "220px" }}>
                 {registrationsData.length > 0 ? (
                   <Line data={registrationsChartData} options={chartOptions} />
                 ) : (
@@ -677,21 +697,69 @@ export default function AdminClientsPage() {
                   placeholder={`${t("common.search")}...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ width: "100%", padding: "12px 12px 12px 38px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "10px", color: "var(--theme-text)" }}
+                  style={{ width: "100%", fontSize: isMobile ? "16px" : "14px", padding: isMobile ? "14px 12px 14px 40px" : "12px 12px 12px 38px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "10px", color: "var(--theme-text)" }}
                 />
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
               <SelectAllCheckbox items={filteredClients} selectedIds={selectedIds} onSelect={setSelectedIds} onSelectAll={(ids: number[]) => setSelectedIds(ids)} getItemId={(item: Client) => item.id} />
               {selectedIds.length > 0 && (
-                <button onClick={deleteSelected} style={{ background: "#c33", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer" }}>
+                <button onClick={deleteSelected} style={{ background: "#c33", color: "white", border: "none", borderRadius: "10px", padding: isMobile ? "12px 18px" : "8px 16px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
                   Supprimer ({selectedIds.length})
                 </button>
               )}
             </div>
           </div>
 
-          {/* Table */}
+          {/* Liste des clients : cartes tactiles sur mobile, tableau sur ordinateur */}
+          {isMobile ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {filteredClients.map((client) => {
+                const expired = isExpired(client.subscriptionEnd);
+                const selected = selectedIds.includes(client.id);
+                const actions = [
+                  { key: "edit", label: "Modifier", color: "#1d4ed8", icon: ACT.edit, run: () => openEditModal(client) },
+                  { key: "modules", label: "Modules", color: "#6d28d9", icon: ACT.modules, run: () => openModulesModal(client) },
+                  { key: "extend", label: "Prolonger", color: "#047857", icon: ACT.extend, run: () => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); } },
+                  { key: "power", label: client.isActive ? "Désactiver" : "Activer", color: "#b45309", icon: ACT.power, run: () => toggleStatus(client.id) },
+                  { key: "demo", label: "Données démo", color: "#0369a1", icon: ACT.refresh, run: () => resetDemoData(client) },
+                  { key: "delete", label: "Supprimer", color: "#b91c1c", icon: ACT.trash, run: () => deleteClient(client.id) },
+                ];
+                return (
+                  <div key={client.id} style={{ background: "var(--theme-surface)", border: `1.5px solid ${selected ? "#667eea" : "var(--theme-border)"}`, borderRadius: "16px", padding: "14px", boxShadow: "0 2px 8px rgba(17,24,39,0.05)" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                      <input type="checkbox" checked={selected} aria-label={`Sélectionner ${client.name}`}
+                        onChange={() => setSelectedIds(selected ? selectedIds.filter(id => id !== client.id) : [...selectedIds, client.id])}
+                        style={{ width: "22px", height: "22px", marginTop: "2px", flexShrink: 0, cursor: "pointer" }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: "var(--theme-text)", fontWeight: 700, fontSize: "16px", wordBreak: "break-word" }}>{client.name}</div>
+                        {client.companyName && <div style={{ color: "var(--theme-text)", opacity: 0.8, fontSize: "14px", wordBreak: "break-word" }}>{client.companyName}</div>}
+                      </div>
+                      <span style={{ background: client.isActive ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)", color: client.isActive ? "#047857" : "#b91c1c", padding: "4px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: 600, flexShrink: 0 }}>
+                        {client.isActive ? "Actif" : "Inactif"}
+                      </span>
+                    </div>
+                    <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "14px", color: "var(--theme-text)" }}>
+                      <a href={`mailto:${client.email}`} style={{ color: "#4338ca", textDecoration: "none", wordBreak: "break-all" }}>✉ {client.email}</a>
+                      {client.phone && <a href={`tel:${client.phone}`} style={{ color: "#4338ca", textDecoration: "none" }}>☎ {client.phone}</a>}
+                      <div style={{ color: expired ? "#b91c1c" : "#047857", fontWeight: 600 }}>
+                        Abonnement {expired ? "expiré le" : "jusqu'au"} {client.subscriptionEnd ? formatDate(client.subscriptionEnd) : "-"}
+                      </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginTop: "12px" }}>
+                      {actions.map((a) => (
+                        <button key={a.key} onClick={a.run} style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", minHeight: "58px", padding: "8px 4px", background: `${a.color}14`, color: a.color, border: `1px solid ${a.color}40`, borderRadius: "12px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+                          {a.icon}
+                          <span>{a.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredClients.length === 0 && <p style={{ textAlign: "center", color: "var(--theme-text-secondary)", padding: "40px 0" }}>Aucun client trouvé</p>}
+            </div>
+          ) : (
           <div style={{ background: "var(--theme-surface)", borderRadius: "20px", padding: "24px", border: "1px solid var(--theme-border)", overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -765,13 +833,16 @@ export default function AdminClientsPage() {
             </table>
             {filteredClients.length === 0 && <p style={{ textAlign: "center", color: "var(--theme-text-secondary)", padding: "40px" }}>Aucun client trouvé</p>}
           </div>
+          )}
         </div>
       </div>
 
+      {/* Champs de saisie : 16 px sur mobile (pas de zoom automatique) et hauteur confortable */}
+      <style>{`@media (max-width: 767px) { .adm-modal input, .adm-modal select { font-size: 16px !important; min-height: 46px; } .adm-modal button { min-height: 46px; font-size: 15px; } }`}</style>
       {/* Modal Create/Edit */}
       {modal.open && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "var(--theme-surface)", padding: "32px", borderRadius: "24px", width: isMobile ? "92vw" : "500px", maxHeight: "90vh", overflowY: "auto" }}>
+        <div style={modalOverlayStyle}>
+          <div className="adm-modal" style={modalPanelStyle(500)}>
             <h2 style={{ color: "var(--theme-text)", marginBottom: "24px" }}>
               {modal.editMode ? "Modifier le client" : "Nouveau client"}
             </h2>
@@ -808,7 +879,7 @@ export default function AdminClientsPage() {
                 <span>20 éléments de démonstration seront créés automatiquement dans chaque module (produits, clients, ventes, factures, RH, finance…).</span>
               </div>
             )}
-            <div style={{ display: "flex", gap: "12px" }}>
+            <div style={modalFooterStyle}>
               <button onClick={modal.editMode ? updateClient : createClient} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>{modal.editMode ? "Modifier" : "Créer"}</button>
               <button onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "12px", background: "var(--theme-border)", color: "var(--theme-text)", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler</button>
             </div>
@@ -818,8 +889,8 @@ export default function AdminClientsPage() {
 
       {/* Modal Modules */}
       {modulesModal.open && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "var(--theme-surface)", padding: "32px", borderRadius: "24px", width: isMobile ? "92vw" : "600px", maxHeight: "80vh", overflowY: "auto" }}>
+        <div style={modalOverlayStyle}>
+          <div className="adm-modal" style={modalPanelStyle(600)}>
             <h2 style={{ color: "var(--theme-text)", marginBottom: "24px" }}>Modules disponibles</h2>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "12px", marginBottom: "24px" }}>
               {MODULES.map((m) => {
@@ -837,7 +908,7 @@ export default function AdminClientsPage() {
                 );
               })}
             </div>
-            <div style={{ display: "flex", gap: "12px" }}>
+            <div style={modalFooterStyle}>
               <button onClick={updateModules} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", cursor: "pointer" }}>Enregistrer</button>
               <button onClick={() => setModulesModal({ open: false, clientId: null, modules: {} })} style={{ flex: 1, padding: "12px", background: "var(--theme-border)", color: "var(--theme-text)", border: "none", borderRadius: "10px", cursor: "pointer" }}>Annuler</button>
             </div>

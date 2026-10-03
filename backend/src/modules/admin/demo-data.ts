@@ -287,7 +287,8 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
         clientAddress: isDebit ? client.address : null,
         clientPhone: isDebit ? client.phone : null,
         description: `${isDebit ? 'Vente' : 'Achat'} de ${product.name}`,
-        items: [{ description: product.name, quantity, unitPrice, total: subtotalHT }],
+        // Champs attendus par l'aperçu / l'impression des factures : unitPriceHT, totalHT, totalTTC
+        items: [{ description: product.name, quantity, unitPriceHT: unitPrice, totalHT: subtotalHT, totalTTC: round2(subtotalHT * 1.2) }],
         subtotalHT,
         taxRate,
         taxAmount,
@@ -296,6 +297,7 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
         paymentTerms: 'Net 30',
         notes: 'Facture de démonstration',
         status: pick(['paid', 'paid', 'pending', 'paid', 'overdue'], i),
+        paymentMethod: pick(['paid', 'paid', 'pending', 'paid', 'overdue'], i) === 'paid' ? pick(['transfer', 'card', 'cash', 'check', 'mobile', 'draft'], i) : null,
         createdAt: issued,
       });
     }),

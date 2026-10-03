@@ -39,13 +39,13 @@ export class InvoicesController {
   }
 
   @Patch(':id/pay')
-  async markAsPaid(@Param('id') id: string, @Request() req: any) {
-    return this.invoicesService.markAsPaid(parseInt(id), req.user.userId);
+  async markAsPaid(@Param('id') id: string, @Request() req: any, @Body() body?: { paymentMethod?: string }) {
+    return this.invoicesService.markAsPaid(parseInt(id), req.user.userId, body?.paymentMethod);
   }
 
   @Patch('number/:operationNumber/pay')
-  async markAsPaidByOperationNumber(@Param('operationNumber') operationNumber: string, @Request() req: any) {
-    return this.invoicesService.markAsPaidByOperationNumber(operationNumber, req.user.userId);
+  async markAsPaidByOperationNumber(@Param('operationNumber') operationNumber: string, @Request() req: any, @Body() body?: { paymentMethod?: string }) {
+    return this.invoicesService.markAsPaidByOperationNumber(operationNumber, req.user.userId, body?.paymentMethod);
   }
 
   @Delete(':id')
