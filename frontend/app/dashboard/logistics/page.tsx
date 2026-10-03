@@ -276,6 +276,11 @@ export default function LogisticsPage() {
   const [transporteurs, setTransporteurs] = useState<Transporteur[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  // Arrivée depuis la recherche globale du tableau de bord : on filtre déjà sur le terme cherché
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearchTerm(q);
+  }, []);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [modal, setModal] = useState({ open: false, form: {} as any, editMode: false, editId: null as number | null });

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import GlobalSearch from "@/components/GlobalSearch";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -912,7 +912,7 @@ export default function DashboardPage() {
           {/* Header */}
           <div style={{ marginBottom: responsive.sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
-              <div style={{ flex: 1, minWidth: isMobile ? "180px" : "auto" }}>
+              <div style={{ flex: isMobile ? "1 1 auto" : "0 1 auto", minWidth: isMobile ? "180px" : "auto" }}>
                 <h1 style={{ color: theme.text, fontSize: responsive.headerTitleSize, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                   <Icon name={getWeatherIcon()} size={responsive.headerEmojiSize} color={theme.primary} />
                   <span style={{ fontSize: responsive.headerNameSize }}>
@@ -930,9 +930,13 @@ export default function DashboardPage() {
                 </p>
               </div>
 
+              {/* Recherche globale dans tout l'espace du client */}
+              <div style={{ flex: isMobile ? "1 1 100%" : "1 1 320px", order: isMobile ? 3 : 0, minWidth: 0, display: "flex", justifyContent: "center", alignSelf: "center" }}>
+                <GlobalSearch isMobile={isMobile} />
+              </div>
+
               {/* Image de profil */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                <ThemeToggle size={isMobile ? 36 : 40} />
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                 <div style={{ position: "relative" }}>
                   <div 

@@ -205,6 +205,11 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  // Arrivée depuis la recherche globale du tableau de bord : on filtre déjà sur le terme cherché
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearchTerm(q);
+  }, []);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({ open: false, form: {}, editMode: false, editId: null });
   const [message, setMessage] = useState("");

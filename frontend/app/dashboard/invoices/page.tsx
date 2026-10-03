@@ -523,6 +523,11 @@ export default function InvoicesPage() {
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  // Arrivée depuis la recherche globale du tableau de bord : on filtre déjà sur le terme cherché
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearchTerm(q);
+  }, []);
   const [selectedOperationNumbers, setSelectedOperationNumbers] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -1877,9 +1882,9 @@ export default function InvoicesPage() {
                   onClick={() => generateInvoicePDF(viewInvoice)}
                   style={{
                     padding: isMobile ? "6px 10px" : "8px 16px",
-                    background: "#f59e0b",
-                    color: "white",
-                    border: "none",
+                    background: "#fde68a",
+                    color: "#000000",
+                    border: "1px solid #d97706",
                     borderRadius: "6px",
                     cursor: "pointer",
                     fontSize: isMobile ? "10px" : "13px",
@@ -1890,16 +1895,16 @@ export default function InvoicesPage() {
                     whiteSpace: "nowrap"
                   }}
                 >
-                  <Icons.FileText size={isMobile ? 12 : 14} color="white" />
+                  <Icons.FileText size={isMobile ? 12 : 14} color="#000000" />
                   {isMobile ? "PDF" : t.pdf}
                 </button>
                 <button
                   onClick={() => window.print()}
                   style={{
                     padding: isMobile ? "6px 10px" : "8px 16px",
-                    background: "#3b82f6",
-                    color: "white",
-                    border: "none",
+                    background: "#bfdbfe",
+                    color: "#000000",
+                    border: "1px solid #2563eb",
                     borderRadius: "6px",
                     cursor: "pointer",
                     fontSize: isMobile ? "10px" : "13px",
@@ -1910,16 +1915,16 @@ export default function InvoicesPage() {
                     whiteSpace: "nowrap"
                   }}
                 >
-                  <Icons.Printer size={isMobile ? 12 : 14} color="white" />
+                  <Icons.Printer size={isMobile ? 12 : 14} color="#000000" />
                   {isMobile ? "Imp" : t.print}
                 </button>
                 <button
                   onClick={() => setShowPreviewModal(false)}
                   style={{
                     padding: isMobile ? "6px 10px" : "8px 16px",
-                    background: "#ef4444",
-                    color: "white",
-                    border: "none",
+                    background: "#fecaca",
+                    color: "#000000",
+                    border: "1px solid #dc2626",
                     borderRadius: "6px",
                     cursor: "pointer",
                     fontSize: isMobile ? "10px" : "13px",
@@ -1930,7 +1935,7 @@ export default function InvoicesPage() {
                     whiteSpace: "nowrap"
                   }}
                 >
-                  <Icons.X size={isMobile ? 12 : 14} color="white" />
+                  <Icons.X size={isMobile ? 12 : 14} color="#000000" />
                   {isMobile ? "Fermer" : t.close}
                 </button>
               </div>
@@ -1997,8 +2002,9 @@ export default function InvoicesPage() {
                           margin: 0
                         }}>{t.invoice}</h2>
                         <div style={{
-                          background: viewInvoice.status === "paid" ? "#10b981" : viewInvoice.status === "pending" ? "#f59e0b" : "#ef4444",
-                          color: "white",
+                          background: viewInvoice.status === "paid" ? "#bbf7d0" : viewInvoice.status === "pending" ? "#fde68a" : "#fecaca",
+                          color: "#000000",
+                          border: "1px solid #6b7280",
                           padding: isMobile ? "2px 10px" : "4px 14px",
                           borderRadius: "20px",
                           fontSize: isMobile ? "9px" : "11px",

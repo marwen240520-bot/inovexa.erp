@@ -153,6 +153,11 @@ export default function CategoriesPage() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [searchTerm, setSearchTerm] = useState("");
+  // Arrivée depuis la recherche globale du tableau de bord : on filtre déjà sur le terme cherché
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearchTerm(q);
+  }, []);
   const [animateCards, setAnimateCards] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);

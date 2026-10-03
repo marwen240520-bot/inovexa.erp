@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme } from "@/contexts/ThemeContext";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
+import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // ─── Pro SVG Icons ─────────────────────────────────────────────────────────────
@@ -120,6 +120,27 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-img-filter": "brightness(1) contrast(1.03) saturate(1.05)",
 };
 
+/** Variables de couleur de l'accueil pour n'importe quel thème */
+function buildHpVars(themeId: string, theme: any): Record<string, string> {
+  if (themeId === "dark") return HP_DARK;
+  if (themeId === "light") return HP_LIGHT;
+  const light = isLightTheme(theme);
+  return {
+    "--hp-bg": theme.background,
+    "--hp-text": theme.text,
+    "--hp-muted": theme.textSecondary,
+    "--hp-header-bg": `${theme.surface}e6`,
+    "--hp-chip-bg": theme.surface,
+    "--hp-menu-bg": theme.surface,
+    "--hp-shadow": light ? "rgba(17,24,39,0.18)" : "rgba(0,0,0,0.6)",
+    "--hp-menu-text": theme.text,
+    "--hp-feature-text": theme.text,
+    "--hp-dot": theme.border,
+    "--hp-faint": theme.textSecondary,
+    "--hp-card-bg": theme.surface,
+  };
+}
+
 const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -129,10 +150,10 @@ export default function HomePage(): React.ReactElement {
   const pathname = usePathname();
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
-  const { themeId } = useTheme();
-  // Thème clair par défaut ; tout autre thème utilise l'apparence sombre d'origine
-  const isLight = themeId === "light";
-  const themeVars = (isLight ? HP_LIGHT : HP_DARK) as React.CSSProperties;
+  const { theme, themeId } = useTheme();
+  // Thème clair par défaut ; « sombre » = apparence d'origine ; les autres thèmes utilisent leurs propres couleurs
+  const isLight = isLightTheme(theme);
+  const themeVars = buildHpVars(themeId, theme) as React.CSSProperties;
   const themeClass = isLight ? "hp-light" : "hp-dark";
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -372,7 +393,6 @@ export default function HomePage(): React.ReactElement {
 
       React.createElement("style", { dangerouslySetInnerHTML: { __html: `
         .loader-screen { animation: loaderFadeIn 0.4s ease both; }
-        .hp-light img[src="/images/logo.png"] { background: linear-gradient(135deg, #1e1b4b, #4338ca); border-radius: 22%; padding: 5%; box-sizing: border-box; }
         .hp-light .loader-brand { text-shadow: none !important; animation: none !important; }
         .loader-exit { animation: loaderFadeOut 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
         @keyframes loaderFadeIn  { from { opacity: 0; } to { opacity: 1; } }
@@ -612,7 +632,7 @@ export default function HomePage(): React.ReactElement {
 
     // Language Selector
     React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200, display: "flex", alignItems: "center", gap: "10px" } },
-      React.createElement(ThemeToggle, { variant: "home", size: 38 }),
+      React.createElement(ThemeSwitcher, { variant: "icon", size: 38 }),
       React.createElement("div", { style: { position: "relative" } },
       React.createElement("button", {
         onClick: (e: React.MouseEvent) => { e.stopPropagation(); setShowLanguageMenu(!showLanguageMenu); },
@@ -770,26 +790,19 @@ export default function HomePage(): React.ReactElement {
         flexShrink: 0
       }
     },
-      React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "80%", background: "radial-gradient(circle, rgba(138, 43, 226, 0.22) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 1, pointerEvents: "none" } }),
       React.createElement("img", {
         src: "/images/1.png",
         alt: "Inovexa Dashboard",
         style: {
           width: "100%", height: "100%", objectFit: "cover",
-          filter: "var(--hp-img-filter)",
-          maskImage: "linear-gradient(to right, transparent 0%, black 18%)",
-          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%)",
           zIndex: 2, position: "relative"
         }
-      }),
-      React.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: "120px", height: "100%", background: "linear-gradient(90deg, var(--hp-bg) 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } }),
-      React.createElement("div", { style: { position: "absolute", bottom: 0, left: 0, width: "100%", height: "80px", background: "linear-gradient(0deg, var(--hp-bg) 0%, transparent 100%)", zIndex: 3, pointerEvents: "none" } })
+      })
     ),
 
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
       * { -webkit-tap-highlight-color: transparent; }
       /* ── Variante claire ── */
-      .hp-light img[src="/images/logo.png"] { background: linear-gradient(135deg, #1e1b4b, #4338ca); border-radius: 22%; padding: 5%; box-sizing: border-box; }
       .hp-light .hero-word-glow { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #9333ea 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; filter: none !important; animation: none !important; }
       .hp-light a[href*="inovexa-erp.com"] { color: #7c3aed !important; }
       .hp-light .ambient-glow { background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.12), transparent 45%) !important; }

@@ -19,6 +19,7 @@ import { ExportModule } from './modules/export/export.module';
 import { SearchModule } from './modules/search/search.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
+import { WorkspaceSearchModule } from './modules/workspace-search/workspace-search.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { TransporteurModule } from './modules/transporteur/transporteur.module';
 import { TransporteursModule } from './modules/transporteurs/transporteurs.module';
@@ -54,6 +55,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
     SearchModule,
     EmployeesModule,
     ExpensesModule,
+    WorkspaceSearchModule,
     LogisticsModule,
     TransporteurModule,
     TransporteursModule,

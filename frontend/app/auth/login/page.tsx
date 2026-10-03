@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // Traductions
@@ -22,6 +22,20 @@ const LG_LIGHT: Record<string, string> = {
   "--lg-input-border": "rgba(124, 58, 237, 0.28)", "--lg-error": "#b91c1c", "--lg-warn": "#b45309",
   "--lg-placeholder": "#9ca3af", "--lg-autofill": "#ffffff",
 };
+
+/** Variables de couleur du login pour n'importe quel thème */
+function buildLgVars(themeId: string, theme: any): Record<string, string> {
+  if (themeId === "dark") return LG_DARK;
+  if (themeId === "light") return LG_LIGHT;
+  const light = isLightTheme(theme);
+  return {
+    "--lg-bg": theme.background, "--lg-text": theme.text, "--lg-muted": theme.textSecondary,
+    "--lg-label": theme.text, "--lg-faint": theme.textSecondary,
+    "--lg-card": theme.surface, "--lg-input-bg": theme.surfaceHover,
+    "--lg-input-border": theme.border, "--lg-error": light ? "#b91c1c" : "#f87171", "--lg-warn": light ? "#b45309" : "#FBBF24",
+    "--lg-placeholder": theme.textSecondary, "--lg-autofill": theme.surface,
+  };
+}
 
 const translations = {
   fr: {
@@ -71,9 +85,9 @@ const translations = {
 export default function LoginPage() {
   const router = useRouter();
   const { language } = useLanguage();
-  const { themeId } = useTheme();
-  const isLight = themeId === "light";
-  const themeVars = (isLight ? LG_LIGHT : LG_DARK) as React.CSSProperties;
+  const { theme, themeId } = useTheme();
+  const isLight = isLightTheme(theme);
+  const themeVars = buildLgVars(themeId, theme) as React.CSSProperties;
   const themeClass = isLight ? "lg-light" : "lg-dark";
   const { isMobile, isTablet } = useResponsive();
   const t = translations[language as keyof typeof translations] || translations.fr;
@@ -727,29 +741,11 @@ const res = await fetch(`${baseURL}/auth/login`, {
             height: "100vh",
             background: "var(--lg-bg)"
           }}>
-            <div style={{
-              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-              width: "80%", height: "80%", background: "radial-gradient(circle, rgba(138, 43, 226, 0.2) 0%, transparent 70%)",
-              filter: "blur(60px)", zIndex: 1
-            }} />
-
             <img 
               src="/images/1.png" 
               alt="Inovexa Futuristic" 
-              style={{ 
-                width: "100%", height: "100%", objectFit: "cover",
-                filter: "brightness(0.9) contrast(1.05)",
-                maskImage: "linear-gradient(to right, transparent 0%, black 15%)",
-                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%)",
-                zIndex: 2, position: "relative"
-              }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             />
-            
-            <div style={{ 
-              position: "absolute", top: 0, left: 0, width: "100px", 
-              background: "linear-gradient(90deg, var(--lg-bg) 0%, transparent 100%)", 
-              height: "100%", zIndex: 3 
-            }} />
           </div>
         </>
       )}
@@ -827,7 +823,6 @@ const res = await fetch(`${baseURL}/auth/login`, {
         }
 
         /* ── Variante claire ── */
-        .lg-light img[src="/images/logo.png"] { background: linear-gradient(135deg, #1e1b4b, #4338ca); border-radius: 22%; padding: 5%; box-sizing: border-box; margin-right: 6px !important; }
         .lg-light .particle { opacity: 0.45; }
         .lg-light h1 span, .lg-light h2 span { text-shadow: none; }
 

@@ -6,6 +6,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 export const THEMES: Record<string, any> = {
   light: {
     id: "light",
+    mode: "light",
     name: "Clair",
     nameEn: "Light",
     nameEs: "Claro",
@@ -26,6 +27,7 @@ export const THEMES: Record<string, any> = {
   },
   dark: {
     id: "dark",
+    mode: "dark",
     name: "Sombre",
     nameEn: "Dark",
     nameEs: "Oscuro",
@@ -47,6 +49,7 @@ export const THEMES: Record<string, any> = {
   
   blue: {
     id: "blue",
+    mode: "dark",
     name: "Bleu Océan",
     nameEn: "Ocean Blue",
     nameEs: "Azul Océano",
@@ -66,6 +69,7 @@ export const THEMES: Record<string, any> = {
   },
   sunset: {
     id: "sunset",
+    mode: "dark",
     name: "Coucher de Soleil",
     nameEn: "Sunset",
     nameEs: "Atardecer",
@@ -82,8 +86,95 @@ export const THEMES: Record<string, any> = {
     borderHover: "#57534e",
     gradient: "linear-gradient(135deg, #ea580c 0%, #f97316 100%)",
     icon: "🌅"
+  },
+  purple: {
+    id: "purple",
+    mode: "dark",
+    name: "Violet",
+    nameEn: "Purple",
+    nameEs: "Púrpura",
+    primary: "#8b5cf6",
+    primaryRgb: "139, 92, 246",
+    secondary: "#a855f7",
+    accent: "#c084fc",
+    background: "#1e1b4b",
+    surface: "#2e1065",
+    surfaceHover: "#3b0764",
+    text: "#faf5ff",
+    textSecondary: "#d8b4fe",
+    border: "#4c1d95",
+    borderHover: "#6d28d9",
+    gradient: "linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)",
+    icon: "🔮"
+  },
+  green: {
+    id: "green",
+    mode: "dark",
+    name: "Forêt",
+    nameEn: "Forest",
+    nameEs: "Bosque",
+    primary: "#059669",
+    primaryRgb: "5, 150, 105",
+    secondary: "#10b981",
+    accent: "#34d399",
+    background: "#022c22",
+    surface: "#064e3b",
+    surfaceHover: "#065f46",
+    text: "#ecfdf5",
+    textSecondary: "#6ee7b7",
+    border: "#047857",
+    borderHover: "#059669",
+    gradient: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+    icon: "🌲"
+  },
+  rose: {
+    id: "rose",
+    mode: "dark",
+    name: "Rose",
+    nameEn: "Rose",
+    nameEs: "Rosa",
+    primary: "#e11d48",
+    primaryRgb: "225, 29, 72",
+    secondary: "#f43f5e",
+    accent: "#fb7185",
+    background: "#1a060f",
+    surface: "#2b0d1a",
+    surfaceHover: "#3a1224",
+    text: "#fff1f2",
+    textSecondary: "#fda4af",
+    border: "#5b1a31",
+    borderHover: "#7f1d3a",
+    gradient: "linear-gradient(135deg, #e11d48 0%, #f43f5e 100%)",
+    icon: "🌹"
+  },
+  lightPremium: {
+    id: "lightPremium",
+    mode: "light",
+    name: "Premium Clair",
+    nameEn: "Premium Light",
+    nameEs: "Premium Claro",
+    primary: "#a16207",
+    primaryRgb: "161, 98, 7",
+    secondary: "#b45309",
+    accent: "#0f766e",
+    background: "#faf7f2",
+    surface: "#ffffff",
+    surfaceHover: "#fbf8f3",
+    text: "#1c1917",
+    textSecondary: "#78716c",
+    navText: "#1c1917",
+    border: "#e7e0d5",
+    borderHover: "#d6cdbd",
+    gradient: "linear-gradient(135deg, #a16207 0%, #b45309 100%)",
+    icon: "✨"
   }
 };
+
+/** Ordre d'affichage dans le sélecteur de thème */
+export const THEME_ORDER = ["light", "lightPremium", "dark", "blue", "purple", "green", "sunset", "rose"];
+
+/** true si le thème est de type « clair » (fond clair, texte foncé) */
+export const isLightTheme = (theme: any): boolean => !!theme && theme.mode === "light";
 
 interface ThemeContextType {
   theme: any;
@@ -126,7 +217,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--theme-text', selectedTheme.text);
     root.style.setProperty('--theme-text-secondary', selectedTheme.textSecondary);
     // Texte des menus latéraux : noir en thème blanc, gris-clair sinon
-    root.style.setProperty('--theme-nav-text', selectedTheme.navText || selectedTheme.textSecondary);
+    root.style.setProperty('--theme-nav-text', selectedTheme.navText || (selectedTheme.mode === 'light' ? selectedTheme.text : selectedTheme.textSecondary));
+    // Contrôles natifs (listes déroulantes, barres de défilement) cohérents avec le thème
+    root.style.colorScheme = selectedTheme.mode === 'light' ? 'light' : 'dark';
+    root.setAttribute('data-theme', selectedTheme.id);
+    root.setAttribute('data-mode', selectedTheme.mode === 'light' ? 'light' : 'dark');
     root.style.setProperty('--theme-border', selectedTheme.border);
     root.style.setProperty('--theme-border-hover', selectedTheme.borderHover);
     root.style.setProperty('--theme-gradient', selectedTheme.gradient);

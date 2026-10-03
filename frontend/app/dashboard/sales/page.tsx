@@ -266,6 +266,11 @@ export default function SalesPage() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [searchTerm, setSearchTerm] = useState("");
+  // Arrivée depuis la recherche globale du tableau de bord : on filtre déjà sur le terme cherché
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearchTerm(q);
+  }, []);
   const [filterPeriod, setFilterPeriod] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);

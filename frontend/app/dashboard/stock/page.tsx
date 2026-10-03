@@ -330,6 +330,11 @@ export default function StockPage() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [searchTerm, setSearchTerm] = useState("");
+  // Arrivée depuis la recherche globale du tableau de bord : on filtre déjà sur le terme cherché
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearchTerm(q);
+  }, []);
   const [filterStatus, setFilterStatus] = useState("all");
   const [showMovements, setShowMovements] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null);

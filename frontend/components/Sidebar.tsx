@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, CSSProperties } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
 const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
@@ -209,6 +210,11 @@ interface ThemeColors {
 // Session cache: prevents the sidebar from re-fetching on every navigation
 let sidebarCachedUser: User | null = null;
 let sidebarCachedModules: Record<string, boolean> | null = null;
+
+/** Modules activés pour le client connecté (null tant que non chargés) — utilisé par la recherche globale */
+export function getCachedModules(): Record<string, boolean> | null {
+  return sidebarCachedModules;
+}
 
 export default function Sidebar() {
   const router = useRouter();
@@ -498,16 +504,11 @@ export default function Sidebar() {
       cursor: "pointer",
     },
     logoImage: {
-      width: "56px",
-      height: "56px",
-      padding: "4px",
-      borderRadius: "16px",
+      width: "60px",
+      height: "60px",
       display: "block",
       flexShrink: 0,
       objectFit: "contain",
-      boxSizing: "border-box",
-      background: "linear-gradient(135deg, #1e1b4b, #4338ca)",
-      boxShadow: "0 6px 16px rgba(67,56,202,0.28)",
     },
     brandContainer: { flex: 1, minWidth: 0 },
     logoTitle: {
@@ -729,6 +730,8 @@ export default function Sidebar() {
                   );
                 })}
                 <div style={styles.divider} />
+                <ThemeSwitcher variant="sidebar" />
+                <div style={{ height: 10 }} />
                 <div
                   onClick={logout}
                   style={{
@@ -901,6 +904,8 @@ export default function Sidebar() {
           <nav style={styles.nav}>
             {menuItems.map((item) => renderNavItem(item))}
             <div style={styles.divider} />
+            <ThemeSwitcher variant="sidebar" />
+            <div style={{ height: 8 }} />
             <div
               onClick={logout}
               style={styles.logoutBtn}
