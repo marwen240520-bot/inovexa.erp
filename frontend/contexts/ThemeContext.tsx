@@ -18,6 +18,7 @@ export const THEMES: Record<string, any> = {
     surfaceHover: "#f9fafb",
     text: "#111827",
     textSecondary: "#6b7280",
+    navText: "#111827",
     border: "#e5e7eb",
     borderHover: "#d1d5db",
     gradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
@@ -124,6 +125,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--theme-surface-hover', selectedTheme.surfaceHover);
     root.style.setProperty('--theme-text', selectedTheme.text);
     root.style.setProperty('--theme-text-secondary', selectedTheme.textSecondary);
+    // Texte des menus latéraux : noir en thème blanc, gris-clair sinon
+    root.style.setProperty('--theme-nav-text', selectedTheme.navText || selectedTheme.textSecondary);
     root.style.setProperty('--theme-border', selectedTheme.border);
     root.style.setProperty('--theme-border-hover', selectedTheme.borderHover);
     root.style.setProperty('--theme-gradient', selectedTheme.gradient);

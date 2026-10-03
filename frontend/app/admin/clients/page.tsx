@@ -336,41 +336,63 @@ export default function AdminClientsPage() {
     showMessage("Statut modifié", "success");
   };
 
-  const deleteClient = async (id: number) => {
-    if (confirm("Supprimer ce client ?")) {
-      const token = localStorage.getItem("token");
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${id}`, {
+  // Supprime un client côté serveur et renvoie un message d'erreur lisible en cas d'échec
+  const requestDeleteClient = async (id: number): Promise<string | null> => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchClients();
-      fetchStats();
-      showMessage("Client supprimé", "success");
-      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok || data?.error) {
+        const msg = Array.isArray(data?.message) ? data.message[0] : data?.message;
+        return msg || data?.error || "Erreur lors de la suppression";
+      }
+      return null;
+    } catch (e) {
+      console.error(e);
+      return "Erreur de connexion au serveur";
     }
+  };
+
+  const deleteClient = async (id: number) => {
+    if (!confirm("Supprimer ce client ?")) return;
+    const error = await requestDeleteClient(id);
+    if (error) {
+      showMessage(error, "error");
+      return;
+    }
+    await Promise.all([fetchClients(), fetchStats()]);
+    setSelectedIds(prev => prev.filter(sid => sid !== id));
+    showMessage("Client supprimé", "success");
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm(`Supprimer ${selectedIds.length} client(s) ?`)) {
-      const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
-      fetchClients();
-      fetchStats();
-      setSelectedIds([]);
-      showMessage(`${selectedIds.length} client(s) supprimé(s)`, "success");
+    if (!confirm(`Supprimer ${selectedIds.length} client(s) ?`)) return;
+    const failed: number[] = [];
+    let lastError = "";
+    for (const id of selectedIds) {
+      const error = await requestDeleteClient(id);
+      if (error) { failed.push(id); lastError = error; }
+    }
+    const deleted = selectedIds.length - failed.length;
+    await Promise.all([fetchClients(), fetchStats()]);
+    setSelectedIds(failed);
+    if (failed.length === 0) {
+      showMessage(`${deleted} client(s) supprimé(s)`, "success");
+    } else if (deleted === 0) {
+      showMessage(lastError, "error");
+    } else {
+      showMessage(`${deleted} supprimé(s), ${failed.length} en échec : ${lastError}`, "error");
     }
   };
 
   const showMessage = (msg: string, type: "success" | "error") => {
     setMessage(msg);
     setMessageType(type);
-    setTimeout(() => setMessage(""), 3000);
+    setTimeout(() => setMessage(""), type === "error" ? 6000 : 3000);
   };
 
   const openEditModal = (client: Client) => {

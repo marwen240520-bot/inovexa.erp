@@ -201,6 +201,7 @@ interface ThemeColors {
   surface: string;
   primary: string;
   textSecondary: string;
+  navText?: string;
   border: string;
   gradient: string;
 }
@@ -373,11 +374,14 @@ export default function Sidebar() {
     surface: "#ffffff",
     primary: "#4f46e5",
     textSecondary: "#6b7280",
+    navText: "#111827",
     border: "#e5e7eb",
     gradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
   };
 
   const ct = localTheme || defaultStyles;
+  // Texte des liens : noir en thème blanc, sinon la couleur secondaire du thème
+  const navText = ct.navText || ct.textSecondary;
 
   // ✅ Correction: Typage explicite des styles avec CSSProperties
   const styles: Record<string, CSSProperties> = {
@@ -450,7 +454,7 @@ export default function Sidebar() {
     mobileMoreTitle: {
       fontSize: "13px",
       fontWeight: 600,
-      color: ct.textSecondary,
+      color: navText,
       letterSpacing: "0.06em",
       textTransform: "uppercase" as const,
     },
@@ -641,7 +645,7 @@ export default function Sidebar() {
       return {
         ...styles.navItem,
         background: "transparent",
-        color: ct.textSecondary,
+        color: navText,
       };
     };
 
@@ -691,7 +695,7 @@ export default function Sidebar() {
                   <span style={styles.mobileMoreTitle}>Menu</span>
                   <button
                     onClick={() => setMobileMoreOpen(false)}
-                    style={{ background: "transparent", border: "none", cursor: "pointer", color: ct.textSecondary, padding: "4px" }}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: navText, padding: "4px" }}
                   >
                     {ICONS.close}
                   </button>
@@ -712,7 +716,7 @@ export default function Sidebar() {
                         marginBottom: "4px",
                         borderRadius: "12px",
                         background: isActive ? `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)` : "transparent",
-                        color: isActive ? ct.primary : ct.textSecondary,
+                        color: isActive ? ct.primary : navText,
                         cursor: "pointer",
                         position: "relative",
                         overflow: "hidden",
@@ -758,7 +762,7 @@ export default function Sidebar() {
                   onClick={() => handleNavigation(item.path, label)}
                   style={{
                     ...(styles.mobileNavBtn as CSSProperties),
-                    color: isActive ? ct.primary : ct.textSecondary,
+                    color: isActive ? ct.primary : navText,
                   }}
                 >
                   <div style={{
@@ -776,7 +780,7 @@ export default function Sidebar() {
                   </div>
                   <span style={{
                     ...(styles.mobileNavLabel as CSSProperties),
-                    color: isActive ? ct.primary : ct.textSecondary,
+                    color: isActive ? ct.primary : navText,
                     fontWeight: isActive ? 600 : 400,
                   }}>
                     {label}
@@ -791,7 +795,7 @@ export default function Sidebar() {
                 onClick={() => setMobileMoreOpen((p) => !p)}
                 style={{
                   ...(styles.mobileNavBtn as CSSProperties),
-                  color: mobileMoreOpen ? ct.primary : ct.textSecondary,
+                  color: mobileMoreOpen ? ct.primary : navText,
                 }}
               >
                 <div style={{
@@ -808,7 +812,7 @@ export default function Sidebar() {
                 </div>
                 <span style={{
                   ...(styles.mobileNavLabel as CSSProperties),
-                  color: mobileMoreOpen ? ct.primary : ct.textSecondary,
+                  color: mobileMoreOpen ? ct.primary : navText,
                   fontWeight: mobileMoreOpen ? 600 : 400,
                 }}>
                   Plus

@@ -1,6 +1,6 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource, EntityMetadata } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
 
@@ -9,6 +9,7 @@ export class AdminService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private dataSource: DataSource,
   ) {}
 
   async getAllClients() {
@@ -121,11 +122,75 @@ export class AdminService {
     };
   }
 
+  /**
+   * Tables rattachées à un client (colonne `userId`), triées pour qu'une table qui
+   * référence une autre (clé étrangère) soit vidée AVANT celle qu'elle référence.
+   * Ex. : purchases -> products -> categories.
+   */
+  private getUserOwnedTablesInDeleteOrder(): EntityMetadata[] {
+    const byTable = new Map<string, EntityMetadata>();
+    for (const meta of this.dataSource.entityMetadatas) {
+      if (meta.target === User) continue;
+      if (!meta.columns.some((c) => c.propertyName === 'userId')) continue;
+      if (!byTable.has(meta.tablePath)) byTable.set(meta.tablePath, meta);
+    }
+    const nodes = Array.from(byTable.values());
+
+    // refCount[t] = nombre de tables (du lot) qui ont une clé étrangère vers t
+    const refCount = new Map<string, number>(nodes.map((m) => [m.tablePath, 0]));
+    const refsOf = (m: EntityMetadata) =>
+      Array.from(
+        new Set(
+          m.foreignKeys
+            .map((fk) => fk.referencedEntityMetadata.tablePath)
+            .filter((t) => t !== m.tablePath && byTable.has(t)),
+        ),
+      );
+    for (const m of nodes) for (const t of refsOf(m)) refCount.set(t, (refCount.get(t) || 0) + 1);
+
+    const ordered: EntityMetadata[] = [];
+    const queue = nodes.filter((m) => (refCount.get(m.tablePath) || 0) === 0);
+    const seen = new Set(queue.map((m) => m.tablePath));
+    while (queue.length) {
+      const m = queue.shift()!;
+      ordered.push(m);
+      for (const t of refsOf(m)) {
+        refCount.set(t, (refCount.get(t) || 0) - 1);
+        if ((refCount.get(t) || 0) <= 0 && !seen.has(t)) {
+          seen.add(t);
+          queue.push(byTable.get(t)!);
+        }
+      }
+    }
+    // Cycles éventuels : on ajoute le reste à la fin
+    for (const m of nodes) if (!seen.has(m.tablePath)) ordered.push(m);
+    return ordered;
+  }
+
   async deleteClient(id: number) {
     const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
     if (!client) throw new NotFoundException('Client non trouvé');
-    
-    await this.userRepository.delete(id);
+
+    try {
+      // Tout ou rien : si une étape échoue, rien n'est supprimé.
+      await this.dataSource.transaction(async (manager) => {
+        for (const meta of this.getUserOwnedTablesInDeleteOrder()) {
+          await manager
+            .createQueryBuilder()
+            .delete()
+            .from(meta.target)
+            .where('"userId" = :id', { id })
+            .execute();
+        }
+        await manager.delete(User, id);
+      });
+    } catch (err: any) {
+      console.error(`Suppression du client ${id} impossible :`, err?.message || err);
+      throw new ConflictException(
+        'Impossible de supprimer ce client : des données liées empêchent la suppression.',
+      );
+    }
+
     return { success: true, message: 'Client supprimé' };
   }
 

@@ -44,8 +44,8 @@ export default function SidebarTransporteur() {
   const menuItems: MenuItem[] = [
     { path: "/transporteur/dashboard", label: t("transporteur.dashboard.title") || "Tableau de bord", icon: "📊", color: "#667eea" },
     { path: "/transporteur/shipments", label: t("transporteur.shipments.title") || "Mes livraisons", icon: "📦", color: "#10b981" },
-    { path: "/transporteur/profile", label: t("transporteur.profile.title") || "Mon profil", icon: "👤", color: "var(--theme-text-secondary)" },
-    { path: "/transporteur/settings", label: t("transporteur.settings.title") || "Paramètres", icon: "⚙️", color: "var(--theme-text-secondary)" }
+    { path: "/transporteur/profile", label: t("transporteur.profile.title") || "Mon profil", icon: "👤", color: "var(--theme-nav-text)" },
+    { path: "/transporteur/settings", label: t("transporteur.settings.title") || "Paramètres", icon: "⚙️", color: "var(--theme-nav-text)" }
   ];
 
   const logout = () => {
@@ -205,7 +205,7 @@ export default function SidebarTransporteur() {
               background: "rgba(102,126,234,0.1)", 
               border: "1px solid rgba(102,126,234,0.3)", 
               borderRadius: "10px", 
-              color: "var(--theme-text-secondary)", 
+              color: "var(--theme-nav-text)", 
               cursor: "pointer", 
               padding: "8px 12px",
               transition: "all 0.2s ease",
@@ -250,7 +250,7 @@ export default function SidebarTransporteur() {
                     : isHovered 
                       ? "rgba(102,126,234,0.08)" 
                       : "transparent", 
-                  color: isActive ? item.color : isHovered ? "#fff" : "var(--theme-text-secondary)", 
+                  color: isActive ? item.color : isHovered ? "#fff" : "var(--theme-nav-text)", 
                   cursor: "pointer", 
                   display: "flex", 
                   alignItems: "center", 

@@ -160,7 +160,7 @@ export default function TransporteurLayout({
       path: "/transporteur/settings", 
       label: getTranslation("transporteur.settings.title"), 
       icon: SettingsIcon,
-      color: "var(--theme-text-secondary)",
+      color: "var(--theme-nav-text)",
       bgColor: "rgba(148,163,184,0.15)"
     }
   ];
@@ -224,7 +224,7 @@ export default function TransporteurLayout({
                 }}
               >
                 <div style={{
-                  color: isActive ? item.color : "var(--theme-text-secondary)",
+                  color: isActive ? item.color : "var(--theme-nav-text)",
                   transform: isActive ? "scale(1.1)" : "scale(1)",
                   transition: "all 0.2s"
                 }}>
@@ -232,7 +232,7 @@ export default function TransporteurLayout({
                 </div>
                 <span style={{
                   fontSize: "10px",
-                  color: isActive ? item.color : "var(--theme-text-secondary)",
+                  color: isActive ? item.color : "var(--theme-nav-text)",
                   fontWeight: isActive ? "600" : "400"
                 }}>
                   {item.label}
@@ -375,7 +375,7 @@ export default function TransporteurLayout({
                   }}
                 >
                   <span style={{ 
-                    color: isActive ? item.color : "var(--theme-text-secondary)",
+                    color: isActive ? item.color : "var(--theme-nav-text)",
                     display: "flex",
                     alignItems: "center"
                   }}>
@@ -384,7 +384,7 @@ export default function TransporteurLayout({
                   <span style={{ 
                     fontSize: "14px", 
                     fontWeight: isActive ? "600" : "400",
-                    color: isActive ? item.color : "var(--theme-text-secondary)"
+                    color: isActive ? item.color : "var(--theme-nav-text)"
                   }}>
                     {item.label}
                   </span>
