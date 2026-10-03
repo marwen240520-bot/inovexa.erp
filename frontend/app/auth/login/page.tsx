@@ -102,12 +102,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 30);
-    return () => clearTimeout(t);
-  }, []);
-
   const detectCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (typeof e.getModifierState === "function") {
       setCapsLockOn(e.getModifierState("CapsLock"));
@@ -115,17 +109,6 @@ export default function LoginPage() {
   };
 
   const isSmallScreen = isMobile || isTablet;
-
-  const particles = useMemo(() => {
-    return Array.from({ length: isMobile ? 10 : 20 }).map((_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      duration: `${8 + Math.random() * 15}s`,
-      delay: `${Math.random() * 5}s`,
-      size: `${1 + Math.random() * 3}px`
-    }));
-  }, [isMobile]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +156,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className={"root-container page-enter " + themeClass + (mounted ? " page-mounted" : "")}
+      className={"root-container " + themeClass}
       style={{ 
         ...themeVars,
         background: "var(--lg-bg)",
@@ -185,24 +168,6 @@ export default function LoginPage() {
       }}
     >
       
-      {particles.map((p) => (
-        <div key={p.id} className="particle" style={{
-          position: "absolute",
-          left: p.left,
-          top: p.top,
-          width: p.size,
-          height: p.size,
-          background: "rgba(168, 85, 247, 0.6)",
-          borderRadius: "50%",
-          boxShadow: "0 0 8px rgba(168, 85, 247, 0.8)",
-          animation: `floatParticle ${p.duration} linear infinite`,
-          animationDelay: p.delay,
-          zIndex: 1
-        }} />
-      ))}
-
-      <div className="ambient-glow" />
-
       {/* ── MOBILE LAYOUT ── */}
       {isSmallScreen ? (
         <div style={{
@@ -218,7 +183,7 @@ export default function LoginPage() {
             padding: "env(safe-area-inset-top, 20px) 24px 0",
             paddingTop: "max(env(safe-area-inset-top, 20px), 20px)",
           }}>
-            <Link href="/" className="anim-item anim-back" style={{
+            <Link href="/" style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
@@ -243,8 +208,8 @@ export default function LoginPage() {
             overflowY: "auto",
           }}>
 
-            {/* LOGO BLOCK — ✅ LOGO PLUS GRAND + GAP SUPPRIMÉ */}
-            <div className="anim-item anim-logo" style={{
+            {/* LOGO BLOCK */}
+            <div style={{
               display: "flex",
               alignItems: "center",
               gap: "0px",
@@ -257,7 +222,6 @@ export default function LoginPage() {
                   width: "96px",
                   height: "auto", 
                   marginRight: "-8px",
-                  filter: "drop-shadow(0 0 16px rgba(138,43,226,0.8))" 
                 }} 
               />
               <div>
@@ -273,7 +237,7 @@ export default function LoginPage() {
                 }}>
                   <span style={{ fontWeight: "800" }}>INOV</span>EXA
                 </h2>
-                <div className="erp-text-glow" style={{ 
+                <div style={{ 
                   background: "linear-gradient(90deg, #A855F7, #6366F1)",
                   WebkitBackgroundClip: "text", 
                   WebkitTextFillColor: "transparent",
@@ -288,7 +252,7 @@ export default function LoginPage() {
             </div>
 
             {/* TITLE */}
-            <div className="anim-item anim-title" style={{ marginBottom: "32px" }}>
+            <div style={{ marginBottom: "32px" }}>
               <h1 style={{ 
                 fontSize: "32px",
                 color: "var(--lg-text)", 
@@ -299,7 +263,7 @@ export default function LoginPage() {
               }}>
                 {t.signIn}
               </h1>
-              <div className="anim-accent" style={{
+              <div style={{
                 marginTop: "12px",
                 width: "48px",
                 height: "3px",
@@ -309,7 +273,7 @@ export default function LoginPage() {
             </div>
 
             {/* GLASS CARD WRAPPER */}
-            <div className="login-card-enter anim-item anim-card" style={{
+            <div style={{
               background: "var(--lg-card)",
               border: "1px solid rgba(168, 85, 247, 0.12)",
               borderRadius: "20px",
@@ -337,7 +301,7 @@ export default function LoginPage() {
               )}
 
               <form onSubmit={handleLogin} style={{ width: "100%" }}>
-                <div className="anim-item anim-field-1" style={{ marginBottom: "18px" }}>
+                <div style={{ marginBottom: "18px" }}>
                   <label style={{ 
                     color: "var(--lg-label)", 
                     display: "block", 
@@ -366,25 +330,14 @@ export default function LoginPage() {
                       borderRadius: "12px", 
                       color: "var(--lg-text)",
                       fontSize: "16px",
-                      transition: "all 0.25s ease",
                       WebkitAppearance: "none",
                       outline: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#A855F7";
-                      e.currentTarget.style.background = "rgba(168, 85, 247, 0.07)";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168, 85, 247, 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "var(--lg-input-border)";
-                      e.currentTarget.style.background = "var(--lg-input-bg)";
-                      e.currentTarget.style.boxShadow = "none";
                     }}
                     required
                   />
                 </div>
 
-                <div className="anim-item anim-field-2" style={{ marginBottom: "26px" }}>
+                <div style={{ marginBottom: "26px" }}>
                   <label style={{ 
                     color: "var(--lg-label)", 
                     display: "block", 
@@ -417,19 +370,8 @@ export default function LoginPage() {
                       borderRadius: "12px", 
                       color: "var(--lg-text)",
                       fontSize: "16px",
-                      transition: "all 0.25s ease",
                       WebkitAppearance: "none",
                       outline: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "#A855F7";
-                      e.currentTarget.style.background = "rgba(168, 85, 247, 0.07)";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(168, 85, 247, 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "var(--lg-input-border)";
-                      e.currentTarget.style.background = "var(--lg-input-bg)";
-                      e.currentTarget.style.boxShadow = "none";
                     }}
                     required
                   />
@@ -457,15 +399,11 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="cta-button-shimmer anim-item anim-button"
                   style={{
                     width: "100%",
                     padding: "18px",
                     fontSize: "16px",
                     borderRadius: "14px",
-                    position: "relative",
-                    zIndex: 2,
-                    overflow: "hidden",
                     border: "none",
                     cursor: loading ? "not-allowed" : "pointer",
                     color: "white",
@@ -473,14 +411,12 @@ export default function LoginPage() {
                     background: loading
                       ? "rgba(168, 85, 247, 0.4)"
                       : "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
-                    boxShadow: loading ? "none" : "0 8px 24px rgba(168, 85, 247, 0.35)",
-                    transition: "all 0.25s ease",
                     letterSpacing: "0.3px",
                     WebkitTapHighlightColor: "transparent",
                     touchAction: "manipulation",
                   }}
                 >
-                  <span style={{ position: "relative", zIndex: 3, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                     {loading && (
                       <span className="spinner" style={{
                         width: "16px", height: "16px",
@@ -492,12 +428,11 @@ export default function LoginPage() {
                     )}
                     {loading ? t.loggingIn : t.login}
                   </span>
-                  {!loading && <div className="shimmer-effect" />}
                 </button>
               </form>
             </div>
 
-            <p className="anim-item anim-footer" style={{ 
+            <p style={{ 
               marginTop: "28px", 
               color: "var(--lg-faint)", 
               fontSize: "10px", 
@@ -524,7 +459,7 @@ export default function LoginPage() {
           }}>
             
             {/* LOGO ET TEXTE */}
-            <div className="anim-item anim-logo" style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
               <div style={{ marginTop: "2px" }}> 
                 <img 
                   src="/images/logo.png" 
@@ -532,7 +467,6 @@ export default function LoginPage() {
                   style={{ 
                     width: "126px",
                     height: "auto", 
-                    filter: "drop-shadow(0 0 15px rgba(138,43,226,0.6))" 
                   }} 
                 />
               </div>
@@ -548,7 +482,7 @@ export default function LoginPage() {
                 }}>
                   <span style={{ fontWeight: "800" }}>INOV</span>EXA
                 </h2>
-                <div className="erp-text-glow" style={{ 
+                <div style={{ 
                   background: "linear-gradient(90deg, #A855F7, #6366F1)",
                   WebkitBackgroundClip: "text", 
                   WebkitTextFillColor: "transparent",
@@ -563,7 +497,7 @@ export default function LoginPage() {
             </div>
 
             {/* TITRE DE CONNEXION */}
-            <h1 className="anim-item anim-title" style={{ 
+            <h1 style={{ 
               fontSize: "42px",
               color: "var(--lg-text)", 
               fontWeight: "800", 
@@ -590,7 +524,7 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleLogin} style={{ maxWidth: "495px", width: "100%" }}>
-              <div className="anim-item anim-field-1" style={{ marginBottom: "22px" }}>
+              <div style={{ marginBottom: "22px" }}>
                 <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
                   {t.email}
                 </label>
@@ -613,22 +547,13 @@ export default function LoginPage() {
                     borderRadius: "12px", 
                     color: "var(--lg-text)",
                     fontSize: "15.4px",
-                    transition: "all 0.3s ease",
                     outline: "none",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#A855F7";
-                    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(168, 85, 247, 0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--lg-input-border)";
-                    e.currentTarget.style.boxShadow = "none";
                   }}
                   required
                 />
               </div>
 
-              <div className="anim-item anim-field-2" style={{ marginBottom: "30.8px" }}>
+              <div style={{ marginBottom: "30.8px" }}>
                 <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "9px", fontSize: "13px", fontWeight: "500" }}>
                   {t.password}
                 </label>
@@ -647,22 +572,13 @@ export default function LoginPage() {
                     width: "100%",
                     boxSizing: "border-box",
                     padding: "15.4px",
-                      paddingRight: "46px",
+                    paddingRight: "46px",
                     background: "var(--lg-input-bg)",
                     border: "1px solid var(--lg-input-border)", 
                     borderRadius: "12px", 
                     color: "var(--lg-text)",
                     fontSize: "15.4px",
-                    transition: "all 0.3s ease",
                     outline: "none",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#A855F7";
-                    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(168, 85, 247, 0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--lg-input-border)";
-                    e.currentTarget.style.boxShadow = "none";
                   }}
                   required
                 />
@@ -690,32 +606,26 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="cta-button-shimmer anim-item anim-button"
                 style={{
                   width: "100%",
                   padding: "17.6px",
                   fontSize: "16.5px",
                   borderRadius: "12px",
-                  position: "relative",
-                  zIndex: 2,
-                  overflow: "hidden",
                   border: "none",
                   cursor: loading ? "not-allowed" : "pointer",
                   color: "white",
                   fontWeight: "700",
                   background: "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
-                  boxShadow: "0 10px 30px rgba(168, 85, 247, 0.3)",
                   opacity: loading ? 0.7 : 1
                 }}
               >
-                <span style={{ position: "relative", zIndex: 3 }}>
+                <span>
                   {loading ? t.loggingIn : t.login}
                 </span>
-                <div className="shimmer-effect"></div>
               </button>
             </form>
 
-            <div className="anim-item anim-back" style={{ marginTop: "33px" }}>
+            <div style={{ marginTop: "33px" }}>
               <Link href="/" style={{ 
                 display: "inline-flex", 
                 alignItems: "center", 
@@ -723,14 +633,13 @@ export default function LoginPage() {
                 color: "var(--lg-muted)", 
                 fontSize: "14.3px",
                 textDecoration: "none",
-                transition: "all 0.3s ease"
               }}>
                 <span style={{ fontSize: "17.6px" }}>←</span>
                 <span>{t.backToHome}</span>
               </Link>
             </div>
 
-            <p className="anim-item anim-footer" style={{ marginTop: "55px", color: "var(--lg-faint)", fontSize: "11px", fontWeight: "600" }}>
+            <p style={{ marginTop: "55px", color: "var(--lg-faint)", fontSize: "11px", fontWeight: "600" }}>
               © 2026 INOVEXA. {t.rights.toUpperCase()}
             </p>
           </div>
@@ -881,64 +790,6 @@ export default function LoginPage() {
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .erp-text-glow {
-          animation: textPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes textPulse {
-          0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.3)); }
-          50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6)); }
-        }
-
-        .cta-button-shimmer {
-          animation: buttonPulse 2s infinite;
-          transition: all 0.3s ease;
-          position: relative;
-        }
-
-        @keyframes buttonPulse {
-          0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); }
-          70% { box-shadow: 0 0 0 15px rgba(168, 85, 247, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
-        }
-
-        .shimmer-effect {
-          position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-          animation: shimmer 2.5s infinite;
-        }
-
-        @keyframes shimmer { 
-          0% { left: -100%; } 
-          100% { left: 100%; } 
-        }
-
-        .cta-button-shimmer:hover { 
-          transform: translateY(-2px); 
-          filter: brightness(1.1); 
-        }
-
-        .cta-button-shimmer:active {
-          transform: translateY(0px);
-          filter: brightness(0.95);
-        }
-
-        .ambient-glow {
-          position: absolute; width: 100%; height: 100%;
-          background: radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.08), transparent 40%);
-          z-index: 0;
-        }
-
-        @keyframes floatParticle {
-          0% { transform: translateY(0) translateX(0); opacity: 0; }
-          15% { opacity: 1; }
-          100% { transform: translateY(-80vh) translateX(30px); opacity: 0; }
-        }
-
-        .particle {
-          pointer-events: none;
-        }
-
         .root-container {
           min-height: 100vh;
           min-height: 100dvh;
@@ -953,7 +804,6 @@ export default function LoginPage() {
         }
 
         /* ── Variante claire ── */
-        .lg-light .particle { opacity: 0.45; }
         .lg-light h1 span, .lg-light h2 span { text-shadow: none; }
 
         input::placeholder {
@@ -968,89 +818,8 @@ export default function LoginPage() {
           transition: background-color 5000s ease-in-out 0s;
         }
 
-        .login-card-enter {
-          animation: cardEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        @keyframes cardEnter {
-          0%   { opacity: 0; transform: translateY(24px) scale(0.98); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
         @media (max-width: 768px) {
           .login-hero { display: none !important; }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           ANIMATION D'OUVERTURE DE PAGE — séquence en cascade
-           ═══════════════════════════════════════════════════════════════ */
-        .page-enter { opacity: 0; }
-        .page-mounted { animation: pageFadeIn 0.6s ease-out forwards; }
-        @keyframes pageFadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-
-        .anim-item {
-          opacity: 0;
-          transform: translateY(24px);
-          transition: 
-            opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-          will-change: opacity, transform;
-        }
-        .page-mounted .anim-item {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        .page-mounted .anim-logo    { transition-delay: 0.05s; }
-        .page-mounted .anim-title   { transition-delay: 0.15s; }
-        .page-mounted .anim-card    { transition-delay: 0.22s; }
-        .page-mounted .anim-field-1 { transition-delay: 0.32s; }
-        .page-mounted .anim-field-2 { transition-delay: 0.42s; }
-        .page-mounted .anim-button  { transition-delay: 0.52s; }
-        .page-mounted .anim-back    { transition-delay: 0.62s; }
-        .page-mounted .anim-footer  { transition-delay: 0.72s; }
-
-        .anim-logo { transform: translateY(-28px) scale(0.94); }
-        .page-mounted .anim-logo {
-          transform: translateY(0) scale(1);
-          transition-duration: 0.85s;
-        }
-
-        .anim-title { transform: translateX(-32px); }
-        .page-mounted .anim-title {
-          transform: translateX(0);
-          transition-duration: 0.85s;
-        }
-
-        .anim-card {
-          transform: translateY(30px) scale(0.97);
-          transform-origin: center top;
-        }
-        .page-mounted .anim-card {
-          transform: translateY(0) scale(1);
-          transition-duration: 0.9s;
-        }
-
-        .anim-field-1,
-        .anim-field-2 { transform: translateY(18px); }
-
-        .anim-button { transform: translateY(20px) scale(0.96); }
-        .page-mounted .anim-button {
-          transform: translateY(0) scale(1);
-          transition-duration: 0.75s;
-        }
-
-        .anim-footer { transform: translateY(12px); }
-
-        .anim-accent {
-          animation: accentGrow 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
-          transform-origin: left center;
-        }
-        @keyframes accentGrow {
-          0%   { transform: scaleX(0); opacity: 0; }
-          100% { transform: scaleX(1); opacity: 1; }
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -1080,10 +849,6 @@ export default function LoginPage() {
           0%, 100% { transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) translateY(0); }
           50%      { transform: perspective(1200px) rotateY(-3deg) rotateX(1deg) translateY(-10px); }
         }
-        @keyframes lgLivePulse {
-          0%, 100% { opacity: 1;   transform: scale(1); }
-          50%      { opacity: 0.5; transform: scale(0.85); }
-        }
         .lg-hero-card:hover {
           transform: perspective(1200px) rotateY(0deg) rotateX(0deg) translateY(-6px) scale(1.015) !important;
           box-shadow:
@@ -1109,11 +874,7 @@ export default function LoginPage() {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .login-card-enter,
-          .anim-item,
           .anim-hero,
-          .anim-accent,
-          .page-mounted,
           .lg-hero-card,
           .lg-hero-orbit-1,
           .lg-hero-orbit-2,
