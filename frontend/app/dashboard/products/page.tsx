@@ -644,69 +644,119 @@ export default function ProductsPage() {
 
           {/* Vue Liste */}
           {viewMode === "list" && (
-            <div style={{ background: theme.surface, borderRadius: cardRadius, padding: isMobile ? "8px" : "16px", border: `1px solid ${theme.border}`, overflowX: "auto", animation: "fadeInUp 0.5s ease 0.5s", opacity: animateCards ? 1 : 0 }}>
+            <div style={{ background: isMobile ? "transparent" : theme.surface, borderRadius: cardRadius, padding: isMobile ? "0" : "16px", border: isMobile ? "none" : `1px solid ${theme.border}`, overflowX: isMobile ? "visible" : "auto", animation: "fadeInUp 0.5s ease 0.5s", opacity: animateCards ? 1 : 0 }}>
+              {isMobile ? (
+                /* Mobile : une carte par produit — le nom s'affiche en entier et les actions restent visibles */
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {filteredProducts.map((p) => {
+                    const statusColor = getStatusColor(p.quantity || 0);
+                    const isChecked = selectedIds.includes(p.id);
+                    return (
+                      <div key={p.id} style={{ background: theme.surface, border: `1.5px solid ${isChecked ? theme.primary : theme.border}`, borderRadius: "14px", padding: "12px" }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                          <input type="checkbox" aria-label={`Sélectionner ${p.name}`} checked={isChecked}
+                            onChange={() => { if (isChecked) setSelectedIds(selectedIds.filter(id => id !== p.id)); else setSelectedIds([...selectedIds, p.id]); }}
+                            style={{ width: "22px", height: "22px", marginTop: "2px", flexShrink: 0, cursor: "pointer" }} />
+                          <button type="button" onClick={() => pickPhotoFor(p)} aria-label={p.imageUrl ? "Changer la photo" : "Ajouter une photo"}
+                            style={{ width: 56, height: 56, borderRadius: 10, flexShrink: 0, padding: 0, overflow: "hidden", cursor: "pointer", border: `1px ${p.imageUrl ? "solid" : "dashed"} ${theme.border}`, background: theme.surfaceHover, color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {p.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.imageUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            ) : (
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                            )}
+                          </button>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: theme.text, fontWeight: 600, fontSize: "15px", lineHeight: 1.3, overflowWrap: "anywhere" }}>{p.name}</div>
+                            <div style={{ color: theme.textSecondary, fontSize: "12px", marginTop: "3px", overflowWrap: "anywhere" }}>{p.sku || "-"}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            <span style={{ background: `${theme.primary}20`, color: theme.primary, padding: "3px 10px", borderRadius: "10px", fontSize: "12px", fontWeight: 600 }}>{getCategoryName(p.categoryId)}</span>
+                            <span style={{ background: `${statusColor}20`, color: statusColor, padding: "3px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>{getStatusText(p.quantity || 0)}</span>
+                          </div>
+                          <span style={{ color: theme.accent, fontWeight: 800, fontSize: "16px", whiteSpace: "nowrap" }}>{formatCurrency(p.price || 0)}</span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginTop: "12px" }}>
+                          <button onClick={() => pickPhotoFor(p)} style={{ minHeight: "44px", background: theme.primary, color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>Photo
+                          </button>
+                          <button onClick={() => openEditModal(p)} style={{ minHeight: "44px", background: "#f59e0b", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            <IconEdit size={14} />{t("common.edit")}
+                          </button>
+                          <button onClick={() => deleteProduct(p.id)} style={{ minHeight: "44px", background: "#c33", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            <IconTrash size={14} />{t("common.delete")}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
               <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? "450px" : "100%" }}>
-                  <thead>
-                    <tr style={{ borderBottom: `1px solid ${theme.border}`, color: theme.textSecondary }}>
-                      <th style={{ padding: "8px", width: "32px" }}>
-                        <input type="checkbox" checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
-                          onChange={() => { if (selectedIds.length === filteredProducts.length) setSelectedIds([]); else setSelectedIds(filteredProducts.map(p => p.id)); }}
-                          style={{ width: "14px", height: "14px", cursor: "pointer" }} />
-                      </th>
-                      <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>{t("common.name")}</th>
-                      {!isMobile && <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>SKU</th>}
-                      <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>{t("common.category")}</th>
-                      <th style={{ padding: "8px", textAlign: "right", fontSize: tableFontSize }}>{t("common.price")}</th>
-                      <th style={{ padding: "8px", textAlign: "center", fontSize: tableFontSize }}>{t("common.status")}</th>
-                      <th style={{ padding: "8px", textAlign: "center", fontSize: tableFontSize }}>{t("common.actions")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProducts.map((p, idx) => {
-                      const statusColor = getStatusColor(p.quantity || 0);
-                      const isChecked = selectedIds.includes(p.id);
-                      return (
-                        <tr key={p.id} style={{ borderBottom: `1px solid ${theme.surfaceHover}`, transition: "background 0.2s", animation: `slideIn 0.3s ease ${idx * 0.03}s` }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover}
-                          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                          <td style={{ padding: "8px", textAlign: "center" }}>
-                            <input type="checkbox" checked={isChecked} onChange={() => { if (isChecked) setSelectedIds(selectedIds.filter(id => id !== p.id)); else setSelectedIds([...selectedIds, p.id]); }} style={{ width: "14px", height: "14px", cursor: "pointer" }} />
-                          </td>
-                          <td style={{ padding: "8px", color: theme.text, fontWeight: "500", fontSize: tableFontSize }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              <button type="button" onClick={() => pickPhotoFor(p)} title={p.imageUrl ? "Changer la photo" : "Ajouter une photo"} aria-label={p.imageUrl ? "Changer la photo" : "Ajouter une photo"} style={{ width: isMobile ? 34 : 42, height: isMobile ? 34 : 42, borderRadius: 8, flexShrink: 0, padding: 0, overflow: "hidden", cursor: "pointer", border: `1px ${p.imageUrl ? "solid" : "dashed"} ${theme.border}`, background: theme.surfaceHover, color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                {p.imageUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={p.imageUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                                ) : (
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-                                )}
-                              </button>
-                              <span style={{ wordBreak: "break-word" }}>{p.name?.length > (isMobile ? 12 : 20) ? p.name.substring(0, isMobile ? 10 : 17) + "..." : p.name}</span>
-                            </div>
-                          </td>
-                          {!isMobile && <td style={{ padding: "8px", color: theme.textSecondary, fontSize: tableFontSize }}>{p.sku || "-"}</td>}
-                          <td style={{ padding: "8px" }}>
-                            <span style={{ background: `${theme.primary}20`, color: theme.primary, padding: "2px 6px", borderRadius: "10px", fontSize: statusFontSize, display: "inline-block", whiteSpace: "nowrap" }}>{getCategoryName(p.categoryId)}</span>
-                          </td>
-                          <td style={{ padding: "8px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize }}>{formatCurrency(p.price || 0)}</td>
-                          <td style={{ padding: "8px", textAlign: "center" }}>
-                            <span style={{ background: `${statusColor}20`, color: statusColor, padding: "2px 6px", borderRadius: "12px", fontSize: statusFontSize, whiteSpace: "nowrap" }}>{getStatusText(p.quantity || 0)}</span>
-                          </td>
-                          <td style={{ padding: "8px", textAlign: "center" }}>
-                            <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                              <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ background: theme.primary, color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
-                              <button onClick={() => openEditModal(p)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconEdit size={11} /></button>
-                              <button onClick={() => deleteProduct(p.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconTrash size={11} /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? "450px" : "100%" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${theme.border}`, color: theme.textSecondary }}>
+                        <th style={{ padding: "8px", width: "32px" }}>
+                          <input type="checkbox" checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
+                            onChange={() => { if (selectedIds.length === filteredProducts.length) setSelectedIds([]); else setSelectedIds(filteredProducts.map(p => p.id)); }}
+                            style={{ width: "14px", height: "14px", cursor: "pointer" }} />
+                        </th>
+                        <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>{t("common.name")}</th>
+                        {!isMobile && <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>SKU</th>}
+                        <th style={{ padding: "8px", textAlign: "left", fontSize: tableFontSize }}>{t("common.category")}</th>
+                        <th style={{ padding: "8px", textAlign: "right", fontSize: tableFontSize }}>{t("common.price")}</th>
+                        <th style={{ padding: "8px", textAlign: "center", fontSize: tableFontSize }}>{t("common.status")}</th>
+                        <th style={{ padding: "8px", textAlign: "center", fontSize: tableFontSize }}>{t("common.actions")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts.map((p, idx) => {
+                        const statusColor = getStatusColor(p.quantity || 0);
+                        const isChecked = selectedIds.includes(p.id);
+                        return (
+                          <tr key={p.id} style={{ borderBottom: `1px solid ${theme.surfaceHover}`, transition: "background 0.2s", animation: `slideIn 0.3s ease ${idx * 0.03}s` }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover}
+                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                            <td style={{ padding: "8px", textAlign: "center" }}>
+                              <input type="checkbox" checked={isChecked} onChange={() => { if (isChecked) setSelectedIds(selectedIds.filter(id => id !== p.id)); else setSelectedIds([...selectedIds, p.id]); }} style={{ width: "14px", height: "14px", cursor: "pointer" }} />
+                            </td>
+                            <td style={{ padding: "8px", color: theme.text, fontWeight: "500", fontSize: tableFontSize }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <button type="button" onClick={() => pickPhotoFor(p)} title={p.imageUrl ? "Changer la photo" : "Ajouter une photo"} aria-label={p.imageUrl ? "Changer la photo" : "Ajouter une photo"} style={{ width: isMobile ? 34 : 42, height: isMobile ? 34 : 42, borderRadius: 8, flexShrink: 0, padding: 0, overflow: "hidden", cursor: "pointer", border: `1px ${p.imageUrl ? "solid" : "dashed"} ${theme.border}`, background: theme.surfaceHover, color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  {p.imageUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={p.imageUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                  ) : (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                                  )}
+                                </button>
+                                <span title={p.name} style={{ overflowWrap: "anywhere", lineHeight: 1.3, minWidth: "140px", display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 3, overflow: "hidden" }}>{p.name}</span>
+                              </div>
+                            </td>
+                            {!isMobile && <td style={{ padding: "8px", color: theme.textSecondary, fontSize: tableFontSize, whiteSpace: "nowrap" }}>{p.sku || "-"}</td>}
+                            <td style={{ padding: "8px" }}>
+                              <span style={{ background: `${theme.primary}20`, color: theme.primary, padding: "2px 6px", borderRadius: "10px", fontSize: statusFontSize, display: "inline-block", whiteSpace: "nowrap" }}>{getCategoryName(p.categoryId)}</span>
+                            </td>
+                            <td style={{ padding: "8px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize, whiteSpace: "nowrap" }}>{formatCurrency(p.price || 0)}</td>
+                            <td style={{ padding: "8px", textAlign: "center" }}>
+                              <span style={{ background: `${statusColor}20`, color: statusColor, padding: "2px 6px", borderRadius: "12px", fontSize: statusFontSize, whiteSpace: "nowrap" }}>{getStatusText(p.quantity || 0)}</span>
+                            </td>
+                            <td style={{ padding: "8px", textAlign: "center" }}>
+                              <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                                <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ background: theme.primary, color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
+                                <button onClick={() => openEditModal(p)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconEdit size={11} /></button>
+                                <button onClick={() => deleteProduct(p.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconTrash size={11} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {filteredProducts.length === 0 && (
                 <div style={{ textAlign: "center", padding: "30px" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px", color: theme.textSecondary }}><IconBox size={isMobile ? 32 : 48} /></div>
@@ -732,30 +782,30 @@ export default function ProductsPage() {
                           <img src={p.imageUrl} alt="" loading="lazy" style={{ width: isMobile ? 48 : 60, height: isMobile ? 48 : 60, borderRadius: 10, objectFit: "cover", display: "block", border: `1px solid ${theme.border}` }} />
                         ) : (p.quantity || 0) <= 0 ? <IconXCircle size={isMobile ? 28 : 36} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={isMobile ? 28 : 36} color="#f59e0b" /> : <IconBox size={isMobile ? 28 : 36} />}
                       </div>
-                      <div style={{ overflow: "hidden" }}>
-                        <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "12px" : "14px", wordBreak: "break-word" }}>{p.name?.length > (isMobile ? 15 : 20) ? p.name.substring(0, isMobile ? 12 : 17) + "..." : p.name}</div>
-                        <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px" }}>{p.sku || t("products.noSku") || "Pas de SKU"}</div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div title={p.name} style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "14px" : "14px", lineHeight: 1.3, overflowWrap: "anywhere" }}>{p.name}</div>
+                        <div style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "10px" }}>{p.sku || t("products.noSku") || "Pas de SKU"}</div>
                       </div>
                     </div>
                     <div style={{ marginBottom: "8px", padding: "4px 0", borderTop: `1px solid ${theme.surfaceHover}`, borderBottom: `1px solid ${theme.surfaceHover}` }}>
                       {[
-                        { label: t("common.category"), value: getCategoryName(p.categoryId), style: { color: theme.primary, background: `${theme.primary}15`, padding: "2px 6px", borderRadius: "8px", fontSize: isMobile ? "8px" : "10px", fontWeight: "bold", display: "inline-block" as const } },
-                        { label: t("common.price"), value: formatCurrency(p.price || 0), style: { color: theme.accent, fontSize: isMobile ? "11px" : "13px", fontWeight: "bold" } },
-                        { label: t("common.status"), value: getStatusText(p.quantity || 0), style: { color: statusColor, fontSize: isMobile ? "8px" : "10px", fontWeight: "bold" } },
+                        { label: t("common.category"), value: getCategoryName(p.categoryId), style: { color: theme.primary, background: `${theme.primary}15`, padding: "2px 6px", borderRadius: "8px", fontSize: isMobile ? "11px" : "10px", fontWeight: "bold", display: "inline-block" as const } },
+                        { label: t("common.price"), value: formatCurrency(p.price || 0), style: { color: theme.accent, fontSize: isMobile ? "13px" : "13px", fontWeight: "bold" } },
+                        { label: t("common.status"), value: getStatusText(p.quantity || 0), style: { color: statusColor, fontSize: isMobile ? "11px" : "10px", fontWeight: "bold" } },
                       ].map((row, i) => (
                         <div key={i} style={{ marginBottom: "4px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
-                          <span style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px" }}>{row.label}</span>
+                          <span style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "10px" }}>{row.label}</span>
                           <span style={row.style}>{row.value}</span>
                         </div>
                       ))}
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
-                      <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ flex: 1, padding: "5px", background: theme.primary, color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
-                      <button onClick={() => openEditModal(p)} style={{ flex: 1, padding: "5px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
-                        <IconEdit size={10} />{!isMobile && t("common.edit")}
+                      <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: theme.primary, color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
+                      <button onClick={() => openEditModal(p)} style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "12px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                        <IconEdit size={isMobile ? 15 : 10} />{!isMobile && t("common.edit")}
                       </button>
-                      <button onClick={() => deleteProduct(p.id)} style={{ flex: 1, padding: "5px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
-                        <IconTrash size={10} />{!isMobile && t("common.delete")}
+                      <button onClick={() => deleteProduct(p.id)} style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "12px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                        <IconTrash size={isMobile ? 15 : 10} />{!isMobile && t("common.delete")}
                       </button>
                     </div>
                   </div>

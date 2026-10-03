@@ -468,7 +468,7 @@ export default function ReportsPage() {
                     fontSize: isMobile ? "12px" : "14px", fontWeight: "500",
                   }}
                 >
-                  <option value="xlsx">Excel (.xlsx)</option>
+                  <option value="xlsx">Excel</option>
                   <option value="csv">CSV</option>
                   <option value="json">JSON</option>
                 </select>
