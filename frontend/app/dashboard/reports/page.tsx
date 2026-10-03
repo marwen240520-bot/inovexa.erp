@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
+import { buildXlsx, reportToSheets, downloadBlob } from "@/lib/exportFiles";
 
 // ── SVG Icon Components ────────────────────────────────────────────────────────
 
@@ -331,6 +332,7 @@ export default function ReportsPage() {
       if (realData && (realData.items?.length > 0 || realData.revenue !== undefined)) {
         if (reportFormat === "json") { downloadJSON(realData, reportType); showMessage(t("reports.reportExported"), "success"); }
         else if (reportFormat === "csv") { downloadCSV(realData, reportType); showMessage(t("reports.reportExported"), "success"); }
+        else if (reportFormat === "xlsx") { await downloadXLSX(realData, reportType); showMessage(t("reports.reportExported"), "success"); }
       } else {
         showMessage(t("reports.noData"), "warning");
       }
@@ -345,6 +347,18 @@ export default function ReportsPage() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `rapport_${type}_${new Date().toISOString().slice(0, 19)}.json`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  // Excel : un vrai fichier .xlsx — onglet « Résumé » (chiffres clés) + onglet « Données » (lignes du rapport)
+  const downloadXLSX = async (data: any, type: string) => {
+    const L: Record<string, { summary: string; data: string }> = {
+      fr: { summary: "Résumé", data: "Données" },
+      en: { summary: "Summary", data: "Data" },
+      es: { summary: "Resumen", data: "Datos" },
+    };
+    const labels = { ...(L[language as string] || L.fr), indicator: t("reports.indicator"), value: t("reports.value") };
+    const blob = await buildXlsx(reportToSheets(data, labels));
+    downloadBlob(blob, `rapport_${type}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.xlsx`);
   };
 
   const downloadCSV = (data: any, type: string) => {
@@ -435,7 +449,9 @@ export default function ReportsPage() {
                 <span style={{ position: "absolute", left: "10px", pointerEvents: "none", zIndex: 1 }}>
                   {reportFormat === "json"
                     ? <IconJSON size={14} color={theme.textSecondary} />
-                    : <IconCSV size={14} color={theme.textSecondary} />
+                    : reportFormat === "xlsx"
+                      ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18M15 3v18" /></svg>
+                      : <IconCSV size={14} color={theme.textSecondary} />
                   }
                 </span>
                 <span style={{ position: "absolute", right: "8px", pointerEvents: "none", zIndex: 1 }}>
@@ -452,8 +468,9 @@ export default function ReportsPage() {
                     fontSize: isMobile ? "12px" : "14px", fontWeight: "500",
                   }}
                 >
-                  <option value="json">JSON</option>
+                  <option value="xlsx">Excel (.xlsx)</option>
                   <option value="csv">CSV</option>
+                  <option value="json">JSON</option>
                 </select>
               </div>
             </div>
@@ -680,7 +697,7 @@ export default function ReportsPage() {
                     ) : (
                       <>
                         <IconDownload size={18} color="white" />
-                        {t("reports.generate")} · {reportFormat.toUpperCase()}
+                        {t("reports.generate")} · {reportFormat === "xlsx" ? "EXCEL" : reportFormat.toUpperCase()}
                       </>
                     )}
                   </button>
