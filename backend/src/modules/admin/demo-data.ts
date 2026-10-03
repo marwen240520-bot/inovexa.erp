@@ -434,6 +434,8 @@ export async function seedDemoData(manager: EntityManager, userId: number): Prom
       { title: "Bénéfice de l'année", metric: 'profit', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: roundUp((revenueYear - costYear) * 1.1, 500) },
       { title: 'Ventes du trimestre', metric: 'sales_count', period: 'quarter', ...{ startDate: q.start, endDate: q.end }, targetValue: Math.max(5, salesInQuarter + 4) },
       { title: 'Nouveaux clients du mois', metric: 'new_clients', period: 'month', ...{ startDate: month.start, endDate: month.end }, targetValue: 5 },
+      { title: 'Recruter 2 commerciaux', metric: 'manual', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: 2, currentValue: 1, unit: 'recrutements' },
+      { title: 'Ouvrir un second point de vente', metric: 'manual', period: 'year', ...{ startDate: yearRange.start, endDate: yearRange.end }, targetValue: 1, currentValue: 0, unit: 'ouverture' },
     ].map((o) => manager.create(Objective, { userId, ...o })),
   );
   mark('objectives', objectives);

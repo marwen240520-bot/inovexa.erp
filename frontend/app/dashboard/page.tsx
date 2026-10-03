@@ -933,13 +933,15 @@ export default function DashboardPage() {
 
               {/* Recherche globale dans tout l'espace du client */}
               <div style={{ flex: isMobile ? "1 1 100%" : "1 1 320px", order: isMobile ? 3 : 0, minWidth: 0, display: "flex", justifyContent: "center", alignSelf: "center" }}>
-                <GlobalSearch isMobile={isMobile} />
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: isMobile ? "100%" : "620px" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}><GlobalSearch isMobile={isMobile} /></div>
+                  <ThemeToggle size={isMobile ? 46 : 48} />
+                </div>
               </div>
 
               {/* Image de profil */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                <ThemeToggle size={isMobile ? 36 : 40} />
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                 <div style={{ position: "relative" }}>
                   <div 

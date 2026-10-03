@@ -251,14 +251,16 @@ export default function ProductsPage() {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (): Promise<Product[]> => {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
-    } catch(e) { console.error("Erreur chargement produits:", e); }
+      const list: Product[] = Array.isArray(data) ? data : [];
+      setProducts(list);
+      return list;
+    } catch(e) { console.error("Erreur chargement produits:", e); return []; }
     finally { setLoading(false); }
   };
 
@@ -283,9 +285,12 @@ export default function ProductsPage() {
       });
 
       if (res.ok) {
+        const sentImage = !!modal.form.imageUrl;
+        const saved = await res.json().catch(() => null);
         setModal({ open: false, form: {}, editMode: false, editId: null });
-        await fetchProducts();
-        showMessage(t("products.productCreated"), "success");
+        const list = await fetchProducts();
+        if (sentImage && saved?.id && !photoKept(list, saved.id)) showMessage(PHOTO_NOT_KEPT, "error");
+        else showMessage(t("products.productCreated"), "success");
       } else {
         const err = await res.json();
         console.error("Erreur création produit:", err);
@@ -318,9 +323,12 @@ export default function ProductsPage() {
       });
 
       if (res.ok) {
+        const sentImage = !!modal.form.imageUrl;
+        const editedId = modal.editId;
         setModal({ open: false, form: {}, editMode: false, editId: null });
-        await fetchProducts();
-        showMessage(t("products.productUpdated"), "success");
+        const list = await fetchProducts();
+        if (sentImage && editedId !== null && editedId !== undefined && !photoKept(list, editedId)) showMessage(PHOTO_NOT_KEPT, "error");
+        else showMessage(t("products.productUpdated"), "success");
       } else {
         const err = await res.json();
         console.error("Erreur mise à jour produit:", err);
@@ -403,6 +411,8 @@ export default function ProductsPage() {
 
   // Import groupé de photos : chaque fichier est rapproché d'un produit par son nom de fichier
   // (« REF-001.jpg » -> SKU REF-001, ou « Clavier sans fil.png » -> produit « Clavier sans fil »).
+  const PHOTO_NOT_KEPT = "La photo n'a pas été conservée par le serveur : il n'est pas à jour (colonne photo absente). Redéployez le backend puis réessayez.";
+  const photoKept = (list: Product[], id: number | string) => !!list.find((p) => String(p.id) === String(id))?.imageUrl;
   const [photoBusy, setPhotoBusy] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetRef = useRef<Product | null>(null);
@@ -431,8 +441,8 @@ export default function ProductsPage() {
     if (!file || !target) return;
     setPhotoBusy(true);
     const ok = await attachPhoto(target, file);
-    if (ok) await fetchProducts();
-    showMessage(ok ? `Photo enregistrée pour « ${target.name} »` : "Impossible d'enregistrer la photo", ok ? "success" : "error");
+    const kept = ok ? photoKept(await fetchProducts(), target.id) : false;
+    showMessage(ok ? (kept ? `Photo enregistrée pour « ${target.name} »` : PHOTO_NOT_KEPT) : "Impossible d'enregistrer la photo", ok && kept ? "success" : "error");
     setPhotoBusy(false);
     photoTargetRef.current = null;
   };
@@ -448,19 +458,21 @@ export default function ProductsPage() {
         const target = products.find((p) => String(p.id) === String(selectedIds[0]));
         if (target) {
           const ok = await attachPhoto(target, files[0]);
-          if (ok) await fetchProducts();
-          showMessage(ok ? `Photo enregistrée pour « ${target.name} »` : "Impossible d'enregistrer la photo", ok ? "success" : "error");
+          const kept = ok ? photoKept(await fetchProducts(), target.id) : false;
+          showMessage(ok ? (kept ? `Photo enregistrée pour « ${target.name} »` : PHOTO_NOT_KEPT) : "Impossible d'enregistrer la photo", ok && kept ? "success" : "error");
           return;
         }
       }
-      let done = 0; const unmatched: string[] = []; const failed: string[] = [];
+      let done = 0; const unmatched: string[] = []; const failed: string[] = []; const sentIds: Array<number | string> = [];
       for (const file of Array.from(files)) {
         const key = normalizeKey(fileStem(file.name));
         const target = products.find((p) => p.sku && normalizeKey(String(p.sku)) === key) || products.find((p) => normalizeKey(p.name) === key);
         if (!target) { unmatched.push(file.name); continue; }
-        if (await attachPhoto(target, file)) done++; else failed.push(file.name);
+        if (await attachPhoto(target, file)) { done++; sentIds.push(target.id); } else failed.push(file.name);
       }
-      if (done > 0) await fetchProducts();
+      let lost = false;
+      if (done > 0) { const list = await fetchProducts(); lost = !sentIds.some((id) => photoKept(list, id)); }
+      if (lost) { showMessage(PHOTO_NOT_KEPT, "error"); return; }
       const parts = [`${done} photo(s) associée(s)`];
       if (unmatched.length) parts.push(`${unmatched.length} sans produit correspondant (${unmatched.slice(0, 3).join(", ")}${unmatched.length > 3 ? "…" : ""}) — cochez un seul produit pour lui associer une photo quel que soit son nom`);
       if (failed.length) parts.push(`${failed.length} en échec`);

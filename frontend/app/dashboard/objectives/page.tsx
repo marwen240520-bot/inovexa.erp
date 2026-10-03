@@ -8,23 +8,27 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-type Metric = "revenue" | "profit" | "sales_count" | "new_clients";
+type Metric = "revenue" | "profit" | "sales_count" | "new_clients" | "orders_count" | "purchases_count" | "invoices_paid_amount" | "invoices_paid_count" | "shipments_delivered" | "average_basket" | "manual";
 type Period = "month" | "quarter" | "year" | "custom";
 type Status = "achieved" | "on_track" | "behind" | "missed" | "upcoming";
 interface Objective {
-  id: number; title: string; metric: Metric; period: Period; startDate: string; endDate: string; targetValue: number;
+  id: number; title: string; metric: Metric; period: Period; startDate: string; endDate: string; targetValue: number; currentValue?: number; unit?: string | null;
   progress: { current: number; target: number; percent: number; remaining: number; totalDays: number; elapsedDays: number; daysLeft: number; elapsedPercent: number; status: Status; neededPerDay: number };
 }
-interface Form { id?: number; title: string; metric: Metric; period: Period; startDate: string; endDate: string; targetValue: string; }
+interface Form { id?: number; title: string; metric: Metric; period: Period; startDate: string; endDate: string; targetValue: string; currentValue: string; unit: string; }
 
-const METRICS: Metric[] = ["revenue", "profit", "sales_count", "new_clients"];
+const AUTO_METRICS: Metric[] = ["revenue", "profit", "sales_count", "average_basket", "new_clients", "orders_count", "purchases_count", "invoices_paid_amount", "invoices_paid_count", "shipments_delivered"];
+const MONEY_METRICS: Metric[] = ["revenue", "profit", "average_basket", "invoices_paid_amount"];
 const PERIODS: Period[] = ["month", "quarter", "year", "custom"];
 
 const TX: Record<string, Record<string, string>> = {
   fr: {
     title: "Objectifs", subtitle: "Fixez des objectifs et suivez leur avancement en temps réel", add: "Nouvel objectif",
     inProgress: "En cours", done: "Atteints", late: "En retard", all: "Tous", ended: "Terminés",
-    revenue: "Chiffre d'affaires", profit: "Bénéfice", sales_count: "Nombre de ventes", new_clients: "Nouveaux clients",
+    revenue: "Chiffre d'affaires",
+    orders_count: "Commandes", purchases_count: "Achats (nombre)", invoices_paid_amount: "Factures encaissées (montant)", invoices_paid_count: "Factures payées (nombre)", shipments_delivered: "Livraisons effectuées", average_basket: "Panier moyen", manual: "Objectif libre (à saisir)",
+    optAuto: "Automatiques", optFree: "Objectif libre", currentValue: "Valeur actuelle", unitLabel: "Unité (ex. recrutements)", markDone: "Marquer comme atteint", manualHint: "Vous mettez à jour la progression vous-même : recrutement, ouverture, projet…", goalAchieved: "Objectif atteint !",
+    hintOrders: "Nombre de commandes", hintPurchases: "Nombre d'achats", hintInvPaidAmount: "Total des factures payées", hintInvPaidCount: "Nombre de factures payées", hintShipments: "Expéditions livrées", hintBasket: "Ventes ÷ nombre de ventes", profit: "Bénéfice", sales_count: "Nombre de ventes", new_clients: "Nouveaux clients",
     month: "Ce mois", quarter: "Ce trimestre", year: "Cette année", custom: "Personnalisée",
     achieved: "Atteint", on_track: "Dans les temps", behind: "En retard", missed: "Manqué", upcoming: "À venir",
     target: "Cible", current: "Réalisé", remaining: "Reste", daysLeft: "jour(s) restant(s)", perDay: "à réaliser par jour", ended2: "Période terminée",
@@ -39,7 +43,10 @@ const TX: Record<string, Record<string, string>> = {
   en: {
     title: "Goals", subtitle: "Set goals and follow their progress in real time", add: "New goal",
     inProgress: "In progress", done: "Achieved", late: "Behind", all: "All", ended: "Ended",
-    revenue: "Revenue", profit: "Profit", sales_count: "Number of sales", new_clients: "New clients",
+    revenue: "Revenue",
+    orders_count: "Orders", purchases_count: "Purchases (count)", invoices_paid_amount: "Invoices collected (amount)", invoices_paid_count: "Paid invoices (count)", shipments_delivered: "Deliveries completed", average_basket: "Average basket", manual: "Free goal (manual)",
+    optAuto: "Automatic", optFree: "Free goal", currentValue: "Current value", unitLabel: "Unit (e.g. hires)", markDone: "Mark as achieved", manualHint: "You update the progress yourself: hiring, opening, project…", goalAchieved: "Goal achieved!",
+    hintOrders: "Number of orders", hintPurchases: "Number of purchases", hintInvPaidAmount: "Total of paid invoices", hintInvPaidCount: "Number of paid invoices", hintShipments: "Shipments delivered", hintBasket: "Sales ÷ number of sales", profit: "Profit", sales_count: "Number of sales", new_clients: "New clients",
     month: "This month", quarter: "This quarter", year: "This year", custom: "Custom",
     achieved: "Achieved", on_track: "On track", behind: "Behind", missed: "Missed", upcoming: "Upcoming",
     target: "Target", current: "Achieved", remaining: "Remaining", daysLeft: "day(s) left", perDay: "needed per day", ended2: "Period ended",
@@ -54,7 +61,10 @@ const TX: Record<string, Record<string, string>> = {
   es: {
     title: "Objetivos", subtitle: "Fije objetivos y siga su avance en tiempo real", add: "Nuevo objetivo",
     inProgress: "En curso", done: "Logrados", late: "Atrasados", all: "Todos", ended: "Terminados",
-    revenue: "Ingresos", profit: "Beneficio", sales_count: "Número de ventas", new_clients: "Nuevos clientes",
+    revenue: "Ingresos",
+    orders_count: "Pedidos", purchases_count: "Compras (número)", invoices_paid_amount: "Facturas cobradas (importe)", invoices_paid_count: "Facturas pagadas (número)", shipments_delivered: "Entregas realizadas", average_basket: "Ticket medio", manual: "Objetivo libre (manual)",
+    optAuto: "Automáticos", optFree: "Objetivo libre", currentValue: "Valor actual", unitLabel: "Unidad (p. ej. contrataciones)", markDone: "Marcar como logrado", manualHint: "Usted actualiza el avance: contratación, apertura, proyecto…", goalAchieved: "¡Objetivo logrado!",
+    hintOrders: "Número de pedidos", hintPurchases: "Número de compras", hintInvPaidAmount: "Total de facturas pagadas", hintInvPaidCount: "Número de facturas pagadas", hintShipments: "Envíos entregados", hintBasket: "Ventas ÷ número de ventas", profit: "Beneficio", sales_count: "Número de ventas", new_clients: "Nuevos clientes",
     month: "Este mes", quarter: "Este trimestre", year: "Este año", custom: "Personalizado",
     achieved: "Logrado", on_track: "En camino", behind: "Atrasado", missed: "No logrado", upcoming: "Próximo",
     target: "Meta", current: "Logrado", remaining: "Falta", daysLeft: "día(s) restante(s)", perDay: "necesarios por día", ended2: "Periodo terminado",
@@ -78,7 +88,7 @@ const STATUS_STYLE: Record<Status, { bg: string; fg: string }> = {
 const RING_COLOR: Record<Status, string> = { achieved: "#10b981", on_track: "#6366f1", behind: "#f59e0b", missed: "#ef4444", upcoming: "#64748b" };
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
-const emptyForm = (): Form => ({ title: "", metric: "revenue", period: "month", startDate: todayIso(), endDate: todayIso(), targetValue: "" });
+const emptyForm = (): Form => ({ title: "", metric: "revenue", period: "month", startDate: todayIso(), endDate: todayIso(), targetValue: "", currentValue: "0", unit: "" });
 
 export default function ObjectivesPage() {
   const router = useRouter();
@@ -99,7 +109,7 @@ export default function ObjectivesPage() {
 
   const headers = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` });
   const notify = (text: string, type: "success" | "error" = "success") => { setMessage({ text, type }); setTimeout(() => setMessage(null), 3500); };
-  const money = (m: Metric, v: number) => (m === "revenue" || m === "profit" ? formatCurrency(v) : (Number.isInteger(v) ? v : Math.round(v * 10) / 10).toLocaleString());
+  const money = (m: Metric, v: number, unit?: string | null) => MONEY_METRICS.includes(m) ? formatCurrency(v) : `${(Number.isInteger(v) ? v : Math.round(v * 10) / 10).toLocaleString()}${m === "manual" && unit ? " " + unit : ""}`;
 
   const load = useCallback(async () => {
     try {
@@ -125,7 +135,7 @@ export default function ObjectivesPage() {
   const visible = items.filter((o) => tab === "all" ? true : tab === "done" ? o.progress.status === "achieved" : tab === "ended" ? o.endDate < today : o.endDate >= today);
 
   const openNew = (preset?: Partial<Form>) => { setFormError(""); setForm({ ...emptyForm(), ...preset }); };
-  const openEdit = (o: Objective) => { setFormError(""); setForm({ id: o.id, title: o.title, metric: o.metric, period: o.period, startDate: o.startDate, endDate: o.endDate, targetValue: String(o.targetValue) }); };
+  const openEdit = (o: Objective) => { setFormError(""); setForm({ id: o.id, title: o.title, metric: o.metric, period: o.period, startDate: o.startDate, endDate: o.endDate, targetValue: String(o.targetValue), currentValue: String(o.currentValue ?? 0), unit: o.unit || "" }); };
 
   const save = async () => {
     if (!form) return;
@@ -135,7 +145,7 @@ export default function ObjectivesPage() {
     try {
       const res = await fetch(`${API_URL}/objectives${form.id ? `/${form.id}` : ""}`, {
         method: form.id ? "PUT" : "POST", headers: headers(),
-        body: JSON.stringify({ title: form.title, metric: form.metric, period: form.period, targetValue: form.targetValue, ...(form.period === "custom" ? { startDate: form.startDate, endDate: form.endDate } : form.id ? { startDate: form.startDate } : {}) }),
+        body: JSON.stringify({ title: form.title, metric: form.metric, period: form.period, targetValue: form.targetValue, ...(form.metric === "manual" ? { currentValue: form.currentValue, unit: form.unit } : {}), ...(form.period === "custom" ? { startDate: form.startDate, endDate: form.endDate } : form.id ? { startDate: form.startDate } : {}) }),
       });
       const data = await res.json().catch(() => ({} as any));
       if (res.ok) { setForm(null); notify(t.saved); setTab("active"); await load(); }
@@ -143,6 +153,13 @@ export default function ObjectivesPage() {
       else setFormError((Array.isArray(data?.message) ? data.message[0] : data?.message) || t.errServer);
     } catch { setFormError(t.errNetwork); }
     setSaving(false);
+  };
+
+  const markDone = async (o: Objective) => {
+    try {
+      const res = await fetch(`${API_URL}/objectives/${o.id}`, { method: "PUT", headers: headers(), body: JSON.stringify({ currentValue: o.targetValue }) });
+      if (res.ok) { notify(t.goalAchieved); await load(); } else notify(t.errServer, "error");
+    } catch { notify(t.errNetwork, "error"); }
   };
 
   const remove = async (o: Objective) => {
@@ -153,7 +170,7 @@ export default function ObjectivesPage() {
 
   const card: React.CSSProperties = { background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16 };
   const field: React.CSSProperties = { width: "100%", boxSizing: "border-box", height: 46, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surfaceHover, color: theme.text, padding: "0 12px", fontSize: 16 };
-  const hint = (m: Metric) => ({ revenue: t.hintRevenue, profit: t.hintProfit, sales_count: t.hintSales, new_clients: t.hintClients }[m]);
+  const hint = (m: Metric) => ({ revenue: t.hintRevenue, profit: t.hintProfit, sales_count: t.hintSales, new_clients: t.hintClients, orders_count: t.hintOrders, purchases_count: t.hintPurchases, invoices_paid_amount: t.hintInvPaidAmount, invoices_paid_count: t.hintInvPaidCount, shipments_delivered: t.hintShipments, average_basket: t.hintBasket, manual: t.manualHint }[m]);
 
   const Ring = ({ percent, color }: { percent: number; color: string }) => {
     const r = 34, c = 2 * Math.PI * r, p = Math.max(0, Math.min(percent, 100));
@@ -171,6 +188,7 @@ export default function ObjectivesPage() {
     { label: t.tplProfitQuarter, preset: { title: t.tplProfitQuarter, metric: "profit", period: "quarter" } },
     { label: t.tplSalesMonth, preset: { title: t.tplSalesMonth, metric: "sales_count", period: "month" } },
     { label: t.tplClientsMonth, preset: { title: t.tplClientsMonth, metric: "new_clients", period: "month" } },
+    { label: t.manual, preset: { title: "", metric: "manual", period: "year", targetValue: "1" } },
   ];
 
   return (
@@ -228,9 +246,9 @@ export default function ObjectivesPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <Ring percent={p.percent} color={RING_COLOR[p.status]} />
                     <div style={{ flex: 1, display: "grid", gap: 6, fontSize: 14 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: theme.textSecondary }}>{t.current}</span><strong style={{ color: theme.text }}>{money(o.metric, p.current)}</strong></div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: theme.textSecondary }}>{t.target}</span><strong style={{ color: theme.text }}>{money(o.metric, p.target)}</strong></div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: theme.textSecondary }}>{t.remaining}</span><strong style={{ color: theme.text }}>{money(o.metric, p.remaining)}</strong></div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: theme.textSecondary }}>{t.current}</span><strong style={{ color: theme.text }}>{money(o.metric, p.current, o.unit)}</strong></div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: theme.textSecondary }}>{t.target}</span><strong style={{ color: theme.text }}>{money(o.metric, p.target, o.unit)}</strong></div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: theme.textSecondary }}>{t.remaining}</span><strong style={{ color: theme.text }}>{money(o.metric, p.remaining, o.unit)}</strong></div>
                     </div>
                   </div>
                   <div title={`${Math.round(p.elapsedPercent)} %`} style={{ position: "relative", height: 8, borderRadius: 999, background: theme.surfaceHover, overflow: "hidden" }}>
@@ -238,8 +256,11 @@ export default function ObjectivesPage() {
                     {!ended && <div style={{ position: "absolute", top: 0, bottom: 0, left: `${Math.min(100, p.elapsedPercent)}%`, width: 2, background: theme.text, opacity: 0.45 }} />}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12.5, color: theme.textSecondary }}>
-                    <span>{ended ? t.ended2 : `${p.daysLeft} ${t.daysLeft}${p.neededPerDay > 0 && p.status !== "achieved" ? ` · ${money(o.metric, p.neededPerDay)} ${t.perDay}` : ""}`}</span>
+                    <span>{ended ? t.ended2 : `${p.daysLeft} ${t.daysLeft}${p.neededPerDay > 0 && p.status !== "achieved" ? ` · ${money(o.metric, p.neededPerDay, o.unit)} ${t.perDay}` : ""}`}</span>
                     <span style={{ display: "flex", gap: 6 }}>
+                      {o.metric === "manual" && p.status !== "achieved" && (
+                        <button onClick={() => markDone(o)} style={{ minHeight: 38, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(16,185,129,0.5)", background: "rgba(16,185,129,0.12)", color: "#10b981", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>✓ {t.markDone}</button>
+                      )}
                       <button onClick={() => openEdit(o)} style={{ minHeight: 38, padding: "0 12px", borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surfaceHover, color: theme.text, cursor: "pointer", fontSize: 13 }}>{t.edit}</button>
                       <button onClick={() => remove(o)} style={{ minHeight: 38, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(185,28,28,0.4)", background: "transparent", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>{t.del}</button>
                     </span>
@@ -259,7 +280,7 @@ export default function ObjectivesPage() {
             <label style={{ display: "block", color: theme.textSecondary, fontSize: 12, marginBottom: 5 }}>{t.name}</label>
             <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={120} style={{ ...field, marginBottom: 12 }} />
             <label style={{ display: "block", color: theme.textSecondary, fontSize: 12, marginBottom: 5 }}>{t.metric}</label>
-            <select value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value as Metric })} style={{ ...field, marginBottom: 4 }}>{METRICS.map((m) => <option key={m} value={m}>{t[m]}</option>)}</select>
+            <select value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value as Metric })} style={{ ...field, marginBottom: 4 }}><optgroup label={t.optAuto}>{AUTO_METRICS.map((m) => <option key={m} value={m}>{t[m]}</option>)}</optgroup><optgroup label={t.optFree}><option value="manual">{t.manual}</option></optgroup></select>
             <div style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 12 }}>{hint(form.metric)}</div>
             <label style={{ display: "block", color: theme.textSecondary, fontSize: 12, marginBottom: 5 }}>{t.period}</label>
             <select value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value as Period })} style={{ ...field, marginBottom: 12 }}>{PERIODS.map((p) => <option key={p} value={p}>{t[p]}</option>)}</select>
@@ -271,6 +292,12 @@ export default function ObjectivesPage() {
             )}
             <label style={{ display: "block", color: theme.textSecondary, fontSize: 12, marginBottom: 5 }}>{t.targetValue}</label>
             <input type="number" inputMode="decimal" min={0} step="any" value={form.targetValue} onChange={(e) => setForm({ ...form, targetValue: e.target.value })} style={{ ...field, marginBottom: 12 }} />
+            {form.metric === "manual" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div><label style={{ display: "block", color: theme.textSecondary, fontSize: 12, marginBottom: 5 }}>{t.currentValue}</label><input type="number" inputMode="decimal" min={0} step="any" value={form.currentValue} onChange={(e) => setForm({ ...form, currentValue: e.target.value })} style={field} /></div>
+                <div><label style={{ display: "block", color: theme.textSecondary, fontSize: 12, marginBottom: 5 }}>{t.unitLabel}</label><input value={form.unit} maxLength={20} onChange={(e) => setForm({ ...form, unit: e.target.value })} style={field} /></div>
+              </div>
+            )}
             {formError && <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.5)", color: "#b91c1c", borderRadius: 10, padding: "10px 12px", fontSize: 13, marginBottom: 12 }}>{formError}</div>}
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={save} disabled={saving} style={{ flex: 1.4, height: 50, borderRadius: 12, border: "none", background: theme.gradient, color: "#fff", fontSize: 16, fontWeight: 700, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}>{saving ? "…" : t.save}</button>

@@ -4,7 +4,10 @@ import { DataSource, Repository } from 'typeorm';
 import { Objective } from './entities/objective.entity';
 import { toNumber } from '../../common/import-utils';
 
-export const OBJECTIVE_METRICS = ['revenue', 'profit', 'sales_count', 'new_clients'] as const;
+export const OBJECTIVE_METRICS = [
+  'revenue', 'profit', 'sales_count', 'new_clients', 'orders_count', 'purchases_count',
+  'invoices_paid_amount', 'invoices_paid_count', 'shipments_delivered', 'average_basket', 'manual',
+] as const;
 export const OBJECTIVE_PERIODS = ['month', 'quarter', 'year', 'custom'] as const;
 
 const DAY = 86_400_000;
@@ -38,6 +41,17 @@ export class ObjectivesService {
       case 'revenue': return one(`SELECT COALESCE(SUM(total), 0) AS v FROM sales WHERE "userId" = $1 AND ${range}`);
       case 'sales_count': return one(`SELECT COUNT(*) AS v FROM sales WHERE "userId" = $1 AND ${range}`);
       case 'new_clients': return one(`SELECT COUNT(*) AS v FROM clients WHERE "userId" = $1 AND ${range}`);
+      case 'orders_count': return one(`SELECT COUNT(*) AS v FROM orders WHERE "userId" = $1 AND ${range}`);
+      case 'purchases_count': return one(`SELECT COUNT(*) AS v FROM purchases WHERE "userId" = $1 AND ${range}`);
+      case 'invoices_paid_amount': return one(`SELECT COALESCE(SUM(amount), 0) AS v FROM invoices WHERE "userId" = $1 AND status = 'paid' AND ${range}`);
+      case 'invoices_paid_count': return one(`SELECT COUNT(*) AS v FROM invoices WHERE "userId" = $1 AND status = 'paid' AND ${range}`);
+      // Les expéditions sont rattachées au client par `clientId` (= id de l'utilisateur)
+      case 'shipments_delivered': return one(`SELECT COUNT(*) AS v FROM shipments WHERE "clientId" = $1 AND status = 'delivered' AND ${range}`);
+      case 'average_basket': {
+        const rev = await one(`SELECT COALESCE(SUM(total), 0) AS v FROM sales WHERE "userId" = $1 AND ${range}`);
+        const n = await one(`SELECT COUNT(*) AS v FROM sales WHERE "userId" = $1 AND ${range}`);
+        return n > 0 ? rev / n : 0;
+      }
       case 'profit': {
         const rev = await one(`SELECT COALESCE(SUM(total), 0) AS v FROM sales WHERE "userId" = $1 AND ${range}`);
         const cost = await one(`SELECT COALESCE(SUM(total), 0) AS v FROM purchases WHERE "userId" = $1 AND ${range}`);
@@ -48,7 +62,7 @@ export class ObjectivesService {
   }
 
   private async withProgress(o: Objective, today = new Date()) {
-    const current = round2(await this.actual(o.userId, o.metric, o.startDate, o.endDate));
+    const current = round2(o.metric === 'manual' ? Number(o.currentValue) || 0 : await this.actual(o.userId, o.metric, o.startDate, o.endDate));
     const target = Number(o.targetValue);
     const t0 = utcDay(o.startDate), t1 = utcDay(o.endDate), now = utcDay(isoDay(today));
     const totalDays = Math.round((t1 - t0) / DAY) + 1;
@@ -89,7 +103,7 @@ export class ObjectivesService {
     const title = typeof body?.title === 'string' ? body.title.trim().slice(0, 120) : '';
     if (!title) throw new BadRequestException("Le titre de l'objectif est obligatoire");
     const metric = String(body?.metric || '');
-    if (!(OBJECTIVE_METRICS as readonly string[]).includes(metric)) throw new BadRequestException('Indicateur invalide (revenue, profit, sales_count ou new_clients)');
+    if (!(OBJECTIVE_METRICS as readonly string[]).includes(metric)) throw new BadRequestException(`Indicateur invalide (${OBJECTIVE_METRICS.join(', ')})`);
     const targetValue = toNumber(body?.targetValue, NaN);
     if (!Number.isFinite(targetValue) || targetValue <= 0 || targetValue > 1e12) throw new BadRequestException('La valeur cible doit être un nombre supérieur à 0');
     const period = String(body?.period || 'month');
@@ -106,7 +120,14 @@ export class ObjectivesService {
       const ref = validIso(body?.startDate) ? new Date(utcDay(body.startDate)) : new Date();
       ({ start: startDate, end: endDate } = periodBounds(period, ref));
     }
-    return { title, metric, period, startDate, endDate, targetValue: round2(targetValue) };
+    // Objectif libre : progression saisie à la main ; indicateurs automatiques : calculée d'après les données
+    let currentValue = 0;
+    if (metric === 'manual') {
+      currentValue = toNumber(body?.currentValue, 0);
+      if (!Number.isFinite(currentValue) || currentValue < 0 || currentValue > 1e12) throw new BadRequestException('La valeur actuelle doit être un nombre positif ou nul');
+    }
+    const unit = typeof body?.unit === 'string' && body.unit.trim() ? body.unit.trim().slice(0, 20) : null;
+    return { title, metric, period, startDate, endDate, targetValue: round2(targetValue), currentValue: round2(currentValue), unit };
   }
 
   async create(userId: number, body: any) {

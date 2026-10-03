@@ -1010,11 +1010,3 @@ tr:hover {
     padding: 16px;
   }
 }
-
-
-/* Logo sur fond clair : simple contour sombre très fin (pas de cadre ni de bordure)
-   pour que « INOVEXA ERP » reste lisible. */
-html[data-mode="light"] img[src="/images/logo.png"],
-html[data-mode="light"] img[src="/logo.png"] {
-  filter: drop-shadow(0 0 0.5px #1e1b4b) drop-shadow(0 0 0.5px #1e1b4b) drop-shadow(0 1px 2px rgba(30, 27, 75, 0.25)) !important;
-}

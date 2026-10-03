@@ -27,7 +27,6 @@ const MODULE_OF: Record<SearchType, string> = {
 const TEXTS: Record<string, any> = {
   fr: {
     placeholder: "Rechercher dans votre espace…",
-    search: "Rechercher",
     hint: "Clients, produits, factures, ventes, employés…",
     searching: "Recherche en cours…",
     none: "Aucun résultat pour",
@@ -40,7 +39,6 @@ const TEXTS: Record<string, any> = {
   },
   en: {
     placeholder: "Search your workspace…",
-    search: "Search",
     hint: "Clients, products, invoices, sales, employees…",
     searching: "Searching…",
     none: "No results for",
@@ -53,7 +51,6 @@ const TEXTS: Record<string, any> = {
   },
   es: {
     placeholder: "Buscar en su espacio…",
-    search: "Buscar",
     hint: "Clientes, productos, facturas, ventas, empleados…",
     searching: "Buscando…",
     none: "Sin resultados para",
@@ -287,6 +284,9 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
   return (
     <div ref={boxRef} style={{ position: "relative", width: "100%", maxWidth: isMobile ? "100%" : 560 }}>
       <div style={{ position: "relative" }}>
+        <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--theme-text-secondary)", display: "flex", pointerEvents: "none" }}>
+          <SearchIcon />
+        </span>
         <input
           ref={inputRef}
           type="text"
@@ -305,7 +305,7 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
           style={{
             width: "100%",
             boxSizing: "border-box",
-            padding: isMobile ? "14px 92px 14px 16px" : "12px 96px 12px 16px",
+            padding: isMobile ? "14px 40px 14px 42px" : "12px 70px 12px 42px",
             fontSize: isMobile ? 16 : 14,
             color: "var(--theme-text)",
             background: "var(--theme-surface)",
@@ -319,37 +319,22 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
           onBlur={(e) => { e.currentTarget.style.borderColor = "var(--theme-border)"; }}
           onFocusCapture={(e) => { e.currentTarget.style.borderColor = "var(--theme-primary, #6366f1)"; }}
         />
-        <div style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center", gap: 4 }}>
-          {query ? (
-            <button
-              type="button"
-              aria-label={t.clear}
-              onClick={() => { setQuery(""); setHits([]); inputRef.current?.focus(); }}
-              style={{ width: 32, height: 32, borderRadius: 8, border: "none", background: "transparent", color: "var(--theme-text-secondary)", cursor: "pointer", fontSize: 20, lineHeight: 1 }}
-            >
-              ×
-            </button>
-          ) : (
-            !isMobile && (
-              <kbd style={{ fontSize: 11, color: "var(--theme-text-secondary)", border: "1px solid var(--theme-border)", borderRadius: 6, padding: "1px 7px", background: "var(--theme-surface-hover)" }}>
-                Ctrl K
-              </kbd>
-            )
-          )}
-          {/* Bouton de recherche : ouvre les résultats ; s'il y en a, va au résultat sélectionné */}
+        {query ? (
           <button
             type="button"
-            aria-label={t.search}
-            title={t.search}
-            onClick={() => {
-              if (hits.length > 0 && trimmed.length >= 2) { go(hits[active]); return; }
-              inputRef.current?.focus(); setOpen(true);
-            }}
-            style={{ width: 40, height: 40, borderRadius: 11, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--theme-gradient, #6366f1)", color: "#ffffff", flexShrink: 0 }}
+            aria-label={t.clear}
+            onClick={() => { setQuery(""); setHits([]); inputRef.current?.focus(); }}
+            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: 8, border: "none", background: "transparent", color: "var(--theme-text-secondary)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}
           >
-            <SearchIcon />
+            ×
           </button>
-        </div>
+        ) : (
+          !isMobile && (
+            <kbd style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "var(--theme-text-secondary)", border: "1px solid var(--theme-border)", borderRadius: 6, padding: "1px 7px", background: "var(--theme-surface-hover)" }}>
+              Ctrl K
+            </kbd>
+          )
+        )}
       </div>
 
       {showPanel && (

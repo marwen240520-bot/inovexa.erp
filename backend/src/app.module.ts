@@ -32,6 +32,8 @@ import { UploadModule } from './modules/upload/upload.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { runPreSyncFixes } from './common/pre-sync-fixes';
+import { PosModule } from './modules/pos/pos.module';
+import { ObjectivesModule } from './modules/objectives/objectives.module';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { runPreSyncFixes } from './common/pre-sync-fixes';
         };
       },
     }),
+    PosModule,
+    ObjectivesModule,
     AuthModule,
     UsersModule,
     ProductsModule,

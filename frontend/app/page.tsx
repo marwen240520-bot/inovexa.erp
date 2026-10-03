@@ -121,13 +121,6 @@ const HP_LIGHT: Record<string, string> = {
 };
 
 /** Variables de couleur de l'accueil pour n'importe quel thème */
-/** Modules de l'application affichés en pastilles sur l'accueil */
-const HOME_MODULES: Record<string, string[]> = {
-  fr: ["Ventes", "Achats", "Stock", "Facturation", "Clients & fournisseurs", "RH", "Finance", "Logistique", "Rapports", "Assistant IA"],
-  en: ["Sales", "Purchases", "Inventory", "Invoicing", "Clients & suppliers", "HR", "Finance", "Logistics", "Reports", "AI assistant"],
-  es: ["Ventas", "Compras", "Inventario", "Facturación", "Clientes y proveedores", "RR. HH.", "Finanzas", "Logística", "Informes", "Asistente IA"],
-};
-
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return HP_DARK;
   if (themeId === "light") return HP_LIGHT;
@@ -764,12 +757,6 @@ export default function HomePage(): React.ReactElement {
           );
         })
       ),
-      // ── Modules (pastilles) — ordinateur et tablette seulement ──
-      !isMobile && React.createElement("div", { "aria-label": "Modules", style: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: isMobile ? "28px" : "34px", maxWidth: "520px", opacity: subtitleVisible ? 1 : 0, transition: "opacity 0.6s ease 0.1s" } },
-        (HOME_MODULES[language] || HOME_MODULES.en).map((label: string) =>
-          React.createElement("span", { key: label, style: { padding: isMobile ? "6px 11px" : "7px 13px", borderRadius: "999px", fontSize: isMobile ? "11px" : "12px", fontWeight: "600", color: "var(--hp-feature-text)", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.22)", whiteSpace: "nowrap" } }, label)
-        )
-      ),
       React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", opacity: subtitleVisible ? 1 : 0, transform: subtitleVisible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.65s ease, transform 0.65s ease" } },
         React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
           React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
@@ -794,265 +781,26 @@ export default function HomePage(): React.ReactElement {
     ),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  RIGHT SIDE — Version raffinée sans badges
+    //  RIGHT SIDE — image seule : aucune animation, aucun effet, aucun cadre
     // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
-      className: "hero-visual-panel",
       style: {
         width: isTablet ? "100%" : "52%",
-        position: "relative",
         height: isTablet ? "520px" : "100vh",
         background: "var(--hp-bg)",
         flexShrink: 0,
-        overflow: "hidden",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: isTablet ? "40px" : "56px"
+        padding: isTablet ? "24px" : "40px",
+        boxSizing: "border-box"
       }
     },
-      // ── Halo ambiant principal ──
-      React.createElement("div", {
-        className: "hero-visual-halo",
-        style: {
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: "130%",
-          height: "130%",
-          transform: "translate(-50%, -50%)",
-          background: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.32) 0%, rgba(99,102,241,0.14) 35%, transparent 70%)",
-          filter: "blur(70px)",
-          pointerEvents: "none",
-          zIndex: 0,
-          animation: "heroHaloPulse 7s ease-in-out infinite"
-        }
-      }),
-
-      // ── Second halo décalé pour la profondeur ──
-      React.createElement("div", {
-        className: "hero-visual-halo-2",
-        style: {
-          position: "absolute",
-          top: "35%",
-          left: "60%",
-          width: "70%",
-          height: "70%",
-          transform: "translate(-50%, -50%)",
-          background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 60%)",
-          filter: "blur(80px)",
-          pointerEvents: "none",
-          zIndex: 0,
-          animation: "heroHaloPulse2 9s ease-in-out infinite"
-        }
-      }),
-
-      // ── Grille décorative ──
-      React.createElement("div", {
-        className: "hero-visual-grid",
-        style: {
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `
-            linear-gradient(rgba(168,85,247,0.07) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(168,85,247,0.07) 1px, transparent 1px)
-          `,
-          backgroundSize: "52px 52px",
-          maskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
-          WebkitMaskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
-          pointerEvents: "none",
-          zIndex: 1,
-          opacity: 0.85
-        }
-      }),
-
-      // ── Anneau orbital externe ──
-      React.createElement("div", {
-        className: "hero-orbit hero-orbit-1",
-        style: {
-          position: "absolute",
-          top: "50%", left: "50%",
-          width: "92%", height: "92%",
-          transform: "translate(-50%, -50%)",
-          borderRadius: "50%",
-          border: "1px solid rgba(168,85,247,0.20)",
-          pointerEvents: "none",
-          zIndex: 2,
-          animation: "heroOrbitSpin 32s linear infinite"
-        }
-      },
-        React.createElement("span", {
-          style: {
-            position: "absolute",
-            top: "-4px", left: "50%",
-            width: "9px", height: "9px",
-            borderRadius: "50%",
-            background: "#C084FC",
-            boxShadow: "0 0 16px #A855F7, 0 0 32px rgba(168,85,247,0.8)"
-          }
-        }),
-        React.createElement("span", {
-          style: {
-            position: "absolute",
-            bottom: "-3px", right: "18%",
-            width: "6px", height: "6px",
-            borderRadius: "50%",
-            background: "#818CF8",
-            boxShadow: "0 0 12px #6366F1"
-          }
-        })
-      ),
-
-      // ── Anneau orbital interne ──
-      React.createElement("div", {
-        className: "hero-orbit hero-orbit-2",
-        style: {
-          position: "absolute",
-          top: "50%", left: "50%",
-          width: "72%", height: "72%",
-          transform: "translate(-50%, -50%)",
-          borderRadius: "50%",
-          border: "1px dashed rgba(99,102,241,0.18)",
-          pointerEvents: "none",
-          zIndex: 2,
-          animation: "heroOrbitSpinReverse 22s linear infinite"
-        }
-      },
-        React.createElement("span", {
-          style: {
-            position: "absolute",
-            bottom: "-3px", left: "28%",
-            width: "7px", height: "7px",
-            borderRadius: "50%",
-            background: "#818CF8",
-            boxShadow: "0 0 14px #6366F1, 0 0 26px rgba(99,102,241,0.6)"
-          }
-        })
-      ),
-
-      // ── Points lumineux flottants autour ──
-      ...[
-        { top: "12%", left: "8%", delay: "0s", size: "5px", color: "#C084FC" },
-        { top: "78%", left: "88%", delay: "1.2s", size: "4px", color: "#818CF8" },
-        { top: "22%", left: "92%", delay: "2.4s", size: "6px", color: "#A855F7" },
-        { top: "88%", left: "14%", delay: "3.6s", size: "5px", color: "#6366F1" },
-      ].map((dot, i) =>
-        React.createElement("span", {
-          key: "dot-" + i,
-          style: {
-            position: "absolute",
-            top: dot.top,
-            left: dot.left,
-            width: dot.size,
-            height: dot.size,
-            borderRadius: "50%",
-            background: dot.color,
-            boxShadow: "0 0 12px " + dot.color,
-            pointerEvents: "none",
-            zIndex: 2,
-            animation: "heroDotFloat 5s ease-in-out infinite",
-            animationDelay: dot.delay
-          }
-        })
-      ),
-
-      // ── Carte contenant l'image ──
-      React.createElement("div", {
-        className: "hero-image-card",
-        style: {
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          maxWidth: "680px",
-          maxHeight: isTablet ? "440px" : "80vh",
-          borderRadius: "32px",
-          overflow: "hidden",
-          border: "1px solid rgba(168,85,247,0.28)",
-          background: "linear-gradient(145deg, rgba(168,85,247,0.10), rgba(99,102,241,0.05))",
-          boxShadow: `
-            0 40px 100px -25px rgba(168,85,247,0.45),
-            0 0 0 1px rgba(168,85,247,0.12) inset,
-            0 0 80px -25px rgba(99,102,241,0.5) inset
-          `,
-          zIndex: 3,
-          transform: "perspective(1400px) rotateY(-5deg) rotateX(2deg)",
-          transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease",
-          animation: "heroCardFloat 8s ease-in-out infinite"
-        }
-      },
-        // Reflet brillant en haut
-        React.createElement("div", {
-          style: {
-            position: "absolute",
-            top: 0, left: 0, right: 0,
-            height: "1.5px",
-            background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.95), rgba(129,140,248,0.7), transparent)",
-            zIndex: 6
-          }
-        }),
-
-        // Reflet diagonal (glass shimmer)
-        React.createElement("div", {
-          className: "hero-image-glass",
-          style: {
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)",
-            backgroundSize: "200% 200%",
-            zIndex: 4,
-            pointerEvents: "none",
-            animation: "heroGlassShimmer 6s ease-in-out infinite"
-          }
-        }),
-
-        // Image principale
-        React.createElement("img", {
-          src: "/images/1.png",
-          alt: "Inovexa Dashboard",
-          style: {
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            position: "relative",
-            zIndex: 2,
-            filter: "var(--hp-img-filter, brightness(0.95) contrast(1.05))",
-            transition: "transform 0.9s cubic-bezier(0.22,1,0.36,1)"
-          },
-          className: "hero-image-content"
-        }),
-
-        // Overlay dégradé subtil en bas
-        React.createElement("div", {
-          style: {
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.28) 100%)",
-            zIndex: 3,
-            pointerEvents: "none"
-          }
-        }),
-
-        // Coins décoratifs néon
-        ...[
-          { top: "16px", left: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "12px 0 0 0" },
-          { top: "16px", right: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 12px 0 0" },
-          { bottom: "16px", left: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 0 12px" },
-          { bottom: "16px", right: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 12px 0" },
-        ].map((corner, i) =>
-          React.createElement("div", {
-            key: "corner-" + i,
-            style: {
-              position: "absolute",
-              width: "28px",
-              height: "28px",
-              zIndex: 5,
-              pointerEvents: "none",
-              opacity: 0.9,
-              ...corner
-            }
-          })
-        )
-      )
+      React.createElement("img", {
+        src: "/images/1.png",
+        alt: "Inovexa Dashboard",
+        style: { maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }
+      })
     ),
 
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
@@ -1065,7 +813,7 @@ export default function HomePage(): React.ReactElement {
       .hp-light.loader-screen .loader-brand { text-shadow: none; }
 
 
-      .home-page-enter { animation: homePageIn 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+      .home-page-enter { animation: none; }
       @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
 
       .erp-text-glow { animation: textPulse 3s ease-in-out infinite; }
@@ -1107,94 +855,6 @@ export default function HomePage(): React.ReactElement {
       .logo3d-ring-2::before { content: ""; position: absolute; bottom: -2px; left: 30%; width: 5px; height: 5px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 10px #6366F1; }
       @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
-
-      /* ═══════════════════════════════════════════════════════════
-         RIGHT SIDE — Hero visual panel (raffiné, sans badges)
-         ═══════════════════════════════════════════════════════════ */
-      @keyframes heroHaloPulse {
-        0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); }
-        50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.10); }
-      }
-      @keyframes heroHaloPulse2 {
-        0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1) translateX(0); }
-        50%      { opacity: 0.9; transform: translate(-50%, -50%) scale(1.15) translateX(20px); }
-      }
-      @keyframes heroOrbitSpin {
-        from { transform: translate(-50%, -50%) rotate(0deg); }
-        to   { transform: translate(-50%, -50%) rotate(360deg); }
-      }
-      @keyframes heroOrbitSpinReverse {
-        from { transform: translate(-50%, -50%) rotate(360deg); }
-        to   { transform: translate(-50%, -50%) rotate(0deg); }
-      }
-      @keyframes heroCardFloat {
-        0%, 100% { transform: perspective(1400px) rotateY(-5deg) rotateX(2deg) translateY(0); }
-        50%      { transform: perspective(1400px) rotateY(-3.5deg) rotateX(1deg) translateY(-12px); }
-      }
-      @keyframes heroDotFloat {
-        0%, 100% { opacity: 0.4; transform: translateY(0) scale(1); }
-        50%      { opacity: 1;   transform: translateY(-14px) scale(1.3); }
-      }
-      @keyframes heroGlassShimmer {
-        0%   { background-position: 200% 50%; }
-        100% { background-position: -200% 50%; }
-      }
-
-      .hero-image-card:hover {
-        transform: perspective(1400px) rotateY(0deg) rotateX(0deg) translateY(-8px) scale(1.02) !important;
-        box-shadow:
-          0 50px 120px -25px rgba(168,85,247,0.65),
-          0 0 0 1px rgba(168,85,247,0.3) inset,
-          0 0 100px -25px rgba(99,102,241,0.7) inset !important;
-      }
-      .hero-image-card:hover .hero-image-content {
-        transform: scale(1.07);
-      }
-
-      /* Thème clair */
-      .hp-light .hero-image-card {
-        box-shadow:
-          0 40px 100px -25px rgba(124,58,237,0.30),
-          0 0 0 1px rgba(124,58,237,0.15) inset !important;
-      }
-      .hp-light .hero-image-card:hover {
-        box-shadow:
-          0 50px 120px -25px rgba(124,58,237,0.45),
-          0 0 0 1px rgba(124,58,237,0.25) inset !important;
-      }
-      .hp-light .hero-visual-halo {
-        background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.20) 0%, rgba(79,70,229,0.10) 35%, transparent 70%) !important;
-      }
-      .hp-light .hero-visual-halo-2 {
-        background: radial-gradient(circle, rgba(79,70,229,0.14) 0%, transparent 60%) !important;
-      }
-      .hp-light .hero-visual-grid {
-        background-image:
-          linear-gradient(rgba(124,58,237,0.06) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(124,58,237,0.06) 1px, transparent 1px) !important;
-      }
-      .hp-light .hero-orbit-1 {
-        border-color: rgba(124,58,237,0.25) !important;
-      }
-      .hp-light .hero-orbit-2 {
-        border-color: rgba(79,70,229,0.20) !important;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo,
-        .home-page-enter,
-        .hero-image-card,
-        .hero-image-glass,
-        .hero-orbit-1,
-        .hero-orbit-2,
-        .hero-visual-halo,
-        .hero-visual-halo-2,
-        .heroDotFloat { animation: none !important; }
-      }
-      @media (max-width: 1024px) {
-        .hero-image-card { transform: none !important; }
-        .hero-image-card:hover { transform: translateY(-5px) scale(1.01) !important; }
-      }
     ` } })
   );
 }

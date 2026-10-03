@@ -11,7 +11,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 type Mode = "sale" | "purchase";
 interface Product { id: number; name: string; sku?: string; price?: number | string; quantity?: number; imageUrl?: string | null; }
 interface Line { product: Product; quantity: number; unitPrice: number; }
-interface Ticket { mode: Mode; ticketNumber: string; counterpart: string | null; paymentMethod: string | null; itemsCount: number; total: number; createdAt: string; lines: Array<{ productName: string; quantity: number; unitPrice: number; total: number }>; }
+interface Ticket { notice?: string; mode: Mode; ticketNumber: string; counterpart: string | null; paymentMethod: string | null; itemsCount: number; total: number; createdAt: string; lines: Array<{ productName: string; quantity: number; unitPrice: number; total: number }>; }
 
 const PAYMENT_CODES = ["cash", "card", "transfer", "check", "mobile", "other"] as const;
 
@@ -28,6 +28,9 @@ const TX: Record<string, Record<string, string>> = {
     cash: "Espèces", card: "Carte", transfer: "Virement", check: "Chèque", mobile: "Mobile", other: "Autre",
     errServer: "Erreur du serveur. Réessayez.", errNetwork: "Impossible de joindre le serveur.", errAuth: "Session expirée : reconnectez-vous.",
     purchaseHint: "Achat : le stock augmente et le prix d'achat est modifiable.", remove: "Retirer",
+    priceHint: "Le prix de chaque ligne est modifiable (remise, prix négocié).",
+    fallbackNote: "Mode de secours : le serveur n'est pas encore à jour. L'opération est bien enregistrée dans Ventes / Achats ; seul le moyen de paiement n'est pas conservé.",
+    partial: "ligne(s) déjà enregistrée(s) avant l'erreur",
   },
   en: {
     title: "Quick checkout", subtitle: "Sell or buy products in seconds",
@@ -41,6 +44,9 @@ const TX: Record<string, Record<string, string>> = {
     cash: "Cash", card: "Card", transfer: "Transfer", check: "Check", mobile: "Mobile", other: "Other",
     errServer: "Server error. Please try again.", errNetwork: "Cannot reach the server.", errAuth: "Session expired: please sign in again.",
     purchaseHint: "Purchase: stock increases and the purchase price is editable.", remove: "Remove",
+    priceHint: "Each line price can be edited (discount, negotiated price).",
+    fallbackNote: "Fallback mode: the server is not up to date yet. The transaction is saved in Sales / Purchases; only the payment method is not kept.",
+    partial: "line(s) already saved before the error",
   },
   es: {
     title: "Caja rápida", subtitle: "Venda o compre productos en segundos",
@@ -54,6 +60,9 @@ const TX: Record<string, Record<string, string>> = {
     cash: "Efectivo", card: "Tarjeta", transfer: "Transferencia", check: "Cheque", mobile: "Móvil", other: "Otro",
     errServer: "Error del servidor. Inténtelo de nuevo.", errNetwork: "No se puede conectar con el servidor.", errAuth: "Sesión caducada: vuelva a iniciar sesión.",
     purchaseHint: "Compra: el stock aumenta y el precio de compra es editable.", remove: "Quitar",
+    priceHint: "El precio de cada línea es editable (descuento, precio negociado).",
+    fallbackNote: "Modo de respaldo: el servidor aún no está actualizado. La operación se guarda en Ventas / Compras; solo no se conserva el método de pago.",
+    partial: "línea(s) ya guardada(s) antes del error",
   },
 };
 
@@ -158,6 +167,39 @@ export default function PosPage() {
   const total = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0);
   const itemsCount = lines.reduce((s, l) => s + l.quantity, 0);
 
+  // Ancien serveur (sans /pos/checkout) : on enregistre ligne par ligne avec les routes Ventes / Achats existantes.
+  const checkoutFallback = async () => {
+    const done: Line[] = [];
+    const results: Ticket["lines"] = [];
+    const name = counterpart.trim();
+    for (const l of lines) {
+      const body = mode === "sale"
+        ? { productId: l.product.id, quantity: l.quantity, unitPrice: l.unitPrice, clientName: name || "Client comptoir", status: "completed" }
+        : { productId: l.product.id, quantity: l.quantity, unitPrice: l.unitPrice, supplierName: name || undefined, status: "received" };
+      let ok = false; let message = "";
+      try {
+        const r = await fetch(`${API_URL}/${mode === "sale" ? "sales" : "purchases"}`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+        ok = r.ok;
+        if (!ok) { const d = await r.json().catch(() => ({} as any)); message = (Array.isArray(d?.message) ? d.message[0] : d?.message) || t.errServer; }
+      } catch { message = t.errNetwork; }
+      if (!ok) {
+        setError(`${done.length ? `${done.length} ${t.partial} (${done.map((x) => x.product.name).join(", ")}) — ` : ""}${message}`);
+        if (done.length) { setLines((prev) => prev.filter((x) => !done.some((d) => d.product.id === x.product.id))); loadProducts(); }
+        return;
+      }
+      done.push(l);
+      results.push({ productName: l.product.name, quantity: l.quantity, unitPrice: l.unitPrice, total: Math.round(l.quantity * l.unitPrice * 100) / 100 });
+    }
+    const now = new Date();
+    setTicket({
+      notice: t.fallbackNote, mode, counterpart: name || (mode === "sale" ? "Client comptoir" : null), paymentMethod: payment,
+      ticketNumber: `${mode === "sale" ? "V" : "A"}-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${Date.now().toString(36).toUpperCase().slice(-5)}`,
+      itemsCount: results.reduce((s, r) => s + r.quantity, 0), total: Math.round(results.reduce((s, r) => s + r.total, 0) * 100) / 100,
+      createdAt: now.toISOString(), lines: results,
+    });
+    setLines([]); setCounterpart(""); setCartOpen(false); loadProducts();
+  };
+
   const checkout = async () => {
     if (!lines.length || busy) return;
     setBusy(true); setError("");
@@ -171,7 +213,8 @@ export default function PosPage() {
         setTicket(data); setLines([]); setCounterpart(""); setCartOpen(false);
         loadProducts(); loadToday();
       } else if (res.status === 401 || res.status === 403) setError(t.errAuth);
-      else if (res.status >= 500 || res.status === 404) setError(res.status === 404 ? "Caisse rapide indisponible : le serveur doit être mis à jour." : t.errServer);
+      else if (res.status === 404) await checkoutFallback();
+      else if (res.status >= 500) setError(t.errServer);
       else { const m = Array.isArray(data?.message) ? data.message[0] : data?.message; setError(m || t.errServer); }
     } catch { setError(t.errNetwork); }
     setBusy(false);
@@ -213,11 +256,7 @@ export default function PosPage() {
                 <input type="number" inputMode="numeric" min={1} value={l.quantity} onChange={(e) => setQty(l.product.id, num(e.target.value))} aria-label="Quantité" style={{ width: 52, height: 40, textAlign: "center", border: "none", borderLeft: `1px solid ${theme.border}`, borderRight: `1px solid ${theme.border}`, background: "transparent", color: theme.text, fontSize: 16, outline: "none" }} />
                 <button onClick={() => addProduct(l.product)} aria-label="+" style={{ width: 40, height: 40, border: "none", background: "transparent", color: theme.text, fontSize: 20, cursor: "pointer" }}>+</button>
               </div>
-              {mode === "purchase" ? (
-                <input type="number" inputMode="decimal" step="0.01" min={0} value={l.unitPrice} onChange={(e) => setPrice(l.product.id, num(e.target.value))} aria-label={t.unitPrice} title={t.unitPrice} style={{ width: 90, height: 40, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surface, color: theme.text, textAlign: "right", padding: "0 8px", fontSize: 16 }} />
-              ) : (
-                <span style={{ color: theme.textSecondary, fontSize: 13 }}>× {formatCurrency(l.unitPrice)}</span>
-              )}
+              <input type="number" inputMode="decimal" step="0.01" min={0} value={l.unitPrice} onChange={(e) => setPrice(l.product.id, num(e.target.value))} aria-label={t.unitPrice} title={t.unitPrice} style={{ width: 96, height: 40, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surface, color: theme.text, textAlign: "right", padding: "0 8px", fontSize: 16 }} />
               <span style={{ marginLeft: "auto", color: theme.text, fontWeight: 700 }}>{formatCurrency(l.quantity * l.unitPrice)}</span>
             </div>
           </div>
@@ -279,7 +318,7 @@ export default function PosPage() {
             </button>
           ))}
         </div>
-        {mode === "purchase" && <div style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 12 }}>{t.purchaseHint}</div>}
+        <div style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 12 }}>{mode === "purchase" ? t.purchaseHint : t.priceHint}</div>
 
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1fr) 380px", gap: 16, alignItems: "start" }}>
           {/* Produits */}
@@ -356,6 +395,7 @@ export default function PosPage() {
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "4px 0" }}><span>{l.quantity} × {l.productName}</span><span style={{ fontWeight: 600 }}>{formatCurrency(l.total)}</span></div>
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", borderTop: `1px solid ${theme.border}`, marginTop: 8, paddingTop: 10, fontSize: 20, fontWeight: 800 }}><span>{t.total}</span><span>{formatCurrency(ticket.total)}</span></div>
+              {ticket.notice && <div style={{ background: "rgba(245,158,11,0.14)", border: "1px solid rgba(245,158,11,0.5)", color: theme.text, borderRadius: 10, padding: "8px 10px", fontSize: 12, marginTop: 8 }}>{ticket.notice}</div>}
               <div style={{ color: theme.textSecondary, fontSize: 12, marginTop: 6 }}>{ticket.counterpart ? `${ticket.counterpart} · ` : ""}{ticket.paymentMethod ? t[ticket.paymentMethod] || ticket.paymentMethod : ""}</div>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>

@@ -691,144 +691,22 @@ export default function LoginPage() {
           {/* ═══════════════════════════════════════════════════════════════
               RIGHT SIDE — Hero visuel amélioré (aligné sur la home page)
               ═══════════════════════════════════════════════════════════════ */}
-          <div className="login-hero anim-hero" style={{ 
+          <div className="login-hero" style={{
             width: "50.5%",
-            position: "relative",
             height: "100vh",
             background: "var(--lg-bg)",
-            overflow: "hidden",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "48px"
+            padding: "40px",
+            boxSizing: "border-box"
           }}>
-            {/* Halo ambiant */}
-            <div className="lg-hero-halo" style={{
-              position: "absolute",
-              top: "50%", left: "50%",
-              width: "120%", height: "120%",
-              transform: "translate(-50%, -50%)",
-              background: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.28) 0%, rgba(99,102,241,0.12) 35%, transparent 70%)",
-              filter: "blur(60px)",
-              pointerEvents: "none",
-              zIndex: 0,
-              animation: "lgHaloPulse 6s ease-in-out infinite"
-            }} />
-
-            {/* Grille décorative */}
-            <div className="lg-hero-grid" style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `
-                linear-gradient(rgba(168,85,247,0.06) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(168,85,247,0.06) 1px, transparent 1px)
-              `,
-              backgroundSize: "48px 48px",
-              maskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
-              WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
-              pointerEvents: "none",
-              zIndex: 1,
-              opacity: 0.8
-            }} />
-
-            {/* Cercles orbitaux */}
-            <div className="lg-hero-orbit lg-hero-orbit-1" style={{
-              position: "absolute",
-              top: "50%", left: "50%",
-              width: "88%", height: "88%",
-              transform: "translate(-50%, -50%)",
-              borderRadius: "50%",
-              border: "1px solid rgba(168,85,247,0.18)",
-              pointerEvents: "none",
-              zIndex: 2,
-              animation: "lgOrbitSpin 28s linear infinite"
-            }}>
-              <span style={{
-                position: "absolute",
-                top: "-3px", left: "50%",
-                width: "8px", height: "8px",
-                borderRadius: "50%",
-                background: "#C084FC",
-                boxShadow: "0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7)"
-              }} />
-            </div>
-            <div className="lg-hero-orbit lg-hero-orbit-2" style={{
-              position: "absolute",
-              top: "50%", left: "50%",
-              width: "68%", height: "68%",
-              transform: "translate(-50%, -50%)",
-              borderRadius: "50%",
-              border: "1px solid rgba(99,102,241,0.15)",
-              pointerEvents: "none",
-              zIndex: 2,
-              animation: "lgOrbitSpinReverse 20s linear infinite"
-            }}>
-              <span style={{
-                position: "absolute",
-                bottom: "-3px", left: "30%",
-                width: "6px", height: "6px",
-                borderRadius: "50%",
-                background: "#818CF8",
-                boxShadow: "0 0 12px #6366F1"
-              }} />
-            </div>
-
-            {/* Carte contenant l'image */}
-            <div className="lg-hero-card" style={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              maxWidth: "640px",
-              maxHeight: "78vh",
-              borderRadius: "28px",
-              overflow: "hidden",
-              border: "1px solid rgba(168,85,247,0.25)",
-              background: "linear-gradient(145deg, rgba(168,85,247,0.08), rgba(99,102,241,0.04))",
-              boxShadow: `
-                0 30px 80px -20px rgba(168,85,247,0.35),
-                0 0 0 1px rgba(168,85,247,0.1) inset,
-                0 0 60px -20px rgba(99,102,241,0.4) inset
-              `,
-              zIndex: 3,
-              transform: "perspective(1200px) rotateY(-4deg) rotateX(2deg)",
-              transition: "transform 0.6s cubic-bezier(0.22,1,0.36,1), box-shadow 0.6s ease",
-              animation: "lgCardFloat 7s ease-in-out infinite"
-            }}>
-              {/* Reflet haut */}
-              <div style={{
-                position: "absolute",
-                top: 0, left: 0, right: 0,
-                height: "1px",
-                background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.9), transparent)",
-                zIndex: 5
-              }} />
-
-              {/* Image */}
-              <img 
-                src="/images/1.png" 
-                alt="Inovexa Futuristic" 
-                className="lg-hero-image"
-                style={{ 
-                  width: "100%", 
-                  height: "100%", 
-                  objectFit: "cover", 
-                  display: "block",
-                  position: "relative",
-                  zIndex: 2,
-                  filter: "var(--lg-img-filter, brightness(0.95) contrast(1.05))",
-                  transition: "transform 0.8s cubic-bezier(0.22,1,0.36,1)"
-                }}
-              />
-
-              {/* Overlay dégradé */}
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.45) 100%)",
-                zIndex: 3,
-                pointerEvents: "none"
-              }} />
-            </div>
+            {/* Image seule : aucune animation, aucun effet, aucun cadre */}
+            <img
+              src="/images/1.png"
+              alt="Inovexa"
+              style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }}
+            />
           </div>
         </>
       )}
@@ -864,75 +742,6 @@ export default function LoginPage() {
 
         @media (max-width: 768px) {
           .login-hero { display: none !important; }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           HERO VISUEL — partie droite (desktop)
-           ═══════════════════════════════════════════════════════════════ */
-        .login-hero {
-          animation: lgHeroSlideIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        @keyframes lgHeroSlideIn {
-          0%   { opacity: 0; transform: translateX(60px) scale(1.04); }
-          100% { opacity: 1; transform: translateX(0) scale(1); }
-        }
-
-        @keyframes lgHaloPulse {
-          0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-          50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
-        }
-        @keyframes lgOrbitSpin {
-          from { transform: translate(-50%, -50%) rotate(0deg); }
-          to   { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        @keyframes lgOrbitSpinReverse {
-          from { transform: translate(-50%, -50%) rotate(360deg); }
-          to   { transform: translate(-50%, -50%) rotate(0deg); }
-        }
-        @keyframes lgCardFloat {
-          0%, 100% { transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) translateY(0); }
-          50%      { transform: perspective(1200px) rotateY(-3deg) rotateX(1deg) translateY(-10px); }
-        }
-        .lg-hero-card:hover {
-          transform: perspective(1200px) rotateY(0deg) rotateX(0deg) translateY(-6px) scale(1.015) !important;
-          box-shadow:
-            0 40px 100px -20px rgba(168,85,247,0.55),
-            0 0 0 1px rgba(168,85,247,0.25) inset,
-            0 0 80px -20px rgba(99,102,241,0.6) inset !important;
-        }
-        .lg-hero-card:hover .lg-hero-image {
-          transform: scale(1.06);
-        }
-        .lg-light .lg-hero-card {
-          box-shadow:
-            0 30px 80px -20px rgba(124,58,237,0.25),
-            0 0 0 1px rgba(124,58,237,0.12) inset !important;
-        }
-        .lg-light .lg-hero-halo {
-          background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.18) 0%, rgba(79,70,229,0.08) 35%, transparent 70%) !important;
-        }
-        .lg-light .lg-hero-grid {
-          background-image:
-            linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px) !important;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .anim-hero,
-          .lg-hero-card,
-          .lg-hero-orbit-1,
-          .lg-hero-orbit-2,
-          .lg-hero-halo { 
-            animation: none !important; 
-            transition: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-          }
-        }
-
-        @media (max-width: 1024px) {
-          .lg-hero-card { transform: none !important; }
-          .lg-hero-card:hover { transform: translateY(-4px) scale(1.01) !important; }
         }
       ` }} />
     </div>
