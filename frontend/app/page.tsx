@@ -781,108 +781,164 @@ export default function HomePage(): React.ReactElement {
     ),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  RIGHT SIDE — Version améliorée
+    //  RIGHT SIDE — Version raffinée sans badges
     // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
       className: "hero-visual-panel",
       style: {
         width: isTablet ? "100%" : "52%",
         position: "relative",
-        height: isTablet ? "480px" : "100vh",
+        height: isTablet ? "520px" : "100vh",
         background: "var(--hp-bg)",
         flexShrink: 0,
         overflow: "hidden",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: isTablet ? "32px" : "48px"
+        padding: isTablet ? "40px" : "56px"
       }
     },
-      // ── Halo ambiant derrière l'image ──
+      // ── Halo ambiant principal ──
       React.createElement("div", {
         className: "hero-visual-halo",
         style: {
           position: "absolute",
           top: "50%",
           left: "50%",
-          width: "120%",
-          height: "120%",
+          width: "130%",
+          height: "130%",
           transform: "translate(-50%, -50%)",
-          background: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.28) 0%, rgba(99,102,241,0.12) 35%, transparent 70%)",
-          filter: "blur(60px)",
+          background: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.32) 0%, rgba(99,102,241,0.14) 35%, transparent 70%)",
+          filter: "blur(70px)",
           pointerEvents: "none",
           zIndex: 0,
-          animation: "heroHaloPulse 6s ease-in-out infinite"
+          animation: "heroHaloPulse 7s ease-in-out infinite"
         }
       }),
 
-      // ── Grille décorative en arrière-plan ──
+      // ── Second halo décalé pour la profondeur ──
+      React.createElement("div", {
+        className: "hero-visual-halo-2",
+        style: {
+          position: "absolute",
+          top: "35%",
+          left: "60%",
+          width: "70%",
+          height: "70%",
+          transform: "translate(-50%, -50%)",
+          background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 60%)",
+          filter: "blur(80px)",
+          pointerEvents: "none",
+          zIndex: 0,
+          animation: "heroHaloPulse2 9s ease-in-out infinite"
+        }
+      }),
+
+      // ── Grille décorative ──
       React.createElement("div", {
         className: "hero-visual-grid",
         style: {
           position: "absolute",
           inset: 0,
           backgroundImage: `
-            linear-gradient(rgba(168,85,247,0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(168,85,247,0.06) 1px, transparent 1px)
+            linear-gradient(rgba(168,85,247,0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(168,85,247,0.07) 1px, transparent 1px)
           `,
-          backgroundSize: "48px 48px",
-          maskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
-          WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
+          backgroundSize: "52px 52px",
+          maskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse at center, black 15%, transparent 70%)",
           pointerEvents: "none",
           zIndex: 1,
-          opacity: 0.8
+          opacity: 0.85
         }
       }),
 
-      // ── Cercles orbitaux animés ──
+      // ── Anneau orbital externe ──
       React.createElement("div", {
         className: "hero-orbit hero-orbit-1",
         style: {
           position: "absolute",
           top: "50%", left: "50%",
-          width: "88%", height: "88%",
+          width: "92%", height: "92%",
           transform: "translate(-50%, -50%)",
           borderRadius: "50%",
-          border: "1px solid rgba(168,85,247,0.18)",
+          border: "1px solid rgba(168,85,247,0.20)",
           pointerEvents: "none",
           zIndex: 2,
-          animation: "heroOrbitSpin 28s linear infinite"
+          animation: "heroOrbitSpin 32s linear infinite"
         }
       },
         React.createElement("span", {
           style: {
             position: "absolute",
-            top: "-3px", left: "50%",
-            width: "8px", height: "8px",
+            top: "-4px", left: "50%",
+            width: "9px", height: "9px",
             borderRadius: "50%",
             background: "#C084FC",
-            boxShadow: "0 0 14px #A855F7, 0 0 28px rgba(168,85,247,0.7)"
+            boxShadow: "0 0 16px #A855F7, 0 0 32px rgba(168,85,247,0.8)"
+          }
+        }),
+        React.createElement("span", {
+          style: {
+            position: "absolute",
+            bottom: "-3px", right: "18%",
+            width: "6px", height: "6px",
+            borderRadius: "50%",
+            background: "#818CF8",
+            boxShadow: "0 0 12px #6366F1"
           }
         })
       ),
+
+      // ── Anneau orbital interne ──
       React.createElement("div", {
         className: "hero-orbit hero-orbit-2",
         style: {
           position: "absolute",
           top: "50%", left: "50%",
-          width: "68%", height: "68%",
+          width: "72%", height: "72%",
           transform: "translate(-50%, -50%)",
           borderRadius: "50%",
-          border: "1px solid rgba(99,102,241,0.15)",
+          border: "1px dashed rgba(99,102,241,0.18)",
           pointerEvents: "none",
           zIndex: 2,
-          animation: "heroOrbitSpinReverse 20s linear infinite"
+          animation: "heroOrbitSpinReverse 22s linear infinite"
         }
       },
         React.createElement("span", {
           style: {
             position: "absolute",
-            bottom: "-3px", left: "30%",
-            width: "6px", height: "6px",
+            bottom: "-3px", left: "28%",
+            width: "7px", height: "7px",
             borderRadius: "50%",
             background: "#818CF8",
-            boxShadow: "0 0 12px #6366F1"
+            boxShadow: "0 0 14px #6366F1, 0 0 26px rgba(99,102,241,0.6)"
+          }
+        })
+      ),
+
+      // ── Points lumineux flottants autour ──
+      ...[
+        { top: "12%", left: "8%", delay: "0s", size: "5px", color: "#C084FC" },
+        { top: "78%", left: "88%", delay: "1.2s", size: "4px", color: "#818CF8" },
+        { top: "22%", left: "92%", delay: "2.4s", size: "6px", color: "#A855F7" },
+        { top: "88%", left: "14%", delay: "3.6s", size: "5px", color: "#6366F1" },
+      ].map((dot, i) =>
+        React.createElement("span", {
+          key: "dot-" + i,
+          style: {
+            position: "absolute",
+            top: dot.top,
+            left: dot.left,
+            width: dot.size,
+            height: dot.size,
+            borderRadius: "50%",
+            background: dot.color,
+            boxShadow: "0 0 12px " + dot.color,
+            pointerEvents: "none",
+            zIndex: 2,
+            animation: "heroDotFloat 5s ease-in-out infinite",
+            animationDelay: dot.delay
           }
         })
       ),
@@ -894,21 +950,21 @@ export default function HomePage(): React.ReactElement {
           position: "relative",
           width: "100%",
           height: "100%",
-          maxWidth: "640px",
-          maxHeight: isTablet ? "420px" : "78vh",
-          borderRadius: "28px",
+          maxWidth: "680px",
+          maxHeight: isTablet ? "440px" : "80vh",
+          borderRadius: "32px",
           overflow: "hidden",
-          border: "1px solid rgba(168,85,247,0.25)",
-          background: "linear-gradient(145deg, rgba(168,85,247,0.08), rgba(99,102,241,0.04))",
+          border: "1px solid rgba(168,85,247,0.28)",
+          background: "linear-gradient(145deg, rgba(168,85,247,0.10), rgba(99,102,241,0.05))",
           boxShadow: `
-            0 30px 80px -20px rgba(168,85,247,0.35),
-            0 0 0 1px rgba(168,85,247,0.1) inset,
-            0 0 60px -20px rgba(99,102,241,0.4) inset
+            0 40px 100px -25px rgba(168,85,247,0.45),
+            0 0 0 1px rgba(168,85,247,0.12) inset,
+            0 0 80px -25px rgba(99,102,241,0.5) inset
           `,
           zIndex: 3,
-          transform: "perspective(1200px) rotateY(-4deg) rotateX(2deg)",
-          transition: "transform 0.6s cubic-bezier(0.22,1,0.36,1), box-shadow 0.6s ease",
-          animation: "heroCardFloat 7s ease-in-out infinite"
+          transform: "perspective(1400px) rotateY(-5deg) rotateX(2deg)",
+          transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), box-shadow 0.7s ease",
+          animation: "heroCardFloat 8s ease-in-out infinite"
         }
       },
         // Reflet brillant en haut
@@ -916,9 +972,23 @@ export default function HomePage(): React.ReactElement {
           style: {
             position: "absolute",
             top: 0, left: 0, right: 0,
-            height: "1px",
-            background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.9), transparent)",
-            zIndex: 5
+            height: "1.5px",
+            background: "linear-gradient(90deg, transparent, rgba(192,132,252,0.95), rgba(129,140,248,0.7), transparent)",
+            zIndex: 6
+          }
+        }),
+
+        // Reflet diagonal (glass shimmer)
+        React.createElement("div", {
+          className: "hero-image-glass",
+          style: {
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)",
+            backgroundSize: "200% 200%",
+            zIndex: 4,
+            pointerEvents: "none",
+            animation: "heroGlassShimmer 6s ease-in-out infinite"
           }
         }),
 
@@ -933,93 +1003,41 @@ export default function HomePage(): React.ReactElement {
             position: "relative",
             zIndex: 2,
             filter: "var(--hp-img-filter, brightness(0.95) contrast(1.05))",
-            transition: "transform 0.8s cubic-bezier(0.22,1,0.36,1)"
+            transition: "transform 0.9s cubic-bezier(0.22,1,0.36,1)"
           },
           className: "hero-image-content"
         }),
 
-        // Overlay dégradé subtil
+        // Overlay dégradé subtil en bas
         React.createElement("div", {
           style: {
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.45) 100%)",
+            background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.28) 100%)",
             zIndex: 3,
             pointerEvents: "none"
           }
         }),
 
-        // Badge "Live" en haut à droite
-        React.createElement("div", {
-          style: {
-            position: "absolute",
-            top: "18px", right: "18px",
-            display: "flex",
-            alignItems: "center",
-            gap: "7px",
-            padding: "7px 13px",
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
-            border: "1px solid rgba(168,85,247,0.4)",
-            borderRadius: "999px",
-            zIndex: 5,
-            color: "white",
-            fontSize: "10px",
-            fontWeight: "700",
-            letterSpacing: "1.2px",
-            textTransform: "uppercase"
-          }
-        },
-          React.createElement("span", {
+        // Coins décoratifs néon
+        ...[
+          { top: "16px", left: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "12px 0 0 0" },
+          { top: "16px", right: "16px", borderTop: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 12px 0 0" },
+          { bottom: "16px", left: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderLeft: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 0 12px" },
+          { bottom: "16px", right: "16px", borderBottom: "2px solid rgba(192,132,252,0.8)", borderRight: "2px solid rgba(192,132,252,0.8)", borderRadius: "0 0 12px 0" },
+        ].map((corner, i) =>
+          React.createElement("div", {
+            key: "corner-" + i,
             style: {
-              width: "6px", height: "6px",
-              borderRadius: "50%",
-              background: "#22c55e",
-              boxShadow: "0 0 10px #22c55e",
-              animation: "livePulse 1.8s ease-in-out infinite"
+              position: "absolute",
+              width: "28px",
+              height: "28px",
+              zIndex: 5,
+              pointerEvents: "none",
+              opacity: 0.9,
+              ...corner
             }
-          }),
-          "Live"
-        ),
-
-        // Badge stats en bas à gauche
-        React.createElement("div", {
-          style: {
-            position: "absolute",
-            bottom: "20px", left: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px",
-            padding: "12px 16px",
-            background: "rgba(0,0,0,0.5)",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
-            border: "1px solid rgba(168,85,247,0.35)",
-            borderRadius: "14px",
-            zIndex: 5,
-            color: "white"
-          }
-        },
-          React.createElement("span", {
-            style: {
-              fontSize: "9px",
-              fontWeight: "700",
-              letterSpacing: "1.5px",
-              color: "rgba(192,132,252,0.95)",
-              textTransform: "uppercase"
-            }
-          }, "Performance"),
-          React.createElement("span", {
-            style: {
-              fontSize: "18px",
-              fontWeight: "800",
-              background: "linear-gradient(135deg, #C084FC, #818CF8)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              letterSpacing: "-0.5px"
-            }
-          }, "+98.4%")
+          })
         )
       )
     ),
@@ -1078,11 +1096,15 @@ export default function HomePage(): React.ReactElement {
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
 
       /* ═══════════════════════════════════════════════════════════
-         RIGHT SIDE — Hero visual panel (amélioré)
+         RIGHT SIDE — Hero visual panel (raffiné, sans badges)
          ═══════════════════════════════════════════════════════════ */
       @keyframes heroHaloPulse {
-        0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-        50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
+        0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(1); }
+        50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.10); }
+      }
+      @keyframes heroHaloPulse2 {
+        0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1) translateX(0); }
+        50%      { opacity: 0.9; transform: translate(-50%, -50%) scale(1.15) translateX(20px); }
       }
       @keyframes heroOrbitSpin {
         from { transform: translate(-50%, -50%) rotate(0deg); }
@@ -1093,48 +1115,72 @@ export default function HomePage(): React.ReactElement {
         to   { transform: translate(-50%, -50%) rotate(0deg); }
       }
       @keyframes heroCardFloat {
-        0%, 100% { transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) translateY(0); }
-        50%      { transform: perspective(1200px) rotateY(-3deg) rotateX(1deg) translateY(-10px); }
+        0%, 100% { transform: perspective(1400px) rotateY(-5deg) rotateX(2deg) translateY(0); }
+        50%      { transform: perspective(1400px) rotateY(-3.5deg) rotateX(1deg) translateY(-12px); }
       }
-      @keyframes livePulse {
-        0%, 100% { opacity: 1;   transform: scale(1); }
-        50%      { opacity: 0.5; transform: scale(0.85); }
+      @keyframes heroDotFloat {
+        0%, 100% { opacity: 0.4; transform: translateY(0) scale(1); }
+        50%      { opacity: 1;   transform: translateY(-14px) scale(1.3); }
       }
+      @keyframes heroGlassShimmer {
+        0%   { background-position: 200% 50%; }
+        100% { background-position: -200% 50%; }
+      }
+
       .hero-image-card:hover {
-        transform: perspective(1200px) rotateY(0deg) rotateX(0deg) translateY(-6px) scale(1.015) !important;
+        transform: perspective(1400px) rotateY(0deg) rotateX(0deg) translateY(-8px) scale(1.02) !important;
         box-shadow:
-          0 40px 100px -20px rgba(168,85,247,0.55),
-          0 0 0 1px rgba(168,85,247,0.25) inset,
-          0 0 80px -20px rgba(99,102,241,0.6) inset !important;
+          0 50px 120px -25px rgba(168,85,247,0.65),
+          0 0 0 1px rgba(168,85,247,0.3) inset,
+          0 0 100px -25px rgba(99,102,241,0.7) inset !important;
       }
       .hero-image-card:hover .hero-image-content {
-        transform: scale(1.06);
+        transform: scale(1.07);
       }
+
+      /* Thème clair */
       .hp-light .hero-image-card {
         box-shadow:
-          0 30px 80px -20px rgba(124,58,237,0.25),
-          0 0 0 1px rgba(124,58,237,0.12) inset !important;
+          0 40px 100px -25px rgba(124,58,237,0.30),
+          0 0 0 1px rgba(124,58,237,0.15) inset !important;
+      }
+      .hp-light .hero-image-card:hover {
+        box-shadow:
+          0 50px 120px -25px rgba(124,58,237,0.45),
+          0 0 0 1px rgba(124,58,237,0.25) inset !important;
       }
       .hp-light .hero-visual-halo {
-        background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.18) 0%, rgba(79,70,229,0.08) 35%, transparent 70%) !important;
+        background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.20) 0%, rgba(79,70,229,0.10) 35%, transparent 70%) !important;
+      }
+      .hp-light .hero-visual-halo-2 {
+        background: radial-gradient(circle, rgba(79,70,229,0.14) 0%, transparent 60%) !important;
       }
       .hp-light .hero-visual-grid {
         background-image:
-          linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px) !important;
+          linear-gradient(rgba(124,58,237,0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(124,58,237,0.06) 1px, transparent 1px) !important;
+      }
+      .hp-light .hero-orbit-1 {
+        border-color: rgba(124,58,237,0.25) !important;
+      }
+      .hp-light .hero-orbit-2 {
+        border-color: rgba(79,70,229,0.20) !important;
       }
 
       @media (prefers-reduced-motion: reduce) {
         .logo3d, .logo3d-ring-1, .logo3d-ring-2, .logo3d-halo,
         .home-page-enter,
         .hero-image-card,
+        .hero-image-glass,
         .hero-orbit-1,
         .hero-orbit-2,
-        .hero-visual-halo { animation: none !important; }
+        .hero-visual-halo,
+        .hero-visual-halo-2,
+        .heroDotFloat { animation: none !important; }
       }
       @media (max-width: 1024px) {
         .hero-image-card { transform: none !important; }
-        .hero-image-card:hover { transform: translateY(-4px) scale(1.01) !important; }
+        .hero-image-card:hover { transform: translateY(-5px) scale(1.01) !important; }
       }
     ` } })
   );
