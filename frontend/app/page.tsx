@@ -428,17 +428,21 @@ export default function HomePage(): React.ReactElement {
       {/* ── CÔTÉ DROIT — image (2.png sombre / 1.png clair) puis texte ── */}
       {!isMobile && (
         <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
-          {/* Capture seule (sans ordinateur) : 2.png en sombre, 1.png en clair */}
-          <div className="hp-shot hp-rise hp-d2" style={{ ["--shot-ratio" as any]: shotRatio }}>
-            <img
-              key={isLight ? "light" : "dark"}
-              src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
-              alt={text.previewAlt}
-              draggable={false}
-              ref={shotRef}
-              onLoad={readShotRatio}
-              decoding="async"
-            />
+          {/* Écran d'ordinateur : bord fin, l'image remplit tout l'écran (2.png sombre / 1.png clair) */}
+          <div className="hp-pc hp-rise hp-d2" style={{ ["--shot-ratio" as any]: shotRatio }}>
+            <div className="hp-pc-screen">
+              <img
+                key={isLight ? "light" : "dark"}
+                src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
+                alt={text.previewAlt}
+                draggable={false}
+                ref={shotRef}
+                onLoad={readShotRatio}
+                decoding="async"
+              />
+            </div>
+            <div className="hp-pc-stand" aria-hidden="true" />
+            <div className="hp-pc-shadow" aria-hidden="true" />
           </div>
           <div className={"hp-right-text " + handwriting.className}>
             <h2 className="hp-right-title hp-pen hp-pen-1">{text.previewTitle}</h2>
@@ -535,9 +539,14 @@ const STYLES = `
     background-color: var(--hp-right-bg);
     background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
   }
-  /* ── Capture seule ── */
-  .hp-shot { width: min(100%, calc(56vh * var(--shot-ratio, 1.6))); flex-shrink: 1; min-height: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 40px 90px -30px var(--hp-cta-shadow), 0 24px 60px -30px var(--hp-shadow); line-height: 0; }
-  .hp-shot img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+  /* ── Écran d'ordinateur ── */
+  .hp-pc { width: min(100%, calc(50vh * var(--shot-ratio, 1.6))); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
+  /* Bord fin : l'image touche presque le bord, aucune bande dessus ni dessous */
+  .hp-pc-screen { width: 100%; padding: 4px; border-radius: 14px; background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); line-height: 0; }
+  .hp-pc-screen img { display: block; width: 100%; height: auto; border-radius: 10px; user-select: none; -webkit-user-drag: none; }
+  /* Pied d'un seul bloc (trapèze), au lieu de deux barres */
+  .hp-pc-stand { width: 26%; height: clamp(34px, 6.5vh, 70px); margin-top: -1px; background: var(--hp-laptop-base); clip-path: polygon(38% 0, 62% 0, 76% 82%, 100% 92%, 100% 100%, 0 100%, 0 92%, 24% 82%); }
+  .hp-pc-shadow { width: 40%; height: 18px; margin-top: 2px; border-radius: 50%; background: radial-gradient(ellipse, var(--hp-laptop-floor), transparent 70%); }
   .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; }
   .hp-right-title { margin: 0; color: var(--hp-text); font-size: clamp(30px, min(3vw, 5vh), 46px); font-weight: 700; line-height: 1.1; text-wrap: balance; transform: rotate(-1.2deg); }
   .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(19px, min(1.5vw, 2.6vh), 24px); font-weight: 500; line-height: 1.35; max-width: 600px; transform: rotate(-0.6deg); }
@@ -557,7 +566,7 @@ const STYLES = `
   /* ── Tablette / mobile ── */
   .is-compact .hp-left { min-height: auto; }
   .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
-  .is-compact .hp-shot { width: min(100%, 720px, calc(60vh * var(--shot-ratio, 1.6))); }
+  .is-compact .hp-pc { width: min(100%, 720px, calc(60vh * var(--shot-ratio, 1.6))); }
   .is-mobile .hp-left { min-height: 100dvh; justify-content: flex-start; gap: 0; padding: 100px 20px 28px; }
   .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
   .is-mobile .hp-subtitle { font-size: 15px; }
