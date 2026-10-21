@@ -1,31 +1,63 @@
 ﻿"use client";
+import React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
-import HeroPreview from "@/components/ui/HeroPreview";
 import LanguageMenu from "@/components/ui/LanguageMenu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
-import { useResponsive } from "@/hooks/useResponsive";
 
-// Traductions
-// Variante sombre = apparence d'origine ; variante claire = même mise en page, couleurs claires
+// ─── Couleurs ──────────────────────────────────────────────────────────────────
+// Même style « violet immersif » que la page d'accueil, avec une variante claire.
+
 const LG_DARK: Record<string, string> = {
-  "--lg-bg": "#000000", "--lg-text": "white", "--lg-muted": "rgba(255,255,255,0.4)",
-  "--lg-label": "rgba(255,255,255,0.65)", "--lg-faint": "rgba(255,255,255,0.2)",
-  "--lg-card": "rgba(255,255,255,0.03)", "--lg-input-bg": "rgba(255,255,255,0.05)",
-  "--lg-input-border": "rgba(138, 43, 226, 0.2)", "--lg-error": "#f87171", "--lg-warn": "#FBBF24",
-  "--lg-placeholder": "rgba(255, 255, 255, 0.2)", "--lg-autofill": "rgba(26, 26, 26, 0.95)",
-  "--lg-img-filter": "brightness(0.88) contrast(1.06)",
+  "--lg-base": "#0A0614",
+  "--lg-glow-1": "rgba(124,58,237,0.5)",
+  "--lg-glow-2": "rgba(79,70,229,0.4)",
+  "--lg-text": "#ffffff",
+  "--lg-muted": "rgba(233,227,255,0.7)",
+  "--lg-label": "rgba(233,227,255,0.85)",
+  "--lg-faint": "rgba(233,227,255,0.55)",
+  "--lg-card": "rgba(255,255,255,0.06)",
+  "--lg-card-border": "rgba(255,255,255,0.14)",
+  "--lg-card-shadow": "rgba(0,0,0,0.7)",
+  "--lg-chip-bg": "rgba(255,255,255,0.08)",
+  "--lg-chip-border": "rgba(255,255,255,0.18)",
+  "--lg-input-bg": "rgba(0,0,0,0.25)",
+  "--lg-input-border": "rgba(255,255,255,0.16)",
+  "--lg-placeholder": "rgba(233,227,255,0.4)",
+  "--lg-autofill": "#140d24",
+  "--lg-accent": "#C4B5FD",
+  "--lg-btn-bg": "#ffffff",
+  "--lg-btn-text": "#2E1065",
+  "--lg-btn-shadow": "rgba(167,139,250,0.45)",
+  "--lg-error": "#fca5a5",
+  "--lg-warn": "#FBBF24",
 };
 const LG_LIGHT: Record<string, string> = {
-  "--lg-bg": "#f8f7ff", "--lg-text": "#111827", "--lg-muted": "#6b7280",
-  "--lg-label": "#374151", "--lg-faint": "#9ca3af",
-  "--lg-card": "#ffffff", "--lg-input-bg": "#ffffff",
-  "--lg-input-border": "rgba(124, 58, 237, 0.28)", "--lg-error": "#b91c1c", "--lg-warn": "#b45309",
-  "--lg-placeholder": "#9ca3af", "--lg-autofill": "#ffffff",
-  "--lg-img-filter": "brightness(1) contrast(1.03) saturate(1.05)",
+  "--lg-base": "#F5F3FF",
+  "--lg-glow-1": "rgba(167,139,250,0.45)",
+  "--lg-glow-2": "rgba(129,140,248,0.3)",
+  "--lg-text": "#1E1035",
+  "--lg-muted": "#4B4466",
+  "--lg-label": "#2E2550",
+  "--lg-faint": "#6B6485",
+  "--lg-card": "rgba(255,255,255,0.78)",
+  "--lg-card-border": "rgba(109,40,217,0.16)",
+  "--lg-card-shadow": "rgba(76,29,149,0.25)",
+  "--lg-chip-bg": "rgba(255,255,255,0.85)",
+  "--lg-chip-border": "rgba(109,40,217,0.2)",
+  "--lg-input-bg": "#ffffff",
+  "--lg-input-border": "rgba(109,40,217,0.22)",
+  "--lg-placeholder": "#9a93b3",
+  "--lg-autofill": "#ffffff",
+  "--lg-accent": "#6D28D9",
+  "--lg-btn-bg": "#2E1065",
+  "--lg-btn-text": "#ffffff",
+  "--lg-btn-shadow": "rgba(109,40,217,0.35)",
+  "--lg-error": "#b91c1c",
+  "--lg-warn": "#b45309",
 };
 
 /** Variables de couleur du login pour n'importe quel thème */
@@ -33,111 +65,123 @@ function buildLgVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return LG_DARK;
   if (themeId === "light") return LG_LIGHT;
   const light = isLightTheme(theme);
-  return {
-    "--lg-bg": theme.background, "--lg-text": theme.text, "--lg-muted": theme.textSecondary,
-    "--lg-label": theme.text, "--lg-faint": theme.textSecondary,
-    "--lg-card": theme.surface, "--lg-input-bg": theme.surfaceHover,
-    "--lg-input-border": theme.border, "--lg-error": light ? "#b91c1c" : "#f87171", "--lg-warn": light ? "#b45309" : "#FBBF24",
-    "--lg-placeholder": theme.textSecondary, "--lg-autofill": theme.surface,
-    "--lg-img-filter": light ? "brightness(1) contrast(1.03) saturate(1.05)" : "brightness(0.88) contrast(1.06)",
-  };
+  return { ...(light ? LG_LIGHT : LG_DARK), "--lg-base": theme.background };
 }
+
+// ─── Traductions ───────────────────────────────────────────────────────────────
 
 const translations = {
   fr: {
     backToHome: "Retour à l'accueil",
     remember: "Se souvenir de mon e-mail",
-    area: "Espace client",
     secure: "Connexion sécurisée",
     welcome: "Accédez à votre espace de gestion.",
-    signIn: "Connectez-vous à votre espace",
+    signIn: "Connectez-vous",
     email: "Email",
     password: "Mot de passe",
     login: "Se connecter",
     loggingIn: "Connexion...",
     invalidCredentials: "Email ou mot de passe incorrect",
     serverError: "Erreur de connexion au serveur",
+    tooMany: "Trop de tentatives. Réessayez plus tard.",
     emailPlaceholder: "exemple@inovexa.com",
     passwordPlaceholder: "Mot de passe",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
     capsLock: "Verr. Maj activée",
-    rights: "Tous droits réservés"
+    rights: "Tous droits réservés.",
   },
   en: {
     backToHome: "Back to home",
     remember: "Remember my email",
-    area: "Client area",
     secure: "Secure sign-in",
     welcome: "Access your management workspace.",
-    signIn: "Sign in to your workspace",
+    signIn: "Sign in",
     email: "Email",
     password: "Password",
     login: "Sign in",
     loggingIn: "Signing in...",
     invalidCredentials: "Invalid email or password",
     serverError: "Connection error",
+    tooMany: "Too many attempts. Please try again later.",
     emailPlaceholder: "example@inovexa.com",
     passwordPlaceholder: "Password",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     capsLock: "Caps Lock is on",
-    rights: "All rights reserved"
+    rights: "All rights reserved.",
   },
   es: {
     backToHome: "Volver al inicio",
     remember: "Recordar mi correo",
-    area: "Área de clientes",
     secure: "Conexión segura",
     welcome: "Acceda a su espacio de gestión.",
-    signIn: "Inicia sesión en tu espacio",
+    signIn: "Inicie sesión",
     email: "Correo electrónico",
     password: "Contraseña",
     login: "Iniciar sesión",
     loggingIn: "Iniciando sesión...",
     invalidCredentials: "Correo o contraseña incorrectos",
     serverError: "Error de conexión",
+    tooMany: "Demasiados intentos. Inténtelo más tarde.",
     emailPlaceholder: "ejemplo@inovexa.com",
     passwordPlaceholder: "Contraseña",
+    showPassword: "Mostrar la contraseña",
+    hidePassword: "Ocultar la contraseña",
     capsLock: "Bloq Mayús activado",
-    rights: "Todos los derechos reservados"
-  }
+    rights: "Todos los derechos reservados.",
+  },
 };
+
+const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
+
+// ─── Icônes ────────────────────────────────────────────────────────────────────
+
+const svgProps = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+const IconMail = () => <svg width="18" height="18" {...svgProps}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>;
+const IconLock = () => <svg width="18" height="18" {...svgProps}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>;
+const IconEye = () => <svg width="20" height="20" {...svgProps}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+const IconEyeOff = () => <svg width="20" height="20" {...svgProps}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>;
+const IconShieldCheck = () => <svg width="14" height="14" {...svgProps} strokeWidth={2}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>;
+const IconArrowLeft = () => <svg width="16" height="16" {...svgProps} strokeWidth={2.2}><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>;
+const IconArrowRight = () => <svg width="17" height="17" {...svgProps} strokeWidth={2.5}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
+const IconAlert = () => <svg width="16" height="16" {...svgProps} strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>;
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
   const router = useRouter();
   const { language } = useLanguage();
   const { theme, themeId } = useTheme();
   const isLight = isLightTheme(theme);
-  const themeVars = buildLgVars(themeId, theme) as React.CSSProperties;
-  const themeClass = isLight ? "lg-light" : "lg-dark";
-  const { isMobile, isTablet } = useResponsive();
+  const themeVars = useMemo(() => buildLgVars(themeId, theme) as React.CSSProperties, [themeId, theme]);
   const t = translations[language as keyof typeof translations] || translations.fr;
-  
+
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
-  // Précharge les écrans d'arrivée pendant que l'utilisateur saisit ses identifiants :
-  // après la connexion, le tableau de bord s'ouvre sans attente du serveur.
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+
+  // Précharge le tableau de bord pendant la saisie : il s'ouvre sans attente après la connexion
   useEffect(() => {
     try { router.prefetch("/dashboard", { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
   }, [router]);
+
   // Pré-remplit l'e-mail mémorisé lors d'une précédente connexion
   useEffect(() => {
     try {
       const saved = localStorage.getItem("remember_email");
       if (saved) setEmail(saved);
       else if (localStorage.getItem("remember_email_off")) setRemember(false);
-    } catch {}
+    } catch { /* stockage indisponible */ }
   }, []);
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [capsLockOn, setCapsLockOn] = useState(false);
 
   const detectCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (typeof e.getModifierState === "function") {
-      setCapsLockOn(e.getModifierState("CapsLock"));
-    }
+    if (typeof e.getModifierState === "function") setCapsLockOn(e.getModifierState("CapsLock"));
   };
-
-  const isSmallScreen = isMobile || isTablet;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,12 +189,11 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const baseURL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
-
+      const baseURL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
       const res = await fetch(`${baseURL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password })
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
       const data = await res.json().catch(() => ({} as any));
 
@@ -158,26 +201,18 @@ export default function LoginPage() {
         try {
           if (remember) { localStorage.setItem("remember_email", email.trim().toLowerCase()); localStorage.removeItem("remember_email_off"); }
           else { localStorage.removeItem("remember_email"); localStorage.setItem("remember_email_off", "1"); }
-        } catch {}
+        } catch { /* stockage indisponible */ }
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        
-        if (data.user.role === "admin") {
-          router.push("/admin/clients");
-        } else if (data.user.role === "transporteur") {
-          router.push("/transporteur/shipments");
-        } else {
-          router.push("/dashboard");
-        }
+
+        if (data.user.role === "admin") router.push("/admin/clients");
+        else if (data.user.role === "transporteur") router.push("/transporteur/shipments");
+        else router.push("/dashboard");
       } else {
         const serverMsg = Array.isArray(data?.message) ? data.message[0] : data?.message;
-        if (res.status === 429) {
-          setError(serverMsg || "Trop de tentatives. Réessayez plus tard.");
-        } else if (res.status >= 500) {
-          setError(t.serverError);
-        } else {
-          setError(serverMsg || t.invalidCredentials);
-        }
+        if (res.status === 429) setError(serverMsg || t.tooMany);
+        else if (res.status >= 500) setError(t.serverError);
+        else setError(serverMsg || t.invalidCredentials);
       }
     } catch (err) {
       console.error("Erreur:", err);
@@ -187,359 +222,51 @@ export default function LoginPage() {
     }
   };
 
+  const year = new Date().getFullYear();
+
   return (
-    <div
-      className={"root-container " + themeClass}
-      style={{ 
-        ...themeVars,
-        background: "var(--lg-bg)",
-        display: "flex", 
-        flexDirection: isSmallScreen ? "column" : "row",
-        overflow: "hidden",
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-        position: "relative",
-      }}
-    >
-      
-      {/* Thème et langue (ordinateur seulement) */}
-      {!isSmallScreen && <div style={{ position: "fixed", top: "max(env(safe-area-inset-top, 0px), 14px)", right: "14px", zIndex: 60, display: "flex", alignItems: "center", gap: "8px" }}>
-        <ThemeToggle size={40} />
-        <LanguageMenu />
-      </div>}
-
-      {/* ── MOBILE LAYOUT ── */}
-      {isSmallScreen ? (
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 10,
-          padding: "0",
-          minHeight: "100dvh",
-        }}>
-
-          {/* En-tête fixe : même présentation que la page d'accueil (logo + nom à gauche, thème et langue à droite) */}
-          <header style={{ position: "fixed", top: 0, left: 0, right: 0, height: "72px", background: "var(--lg-bg)", borderBottom: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", padding: "0 16px", zIndex: 150 }}>
-            <Link href="/" aria-label={t.backToHome} style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", WebkitTapHighlightColor: "transparent" }}>
-              <img src="/images/logo.png" alt="Inovexa Logo" style={{ width: "52px", height: "52px", objectFit: "contain", flexShrink: 0 }} />
-              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-                <span style={{ color: "var(--lg-text)", fontSize: "14px", fontWeight: 300, letterSpacing: "2px", textTransform: "uppercase", fontFamily: "'Orbitron', 'Poppins', sans-serif" }}>
-                  <span style={{ fontWeight: 800 }}>INOV</span>EXA
-                </span>
-                <span style={{ background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "8px", fontWeight: 700, letterSpacing: "5px", marginTop: "2px", textTransform: "uppercase", fontFamily: "'Orbitron', 'Poppins', sans-serif" }}>ERP</span>
-              </div>
-            </Link>
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
-              <ThemeToggle size={38} />
-              <LanguageMenu />
-            </div>
-          </header>
-
-          <div style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "96px 24px 40px",
-            paddingBottom: "max(env(safe-area-inset-bottom, 24px), 40px)",
-            overflowY: "auto",
-          }}>
-
-            {/* TITLE */}
-            <div className="lg-anim" style={{ marginBottom: "32px" }}>
-              <h1 style={{ 
-                fontSize: "32px",
-                color: "var(--lg-text)", 
-                fontWeight: "800", 
-                lineHeight: "1.15",
-                letterSpacing: "-1px",
-                margin: 0,
-              }}>
-                {t.signIn}
-              </h1>
-              <div style={{
-                marginTop: "12px",
-                width: "48px",
-                height: "3px",
-                background: "linear-gradient(90deg, #A855F7, #6366F1)",
-                borderRadius: "2px",
-              }} />
-            </div>
-
-            {/* GLASS CARD WRAPPER */}
-            <div className="lg-card" style={{
-              background: "var(--lg-card)",
-              border: "1px solid rgba(168, 85, 247, 0.12)",
-              borderRadius: "20px",
-              padding: "28px 24px",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-            }}>
-
-              {error && (
-                <div className="lg-error" role="alert" aria-live="assertive" style={{ 
-                  background: "rgba(239,68,68,0.08)", 
-                  border: "1px solid rgba(239,68,68,0.25)", 
-                  color: "var(--lg-error)", 
-                  padding: "12px 14px", 
-                  borderRadius: "12px", 
-                  marginBottom: "20px", 
-                  fontSize: "13px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}>
-                  <span style={{ fontSize: "15px" }}>⚠</span>
-                  {error}
-                </div>
-              )}
-
-              <form className="lg-form" onSubmit={handleLogin} style={{ width: "100%" }}>
-                <div style={{ marginBottom: "18px" }}>
-                  <label style={{ 
-                    color: "var(--lg-label)", 
-                    display: "block", 
-                    marginBottom: "8px", 
-                    fontSize: "12px", 
-                    fontWeight: "600",
-                    letterSpacing: "0.5px",
-                    textTransform: "uppercase",
-                  }}>
-                    {t.email}
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t.emailPlaceholder}
-                    autoComplete="email"
-                    autoCapitalize="none"
-                    inputMode="email"
-                    style={{ 
-                      width: "100%",
-                      boxSizing: "border-box",
-                      padding: "16px",
-                      background: "var(--lg-input-bg)",
-                      border: "1px solid var(--lg-input-border)", 
-                      borderRadius: "12px", 
-                      color: "var(--lg-text)",
-                      fontSize: "16px",
-                      WebkitAppearance: "none",
-                      outline: "none",
-                    }}
-                    required
-                  />
-                </div>
-
-                <div style={{ marginBottom: "26px" }}>
-                  <label style={{ 
-                    color: "var(--lg-label)", 
-                    display: "block", 
-                    marginBottom: "8px", 
-                    fontSize: "12px", 
-                    fontWeight: "600",
-                    letterSpacing: "0.5px",
-                    textTransform: "uppercase",
-                  }}>
-                    {t.password}
-                  </label>
-                  <div style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t.passwordPlaceholder}
-                    autoComplete="current-password"
-                    enterKeyHint="go"
-                    aria-invalid={!!error}
-                    onKeyDown={detectCapsLock}
-                    onKeyUp={detectCapsLock}
-                    style={{ 
-                      width: "100%",
-                      boxSizing: "border-box",
-                      padding: "16px",
-                      paddingRight: "46px",
-                      background: "var(--lg-input-bg)",
-                      border: "1px solid var(--lg-input-border)", 
-                      borderRadius: "12px", 
-                      color: "var(--lg-text)",
-                      fontSize: "16px",
-                      WebkitAppearance: "none",
-                      outline: "none",
-                    }}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                    tabIndex={-1}
-                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--lg-muted)", display: "flex", alignItems: "center" }}
-                  >
-                    {showPassword ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                    )}
-                  </button>
-                  </div>
-                  {capsLockOn && (
-                    <p role="status" style={{ color: "var(--lg-warn)", fontSize: "12px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span aria-hidden="true">⇪</span> {t.capsLock}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  className="lg-btn"
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    width: "100%",
-                    padding: "18px",
-                    fontSize: "16px",
-                    borderRadius: "14px",
-                    border: "none",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    color: "white",
-                    fontWeight: "700",
-                    background: loading
-                      ? "rgba(168, 85, 247, 0.4)"
-                      : "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
-                    letterSpacing: "0.3px",
-                    WebkitTapHighlightColor: "transparent",
-                    touchAction: "manipulation",
-                  }}
-                >
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                    {loading && (
-                      <span className="spinner" style={{
-                        width: "16px", height: "16px",
-                        border: "2px solid rgba(255,255,255,0.3)",
-                        borderTopColor: "white",
-                        borderRadius: "50%",
-                        display: "inline-block",
-                      }} />
-                    )}
-                    {loading ? t.loggingIn : t.login}
-                  </span>
-                </button>
-              </form>
-            </div>
-
-            <div style={{ marginTop: "22px", textAlign: "center" }}>
-              <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "var(--lg-muted)", fontSize: "14px", textDecoration: "none", padding: "8px 4px" }}>
-                <span style={{ fontSize: "16px" }}>←</span>
-                <span>{t.backToHome}</span>
-              </Link>
-            </div>
-
-            <p style={{ 
-              marginTop: "20px", 
-              color: "var(--lg-faint)", 
-              fontSize: "10px", 
-              fontWeight: "600",
-              textAlign: "center",
-              letterSpacing: "1px",
-            }}>
-              © 2026 INOVEXA. {t.rights.toUpperCase()}
-            </p>
-          </div>
+    <div className={"lg-root " + (isLight ? "lg-light" : "lg-dark")} style={themeVars}>
+      {/* ── Barre du haut : retour à gauche, thème + langue à droite ── */}
+      <div className="lg-topbar">
+        <Link href="/" className="lg-back">
+          <IconArrowLeft />
+          <span>{t.backToHome}</span>
+        </Link>
+        <div className="lg-controls">
+          <ThemeToggle size={40} />
+          <LanguageMenu />
         </div>
+      </div>
 
-      ) : (
-        /* ── DESKTOP LAYOUT ── */
-        <>
-          <div style={{ 
-            width: "44%",
-            padding: "0 0 0 20px", 
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            zIndex: 10,
-            position: "relative",
-          }}>
-            
-            {/* LOGO ET TEXTE */}
-            <div className="lg-anim-left" style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "15px", marginLeft: "5px" }}>
-              <div style={{ marginTop: "2px" }}> 
-                <img 
-                  src="/images/logo.png" 
-                  alt="Inovexa Logo" 
-                  style={{ 
-                    width: "126px",
-                    height: "auto", 
-                  }} 
-                />
-              </div>
-              <div>
-                <h2 style={{ 
-                  color: "var(--lg-text)", 
-                  fontSize: "28px", 
-                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
-                  fontWeight: "300", 
-                  margin: 0, 
-                  letterSpacing: "2px",
-                  textTransform: "uppercase"
-                }}>
-                  <span style={{ fontWeight: "800" }}>INOV</span>EXA
-                </h2>
-                <div style={{ 
-                  background: "linear-gradient(90deg, #A855F7, #6366F1)",
-                  WebkitBackgroundClip: "text", 
-                  WebkitTextFillColor: "transparent",
-                  fontSize: "14px", 
-                  fontWeight: "600",
-                  fontFamily: "'Orbitron', 'Poppins', sans-serif",
-                  letterSpacing: "8px", 
-                  marginTop: "1px",
-                  textTransform: "uppercase"
-                }}>ERP</div>
-              </div>
+      {/* ── Contenu centré ── */}
+      <main className="lg-center">
+        <Link href="/" aria-label="Inovexa ERP" className="lg-brand lg-anim">
+          <span className="lg-logo">
+            <img src="/images/logo.png" alt="" width={96} height={96} />
+          </span>
+          <span className="lg-brand-name">
+            INOVEXA <span className="lg-brand-erp">ERP</span>
+          </span>
+        </Link>
+
+        <div className="lg-card lg-anim lg-d1">
+          <h1 className="lg-title">{t.signIn}</h1>
+          <p className="lg-welcome">{t.welcome}</p>
+
+          {error && (
+            <div className="lg-error" role="alert" aria-live="assertive">
+              <IconAlert />
+              <span>{error}</span>
             </div>
+          )}
 
-            {/* Carte de connexion */}
-            <div className="lg-card" style={{ width: "100%", maxWidth: "520px", boxSizing: "border-box", background: "var(--lg-card)", border: "1px solid var(--lg-input-border)", borderRadius: "22px", padding: "clamp(20px, 3.4vh, 32px) 34px clamp(18px, 3vh, 28px)", boxShadow: "0 24px 56px -30px rgba(76, 29, 149, 0.35)" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "5px 12px", borderRadius: "999px", border: "1px solid rgba(139,92,246,0.3)", background: "rgba(139,92,246,0.08)", color: "var(--lg-label)", fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(10px, 1.8vh, 16px)" }}>
-              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#A855F7" }} />
-              {t.area}
-            </div>
-            {/* TITRE DE CONNEXION */}
-            <h1 style={{ 
-              fontSize: "clamp(28px, 4.2vh, 34px)",
-              color: "var(--lg-text)", 
-              fontWeight: "800", 
-              lineHeight: "1.2",
-              marginBottom: "8px",
-              letterSpacing: "-1px",
-              marginTop: "0"
-            }}>
-              {t.signIn}
-            </h1>
-            <p style={{ color: "var(--lg-muted)", fontSize: "15px", margin: "0 0 clamp(14px, 2.6vh, 24px)", lineHeight: 1.5 }}>{t.welcome}</p>
-
-            {error && (
-              <div className="lg-error" role="alert" aria-live="assertive" style={{ 
-                background: "rgba(239,68,68,0.1)", 
-                border: "1px solid rgba(239,68,68,0.2)", 
-                color: "var(--lg-error)", 
-                padding: "12px", 
-                borderRadius: "12px", 
-                marginBottom: "20px", 
-                fontSize: "13px" 
-              }}>
-                {error}
-              </div>
-            )}
-
-            <form className="lg-form" onSubmit={handleLogin} style={{ width: "100%" }}>
-              <div style={{ marginBottom: "clamp(12px, 2vh, 20px)" }}>
-                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "7px", fontSize: "13px", fontWeight: "500" }}>
-                  {t.email}
-                </label>
-                <div style={{ position: "relative" }}>
-                <span aria-hidden="true" style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: "var(--lg-muted)", display: "flex", pointerEvents: "none" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg></span>
+          <form onSubmit={handleLogin} noValidate={false}>
+            <div className="lg-field">
+              <label htmlFor="lg-email" className="lg-label">{t.email}</label>
+              <div className="lg-input-wrap">
+                <span className="lg-input-icon"><IconMail /></span>
                 <input
+                  id="lg-email"
                   className="lg-input"
                   type="email"
                   value={email}
@@ -547,33 +274,22 @@ export default function LoginPage() {
                   placeholder={t.emailPlaceholder}
                   autoComplete="email"
                   autoCapitalize="none"
+                  inputMode="email"
                   spellCheck={false}
                   autoFocus
                   aria-invalid={!!error}
-                  style={{ 
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: "clamp(12px, 1.9vh, 15.4px) 15.4px clamp(12px, 1.9vh, 15.4px) 46px",
-                    background: "var(--lg-input-bg)",
-                    border: "1px solid var(--lg-input-border)", 
-                    borderRadius: "12px", 
-                    color: "var(--lg-text)",
-                    fontSize: "15.4px",
-                    outline: "none",
-                  }}
                   required
                 />
-                </div>
               </div>
+            </div>
 
-              <div style={{ marginBottom: "clamp(10px, 1.6vh, 16px)" }}>
-                <label style={{ color: "var(--lg-label)", display: "block", marginBottom: "7px", fontSize: "13px", fontWeight: "500" }}>
-                  {t.password}
-                </label>
-                <div style={{ position: "relative" }}>
-                  <span aria-hidden="true" style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: "var(--lg-muted)", display: "flex", pointerEvents: "none" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg></span>
-                  <input
-                  className="lg-input"
+            <div className="lg-field">
+              <label htmlFor="lg-password" className="lg-label">{t.password}</label>
+              <div className="lg-input-wrap">
+                <span className="lg-input-icon"><IconLock /></span>
+                <input
+                  id="lg-password"
+                  className="lg-input lg-input-pass"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -583,182 +299,133 @@ export default function LoginPage() {
                   aria-invalid={!!error}
                   onKeyDown={detectCapsLock}
                   onKeyUp={detectCapsLock}
-                  style={{ 
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: "clamp(12px, 1.9vh, 15.4px)",
-                    paddingLeft: "46px",
-                    paddingRight: "46px",
-                    background: "var(--lg-input-bg)",
-                    border: "1px solid var(--lg-input-border)", 
-                    borderRadius: "12px", 
-                    color: "var(--lg-text)",
-                    fontSize: "15.4px",
-                    outline: "none",
-                  }}
                   required
                 />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                    tabIndex={-1}
-                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--lg-muted)", display: "flex", alignItems: "center" }}
-                  >
-                    {showPassword ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                    )}
-                  </button>
-                  </div>
-                  {capsLockOn && (
-                    <p role="status" style={{ color: "var(--lg-warn)", fontSize: "12.5px", margin: "8px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span aria-hidden="true">⇪</span> {t.capsLock}
-                    </p>
-                  )}
+                <button
+                  type="button"
+                  className="lg-eye"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? t.hidePassword : t.showPassword}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <IconEyeOff /> : <IconEye />}
+                </button>
               </div>
-
-              {/* Se souvenir de l'e-mail */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "12px", flexWrap: "wrap", margin: "0 0 clamp(12px, 2vh, 18px)" }}>
-                <label style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "var(--lg-label)", fontSize: "13.5px", cursor: "pointer", minHeight: "28px" }}>
-                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#8b5cf6", cursor: "pointer" }} />
-                  {t.remember}
-                </label>
-                
-              </div>
-              <button
-                className="lg-btn"
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "10px",
-                  boxShadow: "0 12px 26px -12px rgba(139, 92, 246, 0.65)",
-                  padding: "clamp(13px, 2vh, 17px)",
-                  fontSize: "16.5px",
-                  borderRadius: "12px",
-                  border: "none",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  color: "white",
-                  fontWeight: "700",
-                  background: "linear-gradient(135deg, #A855F7 0%, #6366F1 100%)",
-                  opacity: loading ? 0.7 : 1
-                }}
-              >
-                <span>
-                  {loading ? t.loggingIn : t.login}
-                </span>
-                {!loading && <span aria-hidden="true">→</span>}
-              </button>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "16px", color: "var(--lg-muted)", fontSize: "12.5px" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>
-                {t.secure}
-              </div>
-            </form>
+              {capsLockOn && (
+                <p role="status" className="lg-caps"><span aria-hidden="true">⇪</span> {t.capsLock}</p>
+              )}
             </div>
 
-            <div style={{ marginTop: "clamp(12px, 2vh, 20px)" }}>
-              <Link href="/" style={{ 
-                display: "inline-flex", 
-                alignItems: "center", 
-                gap: "8px",
-                color: "var(--lg-muted)", 
-                fontSize: "14.3px",
-                textDecoration: "none",
-              }}>
-                <span style={{ fontSize: "17.6px" }}>←</span>
-                <span>{t.backToHome}</span>
-              </Link>
+            <label className="lg-remember">
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+              {t.remember}
+            </label>
+
+            <button className="lg-btn" type="submit" disabled={loading} aria-busy={loading}>
+              {loading && <span className="lg-spinner" aria-hidden="true" />}
+              <span>{loading ? t.loggingIn : t.login}</span>
+              {!loading && <IconArrowRight />}
+            </button>
+
+            <div className="lg-secure">
+              <IconShieldCheck />
+              {t.secure}
             </div>
+          </form>
+        </div>
+      </main>
 
-            <p style={{ marginTop: "clamp(12px, 2.4vh, 26px)", color: "var(--lg-faint)", fontSize: "11px", fontWeight: "600" }}>
-              © 2026 INOVEXA. {t.rights.toUpperCase()}
-            </p>
-          </div>
+      <p className="lg-footer" suppressHydrationWarning>© {year} Inovexa. {t.rights}</p>
 
-          {/* ═══════════════════════════════════════════════════════════════
-              RIGHT SIDE — Hero visuel amélioré (aligné sur la home page)
-              ═══════════════════════════════════════════════════════════════ */}
-          <div className="login-hero" style={{
-            width: "56%",
-            height: "100vh",
-            background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--lg-bg)",
-            borderLeft: "1px solid rgba(139, 92, 246, 0.18)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
-            boxSizing: "border-box"
-          }}>
-            {/* Titre + capture + légende (statique : aucune animation, aucun effet) */}
-            <HeroPreview />
-          </div>
-        </>
-      )}
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .root-container {
-          min-height: 100vh;
-          min-height: 100dvh;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .spinner {
-          animation: spin 0.8s linear infinite;
-        }
-
-        /* ── Variante claire ── */
-        .lg-light h1 span, .lg-light h2 span { text-shadow: none; }
-
-        /* ── Animations (la capture du tableau de bord reste statique) ── */
-        @keyframes lgFadeUp   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-        @keyframes lgFadeLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
-        @keyframes lgShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
-        @keyframes lgSheen { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
-        .lg-anim      { opacity: 0; animation: lgFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards; }
-        .lg-anim-left { opacity: 0; animation: lgFadeLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        .lg-card      { opacity: 0; animation: lgFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards; }
-        .lg-card > *, .lg-form > * { opacity: 0; animation: lgFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        .lg-card > :nth-child(1), .lg-form > :nth-child(1) { animation-delay: 0.3s; }
-        .lg-card > :nth-child(2), .lg-form > :nth-child(2) { animation-delay: 0.38s; }
-        .lg-card > :nth-child(3), .lg-form > :nth-child(3) { animation-delay: 0.46s; }
-        .lg-card > :nth-child(4), .lg-form > :nth-child(4) { animation-delay: 0.54s; }
-        .lg-card > :nth-child(5), .lg-form > :nth-child(5) { animation-delay: 0.62s; }
-        .lg-card > :nth-child(6), .lg-form > :nth-child(6) { animation-delay: 0.7s; }
-        .lg-card > .lg-error { opacity: 1; animation: lgShake 0.5s ease; }
-        .lg-btn { transition: transform 0.15s ease, box-shadow 0.25s ease; }
-        .lg-btn:hover:not(:disabled) { background-size: 200% 100% !important; transform: translateY(-2px); box-shadow: 0 16px 30px -12px rgba(139, 92, 246, 0.8) !important; animation: lgSheen 1.6s linear infinite; }
-        .lg-btn:active:not(:disabled) { transform: scale(0.98); }
-        @media (prefers-reduced-motion: reduce) {
-          .lg-anim, .lg-anim-left, .lg-card, .lg-card > *, .lg-form > * { animation: none !important; opacity: 1 !important; }
-          .lg-btn, .lg-btn:hover:not(:disabled) { animation: none !important; transition: none; }
-        }
-
-        .lg-input:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
-
-        input::placeholder {
-          color: var(--lg-placeholder);
-        }
-
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover, 
-        input:-webkit-autofill:focus {
-          -webkit-text-fill-color: var(--lg-text);
-          -webkit-box-shadow: 0 0 0px 1000px var(--lg-autofill) inset;
-          transition: background-color 5000s ease-in-out 0s;
-        }
-
-        @media (max-width: 768px) {
-          .login-hero { display: none !important; }
-        }
-      ` }} />
+      <style dangerouslySetInnerHTML={{ __html: STYLES }} />
     </div>
   );
 }
+
+// ─── Styles ────────────────────────────────────────────────────────────────────
+// Tailles fluides (clamp) : la carte tient dans l'écran à 100 % de zoom, de 1280×720 à 1920×1080.
+
+const STYLES = `
+  .lg-root {
+    min-height: 100vh; min-height: 100dvh; position: relative; overflow-x: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--lg-text);
+    background-color: var(--lg-base);
+    background-image:
+      radial-gradient(ellipse 55% 50% at 15% 10%, var(--lg-glow-1), transparent 60%),
+      radial-gradient(ellipse 50% 45% at 85% 95%, var(--lg-glow-2), transparent 60%);
+  }
+  .lg-root * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  .lg-root :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
+
+  /* ── Barre du haut ── */
+  .lg-topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 60; display: flex; align-items: center; justify-content: space-between; padding: max(env(safe-area-inset-top, 0px), 16px) clamp(16px, 2.2vw, 32px) 0; pointer-events: none; }
+  .lg-topbar > * { pointer-events: auto; }
+  .lg-back { display: inline-flex; align-items: center; gap: 8px; color: var(--lg-muted); font-size: 14px; font-weight: 500; text-decoration: none; padding: 8px 4px; transition: color .2s; }
+  .lg-back:hover { color: var(--lg-text); }
+  .lg-controls { display: flex; align-items: center; gap: 10px; }
+
+  /* ── Centre ── */
+  .lg-center { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: clamp(72px, 9vh, 96px) 16px clamp(16px, 3vh, 32px); }
+
+  /* ── Marque ── */
+  .lg-brand { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vh, 14px); text-decoration: none; margin-bottom: clamp(16px, 3vh, 30px); }
+  .lg-logo { width: clamp(64px, 10vh, 96px); height: clamp(64px, 10vh, 96px); border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); box-shadow: 0 0 40px rgba(168,85,247,0.45); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .lg-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
+  .lg-brand-name { font-family: ${LOGO_FONT}; font-weight: 800; font-size: clamp(18px, 2.6vh, 24px); letter-spacing: 2px; color: var(--lg-text); white-space: nowrap; }
+  .lg-brand-erp { color: var(--lg-accent); font-size: 0.7em; letter-spacing: 4px; }
+
+  /* ── Carte ── */
+  .lg-card { width: 100%; max-width: 460px; padding: clamp(24px, 4vh, 36px) clamp(22px, 2.6vw, 36px) clamp(20px, 3.2vh, 28px); border-radius: 24px; background: var(--lg-card); border: 1px solid var(--lg-card-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 40px 100px -30px var(--lg-card-shadow); }
+  .lg-title { margin: 0 0 6px; text-align: center; font-size: clamp(24px, 3.4vh, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--lg-text); }
+  .lg-welcome { margin: 0 0 clamp(18px, 3vh, 26px); text-align: center; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
+
+  .lg-error { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--lg-error); font-size: 13.5px; animation: lgShake .5s ease; }
+  .lg-error svg { flex-shrink: 0; }
+
+  .lg-field { margin-bottom: clamp(12px, 2vh, 18px); }
+  .lg-label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 500; color: var(--lg-label); }
+  .lg-input-wrap { position: relative; }
+  .lg-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; color: var(--lg-muted); pointer-events: none; }
+  .lg-input { width: 100%; height: clamp(46px, 6vh, 52px); padding: 0 16px 0 46px; border-radius: 12px; border: 1px solid var(--lg-input-border); background: var(--lg-input-bg); color: var(--lg-text); font-family: inherit; font-size: 15.5px; outline: none; -webkit-appearance: none; transition: border-color .2s, box-shadow .2s; }
+  .lg-input-pass { padding-right: 50px; }
+  .lg-input::placeholder { color: var(--lg-placeholder); }
+  .lg-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.25); }
+  .lg-input[aria-invalid="true"] { border-color: rgba(239,68,68,0.55); }
+  .lg-input:-webkit-autofill, .lg-input:-webkit-autofill:hover, .lg-input:-webkit-autofill:focus { -webkit-text-fill-color: var(--lg-text); -webkit-box-shadow: 0 0 0 1000px var(--lg-autofill) inset; transition: background-color 5000s ease-in-out 0s; }
+  .lg-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; border-radius: 10px; color: var(--lg-muted); cursor: pointer; }
+  .lg-eye:hover { color: var(--lg-text); }
+  .lg-caps { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12.5px; color: var(--lg-warn); }
+
+  .lg-remember { display: flex; align-items: center; gap: 10px; min-height: 28px; margin: 2px 0 clamp(16px, 2.6vh, 22px); font-size: 13.5px; color: var(--lg-label); cursor: pointer; }
+  .lg-remember input { width: 18px; height: 18px; accent-color: #8b5cf6; cursor: pointer; }
+
+  .lg-btn { width: 100%; height: clamp(48px, 6.2vh, 54px); display: flex; align-items: center; justify-content: center; gap: 10px; border: none; border-radius: 999px; background: var(--lg-btn-bg); color: var(--lg-btn-text); font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 40px var(--lg-btn-shadow); transition: transform .15s ease, box-shadow .25s ease, opacity .2s; touch-action: manipulation; }
+  .lg-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 48px var(--lg-btn-shadow); }
+  .lg-btn:active:not(:disabled) { transform: scale(0.98); }
+  .lg-btn:disabled { opacity: .7; cursor: not-allowed; }
+  .lg-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: lgSpin .8s linear infinite; }
+
+  .lg-secure { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-size: 12.5px; color: var(--lg-muted); }
+
+  .lg-footer { margin: 0; padding: 0 16px max(env(safe-area-inset-bottom, 0px), clamp(14px, 2.6vh, 24px)); font-size: 12px; color: var(--lg-faint); text-align: center; }
+
+  /* ── Mobile ── */
+  @media (max-width: 520px) {
+    .lg-back span { display: none; }
+    .lg-back { width: 40px; height: 40px; justify-content: center; border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); padding: 0; }
+    .lg-card { border-radius: 20px; padding: 24px 20px 20px; }
+    .lg-input { font-size: 16px; } /* évite le zoom automatique sur iPhone */
+  }
+
+  /* ── Animations ── */
+  @keyframes lgFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  @keyframes lgShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
+  @keyframes lgSpin { to { transform: rotate(360deg); } }
+  .lg-anim { animation: lgFadeUp .6s cubic-bezier(0.22,1,0.36,1) both; }
+  .lg-d1 { animation-delay: 120ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .lg-anim, .lg-error { animation: none !important; }
+    .lg-btn, .lg-input { transition: none !important; }
+  }
+`;
