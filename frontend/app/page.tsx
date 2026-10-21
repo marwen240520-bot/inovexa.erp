@@ -190,6 +190,12 @@ const HP_DARK: Record<string, string> = {
   "--hp-shadow": "rgba(0,0,0,0.7)",
   "--hp-right-bg": "#05040a",
   "--hp-right-glow": "rgba(124,58,237,0.28)",
+  "--hp-laptop-body": "linear-gradient(180deg, #2a2733, #16141d)",
+  "--hp-laptop-base": "linear-gradient(180deg, #3a3646, #1c1a24)",
+  "--hp-laptop-edge": "rgba(255,255,255,0.14)",
+  "--hp-laptop-cam": "#3a3646",
+  "--hp-laptop-notch": "#14121a",
+  "--hp-laptop-floor": "rgba(0,0,0,0.6)",
 };
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
@@ -217,6 +223,12 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-shadow": "rgba(17,24,39,0.18)",
   "--hp-right-bg": "#f8f7ff",
   "--hp-right-glow": "rgba(167,139,250,0.3)",
+  "--hp-laptop-body": "linear-gradient(180deg, #e9e6f2, #d6d2e2)",
+  "--hp-laptop-base": "linear-gradient(180deg, #dcd8e8, #bdb7cf)",
+  "--hp-laptop-edge": "rgba(46,16,101,0.18)",
+  "--hp-laptop-cam": "#a9a3bd",
+  "--hp-laptop-notch": "#b1abc6",
+  "--hp-laptop-floor": "rgba(46,16,101,0.25)",
 };
 
 /** Variables de couleur pour n'importe quel thème */
@@ -402,13 +414,23 @@ export default function HomePage(): React.ReactElement {
       {/* ── CÔTÉ DROIT — image (2.png sombre / 1.png clair) puis texte ── */}
       {!isMobile && (
         <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
-          <img
-            key={isLight ? "light" : "dark"}
-            src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
-            alt={text.previewAlt}
-            className="hp-preview-img hp-rise hp-d2"
-            draggable={false}
-          />
+          {/* Écran de bureau dessiné en CSS, avec la capture dedans */}
+          <div className="hp-monitor hp-rise hp-d2">
+            <div className="hp-monitor-frame">
+              <div className="hp-monitor-screen">
+                <img
+                  key={isLight ? "light" : "dark"}
+                  src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
+                  alt={text.previewAlt}
+                  draggable={false}
+                />
+              </div>
+              <span className="hp-monitor-led" aria-hidden="true" />
+            </div>
+            <div className="hp-monitor-neck" aria-hidden="true" />
+            <div className="hp-monitor-foot" aria-hidden="true" />
+            <div className="hp-monitor-shadow" aria-hidden="true" />
+          </div>
           <div className="hp-right-text hp-rise hp-d3">
             <h2 className="hp-right-title">{text.previewTitle}</h2>
             <p className="hp-right-sub">{text.previewText}</p>
@@ -500,7 +522,15 @@ const STYLES = `
     background-color: var(--hp-right-bg);
     background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
   }
-  .hp-preview-img { display: block; width: auto; max-width: 100%; height: auto; max-height: 62vh; min-height: 0; object-fit: contain; border-radius: 16px; border: 1px solid var(--hp-glass-border); box-shadow: 0 30px 80px -30px var(--hp-cta-shadow), 0 20px 50px -30px var(--hp-shadow); user-select: none; }
+  /* ── Écran de bureau ── */
+  .hp-monitor { width: min(100%, 86vh); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
+  .hp-monitor-frame { position: relative; width: 100%; padding: 2% 2% 4.6%; border-radius: 18px; background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); }
+  .hp-monitor-screen { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #0c0b12; }
+  .hp-monitor-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; user-select: none; }
+  .hp-monitor-led { position: absolute; bottom: 1.8%; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #A855F7; box-shadow: 0 0 8px #A855F7; }
+  .hp-monitor-neck { width: 13%; height: clamp(30px, 6vh, 64px); background: var(--hp-laptop-base); border-left: 1px solid var(--hp-laptop-edge); border-right: 1px solid var(--hp-laptop-edge); }
+  .hp-monitor-foot { width: 38%; height: clamp(10px, 1.4vh, 14px); border-radius: 10px 10px 4px 4px; background: var(--hp-laptop-base); border: 1px solid var(--hp-laptop-edge); }
+  .hp-monitor-shadow { width: 52%; height: 20px; margin-top: 2px; border-radius: 50%; background: radial-gradient(ellipse, var(--hp-laptop-floor), transparent 70%); }
   .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; }
   .hp-right-title { margin: 0 0 8px; color: var(--hp-text); font-size: clamp(22px, min(2.2vw, 3.6vh), 34px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
   .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(14px, 1vw, 16px); line-height: 1.6; }
@@ -510,7 +540,7 @@ const STYLES = `
   /* ── Tablette / mobile ── */
   .is-compact .hp-left { min-height: auto; }
   .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
-  .is-compact .hp-preview-img { max-height: 520px; }
+  .is-compact .hp-monitor { width: min(100%, 720px); }
   .is-mobile .hp-left { min-height: 100dvh; justify-content: flex-start; gap: 0; padding: 100px 20px 28px; }
   .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
   .is-mobile .hp-subtitle { font-size: 15px; }
