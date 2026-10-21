@@ -79,6 +79,10 @@ const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
 // Page agrandie de 10 % sur tablette / ordinateur (1 = taille normale)
 const PAGE_SCALE = 1.1;
+// Partie gauche réduite de 20 % sur tablette / ordinateur (contenu et largeur)
+const LEFT_SCALE = 0.8;
+const LEFT_WIDTH = "36%"; // avant : 44 %
+const RIGHT_WIDTH = "64%"; // avant : 56 %
 // Image du côté droit selon le thème
 const PREVIEW_DARK = "/images/2.png";
 const PREVIEW_LIGHT = "/images/1.png";
@@ -353,16 +357,16 @@ export default function HomePage(): React.ReactElement {
       <main
         className="hp-left"
         style={{
-          width: isCompact ? "100%" : "44%",
-          padding: isMobile ? "100px 20px 28px" : isTablet ? "32px 48px 40px" : "40px 56px 32px",
+          width: isCompact ? "100%" : LEFT_WIDTH,
+          padding: isMobile ? "100px 20px 28px" : isTablet ? "26px 38px 32px" : "32px 45px 26px",
           minHeight: isMobile ? "100dvh" : isTablet ? "auto" : fullH("vh"),
           justifyContent: isMobile ? "flex-start" : "space-between",
           gap: isMobile ? 0 : 32,
         }}
       >
-        {!isMobile && <div className="hp-rise">{brand}</div>}
+        {!isMobile && <div className="hp-rise" style={{ zoom: LEFT_SCALE }}>{brand}</div>}
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "column", zoom: isMobile ? 1 : LEFT_SCALE }}>
           <div className="hp-rise hp-d1 hp-modules">
             <span className="hp-live-dot" aria-hidden="true" />
             {text.modules}
@@ -414,7 +418,7 @@ export default function HomePage(): React.ReactElement {
           <p className="hp-rise hp-d4 hp-extra">{text.extra}</p>
         </div>
 
-        <footer className="hp-footer" style={{ marginTop: isMobile ? 32 : 0, flexDirection: isMobile ? "column-reverse" : "row" }}>
+        <footer className="hp-footer" style={{ zoom: isMobile ? 1 : LEFT_SCALE, marginTop: isMobile ? 32 : 0, flexDirection: isMobile ? "column-reverse" : "row" }}>
           <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa. {text.copyright}</p>
           <nav aria-label="Legal" style={{ display: "flex", gap: 16 }}>
             <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
@@ -427,7 +431,7 @@ export default function HomePage(): React.ReactElement {
       {!isMobile && (
         <aside
           style={{
-            width: isTablet ? "100%" : "56%",
+            width: isTablet ? "100%" : RIGHT_WIDTH,
             height: isTablet ? "auto" : fullH("vh"),
             minHeight: isTablet ? 520 : undefined,
             background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--hp-right-bg)",
