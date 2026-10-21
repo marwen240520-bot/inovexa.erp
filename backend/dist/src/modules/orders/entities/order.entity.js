@@ -24,6 +24,14 @@ __decorate([
 ], Order.prototype, "userId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], Order.prototype, "clientId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], Order.prototype, "productId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Order.prototype, "clientName", void 0);
 __decorate([

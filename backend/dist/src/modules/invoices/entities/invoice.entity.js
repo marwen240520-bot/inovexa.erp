@@ -99,6 +99,10 @@ __decorate([
     __metadata("design:type", String)
 ], Invoice.prototype, "paymentTerms", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 30, nullable: true }),
+    __metadata("design:type", String)
+], Invoice.prototype, "paymentMethod", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], Invoice.prototype, "notes", void 0);

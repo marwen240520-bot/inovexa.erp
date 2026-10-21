@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Product = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../users/entities/user.entity");
-const category_entity_1 = require("../categories/category.entity");
+const category_entity_1 = require("../categories/entities/category.entity");
 let Product = class Product {
 };
 exports.Product = Product;
@@ -44,6 +44,10 @@ __decorate([
     (0, typeorm_1.Column)({ default: 0 }),
     __metadata("design:type", Number)
 ], Product.prototype, "quantity", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Product.prototype, "imageUrl", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

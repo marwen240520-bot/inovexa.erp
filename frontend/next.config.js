@@ -63,6 +63,17 @@ const nextConfig = {
   compress: true,
   output: 'standalone',
   generateEtags: true,
+  poweredByHeader: false,
+
+  experimental: {
+    // Les pages sont dynamiques (nonce CSP) mais leurs données sont chargées dans le navigateur :
+    // la structure d'une page déjà visitée peut être réutilisée 3 min sans repasser par le serveur
+    // (retour sur une page = instantané). Valeur par défaut de Next 14 : 30 s.
+    staleTimes: {
+      dynamic: 180,
+      static: 300,
+    },
+  },
   staticPageGenerationTimeout: 120,
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 
@@ -147,6 +158,35 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'no-store, max-age=0',
+          },
+        ],
+      },
+      // Images et traductions de /public : gardées en cache par le navigateur au lieu d'être
+      // revalidées à chaque visite (le logo apparaît sur toutes les pages).
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      {
+        source: '/logo.png',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      {
+        source: '/locales/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
           },
         ],
       },

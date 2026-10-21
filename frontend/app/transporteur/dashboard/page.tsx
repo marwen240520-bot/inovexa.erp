@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import Spinner from "@/components/ui/Spinner";
+import { invalidateApiCache } from "@/lib/apiCache";
 
 // Types
 interface Shipment {
@@ -300,12 +301,15 @@ export default function TransporteurDashboard() {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const shipmentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/shipments`, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/stats`, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
+      // Les deux appels partent en même temps (avant : l'un après l'autre)
+      const [shipmentsRes, statsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/shipments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/transporteur/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+      ]);
       
       if (shipmentsRes.ok) {
         const data = await shipmentsRes.json();
@@ -549,7 +553,7 @@ export default function TransporteurDashboard() {
           </div>
 
           <div style={{ display: "flex", gap: "11px", alignItems: "center" }}>
-            <button onClick={fetchData} style={{ background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "36px", padding: isMobile ? "6px 12px" : "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "11px" : "12px" }}>
+            <button onClick={() => { invalidateApiCache(); fetchData(); }} style={{ background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "36px", padding: isMobile ? "6px 12px" : "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: "7px", fontSize: isMobile ? "11px" : "12px" }}>
               <Ic.RefreshCw size={isMobile ? 12 : 14} color="var(--theme-text-secondary)" />
               {!isMobile && <span style={{ color: "var(--theme-text-secondary)" }}>{getTranslation("dashboard.refresh")}</span>}
             </button>

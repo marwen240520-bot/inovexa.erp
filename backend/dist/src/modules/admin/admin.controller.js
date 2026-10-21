@@ -68,6 +68,12 @@ let AdminController = class AdminController {
         }
         return this.adminService.deleteClient(parseInt(id));
     }
+    async resetDemoData(id, req) {
+        if (req.user.role !== 'admin') {
+            return { error: 'Accès non autorisé' };
+        }
+        return this.adminService.resetDemoData(parseInt(id));
+    }
     async toggleClientStatus(id, req) {
         if (req.user.role !== 'admin') {
             return { error: 'Accès non autorisé' };
@@ -148,6 +154,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "deleteClient", null);
+__decorate([
+    (0, common_1.Post)('clients/:id/reset-demo-data'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "resetDemoData", null);
 __decorate([
     (0, common_1.Patch)('clients/:id/toggle'),
     __param(0, (0, common_1.Param)('id')),

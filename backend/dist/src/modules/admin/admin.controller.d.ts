@@ -27,9 +27,18 @@ export declare class AdminController {
         companyName: string;
         phone?: string;
         subscriptionDuration: number;
+        seedDemoData?: boolean;
     }): Promise<{
         success: boolean;
         message: string;
+        demoData: {
+            seeded: boolean;
+            perModule: number;
+            min: number;
+            max: number;
+            total: number;
+            error?: string;
+        };
         client: {
             id: number;
             email: string;
@@ -65,6 +74,19 @@ export declare class AdminController {
     deleteClient(id: string, req: any): Promise<{
         success: boolean;
         message: string;
+    } | {
+        error: string;
+    }>;
+    resetDemoData(id: string, req: any): Promise<{
+        success: boolean;
+        message: string;
+        demoData: {
+            seeded: boolean;
+            perModule: number;
+            min: number;
+            max: number;
+            total: number;
+        };
     } | {
         error: string;
     }>;

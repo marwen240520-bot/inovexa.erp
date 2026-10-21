@@ -100,4 +100,5 @@ export declare class PurchasesService {
         success: boolean;
         message: string;
     }>;
+    importPurchases(userId: number, rows: any[]): Promise<import("../../common/import-utils").ImportResult>;
 }

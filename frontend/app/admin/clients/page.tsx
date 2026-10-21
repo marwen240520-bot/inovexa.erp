@@ -7,25 +7,9 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ExportButtons from "@/components/ui/ExportButtons";
 import SelectAllCheckbox from "@/components/ui/SelectAllCheckbox";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-  Filler
-} from "chart.js";
-import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { Bar, Doughnut, Line } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement, Filler
-);
 
 // --- Types --------------------------------------------------------------------
 

@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDeviceHint, hintedWidth } from '@/contexts/DeviceContext';
 
 interface ResponsiveState {
   isMobile: boolean;
@@ -14,17 +15,23 @@ interface ResponsiveState {
 }
 
 export function useResponsive(): ResponsiveState {
-  const [state, setState] = useState<ResponsiveState>({
-    isMobile: false,
-    isTablet: false,
-    isDesktop: true,
-    isSmallMobile: false,
-    isMediumMobile: false,
-    isLargeMobile: false,
-    width: typeof window !== 'undefined' ? window.innerWidth : 0,
-    height: typeof window !== 'undefined' ? window.innerHeight : 0,
-    orientation: 'landscape',
-    breakpoint: 'lg'
+  // Valeur initiale identique côté serveur et côté client (indice User-Agent fourni par le layout) :
+  // la bonne mise en page (mobile / ordinateur) est rendue dès le HTML, sans saut à l'hydratation.
+  const isMobileHint = useDeviceHint();
+  const [state, setState] = useState<ResponsiveState>(() => {
+    const width = hintedWidth(isMobileHint);
+    return {
+      isMobile: isMobileHint,
+      isTablet: false,
+      isDesktop: !isMobileHint,
+      isSmallMobile: false,
+      isMediumMobile: isMobileHint,
+      isLargeMobile: false,
+      width,
+      height: isMobileHint ? 800 : 860,
+      orientation: isMobileHint ? 'portrait' : 'landscape',
+      breakpoint: isMobileHint ? 'xs' : 'xl',
+    };
   });
 
   const getBreakpoint = useCallback((width: number): ResponsiveState['breakpoint'] => {
@@ -42,17 +49,22 @@ export function useResponsive(): ResponsiveState {
     const orientation = width > height ? 'landscape' : 'portrait';
     const breakpoint = getBreakpoint(width);
     
-    setState({
-      width,
-      height,
-      orientation,
-      breakpoint,
-      isMobile: width < 768,
-      isTablet: width >= 768 && width < 1024,
-      isDesktop: width >= 1024,
-      isSmallMobile: width < 375,
-      isMediumMobile: width >= 375 && width < 480,
-      isLargeMobile: width >= 480 && width < 768,
+    setState((prev) => {
+      const next: ResponsiveState = {
+        width,
+        height,
+        orientation,
+        breakpoint,
+        isMobile: width < 768,
+        isTablet: width >= 768 && width < 1024,
+        isDesktop: width >= 1024,
+        isSmallMobile: width < 375,
+        isMediumMobile: width >= 375 && width < 480,
+        isLargeMobile: width >= 480 && width < 768,
+      };
+      // Pas de re-rendu si rien n'a changé (le redimensionnement émet beaucoup d'événements)
+      const same = (Object.keys(next) as (keyof ResponsiveState)[]).every((k) => prev[k] === next[k]);
+      return same ? prev : next;
     });
   }, [getBreakpoint]);
 
@@ -61,15 +73,22 @@ export function useResponsive(): ResponsiveState {
     if (typeof window === 'undefined') return;
     
     handleResize();
-    
-    // Écouter les événements de redimensionnement
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-    
+
+    // Un seul calcul par image affichée, même si le navigateur émet des dizaines d'événements
+    let frame = 0;
+    const onResize = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => { frame = 0; handleResize(); });
+    };
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+
     // Nettoyage
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
     };
   }, [handleResize]);
 

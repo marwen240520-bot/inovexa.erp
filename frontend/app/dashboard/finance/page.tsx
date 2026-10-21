@@ -5,27 +5,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-  Filler,
-  RadialLinearScale
-} from "chart.js";
-import { Line, Doughnut, Bar } from "react-chartjs-2";
+import { Line, Doughnut, Bar } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
-  ArcElement, PointElement, LineElement, Filler, RadialLinearScale
-);
 
 // ==================== TRADUCTIONS COMPLéTES ====================
 const translations = {

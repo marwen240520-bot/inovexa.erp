@@ -16,8 +16,8 @@ export declare class InvoicesService {
     findOne(id: number, userId: number): Promise<Invoice>;
     create(userId: number, data: any): Promise<Invoice>;
     update(id: number, userId: number, data: any): Promise<Invoice>;
-    markAsPaid(id: number, userId: number): Promise<Invoice>;
-    markAsPaidByOperationNumber(operationNumber: string, userId: number): Promise<Invoice>;
+    markAsPaid(id: number, userId: number, paymentMethod?: string): Promise<Invoice>;
+    markAsPaidByOperationNumber(operationNumber: string, userId: number, paymentMethod?: string): Promise<Invoice>;
     delete(id: number, userId: number): Promise<{
         success: boolean;
     }>;
@@ -35,4 +35,5 @@ export declare class InvoicesService {
         quarterlyTotal: number;
         yearlyTotal: number;
     }>;
+    importInvoices(userId: number, rows: any[]): Promise<import("../../common/import-utils").ImportResult>;
 }

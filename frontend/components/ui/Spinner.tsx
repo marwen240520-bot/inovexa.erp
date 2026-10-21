@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import PageSkeleton, { useInAppShell } from "@/components/ui/PageSkeleton";
 
 type SpinnerProps = {
   /** Diamètre en px (défaut 44, 84 en fullScreen). */
@@ -20,6 +21,10 @@ type SpinnerProps = {
  * Usage :
  *   - écran de chargement de page : <Spinner fullScreen />
  *   - inline (bouton, carte)      : <Spinner size={18} />
+ *
+ * Dans l'interface de l'application (barre latérale visible), <Spinner fullScreen />
+ * affiche un squelette du contenu à la place du logo : la mise en page ne saute plus
+ * et l'utilisateur voit tout de suite la structure de la page qui arrive.
  */
 export default function Spinner({
   size,
@@ -27,7 +32,12 @@ export default function Spinner({
   className,
   style,
 }: SpinnerProps) {
+  const inAppShell = useInAppShell();
   const finalSize = size ?? (fullScreen ? 84 : 44);
+
+  if (fullScreen && inAppShell) {
+    return <PageSkeleton />;
+  }
 
   const logo = (
     <span
@@ -46,6 +56,9 @@ export default function Spinner({
         src="/images/logo.png"
         alt=""
         aria-hidden="true"
+        width={finalSize}
+        height={finalSize}
+        decoding="async"
         draggable={false}
         style={{
           width: "100%",

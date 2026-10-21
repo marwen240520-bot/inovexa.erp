@@ -8,18 +8,10 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import ImportButton from "@/components/ui/ImportButton";
 import SelectAllCheckbox from "@/components/ui/SelectAllCheckbox";
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
-  Title, Tooltip, Legend, ArcElement, PointElement, LineElement, Filler
-} from "chart.js";
-import { Doughnut } from "react-chartjs-2";
+import { Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
-  ArcElement, PointElement, LineElement, Filler
-);
 
 // --- Interfaces ----------------------------------------------------------------
 

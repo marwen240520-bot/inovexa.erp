@@ -4,6 +4,9 @@ export declare class PurchasesController {
     constructor(purchasesService: PurchasesService);
     findAll(req: any, period?: string): Promise<import("./entities/purchase.entity").Purchase[]>;
     findOne(id: string, req: any): Promise<import("./entities/purchase.entity").Purchase>;
+    importPurchases(req: any, body: {
+        purchases: any[];
+    }): Promise<import("../../common/import-utils").ImportResult>;
     create(req: any, body: any): Promise<{
         newStock: number;
         length: number;

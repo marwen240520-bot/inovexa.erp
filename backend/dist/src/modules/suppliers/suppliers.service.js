@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const supplier_entity_1 = require("./supplier.entity");
+const import_utils_1 = require("../../common/import-utils");
 let SuppliersService = class SuppliersService {
     constructor(supplierRepository) {
         this.supplierRepository = supplierRepository;
@@ -70,6 +71,40 @@ let SuppliersService = class SuppliersService {
         const active = suppliers.filter(s => s.status === 'active').length;
         const totalPurchases = suppliers.reduce((sum, s) => sum + (s.totalPurchases || 0), 0);
         return { total: suppliers.length, active, totalPurchases };
+    }
+    async importSuppliers(userId, rows) {
+        if (!Array.isArray(rows) || rows.length === 0)
+            throw new common_1.BadRequestException('Aucun fournisseur à importer');
+        const details = [];
+        let success = 0;
+        let processed = 0;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if ((0, import_utils_1.isEmptyRow)(row))
+                continue;
+            processed++;
+            try {
+                const name = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['name', 'nom', 'fournisseur', 'nom fournisseur', 'raison sociale', 'societe', 'entreprise', 'company', 'supplier']));
+                if (!name)
+                    throw new Error(`Nom du fournisseur manquant (colonnes reçues : ${Object.keys(row).join(', ')})`);
+                const entity = this.supplierRepository.create({
+                    userId,
+                    name,
+                    contact: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['contact', 'personne contact', 'interlocuteur', 'responsable'])) || undefined,
+                    email: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['email', 'e-mail', 'mail', 'courriel', 'adresse email'])) || '',
+                    phone: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['phone', 'telephone', 'tel', 'mobile', 'gsm', 'portable'])) || undefined,
+                    address: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['address', 'adresse', 'ville'])) || undefined,
+                    totalPurchases: (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['totalPurchases', 'total purchases', 'total achats', 'total'])),
+                    status: (0, import_utils_1.normalizeStatus)((0, import_utils_1.pick)(row, ['status', 'statut', 'etat']), import_utils_1.ACTIVE_STATUS, 'active'),
+                });
+                await this.supplierRepository.save(entity);
+                success++;
+            }
+            catch (e) {
+                details.push({ row: i + 2, error: (0, import_utils_1.errorMessage)(e) });
+            }
+        }
+        return (0, import_utils_1.buildImportResult)('fournisseur(s)', processed, success, details);
     }
 };
 exports.SuppliersService = SuppliersService;

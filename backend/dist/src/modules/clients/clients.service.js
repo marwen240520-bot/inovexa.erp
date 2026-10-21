@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const client_entity_1 = require("./entities/client.entity");
+const import_utils_1 = require("../../common/import-utils");
 let ClientsService = class ClientsService {
     constructor(clientRepository) {
         this.clientRepository = clientRepository;
@@ -68,20 +69,38 @@ let ClientsService = class ClientsService {
         client.status = status;
         return this.clientRepository.save(client);
     }
-    async importClients(userId, clients) {
+    async importClients(userId, rows) {
+        if (!Array.isArray(rows) || rows.length === 0)
+            throw new common_1.BadRequestException('Aucun client à importer');
+        const details = [];
         let success = 0;
-        let errors = 0;
-        for (const client of clients) {
+        let processed = 0;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if ((0, import_utils_1.isEmptyRow)(row))
+                continue;
+            processed++;
             try {
-                const newClient = this.clientRepository.create({ ...client, userId });
-                await this.clientRepository.save(newClient);
+                const name = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['name', 'nom', 'client', 'nom client', 'raison sociale', 'societe', 'entreprise', 'company', 'full name']));
+                if (!name)
+                    throw new Error(`Nom du client manquant (colonnes reçues : ${Object.keys(row).join(', ')})`);
+                const entity = this.clientRepository.create({
+                    userId,
+                    name,
+                    email: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['email', 'e-mail', 'mail', 'courriel', 'adresse email'])) || '',
+                    phone: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['phone', 'telephone', 'tel', 'mobile', 'gsm', 'portable'])) || undefined,
+                    address: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['address', 'adresse', 'ville'])) || undefined,
+                    totalSpent: (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['totalSpent', 'total spent', 'total depense', 'montant total', 'total'])),
+                    status: (0, import_utils_1.normalizeStatus)((0, import_utils_1.pick)(row, ['status', 'statut', 'etat']), import_utils_1.ACTIVE_STATUS, 'active'),
+                });
+                await this.clientRepository.save(entity);
                 success++;
             }
             catch (e) {
-                errors++;
+                details.push({ row: i + 2, error: (0, import_utils_1.errorMessage)(e) });
             }
         }
-        return { success, errors, total: clients.length };
+        return (0, import_utils_1.buildImportResult)('client(s)', processed, success, details);
     }
     async delete(id, userId) {
         const client = await this.findOne(id, userId);

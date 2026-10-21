@@ -21,6 +21,9 @@ export declare class SuppliersController {
         totalPurchases: number;
     }>;
     findOne(id: string, req: any): Promise<import("./supplier.entity").Supplier>;
+    importSuppliers(req: any, body: {
+        suppliers: any[];
+    }): Promise<import("../../common/import-utils").ImportResult>;
     create(req: any, body: any): Promise<import("./supplier.entity").Supplier>;
     update(id: string, req: any, body: any): Promise<import("./supplier.entity").Supplier>;
     delete(id: string, req: any): Promise<{

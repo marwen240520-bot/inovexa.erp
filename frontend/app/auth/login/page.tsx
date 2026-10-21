@@ -112,6 +112,11 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState("");
   const [remember, setRemember] = useState(true);
+  // Précharge les écrans d'arrivée pendant que l'utilisateur saisit ses identifiants :
+  // après la connexion, le tableau de bord s'ouvre sans attente du serveur.
+  useEffect(() => {
+    try { router.prefetch("/dashboard", { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
+  }, [router]);
   // Pré-remplit l'e-mail mémorisé lors d'une précédente connexion
   useEffect(() => {
     try {

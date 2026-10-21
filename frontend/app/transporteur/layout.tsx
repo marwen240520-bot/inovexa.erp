@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useLanguage } from "../../contexts/LanguageContext";
 import Spinner from "@/components/ui/Spinner";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { AppShellProvider } from "@/components/ui/PageSkeleton";
 
 // SVG Icons with better styling
 const DashboardIcon = ({ active = false }: { active?: boolean }) => (
@@ -428,7 +429,8 @@ export default function TransporteurLayout({
         minHeight: "100vh",
         background: "var(--theme-background)"
       }}>
-        {children}
+        {/* Chargements de page : squelette du contenu, la barre latérale reste visible */}
+        <AppShellProvider>{children}</AppShellProvider>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `

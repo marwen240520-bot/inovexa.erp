@@ -51,6 +51,10 @@ __decorate([
     __metadata("design:type", String)
 ], Sale.prototype, "status", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 30, nullable: true }),
+    __metadata("design:type", String)
+], Sale.prototype, "paymentMethod", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], Sale.prototype, "createdAt", void 0);

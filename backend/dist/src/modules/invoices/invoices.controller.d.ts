@@ -5,10 +5,17 @@ export declare class InvoicesController {
     findAll(req: any): Promise<import("./entities/invoice.entity").Invoice[]>;
     findOne(id: string, req: any): Promise<import("./entities/invoice.entity").Invoice>;
     findByOperationNumber(operationNumber: string, req: any): Promise<import("./entities/invoice.entity").Invoice>;
+    importInvoices(req: any, body: {
+        invoices: any[];
+    }): Promise<import("../../common/import-utils").ImportResult>;
     create(req: any, body: any): Promise<import("./entities/invoice.entity").Invoice>;
     update(id: string, req: any, body: any): Promise<import("./entities/invoice.entity").Invoice>;
-    markAsPaid(id: string, req: any): Promise<import("./entities/invoice.entity").Invoice>;
-    markAsPaidByOperationNumber(operationNumber: string, req: any): Promise<import("./entities/invoice.entity").Invoice>;
+    markAsPaid(id: string, req: any, body?: {
+        paymentMethod?: string;
+    }): Promise<import("./entities/invoice.entity").Invoice>;
+    markAsPaidByOperationNumber(operationNumber: string, req: any, body?: {
+        paymentMethod?: string;
+    }): Promise<import("./entities/invoice.entity").Invoice>;
     delete(id: string, req: any): Promise<{
         success: boolean;
     }>;

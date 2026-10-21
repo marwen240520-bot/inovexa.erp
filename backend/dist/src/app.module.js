@@ -28,6 +28,9 @@ const export_module_1 = require("./modules/export/export.module");
 const search_module_1 = require("./modules/search/search.module");
 const employees_module_1 = require("./modules/employees/employees.module");
 const expenses_module_1 = require("./modules/expenses/expenses.module");
+const workspace_search_module_1 = require("./modules/workspace-search/workspace-search.module");
+const assert_unique_entities_1 = require("./common/assert-unique-entities");
+(0, assert_unique_entities_1.assertUniqueEntityTables)(__dirname);
 const logistics_module_1 = require("./modules/logistics/logistics.module");
 const transporteur_module_1 = require("./modules/transporteur/transporteur.module");
 const transporteurs_module_1 = require("./modules/transporteurs/transporteurs.module");
@@ -35,20 +38,30 @@ const ia_module_1 = require("./modules/ia/ia.module");
 const upload_module_1 = require("./modules/upload/upload.module");
 const departments_module_1 = require("./modules/departments/departments.module");
 const projects_module_1 = require("./modules/projects/projects.module");
+const pre_sync_fixes_1 = require("./common/pre-sync-fixes");
+const pos_module_1 = require("./modules/pos/pos.module");
+const objectives_module_1 = require("./modules/objectives/objectives.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forRoot({
-                type: 'postgres',
-                url: process.env.DATABASE_URL,
-                ssl: false,
-                entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                synchronize: true,
-                logging: false,
+            typeorm_1.TypeOrmModule.forRootAsync({
+                useFactory: async () => {
+                    await (0, pre_sync_fixes_1.runPreSyncFixes)(process.env.DATABASE_URL);
+                    return {
+                        type: 'postgres',
+                        url: process.env.DATABASE_URL,
+                        ssl: false,
+                        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+                        synchronize: true,
+                        logging: false,
+                    };
+                },
             }),
+            pos_module_1.PosModule,
+            objectives_module_1.ObjectivesModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             products_module_1.ProductsModule,
@@ -66,6 +79,7 @@ exports.AppModule = AppModule = __decorate([
             search_module_1.SearchModule,
             employees_module_1.EmployeesModule,
             expenses_module_1.ExpensesModule,
+            workspace_search_module_1.WorkspaceSearchModule,
             logistics_module_1.LogisticsModule,
             transporteur_module_1.TransporteurModule,
             transporteurs_module_1.TransporteursModule,

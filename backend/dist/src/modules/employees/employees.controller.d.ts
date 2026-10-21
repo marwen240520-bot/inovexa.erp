@@ -22,9 +22,5 @@ export declare class EmployeesController {
     }>;
     importEmployees(req: any, body: {
         employees: any[];
-    }): Promise<{
-        success: number;
-        errors: number;
-        message: string;
-    }>;
+    }): Promise<import("../../common/import-utils").ImportResult>;
 }

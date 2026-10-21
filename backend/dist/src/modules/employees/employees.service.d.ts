@@ -19,9 +19,5 @@ export declare class EmployeesService {
         totalPayroll: number;
         avgSalary: number;
     }>;
-    importEmployees(userId: number, employees: any[]): Promise<{
-        success: number;
-        errors: number;
-        message: string;
-    }>;
+    importEmployees(userId: number, rows: any[]): Promise<import("../../common/import-utils").ImportResult>;
 }

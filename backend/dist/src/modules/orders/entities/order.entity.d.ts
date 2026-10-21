@@ -1,6 +1,8 @@
 export declare class Order {
     id: number;
     userId: number;
+    clientId: number;
+    productId: number;
     clientName: string;
     productName: string;
     quantity: number;

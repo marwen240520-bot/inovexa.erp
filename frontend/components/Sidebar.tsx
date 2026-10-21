@@ -1,8 +1,12 @@
-﻿"use client";
+"use client";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect, CSSProperties } from "react";
+import { useState, useEffect, useRef, CSSProperties } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useDeviceHint } from "@/contexts/DeviceContext";
+import { clearApiCache } from "@/lib/apiCache";
+import { prefetchRouteData } from "@/lib/routeData";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
 const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
@@ -20,6 +24,8 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
 const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida" },
   "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
+  "common.more": { fr: "Plus", en: "More", es: "Más" },
+  "common.menu": { fr: "Menu", en: "Menu", es: "Menú" },
 };
 
 const ICONS: Record<string, JSX.Element> = {
@@ -230,6 +236,23 @@ interface ThemeColors {
 // Session cache: prevents the sidebar from re-fetching on every navigation
 let sidebarCachedUser: User | null = null;
 let sidebarCachedModules: Record<string, boolean> | null = null;
+let modulesRefreshed = false;
+
+// Les modules du dernier chargement sont aussi gardés dans localStorage : au rechargement de la page,
+// le menu s'affiche immédiatement, puis il est mis à jour en arrière-plan.
+const MODULES_STORAGE_KEY = "sidebar_modules";
+function readStoredModules(userId?: string | number): Record<string, boolean> | null {
+  try {
+    const raw = localStorage.getItem(MODULES_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || String(parsed.userId) !== String(userId) || typeof parsed.modules !== "object") return null;
+    return parsed.modules;
+  } catch { return null; }
+}
+function storeModules(userId: string | number, modules: Record<string, boolean>) {
+  try { localStorage.setItem(MODULES_STORAGE_KEY, JSON.stringify({ userId, modules })); } catch { /* ignoré */ }
+}
 
 /** Modules activés pour le client connecté (null tant que non chargés) — utilisé par la recherche globale */
 export function getCachedModules(): Record<string, boolean> | null {
@@ -246,10 +269,15 @@ export default function Sidebar() {
   const [userModules, setUserModules] = useState<Record<string, boolean> | null>(sidebarCachedModules);
   const [loading, setLoading] = useState(sidebarCachedModules === null);
   const [navigationError, setNavigationError] = useState<string | null>(null);
-  const [localTheme, setLocalTheme] = useState<ThemeColors | null>(null);
+  // Thème connu dès le rendu serveur (cookie) : la barre a les bonnes couleurs immédiatement
+  const [localTheme, setLocalTheme] = useState<ThemeColors | null>(theme);
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  // Valeur initiale fournie par le serveur : bonne barre (latérale / du bas) dès le premier affichage
+  const isMobileHint = useDeviceHint();
+  const [isMobile, setIsMobile] = useState(isMobileHint);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const prefetched = useRef<Set<string>>(new Set());
+  const hoverTimer = useRef<number | null>(null);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -293,9 +321,11 @@ export default function Sidebar() {
       try {
         const u = JSON.parse(userData);
         setUser(u); sidebarCachedUser = u;
-        const fromUser = normalizeModules(u.modules);
-        if (fromUser) { setUserModules(fromUser); sidebarCachedModules = fromUser; }
-        if (u.id && token) fetchUserModules(u.id, token);
+        // Modules déjà connus (session, profil enregistré ou dernier chargement) → menu affiché tout de suite
+        const known = sidebarCachedModules || normalizeModules(u.modules) || readStoredModules(u.id);
+        if (known) { setUserModules(known); sidebarCachedModules = known; setLoading(false); }
+        // Mise à jour en arrière-plan (une seule fois par session)
+        if (u.id && token && !modulesRefreshed) { modulesRefreshed = true; fetchUserModules(u.id, token); }
         else setLoading(false);
       } catch { setLoading(false); }
     } else { setLoading(false); }
@@ -309,7 +339,7 @@ export default function Sidebar() {
       });
       if (res.ok) {
         const mods = normalizeModules(await res.json());
-        if (mods) { setUserModules(mods); sidebarCachedModules = mods; }
+        if (mods) { setUserModules(mods); sidebarCachedModules = mods; storeModules(userId, mods); }
       }
     } catch {}
     setLoading(false);
@@ -323,6 +353,40 @@ export default function Sidebar() {
     if (id === "objectives") return userModules.objectives !== false;
     if (id === "pos") return userModules.pos !== undefined ? userModules.pos === true : (userModules.sales === true || userModules.purchases === true);
     return userModules[id] === true;                       // sinon : actif seulement si explicitement true
+  };
+
+  /**
+   * Précharge une page au survol / focus / toucher : rendu serveur ET code JavaScript de la page
+   * sont récupérés pendant que la souris s'approche, le clic qui suit est quasi instantané.
+   */
+  const prefetch = (path: string) => {
+    if (path === pathname) return;
+    // Données de la page (gardées 30 s par le cache API, donc pas de requête en double)
+    prefetchRouteData(path);
+    if (prefetched.current.has(path)) return;
+    prefetched.current.add(path);
+    try { router.prefetch(path, { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
+  };
+
+  /** Survol « intentionnel » : on ne précharge pas quand la souris ne fait que traverser le menu. */
+  const hoverPrefetch = (path: string) => {
+    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => prefetch(path), 90);
+  };
+  const cancelHoverPrefetch = () => {
+    if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+  };
+
+  /** Lien actif : page exacte, ou sous-page (ex. /dashboard/sales/123 garde « Ventes » actif). */
+  const isActivePath = (path: string) =>
+    pathname === path || (path !== "/dashboard" && !!pathname && pathname.startsWith(path + "/"));
+
+  /** Clic sur un lien du menu : laisse le navigateur gérer Ctrl/⌘-clic (nouvel onglet). */
+  const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    const token = localStorage.getItem("token");
+    if (!token) { e.preventDefault(); router.push("/auth/login"); return; }
+    if (isMobile) setMobileMoreOpen(false);
   };
 
   const handleNavigation = async (path: string, label: string) => {
@@ -343,6 +407,11 @@ export default function Sidebar() {
     if (confirm(t("common.logoutWarning") || "Confirmer la déconnexion ?")) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      try { localStorage.removeItem(MODULES_STORAGE_KEY); } catch { /* ignoré */ }
+      sidebarCachedUser = null;
+      sidebarCachedModules = null;
+      modulesRefreshed = false;
+      clearApiCache();
       router.push("/");
     }
   };
@@ -556,6 +625,8 @@ export default function Sidebar() {
       padding: "9px 12px 9px 14px",
       marginBottom: "2px",
       cursor: "pointer",
+      textDecoration: "none",
+      outlineOffset: "2px",
       borderRadius: "10px",
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       position: "relative",
@@ -642,7 +713,7 @@ export default function Sidebar() {
   const mobileMoreItems = menuItems.slice(MOBILE_PRIMARY_COUNT);
 
   const renderNavItem = (item: any) => {
-    const isActive = pathname === item.path;
+    const isActive = isActivePath(item.path);
     const isHovered = hoveredItem === item.path;
     const label = getLabel(item.label);
     const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
@@ -670,27 +741,51 @@ export default function Sidebar() {
     };
 
     return (
-      <div
+      <Link
         key={item.path}
-        onClick={() => handleNavigation(item.path, label)}
-        onMouseEnter={() => handleMouseEnter(item.path)}
-        onMouseLeave={handleMouseLeave}
+        href={item.path}
+        prefetch={false}
+        aria-current={isActive ? "page" : undefined}
+        className="ix-nav-link"
+        onClick={(e) => onNavClick(e, item.path)}
+        onMouseEnter={() => { handleMouseEnter(item.path); hoverPrefetch(item.path); }}
+        onFocus={() => prefetch(item.path)}
+        onTouchStart={() => prefetch(item.path)}
+        onMouseLeave={() => { handleMouseLeave(); cancelHoverPrefetch(); }}
         style={getNavItemStyle()}
       >
         {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
         <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
         <span style={styles.navLabel}>{label}</span>
-      </div>
+      </Link>
     );
   };
 
-  // Pas de chargement propre à la Sidebar : on laisse la page afficher l'unique indicateur
+  // Avant le montage (rendu serveur) ou tant que les modules sont inconnus : un rail vide à la
+  // place exacte de la barre latérale. Le contenu ne bouge donc plus quand le menu apparaît.
   if (loading || !mounted) {
-    return null;
+    if (isMobile) return null;
+    return (
+      <div style={styles.sidebar} aria-hidden="true">
+        <div style={styles.header}>
+          <div style={styles.logoWrapper}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="" width={92} height={92} style={styles.logoImage} />
+            <div style={styles.brandContainer}>
+              <div style={{ ...styles.logoTitle, color: "var(--theme-text)" }}>Inovexa ERP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .ix-nav-link:focus-visible { outline: 2px solid var(--theme-primary); outline-offset: 2px; }
+        .ix-nav-link { -webkit-tap-highlight-color: transparent; }
+      ` }} />
       {navigationError && (
         <div onClick={() => setNavigationError(null)} style={styles.errorToast}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -712,8 +807,10 @@ export default function Sidebar() {
               <div style={styles.mobileMoreOverlay} onClick={() => setMobileMoreOpen(false)} />
               <div style={styles.mobileMoreDrawer}>
                 <div style={styles.mobileMoreHeader}>
-                  <span style={styles.mobileMoreTitle}>Menu</span>
+                  <span style={styles.mobileMoreTitle}>{getLabel("common.menu")}</span>
                   <button
+                    type="button"
+                    aria-label="Fermer"
                     onClick={() => setMobileMoreOpen(false)}
                     style={{ background: "transparent", border: "none", cursor: "pointer", color: navText, padding: "4px" }}
                   >
@@ -721,14 +818,21 @@ export default function Sidebar() {
                   </button>
                 </div>
                 {mobileMoreItems.map((item: any) => {
-                  const isActive = pathname === item.path;
+                  const isActive = isActivePath(item.path);
                   const label = getLabel(item.label);
                   const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
                   return (
-                    <div
+                    <Link
                       key={item.path}
-                      onClick={() => handleNavigation(item.path, label)}
+                      href={item.path}
+                      prefetch={false}
+                      aria-current={isActive ? "page" : undefined}
+                      className="ix-nav-link"
+                      onClick={(e) => onNavClick(e, item.path)}
+                      onTouchStart={() => prefetch(item.path)}
+                      onFocus={() => prefetch(item.path)}
                       style={{
+                        textDecoration: "none",
                         display: "flex",
                         alignItems: "center",
                         gap: "12px",
@@ -745,7 +849,7 @@ export default function Sidebar() {
                       {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
                       <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
                       <span style={{ fontSize: "14px", fontWeight: isActive ? 600 : 400 }}>{label}</span>
-                    </div>
+                    </Link>
                   );
                 })}
                 <div style={styles.divider} />
@@ -773,15 +877,21 @@ export default function Sidebar() {
           {/* Bottom tab bar */}
           <div style={styles.mobileBottomNav}>
             {mobilePrimaryItems.map((item: any) => {
-              const isActive = pathname === item.path;
+              const isActive = isActivePath(item.path);
               const label = getLabel(item.label);
               const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
               return (
-                <button
+                <Link
                   key={item.path}
-                  onClick={() => handleNavigation(item.path, label)}
+                  href={item.path}
+                  prefetch={false}
+                  aria-current={isActive ? "page" : undefined}
+                  className="ix-nav-link"
+                  onClick={(e) => onNavClick(e, item.path)}
+                  onTouchStart={() => prefetch(item.path)}
                   style={{
                     ...(styles.mobileNavBtn as CSSProperties),
+                    textDecoration: "none",
                     color: isActive ? ct.primary : navText,
                   }}
                 >
@@ -805,13 +915,15 @@ export default function Sidebar() {
                   }}>
                     {label}
                   </span>
-                </button>
+                </Link>
               );
             })}
 
             {/* "More" button if there are extra items */}
             {mobileMoreItems.length > 0 && (
               <button
+                type="button"
+                aria-expanded={mobileMoreOpen}
                 onClick={() => setMobileMoreOpen((p) => !p)}
                 style={{
                   ...(styles.mobileNavBtn as CSSProperties),
@@ -835,7 +947,7 @@ export default function Sidebar() {
                   color: mobileMoreOpen ? ct.primary : navText,
                   fontWeight: mobileMoreOpen ? 600 : 400,
                 }}>
-                  Plus
+                  {getLabel("common.more")}
                 </span>
               </button>
             )}

@@ -17,4 +17,9 @@ export declare class ProductsService {
     delete(id: number, userId: number): Promise<{
         success: boolean;
     }>;
+    private findField;
+    private static readonly MAX_IMAGE_LENGTH;
+    private cleanImage;
+    private parseNumber;
+    private parseCategoryId;
 }

@@ -23,7 +23,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Expense.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, transformer: { to: (v) => v, from: (v) => (v === null || v === undefined ? v : parseFloat(v)) } }),
     __metadata("design:type", Number)
 ], Expense.prototype, "amount", void 0);
 __decorate([

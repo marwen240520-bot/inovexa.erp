@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const invoice_entity_1 = require("./entities/invoice.entity");
 const client_entity_1 = require("../clients/entities/client.entity");
 const supplier_entity_1 = require("../suppliers/supplier.entity");
+const import_utils_1 = require("../../common/import-utils");
 let InvoicesService = class InvoicesService {
     constructor(invoiceRepository, clientRepository, supplierRepository) {
         this.invoiceRepository = invoiceRepository;
@@ -150,6 +151,7 @@ let InvoicesService = class InvoicesService {
             taxAmount: data.taxAmount || 0,
             dueDate: dueDate,
             paymentTerms: data.paymentTerms || 'Net 30',
+            paymentMethod: (0, import_utils_1.normalizePaymentMethod)(data.paymentMethod),
             notes: data.notes || '',
             status: data.status || 'pending',
         });
@@ -216,6 +218,8 @@ let InvoicesService = class InvoicesService {
             invoice.dueDate = this.getValidDate(data.dueDate);
         if (data.paymentTerms !== undefined)
             invoice.paymentTerms = data.paymentTerms;
+        if (data.paymentMethod !== undefined)
+            invoice.paymentMethod = (0, import_utils_1.normalizePaymentMethod)(data.paymentMethod);
         if (data.notes !== undefined)
             invoice.notes = data.notes;
         if (data.status !== undefined)
@@ -227,14 +231,18 @@ let InvoicesService = class InvoicesService {
             throw new common_1.BadRequestException(`Erreur lors de la modification de la facture: ${e?.detail || e?.message || 'données invalides'}`);
         }
     }
-    async markAsPaid(id, userId) {
+    async markAsPaid(id, userId, paymentMethod) {
         const invoice = await this.findOne(id, userId);
         invoice.status = 'paid';
+        if (paymentMethod)
+            invoice.paymentMethod = (0, import_utils_1.normalizePaymentMethod)(paymentMethod);
         return this.invoiceRepository.save(invoice);
     }
-    async markAsPaidByOperationNumber(operationNumber, userId) {
+    async markAsPaidByOperationNumber(operationNumber, userId, paymentMethod) {
         const invoice = await this.findByOperationNumber(operationNumber, userId);
         invoice.status = 'paid';
+        if (paymentMethod)
+            invoice.paymentMethod = (0, import_utils_1.normalizePaymentMethod)(paymentMethod);
         return this.invoiceRepository.save(invoice);
     }
     async delete(id, userId) {
@@ -288,6 +296,61 @@ let InvoicesService = class InvoicesService {
             quarterlyTotal,
             yearlyTotal
         };
+    }
+    async importInvoices(userId, rows) {
+        if (!Array.isArray(rows) || rows.length === 0)
+            throw new common_1.BadRequestException('Aucune facture à importer');
+        const details = [];
+        let success = 0;
+        let processed = 0;
+        const batch = Date.now().toString(36).toUpperCase();
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if ((0, import_utils_1.isEmptyRow)(row))
+                continue;
+            processed++;
+            try {
+                const typeLabel = (0, import_utils_1.normalizeStatus)((0, import_utils_1.pick)(row, ['type', 'sens', 'nature']), { debit: ['vente', 'client', 'sale', 'debit', 'débit'], credit: ['achat', 'fournisseur', 'purchase', 'credit', 'crédit'] }, 'debit');
+                const taxRate = (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['taxRate', 'tax rate', 'tva', 'taux tva', 'taux de tva']), 20);
+                let subtotalHT = (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['subtotalHT', 'subtotal', 'montant ht', 'total ht', 'ht']), NaN);
+                let amount = (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['amount', 'montant', 'total ttc', 'ttc', 'total', 'montant ttc']), NaN);
+                if (!Number.isFinite(subtotalHT) && !Number.isFinite(amount))
+                    throw new Error('Montant manquant (colonne « amount », « montant » ou « total »)');
+                if (!Number.isFinite(subtotalHT))
+                    subtotalHT = Math.round((amount / (1 + taxRate / 100)) * 100) / 100;
+                const taxAmount = Math.round(subtotalHT * taxRate) / 100;
+                if (!Number.isFinite(amount))
+                    amount = Math.round((subtotalHT + taxAmount) * 100) / 100;
+                const description = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['description', 'libelle', 'objet', 'designation']));
+                const data = {
+                    operationNumber: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['operationNumber', 'operation number', 'numero operation', 'n operation'])) || `OP-${userId}-${batch}-${i + 1}`,
+                    reference: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['reference', 'ref', 'numero', 'numero facture', 'n facture', 'invoice number'])) || `FAC-${new Date().getFullYear()}-${batch}-${i + 1}`,
+                    type: typeLabel,
+                    clientName: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['clientName', 'client name', 'client', 'nom client', 'customer'])) || '',
+                    supplierName: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['supplierName', 'supplier name', 'fournisseur', 'nom fournisseur', 'supplier'])) || '',
+                    clientEmail: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['clientEmail', 'email client', 'email'])) || '',
+                    clientPhone: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['clientPhone', 'telephone client', 'telephone', 'tel'])) || '',
+                    clientAddress: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['clientAddress', 'adresse client', 'adresse'])) || '',
+                    description: description || '',
+                    items: [{ description: description || 'Prestation / marchandises', quantity: 1, unitPriceHT: subtotalHT, totalHT: subtotalHT, totalTTC: amount }],
+                    subtotalHT,
+                    taxRate,
+                    taxAmount,
+                    amount,
+                    dueDate: (0, import_utils_1.toDate)((0, import_utils_1.pick)(row, ['dueDate', 'due date', 'echeance', 'date echeance', "date d'echeance"])),
+                    paymentTerms: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['paymentTerms', 'payment terms', 'conditions de paiement', 'conditions de reglement', 'delai de paiement'])) || 'Net 30',
+                    paymentMethod: (0, import_utils_1.pick)(row, ['paymentMethod', 'payment method', 'moyen de paiement', 'mode de paiement', 'mode de reglement', 'reglement', 'paiement']),
+                    notes: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['notes', 'note', 'remarque', 'commentaire'])) || '',
+                    status: (0, import_utils_1.normalizeStatus)((0, import_utils_1.pick)(row, ['status', 'statut', 'etat']), { paid: ['payee', 'payée', 'paye', 'payé', 'reglee', 'réglée', 'paid'], pending: ['en attente', 'impayee', 'impayée', 'pending'], overdue: ['en retard', 'overdue'] }, 'pending'),
+                };
+                await this.create(userId, data);
+                success++;
+            }
+            catch (e) {
+                details.push({ row: i + 2, error: (0, import_utils_1.errorMessage)(e) });
+            }
+        }
+        return (0, import_utils_1.buildImportResult)('facture(s)', processed, success, details);
     }
 };
 exports.InvoicesService = InvoicesService;

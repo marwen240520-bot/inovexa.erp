@@ -5,27 +5,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-  Filler,
-  RadialLinearScale
-} from "chart.js";
-import { Bar, Line, Doughnut, Pie, Radar } from "react-chartjs-2";
+import { Bar, Line, Doughnut, Pie, Radar } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
-  ArcElement, PointElement, LineElement, Filler, RadialLinearScale
-);
 
 // --- SVG Icon Components ------------------------------------------------------
 const Icon = ({ children, size = 18, style = {} }: { children: React.ReactNode; size?: number; style?: React.CSSProperties }) => (

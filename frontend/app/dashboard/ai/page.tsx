@@ -4,26 +4,9 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-  Filler
-} from "chart.js";
-import { Bar, Line, Doughnut } from "react-chartjs-2";
+import { Bar, Line, Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
-  ArcElement, PointElement, LineElement, Filler
-);
 
 // ==================== SVG ICONS ====================
 const Icon = ({ children, size = 16, style = {} }: { children: React.ReactNode; size?: number; style?: React.CSSProperties }) => (

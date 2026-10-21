@@ -8,6 +8,7 @@ export declare class Sale {
     unitPrice: number;
     total: number;
     status: string;
+    paymentMethod: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

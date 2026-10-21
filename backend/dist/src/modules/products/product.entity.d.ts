@@ -1,5 +1,5 @@
 import { User } from '../users/entities/user.entity';
-import { Category } from '../categories/category.entity';
+import { Category } from '../categories/entities/category.entity';
 export declare class Product {
     id: number;
     userId: number;
@@ -8,6 +8,7 @@ export declare class Product {
     sku: string;
     price: number;
     quantity: number;
+    imageUrl: string | null;
     createdAt: Date;
     updatedAt: Date;
     user: User;

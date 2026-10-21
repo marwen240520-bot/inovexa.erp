@@ -106,8 +106,5 @@ export declare class SalesController {
     }>;
     importSales(req: any, body: {
         sales: any[];
-    }): Promise<{
-        success: number;
-        errors: number;
-    }>;
+    }): Promise<import("../../common/import-utils").ImportResult>;
 }

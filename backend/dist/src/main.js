@@ -4,8 +4,11 @@ const core_1 = require("@nestjs/core");
 const path_1 = require("path");
 const app_module_1 = require("./app.module");
 const common_1 = require("@nestjs/common");
+const express_1 = require("express");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.use((0, express_1.json)({ limit: '50mb' }));
+    app.use((0, express_1.urlencoded)({ extended: true, limit: '50mb' }));
     app.enableCors({
         origin: [
             process.env.FRONTEND_URL || 'http://localhost:3000',

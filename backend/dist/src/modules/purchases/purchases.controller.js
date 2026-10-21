@@ -26,6 +26,9 @@ let PurchasesController = class PurchasesController {
     async findOne(id, req) {
         return this.purchasesService.findOne(parseInt(id), req.user.userId);
     }
+    async importPurchases(req, body) {
+        return this.purchasesService.importPurchases(req.user.userId, body?.purchases);
+    }
     async create(req, body) {
         return this.purchasesService.create(req.user.userId, body);
     }
@@ -53,6 +56,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], PurchasesController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)('import'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], PurchasesController.prototype, "importPurchases", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Request)()),

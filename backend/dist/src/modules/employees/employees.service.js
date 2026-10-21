@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const employee_entity_1 = require("./entities/employee.entity");
+const import_utils_1 = require("../../common/import-utils");
 let EmployeesService = class EmployeesService {
     constructor(employeeRepository) {
         this.employeeRepository = employeeRepository;
@@ -68,24 +69,49 @@ let EmployeesService = class EmployeesService {
         const avgSalary = total > 0 ? totalPayroll / total : 0;
         return { total, active, onLeave, inactive, totalPayroll, avgSalary };
     }
-    async importEmployees(userId, employees) {
+    async importEmployees(userId, rows) {
+        if (!Array.isArray(rows) || rows.length === 0)
+            throw new common_1.BadRequestException('Aucun employé à importer');
+        const details = [];
         let success = 0;
-        let errors = 0;
-        for (const emp of employees) {
+        let processed = 0;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if ((0, import_utils_1.isEmptyRow)(row))
+                continue;
+            processed++;
             try {
-                const newEmployee = this.employeeRepository.create({
-                    ...emp,
+                let name = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['name', 'nom complet', 'full name', 'fullname', 'employe', 'employee', 'nom et prenom']));
+                if (!name) {
+                    const first = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['prenom', 'firstname', 'first name']));
+                    const last = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['nom', 'lastname', 'last name', 'nom de famille']));
+                    name = [first, last].filter(Boolean).join(' ') || null;
+                }
+                if (!name)
+                    throw new Error(`Nom de l'employé manquant (colonnes reçues : ${Object.keys(row).join(', ')})`);
+                const hire = (0, import_utils_1.toDate)((0, import_utils_1.pick)(row, ['hireDate', 'hire date', 'date embauche', "date d'embauche", 'embauche', 'date']));
+                const now = new Date().toISOString();
+                const entity = this.employeeRepository.create({
                     userId,
-                    hireDate: emp.hireDate ? new Date(emp.hireDate) : null
+                    name,
+                    email: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['email', 'e-mail', 'mail', 'courriel'])) || '',
+                    position: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['position', 'poste', 'fonction', 'job title', 'titre'])) || undefined,
+                    department: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['department', 'departement', 'service'])) || undefined,
+                    salary: (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['salary', 'salaire', 'salaire brut', 'remuneration'])),
+                    phone: (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['phone', 'telephone', 'tel', 'mobile', 'gsm'])) || undefined,
+                    hireDate: hire ? hire.toISOString().slice(0, 10) : undefined,
+                    status: (0, import_utils_1.normalizeStatus)((0, import_utils_1.pick)(row, ['status', 'statut', 'etat']), { active: ['actif', 'active'], inactive: ['inactif', 'inactive'], on_leave: ['conge', 'en conge', 'on leave', 'leave', 'on_leave'] }, 'active'),
+                    createdAt: now,
+                    updatedAt: now,
                 });
-                await this.employeeRepository.save(newEmployee);
+                await this.employeeRepository.save(entity);
                 success++;
             }
             catch (e) {
-                errors++;
+                details.push({ row: i + 2, error: (0, import_utils_1.errorMessage)(e) });
             }
         }
-        return { success, errors, message: `${success} employé(s) importé(s), ${errors} erreur(s)` };
+        return (0, import_utils_1.buildImportResult)('employé(s)', processed, success, details);
     }
 };
 exports.EmployeesService = EmployeesService;

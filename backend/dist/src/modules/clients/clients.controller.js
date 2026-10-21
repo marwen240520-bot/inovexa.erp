@@ -26,6 +26,9 @@ let ClientsController = class ClientsController {
     async findOne(id, req) {
         return this.clientsService.findOne(parseInt(id), req.user.userId);
     }
+    async importClients(req, body) {
+        return this.clientsService.importClients(req.user.userId, body?.clients);
+    }
     async create(req, body) {
         body.userId = req.user.userId;
         return this.clientsService.create(req.user.userId, body);
@@ -56,6 +59,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)('import'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ClientsController.prototype, "importClients", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Request)()),

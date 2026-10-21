@@ -20,6 +20,7 @@ export declare class Invoice {
     taxAmount: number;
     dueDate: Date | null;
     paymentTerms: string;
+    paymentMethod: string | null;
     notes: string;
     status: string;
     createdAt: Date;

@@ -108,8 +108,5 @@ export declare class SalesService {
         pending: number;
         cancelled: number;
     }>;
-    importSales(userId: number, salesData: any[]): Promise<{
-        success: number;
-        errors: number;
-    }>;
+    importSales(userId: number, rows: any[]): Promise<import("../../common/import-utils").ImportResult>;
 }

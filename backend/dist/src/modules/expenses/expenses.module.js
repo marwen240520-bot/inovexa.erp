@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const expenses_controller_1 = require("./expenses.controller");
 const expenses_service_1 = require("./expenses.service");
-const expense_entity_1 = require("./entities/expense.entity");
+const expense_entity_1 = require("../finance/entities/expense.entity");
 let ExpensesModule = class ExpensesModule {
 };
 exports.ExpensesModule = ExpensesModule;

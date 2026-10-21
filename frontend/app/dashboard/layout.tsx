@@ -2,6 +2,8 @@
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useState, useEffect } from "react";
+import { useDeviceHint } from "@/contexts/DeviceContext";
+import { AppShellProvider } from "@/components/ui/PageSkeleton";
 
 export default function DashboardLayout({
   children,
@@ -9,15 +11,22 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [isMobile, setIsMobile] = useState(false);
+  // Valeur initiale fournie par le serveur (User-Agent) : le contenu est placé au bon endroit
+  // dès le HTML, il ne glisse plus de 280 px vers la droite après le chargement.
+  const isMobileHint = useDeviceHint();
+  const [isMobile, setIsMobile] = useState(isMobileHint);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
+    // Les transitions ne s'activent qu'après la première mesure (pas d'animation au chargement)
+    const id = window.requestAnimationFrame(() => setMounted(true));
     window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    return () => {
+      window.cancelAnimationFrame(id);
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   const isAuthPage =
@@ -26,7 +35,7 @@ export default function DashboardLayout({
   if (isAuthPage) return <>{children}</>;
 
   // Rail de 280px en desktop ; 0 en mobile (la Sidebar affiche alors sa barre du bas).
-  const sidebarWidth = mounted && !isMobile ? 280 : 0;
+  const sidebarWidth = isMobile ? 0 : 280;
 
   return (
     <div
@@ -43,7 +52,8 @@ export default function DashboardLayout({
       <Sidebar />
 
       {/* Contenu principal */}
-      <div
+      <main
+        id="contenu"
         style={{
           flex: 1,
           marginLeft: sidebarWidth,
@@ -51,10 +61,11 @@ export default function DashboardLayout({
           transition: mounted ? "margin-left 0.3s ease, width 0.3s ease" : "none",
           minHeight: "100vh",
           position: "relative",
+          minWidth: 0,
         }}
       >
-        {children}
-      </div>
+        <AppShellProvider>{children}</AppShellProvider>
+      </main>
 
       <style dangerouslySetInnerHTML={{
         __html: `

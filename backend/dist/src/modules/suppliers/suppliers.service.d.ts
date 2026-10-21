@@ -28,4 +28,5 @@ export declare class SuppliersService {
         active: number;
         totalPurchases: number;
     }>;
+    importSuppliers(userId: number, rows: any[]): Promise<import("../../common/import-utils").ImportResult>;
 }

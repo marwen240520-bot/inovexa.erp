@@ -15,6 +15,9 @@ export declare class ClientsController {
         updatedAt: Date;
     }[]>;
     findOne(id: string, req: any): Promise<import("./entities/client.entity").Client>;
+    importClients(req: any, body: {
+        clients: any[];
+    }): Promise<import("../../common/import-utils").ImportResult>;
     create(req: any, body: any): Promise<import("./entities/client.entity").Client>;
     update(id: string, req: any, body: any): Promise<import("./entities/client.entity").Client>;
     updateStatus(id: string, req: any, body: {

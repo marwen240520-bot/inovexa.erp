@@ -1,10 +1,7 @@
 ﻿// contexts/LanguageContext.tsx
 "use client";
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import Spinner from "@/components/ui/Spinner";
-
-// Pour charger les fichiers depuis public, utilisez fetch
-// Ne pas importer directement depuis public
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { LANG_COOKIE, deepMerge, isSupportedLanguage, lookup } from "@/lib/i18n";
 
 interface LanguageContextType {
   language: string;
@@ -13,122 +10,107 @@ interface LanguageContextType {
   t: (key: string) => string;
 }
 
-const translations: Record<string, any> = {
-  fr: {},
-  en: {},
-  es: {}
-};
-
-let translationsLoaded = false;
-
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<string>('fr');
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+// Dictionnaires déjà chargés côté client (fusionnés avec l'anglais pour le repli)
+const messagesCache: Record<string, any> = {};
+let englishPromise: Promise<any> | null = null;
 
-  // Charger les traductions depuis le dossier public
-  const loadTranslations = useCallback(async () => {
-    if (translationsLoaded) return;
-    
+async function fetchJson(url: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} sur ${url}`);
+  return res.json();
+}
+
+async function loadMessages(lang: string): Promise<any> {
+  if (messagesCache[lang]) return messagesCache[lang];
+  if (!englishPromise) englishPromise = fetchJson("/locales/en.json").catch(() => ({}));
+  const [en, own] = await Promise.all([
+    englishPromise,
+    lang === "en" ? englishPromise : fetchJson(`/locales/${lang}.json`),
+  ]);
+  const merged = lang === "en" ? en : deepMerge(en, own);
+  messagesCache[lang] = merged;
+  return merged;
+}
+
+function persistLanguage(lang: string) {
+  try { localStorage.setItem("language", lang); } catch { /* stockage indisponible */ }
+  try { document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`; } catch { /* ignoré */ }
+  try { document.documentElement.lang = lang; } catch { /* ignoré */ }
+}
+
+/**
+ * Les traductions de la langue courante sont fournies par le serveur (app/layout.tsx) :
+ * la page est rendue directement traduite, sans spinner ni téléchargement des 3 fichiers
+ * fr/en/es au démarrage. Les autres langues ne sont chargées qu'au moment du changement.
+ */
+export function LanguageProvider({
+  children,
+  initialLanguage = "fr",
+  initialMessages = {},
+}: {
+  children: React.ReactNode;
+  initialLanguage?: string;
+  initialMessages?: Record<string, any>;
+}) {
+  const [state, setState] = useState(() => {
+    const lang = isSupportedLanguage(initialLanguage) ? initialLanguage : "fr";
+    if (!messagesCache[lang]) messagesCache[lang] = initialMessages;
+    return { language: lang as string, messages: initialMessages };
+  });
+  const requested = useRef(state.language);
+
+  const changeLanguage = useCallback(async (lang: string) => {
+    if (!isSupportedLanguage(lang)) throw new Error("Langue non supportée");
+    requested.current = lang;
+    persistLanguage(lang);
     try {
-      const [frRes, enRes, esRes] = await Promise.all([
-        fetch('/locales/fr.json'),
-        fetch('/locales/en.json'),
-        fetch('/locales/es.json')
-      ]);
-      
-      translations.fr = await frRes.json();
-      translations.en = await enRes.json();
-      translations.es = await esRes.json();
-      translationsLoaded = true;
+      const messages = await loadMessages(lang);
+      // Ignore une réponse arrivée après un autre changement de langue
+      if (requested.current === lang) setState({ language: lang, messages });
     } catch (error) {
       console.error("Erreur chargement traductions:", error);
     }
-    setIsLoading(false);
   }, []);
 
-  // Charger la langue sauvegardée au démarrage
+  // Migration : langue choisie avant l'existence du cookie (stockée seulement dans localStorage)
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage && ['fr', 'en', 'es'].includes(savedLanguage)) {
-      setLanguage(savedLanguage);
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("language"); } catch { /* ignoré */ }
+    const hasCookie = typeof document !== "undefined" && document.cookie.includes(`${LANG_COOKIE}=`);
+    if (!hasCookie && isSupportedLanguage(saved) && saved !== state.language) {
+      changeLanguage(saved);
     } else {
-      const browserLang = navigator.language.split('-')[0];
-      if (['fr', 'en', 'es'].includes(browserLang)) {
-        setLanguage(browserLang);
-      } else {
-        setLanguage('fr');
-      }
+      persistLanguage(state.language);
     }
-    loadTranslations();
-    setIsInitialized(true);
-  }, [loadTranslations]);
-
-  // Sauvegarder la langue quand elle change
-  useEffect(() => {
-    if (isInitialized && !isLoading) {
-      localStorage.setItem('language', language);
-    }
-  }, [language, isInitialized, isLoading]);
-
-  const changeLanguage = useCallback(async (lang: string) => {
-    if (['fr', 'en', 'es'].includes(lang)) {
-      setLanguage(lang);
-      return Promise.resolve();
-    }
-    return Promise.reject(new Error('Langue non supportée'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fonction de traduction
-  const t = useCallback((key: string): string => {
-    if (isLoading) return key;
-    
-    const keys = key.split('.');
-    let value: any = translations[language];
-    
-    for (const k of keys) {
-      if (value && typeof value === 'object') {
-        value = value[k];
-      } else {
-        value = undefined;
-        break;
-      }
-    }
-    
-    if (value === undefined || value === null) {
-      // Fallback vers l'anglais
-      let fallbackValue: any = translations['en'];
-      for (const k of keys) {
-        if (fallbackValue && typeof fallbackValue === 'object') {
-          fallbackValue = fallbackValue[k];
-        } else {
-          fallbackValue = undefined;
-          break;
-        }
-      }
-      return fallbackValue || key;
-    }
-    
-    return value;
-  }, [language, isLoading]);
+  const { language, messages } = state;
 
-  if (isLoading) {
-    return <Spinner fullScreen />;
-  }
-
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage, changeLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
+  const t = useCallback(
+    (key: string): string => {
+      const value = lookup(messages, key);
+      return value === undefined || value === null ? key : value;
+    },
+    [messages]
   );
+
+  const setLanguage = useCallback((lang: string) => { void changeLanguage(lang); }, [changeLanguage]);
+
+  const value = useMemo(
+    () => ({ language, setLanguage, changeLanguage, t }),
+    [language, setLanguage, changeLanguage, t]
+  );
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 }

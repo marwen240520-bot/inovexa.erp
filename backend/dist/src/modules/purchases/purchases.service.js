@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const purchase_entity_1 = require("./entities/purchase.entity");
 const product_entity_1 = require("../products/product.entity");
 const supplier_entity_1 = require("../suppliers/supplier.entity");
+const import_utils_1 = require("../../common/import-utils");
 let PurchasesService = class PurchasesService {
     constructor(purchaseRepository, productRepository, supplierRepository) {
         this.purchaseRepository = purchaseRepository;
@@ -103,6 +104,66 @@ let PurchasesService = class PurchasesService {
         }
         await this.purchaseRepository.delete(id);
         return { success: true, message: 'Achat supprimé, stock rétabli' };
+    }
+    async importPurchases(userId, rows) {
+        if (!Array.isArray(rows) || rows.length === 0)
+            throw new common_1.BadRequestException('Aucun achat à importer');
+        const details = [];
+        let success = 0;
+        let processed = 0;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if ((0, import_utils_1.isEmptyRow)(row))
+                continue;
+            processed++;
+            try {
+                const quantity = (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['quantity', 'quantite', 'qty', 'qte']), 1);
+                if (quantity <= 0)
+                    throw new Error('Quantité invalide (doit être supérieure à 0)');
+                const productId = (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['productId', 'product id', 'id produit', 'produit id']), 0);
+                const sku = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['sku', 'reference', 'ref', 'code']));
+                const productName = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['productName', 'product name', 'product', 'produit', 'nom produit', 'article', 'designation', 'libelle']));
+                let product = null;
+                if (productId)
+                    product = await this.productRepository.findOne({ where: { id: productId, userId } });
+                if (!product && sku)
+                    product = await this.productRepository.findOne({ where: { sku, userId } });
+                if (!product && productName) {
+                    product = await this.productRepository
+                        .createQueryBuilder('p')
+                        .where('p.userId = :userId', { userId })
+                        .andWhere('LOWER(p.name) = LOWER(:name)', { name: productName })
+                        .getOne();
+                }
+                if (!product) {
+                    throw new Error(`Produit introuvable (${productName || sku || productId || 'non renseigné'}). Importez ou créez d'abord vos produits.`);
+                }
+                const total = (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['total', 'montant', 'montant total', 'amount']), NaN);
+                const unitPrice = (0, import_utils_1.toNumber)((0, import_utils_1.pick)(row, ['unitPrice', 'unit price', 'prix unitaire', "prix d'achat", 'pu', 'prix', 'price']), Number.isFinite(total) ? total / quantity : Number(product.price) || 0);
+                const supplierName = (0, import_utils_1.toText)((0, import_utils_1.pick)(row, ['supplierName', 'supplier name', 'supplier', 'fournisseur', 'nom fournisseur']));
+                const supplier = await this.ensureSupplierExists(userId, supplierName || undefined);
+                const date = (0, import_utils_1.toDate)((0, import_utils_1.pick)(row, ['createdAt', 'date', 'date achat', 'purchase date']));
+                const purchase = this.purchaseRepository.create({
+                    userId,
+                    productId: product.id,
+                    productName: product.name,
+                    supplierName: supplier ? supplier.name : supplierName || undefined,
+                    quantity,
+                    unitPrice,
+                    total: Math.round(unitPrice * quantity * 100) / 100,
+                    status: (0, import_utils_1.normalizeStatus)((0, import_utils_1.pick)(row, ['status', 'statut', 'etat']), { received: ['recu', 'reçu', 'recue', 'reçue', 'livre', 'livré', 'received', 'delivered', 'paid', 'payee'], ordered: ['commande', 'commandé', 'ordered'], pending: ['en attente', 'pending'], cancelled: ['annule', 'annulé', 'cancelled', 'canceled'] }, 'pending'),
+                    ...(date ? { createdAt: date } : {}),
+                });
+                await this.purchaseRepository.save(purchase);
+                product.quantity = (product.quantity || 0) + quantity;
+                await this.productRepository.save(product);
+                success++;
+            }
+            catch (e) {
+                details.push({ row: i + 2, error: (0, import_utils_1.errorMessage)(e) });
+            }
+        }
+        return (0, import_utils_1.buildImportResult)('achat(s)', processed, success, details);
     }
 };
 exports.PurchasesService = PurchasesService;

@@ -29,17 +29,20 @@ let InvoicesController = class InvoicesController {
     async findByOperationNumber(operationNumber, req) {
         return this.invoicesService.findByOperationNumber(operationNumber, req.user.userId);
     }
+    async importInvoices(req, body) {
+        return this.invoicesService.importInvoices(req.user.userId, body?.invoices);
+    }
     async create(req, body) {
         return this.invoicesService.create(req.user.userId, body);
     }
     async update(id, req, body) {
         return this.invoicesService.update(parseInt(id), req.user.userId, body);
     }
-    async markAsPaid(id, req) {
-        return this.invoicesService.markAsPaid(parseInt(id), req.user.userId);
+    async markAsPaid(id, req, body) {
+        return this.invoicesService.markAsPaid(parseInt(id), req.user.userId, body?.paymentMethod);
     }
-    async markAsPaidByOperationNumber(operationNumber, req) {
-        return this.invoicesService.markAsPaidByOperationNumber(operationNumber, req.user.userId);
+    async markAsPaidByOperationNumber(operationNumber, req, body) {
+        return this.invoicesService.markAsPaidByOperationNumber(operationNumber, req.user.userId, body?.paymentMethod);
     }
     async delete(id, req) {
         return this.invoicesService.delete(parseInt(id), req.user.userId);
@@ -73,6 +76,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], InvoicesController.prototype, "findByOperationNumber", null);
 __decorate([
+    (0, common_1.Post)('import'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], InvoicesController.prototype, "importInvoices", null);
+__decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -93,16 +104,18 @@ __decorate([
     (0, common_1.Patch)(':id/pay'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Request)()),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], InvoicesController.prototype, "markAsPaid", null);
 __decorate([
     (0, common_1.Patch)('number/:operationNumber/pay'),
     __param(0, (0, common_1.Param)('operationNumber')),
     __param(1, (0, common_1.Request)()),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], InvoicesController.prototype, "markAsPaidByOperationNumber", null);
 __decorate([

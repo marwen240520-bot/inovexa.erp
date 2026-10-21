@@ -5,22 +5,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useAppSettings } from "@/hooks/useAppSettings";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-} from "chart.js";
-import { Doughnut } from "react-chartjs-2";
+import { Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement
-);
 
 // --- SVG Icon Components -------------------------------------------------------
 

@@ -158,59 +158,40 @@ export default function HomePage(): React.ReactElement {
   const themeClass = isLight ? "hp-light" : "hp-dark";
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isExiting, setIsExiting] = useState<boolean>(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
-  const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false]);
-  const [heroVisible, setHeroVisible] = useState<boolean>(false);
-  const [subtitleVisible, setSubtitleVisible] = useState<boolean>(false);
-  const [badgeVisible, setBadgeVisible] = useState<boolean>(false);
-  const [logoVisible, setLogoVisible] = useState<boolean>(false);
+  // Le contenu est visible dès le HTML envoyé par le serveur. L'apparition progressive est faite
+  // en CSS (classes « hp-rise »), sans attendre le JavaScript : plus d'écran de chargement artificiel
+  // de 1,2 s ni de minuteries avant que le titre s'affiche.
 
   const isCompact: boolean = isMobile || isTablet;
 
+  // Positions pseudo-aléatoires mais identiques côté serveur et navigateur (pas d'écart à l'hydratation)
   const particles: Particle[] = useMemo((): Particle[] => {
     const count: number = isMobile ? 10 : 20;
+    const rand = (n: number): number => { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
     const result: Particle[] = [];
     for (let i = 0; i < count; i++) {
       result.push({
         id: i,
-        left: Math.random() * 100 + "%",
-        top: Math.random() * 100 + "%",
-        duration: 8 + Math.random() * 15 + "s",
-        delay: Math.random() * 5 + "s",
-        size: 1 + Math.random() * 3 + "px"
+        left: (rand(i * 5 + 1) * 100).toFixed(2) + "%",
+        top: (rand(i * 5 + 2) * 100).toFixed(2) + "%",
+        duration: (8 + rand(i * 5 + 3) * 15).toFixed(2) + "s",
+        delay: (rand(i * 5 + 4) * 5).toFixed(2) + "s",
+        size: (1 + rand(i * 5 + 5) * 3).toFixed(2) + "px"
       });
     }
     return result;
   }, [isMobile]);
 
-  useEffect((): (() => void) => {
-    setIsLoading(true);
-    setIsExiting(false);
-    setLogoVisible(false);
-    setBadgeVisible(false);
-    setHeroVisible(false);
-    setSubtitleVisible(false);
-    setVisibleCards([false, false, false, false]);
-
-    const token: string | null = localStorage.getItem("token");
+  useEffect((): void => {
+    let token: string | null = null;
+    try { token = localStorage.getItem("token"); } catch { /* stockage indisponible */ }
     setIsLoggedIn(!!token);
-
-    let seen = false;
-    try { seen = sessionStorage.getItem("hp_loaded") === "1"; } catch { /* stockage indisponible */ }
-    const minDisplay = seen ? 0 : 900;
-    const fadeDuration = seen ? 0 : 300;
-
-    const t1 = setTimeout(() => { setIsExiting(true); }, minDisplay);
-    // L'indicateur « déjà vu » n'est posé qu'à la FIN du chargement (sinon le double appel d'effet de React en développement le posait trop tôt)
-    const t2 = setTimeout(() => { setIsLoading(false); try { sessionStorage.setItem("hp_loaded", "1"); } catch { /* ignoré */ } }, minDisplay + fadeDuration);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [pathname]);
+    // Utilisateur déjà connecté : la page du tableau de bord est préchargée pour un clic instantané
+    const full = { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1];
+    if (token) { try { router.prefetch("/dashboard", full); } catch { /* ignoré */ } }
+    else { try { router.prefetch("/auth/login", full); } catch { /* ignoré */ } }
+  }, [pathname, router]);
 
   useEffect((): (() => void) | undefined => {
     if (!showLanguageMenu) return;
@@ -218,18 +199,6 @@ export default function HomePage(): React.ReactElement {
     setTimeout((): void => { document.addEventListener("click", handler); }, 0);
     return (): void => { document.removeEventListener("click", handler); };
   }, [showLanguageMenu]);
-
-  useEffect((): (() => void) | undefined => {
-    if (isLoading) return;
-    const t0 = setTimeout(() => setLogoVisible(true), 100);
-    const t1 = setTimeout(() => setBadgeVisible(true), 300);
-    const t2 = setTimeout(() => setHeroVisible(true), 500);
-    const t3 = setTimeout(() => setSubtitleVisible(true), 800);
-    const cardTimers = [0, 1, 2, 3].map((i) =>
-      setTimeout(() => setVisibleCards((prev) => { const next = [...prev]; next[i] = true; return next; }), 1000 + i * 120)
-    );
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); cardTimers.forEach(clearTimeout); };
-  }, [isLoading]);
 
   const handleLanguageChange = (lang: string): void => {
     changeLanguage(lang);
@@ -293,43 +262,6 @@ export default function HomePage(): React.ReactElement {
   const text: any = getTranslations();
   const flagCodes: Record<string, string> = { en: "gb", fr: "fr", es: "es" };
 
-  // ═════════════════════════════════════════════════════════════════════════════
-  //  ÉCRAN DE CHARGEMENT (LOADER)
-  // ═════════════════════════════════════════════════════════════════════════════
-  if (isLoading) {
-    return React.createElement("div", {
-      className: "loader-screen " + themeClass + (isExiting ? " loader-exit" : ""),
-      style: {
-        ...themeVars,
-        position: "fixed",
-        inset: 0,
-        background: "var(--hp-bg)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif"
-      }
-    },
-      React.createElement("img", { src: "/images/logo.png", alt: "Inovexa", style: { width: "96px", height: "96px", objectFit: "contain", marginBottom: "16px" } }),
-      React.createElement("h1", { style: { color: "var(--hp-text)", fontSize: "22px", fontWeight: "300", margin: 0, letterSpacing: "3px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
-        React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
-      ),
-      React.createElement("div", { style: { color: "var(--hp-muted)", fontSize: "11px", fontWeight: "600", letterSpacing: "7px", textTransform: "uppercase", margin: "6px 0 26px", fontFamily: LOGO_FONT } }, "ERP"),
-      React.createElement("div", { style: { width: "160px", height: "3px", borderRadius: "999px", background: "rgba(168, 85, 247, 0.18)", overflow: "hidden" } },
-        React.createElement("div", { className: "loader-bar-fill" })
-      ),
-      React.createElement("style", { dangerouslySetInnerHTML: { __html: `
-        .loader-screen { transition: opacity 0.3s ease; }
-        .loader-exit { opacity: 0; }
-        .loader-bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #A855F7, #6366F1); animation: loaderBarFill 0.9s ease-out forwards; }
-        @keyframes loaderBarFill { from { width: 0; } to { width: 100%; } }
-        @media (prefers-reduced-motion: reduce) { .loader-bar-fill { animation: none; width: 100%; } }
-      ` } })
-    );
-  }
-
   return React.createElement("div", {
     className: "home-page-enter " + themeClass,
     style: {
@@ -386,11 +318,9 @@ export default function HomePage(): React.ReactElement {
         style: {
           display: "flex",
           alignItems: "center",
-          gap: "12px",
-          opacity: logoVisible ? 1 : 0,
-          transform: logoVisible ? "translateY(0)" : "translateY(-20px)",
-          transition: "opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)"
-        }
+          gap: "12px"
+        },
+        className: "hp-rise"
       },
         // Logo image (52px — conservé)
         React.createElement("div", {
@@ -541,11 +471,9 @@ export default function HomePage(): React.ReactElement {
           display: "flex",
           alignItems: "center",
           gap: isMobile ? "20px" : "26px",
-          marginBottom: "clamp(10px, 2vh, 28px)",
-          opacity: logoVisible ? 1 : 0,
-          transform: logoVisible ? "translateY(0)" : "translateY(60px)",
-          transition: "opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1)"
-        }
+          marginBottom: "clamp(10px, 2vh, 28px)"
+        },
+        className: "hp-rise"
       },
         React.createElement("div", { className: "logo3d-scene", style: { width: isMobile ? "90px" : "105px", height: isMobile ? "90px" : "105px", position: "relative", flexShrink: 0 } },
           React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
@@ -567,7 +495,7 @@ export default function HomePage(): React.ReactElement {
         )
       ),
       // ── Pastille au-dessus du titre (ordinateur / tablette) ──
-      !isMobile && React.createElement("div", { style: { display: "inline-flex", alignItems: "center", gap: "8px", alignSelf: "flex-start", padding: "6px 14px", borderRadius: "999px", border: "1px solid rgba(168, 85, 247, 0.3)", background: "var(--hp-card-bg)", color: "var(--hp-feature-text)", fontSize: "11.5px", fontWeight: "700", letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(12px, 2.2vh, 20px)", opacity: heroVisible ? 1 : 0, transition: "opacity 0.75s ease" } },
+      !isMobile && React.createElement("div", { style: { display: "inline-flex", alignItems: "center", gap: "8px", alignSelf: "flex-start", padding: "6px 14px", borderRadius: "999px", border: "1px solid rgba(168, 85, 247, 0.3)", background: "var(--hp-card-bg)", color: "var(--hp-feature-text)", fontSize: "11.5px", fontWeight: "700", letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(12px, 2.2vh, 20px)" }, className: "hp-rise hp-d1" },
         React.createElement("span", { style: { width: "7px", height: "7px", borderRadius: "50%", background: "#A855F7" } }),
         text.eyebrow
       ),
@@ -581,15 +509,13 @@ export default function HomePage(): React.ReactElement {
           marginBottom: isMobile ? "28px" : "22px",
           marginTop: isMobile ? "24px" : "0",
           letterSpacing: "-1.5px",
-          textShadow: "0 0 30px rgba(168, 85, 247, 0.15)",
-          opacity: heroVisible ? 1 : 0,
-          transform: heroVisible ? "translateY(0)" : "translateY(28px)",
-          transition: "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)"
-        }
+          textShadow: "0 0 30px rgba(168, 85, 247, 0.15)"
+        },
+        className: "hp-rise hp-d2"
       }, text.title),
       React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: isMobile ? "36px" : "clamp(20px, 3.4vh, 32px)", maxWidth: isMobile ? "460px" : "540px" } },
         text.features.map((f: { title: string; desc?: string }, i: number) => {
-          return React.createElement("div", { key: i, className: "hp-feature-card", style: { display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start", gap: isMobile ? "8px" : "14px", padding: isMobile ? "14px" : "14px 16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", opacity: visibleCards[i] ? 1 : 0, transform: visibleCards[i] ? "translateY(0) scale(1)" : "translateY(22px) scale(0.97)", transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)" } },
+          return React.createElement("div", { key: i, className: "hp-feature-card hp-rise", style: { display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start", gap: isMobile ? "8px" : "14px", padding: isMobile ? "14px" : "14px 16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", animationDelay: (180 + i * 60) + "ms", transition: "transform 0.25s ease, border-color 0.25s ease" } },
             React.createElement("div", { style: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
             React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "4px" } },
               React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "11px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title),
@@ -598,7 +524,7 @@ export default function HomePage(): React.ReactElement {
           );
         })
       ),
-      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", opacity: subtitleVisible ? 1 : 0, transform: subtitleVisible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.65s ease, transform 0.65s ease" } },
+      React.createElement("div", { className: "hp-rise hp-d3", style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" } },
         React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
           React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
             React.createElement("span", { style: { position: "relative", zIndex: 2 } }, isLoggedIn ? text.button : text.login),
@@ -654,6 +580,11 @@ export default function HomePage(): React.ReactElement {
 
 
       .home-page-enter { animation: none; }
+      /* Apparition courte et sans JavaScript : le contenu est déjà dans le HTML */
+      .hp-rise { animation: hpRise 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+      .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 110ms; } .hp-d3 { animation-delay: 300ms; }
+      @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { .hp-rise { animation: none; } .erp-text-glow, .hero-word-glow, .cta-button-shimmer, .shimmer-effect, .logo3d, .logo3d-halo, .logo3d-ring { animation: none !important; } }
       .hp-feature-card:hover { transform: translateY(-2px) !important; border-color: rgba(168, 85, 247, 0.45) !important; }
       @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
 

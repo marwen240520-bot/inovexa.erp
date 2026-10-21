@@ -7,27 +7,10 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-  Filler,
-  TooltipItem
-} from "chart.js";
-import { Line, Doughnut } from "react-chartjs-2";
+import type { TooltipItem } from "chart.js";
+import { Line, Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
-  ArcElement, PointElement, LineElement, Filler
-);
 
 // --- TYPES -------------------------------------------------------------------
 type SalesDataPoint = { month: string; sales: number };
@@ -588,10 +571,12 @@ export default function DashboardPage() {
     const token = localStorage.getItem("token");
     if (!token) router.push("/auth/login");
     const initPage = async () => {
-      const freshUser = await loadUserFromBackend();
+      // Utilisateur enregistré affiché tout de suite ; le profil à jour et les données du tableau
+      // de bord sont chargés EN PARALLÈLE (avant : profil, puis seulement ensuite les 7 listes).
+      const userData = localStorage.getItem("user");
+      if (userData) { try { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } } catch { /* profil local illisible */ } }
+      const [freshUser] = await Promise.all([loadUserFromBackend(), fetchDashboardData()]);
       if (freshUser) { setUser(freshUser); const fi = freshUser.avatar || freshUser.profileImage; if (fi) { setProfileImage(fi); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } }
-      else { const userData = localStorage.getItem("user"); if (userData) { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } } }
-      await fetchDashboardData();
       setRefreshTime(formatDateTime(new Date()));
       setTimeout(() => setAnimateCards(true), 100);
     };

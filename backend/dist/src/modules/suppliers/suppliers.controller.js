@@ -29,6 +29,9 @@ let SuppliersController = class SuppliersController {
     async findOne(id, req) {
         return this.suppliersService.findOne(parseInt(id), req.user.userId);
     }
+    async importSuppliers(req, body) {
+        return this.suppliersService.importSuppliers(req.user.userId, body?.suppliers);
+    }
     async create(req, body) {
         return this.suppliersService.create(req.user.userId, body);
     }
@@ -62,6 +65,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], SuppliersController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)('import'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], SuppliersController.prototype, "importSuppliers", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Request)()),

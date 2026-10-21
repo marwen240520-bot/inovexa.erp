@@ -9,6 +9,7 @@ export declare class Purchase {
     unitPrice: number;
     total: number;
     status: string;
+    paymentMethod: string | null;
     createdAt: Date;
     product: Product;
 }

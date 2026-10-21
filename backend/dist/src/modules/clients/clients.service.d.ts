@@ -20,11 +20,7 @@ export declare class ClientsService {
     create(userId: number, data: Partial<Client>): Promise<Client>;
     update(id: number, userId: number, data: Partial<Client>): Promise<Client>;
     updateStatus(id: number, userId: number, status: string): Promise<Client>;
-    importClients(userId: number, clients: any[]): Promise<{
-        success: number;
-        errors: number;
-        total: number;
-    }>;
+    importClients(userId: number, rows: any[]): Promise<import("../../common/import-utils").ImportResult>;
     delete(id: number, userId: number): Promise<{
         success: boolean;
     }>;
