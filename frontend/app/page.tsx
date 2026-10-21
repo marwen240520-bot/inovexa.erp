@@ -1,448 +1,429 @@
 ﻿"use client";
 import React from "react";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import LanguageMenu from "@/components/ui/LanguageMenu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
-import ThemeToggle from "@/components/ui/ThemeToggle";
-import { useResponsive } from "@/hooks/useResponsive";
 
-// ─── Icônes SVG ────────────────────────────────────────────────────────────────
+// ─── Couleurs ──────────────────────────────────────────────────────────────────
+// Même style « violet immersif » que la page d'accueil, avec une variante claire.
 
-type IconProps = { size?: number | string; color?: string };
-const svgBase = (size: number | string, color: string, strokeWidth = "2") => ({
-  width: size,
-  height: size,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: color,
-  strokeWidth,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true,
-  focusable: "false" as const,
-});
+const LG_DARK: Record<string, string> = {
+  "--lg-base": "#0A0614",
+  "--lg-glow-1": "rgba(124,58,237,0.5)",
+  "--lg-glow-2": "rgba(79,70,229,0.4)",
+  "--lg-text": "#ffffff",
+  "--lg-muted": "rgba(233,227,255,0.7)",
+  "--lg-label": "rgba(233,227,255,0.85)",
+  "--lg-faint": "rgba(233,227,255,0.55)",
+  "--lg-card": "rgba(255,255,255,0.06)",
+  "--lg-card-border": "rgba(255,255,255,0.14)",
+  "--lg-card-shadow": "rgba(0,0,0,0.7)",
+  "--lg-chip-bg": "rgba(255,255,255,0.08)",
+  "--lg-chip-border": "rgba(255,255,255,0.18)",
+  "--lg-input-bg": "rgba(0,0,0,0.25)",
+  "--lg-input-border": "rgba(255,255,255,0.16)",
+  "--lg-placeholder": "rgba(233,227,255,0.4)",
+  "--lg-autofill": "#140d24",
+  "--lg-accent": "#C4B5FD",
+  "--lg-btn-bg": "#ffffff",
+  "--lg-btn-text": "#2E1065",
+  "--lg-btn-shadow": "rgba(167,139,250,0.45)",
+  "--lg-error": "#fca5a5",
+  "--lg-veil": "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(5,4,10,0.45), rgba(5,4,10,0.88))",
+  "--lg-card-solid": "rgba(16,10,30,0.74)",
+  "--lg-bg-opacity": "0.7",
+  "--lg-warn": "#FBBF24",
+};
+const LG_LIGHT: Record<string, string> = {
+  "--lg-base": "#F5F3FF",
+  "--lg-glow-1": "rgba(167,139,250,0.45)",
+  "--lg-glow-2": "rgba(129,140,248,0.3)",
+  "--lg-text": "#1E1035",
+  "--lg-muted": "#4B4466",
+  "--lg-label": "#2E2550",
+  "--lg-faint": "#6B6485",
+  "--lg-card": "rgba(255,255,255,0.78)",
+  "--lg-card-border": "rgba(109,40,217,0.16)",
+  "--lg-card-shadow": "rgba(76,29,149,0.25)",
+  "--lg-chip-bg": "rgba(255,255,255,0.85)",
+  "--lg-chip-border": "rgba(109,40,217,0.2)",
+  "--lg-input-bg": "#ffffff",
+  "--lg-input-border": "rgba(109,40,217,0.22)",
+  "--lg-placeholder": "#9a93b3",
+  "--lg-autofill": "#ffffff",
+  "--lg-accent": "#6D28D9",
+  "--lg-btn-bg": "#2E1065",
+  "--lg-btn-text": "#ffffff",
+  "--lg-btn-shadow": "rgba(109,40,217,0.35)",
+  "--lg-error": "#b91c1c",
+  "--lg-veil": "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(245,243,255,0.35), rgba(245,243,255,0.88))",
+  "--lg-card-solid": "rgba(255,255,255,0.86)",
+  "--lg-bg-opacity": "0.85",
+  "--lg-warn": "#b45309",
+};
 
-const IconTarget = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /></svg>
-);
-const IconBarChart = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
-);
-const IconShield = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-);
-const IconUsers = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-);
-const IconArrowRight = ({ size = "1.1em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.5")}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-);
-const IconChevronDown = ({ size = 11, color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.5")}><polyline points="6 9 12 15 18 9" /></svg>
-);
-const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.5")}><polyline points="20 6 9 17 4 12" /></svg>
-);
-const IconMonitor = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><rect x="2" y="4" width="20" height="13" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
-);
-const IconPhone = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><rect x="7" y="2" width="10" height="20" rx="2" /><line x1="11" y1="18" x2="13" y2="18" /></svg>
-);
-const IconGlobe = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20z" /></svg>
-);
-
-// ─── Types & constantes ────────────────────────────────────────────────────────
-
-type Lang = "fr" | "en" | "es";
-
-interface HomeText {
-  title: string;
-  modules: string;
-  subtitle: string;
-  button: string;
-  login: string;
-  signin: string;
-  copyright: string;
-  privacy: string;
-  terms: string;
-  langLabel: string;
-  previewAlt: string;
-  previewTitle: string;
-  previewText: string;
-  devices: [string, string, string];
-  features: { title: string; desc: string }[];
+/** Variables de couleur du login pour n'importe quel thème */
+function buildLgVars(themeId: string, theme: any): Record<string, string> {
+  if (themeId === "dark") return LG_DARK;
+  if (themeId === "light") return LG_LIGHT;
+  const light = isLightTheme(theme);
+  return { ...(light ? LG_LIGHT : LG_DARK), "--lg-base": theme.background };
 }
 
-const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
-const LANGS: { code: Lang; label: string; flag: string }[] = [
-  { code: "fr", label: "Français", flag: "fr" },
-  { code: "en", label: "English", flag: "gb" },
-  { code: "es", label: "Español", flag: "es" },
-];
-const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
-const DEVICE_ICONS = [IconMonitor, IconPhone, IconGlobe];
+// ─── Traductions ───────────────────────────────────────────────────────────────
 
-// Largeurs des deux colonnes sur ordinateur
-const LEFT_WIDTH = "40%";
-const RIGHT_WIDTH = "60%";
-// Image du côté droit selon le thème
-const PREVIEW_DARK = "/images/2.png";
-const PREVIEW_LIGHT = "/images/1.png";
-
-// Traductions définies une seule fois (et non recréées à chaque rendu)
-const TRANSLATIONS: Record<Lang, HomeText> = {
+const translations = {
   fr: {
-    title: "L'avenir de la gestion d'entreprise commence ici.",
-    modules: "Ventes · Stock · Factures · RH · Finance",
-    subtitle: "Un ERP clair et rapide pour gérer toute votre activité, en français, anglais et espagnol.",
-    button: "Accéder au Dashboard",
-    login: "Commencer maintenant",
-    signin: "Se connecter",
-    copyright: "Tous droits réservés.",
-    privacy: "Confidentialité",
-    terms: "Conditions",
-    langLabel: "Choisir la langue",
-    previewAlt: "Aperçu du tableau de bord Inovexa ERP",
-    previewTitle: "Votre ERP, partout avec vous.",
-    previewText: "Au bureau, en déplacement ou sur le terrain : accédez à vos données depuis n'importe quel appareil.",
-    devices: ["Ordinateur", "Mobile", "FR · EN · ES"],
-    features: [
-      { title: "Solutions intégrées", desc: "Ventes, achats, stock" },
-      { title: "Analyses temps réel", desc: "Tableaux de bord en direct" },
-      { title: "Sécurisé & fiable", desc: "Données protégées" },
-      { title: "Votre équipe", desc: "RH, finance, logistique" },
-    ],
-  },
-  es: {
-    title: "El futuro de la gestión empresarial comienza aquí.",
-    modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas",
-    subtitle: "Un ERP claro y rápido para gestionar toda su actividad, en francés, inglés y español.",
-    button: "Panel de Control",
-    login: "Empezar ahora",
-    signin: "Iniciar sesión",
-    copyright: "Todos los derechos reservados.",
-    privacy: "Privacidad",
-    terms: "Términos",
-    langLabel: "Elegir idioma",
-    previewAlt: "Vista previa del panel de Inovexa ERP",
-    previewTitle: "Su ERP, siempre con usted.",
-    previewText: "En la oficina, de viaje o sobre el terreno: acceda a sus datos desde cualquier dispositivo.",
-    devices: ["Ordenador", "Móvil", "FR · EN · ES"],
-    features: [
-      { title: "Soluciones integradas", desc: "Ventas, compras, stock" },
-      { title: "Análisis en tiempo real", desc: "Paneles en vivo" },
-      { title: "Seguro & confiable", desc: "Datos protegidos" },
-      { title: "Su equipo", desc: "RR. HH., finanzas, logística" },
-    ],
+    backToHome: "Retour à l'accueil",
+    remember: "Se souvenir de mon e-mail",
+    secure: "Connexion sécurisée",
+    welcome: "Accédez à votre espace de gestion.",
+    signIn: "Connectez-vous",
+    email: "Email",
+    password: "Mot de passe",
+    login: "Se connecter",
+    loggingIn: "Connexion...",
+    invalidCredentials: "Email ou mot de passe incorrect",
+    serverError: "Erreur de connexion au serveur",
+    tooMany: "Trop de tentatives. Réessayez plus tard.",
+    emailPlaceholder: "exemple@inovexa.com",
+    passwordPlaceholder: "Mot de passe",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
+    capsLock: "Verr. Maj activée",
+    rights: "Tous droits réservés.",
   },
   en: {
-    title: "The future of business management starts here.",
-    modules: "Sales · Stock · Invoices · HR · Finance",
-    subtitle: "A clear, fast ERP to run your whole business, in French, English and Spanish.",
-    button: "Go to Dashboard",
-    login: "Get Started Now",
-    signin: "Sign in",
-    copyright: "All rights reserved.",
-    privacy: "Privacy",
-    terms: "Terms",
-    langLabel: "Choose language",
-    previewAlt: "Inovexa ERP dashboard preview",
-    previewTitle: "Your ERP, wherever you are.",
-    previewText: "At the office, on the road or in the field: reach your data from any device.",
-    devices: ["Desktop", "Mobile", "FR · EN · ES"],
-    features: [
-      { title: "Integrated solutions", desc: "Sales, purchases, stock" },
-      { title: "Real-time insights", desc: "Live dashboards" },
-      { title: "Secure & reliable", desc: "Protected data" },
-      { title: "Empower your team", desc: "HR, finance, logistics" },
-    ],
+    backToHome: "Back to home",
+    remember: "Remember my email",
+    secure: "Secure sign-in",
+    welcome: "Access your management workspace.",
+    signIn: "Sign in",
+    email: "Email",
+    password: "Password",
+    login: "Sign in",
+    loggingIn: "Signing in...",
+    invalidCredentials: "Invalid email or password",
+    serverError: "Connection error",
+    tooMany: "Too many attempts. Please try again later.",
+    emailPlaceholder: "example@inovexa.com",
+    passwordPlaceholder: "Password",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    capsLock: "Caps Lock is on",
+    rights: "All rights reserved.",
+  },
+  es: {
+    backToHome: "Volver al inicio",
+    remember: "Recordar mi correo",
+    secure: "Conexión segura",
+    welcome: "Acceda a su espacio de gestión.",
+    signIn: "Inicie sesión",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    login: "Iniciar sesión",
+    loggingIn: "Iniciando sesión...",
+    invalidCredentials: "Correo o contraseña incorrectos",
+    serverError: "Error de conexión",
+    tooMany: "Demasiados intentos. Inténtelo más tarde.",
+    emailPlaceholder: "ejemplo@inovexa.com",
+    passwordPlaceholder: "Contraseña",
+    showPassword: "Mostrar la contraseña",
+    hidePassword: "Ocultar la contraseña",
+    capsLock: "Bloq Mayús activado",
+    rights: "Todos los derechos reservados.",
   },
 };
 
-// Couleurs de la page. Le panneau gauche « violet immersif » a sa propre variante claire.
-const HP_DARK: Record<string, string> = {
-  "--hp-bg": "#000000",
-  "--hp-text": "#ffffff",
-  "--hp-muted": "rgba(233,227,255,0.75)",
-  "--hp-faint": "rgba(233,227,255,0.6)",
-  "--hp-left-base": "#0A0614",
-  "--hp-left-glow-1": "rgba(124,58,237,0.55)",
-  "--hp-left-glow-2": "rgba(79,70,229,0.4)",
-  "--hp-glass": "rgba(255,255,255,0.06)",
-  "--hp-glass-border": "rgba(255,255,255,0.12)",
-  "--hp-glass-line": "rgba(255,255,255,0.08)",
-  "--hp-chip-bg": "rgba(255,255,255,0.08)",
-  "--hp-chip-border": "rgba(255,255,255,0.16)",
-  "--hp-icon": "#C4B5FD",
-  "--hp-accent-text": "#C4B5FD",
-  "--hp-cta-bg": "#ffffff",
-  "--hp-cta-text": "#2E1065",
-  "--hp-cta-shadow": "rgba(167,139,250,0.45)",
-  "--hp-ghost-border": "rgba(255,255,255,0.3)",
-  "--hp-link": "#DDD6FE",
-  "--hp-header-bg": "rgba(10,6,20,0.85)",
-  "--hp-menu-bg": "rgba(16,10,30,0.97)",
-  "--hp-menu-text": "rgba(255,255,255,0.88)",
-  "--hp-shadow": "rgba(0,0,0,0.7)",
-  "--hp-right-bg": "#05040a",
-  "--hp-right-glow": "rgba(124,58,237,0.28)",
-  "--hp-laptop-body": "linear-gradient(180deg, #2a2733, #16141d)",
-  "--hp-laptop-base": "linear-gradient(180deg, #3a3646, #1c1a24)",
-  "--hp-laptop-edge": "rgba(255,255,255,0.14)",
-  "--hp-laptop-cam": "#3a3646",
-  "--hp-laptop-notch": "#14121a",
-  "--hp-laptop-floor": "rgba(0,0,0,0.6)",
-};
-const HP_LIGHT: Record<string, string> = {
-  "--hp-bg": "#f8f7ff",
-  "--hp-text": "#1E1035",
-  "--hp-muted": "#4B4466",
-  "--hp-faint": "#6B6485",
-  "--hp-left-base": "#F5F3FF",
-  "--hp-left-glow-1": "rgba(167,139,250,0.45)",
-  "--hp-left-glow-2": "rgba(129,140,248,0.3)",
-  "--hp-glass": "rgba(255,255,255,0.7)",
-  "--hp-glass-border": "rgba(109,40,217,0.14)",
-  "--hp-glass-line": "rgba(109,40,217,0.1)",
-  "--hp-chip-bg": "rgba(255,255,255,0.8)",
-  "--hp-chip-border": "rgba(109,40,217,0.18)",
-  "--hp-icon": "#6D28D9",
-  "--hp-accent-text": "#6D28D9",
-  "--hp-cta-bg": "#2E1065",
-  "--hp-cta-text": "#ffffff",
-  "--hp-cta-shadow": "rgba(109,40,217,0.35)",
-  "--hp-ghost-border": "rgba(46,16,101,0.25)",
-  "--hp-link": "#6D28D9",
-  "--hp-header-bg": "rgba(245,243,255,0.9)",
-  "--hp-menu-bg": "rgba(255,255,255,0.98)",
-  "--hp-menu-text": "#374151",
-  "--hp-shadow": "rgba(17,24,39,0.18)",
-  "--hp-right-bg": "#f8f7ff",
-  "--hp-right-glow": "rgba(167,139,250,0.3)",
-  "--hp-laptop-body": "linear-gradient(180deg, #e9e6f2, #d6d2e2)",
-  "--hp-laptop-base": "linear-gradient(180deg, #dcd8e8, #bdb7cf)",
-  "--hp-laptop-edge": "rgba(46,16,101,0.18)",
-  "--hp-laptop-cam": "#a9a3bd",
-  "--hp-laptop-notch": "#b1abc6",
-  "--hp-laptop-floor": "rgba(46,16,101,0.25)",
-};
+// Capture du tableau de bord utilisée en fond flouté (même images que l'accueil)
+const BG_DARK = "/images/2.png";
+const BG_LIGHT = "/images/1.png";
 
-/** Variables de couleur pour n'importe quel thème */
-function buildHpVars(themeId: string, theme: any): Record<string, string> {
-  if (themeId === "dark") return HP_DARK;
-  if (themeId === "light") return HP_LIGHT;
-  const light = isLightTheme(theme);
-  return {
-    ...(light ? HP_LIGHT : HP_DARK),
-    "--hp-bg": theme.background,
-    "--hp-right-bg": theme.background,
-  };
-}
+/**
+ * Choix du fond de la page de connexion — changez simplement cette valeur :
+ *  "capture" : capture du tableau de bord floutée (2.png / 1.png)
+ *  "aurora"  : halos violets qui bougent lentement
+ *  "grid"    : grille de points avec une lueur au centre
+ *  "mesh"    : dégradé violet / indigo / rose, fixe
+ *  "modules" : icônes des modules en filigrane
+ *  "rays"      : rayons de lumière depuis le haut
+ *  "spotlight" : projecteur au centre
+ *  "horizon"   : sol en grille en perspective
+ *  "waves"     : vagues violettes en bas
+ *  "grain"     : lueur avec grain photo
+ *  "rings"     : cercles concentriques
+ *  "hexagons"  : motif d'hexagones
+ *  "lines"     : quadrillage fin
+ *  "split"     : coupe en diagonale violet / noir
+ *  "bokeh"     : bulles de lumière floues
+ *  "stars"     : ciel étoilé
+ *  "nebula"    : nébuleuse colorée
+ *  "sunset"    : coucher de soleil violet / rose
+ *  "ocean"     : indigo et bleu-vert
+ *  "midnight"  : nuit sobre, presque uni
+ *  "shapes"    : grandes formes floues
+ *  "topo"      : lignes de niveau (carte)
+ *  "checker"   : damier très doux
+ *  "beam"      : faisceau qui traverse lentement
+ *  "stripes"   : rayures diagonales fines
+ */
+const FX_BACKGROUNDS = ["rays", "spotlight", "horizon", "waves", "grain", "rings", "hexagons", "lines", "split", "bokeh", "stars", "nebula", "sunset", "ocean", "midnight", "shapes", "topo", "checker", "beam", "stripes"] as const;
+type LoginBackground = "capture" | "aurora" | "grid" | "mesh" | "modules" | (typeof FX_BACKGROUNDS)[number];
+const BACKGROUND: LoginBackground = "horizon";
 
-// ─── Composant principal ───────────────────────────────────────────────────────
+const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
 
-export default function HomePage(): React.ReactElement {
+// ─── Icônes ────────────────────────────────────────────────────────────────────
+
+const svgProps = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+const IconMail = () => <svg width="18" height="18" {...svgProps}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>;
+const IconLock = () => <svg width="18" height="18" {...svgProps}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>;
+const IconEye = () => <svg width="20" height="20" {...svgProps}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+const IconEyeOff = () => <svg width="20" height="20" {...svgProps}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>;
+const IconShieldCheck = () => <svg width="14" height="14" {...svgProps} strokeWidth={2}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>;
+const IconArrowLeft = () => <svg width="16" height="16" {...svgProps} strokeWidth={2.2}><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>;
+const IconArrowRight = () => <svg width="17" height="17" {...svgProps} strokeWidth={2.5}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
+const IconAlert = () => <svg width="16" height="16" {...svgProps} strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>;
+
+// Icônes des modules pour le fond « modules »
+const ico = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+const MODULE_ICONS = [
+  () => <svg {...ico}><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>,
+  () => <svg {...ico}><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z" /></svg>,
+  () => <svg {...ico}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>,
+  () => <svg {...ico}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
+  () => <svg {...ico}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>,
+  () => <svg {...ico}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>,
+  () => <svg {...ico}><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>,
+  () => <svg {...ico}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+];
+const MODULE_POS: React.CSSProperties[] = [
+  { top: "12%", left: "8%", width: 92, transform: "rotate(-12deg)" },
+  { top: "64%", left: "12%", width: 120, transform: "rotate(8deg)" },
+  { top: "20%", right: "10%", width: 110, transform: "rotate(10deg)" },
+  { top: "70%", right: "8%", width: 96, transform: "rotate(-8deg)" },
+  { top: "42%", left: "3%", width: 70, transform: "rotate(4deg)" },
+  { top: "46%", right: "3%", width: 74, transform: "rotate(-6deg)" },
+  { top: "84%", left: "40%", width: 64, transform: "rotate(-4deg)" },
+  { top: "4%", left: "44%", width: 60, transform: "rotate(6deg)" },
+];
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
+
+export default function LoginPage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const { language, changeLanguage } = useLanguage();
-  const { isMobile, isTablet } = useResponsive();
+  const { language } = useLanguage();
   const { theme, themeId } = useTheme();
-
   const isLight = isLightTheme(theme);
-  const themeVars = useMemo(() => buildHpVars(themeId, theme) as React.CSSProperties, [themeId, theme]);
-  const isCompact = isMobile || isTablet;
+  const themeVars = useMemo(() => buildLgVars(themeId, theme) as React.CSSProperties, [themeId, theme]);
+  const t = translations[language as keyof typeof translations] || translations.fr;
 
-  const lang: Lang = (["fr", "en", "es"] as const).includes(language as Lang) ? (language as Lang) : "en";
-  const text = TRANSLATIONS[lang];
-  const currentLang = LANGS.find((l) => l.code === lang)!;
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
-  const langWrapRef = useRef<HTMLDivElement>(null);
-  const langButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Session + préchargement de la page suivante pour un clic instantané
+  // Précharge le tableau de bord pendant la saisie : il s'ouvre sans attente après la connexion
   useEffect(() => {
-    let token: string | null = null;
-    try { token = localStorage.getItem("token"); } catch { /* stockage indisponible */ }
-    setIsLoggedIn(!!token);
-    const full = { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1];
-    try { router.prefetch(token ? "/dashboard" : "/auth/login", full); } catch { /* ignoré */ }
-  }, [pathname, router]);
+    try { router.prefetch("/dashboard", { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
+  }, [router]);
 
-  // Fermeture du menu de langue : clic à l'extérieur ou touche Échap
+  // Pré-remplit l'e-mail mémorisé lors d'une précédente connexion
   useEffect(() => {
-    if (!showLanguageMenu) return;
-    const onPointer = (e: PointerEvent) => {
-      if (langWrapRef.current && !langWrapRef.current.contains(e.target as Node)) setShowLanguageMenu(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setShowLanguageMenu(false); langButtonRef.current?.focus(); }
-    };
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [showLanguageMenu]);
+    try {
+      const saved = localStorage.getItem("remember_email");
+      if (saved) setEmail(saved);
+      else if (localStorage.getItem("remember_email_off")) setRemember(false);
+    } catch { /* stockage indisponible */ }
+  }, []);
 
-  const handleLanguageChange = useCallback((code: Lang) => {
-    changeLanguage(code);
-    setShowLanguageMenu(false);
-    langButtonRef.current?.focus();
-  }, [changeLanguage]);
+  const detectCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (typeof e.getModifierState === "function") setCapsLockOn(e.getModifierState("CapsLock"));
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const baseURL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+      const res = await fetch(`${baseURL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
+      const data = await res.json().catch(() => ({} as any));
+
+      if (res.ok) {
+        try {
+          if (remember) { localStorage.setItem("remember_email", email.trim().toLowerCase()); localStorage.removeItem("remember_email_off"); }
+          else { localStorage.removeItem("remember_email"); localStorage.setItem("remember_email_off", "1"); }
+        } catch { /* stockage indisponible */ }
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        if (data.user.role === "admin") router.push("/admin/clients");
+        else if (data.user.role === "transporteur") router.push("/transporteur/shipments");
+        else router.push("/dashboard");
+      } else {
+        const serverMsg = Array.isArray(data?.message) ? data.message[0] : data?.message;
+        if (res.status === 429) setError(serverMsg || t.tooMany);
+        else if (res.status >= 500) setError(t.serverError);
+        else setError(serverMsg || t.invalidCredentials);
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      setError(t.serverError);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const year = new Date().getFullYear();
-  const ctaHref = isLoggedIn ? "/dashboard" : "/auth/login";
-
-  const brand = (
-    <Link href="/" aria-label="Inovexa ERP" className="hp-brand">
-      <span className="hp-logo">
-        <img src="/images/logo.png" alt="" width={88} height={88} />
-      </span>
-      <span className="hp-brand-name">
-        <b>INOV</b>EXA <span className="hp-brand-erp">ERP</span>
-      </span>
-    </Link>
-  );
 
   return (
-    <div
-      className={"home-page " + (isLight ? "hp-light" : "hp-dark") + (isCompact ? " is-compact" : "") + (isMobile ? " is-mobile" : "")}
-      style={{
-        ...themeVars,
-        minHeight: "100dvh",
-        background: "var(--hp-bg)",
-        display: "flex",
-        flexDirection: isCompact ? "column" : "row",
-        overflow: "hidden",
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-        position: "relative",
-      }}
-    >
-      {/* ── MOBILE : en-tête fixe ── */}
-      {isMobile && <header className="mobile-header">{brand}</header>}
-
-      {/* ── Thème + langue ── */}
-      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 200, display: "flex", alignItems: "center", gap: 10 }}>
-        <ThemeToggle variant="home" size={40} />
-        <div ref={langWrapRef} style={{ position: "relative" }}>
-          <button
-            ref={langButtonRef}
-            type="button"
-            className="hp-chip-btn"
-            aria-haspopup="listbox"
-            aria-expanded={showLanguageMenu}
-            aria-label={`${text.langLabel} — ${currentLang.label}`}
-            onClick={() => setShowLanguageMenu((v) => !v)}
-          >
-            <img src={`https://flagcdn.com/w20/${currentLang.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
-            <span style={{ fontWeight: 700, letterSpacing: 0.5 }}>{lang.toUpperCase()}</span>
-            <span className={"hp-chevron" + (showLanguageMenu ? " open" : "")}><IconChevronDown color="var(--hp-muted)" /></span>
-          </button>
-
-          {showLanguageMenu && (
-            <ul role="listbox" aria-label={text.langLabel} className="hp-lang-menu">
-              {LANGS.map((l) => {
-                const active = l.code === lang;
-                return (
-                  <li key={l.code} role="option" aria-selected={active}>
-                    <button type="button" lang={l.code} className={"hp-lang-item" + (active ? " active" : "")} onClick={() => handleLanguageChange(l.code)}>
-                      <img src={`https://flagcdn.com/w20/${l.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
-                      <span style={{ flex: 1 }}>{l.label}</span>
-                      {active && <IconCheck color="var(--hp-accent-text)" />}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+    <div className={"lg-root " + (isLight ? "lg-light" : "lg-dark")} style={themeVars}>
+      {/* ── Fond : capture du tableau de bord, floutée et voilée ── */}
+      {BACKGROUND === "capture" && (
+        <>
+          <div className="lg-bg" aria-hidden="true">
+            <img key={isLight ? "light" : "dark"} src={isLight ? BG_LIGHT : BG_DARK} alt="" draggable={false} />
+          </div>
+          <div className="lg-veil" aria-hidden="true" />
+        </>
+      )}
+      {BACKGROUND === "aurora" && (
+        <div className="lg-aurora" aria-hidden="true"><span /><span /><span /></div>
+      )}
+      {BACKGROUND === "grid" && <div className="lg-grid" aria-hidden="true" />}
+      {BACKGROUND === "mesh" && <div className="lg-mesh" aria-hidden="true" />}
+      {(FX_BACKGROUNDS as readonly string[]).includes(BACKGROUND) && (
+        <div className={"lg-fx lg-fx-" + BACKGROUND} aria-hidden="true"><span /></div>
+      )}
+      {BACKGROUND === "modules" && (
+        <div className="lg-modules" aria-hidden="true">
+          {MODULE_ICONS.map((Icon, i) => (
+            <span key={i} style={MODULE_POS[i]}><Icon /></span>
+          ))}
+        </div>
+      )}
+      {/* ── Barre du haut : retour à gauche, thème + langue à droite ── */}
+      <div className="lg-topbar">
+        <Link href="/" className="lg-back">
+          <IconArrowLeft />
+          <span>{t.backToHome}</span>
+        </Link>
+        <div className="lg-controls">
+          <ThemeToggle size={40} />
+          <LanguageMenu />
         </div>
       </div>
 
-      {/* ── CÔTÉ GAUCHE — violet immersif ── */}
-      <main className="hp-left" style={{ width: isCompact ? "100%" : LEFT_WIDTH }}>
-        {!isMobile && <div className="hp-rise">{brand}</div>}
+      {/* ── Contenu centré ── */}
+      <main className="lg-center">
+        <div className="lg-card lg-anim">
+          <Link href="/" aria-label="Inovexa ERP" className="lg-brand">
+            <span className="lg-logo">
+              <img src="/images/logo.png" alt="" width={64} height={64} />
+            </span>
+            <span className="lg-brand-name">
+              INOVEXA <span className="lg-brand-erp">ERP</span>
+            </span>
+          </Link>
+          <h1 className="lg-title">{t.signIn}</h1>
+          <p className="lg-welcome">{t.welcome}</p>
 
-        <div className="hp-left-body">
-          <div className="hp-rise hp-d1 hp-modules">
-            <span className="hp-live-dot" aria-hidden="true" />
-            {text.modules}
-          </div>
+          {error && (
+            <div className="lg-error" role="alert" aria-live="assertive">
+              <IconAlert />
+              <span>{error}</span>
+            </div>
+          )}
 
-          <h1 className="hp-rise hp-d2 hp-title">{text.title}</h1>
-          <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
-
-          {/* Le lien EST le bouton (pas de <button> dans un <a>) */}
-          <div className="hp-rise hp-d3 hp-actions">
-            <Link href={ctaHref} prefetch className="hp-cta">
-              {isLoggedIn ? text.button : text.login}
-              <span className="hp-cta-arrow"><IconArrowRight /></span>
-            </Link>
-            {!isLoggedIn && <Link href="/auth/login" className="hp-ghost">{text.signin}</Link>}
-          </div>
-
-          {/* Fonctionnalités — liste en verre */}
-          <ul className="hp-glass-list hp-rise hp-d4">
-            {text.features.map((f, i) => {
-              const Icon = FEATURE_ICONS[i];
-              return (
-                <li key={f.title} className="hp-glass-row">
-                  <Icon color="var(--hp-icon)" />
-                  <span className="hp-glass-title">{f.title}</span>
-                  <span className="hp-glass-desc">{f.desc}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <footer className="hp-footer">
-          <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa. {text.copyright}</p>
-          <nav aria-label="Legal" style={{ display: "flex", gap: 16 }}>
-            <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
-            <a href="https://inovexa-erp.com/terms.html" target="_blank" rel="noopener noreferrer">{text.terms}</a>
-          </nav>
-        </footer>
-      </main>
-
-      {/* ── CÔTÉ DROIT — image (2.png sombre / 1.png clair) puis texte ── */}
-      {!isMobile && (
-        <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
-          {/* Écran de bureau dessiné en CSS, avec la capture dedans */}
-          <div className="hp-monitor hp-rise hp-d2">
-            <div className="hp-monitor-frame">
-              <div className="hp-monitor-screen">
-                <img
-                  key={isLight ? "light" : "dark"}
-                  src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
-                  alt={text.previewAlt}
-                  draggable={false}
+          <form onSubmit={handleLogin} noValidate={false}>
+            <div className="lg-field">
+              <label htmlFor="lg-email" className="lg-label">{t.email}</label>
+              <div className="lg-input-wrap">
+                <span className="lg-input-icon"><IconMail /></span>
+                <input
+                  id="lg-email"
+                  className="lg-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t.emailPlaceholder}
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  inputMode="email"
+                  spellCheck={false}
+                  autoFocus
+                  aria-invalid={!!error}
+                  required
                 />
               </div>
-              <span className="hp-monitor-led" aria-hidden="true" />
             </div>
-            <div className="hp-monitor-neck" aria-hidden="true" />
-            <div className="hp-monitor-foot" aria-hidden="true" />
-            <div className="hp-monitor-shadow" aria-hidden="true" />
-          </div>
-          <div className="hp-right-text hp-rise hp-d3">
-            <h2 className="hp-right-title">{text.previewTitle}</h2>
-            <p className="hp-right-sub">{text.previewText}</p>
-            <ul className="hp-devices">
-              {text.devices.map((d, i) => {
-                const Icon = DEVICE_ICONS[i];
-                return <li key={d}><Icon color="var(--hp-icon)" />{d}</li>;
-              })}
-            </ul>
-          </div>
-        </aside>
-      )}
+
+            <div className="lg-field">
+              <label htmlFor="lg-password" className="lg-label">{t.password}</label>
+              <div className="lg-input-wrap">
+                <span className="lg-input-icon"><IconLock /></span>
+                <input
+                  id="lg-password"
+                  className="lg-input lg-input-pass"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.passwordPlaceholder}
+                  autoComplete="current-password"
+                  enterKeyHint="go"
+                  aria-invalid={!!error}
+                  onKeyDown={detectCapsLock}
+                  onKeyUp={detectCapsLock}
+                  required
+                />
+                <button
+                  type="button"
+                  className="lg-eye"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? t.hidePassword : t.showPassword}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <IconEyeOff /> : <IconEye />}
+                </button>
+              </div>
+              {capsLockOn && (
+                <p role="status" className="lg-caps"><span aria-hidden="true">⇪</span> {t.capsLock}</p>
+              )}
+            </div>
+
+            <label className="lg-remember">
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+              {t.remember}
+            </label>
+
+            <button className="lg-btn" type="submit" disabled={loading} aria-busy={loading}>
+              {loading && <span className="lg-spinner" aria-hidden="true" />}
+              <span>{loading ? t.loggingIn : t.login}</span>
+              {!loading && <IconArrowRight />}
+            </button>
+
+            <div className="lg-secure">
+              <IconShieldCheck />
+              {t.secure}
+            </div>
+          </form>
+        </div>
+      </main>
+
+      <p className="lg-footer" suppressHydrationWarning>© {year} Inovexa. {t.rights}</p>
 
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
     </div>
@@ -450,125 +431,160 @@ export default function HomePage(): React.ReactElement {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-// Toutes les tailles sont fluides (clamp) : la page tient dans l'écran à 100 % de zoom,
-// de 1280×720 jusqu'à 1920×1080 et plus, sans débordement ni zoom CSS.
+// Tailles fluides (clamp) : la carte tient dans l'écran à 100 % de zoom, de 1280×720 à 1920×1080.
 
 const STYLES = `
-  .home-page * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-  .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
-  .home-page ul { list-style: none; margin: 0; padding: 0; }
-
-  /* ── Panneau gauche ── */
-  .hp-left {
-    display: flex; flex-direction: column; justify-content: space-between; gap: clamp(16px, 3vh, 32px);
-    position: relative; z-index: 10; min-height: 100vh;
-    padding: clamp(22px, 4vh, 44px) clamp(28px, 3.4vw, 64px) clamp(18px, 3vh, 32px);
-    background-color: var(--hp-left-base);
+  .lg-root {
+    min-height: 100vh; min-height: 100dvh; position: relative; overflow-x: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--lg-text);
+    background-color: var(--lg-base);
     background-image:
-      radial-gradient(ellipse 80% 60% at 0% 0%, var(--hp-left-glow-1), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 100% 100%, var(--hp-left-glow-2), transparent 60%);
+      radial-gradient(ellipse 55% 50% at 15% 10%, var(--lg-glow-1), transparent 60%),
+      radial-gradient(ellipse 50% 45% at 85% 95%, var(--lg-glow-2), transparent 60%);
   }
-  .hp-left-body { display: flex; flex-direction: column; max-width: 560px; }
+  .lg-bg { position: fixed; inset: -60px; z-index: 0; pointer-events: none; }
+  .lg-bg img { width: 100%; height: 100%; object-fit: cover; filter: blur(12px) saturate(1.1); opacity: var(--lg-bg-opacity); transform: scale(1.04); }
+  .lg-veil { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--lg-veil); }
+  .lg-center, .lg-footer { position: relative; z-index: 1; }
 
-  /* ── Marque ── */
-  .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
-  .hp-logo { width: clamp(60px, 8.6vh, 88px); height: clamp(60px, 8.6vh, 88px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
-  .hp-brand-name { font-family: ${LOGO_FONT}; font-size: clamp(17px, 1.45vw, 23px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
-  .hp-brand-name b { font-weight: 800; }
-  .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
+  /* Fond « aurora » : halos qui bougent lentement */
+  .lg-aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .lg-aurora span { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .75; }
+  .lg-aurora span:nth-child(1) { width: 55vw; height: 55vw; left: -12vw; top: -18vw; background: #7C3AED; animation: lgFloat1 18s ease-in-out infinite alternate; }
+  .lg-aurora span:nth-child(2) { width: 45vw; height: 45vw; right: -10vw; bottom: -16vw; background: #4F46E5; animation: lgFloat2 22s ease-in-out infinite alternate; }
+  .lg-aurora span:nth-child(3) { width: 30vw; height: 30vw; left: 55%; top: 10%; background: #C026D3; opacity: .45; animation: lgFloat3 26s ease-in-out infinite alternate; }
+  .lg-light .lg-aurora span { opacity: .35; }
+  @keyframes lgFloat1 { to { transform: translate(10vw, 8vh) scale(1.1); } }
+  @keyframes lgFloat2 { to { transform: translate(-8vw, -10vh) scale(1.15); } }
+  @keyframes lgFloat3 { to { transform: translate(-14vw, 22vh) scale(.9); } }
 
-  /* ── En-tête mobile ── */
-  .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: 72px; background: var(--hp-header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--hp-glass-line); display: flex; align-items: center; z-index: 150; padding: 0 16px; padding-top: env(safe-area-inset-top); }
-  .mobile-header .hp-logo { width: 56px; height: 56px; }
-  .mobile-header .hp-brand-name { font-size: 17px; }
+  /* Fond « grid » : grille de points + lueur */
+  .lg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(circle at 50% 45%, rgba(124,58,237,0.38), transparent 45%), radial-gradient(var(--lg-dot, rgba(196,181,253,0.22)) 1.2px, transparent 1.2px);
+    background-size: 100% 100%, 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 40%, transparent 100%); mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 40%, transparent 100%); }
+  .lg-light .lg-grid { --lg-dot: rgba(109,40,217,0.22); }
 
-  /* ── Textes ── */
-  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.55em 1.1em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(11px, 0.85vw, 13px); font-weight: 600; margin-bottom: clamp(14px, 2.6vh, 26px); }
-  .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
-  @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
-  .hp-title { margin: 0 0 clamp(12px, 2.2vh, 22px); color: var(--hp-text); font-size: clamp(28px, min(3.15vw, 5.8vh), 56px); font-weight: 700; line-height: 1.07; letter-spacing: -0.03em; text-wrap: balance; }
-  .hp-subtitle { margin: 0 0 clamp(18px, 3.4vh, 34px); color: var(--hp-muted); font-size: clamp(14px, min(1.1vw, 1.95vh), 17px); line-height: 1.6; max-width: 480px; }
+  /* Fond « mesh » : dégradé fixe */
+  .lg-mesh { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(at 12% 18%, rgba(124,58,237,0.75) 0, transparent 45%),
+      radial-gradient(at 88% 12%, rgba(192,38,211,0.45) 0, transparent 40%),
+      radial-gradient(at 80% 88%, rgba(79,70,229,0.7) 0, transparent 45%),
+      radial-gradient(at 18% 92%, rgba(56,189,248,0.25) 0, transparent 40%); }
+  .lg-light .lg-mesh { opacity: .5; }
 
-  /* ── Boutons ── */
-  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: clamp(16px, 3.6vh, 40px); }
-  .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(46px, 6vh, 56px); padding: 0 clamp(20px, 1.8vw, 30px); border-radius: 999px; font-size: clamp(14px, 1vw, 16px); text-decoration: none; white-space: nowrap; }
-  .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
-  .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
-  .hp-cta:active { transform: translateY(0); }
-  .hp-cta-arrow { display: inline-flex; transition: transform .2s; }
-  .hp-cta:hover .hp-cta-arrow { transform: translateX(3px); }
-  .hp-ghost { border: 1px solid var(--hp-ghost-border); color: var(--hp-text) !important; font-weight: 600; transition: background .2s; }
-  .hp-ghost:hover { background: var(--hp-glass); }
+  /* ── 20 fonds supplémentaires (classe lg-fx-<nom>) ── */
+  .lg-fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .lg-fx span { position: absolute; inset: 0; }
+  .lg-light .lg-fx { opacity: .5; }
+  .lg-fx-rays { background: conic-gradient(from 180deg at 50% -10%, transparent 0deg, rgba(168,85,247,0.28) 8deg, transparent 16deg, transparent 24deg, rgba(99,102,241,0.22) 32deg, transparent 40deg, transparent 150deg, rgba(168,85,247,0.25) 158deg, transparent 166deg, transparent 176deg, rgba(192,38,211,0.2) 184deg, transparent 192deg, transparent 320deg, rgba(99,102,241,0.25) 328deg, transparent 336deg, transparent 344deg, rgba(168,85,247,0.28) 352deg, transparent 360deg); -webkit-mask-image: linear-gradient(#000, transparent 85%); mask-image: linear-gradient(#000, transparent 85%); }
+  .lg-fx-spotlight { background: radial-gradient(ellipse 40% 75% at 50% -5%, rgba(196,181,253,0.45), rgba(124,58,237,0.18) 45%, transparent 75%); }
+  .lg-fx-horizon { background: linear-gradient(180deg, transparent 50%, rgba(124,58,237,0.25)); }
+  .lg-fx-horizon span { top: 55%; inset-inline: -50%; bottom: -20%; background-image: linear-gradient(rgba(196,181,253,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(196,181,253,0.35) 1px, transparent 1px); background-size: 60px 60px; transform: perspective(500px) rotateX(62deg); transform-origin: top; -webkit-mask-image: linear-gradient(transparent, #000 40%); mask-image: linear-gradient(transparent, #000 40%); }
+  .lg-light .lg-fx-horizon { opacity: 1; background: linear-gradient(180deg, transparent 50%, rgba(167,139,250,0.3)); }
+  .lg-light .lg-fx-horizon span { background-image: linear-gradient(rgba(109,40,217,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(109,40,217,0.28) 1px, transparent 1px); }
+  /* Sur mobile : pas de grille horizon, fond simple */
+  @media (max-width: 768px) { .lg-fx-horizon { display: none; } }
+  .lg-fx-waves { background: radial-gradient(ellipse 90% 35% at 20% 108%, rgba(124,58,237,0.75), transparent 70%), radial-gradient(ellipse 80% 30% at 80% 112%, rgba(79,70,229,0.7), transparent 70%), radial-gradient(ellipse 120% 45% at 50% 120%, rgba(192,38,211,0.35), transparent 70%); }
+  .lg-fx-grain { background: radial-gradient(ellipse 60% 55% at 30% 25%, rgba(124,58,237,0.55), transparent 65%), radial-gradient(ellipse 55% 50% at 75% 80%, rgba(79,70,229,0.45), transparent 65%); }
+  .lg-fx-grain span { opacity: .22; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .lg-fx-rings { background: repeating-radial-gradient(circle at 50% 50%, transparent 0 46px, rgba(168,85,247,0.16) 46px 47px); -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 70%); mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 70%); }
+  .lg-fx-hexagons { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='98'><path d='M28 66L0 50V16L28 0l28 16v34L28 66zm0 32L0 82V66l28 16 28-16v16L28 98z' fill='none' stroke='%23A78BFA' stroke-opacity='0.22'/></svg>"), radial-gradient(ellipse 60% 55% at 50% 45%, rgba(124,58,237,0.3), transparent 70%); -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); }
+  .lg-fx-lines { background-image: linear-gradient(rgba(196,181,253,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(196,181,253,0.09) 1px, transparent 1px), radial-gradient(ellipse 55% 50% at 50% 45%, rgba(124,58,237,0.35), transparent 70%); background-size: 44px 44px, 44px 44px, 100% 100%; }
+  .lg-fx-split { background: linear-gradient(115deg, #2E1065 0%, #5B21B6 42%, transparent 42.1%), radial-gradient(ellipse 50% 50% at 85% 80%, rgba(79,70,229,0.35), transparent 70%); }
+  .lg-fx-bokeh { background: radial-gradient(circle at 12% 22%, rgba(168,85,247,0.55) 0 50px, transparent 90px), radial-gradient(circle at 86% 18%, rgba(99,102,241,0.5) 0 70px, transparent 120px), radial-gradient(circle at 78% 78%, rgba(192,38,211,0.4) 0 40px, transparent 80px), radial-gradient(circle at 20% 82%, rgba(124,58,237,0.45) 0 80px, transparent 140px), radial-gradient(circle at 52% 8%, rgba(196,181,253,0.3) 0 24px, transparent 50px), radial-gradient(circle at 60% 92%, rgba(99,102,241,0.35) 0 30px, transparent 60px); filter: blur(14px); }
+  .lg-fx-stars { background-color: transparent; background-image: radial-gradient(1.5px 1.5px at 8% 12%, #fff, transparent), radial-gradient(1px 1px at 22% 68%, #fff, transparent), radial-gradient(1.5px 1.5px at 35% 30%, #E9D5FF, transparent), radial-gradient(1px 1px at 48% 85%, #fff, transparent), radial-gradient(2px 2px at 62% 18%, #fff, transparent), radial-gradient(1px 1px at 74% 54%, #C4B5FD, transparent), radial-gradient(1.5px 1.5px at 88% 32%, #fff, transparent), radial-gradient(1px 1px at 93% 80%, #fff, transparent), radial-gradient(1px 1px at 15% 45%, #fff, transparent), radial-gradient(1.5px 1.5px at 55% 50%, #fff, transparent), radial-gradient(ellipse 60% 40% at 50% 100%, rgba(124,58,237,0.4), transparent 70%); background-size: 340px 340px, 280px 280px, 400px 400px, 300px 300px, 460px 460px, 260px 260px, 380px 380px, 320px 320px, 220px 220px, 500px 500px, 100% 100%; }
+  .lg-light .lg-fx-stars { filter: invert(1) hue-rotate(180deg); }
+  .lg-fx-nebula { background: conic-gradient(from 210deg at 65% 40%, rgba(124,58,237,0.55), rgba(192,38,211,0.4), rgba(79,70,229,0.5), rgba(56,189,248,0.2), rgba(124,58,237,0.55)); filter: blur(60px); transform: scale(1.2); }
+  .lg-fx-sunset { background: linear-gradient(180deg, transparent 0%, rgba(124,58,237,0.35) 45%, rgba(219,39,119,0.45) 78%, rgba(251,146,60,0.4) 100%); }
+  .lg-fx-ocean { background: radial-gradient(ellipse 70% 60% at 20% 20%, rgba(79,70,229,0.6), transparent 65%), radial-gradient(ellipse 70% 60% at 85% 85%, rgba(13,148,136,0.45), transparent 65%), radial-gradient(ellipse 50% 40% at 70% 30%, rgba(56,189,248,0.2), transparent 70%); }
+  .lg-fx-midnight { background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(46,16,101,0.55), transparent 75%); }
+  .lg-fx-shapes span { inset: auto; width: 38vw; height: 38vw; left: -8vw; top: -10vw; border-radius: 22%; background: linear-gradient(135deg, #7C3AED, #4F46E5); transform: rotate(24deg); filter: blur(50px); opacity: .55; box-shadow: 70vw 55vw 0 -6vw #C026D3; }
+  .lg-fx-topo { background: repeating-radial-gradient(ellipse 120% 80% at 30% 40%, transparent 0 22px, rgba(196,181,253,0.12) 22px 23px), repeating-radial-gradient(ellipse 100% 90% at 80% 70%, transparent 0 28px, rgba(165,180,252,0.1) 28px 29px); -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 30%, transparent 100%); mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 30%, transparent 100%); }
+  .lg-fx-checker { background-image: conic-gradient(rgba(168,85,247,0.08) 25%, transparent 0 50%, rgba(168,85,247,0.08) 0 75%, transparent 0), radial-gradient(ellipse 55% 50% at 50% 45%, rgba(124,58,237,0.32), transparent 70%); background-size: 64px 64px, 100% 100%; -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); }
+  .lg-fx-beam { background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(46,16,101,0.6), transparent 75%); }
+  .lg-fx-beam span { inset: -50% -20%; background: linear-gradient(105deg, transparent 40%, rgba(196,181,253,0.18) 48%, rgba(168,85,247,0.3) 50%, rgba(196,181,253,0.18) 52%, transparent 60%); animation: lgBeam 9s ease-in-out infinite; }
+  @keyframes lgBeam { 0% { transform: translateX(-45%); } 100% { transform: translateX(45%); } }
+  .lg-fx-stripes { background-image: repeating-linear-gradient(135deg, rgba(196,181,253,0.07) 0 2px, transparent 2px 22px), radial-gradient(ellipse 60% 55% at 50% 45%, rgba(124,58,237,0.35), transparent 70%); }
 
-  /* ── Liste en verre ── */
-  .hp-glass-list { display: flex; flex-direction: column; border-radius: 16px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); max-width: 540px; font-size: clamp(13px, 0.95vw, 15px); }
-  .hp-glass-row { display: flex; align-items: center; gap: 0.9em; padding: clamp(8px, 1.35vh, 15px) 1.2em; border-bottom: 1px solid var(--hp-glass-line); }
-  .hp-glass-row:last-child { border-bottom: none; }
-  .hp-glass-row svg { flex-shrink: 0; }
-  .hp-glass-title { flex: 1; font-weight: 600; color: var(--hp-text); }
-  .hp-glass-desc { font-size: 0.88em; color: var(--hp-muted); text-align: right; }
+  /* Fond « modules » : icônes en filigrane */
+  .lg-modules { position: fixed; inset: 0; z-index: 0; pointer-events: none; color: var(--lg-accent); }
+  .lg-modules span { position: absolute; display: block; aspect-ratio: 1; opacity: .14; }
+  .lg-modules svg { width: 100%; height: 100%; }
+  @media (max-width: 520px) { .lg-modules span { opacity: .08; } }
+  .lg-root * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  .lg-root :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
 
-  /* ── Pied de page ── */
-  .hp-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 12px; color: var(--hp-faint); }
-  .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
-  .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  /* ── Barre du haut ── */
+  .lg-topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 60; display: flex; align-items: center; justify-content: space-between; padding: max(env(safe-area-inset-top, 0px), 16px) clamp(16px, 2.2vw, 32px) 0; pointer-events: none; }
+  .lg-topbar > * { pointer-events: auto; }
+  .lg-back { display: inline-flex; align-items: center; gap: 8px; color: var(--lg-muted); font-size: 14px; font-weight: 500; text-decoration: none; padding: 8px 4px; transition: color .2s; }
+  .lg-back:hover { color: var(--lg-text); }
+  .lg-controls { display: flex; align-items: center; gap: 10px; }
 
-  /* ── Côté droit ── */
-  .hp-right {
-    flex-shrink: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: clamp(18px, 3.2vh, 32px); padding: clamp(28px, 6vh, 64px) clamp(28px, 3.6vw, 64px);
-    border-left: 1px solid rgba(139,92,246,0.18);
-    background-color: var(--hp-right-bg);
-    background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
+  /* ── Centre ── */
+  .lg-center { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: clamp(72px, 9vh, 96px) 16px clamp(16px, 3vh, 32px); }
+
+  /* ── Marque (dans la carte) ── */
+  .lg-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: clamp(18px, 3vh, 26px); }
+  .lg-logo { width: clamp(50px, 7vh, 64px); height: clamp(50px, 7vh, 64px); flex-shrink: 0; border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); box-shadow: 0 0 28px rgba(168,85,247,0.4); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .lg-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 8px rgba(138,43,226,0.6)); }
+  .lg-brand-name { font-family: ${LOGO_FONT}; font-weight: 800; font-size: clamp(17px, 2.3vh, 20px); letter-spacing: 2px; color: var(--lg-text); white-space: nowrap; }
+  .lg-brand-erp { color: var(--lg-accent); font-size: 0.7em; letter-spacing: 4px; }
+
+  /* ── Carte ── */
+  .lg-card { width: 100%; max-width: 440px; padding: clamp(24px, 4vh, 36px) clamp(22px, 2.6vw, 36px) clamp(20px, 3.2vh, 28px); border-radius: 24px; background: var(--lg-card-solid); border: 1px solid var(--lg-card-border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 40px 100px -30px var(--lg-card-shadow); }
+  .lg-title { margin: 0 0 6px; text-align: left; font-size: clamp(24px, 3.4vh, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--lg-text); }
+  .lg-welcome { margin: 0 0 clamp(18px, 3vh, 26px); text-align: left; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
+
+  .lg-error { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--lg-error); font-size: 13.5px; animation: lgShake .5s ease; }
+  .lg-error svg { flex-shrink: 0; }
+
+  .lg-field { margin-bottom: clamp(12px, 2vh, 18px); }
+  .lg-label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 500; color: var(--lg-label); }
+  .lg-input-wrap { position: relative; }
+  .lg-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; color: var(--lg-muted); pointer-events: none; }
+  .lg-input { width: 100%; height: clamp(46px, 6vh, 52px); padding: 0 16px 0 46px; border-radius: 12px; border: 1px solid var(--lg-input-border); background: var(--lg-input-bg); color: var(--lg-text); font-family: inherit; font-size: 15.5px; outline: none; -webkit-appearance: none; transition: border-color .2s, box-shadow .2s; }
+  .lg-input-pass { padding-right: 50px; }
+  .lg-input::placeholder { color: var(--lg-placeholder); }
+  .lg-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.25); }
+  .lg-input[aria-invalid="true"] { border-color: rgba(239,68,68,0.55); }
+  .lg-input:-webkit-autofill, .lg-input:-webkit-autofill:hover, .lg-input:-webkit-autofill:focus { -webkit-text-fill-color: var(--lg-text); -webkit-box-shadow: 0 0 0 1000px var(--lg-autofill) inset; transition: background-color 5000s ease-in-out 0s; }
+  .lg-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; border-radius: 10px; color: var(--lg-muted); cursor: pointer; }
+  .lg-eye:hover { color: var(--lg-text); }
+  .lg-caps { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12.5px; color: var(--lg-warn); }
+
+  .lg-remember { display: flex; align-items: center; gap: 10px; min-height: 28px; margin: 2px 0 clamp(16px, 2.6vh, 22px); font-size: 13.5px; color: var(--lg-label); cursor: pointer; }
+  .lg-remember input { width: 18px; height: 18px; accent-color: #8b5cf6; cursor: pointer; }
+
+  .lg-btn { width: 100%; height: clamp(48px, 6.2vh, 54px); display: flex; align-items: center; justify-content: center; gap: 10px; border: none; border-radius: 999px; background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); color: #ffffff; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 40px rgba(168,85,247,0.45); transition: transform .15s ease, box-shadow .25s ease, opacity .2s; touch-action: manipulation; }
+  .lg-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 48px var(--lg-btn-shadow); }
+  .lg-btn:active:not(:disabled) { transform: scale(0.98); }
+  .lg-btn:disabled { opacity: .7; cursor: not-allowed; }
+  .lg-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: lgSpin .8s linear infinite; }
+
+  .lg-secure { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-size: 12.5px; color: var(--lg-muted); }
+
+  .lg-footer { margin: 0; padding: 0 16px max(env(safe-area-inset-bottom, 0px), clamp(14px, 2.6vh, 24px)); font-size: 12px; color: var(--lg-faint); text-align: center; }
+
+  /* ── Mobile ── */
+  @media (max-width: 520px) {
+    .lg-back span { display: none; }
+    .lg-back { width: 40px; height: 40px; justify-content: center; border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); padding: 0; }
+    .lg-card { border-radius: 20px; padding: 24px 20px 20px; }
+    .lg-input { font-size: 16px; } /* évite le zoom automatique sur iPhone */
   }
-  /* ── Écran de bureau ── */
-  .hp-monitor { width: min(100%, 86vh); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
-  .hp-monitor-frame { position: relative; width: 100%; padding: 2% 2% 4.6%; border-radius: 18px; background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); }
-  .hp-monitor-screen { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #0c0b12; }
-  .hp-monitor-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; user-select: none; }
-  .hp-monitor-led { position: absolute; bottom: 1.8%; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #A855F7; box-shadow: 0 0 8px #A855F7; }
-  .hp-monitor-neck { width: 13%; height: clamp(30px, 6vh, 64px); background: var(--hp-laptop-base); border-left: 1px solid var(--hp-laptop-edge); border-right: 1px solid var(--hp-laptop-edge); }
-  .hp-monitor-foot { width: 38%; height: clamp(10px, 1.4vh, 14px); border-radius: 10px 10px 4px 4px; background: var(--hp-laptop-base); border: 1px solid var(--hp-laptop-edge); }
-  .hp-monitor-shadow { width: 52%; height: 20px; margin-top: 2px; border-radius: 50%; background: radial-gradient(ellipse, var(--hp-laptop-floor), transparent 70%); }
-  .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; }
-  .hp-right-title { margin: 0 0 8px; color: var(--hp-text); font-size: clamp(22px, min(2.2vw, 3.6vh), 34px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
-  .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(14px, 1vw, 16px); line-height: 1.6; }
-  .hp-devices { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: clamp(12.5px, 0.9vw, 14px); font-weight: 600; color: var(--hp-text); }
-  .hp-devices li { display: inline-flex; align-items: center; gap: 7px; }
 
-  /* ── Tablette / mobile ── */
-  .is-compact .hp-left { min-height: auto; }
-  .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
-  .is-compact .hp-monitor { width: min(100%, 720px); }
-  .is-mobile .hp-left { min-height: 100dvh; justify-content: flex-start; gap: 0; padding: 100px 20px 28px; }
-  .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
-  .is-mobile .hp-subtitle { font-size: 15px; }
-  .is-mobile .hp-actions { flex-direction: column; align-items: stretch; }
-  .is-mobile .hp-cta, .is-mobile .hp-ghost { height: 52px; font-size: 15px; }
-  .is-mobile .hp-footer { margin-top: 32px; flex-direction: column-reverse; align-items: flex-start; }
-  @media (max-width: 420px) {
-    .hp-glass-row { flex-wrap: wrap; row-gap: 2px; }
-    .hp-glass-desc { flex-basis: 100%; padding-left: 2em; text-align: left; }
-  }
-
-  /* ── Sélecteur de langue ── */
-  .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 12px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
-  .hp-chevron { display: inline-flex; transition: transform .2s; }
-  .hp-chevron.open { transform: rotate(180deg); }
-  .hp-lang-menu { position: absolute; top: 48px; right: 0; background: var(--hp-menu-bg); backdrop-filter: blur(20px); border: 1px solid var(--hp-chip-border); border-radius: 14px; padding: 6px !important; min-width: 150px; box-shadow: 0 20px 40px var(--hp-shadow); z-index: 201; animation: menuIn .16s ease-out; }
-  .hp-lang-item { width: 100%; background: transparent; border: none; color: var(--hp-menu-text); padding: 11px 12px; min-height: 44px; border-radius: 9px; cursor: pointer; text-align: left; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 10px; }
-  .hp-lang-item:hover { background: rgba(167,139,250,0.12); }
-  .hp-lang-item.active { background: rgba(167,139,250,0.2); color: var(--hp-accent-text); font-weight: 700; }
-  @keyframes menuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-
-  /* ── Apparition sans JavaScript ── */
-  .hp-rise { animation: hpRise .55s cubic-bezier(0.22,1,0.36,1) both; }
-  .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; } .hp-d4 { animation-delay: 320ms; }
-  @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-
+  /* ── Animations ── */
+  @keyframes lgFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  @keyframes lgShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
+  @keyframes lgSpin { to { transform: rotate(360deg); } }
+  .lg-anim { animation: lgFadeUp .6s cubic-bezier(0.22,1,0.36,1) both; }
+  .lg-d1 { animation-delay: 120ms; }
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-live-dot, .hp-lang-menu { animation: none !important; }
-    .hp-cta, .hp-cta-arrow, .hp-ghost { transition: none !important; }
+    .lg-anim, .lg-error, .lg-aurora span, .lg-fx-beam span { animation: none !important; }
+    .lg-btn, .lg-input { transition: none !important; }
   }
 `;
