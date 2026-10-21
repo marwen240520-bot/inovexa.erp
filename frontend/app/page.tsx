@@ -1,5 +1,4 @@
-﻿
-"use client";
+﻿"use client";
 import React from 'react';
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -71,7 +70,6 @@ const IconFileText = ({ size = 11, color = "currentColor" }: { size?: number; co
   </svg>
 );
 
-// ─── Interface pour les particules ─────────────────────────────────────────────
 interface Particle {
   id: number;
   left: string;
@@ -80,8 +78,6 @@ interface Particle {
   delay: string;
   size: string;
 }
-
-// ─── Feature icons list ─────────────────────────────────────────────────────────
 
 const featureIcons: React.ReactElement[] = [
   React.createElement(IconTarget, { size: 22, color: "#A855F7", key: "icon-target" }),
@@ -442,7 +438,7 @@ export default function HomePage(): React.ReactElement {
     )),
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  AMÉLIORATION DE LA PARTIE GAUCHE (LEFT SIDE)
+    //  PARTIE GAUCHE (LEFT SIDE) AVEC ANIMATION CRÉATIVE DU LOGO
     // ═════════════════════════════════════════════════════════════════════════
     React.createElement("div", {
       style: {
@@ -454,7 +450,7 @@ export default function HomePage(): React.ReactElement {
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
-      // Logo Desktop
+      // Logo Desktop doté d'animations cinématiques et interactives
       !isMobile && React.createElement("div", {
         style: {
           display: "flex",
@@ -464,15 +460,19 @@ export default function HomePage(): React.ReactElement {
         },
         className: "hp-rise"
       },
-        React.createElement("div", { className: "logo3d-scene", style: { width: "92px", height: "92px", position: "relative", flexShrink: 0 } },
+        React.createElement("div", { className: "logo3d-scene creative-logo-container", style: { width: "96px", height: "96px", position: "relative", flexShrink: 0 } },
           React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
+            // Effet de halo lumineux dynamique en arrière-plan
             React.createElement("div", { className: "logo3d-halo" }),
+            // Anneaux orbitaux animés en rotation 3D
             React.createElement("div", { className: "logo3d-ring logo3d-ring-1" }),
             React.createElement("div", { className: "logo3d-ring logo3d-ring-2" }),
+            // Reflet lumineux/shimmer traversant l'image du logo
+            React.createElement("div", { className: "logo-img-shimmer" }),
             React.createElement("img", {
               src: "/images/logo.png",
               alt: "Inovexa Logo",
-              style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))", transform: "translateZ(26px)" }
+              style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 20px rgba(168,85,247,0.8))", transform: "translateZ(30px)" }
             })
           )
         ),
@@ -484,7 +484,7 @@ export default function HomePage(): React.ReactElement {
         )
       ),
 
-      // Pastille Eyebrow modernisée
+      // Pastille Eyebrow
       !isMobile && React.createElement("div", { 
         style: { 
           display: "inline-flex", 
@@ -509,7 +509,7 @@ export default function HomePage(): React.ReactElement {
         text.eyebrow
       ),
 
-      // Titre principal optimisé avec fluidité et impact visuel
+      // Titre principal
       React.createElement("h1", {
         style: {
           fontSize: isMobile ? "34px" : isTablet ? "44px" : "clamp(38px, 4.8vw, 54px)",
@@ -523,7 +523,7 @@ export default function HomePage(): React.ReactElement {
         className: "hp-rise hp-d2"
       }, text.title),
 
-      // Grille des fonctionnalités modernisée
+      // Grille des fonctionnalités
       React.createElement("div", { 
         style: { 
           display: "grid", 
@@ -572,7 +572,7 @@ export default function HomePage(): React.ReactElement {
         })
       ),
 
-      // Bouton CTA principal raffiné
+      // Bouton CTA principal
       React.createElement("div", { className: "hp-rise hp-d3", style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" } },
         React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none", width: isMobile ? "100%" : "auto" } },
           React.createElement("button", { 
@@ -602,7 +602,7 @@ export default function HomePage(): React.ReactElement {
         )
       ),
 
-      // Section de bas de page (Copyright et Liens Légaux)
+      // Liens de bas de page et copyright
       React.createElement("div", { 
         style: { 
           marginTop: isMobile ? "36px" : "clamp(24px, 3vh, 38px)", 
@@ -627,7 +627,7 @@ export default function HomePage(): React.ReactElement {
       )
     ),
 
-    // RIGHT SIDE (Statique)
+    // RIGHT SIDE
     !isMobile && React.createElement("div", {
       style: {
         width: isTablet ? "100%" : "52%",
@@ -657,7 +657,7 @@ export default function HomePage(): React.ReactElement {
       .hp-rise { animation: hpRise 0.5s cubic-bezier(0.22,1,0.36,1) both; }
       .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 110ms; } .hp-d3 { animation-delay: 300ms; }
       @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-      @media (prefers-reduced-motion: reduce) { .hp-rise { animation: none; } .erp-text-glow, .hero-word-glow, .cta-button-shimmer, .shimmer-effect, .logo3d, .logo3d-halo, .logo3d-ring { animation: none !important; } }
+      @media (prefers-reduced-motion: reduce) { .hp-rise { animation: none; } .erp-text-glow, .hero-word-glow, .cta-button-shimmer, .shimmer-effect, .logo3d, .logo3d-halo, .logo3d-ring, .logo-img-shimmer { animation: none !important; } }
       
       .hp-feature-card:hover { 
         transform: translateY(-3px) !important; 
@@ -691,29 +691,40 @@ export default function HomePage(): React.ReactElement {
 
       @keyframes headerHaloPulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
 
-      .logo3d-scene { perspective: 700px; cursor: pointer; }
-      .logo3d { transform-style: preserve-3d; animation: logoFloat3D 7s ease-in-out infinite; will-change: transform; }
-      .logo3d-scene:hover .logo3d { animation: logoSpin3D 1.6s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
-      @keyframes logoFloat3D {
-        0%, 100% { transform: rotateY(-16deg) rotateX(8deg) translateY(0px); }
-        25%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
-        50%      { transform: rotateY(16deg)  rotateX(8deg) translateY(0px); }
-        75%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
+      /* ── ANIMATION CRÉATIVE DU LOGO 3D ── */
+      .logo3d-scene { perspective: 800px; cursor: pointer; }
+      .logo3d { transform-style: preserve-3d; animation: logoFloatCreative 6s ease-in-out infinite; will-change: transform; }
+      
+      /* Effet d'accélération et de mise en valeur au survol du logo */
+      .logo3d-scene:hover .logo3d { animation: logoSpinCreative 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite; }
+      
+      @keyframes logoFloatCreative {
+        0%, 100% { transform: rotateY(-18deg) rotateX(10deg) translateY(0px) scale(1); }
+        50%      { transform: rotateY(18deg) rotateX(-10deg) translateY(-8px) scale(1.04); }
       }
-      @keyframes logoSpin3D {
-        0%   { transform: rotateY(0deg)   rotateX(6deg); }
-        100% { transform: rotateY(360deg) rotateX(6deg); }
+      
+      @keyframes logoSpinCreative {
+        0%   { transform: rotateY(0deg) rotateX(10deg) scale(1.05); }
+        100% { transform: rotateY(360deg) rotateX(10deg) scale(1.05); }
       }
-      .logo3d-halo { position: absolute; inset: -14%; border-radius: 50%; background: radial-gradient(circle, rgba(168,85,247,0.38) 0%, transparent 65%); transform: translateZ(-32px); animation: logoHaloPulse 3.2s ease-in-out infinite; pointer-events: none; }
-      @keyframes logoHaloPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+
+      .logo3d-halo { position: absolute; inset: -20%; border-radius: 50%; background: radial-gradient(circle, rgba(168,85,247,0.5) 0%, transparent 70%); transform: translateZ(-40px); animation: logoHaloPulseCreative 3s ease-in-out infinite; pointer-events: none; }
+      @keyframes logoHaloPulseCreative { 0%, 100% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.9; transform: scale(1.15); } }
+      
       .logo3d-ring { position: absolute; border-radius: 50%; pointer-events: none; }
-      .logo3d-ring-1 { inset: -13%; border: 1px solid rgba(168,85,247,0.5); box-shadow: 0 0 14px rgba(168,85,247,0.25) inset; animation: logoRingSpin1 9s linear infinite; }
-      .logo3d-ring-2 { inset: -24%; border: 1px solid rgba(99,102,241,0.35); animation: logoRingSpin2 14s linear infinite; }
-      .logo3d-ring-1::before { content: ""; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: #C084FC; box-shadow: 0 0 10px #A855F7, 0 0 22px rgba(168,85,247,0.6); }
-      .logo3d-ring-2::before { content: ""; position: absolute; bottom: -2px; left: 30%; width: 5px; height: 5px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 10px #6366F1; }
+      .logo3d-ring-1 { inset: -15%; border: 1.5px dashed rgba(168,85,247,0.6); box-shadow: 0 0 15px rgba(168,85,247,0.3) inset; animation: logoRingSpin1 8s linear infinite; }
+      .logo3d-ring-2 { inset: -28%; border: 1px solid rgba(99,102,241,0.4); animation: logoRingSpin2 12s linear infinite reverse; }
+      
+      .logo3d-ring-1::before { content: ""; position: absolute; top: -4px; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: #C084FC; box-shadow: 0 0 12px #A855F7, 0 0 24px rgba(168,85,247,0.8); }
+      .logo3d-ring-2::before { content: ""; position: absolute; bottom: -3px; left: 25%; width: 6px; height: 6px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 12px #6366F1; }
+      
       @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
+
+      /* Effet de brillance / lumière traversante sur l'image du logo */
+      .logo-img-shimmer { position: absolute; inset: 0; z-index: 3; border-radius: 50%; overflow: hidden; pointer-events: none; }
+      .logo-img-shimmer::after { content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%); transform: rotate(30deg) translateX(-100%); animation: imgShimmerPass 4s ease-in-out infinite; }
+      @keyframes imgShimmerPass { 0% { transform: rotate(30deg) translateX(-100%); } 20%, 100% { transform: rotate(30deg) translateX(100%); } }
     ` } })
   );
 }
-
