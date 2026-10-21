@@ -70,6 +70,7 @@ const IconFileText = ({ size = 11, color = "currentColor" }: { size?: number; co
   </svg>
 );
 
+// ─── Interface pour les particules ─────────────────────────────────────────────
 interface Particle {
   id: number;
   left: string;
@@ -79,6 +80,8 @@ interface Particle {
   size: string;
 }
 
+// ─── Feature icons list ─────────────────────────────────────────────────────────
+
 const featureIcons: React.ReactElement[] = [
   React.createElement(IconTarget, { size: 22, color: "#A855F7", key: "icon-target" }),
   React.createElement(IconBarChart, { size: 22, color: "#A855F7", key: "icon-barchart" }),
@@ -86,6 +89,7 @@ const featureIcons: React.ReactElement[] = [
   React.createElement(IconUsers, { size: 22, color: "#A855F7", key: "icon-users" })
 ];
 
+// Variante sombre = apparence d'origine ; variante claire = même mise en page, couleurs claires
 const HP_DARK: Record<string, string> = {
   "--hp-bg": "#000000",
   "--hp-text": "white",
@@ -117,6 +121,7 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-img-filter": "brightness(1) contrast(1.03) saturate(1.05)",
 };
 
+/** Variables de couleur de l'accueil pour n'importe quel thème */
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return HP_DARK;
   if (themeId === "light") return HP_LIGHT;
@@ -139,21 +144,28 @@ function buildHpVars(themeId: string, theme: any): Record<string, string> {
 
 const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
 
+// ─── Main Component ────────────────────────────────────────────────────────────
+
 export default function HomePage(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
   const { theme, themeId } = useTheme();
+  // Thème clair par défaut ; « sombre » = apparence d'origine ; les autres thèmes utilisent leurs propres couleurs
   const isLight = isLightTheme(theme);
   const themeVars = buildHpVars(themeId, theme) as React.CSSProperties;
   const themeClass = isLight ? "hp-light" : "hp-dark";
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
+  // Le contenu est visible dès le HTML envoyé par le serveur. L'apparition progressive est faite
+  // en CSS (classes « hp-rise »), sans attendre le JavaScript : plus d'écran de chargement artificiel
+  // de 1,2 s ni de minuteries avant que le titre s'affiche.
 
   const isCompact: boolean = isMobile || isTablet;
 
+  // Positions pseudo-aléatoires mais identiques côté serveur et navigateur (pas d'écart à l'hydratation)
   const particles: Particle[] = useMemo((): Particle[] => {
     const count: number = isMobile ? 10 : 20;
     const rand = (n: number): number => { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
@@ -175,6 +187,7 @@ export default function HomePage(): React.ReactElement {
     let token: string | null = null;
     try { token = localStorage.getItem("token"); } catch { /* stockage indisponible */ }
     setIsLoggedIn(!!token);
+    // Utilisateur déjà connecté : la page du tableau de bord est préchargée pour un clic instantané
     const full = { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1];
     if (token) { try { router.prefetch("/dashboard", full); } catch { /* ignoré */ } }
     else { try { router.prefetch("/auth/login", full); } catch { /* ignoré */ } }
@@ -197,7 +210,7 @@ export default function HomePage(): React.ReactElement {
       fr: {
         title: React.createElement(React.Fragment, null, "L'avenir de la ", React.createElement("span", { className: "hero-word-glow" }, "gestion d'entreprise"), " commence ici."),
         subtitle: "INOVEXA",
-        eyebrow: "ERP · Solution Intelligente",
+        eyebrow: "ERP · Gestion d'entreprise",
         button: "Accéder au Dashboard",
         login: "Commencer maintenant",
         copyright: "Tous droits réservés",
@@ -213,7 +226,7 @@ export default function HomePage(): React.ReactElement {
       es: {
         title: React.createElement(React.Fragment, null, "El futuro de la ", React.createElement("span", { className: "hero-word-glow" }, "gestión empresarial"), " comienza aquí."),
         subtitle: "INOVEXA",
-        eyebrow: "ERP · Solución Inteligente",
+        eyebrow: "ERP · Gestión empresarial",
         button: "Panel de Control",
         login: "Empezar ahora",
         copyright: "Todos los derechos reservados",
@@ -229,7 +242,7 @@ export default function HomePage(): React.ReactElement {
       en: {
         title: React.createElement(React.Fragment, null, "The future of ", React.createElement("span", { className: "hero-word-glow" }, "business management"), " starts here."),
         subtitle: "INOVEXA",
-        eyebrow: "ERP · Smart Solution",
+        eyebrow: "ERP · Business management",
         button: "Go to Dashboard",
         login: "Get Started Now",
         copyright: "All rights reserved",
@@ -279,6 +292,9 @@ export default function HomePage(): React.ReactElement {
     }),
     React.createElement("div", { className: "ambient-glow" }),
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE (TEXTE RÉDUIT)
+    // ═══════════════════════════════════════════════════════════════════════════
     isMobile && React.createElement("header", {
       className: "mobile-header",
       style: {
@@ -306,6 +322,7 @@ export default function HomePage(): React.ReactElement {
         },
         className: "hp-rise"
       },
+        // Logo image (52px — conservé)
         React.createElement("div", {
           style: {
             width: "52px",
@@ -337,6 +354,7 @@ export default function HomePage(): React.ReactElement {
             }
           })
         ),
+        // Brand text — ✅ RÉDUIT : 18px → 14px / 10px → 8px
         React.createElement("div", {
           style: {
             display: "flex",
@@ -374,7 +392,7 @@ export default function HomePage(): React.ReactElement {
       )
     ),
 
-    // Language Selector & Theme Toggle
+    // Language Selector
     React.createElement("div", { style: { position: "fixed", top: "16px", right: "16px", zIndex: 200, display: "flex", alignItems: "center", gap: "10px" } },
       React.createElement(ThemeToggle, { variant: "home", size: 38 }),
       React.createElement("div", { style: { position: "relative" } },
@@ -389,9 +407,7 @@ export default function HomePage(): React.ReactElement {
           padding: "8px 14px",
           cursor: "pointer",
           fontSize: "11px",
-          display: "flex", alignItems: "center", gap: "8px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-          transition: "all 0.2s ease"
+          display: "flex", alignItems: "center", gap: "8px"
         }
       },
         React.createElement("img", { src: "https://flagcdn.com/w20/" + flagCodes[language] + ".png", width: "15", alt: language, style: { borderRadius: "2px" } }),
@@ -407,7 +423,7 @@ export default function HomePage(): React.ReactElement {
           border: "1px solid rgba(168, 85, 247, 0.3)",
           borderRadius: "14px", padding: "6px",
           display: "flex", flexDirection: "column",
-          minWidth: "130px",
+          minWidth: "120px",
           boxShadow: "0 20px 40px var(--hp-shadow), 0 0 0 1px rgba(168,85,247,0.1)",
           zIndex: 201
         }
@@ -417,7 +433,7 @@ export default function HomePage(): React.ReactElement {
             key: lang,
             onClick: () => handleLanguageChange(lang),
             style: {
-              background: language === lang ? "rgba(168, 85, 247, 0.15)" : "transparent",
+              background: language === lang ? "rgba(168, 85, 247, 0.2)" : "transparent",
               border: "none",
               color: language === lang ? "#A855F7" : "var(--hp-menu-text)",
               padding: "10px 12px",
@@ -426,8 +442,7 @@ export default function HomePage(): React.ReactElement {
               textAlign: "left",
               fontSize: "12px",
               fontWeight: language === lang ? "700" : "400",
-              display: "flex", alignItems: "center", gap: "10px",
-              transition: "background 0.15s ease"
+              display: "flex", alignItems: "center", gap: "10px"
             }
           },
             React.createElement("img", { src: "https://flagcdn.com/w20/" + flagCodes[lang] + ".png", width: "15", alt: lang, style: { borderRadius: "2px" } }),
@@ -437,194 +452,107 @@ export default function HomePage(): React.ReactElement {
       )
     )),
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  PARTIE GAUCHE (Élargie à 58% pour équilibrer la réduction de la droite)
-    // ═════════════════════════════════════════════════════════════════════════
+    // LEFT SIDE
     React.createElement("div", {
       style: {
-        width: isCompact ? "100%" : "58%",
-        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "32px 0 32px 72px",
+        width: isCompact ? "100%" : "44%",
+        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "20px 0 20px 64px",
         boxSizing: "border-box",
         display: "flex", flexDirection: "column", justifyContent: "center",
         zIndex: 10, position: "relative",
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
+      // ═════════════════════════════════════════════════════════════════════════
+      //  LOGO INLINE — TABLETTE/DESKTOP UNIQUEMENT
+      // ═════════════════════════════════════════════════════════════════════════
       !isMobile && React.createElement("div", {
         style: {
           display: "flex",
           alignItems: "center",
-          gap: "20px",
-          marginBottom: "clamp(16px, 2.5vh, 30px)"
+          gap: isMobile ? "20px" : "26px",
+          marginBottom: "clamp(10px, 2vh, 28px)"
         },
         className: "hp-rise"
       },
-        React.createElement("div", { className: "logo3d-scene creative-logo-container", style: { width: "96px", height: "96px", position: "relative", flexShrink: 0 } },
+        React.createElement("div", { className: "logo3d-scene", style: { width: isMobile ? "90px" : "105px", height: isMobile ? "90px" : "105px", position: "relative", flexShrink: 0 } },
           React.createElement("div", { className: "logo3d", style: { width: "100%", height: "100%", position: "relative" } },
             React.createElement("div", { className: "logo3d-halo" }),
             React.createElement("div", { className: "logo3d-ring logo3d-ring-1" }),
             React.createElement("div", { className: "logo3d-ring logo3d-ring-2" }),
-            React.createElement("div", { className: "logo-img-shimmer" }),
             React.createElement("img", {
               src: "/images/logo.png",
               alt: "Inovexa Logo",
-              style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 20px rgba(168,85,247,0.8))", transform: "translateZ(30px)" }
+              style: { width: "100%", height: "100%", objectFit: "contain", position: "relative", zIndex: 2, filter: "drop-shadow(0 0 18px rgba(138,43,226,0.7))", transform: "translateZ(26px)" }
             })
           )
         ),
         React.createElement("div", null,
-          React.createElement("h2", { style: { color: "var(--hp-text)", fontSize: "20px", fontWeight: "300", margin: 0, letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
+          React.createElement("h2", { style: { color: "var(--hp-text)", fontSize: isMobile ? "18px" : "20px", fontWeight: "300", margin: 0, letterSpacing: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } },
             React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
           ),
-          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "4px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
+          React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
         )
       ),
-
-      !isMobile && React.createElement("div", { 
-        style: { 
-          display: "inline-flex", 
-          alignItems: "center", 
-          gap: "10px", 
-          alignSelf: "flex-start", 
-          padding: "7px 16px", 
-          borderRadius: "999px", 
-          border: "1px solid rgba(168, 85, 247, 0.3)", 
-          background: "var(--hp-card-bg)", 
-          color: "var(--hp-feature-text)", 
-          fontSize: "12px", 
-          fontWeight: "700", 
-          letterSpacing: "1px", 
-          textTransform: "uppercase", 
-          marginBottom: "clamp(14px, 2.2vh, 22px)",
-          boxShadow: "0 4px 16px rgba(168, 85, 247, 0.08)"
-        }, 
-        className: "hp-rise hp-d1" 
-      },
-        React.createElement("span", { style: { width: "8px", height: "8px", borderRadius: "50%", background: "#A855F7", boxShadow: "0 0 8px #A855F7" } }),
+      // ── Pastille au-dessus du titre (ordinateur / tablette) ──
+      !isMobile && React.createElement("div", { style: { display: "inline-flex", alignItems: "center", gap: "8px", alignSelf: "flex-start", padding: "6px 14px", borderRadius: "999px", border: "1px solid rgba(168, 85, 247, 0.3)", background: "var(--hp-card-bg)", color: "var(--hp-feature-text)", fontSize: "11.5px", fontWeight: "700", letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(12px, 2.2vh, 20px)" }, className: "hp-rise hp-d1" },
+        React.createElement("span", { style: { width: "7px", height: "7px", borderRadius: "50%", background: "#A855F7" } }),
         text.eyebrow
       ),
-
+      // ✅ TITRE HERO avec marge supérieure sur mobile
       React.createElement("h1", {
         style: {
-          fontSize: isMobile ? "34px" : isTablet ? "44px" : "clamp(38px, 4.5vw, 52px)",
+          fontSize: isMobile ? "32px" : isTablet ? "44px" : "clamp(36px, 5.2vh, 52px)",
           color: "var(--hp-text)",
-          fontWeight: "850",
-          lineHeight: "1.12",
-          marginBottom: isMobile ? "24px" : "20px",
-          marginTop: isMobile ? "20px" : "0",
-          letterSpacing: "-1.2px",
-          maxWidth: "640px"
+          fontWeight: "900",
+          lineHeight: "1.1",
+          marginBottom: isMobile ? "28px" : "22px",
+          marginTop: isMobile ? "24px" : "0",
+          letterSpacing: "-1.5px",
+          textShadow: "0 0 30px rgba(168, 85, 247, 0.15)"
         },
         className: "hp-rise hp-d2"
       }, text.title),
-
-      React.createElement("div", { 
-        style: { 
-          display: "grid", 
-          gridTemplateColumns: "repeat(2, 1fr)", 
-          gap: "14px", 
-          marginBottom: isMobile ? "32px" : "26px", 
-          maxWidth: "600px" 
-        } 
-      },
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "10px" : "12px", marginBottom: isMobile ? "36px" : "clamp(20px, 3.4vh, 32px)", maxWidth: isMobile ? "460px" : "540px" } },
         text.features.map((f: { title: string; desc?: string }, i: number) => {
-          return React.createElement("div", { 
-            key: i, 
-            className: "hp-feature-card hp-rise", 
-            style: { 
-              display: "flex", 
-              flexDirection: isMobile ? "column" : "row", 
-              alignItems: isMobile ? "stretch" : "center", 
-              gap: "12px", 
-              padding: "16px", 
-              background: "var(--hp-card-bg)", 
-              border: "1px solid rgba(168, 85, 247, 0.18)", 
-              borderRadius: "16px", 
-              animationDelay: (180 + i * 60) + "ms", 
-              transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
-            } 
-          },
-            React.createElement("div", { 
-              style: { 
-                width: "42px", 
-                height: "42px", 
-                borderRadius: "12px", 
-                background: "rgba(168, 85, 247, 0.12)", 
-                border: "1px solid rgba(168, 85, 247, 0.25)", 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                flexShrink: 0
-              } 
-            }, featureIcons[i]),
-            React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "3px" } },
-              React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: "11.5px", fontWeight: "800", letterSpacing: "0.5px", lineHeight: "1.3" } }, f.title),
-              !isMobile && f.desc && React.createElement("span", { style: { color: "var(--hp-muted)", fontSize: "12px", lineHeight: 1.4, fontWeight: "400" } }, f.desc)
+          return React.createElement("div", { key: i, className: "hp-feature-card hp-rise", style: { display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start", gap: isMobile ? "8px" : "14px", padding: isMobile ? "14px" : "14px 16px", background: "var(--hp-card-bg)", border: "1px solid rgba(168, 85, 247, 0.18)", borderRadius: "14px", animationDelay: (180 + i * 60) + "ms", transition: "transform 0.25s ease, border-color 0.25s ease" } },
+            React.createElement("div", { style: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.12)", border: "1px solid rgba(168, 85, 247, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" } }, featureIcons[i]),
+            React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "4px" } },
+              React.createElement("span", { style: { color: "var(--hp-feature-text)", fontSize: isMobile ? "9px" : "11px", fontWeight: "800", letterSpacing: "0.6px", lineHeight: "1.3" } }, f.title),
+              !isMobile && f.desc && React.createElement("span", { style: { color: "var(--hp-muted)", fontSize: "12px", lineHeight: 1.45, fontWeight: "400" } }, f.desc)
             )
           );
         })
       ),
-
       React.createElement("div", { className: "hp-rise hp-d3", style: { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" } },
-        React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none", width: isMobile ? "100%" : "auto" } },
-          React.createElement("button", { 
-            className: "cta-button-shimmer", 
-            style: { 
-              width: isMobile ? "100%" : "auto",
-              padding: isMobile ? "16px 24px" : "18px 38px", 
-              fontSize: "15px", 
-              borderRadius: "14px", 
-              border: "none", 
-              cursor: "pointer", 
-              color: "white", 
-              fontWeight: "700", 
-              position: "relative", 
-              overflow: "hidden", 
-              display: "flex", 
-              alignItems: "center", 
-              justifyContent: "center",
-              gap: "12px", 
-              letterSpacing: "0.4px" 
-            } 
-          },
+        React.createElement(Link, { href: isLoggedIn ? "/dashboard" : "/auth/login", style: { textDecoration: "none" } },
+          React.createElement("button", { className: "cta-button-shimmer", style: { padding: isMobile ? "16px 36px" : "17px 44px", fontSize: isMobile ? "14px" : "15px", borderRadius: "14px", border: "none", cursor: "pointer", color: "white", fontWeight: "700", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", letterSpacing: "0.3px" } },
             React.createElement("span", { style: { position: "relative", zIndex: 2 } }, isLoggedIn ? text.button : text.login),
-            React.createElement("span", { style: { position: "relative", zIndex: 2, display: "flex", alignItems: "center" } }, React.createElement(IconArrowRight, { size: 18, color: "white" })),
+            React.createElement("span", { style: { position: "relative", zIndex: 2 } }, React.createElement(IconArrowRight, { size: 17, color: "white" })),
             React.createElement("div", { className: "shimmer-effect" })
           )
         )
       ),
-
-      React.createElement("div", { 
-        style: { 
-          marginTop: isMobile ? "36px" : "clamp(22px, 2.8vh, 34px)", 
-          paddingTop: "16px", 
-          borderTop: "1px solid rgba(168, 85, 247, 0.16)", 
-          maxWidth: "600px", 
-          display: "flex", 
-          flexDirection: "column", 
-          gap: "8px" 
-        } 
-      },
-        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" } },
-          React.createElement("a", { href: "https://inovexa-erp.com/privacy.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.8)", fontSize: "11px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "5px" } },
-            React.createElement(IconLock, { size: 11, color: "currentColor" }), text.privacy
+      React.createElement("div", { style: { marginTop: isMobile ? "44px" : "clamp(18px, 3.4vh, 44px)", paddingTop: isMobile ? 0 : "16px", borderTop: isMobile ? "none" : "1px solid rgba(168, 85, 247, 0.16)", maxWidth: isMobile ? "none" : "540px", display: "flex", flexDirection: "column", gap: "10px" } },
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" } },
+          React.createElement("a", { href: "https://inovexa-erp.com/privacy.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.7)", fontSize: "10px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" } },
+            React.createElement(IconLock, { size: 10, color: "currentColor" }), text.privacy
           ),
-          React.createElement("span", { style: { color: "var(--hp-dot)", fontSize: "11px" } }, "•"),
-          React.createElement("a", { href: "https://inovexa-erp.com/terms.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.8)", fontSize: "11px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "5px" } },
-            React.createElement(IconFileText, { size: 11, color: "currentColor" }), text.terms
+          React.createElement("span", { style: { color: "var(--hp-dot)", fontSize: "10px" } }, "•"),
+          React.createElement("a", { href: "https://inovexa-erp.com/terms.html", target: "_blank", rel: "noopener noreferrer", style: { color: "rgba(168, 85, 247, 0.7)", fontSize: "10px", fontWeight: "600", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" } },
+            React.createElement(IconFileText, { size: 10, color: "currentColor" }), text.terms
           )
         ),
-        React.createElement("p", { style: { color: "var(--hp-faint)", fontSize: "10px", fontWeight: "600", margin: 0, letterSpacing: "0.6px" } }, "\u00A9 2026 INOVEXA. " + text.copyright.toUpperCase())
+        React.createElement("p", { style: { color: "var(--hp-faint)", fontSize: "9px", fontWeight: "600", margin: 0, letterSpacing: "0.5px" } }, "\u00A9 2026 INOVEXA. " + text.copyright.toUpperCase())
       )
     ),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  PARTIE DROITE (Réduite à 42% — soit 10% de moins que les 52% initiaux)
+    //  RIGHT SIDE — titre + capture du tableau de bord + légende (statique : aucune animation, aucun effet)
     // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
       style: {
-        width: isTablet ? "100%" : "42%",
+        width: isTablet ? "100%" : "56%",
         height: isTablet ? "auto" : "100vh",
         minHeight: isTablet ? "520px" : undefined,
         background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--hp-bg)",
@@ -634,120 +562,71 @@ export default function HomePage(): React.ReactElement {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: isTablet ? "32px 24px" : "clamp(24px, 5vh, 48px) clamp(20px, 2.5vw, 40px)",
-        boxSizing: "border-box",
-        position: "relative",
-        overflow: "hidden"
+        padding: isTablet ? "32px 24px" : "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
+        boxSizing: "border-box"
       }
     },
-      React.createElement("div", { className: "right-preview-creative-wrapper" },
-        React.createElement("div", { className: "right-preview-ambient-glow" }),
-        React.createElement(HeroPreview)
-      )
+      React.createElement(HeroPreview)
     ),
 
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
       * { -webkit-tap-highlight-color: transparent; }
+      /* ── Variante claire ── */
       .hp-light .hero-word-glow { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #9333ea 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; filter: none !important; animation: none !important; }
       .hp-light a[href*="inovexa-erp.com"] { color: #7c3aed !important; }
       .hp-light .ambient-glow { background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.12), transparent 45%) !important; }
+      .hp-light .loader-halo { filter: blur(70px); }
+      .hp-light.loader-screen .loader-brand { text-shadow: none; }
+
 
       .home-page-enter { animation: none; }
+      /* Apparition courte et sans JavaScript : le contenu est déjà dans le HTML */
       .hp-rise { animation: hpRise 0.5s cubic-bezier(0.22,1,0.36,1) both; }
       .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 110ms; } .hp-d3 { animation-delay: 300ms; }
       @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-      @media (prefers-reduced-motion: reduce) { .hp-rise { animation: none; } .erp-text-glow, .hero-word-glow, .cta-button-shimmer, .shimmer-effect, .logo3d, .logo3d-halo, .logo3d-ring, .logo-img-shimmer, .right-preview-creative-wrapper { animation: none !important; } }
-      
-      .hp-feature-card:hover { 
-        transform: translateY(-3px) !important; 
-        border-color: rgba(168, 85, 247, 0.5) !important; 
-        background: rgba(168, 85, 247, 0.08) !important;
-        box-shadow: 0 10px 25px rgba(168, 85, 247, 0.12) !important;
-      }
+      @media (prefers-reduced-motion: reduce) { .hp-rise { animation: none; } .erp-text-glow, .hero-word-glow, .cta-button-shimmer, .shimmer-effect, .logo3d, .logo3d-halo, .logo3d-ring { animation: none !important; } }
+      .hp-feature-card:hover { transform: translateY(-2px) !important; border-color: rgba(168, 85, 247, 0.45) !important; }
+      @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
 
       .erp-text-glow { animation: textPulse 3s ease-in-out infinite; }
       @keyframes textPulse { 0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(168,85,247,0.3)); } 50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168,85,247,0.7)); } }
-      
-      .cta-button-shimmer { 
-        background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); 
-        box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); 
-        animation: buttonPulse 3s infinite; 
-        transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; 
-      }
-      .cta-button-shimmer:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 14px 38px rgba(168, 85, 247, 0.55); }
+      .cta-button-shimmer { background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); box-shadow: 0 8px 32px rgba(168, 85, 247, 0.35); animation: buttonPulse 2.5s infinite; transition: transform 0.2s, filter 0.2s; }
+      .cta-button-shimmer:hover { transform: translateY(-2px); filter: brightness(1.1); }
       .cta-button-shimmer:active { transform: translateY(0px); filter: brightness(0.95); }
       @keyframes buttonPulse { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); } 70% { box-shadow: 0 0 0 16px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
-      
       .shimmer-effect { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); animation: shimmer 2.8s infinite; pointer-events: none; }
       @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
-      
       .ambient-glow { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.09), transparent 42%); z-index: 0; pointer-events: none; }
       @keyframes floatParticle { 0% { transform: translateY(0) translateX(0); opacity: 0; } 12% { opacity: 1; } 100% { transform: translateY(-85vh) translateX(25px); opacity: 0; } }
-      
-      .hero-word-glow { display: inline-block; background: linear-gradient(135deg, #C084FC 0%, #818CF8 50%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: wordGlow 3.5s ease-in-out infinite, gradientShift 4s ease infinite; }
+      .hero-word-glow { display: inline-block; animation: wordGlow 3.5s ease-in-out infinite; background: linear-gradient(135deg, #C084FC 0%, #818CF8 50%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: wordGlow 3.5s ease-in-out infinite, gradientShift 4s ease infinite; }
       @keyframes wordGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(168,85,247,0.4)); } 50% { filter: drop-shadow(0 0 22px rgba(168,85,247,0.85)) drop-shadow(0 0 40px rgba(99,102,241,0.4)); } }
       @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      @media (max-width: 640px) { .cta-button-shimmer { width: 100%; justify-content: center; } }
 
       @keyframes headerHaloPulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
 
-      /* Animation logo gauche */
-      .logo3d-scene { perspective: 800px; cursor: pointer; }
-      .logo3d { transform-style: preserve-3d; animation: logoFloatCreative 6s ease-in-out infinite; will-change: transform; }
-      .logo3d-scene:hover .logo3d { animation: logoSpinCreative 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite; }
-      
-      @keyframes logoFloatCreative {
-        0%, 100% { transform: rotateY(-18deg) rotateX(10deg) translateY(0px) scale(1); }
-        50%      { transform: rotateY(18deg) rotateX(-10deg) translateY(-8px) scale(1.04); }
+      .logo3d-scene { perspective: 700px; cursor: pointer; }
+      .logo3d { transform-style: preserve-3d; animation: logoFloat3D 7s ease-in-out infinite; will-change: transform; }
+      .logo3d-scene:hover .logo3d { animation: logoSpin3D 1.6s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
+      @keyframes logoFloat3D {
+        0%, 100% { transform: rotateY(-16deg) rotateX(8deg) translateY(0px); }
+        25%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
+        50%      { transform: rotateY(16deg)  rotateX(8deg) translateY(0px); }
+        75%      { transform: rotateY(0deg)   rotateX(-5deg) translateY(-5px); }
       }
-      @keyframes logoSpinCreative {
-        0%   { transform: rotateY(0deg) rotateX(10deg) scale(1.05); }
-        100% { transform: rotateY(360deg) rotateX(10deg) scale(1.05); }
+      @keyframes logoSpin3D {
+        0%   { transform: rotateY(0deg)   rotateX(6deg); }
+        100% { transform: rotateY(360deg) rotateX(6deg); }
       }
-      .logo3d-halo { position: absolute; inset: -20%; border-radius: 50%; background: radial-gradient(circle, rgba(168,85,247,0.5) 0%, transparent 70%); transform: translateZ(-40px); animation: logoHaloPulseCreative 3s ease-in-out infinite; pointer-events: none; }
-      @keyframes logoHaloPulseCreative { 0%, 100% { opacity: 0.4; transform: scale(0.95); } 50% { opacity: 0.9; transform: scale(1.15); } }
-      
+      .logo3d-halo { position: absolute; inset: -14%; border-radius: 50%; background: radial-gradient(circle, rgba(168,85,247,0.38) 0%, transparent 65%); transform: translateZ(-32px); animation: logoHaloPulse 3.2s ease-in-out infinite; pointer-events: none; }
+      @keyframes logoHaloPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
       .logo3d-ring { position: absolute; border-radius: 50%; pointer-events: none; }
-      .logo3d-ring-1 { inset: -15%; border: 1.5px dashed rgba(168,85,247,0.6); box-shadow: 0 0 15px rgba(168,85,247,0.3) inset; animation: logoRingSpin1 8s linear infinite; }
-      .logo3d-ring-2 { inset: -28%; border: 1px solid rgba(99,102,241,0.4); animation: logoRingSpin2 12s linear infinite reverse; }
-      .logo3d-ring-1::before { content: ""; position: absolute; top: -4px; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: #C084FC; box-shadow: 0 0 12px #A855F7, 0 0 24px rgba(168,85,247,0.8); }
-      .logo3d-ring-2::before { content: ""; position: absolute; bottom: -3px; left: 25%; width: 6px; height: 6px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 12px #6366F1; }
+      .logo3d-ring-1 { inset: -13%; border: 1px solid rgba(168,85,247,0.5); box-shadow: 0 0 14px rgba(168,85,247,0.25) inset; animation: logoRingSpin1 9s linear infinite; }
+      .logo3d-ring-2 { inset: -24%; border: 1px solid rgba(99,102,241,0.35); animation: logoRingSpin2 14s linear infinite; }
+      .logo3d-ring-1::before { content: ""; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: #C084FC; box-shadow: 0 0 10px #A855F7, 0 0 22px rgba(168,85,247,0.6); }
+      .logo3d-ring-2::before { content: ""; position: absolute; bottom: -2px; left: 30%; width: 5px; height: 5px; border-radius: 50%; background: #818CF8; box-shadow: 0 0 10px #6366F1; }
       @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
-      .logo-img-shimmer { position: absolute; inset: 0; z-index: 3; border-radius: 50%; overflow: hidden; pointer-events: none; }
-      .logo-img-shimmer::after { content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%); transform: rotate(30deg) translateX(-100%); animation: imgShimmerPass 4s ease-in-out infinite; }
-      @keyframes imgShimmerPass { 0% { transform: rotate(30deg) translateX(-100%); } 20%, 100% { transform: rotate(30deg) translateX(100%); } }
-
-      /* Animation de la partie droite (HeroPreview) */
-      .right-preview-creative-wrapper {
-        position: relative;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: rightPreviewFloat 7s ease-in-out infinite;
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .right-preview-creative-wrapper:hover {
-        transform: scale(1.02) translateY(-4px);
-      }
-      @keyframes rightPreviewFloat {
-        0%, 100% { transform: translateY(0px) rotate(0deg); }
-        50%      { transform: translateY(-10px) rotate(0.4deg); }
-      }
-      .right-preview-ambient-glow {
-        position: absolute;
-        width: 80%;
-        height: 80%;
-        background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, rgba(99, 102, 241, 0.1) 50%, transparent 70%);
-        filter: blur(40px);
-        z-index: 0;
-        pointer-events: none;
-        animation: rightGlowPulse 4s ease-in-out infinite;
-      }
-      @keyframes rightGlowPulse {
-        0%, 100% { opacity: 0.6; transform: scale(0.95); }
-        50%      { opacity: 1; transform: scale(1.1); }
-      }
     ` } })
   );
 }
