@@ -269,10 +269,13 @@ export default function HomePage(): React.ReactElement {
   // Format réel de la capture (largeur / hauteur), lu au chargement de l'image :
   // l'écran du PC prend exactement ce format, l'image n'est ni coupée ni déformée.
   const [shotRatio, setShotRatio] = useState(16 / 10);
-  const onShotLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
-    if (w > 0 && h > 0) setShotRatio(w / h);
-  };
+  const shotRef = useRef<HTMLImageElement>(null);
+  const readShotRatio = useCallback(() => {
+    const img = shotRef.current;
+    if (img && img.naturalWidth > 0 && img.naturalHeight > 0) setShotRatio(img.naturalWidth / img.naturalHeight);
+  }, []);
+  // L'image peut être déjà en cache (chargée avant React) : on lit aussi son format au montage
+  useEffect(() => { if (shotRef.current?.complete) readShotRatio(); }, [isLight, readShotRatio]);
   const langWrapRef = useRef<HTMLDivElement>(null);
   const langButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -425,23 +428,17 @@ export default function HomePage(): React.ReactElement {
       {/* ── CÔTÉ DROIT — image (2.png sombre / 1.png clair) puis texte ── */}
       {!isMobile && (
         <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
-          {/* Écran de bureau dessiné en CSS, avec la capture dedans */}
-          <div className="hp-monitor hp-rise hp-d2" style={{ ["--shot-ratio" as any]: shotRatio }}>
-            <div className="hp-monitor-frame">
-              <div className="hp-monitor-screen">
-                <img
-                  key={isLight ? "light" : "dark"}
-                  src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
-                  alt={text.previewAlt}
-                  draggable={false}
-                  onLoad={onShotLoad}
-                />
-              </div>
-              <span className="hp-monitor-led" aria-hidden="true" />
-            </div>
-            <div className="hp-monitor-neck" aria-hidden="true" />
-            <div className="hp-monitor-foot" aria-hidden="true" />
-            <div className="hp-monitor-shadow" aria-hidden="true" />
+          {/* Capture seule (sans ordinateur) : 2.png en sombre, 1.png en clair */}
+          <div className="hp-shot hp-rise hp-d2" style={{ ["--shot-ratio" as any]: shotRatio }}>
+            <img
+              key={isLight ? "light" : "dark"}
+              src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
+              alt={text.previewAlt}
+              draggable={false}
+              ref={shotRef}
+              onLoad={readShotRatio}
+              decoding="async"
+            />
           </div>
           <div className={"hp-right-text " + handwriting.className}>
             <h2 className="hp-right-title hp-pen hp-pen-1">{text.previewTitle}</h2>
@@ -538,15 +535,9 @@ const STYLES = `
     background-color: var(--hp-right-bg);
     background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
   }
-  /* ── Écran de bureau ── */
-  .hp-monitor { width: min(100%, calc(50vh * var(--shot-ratio, 1.6))); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
-  .hp-monitor-frame { position: relative; width: 100%; padding: 2% 2% 4.6%; border-radius: 18px; background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); }
-  .hp-monitor-screen { width: 100%; aspect-ratio: var(--shot-ratio, 1.6); border-radius: 6px; overflow: hidden; background: #0c0b12; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5); }
-  .hp-monitor-screen img { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; }
-  .hp-monitor-led { position: absolute; bottom: 1.8%; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #A855F7; box-shadow: 0 0 8px #A855F7; }
-  .hp-monitor-neck { width: 13%; height: clamp(30px, 6vh, 64px); background: var(--hp-laptop-base); border-left: 1px solid var(--hp-laptop-edge); border-right: 1px solid var(--hp-laptop-edge); }
-  .hp-monitor-foot { width: 38%; height: clamp(10px, 1.4vh, 14px); border-radius: 10px 10px 4px 4px; background: var(--hp-laptop-base); border: 1px solid var(--hp-laptop-edge); }
-  .hp-monitor-shadow { width: 52%; height: 20px; margin-top: 2px; border-radius: 50%; background: radial-gradient(ellipse, var(--hp-laptop-floor), transparent 70%); }
+  /* ── Capture seule ── */
+  .hp-shot { width: min(100%, calc(56vh * var(--shot-ratio, 1.6))); flex-shrink: 1; min-height: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 40px 90px -30px var(--hp-cta-shadow), 0 24px 60px -30px var(--hp-shadow); line-height: 0; }
+  .hp-shot img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
   .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; }
   .hp-right-title { margin: 0; color: var(--hp-text); font-size: clamp(30px, min(3vw, 5vh), 46px); font-weight: 700; line-height: 1.1; text-wrap: balance; transform: rotate(-1.2deg); }
   .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(19px, min(1.5vw, 2.6vh), 24px); font-weight: 500; line-height: 1.35; max-width: 600px; transform: rotate(-0.6deg); }
@@ -566,7 +557,7 @@ const STYLES = `
   /* ── Tablette / mobile ── */
   .is-compact .hp-left { min-height: auto; }
   .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
-  .is-compact .hp-monitor { width: min(100%, 720px, calc(60vh * var(--shot-ratio, 1.6))); }
+  .is-compact .hp-shot { width: min(100%, 720px, calc(60vh * var(--shot-ratio, 1.6))); }
   .is-mobile .hp-left { min-height: 100dvh; justify-content: flex-start; gap: 0; padding: 100px 20px 28px; }
   .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
   .is-mobile .hp-subtitle { font-size: 15px; }
