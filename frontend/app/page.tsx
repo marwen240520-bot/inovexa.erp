@@ -437,11 +437,13 @@ export default function HomePage(): React.ReactElement {
       )
     )),
 
-    // PARTIE GAUCHE (LEFT SIDE) avec animation créative du logo
+    // ═════════════════════════════════════════════════════════════════════════
+    //  PARTIE GAUCHE (Élargie à 58% pour équilibrer la réduction de la droite)
+    // ═════════════════════════════════════════════════════════════════════════
     React.createElement("div", {
       style: {
-        width: isCompact ? "100%" : "48%",
-        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "32px 0 32px 64px",
+        width: isCompact ? "100%" : "58%",
+        padding: isMobile ? "96px 24px 40px" : isTablet ? "80px 48px 48px" : "32px 0 32px 72px",
         boxSizing: "border-box",
         display: "flex", flexDirection: "column", justifyContent: "center",
         zIndex: 10, position: "relative",
@@ -453,7 +455,7 @@ export default function HomePage(): React.ReactElement {
           display: "flex",
           alignItems: "center",
           gap: "20px",
-          marginBottom: "clamp(16px, 2.5vh, 32px)"
+          marginBottom: "clamp(16px, 2.5vh, 30px)"
         },
         className: "hp-rise"
       },
@@ -493,7 +495,7 @@ export default function HomePage(): React.ReactElement {
           fontWeight: "700", 
           letterSpacing: "1px", 
           textTransform: "uppercase", 
-          marginBottom: "clamp(16px, 2.5vh, 24px)",
+          marginBottom: "clamp(14px, 2.2vh, 22px)",
           boxShadow: "0 4px 16px rgba(168, 85, 247, 0.08)"
         }, 
         className: "hp-rise hp-d1" 
@@ -504,13 +506,14 @@ export default function HomePage(): React.ReactElement {
 
       React.createElement("h1", {
         style: {
-          fontSize: isMobile ? "34px" : isTablet ? "44px" : "clamp(38px, 4.8vw, 54px)",
+          fontSize: isMobile ? "34px" : isTablet ? "44px" : "clamp(38px, 4.5vw, 52px)",
           color: "var(--hp-text)",
           fontWeight: "850",
           lineHeight: "1.12",
           marginBottom: isMobile ? "24px" : "20px",
           marginTop: isMobile ? "20px" : "0",
           letterSpacing: "-1.2px",
+          maxWidth: "640px"
         },
         className: "hp-rise hp-d2"
       }, text.title),
@@ -520,8 +523,8 @@ export default function HomePage(): React.ReactElement {
           display: "grid", 
           gridTemplateColumns: "repeat(2, 1fr)", 
           gap: "14px", 
-          marginBottom: isMobile ? "32px" : "28px", 
-          maxWidth: "520px" 
+          marginBottom: isMobile ? "32px" : "26px", 
+          maxWidth: "600px" 
         } 
       },
         text.features.map((f: { title: string; desc?: string }, i: number) => {
@@ -594,10 +597,10 @@ export default function HomePage(): React.ReactElement {
 
       React.createElement("div", { 
         style: { 
-          marginTop: isMobile ? "36px" : "clamp(24px, 3vh, 38px)", 
+          marginTop: isMobile ? "36px" : "clamp(22px, 2.8vh, 34px)", 
           paddingTop: "16px", 
           borderTop: "1px solid rgba(168, 85, 247, 0.16)", 
-          maxWidth: "520px", 
+          maxWidth: "600px", 
           display: "flex", 
           flexDirection: "column", 
           gap: "8px" 
@@ -617,11 +620,11 @@ export default function HomePage(): React.ReactElement {
     ),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  RIGHT SIDE AVEC ANIMATION CRÉATIVE DE L'IMAGE / PRÉVISUALISATION
+    //  PARTIE DROITE (Réduite à 42% — soit 10% de moins que les 52% initiaux)
     // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
       style: {
-        width: isTablet ? "100%" : "52%",
+        width: isTablet ? "100%" : "42%",
         height: isTablet ? "auto" : "100vh",
         minHeight: isTablet ? "520px" : undefined,
         background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--hp-bg)",
@@ -631,13 +634,12 @@ export default function HomePage(): React.ReactElement {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: isTablet ? "32px 24px" : "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
+        padding: isTablet ? "32px 24px" : "clamp(24px, 5vh, 48px) clamp(20px, 2.5vw, 40px)",
         boxSizing: "border-box",
         position: "relative",
         overflow: "hidden"
       }
     },
-      // Conteneur enveloppant doté d'une animation créative (lévitation subtile + effet de profondeur 3D)
       React.createElement("div", { className: "right-preview-creative-wrapper" },
         React.createElement("div", { className: "right-preview-ambient-glow" }),
         React.createElement(HeroPreview)
@@ -715,7 +717,7 @@ export default function HomePage(): React.ReactElement {
       .logo-img-shimmer::after { content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%); transform: rotate(30deg) translateX(-100%); animation: imgShimmerPass 4s ease-in-out infinite; }
       @keyframes imgShimmerPass { 0% { transform: rotate(30deg) translateX(-100%); } 20%, 100% { transform: rotate(30deg) translateX(100%); } }
 
-      /* ── ANIMATION CRÉATIVE DE LA PARTIE DROITE (HeroPreview) ── */
+      /* Animation de la partie droite (HeroPreview) */
       .right-preview-creative-wrapper {
         position: relative;
         width: 100%;
