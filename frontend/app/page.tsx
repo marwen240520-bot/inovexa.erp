@@ -10,8 +10,8 @@ import { useResponsive } from "@/hooks/useResponsive";
 
 // ─── Icônes SVG ────────────────────────────────────────────────────────────────
 
-type IconProps = { size?: number; color?: string };
-const svgBase = (size: number, color: string, strokeWidth = "2") => ({
+type IconProps = { size?: number | string; color?: string };
+const svgBase = (size: number | string, color: string, strokeWidth = "2") => ({
   width: size,
   height: size,
   viewBox: "0 0 24 24",
@@ -24,19 +24,19 @@ const svgBase = (size: number, color: string, strokeWidth = "2") => ({
   focusable: "false" as const,
 });
 
-const IconTarget = ({ size = 18, color = "currentColor" }: IconProps) => (
+const IconTarget = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /></svg>
 );
-const IconBarChart = ({ size = 18, color = "currentColor" }: IconProps) => (
+const IconBarChart = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color)}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
 );
-const IconShield = ({ size = 18, color = "currentColor" }: IconProps) => (
+const IconShield = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color)}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
 );
-const IconUsers = ({ size = 18, color = "currentColor" }: IconProps) => (
+const IconUsers = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color)}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
 );
-const IconArrowRight = ({ size = 16, color = "currentColor" }: IconProps) => (
+const IconArrowRight = ({ size = "1.1em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
 );
 const IconChevronDown = ({ size = 11, color = "currentColor" }: IconProps) => (
@@ -44,6 +44,15 @@ const IconChevronDown = ({ size = 11, color = "currentColor" }: IconProps) => (
 );
 const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><polyline points="20 6 9 17 4 12" /></svg>
+);
+const IconMonitor = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color)}><rect x="2" y="4" width="20" height="13" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+);
+const IconPhone = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color)}><rect x="7" y="2" width="10" height="20" rx="2" /><line x1="11" y1="18" x2="13" y2="18" /></svg>
+);
+const IconGlobe = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20z" /></svg>
 );
 
 // ─── Types & constantes ────────────────────────────────────────────────────────
@@ -54,11 +63,6 @@ interface HomeText {
   title: string;
   modules: string;
   subtitle: string;
-  extra: string;
-  previewAlt: string;
-  previewTag: string;
-  previewTitle: string;
-  previewText: string;
   button: string;
   login: string;
   signin: string;
@@ -66,6 +70,10 @@ interface HomeText {
   privacy: string;
   terms: string;
   langLabel: string;
+  previewAlt: string;
+  previewTitle: string;
+  previewText: string;
+  devices: [string, string, string];
   features: { title: string; desc: string }[];
 }
 
@@ -76,13 +84,11 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "es", label: "Español", flag: "es" },
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
+const DEVICE_ICONS = [IconMonitor, IconPhone, IconGlobe];
 
-// Page agrandie de 10 % sur tablette / ordinateur (1 = taille normale)
-const PAGE_SCALE = 1.1;
-// Partie gauche réduite de 20 % sur tablette / ordinateur (contenu et largeur)
-const LEFT_SCALE = 0.8;
-const LEFT_WIDTH = "36%"; // avant : 44 %
-const RIGHT_WIDTH = "64%"; // avant : 56 %
+// Largeurs des deux colonnes sur ordinateur
+const LEFT_WIDTH = "40%";
+const RIGHT_WIDTH = "60%";
 // Image du côté droit selon le thème
 const PREVIEW_DARK = "/images/2.png";
 const PREVIEW_LIGHT = "/images/1.png";
@@ -93,11 +99,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "L'avenir de la gestion d'entreprise commence ici.",
     modules: "Ventes · Stock · Factures · RH · Finance",
     subtitle: "Un ERP clair et rapide pour gérer toute votre activité, en français, anglais et espagnol.",
-    extra: "De la commande à la facture, du stock à la paie : toutes vos opérations sont reliées et à jour en temps réel, pour décider plus vite et mieux.",
-    previewAlt: "Aperçu du tableau de bord Inovexa ERP",
-    previewTag: "Aperçu en direct",
-    previewTitle: "Toute votre activité, en un coup d'œil.",
-    previewText: "Suivez vos ventes, votre stock et vos factures depuis un tableau de bord unique.",
     button: "Accéder au Dashboard",
     login: "Commencer maintenant",
     signin: "Se connecter",
@@ -105,6 +106,10 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Confidentialité",
     terms: "Conditions",
     langLabel: "Choisir la langue",
+    previewAlt: "Aperçu du tableau de bord Inovexa ERP",
+    previewTitle: "Votre ERP, partout avec vous.",
+    previewText: "Au bureau, en déplacement ou sur le terrain : accédez à vos données depuis n'importe quel appareil.",
+    devices: ["Ordinateur", "Mobile", "FR · EN · ES"],
     features: [
       { title: "Solutions intégrées", desc: "Ventes, achats, stock" },
       { title: "Analyses temps réel", desc: "Tableaux de bord en direct" },
@@ -116,11 +121,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "El futuro de la gestión empresarial comienza aquí.",
     modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas",
     subtitle: "Un ERP claro y rápido para gestionar toda su actividad, en francés, inglés y español.",
-    extra: "Del pedido a la factura, del stock a la nómina: todas sus operaciones conectadas y actualizadas en tiempo real, para decidir más rápido y mejor.",
-    previewAlt: "Vista previa del panel de Inovexa ERP",
-    previewTag: "Vista previa en directo",
-    previewTitle: "Toda su actividad, de un vistazo.",
-    previewText: "Siga sus ventas, su stock y sus facturas desde un único panel.",
     button: "Panel de Control",
     login: "Empezar ahora",
     signin: "Iniciar sesión",
@@ -128,6 +128,10 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacidad",
     terms: "Términos",
     langLabel: "Elegir idioma",
+    previewAlt: "Vista previa del panel de Inovexa ERP",
+    previewTitle: "Su ERP, siempre con usted.",
+    previewText: "En la oficina, de viaje o sobre el terreno: acceda a sus datos desde cualquier dispositivo.",
+    devices: ["Ordenador", "Móvil", "FR · EN · ES"],
     features: [
       { title: "Soluciones integradas", desc: "Ventas, compras, stock" },
       { title: "Análisis en tiempo real", desc: "Paneles en vivo" },
@@ -139,11 +143,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "The future of business management starts here.",
     modules: "Sales · Stock · Invoices · HR · Finance",
     subtitle: "A clear, fast ERP to run your whole business, in French, English and Spanish.",
-    extra: "From order to invoice, from stock to payroll: every operation is connected and up to date in real time, so you can decide faster and better.",
-    previewAlt: "Inovexa ERP dashboard preview",
-    previewTag: "Live preview",
-    previewTitle: "Your whole business, at a glance.",
-    previewText: "Track sales, stock and invoices from a single dashboard.",
     button: "Go to Dashboard",
     login: "Get Started Now",
     signin: "Sign in",
@@ -151,6 +150,10 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacy",
     terms: "Terms",
     langLabel: "Choose language",
+    previewAlt: "Inovexa ERP dashboard preview",
+    previewTitle: "Your ERP, wherever you are.",
+    previewText: "At the office, on the road or in the field: reach your data from any device.",
+    devices: ["Desktop", "Mobile", "FR · EN · ES"],
     features: [
       { title: "Integrated solutions", desc: "Sales, purchases, stock" },
       { title: "Real-time insights", desc: "Live dashboards" },
@@ -186,6 +189,7 @@ const HP_DARK: Record<string, string> = {
   "--hp-menu-text": "rgba(255,255,255,0.88)",
   "--hp-shadow": "rgba(0,0,0,0.7)",
   "--hp-right-bg": "#05040a",
+  "--hp-right-glow": "rgba(124,58,237,0.28)",
 };
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
@@ -212,6 +216,7 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-menu-text": "#374151",
   "--hp-shadow": "rgba(17,24,39,0.18)",
   "--hp-right-bg": "#f8f7ff",
+  "--hp-right-glow": "rgba(167,139,250,0.3)",
 };
 
 /** Variables de couleur pour n'importe quel thème */
@@ -238,9 +243,6 @@ export default function HomePage(): React.ReactElement {
   const isLight = isLightTheme(theme);
   const themeVars = useMemo(() => buildHpVars(themeId, theme) as React.CSSProperties, [themeId, theme]);
   const isCompact = isMobile || isTablet;
-  const scale = isMobile ? 1 : PAGE_SCALE;
-  // Avec « zoom », 100vh rapetisse aussi : on compense pour garder toute la hauteur de l'écran
-  const fullH = (unit: "vh" | "dvh") => (scale === 1 ? `100${unit}` : `calc(100${unit} / ${scale})`);
 
   const lang: Lang = (["fr", "en", "es"] as const).includes(language as Lang) ? (language as Lang) : "en";
   const text = TRANSLATIONS[lang];
@@ -289,22 +291,20 @@ export default function HomePage(): React.ReactElement {
   const brand = (
     <Link href="/" aria-label="Inovexa ERP" className="hp-brand">
       <span className="hp-logo">
-        <img src="/images/logo.png" alt="" width={72} height={72} />
+        <img src="/images/logo.png" alt="" width={64} height={64} />
       </span>
-      <span style={{ fontFamily: LOGO_FONT, fontSize: isMobile ? 16 : 19, letterSpacing: 2, fontWeight: 300, color: "var(--hp-text)", whiteSpace: "nowrap" }}>
-        <b style={{ fontWeight: 800 }}>INOV</b>EXA{" "}
-        <span style={{ color: "var(--hp-accent-text)", fontWeight: 800, fontSize: isMobile ? 11 : 12.5, letterSpacing: 4 }}>ERP</span>
+      <span className="hp-brand-name">
+        <b>INOV</b>EXA <span className="hp-brand-erp">ERP</span>
       </span>
     </Link>
   );
 
   return (
     <div
-      className={"home-page " + (isLight ? "hp-light" : "hp-dark")}
+      className={"home-page " + (isLight ? "hp-light" : "hp-dark") + (isCompact ? " is-compact" : "") + (isMobile ? " is-mobile" : "")}
       style={{
         ...themeVars,
-        zoom: scale,
-        minHeight: fullH("dvh"),
+        minHeight: "100dvh",
         background: "var(--hp-bg)",
         display: "flex",
         flexDirection: isCompact ? "column" : "row",
@@ -354,49 +354,23 @@ export default function HomePage(): React.ReactElement {
       </div>
 
       {/* ── CÔTÉ GAUCHE — violet immersif ── */}
-      <main
-        className="hp-left"
-        style={{
-          width: isCompact ? "100%" : LEFT_WIDTH,
-          padding: isMobile ? "100px 20px 28px" : isTablet ? "26px 38px 32px" : "32px 45px 26px",
-          minHeight: isMobile ? "100dvh" : isTablet ? "auto" : fullH("vh"),
-          justifyContent: isMobile ? "flex-start" : "space-between",
-          gap: isMobile ? 0 : 32,
-        }}
-      >
-        {!isMobile && <div className="hp-rise" style={{ zoom: LEFT_SCALE }}>{brand}</div>}
+      <main className="hp-left" style={{ width: isCompact ? "100%" : LEFT_WIDTH }}>
+        {!isMobile && <div className="hp-rise">{brand}</div>}
 
-        <div style={{ display: "flex", flexDirection: "column", zoom: isMobile ? 1 : LEFT_SCALE }}>
+        <div className="hp-left-body">
           <div className="hp-rise hp-d1 hp-modules">
             <span className="hp-live-dot" aria-hidden="true" />
             {text.modules}
           </div>
 
-          <h1
-            className="hp-rise hp-d2"
-            style={{
-              fontSize: isMobile ? "clamp(32px, 9vw, 40px)" : isTablet ? 48 : "clamp(40px, 6.2vh, 56px)",
-              color: "var(--hp-text)",
-              fontWeight: 700,
-              lineHeight: 1.06,
-              letterSpacing: isMobile ? "-1px" : "-1.6px",
-              margin: "0 0 22px",
-              maxWidth: 520,
-              textWrap: "balance" as any,
-            }}
-          >
-            {text.title}
-          </h1>
-
-          <p className="hp-rise hp-d2 hp-subtitle" style={{ fontSize: isMobile ? 15 : 16.5, marginBottom: isMobile ? 26 : "clamp(22px, 3.8vh, 34px)" }}>
-            {text.subtitle}
-          </p>
+          <h1 className="hp-rise hp-d2 hp-title">{text.title}</h1>
+          <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
 
           {/* Le lien EST le bouton (pas de <button> dans un <a>) */}
-          <div className="hp-rise hp-d3" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "center", gap: 12, marginBottom: isMobile ? 30 : "clamp(26px, 4.8vh, 44px)" }}>
+          <div className="hp-rise hp-d3 hp-actions">
             <Link href={ctaHref} prefetch className="hp-cta">
               {isLoggedIn ? text.button : text.login}
-              <span className="hp-cta-arrow"><IconArrowRight color="currentColor" /></span>
+              <span className="hp-cta-arrow"><IconArrowRight /></span>
             </Link>
             {!isLoggedIn && <Link href="/auth/login" className="hp-ghost">{text.signin}</Link>}
           </div>
@@ -414,11 +388,9 @@ export default function HomePage(): React.ReactElement {
               );
             })}
           </ul>
-
-          <p className="hp-rise hp-d4 hp-extra">{text.extra}</p>
         </div>
 
-        <footer className="hp-footer" style={{ zoom: isMobile ? 1 : LEFT_SCALE, marginTop: isMobile ? 32 : 0, flexDirection: isMobile ? "column-reverse" : "row" }}>
+        <footer className="hp-footer">
           <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa. {text.copyright}</p>
           <nav aria-label="Legal" style={{ display: "flex", gap: 16 }}>
             <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
@@ -427,35 +399,26 @@ export default function HomePage(): React.ReactElement {
         </footer>
       </main>
 
-      {/* ── CÔTÉ DROIT — 2.png en sombre, 1.png en clair ── */}
+      {/* ── CÔTÉ DROIT — image (2.png sombre / 1.png clair) puis texte ── */}
       {!isMobile && (
-        <aside
-          style={{
-            width: isTablet ? "100%" : RIGHT_WIDTH,
-            height: isTablet ? "auto" : fullH("vh"),
-            minHeight: isTablet ? 520 : undefined,
-            background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--hp-right-bg)",
-            borderLeft: isTablet ? "none" : "1px solid rgba(139, 92, 246, 0.18)",
-            borderTop: isTablet ? "1px solid rgba(139, 92, 246, 0.18)" : "none",
-            flexShrink: 0,
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            gap: "clamp(18px, 3.4vh, 32px)",
-            padding: isTablet ? "40px 24px" : "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
-            boxSizing: "border-box",
-          }}
-        >
-          <div className="hp-right-text hp-rise hp-d2">
-            <span className="hp-right-tag"><span className="hp-live-dot" aria-hidden="true" />{text.previewTag}</span>
-            <h2 className="hp-right-title">{text.previewTitle}</h2>
-            <p className="hp-right-sub">{text.previewText}</p>
-          </div>
+        <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
           <img
             key={isLight ? "light" : "dark"}
             src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
             alt={text.previewAlt}
-            className="hp-preview-img"
+            className="hp-preview-img hp-rise hp-d2"
             draggable={false}
           />
+          <div className="hp-right-text hp-rise hp-d3">
+            <h2 className="hp-right-title">{text.previewTitle}</h2>
+            <p className="hp-right-sub">{text.previewText}</p>
+            <ul className="hp-devices">
+              {text.devices.map((d, i) => {
+                const Icon = DEVICE_ICONS[i];
+                return <li key={d}><Icon color="var(--hp-icon)" />{d}</li>;
+              })}
+            </ul>
+          </div>
         </aside>
       )}
 
@@ -465,71 +428,98 @@ export default function HomePage(): React.ReactElement {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
+// Toutes les tailles sont fluides (clamp) : la page tient dans l'écran à 100 % de zoom,
+// de 1280×720 jusqu'à 1920×1080 et plus, sans débordement ni zoom CSS.
 
 const STYLES = `
-  .home-page * { -webkit-tap-highlight-color: transparent; }
+  .home-page * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
   /* ── Panneau gauche ── */
   .hp-left {
-    box-sizing: border-box; display: flex; flex-direction: column; position: relative; z-index: 10;
+    display: flex; flex-direction: column; justify-content: space-between; gap: clamp(16px, 3vh, 32px);
+    position: relative; z-index: 10; min-height: 100vh;
+    padding: clamp(22px, 4vh, 44px) clamp(28px, 3.4vw, 64px) clamp(18px, 3vh, 32px);
     background-color: var(--hp-left-base);
     background-image:
       radial-gradient(ellipse 80% 60% at 0% 0%, var(--hp-left-glow-1), transparent 60%),
       radial-gradient(ellipse 70% 50% at 100% 100%, var(--hp-left-glow-2), transparent 60%);
   }
+  .hp-left-body { display: flex; flex-direction: column; max-width: 560px; }
 
   /* ── Marque ── */
-  .hp-brand { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; }
-  .hp-logo { width: 72px; height: 72px; flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .hp-logo img { width: 84%; height: 84%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
+  .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
+  .hp-logo { width: clamp(46px, 6.4vh, 64px); height: clamp(46px, 6.4vh, 64px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
+  .hp-brand-name { font-family: ${LOGO_FONT}; font-size: clamp(15px, 1.2vw, 19px); letter-spacing: 2px; font-weight: 300; color: var(--hp-text); white-space: nowrap; }
+  .hp-brand-name b { font-weight: 800; }
+  .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.68em; letter-spacing: 4px; }
 
   /* ── En-tête mobile ── */
-  @media (max-width: 767px) { .hp-logo { width: 50px; height: 50px; } }
   .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: 72px; background: var(--hp-header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--hp-glass-line); display: flex; align-items: center; z-index: 150; padding: 0 16px; padding-top: env(safe-area-inset-top); }
+  .mobile-header .hp-logo { width: 48px; height: 48px; }
 
-  /* ── Pastille modules ── */
-  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 7px 14px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: 12px; font-weight: 600; margin-bottom: clamp(18px, 3vh, 26px); }
-  .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; animation: livePing 2.4s ease-out infinite; }
+  /* ── Textes ── */
+  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.55em 1.1em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(11px, 0.85vw, 13px); font-weight: 600; margin-bottom: clamp(14px, 2.6vh, 26px); }
+  .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
-  .hp-extra { margin: 22px 0 0; max-width: 500px; padding-left: 14px; border-left: 2px solid var(--hp-icon); color: var(--hp-muted); font-size: 14px; line-height: 1.6; font-style: italic; }
-  .hp-subtitle { margin: 0; color: var(--hp-muted); line-height: 1.65; max-width: 460px; }
+  .hp-title { margin: 0 0 clamp(12px, 2.2vh, 22px); color: var(--hp-text); font-size: clamp(30px, min(3.5vw, 6.2vh), 56px); font-weight: 700; line-height: 1.07; letter-spacing: -0.03em; text-wrap: balance; }
+  .hp-subtitle { margin: 0 0 clamp(18px, 3.4vh, 34px); color: var(--hp-muted); font-size: clamp(14px, min(1.1vw, 1.95vh), 17px); line-height: 1.6; max-width: 480px; }
 
   /* ── Boutons ── */
-  .hp-cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 28px; border-radius: 999px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-size: 15px; font-weight: 700; text-decoration: none; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
+  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: clamp(20px, 4vh, 40px); }
+  .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(46px, 6vh, 56px); padding: 0 clamp(20px, 1.8vw, 30px); border-radius: 999px; font-size: clamp(14px, 1vw, 16px); text-decoration: none; white-space: nowrap; }
+  .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
   .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
   .hp-cta:active { transform: translateY(0); }
   .hp-cta-arrow { display: inline-flex; transition: transform .2s; }
   .hp-cta:hover .hp-cta-arrow { transform: translateX(3px); }
-  .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: 54px; padding: 0 24px; border-radius: 999px; border: 1px solid var(--hp-ghost-border); color: var(--hp-text) !important; font-size: 15px; font-weight: 600; text-decoration: none; transition: background .2s; }
+  .hp-ghost { border: 1px solid var(--hp-ghost-border); color: var(--hp-text) !important; font-weight: 600; transition: background .2s; }
   .hp-ghost:hover { background: var(--hp-glass); }
 
   /* ── Liste en verre ── */
-  .hp-glass-list { display: flex; flex-direction: column; border-radius: 18px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); max-width: 520px; }
-  .hp-glass-row { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--hp-glass-line); }
+  .hp-glass-list { display: flex; flex-direction: column; border-radius: 16px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); max-width: 540px; font-size: clamp(13px, 0.95vw, 15px); }
+  .hp-glass-row { display: flex; align-items: center; gap: 0.9em; padding: clamp(9px, 1.5vh, 15px) 1.2em; border-bottom: 1px solid var(--hp-glass-line); }
   .hp-glass-row:last-child { border-bottom: none; }
-  .hp-glass-title { flex: 1; font-size: 14px; font-weight: 600; color: var(--hp-text); }
-  .hp-glass-desc { font-size: 12.5px; color: var(--hp-muted); text-align: right; }
-  @media (max-width: 420px) {
-    .hp-glass-row { flex-wrap: wrap; row-gap: 2px; }
-    .hp-glass-desc { flex-basis: 100%; padding-left: 32px; text-align: left; }
-  }
-
-  /* ── Texte côté droit ── */
-  .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 600px; flex-shrink: 0; }
-  .hp-right-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 13px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: 12px; font-weight: 600; margin-bottom: 14px; }
-  .hp-right-title { margin: 0 0 8px; color: var(--hp-text); font-size: clamp(22px, 3.4vh, 32px); font-weight: 700; line-height: 1.15; letter-spacing: -0.7px; text-wrap: balance; }
-  .hp-right-sub { margin: 0; color: var(--hp-muted); font-size: 15px; line-height: 1.6; }
-
-  /* ── Image côté droit ── */
-  .hp-preview-img { display: block; max-width: 100%; max-height: 100%; min-height: 0; flex: 0 1 auto; width: auto; height: auto; object-fit: contain; border-radius: 16px; animation: hpFade .4s ease both; user-select: none; }
-  @keyframes hpFade { from { opacity: 0; } to { opacity: 1; } }
+  .hp-glass-row svg { flex-shrink: 0; }
+  .hp-glass-title { flex: 1; font-weight: 600; color: var(--hp-text); }
+  .hp-glass-desc { font-size: 0.88em; color: var(--hp-muted); text-align: right; }
 
   /* ── Pied de page ── */
-  .hp-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--hp-faint); }
+  .hp-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 12px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── Côté droit ── */
+  .hp-right {
+    flex-shrink: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: clamp(18px, 3.2vh, 32px); padding: clamp(28px, 6vh, 64px) clamp(28px, 3.6vw, 64px);
+    border-left: 1px solid rgba(139,92,246,0.18);
+    background-color: var(--hp-right-bg);
+    background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
+  }
+  .hp-preview-img { display: block; width: auto; max-width: 100%; height: auto; max-height: 62vh; min-height: 0; object-fit: contain; border-radius: 16px; border: 1px solid var(--hp-glass-border); box-shadow: 0 30px 80px -30px var(--hp-cta-shadow), 0 20px 50px -30px var(--hp-shadow); user-select: none; }
+  .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; }
+  .hp-right-title { margin: 0 0 8px; color: var(--hp-text); font-size: clamp(22px, min(2.2vw, 3.6vh), 34px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
+  .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(14px, 1vw, 16px); line-height: 1.6; }
+  .hp-devices { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: clamp(12.5px, 0.9vw, 14px); font-weight: 600; color: var(--hp-text); }
+  .hp-devices li { display: inline-flex; align-items: center; gap: 7px; }
+
+  /* ── Tablette / mobile ── */
+  .is-compact .hp-left { min-height: auto; }
+  .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
+  .is-compact .hp-preview-img { max-height: 520px; }
+  .is-mobile .hp-left { min-height: 100dvh; justify-content: flex-start; gap: 0; padding: 100px 20px 28px; }
+  .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
+  .is-mobile .hp-subtitle { font-size: 15px; }
+  .is-mobile .hp-actions { flex-direction: column; align-items: stretch; }
+  .is-mobile .hp-cta, .is-mobile .hp-ghost { height: 52px; font-size: 15px; }
+  .is-mobile .hp-footer { margin-top: 32px; flex-direction: column-reverse; align-items: flex-start; }
+  @media (max-width: 420px) {
+    .hp-glass-row { flex-wrap: wrap; row-gap: 2px; }
+    .hp-glass-desc { flex-basis: 100%; padding-left: 2em; text-align: left; }
+  }
 
   /* ── Sélecteur de langue ── */
   .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 12px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
@@ -547,7 +537,7 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-live-dot, .hp-lang-menu, .hp-preview-img { animation: none !important; }
+    .hp-rise, .hp-live-dot, .hp-lang-menu { animation: none !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost { transition: none !important; }
   }
 `;
