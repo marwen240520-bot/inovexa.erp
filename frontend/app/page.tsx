@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
-import HeroPreview from "@/components/ui/HeroPreview";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // ─── Icônes SVG ────────────────────────────────────────────────────────────────
@@ -55,6 +54,8 @@ interface HomeText {
   title: string;
   modules: string;
   subtitle: string;
+  extra: string;
+  previewAlt: string;
   button: string;
   login: string;
   signin: string;
@@ -73,12 +74,20 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
+// Page réduite de 10 % sur tablette / ordinateur (1 = taille normale)
+const PAGE_SCALE = 0.9;
+// Image du côté droit selon le thème
+const PREVIEW_DARK = "/images/2.png";
+const PREVIEW_LIGHT = "/images/1.png";
+
 // Traductions définies une seule fois (et non recréées à chaque rendu)
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
     title: "L'avenir de la gestion d'entreprise commence ici.",
     modules: "Ventes · Stock · Factures · RH · Finance",
     subtitle: "Un ERP clair et rapide pour gérer toute votre activité, en français, anglais et espagnol.",
+    extra: "De la commande à la facture, du stock à la paie : toutes vos opérations sont reliées et à jour en temps réel, pour décider plus vite et mieux.",
+    previewAlt: "Aperçu du tableau de bord Inovexa ERP",
     button: "Accéder au Dashboard",
     login: "Commencer maintenant",
     signin: "Se connecter",
@@ -97,6 +106,8 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "El futuro de la gestión empresarial comienza aquí.",
     modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas",
     subtitle: "Un ERP claro y rápido para gestionar toda su actividad, en francés, inglés y español.",
+    extra: "Del pedido a la factura, del stock a la nómina: todas sus operaciones conectadas y actualizadas en tiempo real, para decidir más rápido y mejor.",
+    previewAlt: "Vista previa del panel de Inovexa ERP",
     button: "Panel de Control",
     login: "Empezar ahora",
     signin: "Iniciar sesión",
@@ -115,6 +126,8 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "The future of business management starts here.",
     modules: "Sales · Stock · Invoices · HR · Finance",
     subtitle: "A clear, fast ERP to run your whole business, in French, English and Spanish.",
+    extra: "From order to invoice, from stock to payroll: every operation is connected and up to date in real time, so you can decide faster and better.",
+    previewAlt: "Inovexa ERP dashboard preview",
     button: "Go to Dashboard",
     login: "Get Started Now",
     signin: "Sign in",
@@ -209,6 +222,9 @@ export default function HomePage(): React.ReactElement {
   const isLight = isLightTheme(theme);
   const themeVars = useMemo(() => buildHpVars(themeId, theme) as React.CSSProperties, [themeId, theme]);
   const isCompact = isMobile || isTablet;
+  const scale = isMobile ? 1 : PAGE_SCALE;
+  // Avec « zoom », 100vh rapetisse aussi : on compense pour garder toute la hauteur de l'écran
+  const fullH = (unit: "vh" | "dvh") => (scale === 1 ? `100${unit}` : `calc(100${unit} / ${scale})`);
 
   const lang: Lang = (["fr", "en", "es"] as const).includes(language as Lang) ? (language as Lang) : "en";
   const text = TRANSLATIONS[lang];
@@ -257,11 +273,11 @@ export default function HomePage(): React.ReactElement {
   const brand = (
     <Link href="/" aria-label="Inovexa ERP" className="hp-brand">
       <span className="hp-logo">
-        <img src="/images/logo.png" alt="" width={44} height={44} />
+        <img src="/images/logo.png" alt="" width={64} height={64} />
       </span>
-      <span style={{ fontFamily: LOGO_FONT, fontSize: 16, letterSpacing: 2, fontWeight: 300, color: "var(--hp-text)", whiteSpace: "nowrap" }}>
+      <span style={{ fontFamily: LOGO_FONT, fontSize: isMobile ? 16 : 19, letterSpacing: 2, fontWeight: 300, color: "var(--hp-text)", whiteSpace: "nowrap" }}>
         <b style={{ fontWeight: 800 }}>INOV</b>EXA{" "}
-        <span style={{ color: "var(--hp-accent-text)", fontWeight: 800, fontSize: 11, letterSpacing: 4 }}>ERP</span>
+        <span style={{ color: "var(--hp-accent-text)", fontWeight: 800, fontSize: isMobile ? 11 : 12.5, letterSpacing: 4 }}>ERP</span>
       </span>
     </Link>
   );
@@ -271,7 +287,8 @@ export default function HomePage(): React.ReactElement {
       className={"home-page " + (isLight ? "hp-light" : "hp-dark")}
       style={{
         ...themeVars,
-        minHeight: "100dvh",
+        zoom: scale,
+        minHeight: fullH("dvh"),
         background: "var(--hp-bg)",
         display: "flex",
         flexDirection: isCompact ? "column" : "row",
@@ -326,7 +343,7 @@ export default function HomePage(): React.ReactElement {
         style={{
           width: isCompact ? "100%" : "44%",
           padding: isMobile ? "100px 20px 28px" : isTablet ? "32px 48px 40px" : "40px 56px 32px",
-          minHeight: isMobile ? "100dvh" : isTablet ? "auto" : "100vh",
+          minHeight: isMobile ? "100dvh" : isTablet ? "auto" : fullH("vh"),
           justifyContent: isMobile ? "flex-start" : "space-between",
           gap: isMobile ? 0 : 32,
         }}
@@ -381,6 +398,8 @@ export default function HomePage(): React.ReactElement {
               );
             })}
           </ul>
+
+          <p className="hp-rise hp-d4 hp-extra">{text.extra}</p>
         </div>
 
         <footer className="hp-footer" style={{ marginTop: isMobile ? 32 : 0, flexDirection: isMobile ? "column-reverse" : "row" }}>
@@ -392,13 +411,12 @@ export default function HomePage(): React.ReactElement {
         </footer>
       </main>
 
-      {/* ── CÔTÉ DROIT — image d'origine (HeroPreview) ── */}
+      {/* ── CÔTÉ DROIT — 2.png en sombre, 1.png en clair ── */}
       {!isMobile && (
         <aside
-          aria-hidden="true"
           style={{
             width: isTablet ? "100%" : "56%",
-            height: isTablet ? "auto" : "100vh",
+            height: isTablet ? "auto" : fullH("vh"),
             minHeight: isTablet ? 520 : undefined,
             background: "linear-gradient(0deg, rgba(139, 92, 246, 0.06), rgba(139, 92, 246, 0.06)), var(--hp-right-bg)",
             borderLeft: isTablet ? "none" : "1px solid rgba(139, 92, 246, 0.18)",
@@ -409,7 +427,13 @@ export default function HomePage(): React.ReactElement {
             boxSizing: "border-box",
           }}
         >
-          <HeroPreview />
+          <img
+            key={isLight ? "light" : "dark"}
+            src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
+            alt={text.previewAlt}
+            className="hp-preview-img"
+            draggable={false}
+          />
         </aside>
       )}
 
@@ -435,17 +459,19 @@ const STYLES = `
   }
 
   /* ── Marque ── */
-  .hp-brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
-  .hp-logo { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .hp-logo img { width: 78%; height: 78%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
+  .hp-brand { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; }
+  .hp-logo { width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .hp-logo img { width: 84%; height: 84%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
 
   /* ── En-tête mobile ── */
+  @media (max-width: 767px) { .hp-logo { width: 50px; height: 50px; } }
   .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: 72px; background: var(--hp-header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--hp-glass-line); display: flex; align-items: center; z-index: 150; padding: 0 16px; padding-top: env(safe-area-inset-top); }
 
   /* ── Pastille modules ── */
   .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 7px 14px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: 12px; font-weight: 600; margin-bottom: clamp(18px, 3vh, 26px); }
   .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; animation: livePing 2.4s ease-out infinite; }
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
+  .hp-extra { margin: 22px 0 0; max-width: 500px; padding-left: 14px; border-left: 2px solid var(--hp-icon); color: var(--hp-muted); font-size: 14px; line-height: 1.6; font-style: italic; }
   .hp-subtitle { margin: 0; color: var(--hp-muted); line-height: 1.65; max-width: 460px; }
 
   /* ── Boutons ── */
@@ -468,6 +494,10 @@ const STYLES = `
     .hp-glass-desc { flex-basis: 100%; padding-left: 32px; text-align: left; }
   }
 
+  /* ── Image côté droit ── */
+  .hp-preview-img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 16px; animation: hpFade .4s ease both; user-select: none; }
+  @keyframes hpFade { from { opacity: 0; } to { opacity: 1; } }
+
   /* ── Pied de page ── */
   .hp-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
@@ -489,7 +519,7 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-live-dot, .hp-lang-menu { animation: none !important; }
+    .hp-rise, .hp-live-dot, .hp-lang-menu, .hp-preview-img { animation: none !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost { transition: none !important; }
   }
 `;
