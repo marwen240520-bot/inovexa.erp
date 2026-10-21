@@ -56,6 +56,9 @@ interface HomeText {
   subtitle: string;
   extra: string;
   previewAlt: string;
+  previewTag: string;
+  previewTitle: string;
+  previewText: string;
   button: string;
   login: string;
   signin: string;
@@ -74,8 +77,8 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
-// Page réduite de 10 % sur tablette / ordinateur (1 = taille normale)
-const PAGE_SCALE = 0.9;
+// Page agrandie de 10 % sur tablette / ordinateur (1 = taille normale)
+const PAGE_SCALE = 1.1;
 // Image du côté droit selon le thème
 const PREVIEW_DARK = "/images/2.png";
 const PREVIEW_LIGHT = "/images/1.png";
@@ -88,6 +91,9 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     subtitle: "Un ERP clair et rapide pour gérer toute votre activité, en français, anglais et espagnol.",
     extra: "De la commande à la facture, du stock à la paie : toutes vos opérations sont reliées et à jour en temps réel, pour décider plus vite et mieux.",
     previewAlt: "Aperçu du tableau de bord Inovexa ERP",
+    previewTag: "Aperçu en direct",
+    previewTitle: "Toute votre activité, en un coup d'œil.",
+    previewText: "Suivez vos ventes, votre stock et vos factures depuis un tableau de bord unique.",
     button: "Accéder au Dashboard",
     login: "Commencer maintenant",
     signin: "Se connecter",
@@ -108,6 +114,9 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     subtitle: "Un ERP claro y rápido para gestionar toda su actividad, en francés, inglés y español.",
     extra: "Del pedido a la factura, del stock a la nómina: todas sus operaciones conectadas y actualizadas en tiempo real, para decidir más rápido y mejor.",
     previewAlt: "Vista previa del panel de Inovexa ERP",
+    previewTag: "Vista previa en directo",
+    previewTitle: "Toda su actividad, de un vistazo.",
+    previewText: "Siga sus ventas, su stock y sus facturas desde un único panel.",
     button: "Panel de Control",
     login: "Empezar ahora",
     signin: "Iniciar sesión",
@@ -128,6 +137,9 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     subtitle: "A clear, fast ERP to run your whole business, in French, English and Spanish.",
     extra: "From order to invoice, from stock to payroll: every operation is connected and up to date in real time, so you can decide faster and better.",
     previewAlt: "Inovexa ERP dashboard preview",
+    previewTag: "Live preview",
+    previewTitle: "Your whole business, at a glance.",
+    previewText: "Track sales, stock and invoices from a single dashboard.",
     button: "Go to Dashboard",
     login: "Get Started Now",
     signin: "Sign in",
@@ -273,7 +285,7 @@ export default function HomePage(): React.ReactElement {
   const brand = (
     <Link href="/" aria-label="Inovexa ERP" className="hp-brand">
       <span className="hp-logo">
-        <img src="/images/logo.png" alt="" width={64} height={64} />
+        <img src="/images/logo.png" alt="" width={72} height={72} />
       </span>
       <span style={{ fontFamily: LOGO_FONT, fontSize: isMobile ? 16 : 19, letterSpacing: 2, fontWeight: 300, color: "var(--hp-text)", whiteSpace: "nowrap" }}>
         <b style={{ fontWeight: 800 }}>INOV</b>EXA{" "}
@@ -422,11 +434,17 @@ export default function HomePage(): React.ReactElement {
             borderLeft: isTablet ? "none" : "1px solid rgba(139, 92, 246, 0.18)",
             borderTop: isTablet ? "1px solid rgba(139, 92, 246, 0.18)" : "none",
             flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: isTablet ? "32px 24px" : "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "clamp(18px, 3.4vh, 32px)",
+            padding: isTablet ? "40px 24px" : "clamp(24px, 5vh, 56px) clamp(28px, 3.4vw, 56px)",
             boxSizing: "border-box",
           }}
         >
+          <div className="hp-right-text hp-rise hp-d2">
+            <span className="hp-right-tag"><span className="hp-live-dot" aria-hidden="true" />{text.previewTag}</span>
+            <h2 className="hp-right-title">{text.previewTitle}</h2>
+            <p className="hp-right-sub">{text.previewText}</p>
+          </div>
           <img
             key={isLight ? "light" : "dark"}
             src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
@@ -460,7 +478,7 @@ const STYLES = `
 
   /* ── Marque ── */
   .hp-brand { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; }
-  .hp-logo { width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .hp-logo { width: 72px; height: 72px; flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .hp-logo img { width: 84%; height: 84%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
 
   /* ── En-tête mobile ── */
@@ -494,8 +512,14 @@ const STYLES = `
     .hp-glass-desc { flex-basis: 100%; padding-left: 32px; text-align: left; }
   }
 
+  /* ── Texte côté droit ── */
+  .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 600px; flex-shrink: 0; }
+  .hp-right-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 13px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: 12px; font-weight: 600; margin-bottom: 14px; }
+  .hp-right-title { margin: 0 0 8px; color: var(--hp-text); font-size: clamp(22px, 3.4vh, 32px); font-weight: 700; line-height: 1.15; letter-spacing: -0.7px; text-wrap: balance; }
+  .hp-right-sub { margin: 0; color: var(--hp-muted); font-size: 15px; line-height: 1.6; }
+
   /* ── Image côté droit ── */
-  .hp-preview-img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 16px; animation: hpFade .4s ease both; user-select: none; }
+  .hp-preview-img { display: block; max-width: 100%; max-height: 100%; min-height: 0; flex: 0 1 auto; width: auto; height: auto; object-fit: contain; border-radius: 16px; animation: hpFade .4s ease both; user-select: none; }
   @keyframes hpFade { from { opacity: 0; } to { opacity: 1; } }
 
   /* ── Pied de page ── */
