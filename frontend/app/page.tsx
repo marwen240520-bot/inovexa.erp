@@ -485,8 +485,6 @@ const STYLES = `
   .lg-fx-horizon span { top: 55%; inset-inline: -50%; bottom: -20%; background-image: linear-gradient(rgba(196,181,253,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(196,181,253,0.35) 1px, transparent 1px); background-size: 60px 60px; transform: perspective(500px) rotateX(62deg); transform-origin: top; -webkit-mask-image: linear-gradient(transparent, #000 40%); mask-image: linear-gradient(transparent, #000 40%); }
   .lg-light .lg-fx-horizon { opacity: 1; background: linear-gradient(180deg, transparent 50%, rgba(167,139,250,0.3)); }
   .lg-light .lg-fx-horizon span { background-image: linear-gradient(rgba(109,40,217,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(109,40,217,0.28) 1px, transparent 1px); }
-  /* Sur mobile : pas de grille horizon, fond simple */
-  @media (max-width: 768px) { .lg-fx-horizon { display: none; } }
   .lg-fx-waves { background: radial-gradient(ellipse 90% 35% at 20% 108%, rgba(124,58,237,0.75), transparent 70%), radial-gradient(ellipse 80% 30% at 80% 112%, rgba(79,70,229,0.7), transparent 70%), radial-gradient(ellipse 120% 45% at 50% 120%, rgba(192,38,211,0.35), transparent 70%); }
   .lg-fx-grain { background: radial-gradient(ellipse 60% 55% at 30% 25%, rgba(124,58,237,0.55), transparent 65%), radial-gradient(ellipse 55% 50% at 75% 80%, rgba(79,70,229,0.45), transparent 65%); }
   .lg-fx-grain span { opacity: .22; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
