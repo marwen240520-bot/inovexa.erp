@@ -429,7 +429,7 @@ export default function HomePage(): React.ReactElement {
       {!isMobile && (
         <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
           {/* Écran d'ordinateur : bord fin, l'image remplit tout l'écran (2.png sombre / 1.png clair) */}
-          <div className="hp-pc hp-rise hp-d2" style={{ ["--shot-ratio" as any]: shotRatio }}>
+          <div className="hp-pc" style={{ ["--shot-ratio" as any]: shotRatio }}>
             <div className="hp-pc-screen">
               <img
                 key={isLight ? "light" : "dark"}
@@ -542,7 +542,7 @@ const STYLES = `
   /* ── Écran d'ordinateur ── */
   .hp-pc { width: min(100%, calc(50vh * var(--shot-ratio, 1.6))); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
   /* Bord fin : l'image touche presque le bord, aucune bande dessus ni dessous */
-  .hp-pc-screen { width: 100%; padding: 4px; border-radius: 14px; background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); line-height: 0; }
+  .hp-pc-screen { width: 100%; padding: clamp(10px, 1.1vw, 18px); border-radius: clamp(16px, 1.4vw, 22px); background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); line-height: 0; }
   .hp-pc-screen img { display: block; width: 100%; height: auto; border-radius: 10px; user-select: none; -webkit-user-drag: none; }
   /* Pied d'un seul bloc (trapèze), au lieu de deux barres */
   .hp-pc-stand { width: 26%; height: clamp(34px, 6.5vh, 70px); margin-top: -1px; background: var(--hp-laptop-base); clip-path: polygon(38% 0, 62% 0, 76% 82%, 100% 92%, 100% 100%, 0 100%, 0 92%, 24% 82%); }
