@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import HeroPreview from "@/components/ui/HeroPreview";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // ─── Pro SVG Icons ─────────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ const featureIcons: React.ReactElement[] = [
   React.createElement(IconUsers, { size: 22, color: "#A855F7", key: "icon-users" })
 ];
 
+// Variante sombre = apparence d'origine ; variante claire = même mise en page, couleurs claires
 const HP_DARK: Record<string, string> = {
   "--hp-bg": "#000000",
   "--hp-text": "white",
@@ -119,6 +121,7 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-img-filter": "brightness(1) contrast(1.03) saturate(1.05)",
 };
 
+/** Variables de couleur de l'accueil pour n'importe quel thème */
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return HP_DARK;
   if (themeId === "light") return HP_LIGHT;
@@ -141,330 +144,6 @@ function buildHpVars(themeId: string, theme: any): Record<string, string> {
 
 const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  🎨 HERO PREVIEW — Design amélioré de la partie droite
-// ═══════════════════════════════════════════════════════════════════════════════
-
-interface HeroPreviewProps {
-  isLight: boolean;
-  isTablet: boolean;
-  text: any;
-}
-
-function HeroPreviewImproved({ isLight, isTablet, text }: HeroPreviewProps) {
-  const kpiData = [
-    { label: "Ventes", value: "€ 48.2K", change: "+12.4%", up: true, icon: "📈", bars: [40, 65, 45, 78, 60, 88, 72] },
-    { label: "Achats", value: "€ 21.7K", change: "-3.1%", up: false, icon: "📦", bars: [60, 55, 70, 50, 45, 55, 48] },
-    { label: "Marge", value: "36.8%", change: "+5.2%", up: true, icon: "💰", bars: [30, 45, 55, 60, 72, 78, 85] },
-  ];
-
-  const activities = [
-    { name: "Facture #INV-2049", amount: "+€ 3,250", type: "in", time: "il y a 2 min" },
-    { name: "Commande #CMD-881", amount: "-€ 1,840", type: "out", time: "il y a 8 min" },
-    { name: "Paiement client A.", amount: "+€ 5,120", type: "in", time: "il y a 15 min" },
-  ];
-
-  const accent = "#A855F7";
-  const accent2 = "#6366F1";
-  const surface = isLight ? "#ffffff" : "rgba(20,20,28,0.92)";
-  const surfaceAlt = isLight ? "#f8f7ff" : "rgba(30,30,42,0.9)";
-  const border = isLight ? "rgba(168,85,247,0.15)" : "rgba(168,85,247,0.22)";
-  const textMain = isLight ? "#111827" : "#f9fafb";
-  const textMuted = isLight ? "#6b7280" : "rgba(255,255,255,0.55)";
-  const shadow = isLight ? "0 20px 60px rgba(17,24,39,0.12)" : "0 20px 60px rgba(0,0,0,0.6)";
-
-  return React.createElement("div", {
-    style: {
-      width: "100%",
-      maxWidth: isTablet ? "560px" : "620px",
-      position: "relative",
-      perspective: "1200px",
-    }
-  },
-    // Glow arrière-plan
-    React.createElement("div", {
-      style: {
-        position: "absolute",
-        inset: "-10%",
-        background: `radial-gradient(circle at 50% 40%, ${accent}33 0%, transparent 60%)`,
-        filter: "blur(40px)",
-        pointerEvents: "none",
-        zIndex: 0,
-      }
-    }),
-
-    // ─── Carte principale du dashboard ───
-    React.createElement("div", {
-      className: "hero-mockup",
-      style: {
-        position: "relative",
-        zIndex: 2,
-        background: surface,
-        border: `1px solid ${border}`,
-        borderRadius: "24px",
-        padding: "22px",
-        boxShadow: shadow,
-        backdropFilter: "blur(20px)",
-        transform: "rotateY(-4deg) rotateX(2deg)",
-        transformStyle: "preserve-3d",
-      }
-    },
-      // Barre supérieure (fake window controls + titre)
-      React.createElement("div", {
-        style: {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "18px",
-          paddingBottom: "14px",
-          borderBottom: `1px solid ${border}`,
-        }
-      },
-        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px" } },
-          ["#ef4444", "#f59e0b", "#10b981"].map((c, i) =>
-            React.createElement("span", { key: i, style: { width: "9px", height: "9px", borderRadius: "50%", background: c, opacity: 0.85 } })
-          )
-        ),
-        React.createElement("div", {
-          style: {
-            fontSize: "11px",
-            fontWeight: "700",
-            color: textMuted,
-            letterSpacing: "1px",
-            textTransform: "uppercase",
-          }
-        }, "Dashboard · Vue d'ensemble"),
-        React.createElement("div", {
-          style: {
-            width: "24px", height: "24px", borderRadius: "8px",
-            background: `linear-gradient(135deg, ${accent}, ${accent2})`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "11px", color: "white", fontWeight: "800",
-          }
-        }, "IN")
-      ),
-
-      // KPIs
-      React.createElement("div", {
-        style: {
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "10px",
-          marginBottom: "18px",
-        }
-      },
-        kpiData.map((kpi, i) =>
-          React.createElement("div", {
-            key: i,
-            className: "hero-kpi",
-            style: {
-              background: surfaceAlt,
-              border: `1px solid ${border}`,
-              borderRadius: "14px",
-              padding: "12px 10px",
-              animationDelay: `${i * 120}ms`,
-            }
-          },
-            React.createElement("div", { style: { fontSize: "10px", color: textMuted, fontWeight: "600", marginBottom: "6px" } }, kpi.label),
-            React.createElement("div", { style: { fontSize: "16px", fontWeight: "800", color: textMain, marginBottom: "6px", letterSpacing: "-0.3px" } }, kpi.value),
-            React.createElement("div", {
-              style: {
-                display: "inline-flex", alignItems: "center", gap: "4px",
-                fontSize: "10px", fontWeight: "700",
-                color: kpi.up ? "#10b981" : "#ef4444",
-                background: kpi.up ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-                padding: "2px 6px", borderRadius: "6px",
-              }
-            }, kpi.up ? "▲" : "▼", " ", kpi.change),
-            // Mini bar chart
-            React.createElement("div", {
-              style: { display: "flex", alignItems: "flex-end", gap: "3px", height: "28px", marginTop: "10px" }
-            },
-              kpi.bars.map((h, j) =>
-                React.createElement("div", {
-                  key: j,
-                  style: {
-                    flex: 1,
-                    height: `${h}%`,
-                    background: `linear-gradient(180deg, ${accent}, ${accent2})`,
-                    borderRadius: "2px",
-                    opacity: 0.6 + (h / 200),
-                  }
-                })
-              )
-            )
-          )
-        )
-      ),
-
-      // Graphique principal (courbe simulée en SVG)
-      React.createElement("div", {
-        style: {
-          background: surfaceAlt,
-          border: `1px solid ${border}`,
-          borderRadius: "16px",
-          padding: "14px 14px 10px",
-          marginBottom: "16px",
-        }
-      },
-        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" } },
-          React.createElement("span", { style: { fontSize: "11px", fontWeight: "700", color: textMain } }, "Revenus 7 jours"),
-          React.createElement("span", { style: { fontSize: "10px", color: "#10b981", fontWeight: "700" } }, "+18.2%")
-        ),
-        React.createElement("svg", {
-          viewBox: "0 0 300 80",
-          style: { width: "100%", height: "70px", display: "block" }
-        },
-          React.createElement("defs", null,
-            React.createElement("linearGradient", { id: "chartGrad", x1: "0", y1: "0", x2: "0", y2: "1" },
-              React.createElement("stop", { offset: "0%", stopColor: accent, stopOpacity: "0.4" }),
-              React.createElement("stop", { offset: "100%", stopColor: accent, stopOpacity: "0" })
-            )
-          ),
-          React.createElement("path", {
-            d: "M0,60 C30,55 45,30 70,35 C95,40 110,15 140,22 C170,29 185,50 210,40 C235,30 255,10 300,18 L300,80 L0,80 Z",
-            fill: "url(#chartGrad)"
-          }),
-          React.createElement("path", {
-            d: "M0,60 C30,55 45,30 70,35 C95,40 110,15 140,22 C170,29 185,50 210,40 C235,30 255,10 300,18",
-            fill: "none",
-            stroke: accent,
-            strokeWidth: "2.5",
-            strokeLinecap: "round"
-          }),
-          [0, 50, 100, 150, 200, 250, 300].map((x, i) =>
-            React.createElement("circle", { key: i, cx: x, cy: [60, 42, 35, 22, 40, 15, 18][i], r: "3", fill: accent })
-          )
-        )
-      ),
-
-      // Activités récentes
-      React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "8px" } },
-        activities.map((a, i) =>
-          React.createElement("div", {
-            key: i,
-            className: "hero-activity",
-            style: {
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "9px 12px",
-              background: surfaceAlt,
-              border: `1px solid ${border}`,
-              borderRadius: "10px",
-              animationDelay: `${300 + i * 100}ms`,
-            }
-          },
-            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "10px" } },
-              React.createElement("div", {
-                style: {
-                  width: "26px", height: "26px", borderRadius: "8px",
-                  background: a.type === "in" ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "11px",
-                }
-              }, a.type === "in" ? "↓" : "↑"),
-              React.createElement("div", null,
-                React.createElement("div", { style: { fontSize: "11px", fontWeight: "700", color: textMain } }, a.name),
-                React.createElement("div", { style: { fontSize: "9px", color: textMuted, marginTop: "1px" } }, a.time)
-              )
-            ),
-            React.createElement("span", {
-              style: {
-                fontSize: "11px", fontWeight: "800",
-                color: a.type === "in" ? "#10b981" : "#ef4444",
-              }
-            }, a.amount)
-          )
-        )
-      )
-    ),
-
-    // ─── Badge flottant haut-gauche ───
-    React.createElement("div", {
-      className: "hero-float-badge hero-float-1",
-      style: {
-        position: "absolute",
-        top: "-18px",
-        left: "-24px",
-        zIndex: 5,
-        background: surface,
-        border: `1px solid ${border}`,
-        borderRadius: "16px",
-        padding: "12px 16px",
-        boxShadow: shadow,
-        display: "flex", alignItems: "center", gap: "10px",
-        backdropFilter: "blur(14px)",
-      }
-    },
-      React.createElement("div", {
-        style: {
-          width: "36px", height: "36px", borderRadius: "12px",
-          background: `linear-gradient(135deg, ${accent}, ${accent2})`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `0 6px 18px ${accent}55`,
-        }
-      }, React.createElement(IconShield, { size: 18, color: "white" })),
-      React.createElement("div", null,
-        React.createElement("div", { style: { fontSize: "10px", color: textMuted, fontWeight: "600" } }, "Sécurité"),
-        React.createElement("div", { style: { fontSize: "13px", fontWeight: "800", color: textMain } }, "100% chiffré")
-      )
-    ),
-
-    // ─── Badge flottant bas-droite ───
-    React.createElement("div", {
-      className: "hero-float-badge hero-float-2",
-      style: {
-        position: "absolute",
-        bottom: "-20px",
-        right: "-24px",
-        zIndex: 5,
-        background: surface,
-        border: `1px solid ${border}`,
-        borderRadius: "16px",
-        padding: "12px 16px",
-        boxShadow: shadow,
-        display: "flex", alignItems: "center", gap: "10px",
-        backdropFilter: "blur(14px)",
-      }
-    },
-      React.createElement("div", {
-        style: {
-          width: "36px", height: "36px", borderRadius: "12px",
-          background: "linear-gradient(135deg, #10b981, #059669)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 6px 18px rgba(16,185,129,0.4)",
-        }
-      }, React.createElement(IconUsers, { size: 18, color: "white" })),
-      React.createElement("div", null,
-        React.createElement("div", { style: { fontSize: "10px", color: textMuted, fontWeight: "600" } }, "Équipe active"),
-        React.createElement("div", { style: { fontSize: "13px", fontWeight: "800", color: textMain } }, "248 membres")
-      )
-    ),
-
-    // ─── Badge flottant haut-droite (notification) ───
-    React.createElement("div", {
-      className: "hero-float-badge hero-float-3",
-      style: {
-        position: "absolute",
-        top: "20%",
-        right: "-30px",
-        zIndex: 5,
-        background: `linear-gradient(135deg, ${accent}, ${accent2})`,
-        borderRadius: "14px",
-        padding: "10px 14px",
-        boxShadow: `0 10px 30px ${accent}66`,
-        display: "flex", alignItems: "center", gap: "8px",
-        color: "white",
-      }
-    },
-      React.createElement("span", { style: { fontSize: "16px" } }, "🎯"),
-      React.createElement("div", null,
-        React.createElement("div", { style: { fontSize: "9px", opacity: 0.85, fontWeight: "600" } }, "Objectif atteint"),
-        React.createElement("div", { style: { fontSize: "12px", fontWeight: "800" } }, "+24% ce mois")
-      )
-    )
-  );
-}
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function HomePage(): React.ReactElement {
@@ -473,15 +152,20 @@ export default function HomePage(): React.ReactElement {
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
   const { theme, themeId } = useTheme();
+  // Thème clair par défaut ; « sombre » = apparence d'origine ; les autres thèmes utilisent leurs propres couleurs
   const isLight = isLightTheme(theme);
   const themeVars = buildHpVars(themeId, theme) as React.CSSProperties;
   const themeClass = isLight ? "hp-light" : "hp-dark";
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState<boolean>(false);
+  // Le contenu est visible dès le HTML envoyé par le serveur. L'apparition progressive est faite
+  // en CSS (classes « hp-rise »), sans attendre le JavaScript : plus d'écran de chargement artificiel
+  // de 1,2 s ni de minuteries avant que le titre s'affiche.
 
   const isCompact: boolean = isMobile || isTablet;
 
+  // Positions pseudo-aléatoires mais identiques côté serveur et navigateur (pas d'écart à l'hydratation)
   const particles: Particle[] = useMemo((): Particle[] => {
     const count: number = isMobile ? 10 : 20;
     const rand = (n: number): number => { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
@@ -503,6 +187,7 @@ export default function HomePage(): React.ReactElement {
     let token: string | null = null;
     try { token = localStorage.getItem("token"); } catch { /* stockage indisponible */ }
     setIsLoggedIn(!!token);
+    // Utilisateur déjà connecté : la page du tableau de bord est préchargée pour un clic instantané
     const full = { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1];
     if (token) { try { router.prefetch("/dashboard", full); } catch { /* ignoré */ } }
     else { try { router.prefetch("/auth/login", full); } catch { /* ignoré */ } }
@@ -608,13 +293,15 @@ export default function HomePage(): React.ReactElement {
     React.createElement("div", { className: "ambient-glow" }),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE
+    //  ✅ MOBILE: HEADER FIXE AVEC LOGO À GAUCHE (TEXTE RÉDUIT)
     // ═══════════════════════════════════════════════════════════════════════════
     isMobile && React.createElement("header", {
       className: "mobile-header",
       style: {
         position: "fixed",
-        top: 0, left: 0, right: 0,
+        top: 0,
+        left: 0,
+        right: 0,
         height: "72px",
         background: "var(--hp-header-bg)",
         backdropFilter: "blur(16px)",
@@ -628,15 +315,27 @@ export default function HomePage(): React.ReactElement {
       }
     },
       React.createElement("div", {
-        style: { display: "flex", alignItems: "center", gap: "12px" },
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: "12px"
+        },
         className: "hp-rise"
       },
+        // Logo image (52px — conservé)
         React.createElement("div", {
-          style: { width: "52px", height: "52px", position: "relative", flexShrink: 0 }
+          style: {
+            width: "52px",
+            height: "52px",
+            position: "relative",
+            flexShrink: 0
+          }
         },
           React.createElement("div", {
             style: {
-              position: "absolute", inset: "-20%", borderRadius: "50%",
+              position: "absolute",
+              inset: "-20%",
+              borderRadius: "50%",
               background: "radial-gradient(circle, rgba(168,85,247,0.5) 0%, transparent 70%)",
               animation: "headerHaloPulse 2.8s ease-in-out infinite",
               pointerEvents: "none"
@@ -646,26 +345,47 @@ export default function HomePage(): React.ReactElement {
             src: "/images/logo.png",
             alt: "Inovexa Logo",
             style: {
-              width: "100%", height: "100%", objectFit: "contain",
-              position: "relative", zIndex: 2,
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              position: "relative",
+              zIndex: 2,
               filter: "drop-shadow(0 0 12px rgba(138,43,226,0.75))"
             }
           })
         ),
-        React.createElement("div", { style: { display: "flex", flexDirection: "column", lineHeight: 1 } },
+        // Brand text — ✅ RÉDUIT : 18px → 14px / 10px → 8px
+        React.createElement("div", {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: 1
+          }
+        },
           React.createElement("span", {
             style: {
-              color: "var(--hp-text)", fontSize: "14px", fontWeight: "300",
-              letterSpacing: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT
+              color: "var(--hp-text)",
+              fontSize: "14px",
+              fontWeight: "300",
+              letterSpacing: "2px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
             }
-          }, React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"),
+          },
+            React.createElement("span", { style: { fontWeight: "800" } }, "INOV"), "EXA"
+          ),
           React.createElement("span", {
             className: "erp-text-glow",
             style: {
               background: "linear-gradient(90deg, #A855F7, #6366F1)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              fontSize: "8px", fontWeight: "700", letterSpacing: "5px",
-              marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontSize: "8px",
+              fontWeight: "700",
+              letterSpacing: "5px",
+              marginTop: "2px",
+              textTransform: "uppercase",
+              fontFamily: LOGO_FONT
             }
           }, "ERP")
         )
@@ -743,9 +463,14 @@ export default function HomePage(): React.ReactElement {
         minHeight: isMobile ? "100vh" : "auto"
       }
     },
+      // ═════════════════════════════════════════════════════════════════════════
+      //  LOGO INLINE — TABLETTE/DESKTOP UNIQUEMENT
+      // ═════════════════════════════════════════════════════════════════════════
       !isMobile && React.createElement("div", {
         style: {
-          display: "flex", alignItems: "center", gap: isMobile ? "20px" : "26px",
+          display: "flex",
+          alignItems: "center",
+          gap: isMobile ? "20px" : "26px",
           marginBottom: "clamp(10px, 2vh, 28px)"
         },
         className: "hp-rise"
@@ -769,10 +494,12 @@ export default function HomePage(): React.ReactElement {
           React.createElement("div", { className: "erp-text-glow", style: { background: "linear-gradient(90deg, #A855F7, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: "11px", fontWeight: "700", letterSpacing: "7px", marginTop: "2px", textTransform: "uppercase", fontFamily: LOGO_FONT } }, "ERP")
         )
       ),
+      // ── Pastille au-dessus du titre (ordinateur / tablette) ──
       !isMobile && React.createElement("div", { style: { display: "inline-flex", alignItems: "center", gap: "8px", alignSelf: "flex-start", padding: "6px 14px", borderRadius: "999px", border: "1px solid rgba(168, 85, 247, 0.3)", background: "var(--hp-card-bg)", color: "var(--hp-feature-text)", fontSize: "11.5px", fontWeight: "700", letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: "clamp(12px, 2.2vh, 20px)" }, className: "hp-rise hp-d1" },
         React.createElement("span", { style: { width: "7px", height: "7px", borderRadius: "50%", background: "#A855F7" } }),
         text.eyebrow
       ),
+      // ✅ TITRE HERO avec marge supérieure sur mobile
       React.createElement("h1", {
         style: {
           fontSize: isMobile ? "32px" : isTablet ? "44px" : "clamp(36px, 5.2vh, 52px)",
@@ -821,7 +548,7 @@ export default function HomePage(): React.ReactElement {
     ),
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  ✅ RIGHT SIDE — NOUVEAU HERO PREVIEW AMÉLIORÉ
+    //  ✅ RIGHT SIDE — VRAIE PHOTO DASHBOARD + CADRE NAVIGATEUR + BADGES FLOTTANTS
     // ═══════════════════════════════════════════════════════════════════════════
     !isMobile && React.createElement("div", {
       style: {
@@ -841,21 +568,195 @@ export default function HomePage(): React.ReactElement {
         overflow: "hidden",
       }
     },
-      React.createElement(HeroPreviewImproved, { isLight, isTablet, text })
+      // ─── Scène 3D : wrapper avec perspective ───
+      React.createElement("div", {
+        className: "hero-preview-stage",
+        style: {
+          width: "100%",
+          maxWidth: isTablet ? "560px" : "640px",
+          position: "relative",
+          perspective: "1400px",
+        }
+      },
+        // Glow radial violet derrière la photo
+        React.createElement("div", {
+          className: "hero-preview-glow",
+          style: {
+            position: "absolute",
+            inset: "-12%",
+            background: "radial-gradient(circle at 50% 45%, rgba(168,85,247,0.28) 0%, transparent 65%)",
+            filter: "blur(50px)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }
+        }),
+
+        // ─── Cadre de la photo (style navigateur + rotation 3D) ───
+        React.createElement("div", {
+          className: "hero-preview-frame",
+          style: {
+            position: "relative",
+            zIndex: 2,
+            borderRadius: "22px",
+            border: "1px solid rgba(168, 85, 247, 0.3)",
+            boxShadow: "0 30px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(168,85,247,0.15), 0 0 60px rgba(168,85,247,0.15)",
+            overflow: "hidden",
+            background: isLight ? "#ffffff" : "rgba(20,20,28,0.92)",
+            transform: "rotateY(-3deg) rotateX(1.5deg)",
+            transformStyle: "preserve-3d",
+            transition: "transform 0.4s ease, box-shadow 0.4s ease",
+          }
+        },
+          // Barre supérieure style navigateur
+          React.createElement("div", {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 14px",
+              background: isLight ? "rgba(248,247,255,0.95)" : "rgba(15,15,22,0.95)",
+              borderBottom: "1px solid rgba(168, 85, 247, 0.15)",
+            }
+          },
+            React.createElement("div", { style: { display: "flex", gap: "6px" } },
+              ["#ef4444", "#f59e0b", "#10b981"].map((c, i) =>
+                React.createElement("span", { key: i, style: { width: "9px", height: "9px", borderRadius: "50%", background: c, opacity: 0.9 } })
+              )
+            ),
+            React.createElement("div", {
+              style: {
+                flex: 1,
+                marginLeft: "10px",
+                fontSize: "10px",
+                color: "var(--hp-muted)",
+                fontWeight: "600",
+                letterSpacing: "0.5px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }
+            },
+              React.createElement("span", { style: { opacity: 0.6 } }, "🔒"),
+              "inovexa-erp.com/dashboard"
+            )
+          ),
+          // ✅ LA VRAIE PHOTO DU DASHBOARD
+          React.createElement("div", {
+            style: {
+              position: "relative",
+              overflow: "hidden",
+              background: isLight ? "#f8f7ff" : "#0a0a12",
+            }
+          },
+            React.createElement(HeroPreview)
+          )
+        ),
+
+        // ─── Badge flottant haut-gauche (Sécurité) ───
+        React.createElement("div", {
+          className: "hero-float-badge hero-float-1",
+          style: {
+            position: "absolute",
+            top: "-18px",
+            left: "-24px",
+            zIndex: 5,
+            background: isLight ? "#ffffff" : "rgba(20,20,28,0.95)",
+            border: "1px solid rgba(168, 85, 247, 0.3)",
+            borderRadius: "16px",
+            padding: "12px 16px",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+            display: "flex", alignItems: "center", gap: "10px",
+            backdropFilter: "blur(14px)",
+          }
+        },
+          React.createElement("div", {
+            style: {
+              width: "36px", height: "36px", borderRadius: "12px",
+              background: "linear-gradient(135deg, #A855F7, #6366F1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 6px 18px rgba(168,85,247,0.45)",
+            }
+          }, React.createElement(IconShield, { size: 18, color: "white" })),
+          React.createElement("div", null,
+            React.createElement("div", { style: { fontSize: "10px", color: "var(--hp-muted)", fontWeight: "600" } }, "Sécurité"),
+            React.createElement("div", { style: { fontSize: "13px", fontWeight: "800", color: "var(--hp-text)" } }, "100% chiffré")
+          )
+        ),
+
+        // ─── Badge flottant bas-droite (Équipe) ───
+        React.createElement("div", {
+          className: "hero-float-badge hero-float-2",
+          style: {
+            position: "absolute",
+            bottom: "-20px",
+            right: "-24px",
+            zIndex: 5,
+            background: isLight ? "#ffffff" : "rgba(20,20,28,0.95)",
+            border: "1px solid rgba(168, 85, 247, 0.3)",
+            borderRadius: "16px",
+            padding: "12px 16px",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+            display: "flex", alignItems: "center", gap: "10px",
+            backdropFilter: "blur(14px)",
+          }
+        },
+          React.createElement("div", {
+            style: {
+              width: "36px", height: "36px", borderRadius: "12px",
+              background: "linear-gradient(135deg, #10b981, #059669)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 6px 18px rgba(16,185,129,0.4)",
+            }
+          }, React.createElement(IconUsers, { size: 18, color: "white" })),
+          React.createElement("div", null,
+            React.createElement("div", { style: { fontSize: "10px", color: "var(--hp-muted)", fontWeight: "600" } }, "Équipe active"),
+            React.createElement("div", { style: { fontSize: "13px", fontWeight: "800", color: "var(--hp-text)" } }, "248 membres")
+          )
+        ),
+
+        // ─── Badge flottant haut-droite (Objectif) ───
+        React.createElement("div", {
+          className: "hero-float-badge hero-float-3",
+          style: {
+            position: "absolute",
+            top: "18%",
+            right: "-30px",
+            zIndex: 5,
+            background: "linear-gradient(135deg, #A855F7, #6366F1)",
+            borderRadius: "14px",
+            padding: "10px 14px",
+            boxShadow: "0 12px 36px rgba(168,85,247,0.5)",
+            display: "flex", alignItems: "center", gap: "8px",
+            color: "white",
+          }
+        },
+          React.createElement("span", { style: { fontSize: "16px" } }, "🎯"),
+          React.createElement("div", null,
+            React.createElement("div", { style: { fontSize: "9px", opacity: 0.85, fontWeight: "600" } }, "Objectif atteint"),
+            React.createElement("div", { style: { fontSize: "12px", fontWeight: "800" } }, "+24% ce mois")
+          )
+        )
+      )
     ),
 
     React.createElement("style", { dangerouslySetInnerHTML: { __html: `
       * { -webkit-tap-highlight-color: transparent; }
+      /* ── Variante claire ── */
       .hp-light .hero-word-glow { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #9333ea 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; filter: none !important; animation: none !important; }
       .hp-light a[href*="inovexa-erp.com"] { color: #7c3aed !important; }
       .hp-light .ambient-glow { background: radial-gradient(circle at 18% 28%, rgba(138,43,226,0.12), transparent 45%) !important; }
+      .hp-light .loader-halo { filter: blur(70px); }
+      .hp-light.loader-screen .loader-brand { text-shadow: none; }
+
 
       .home-page-enter { animation: none; }
+      /* Apparition courte et sans JavaScript : le contenu est déjà dans le HTML */
       .hp-rise { animation: hpRise 0.5s cubic-bezier(0.22,1,0.36,1) both; }
       .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 110ms; } .hp-d3 { animation-delay: 300ms; }
       @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-      @media (prefers-reduced-motion: reduce) { .hp-rise { animation: none; } .erp-text-glow, .hero-word-glow, .cta-button-shimmer, .shimmer-effect, .logo3d, .logo3d-halo, .logo3d-ring, .hero-mockup, .hero-float-badge, .hero-kpi, .hero-activity { animation: none !important; } }
+      @media (prefers-reduced-motion: reduce) { .hp-rise { animation: none; } .erp-text-glow, .hero-word-glow, .cta-button-shimmer, .shimmer-effect, .logo3d, .logo3d-halo, .logo3d-ring, .hero-preview-frame, .hero-float-badge { animation: none !important; } }
       .hp-feature-card:hover { transform: translateY(-2px) !important; border-color: rgba(168, 85, 247, 0.45) !important; }
+      @keyframes homePageIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
 
       .erp-text-glow { animation: textPulse 3s ease-in-out infinite; }
       @keyframes textPulse { 0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(168,85,247,0.3)); } 50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168,85,247,0.7)); } }
@@ -897,22 +798,18 @@ export default function HomePage(): React.ReactElement {
       @keyframes logoRingSpin1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
       @keyframes logoRingSpin2 { from { transform: rotateX(64deg) rotateY(14deg) rotateZ(360deg); } to { transform: rotateX(64deg) rotateY(14deg) rotateZ(0deg); } }
 
-      /* ═══ HERO PREVIEW AMÉLIORÉ ═══ */
-      .hero-mockup {
-        animation: mockupFloat 6s ease-in-out infinite;
-        transition: transform 0.4s ease;
+      /* ═══ HERO PREVIEW — CADRE 3D + BADGES FLOTTANTS ═══ */
+      .hero-preview-frame {
+        animation: frameFloat 6s ease-in-out infinite;
       }
-      .hero-mockup:hover { transform: rotateY(-2deg) rotateX(1deg) translateY(-4px) !important; }
-      @keyframes mockupFloat {
-        0%, 100% { transform: rotateY(-4deg) rotateX(2deg) translateY(0); }
-        50% { transform: rotateY(-4deg) rotateX(2deg) translateY(-8px); }
+      .hero-preview-frame:hover {
+        transform: rotateY(-1deg) rotateX(0.5deg) translateY(-4px) !important;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(168,85,247,0.25), 0 0 80px rgba(168,85,247,0.25) !important;
       }
-      .hero-kpi { animation: kpiFadeIn 0.6s cubic-bezier(0.22,1,0.36,1) both; transition: transform 0.2s ease, border-color 0.2s ease; }
-      .hero-kpi:hover { transform: translateY(-2px); }
-      @keyframes kpiFadeIn { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
-      .hero-activity { animation: activityFadeIn 0.5s cubic-bezier(0.22,1,0.36,1) both; transition: transform 0.2s ease; }
-      .hero-activity:hover { transform: translateX(3px); }
-      @keyframes activityFadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+      @keyframes frameFloat {
+        0%, 100% { transform: rotateY(-3deg) rotateX(1.5deg) translateY(0); }
+        50%      { transform: rotateY(-3deg) rotateX(1.5deg) translateY(-8px); }
+      }
 
       .hero-float-badge { animation: badgeFloat 4s ease-in-out infinite; }
       .hero-float-1 { animation-delay: 0s; }
@@ -920,7 +817,7 @@ export default function HomePage(): React.ReactElement {
       .hero-float-3 { animation-delay: 2.4s; }
       @keyframes badgeFloat {
         0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-8px); }
+        50%      { transform: translateY(-8px); }
       }
 
       @media (max-width: 1024px) {
