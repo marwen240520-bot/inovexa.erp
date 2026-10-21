@@ -33,6 +33,9 @@ const LG_DARK: Record<string, string> = {
   "--lg-btn-text": "#2E1065",
   "--lg-btn-shadow": "rgba(167,139,250,0.45)",
   "--lg-error": "#fca5a5",
+  "--lg-veil": "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(5,4,10,0.45), rgba(5,4,10,0.88))",
+  "--lg-card-solid": "rgba(16,10,30,0.74)",
+  "--lg-bg-opacity": "0.7",
   "--lg-warn": "#FBBF24",
 };
 const LG_LIGHT: Record<string, string> = {
@@ -57,6 +60,9 @@ const LG_LIGHT: Record<string, string> = {
   "--lg-btn-text": "#ffffff",
   "--lg-btn-shadow": "rgba(109,40,217,0.35)",
   "--lg-error": "#b91c1c",
+  "--lg-veil": "radial-gradient(ellipse 55% 65% at 50% 50%, rgba(245,243,255,0.35), rgba(245,243,255,0.88))",
+  "--lg-card-solid": "rgba(255,255,255,0.86)",
+  "--lg-bg-opacity": "0.85",
   "--lg-warn": "#b45309",
 };
 
@@ -133,6 +139,42 @@ const translations = {
   },
 };
 
+// Capture du tableau de bord utilisée en fond flouté (même images que l'accueil)
+const BG_DARK = "/images/2.png";
+const BG_LIGHT = "/images/1.png";
+
+/**
+ * Choix du fond de la page de connexion — changez simplement cette valeur :
+ *  "capture" : capture du tableau de bord floutée (2.png / 1.png)
+ *  "aurora"  : halos violets qui bougent lentement
+ *  "grid"    : grille de points avec une lueur au centre
+ *  "mesh"    : dégradé violet / indigo / rose, fixe
+ *  "modules" : icônes des modules en filigrane
+ *  "rays"      : rayons de lumière depuis le haut
+ *  "spotlight" : projecteur au centre
+ *  "horizon"   : sol en grille en perspective
+ *  "waves"     : vagues violettes en bas
+ *  "grain"     : lueur avec grain photo
+ *  "rings"     : cercles concentriques
+ *  "hexagons"  : motif d'hexagones
+ *  "lines"     : quadrillage fin
+ *  "split"     : coupe en diagonale violet / noir
+ *  "bokeh"     : bulles de lumière floues
+ *  "stars"     : ciel étoilé
+ *  "nebula"    : nébuleuse colorée
+ *  "sunset"    : coucher de soleil violet / rose
+ *  "ocean"     : indigo et bleu-vert
+ *  "midnight"  : nuit sobre, presque uni
+ *  "shapes"    : grandes formes floues
+ *  "topo"      : lignes de niveau (carte)
+ *  "checker"   : damier très doux
+ *  "beam"      : faisceau qui traverse lentement
+ *  "stripes"   : rayures diagonales fines
+ */
+const FX_BACKGROUNDS = ["rays", "spotlight", "horizon", "waves", "grain", "rings", "hexagons", "lines", "split", "bokeh", "stars", "nebula", "sunset", "ocean", "midnight", "shapes", "topo", "checker", "beam", "stripes"] as const;
+type LoginBackground = "capture" | "aurora" | "grid" | "mesh" | "modules" | (typeof FX_BACKGROUNDS)[number];
+const BACKGROUND: LoginBackground = "horizon";
+
 const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
 
 // ─── Icônes ────────────────────────────────────────────────────────────────────
@@ -146,6 +188,29 @@ const IconShieldCheck = () => <svg width="14" height="14" {...svgProps} strokeWi
 const IconArrowLeft = () => <svg width="16" height="16" {...svgProps} strokeWidth={2.2}><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>;
 const IconArrowRight = () => <svg width="17" height="17" {...svgProps} strokeWidth={2.5}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
 const IconAlert = () => <svg width="16" height="16" {...svgProps} strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>;
+
+// Icônes des modules pour le fond « modules »
+const ico = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+const MODULE_ICONS = [
+  () => <svg {...ico}><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>,
+  () => <svg {...ico}><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z" /></svg>,
+  () => <svg {...ico}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>,
+  () => <svg {...ico}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
+  () => <svg {...ico}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>,
+  () => <svg {...ico}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>,
+  () => <svg {...ico}><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>,
+  () => <svg {...ico}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+];
+const MODULE_POS: React.CSSProperties[] = [
+  { top: "12%", left: "8%", width: 92, transform: "rotate(-12deg)" },
+  { top: "64%", left: "12%", width: 120, transform: "rotate(8deg)" },
+  { top: "20%", right: "10%", width: 110, transform: "rotate(10deg)" },
+  { top: "70%", right: "8%", width: 96, transform: "rotate(-8deg)" },
+  { top: "42%", left: "3%", width: 70, transform: "rotate(4deg)" },
+  { top: "46%", right: "3%", width: 74, transform: "rotate(-6deg)" },
+  { top: "84%", left: "40%", width: 64, transform: "rotate(-4deg)" },
+  { top: "4%", left: "44%", width: 60, transform: "rotate(6deg)" },
+];
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
@@ -226,6 +291,30 @@ export default function LoginPage() {
 
   return (
     <div className={"lg-root " + (isLight ? "lg-light" : "lg-dark")} style={themeVars}>
+      {/* ── Fond : capture du tableau de bord, floutée et voilée ── */}
+      {BACKGROUND === "capture" && (
+        <>
+          <div className="lg-bg" aria-hidden="true">
+            <img key={isLight ? "light" : "dark"} src={isLight ? BG_LIGHT : BG_DARK} alt="" draggable={false} />
+          </div>
+          <div className="lg-veil" aria-hidden="true" />
+        </>
+      )}
+      {BACKGROUND === "aurora" && (
+        <div className="lg-aurora" aria-hidden="true"><span /><span /><span /></div>
+      )}
+      {BACKGROUND === "grid" && <div className="lg-grid" aria-hidden="true" />}
+      {BACKGROUND === "mesh" && <div className="lg-mesh" aria-hidden="true" />}
+      {(FX_BACKGROUNDS as readonly string[]).includes(BACKGROUND) && (
+        <div className={"lg-fx lg-fx-" + BACKGROUND} aria-hidden="true"><span /></div>
+      )}
+      {BACKGROUND === "modules" && (
+        <div className="lg-modules" aria-hidden="true">
+          {MODULE_ICONS.map((Icon, i) => (
+            <span key={i} style={MODULE_POS[i]}><Icon /></span>
+          ))}
+        </div>
+      )}
       {/* ── Barre du haut : retour à gauche, thème + langue à droite ── */}
       <div className="lg-topbar">
         <Link href="/" className="lg-back">
@@ -240,16 +329,15 @@ export default function LoginPage() {
 
       {/* ── Contenu centré ── */}
       <main className="lg-center">
-        <Link href="/" aria-label="Inovexa ERP" className="lg-brand lg-anim">
-          <span className="lg-logo">
-            <img src="/images/logo.png" alt="" width={96} height={96} />
-          </span>
-          <span className="lg-brand-name">
-            INOVEXA <span className="lg-brand-erp">ERP</span>
-          </span>
-        </Link>
-
-        <div className="lg-card lg-anim lg-d1">
+        <div className="lg-card lg-anim">
+          <Link href="/" aria-label="Inovexa ERP" className="lg-brand">
+            <span className="lg-logo">
+              <img src="/images/logo.png" alt="" width={64} height={64} />
+            </span>
+            <span className="lg-brand-name">
+              INOVEXA <span className="lg-brand-erp">ERP</span>
+            </span>
+          </Link>
           <h1 className="lg-title">{t.signIn}</h1>
           <p className="lg-welcome">{t.welcome}</p>
 
@@ -355,6 +443,75 @@ const STYLES = `
       radial-gradient(ellipse 55% 50% at 15% 10%, var(--lg-glow-1), transparent 60%),
       radial-gradient(ellipse 50% 45% at 85% 95%, var(--lg-glow-2), transparent 60%);
   }
+  .lg-bg { position: fixed; inset: -60px; z-index: 0; pointer-events: none; }
+  .lg-bg img { width: 100%; height: 100%; object-fit: cover; filter: blur(12px) saturate(1.1); opacity: var(--lg-bg-opacity); transform: scale(1.04); }
+  .lg-veil { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--lg-veil); }
+  .lg-center, .lg-footer { position: relative; z-index: 1; }
+
+  /* Fond « aurora » : halos qui bougent lentement */
+  .lg-aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .lg-aurora span { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .75; }
+  .lg-aurora span:nth-child(1) { width: 55vw; height: 55vw; left: -12vw; top: -18vw; background: #7C3AED; animation: lgFloat1 18s ease-in-out infinite alternate; }
+  .lg-aurora span:nth-child(2) { width: 45vw; height: 45vw; right: -10vw; bottom: -16vw; background: #4F46E5; animation: lgFloat2 22s ease-in-out infinite alternate; }
+  .lg-aurora span:nth-child(3) { width: 30vw; height: 30vw; left: 55%; top: 10%; background: #C026D3; opacity: .45; animation: lgFloat3 26s ease-in-out infinite alternate; }
+  .lg-light .lg-aurora span { opacity: .35; }
+  @keyframes lgFloat1 { to { transform: translate(10vw, 8vh) scale(1.1); } }
+  @keyframes lgFloat2 { to { transform: translate(-8vw, -10vh) scale(1.15); } }
+  @keyframes lgFloat3 { to { transform: translate(-14vw, 22vh) scale(.9); } }
+
+  /* Fond « grid » : grille de points + lueur */
+  .lg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(circle at 50% 45%, rgba(124,58,237,0.38), transparent 45%), radial-gradient(var(--lg-dot, rgba(196,181,253,0.22)) 1.2px, transparent 1.2px);
+    background-size: 100% 100%, 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 40%, transparent 100%); mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 40%, transparent 100%); }
+  .lg-light .lg-grid { --lg-dot: rgba(109,40,217,0.22); }
+
+  /* Fond « mesh » : dégradé fixe */
+  .lg-mesh { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(at 12% 18%, rgba(124,58,237,0.75) 0, transparent 45%),
+      radial-gradient(at 88% 12%, rgba(192,38,211,0.45) 0, transparent 40%),
+      radial-gradient(at 80% 88%, rgba(79,70,229,0.7) 0, transparent 45%),
+      radial-gradient(at 18% 92%, rgba(56,189,248,0.25) 0, transparent 40%); }
+  .lg-light .lg-mesh { opacity: .5; }
+
+  /* ── 20 fonds supplémentaires (classe lg-fx-<nom>) ── */
+  .lg-fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .lg-fx span { position: absolute; inset: 0; }
+  .lg-light .lg-fx { opacity: .5; }
+  .lg-fx-rays { background: conic-gradient(from 180deg at 50% -10%, transparent 0deg, rgba(168,85,247,0.28) 8deg, transparent 16deg, transparent 24deg, rgba(99,102,241,0.22) 32deg, transparent 40deg, transparent 150deg, rgba(168,85,247,0.25) 158deg, transparent 166deg, transparent 176deg, rgba(192,38,211,0.2) 184deg, transparent 192deg, transparent 320deg, rgba(99,102,241,0.25) 328deg, transparent 336deg, transparent 344deg, rgba(168,85,247,0.28) 352deg, transparent 360deg); -webkit-mask-image: linear-gradient(#000, transparent 85%); mask-image: linear-gradient(#000, transparent 85%); }
+  .lg-fx-spotlight { background: radial-gradient(ellipse 40% 75% at 50% -5%, rgba(196,181,253,0.45), rgba(124,58,237,0.18) 45%, transparent 75%); }
+  .lg-fx-horizon { background: linear-gradient(180deg, transparent 50%, rgba(124,58,237,0.25)); }
+  .lg-fx-horizon span { top: 55%; inset-inline: -50%; bottom: -20%; background-image: linear-gradient(rgba(196,181,253,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(196,181,253,0.35) 1px, transparent 1px); background-size: 60px 60px; transform: perspective(500px) rotateX(62deg); transform-origin: top; -webkit-mask-image: linear-gradient(transparent, #000 40%); mask-image: linear-gradient(transparent, #000 40%); }
+  .lg-light .lg-fx-horizon { opacity: 1; background: linear-gradient(180deg, transparent 50%, rgba(167,139,250,0.3)); }
+  .lg-light .lg-fx-horizon span { background-image: linear-gradient(rgba(109,40,217,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(109,40,217,0.28) 1px, transparent 1px); }
+  .lg-fx-waves { background: radial-gradient(ellipse 90% 35% at 20% 108%, rgba(124,58,237,0.75), transparent 70%), radial-gradient(ellipse 80% 30% at 80% 112%, rgba(79,70,229,0.7), transparent 70%), radial-gradient(ellipse 120% 45% at 50% 120%, rgba(192,38,211,0.35), transparent 70%); }
+  .lg-fx-grain { background: radial-gradient(ellipse 60% 55% at 30% 25%, rgba(124,58,237,0.55), transparent 65%), radial-gradient(ellipse 55% 50% at 75% 80%, rgba(79,70,229,0.45), transparent 65%); }
+  .lg-fx-grain span { opacity: .22; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .lg-fx-rings { background: repeating-radial-gradient(circle at 50% 50%, transparent 0 46px, rgba(168,85,247,0.16) 46px 47px); -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 70%); mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 70%); }
+  .lg-fx-hexagons { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='98'><path d='M28 66L0 50V16L28 0l28 16v34L28 66zm0 32L0 82V66l28 16 28-16v16L28 98z' fill='none' stroke='%23A78BFA' stroke-opacity='0.22'/></svg>"), radial-gradient(ellipse 60% 55% at 50% 45%, rgba(124,58,237,0.3), transparent 70%); -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); }
+  .lg-fx-lines { background-image: linear-gradient(rgba(196,181,253,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(196,181,253,0.09) 1px, transparent 1px), radial-gradient(ellipse 55% 50% at 50% 45%, rgba(124,58,237,0.35), transparent 70%); background-size: 44px 44px, 44px 44px, 100% 100%; }
+  .lg-fx-split { background: linear-gradient(115deg, #2E1065 0%, #5B21B6 42%, transparent 42.1%), radial-gradient(ellipse 50% 50% at 85% 80%, rgba(79,70,229,0.35), transparent 70%); }
+  .lg-fx-bokeh { background: radial-gradient(circle at 12% 22%, rgba(168,85,247,0.55) 0 50px, transparent 90px), radial-gradient(circle at 86% 18%, rgba(99,102,241,0.5) 0 70px, transparent 120px), radial-gradient(circle at 78% 78%, rgba(192,38,211,0.4) 0 40px, transparent 80px), radial-gradient(circle at 20% 82%, rgba(124,58,237,0.45) 0 80px, transparent 140px), radial-gradient(circle at 52% 8%, rgba(196,181,253,0.3) 0 24px, transparent 50px), radial-gradient(circle at 60% 92%, rgba(99,102,241,0.35) 0 30px, transparent 60px); filter: blur(14px); }
+  .lg-fx-stars { background-color: transparent; background-image: radial-gradient(1.5px 1.5px at 8% 12%, #fff, transparent), radial-gradient(1px 1px at 22% 68%, #fff, transparent), radial-gradient(1.5px 1.5px at 35% 30%, #E9D5FF, transparent), radial-gradient(1px 1px at 48% 85%, #fff, transparent), radial-gradient(2px 2px at 62% 18%, #fff, transparent), radial-gradient(1px 1px at 74% 54%, #C4B5FD, transparent), radial-gradient(1.5px 1.5px at 88% 32%, #fff, transparent), radial-gradient(1px 1px at 93% 80%, #fff, transparent), radial-gradient(1px 1px at 15% 45%, #fff, transparent), radial-gradient(1.5px 1.5px at 55% 50%, #fff, transparent), radial-gradient(ellipse 60% 40% at 50% 100%, rgba(124,58,237,0.4), transparent 70%); background-size: 340px 340px, 280px 280px, 400px 400px, 300px 300px, 460px 460px, 260px 260px, 380px 380px, 320px 320px, 220px 220px, 500px 500px, 100% 100%; }
+  .lg-light .lg-fx-stars { filter: invert(1) hue-rotate(180deg); }
+  .lg-fx-nebula { background: conic-gradient(from 210deg at 65% 40%, rgba(124,58,237,0.55), rgba(192,38,211,0.4), rgba(79,70,229,0.5), rgba(56,189,248,0.2), rgba(124,58,237,0.55)); filter: blur(60px); transform: scale(1.2); }
+  .lg-fx-sunset { background: linear-gradient(180deg, transparent 0%, rgba(124,58,237,0.35) 45%, rgba(219,39,119,0.45) 78%, rgba(251,146,60,0.4) 100%); }
+  .lg-fx-ocean { background: radial-gradient(ellipse 70% 60% at 20% 20%, rgba(79,70,229,0.6), transparent 65%), radial-gradient(ellipse 70% 60% at 85% 85%, rgba(13,148,136,0.45), transparent 65%), radial-gradient(ellipse 50% 40% at 70% 30%, rgba(56,189,248,0.2), transparent 70%); }
+  .lg-fx-midnight { background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(46,16,101,0.55), transparent 75%); }
+  .lg-fx-shapes span { inset: auto; width: 38vw; height: 38vw; left: -8vw; top: -10vw; border-radius: 22%; background: linear-gradient(135deg, #7C3AED, #4F46E5); transform: rotate(24deg); filter: blur(50px); opacity: .55; box-shadow: 70vw 55vw 0 -6vw #C026D3; }
+  .lg-fx-topo { background: repeating-radial-gradient(ellipse 120% 80% at 30% 40%, transparent 0 22px, rgba(196,181,253,0.12) 22px 23px), repeating-radial-gradient(ellipse 100% 90% at 80% 70%, transparent 0 28px, rgba(165,180,252,0.1) 28px 29px); -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 30%, transparent 100%); mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 30%, transparent 100%); }
+  .lg-fx-checker { background-image: conic-gradient(rgba(168,85,247,0.08) 25%, transparent 0 50%, rgba(168,85,247,0.08) 0 75%, transparent 0), radial-gradient(ellipse 55% 50% at 50% 45%, rgba(124,58,237,0.32), transparent 70%); background-size: 64px 64px, 100% 100%; -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); mask-image: radial-gradient(ellipse 80% 75% at 50% 50%, #000 35%, transparent 100%); }
+  .lg-fx-beam { background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(46,16,101,0.6), transparent 75%); }
+  .lg-fx-beam span { inset: -50% -20%; background: linear-gradient(105deg, transparent 40%, rgba(196,181,253,0.18) 48%, rgba(168,85,247,0.3) 50%, rgba(196,181,253,0.18) 52%, transparent 60%); animation: lgBeam 9s ease-in-out infinite; }
+  @keyframes lgBeam { 0% { transform: translateX(-45%); } 100% { transform: translateX(45%); } }
+  .lg-fx-stripes { background-image: repeating-linear-gradient(135deg, rgba(196,181,253,0.07) 0 2px, transparent 2px 22px), radial-gradient(ellipse 60% 55% at 50% 45%, rgba(124,58,237,0.35), transparent 70%); }
+
+  /* Fond « modules » : icônes en filigrane */
+  .lg-modules { position: fixed; inset: 0; z-index: 0; pointer-events: none; color: var(--lg-accent); }
+  .lg-modules span { position: absolute; display: block; aspect-ratio: 1; opacity: .14; }
+  .lg-modules svg { width: 100%; height: 100%; }
+  @media (max-width: 520px) { .lg-modules span { opacity: .08; } }
   .lg-root * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   .lg-root :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
 
@@ -368,17 +525,17 @@ const STYLES = `
   /* ── Centre ── */
   .lg-center { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: clamp(72px, 9vh, 96px) 16px clamp(16px, 3vh, 32px); }
 
-  /* ── Marque ── */
-  .lg-brand { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vh, 14px); text-decoration: none; margin-bottom: clamp(16px, 3vh, 30px); }
-  .lg-logo { width: clamp(64px, 10vh, 96px); height: clamp(64px, 10vh, 96px); border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); box-shadow: 0 0 40px rgba(168,85,247,0.45); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .lg-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
-  .lg-brand-name { font-family: ${LOGO_FONT}; font-weight: 800; font-size: clamp(18px, 2.6vh, 24px); letter-spacing: 2px; color: var(--lg-text); white-space: nowrap; }
+  /* ── Marque (dans la carte) ── */
+  .lg-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: clamp(18px, 3vh, 26px); }
+  .lg-logo { width: clamp(50px, 7vh, 64px); height: clamp(50px, 7vh, 64px); flex-shrink: 0; border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); box-shadow: 0 0 28px rgba(168,85,247,0.4); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .lg-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 8px rgba(138,43,226,0.6)); }
+  .lg-brand-name { font-family: ${LOGO_FONT}; font-weight: 800; font-size: clamp(17px, 2.3vh, 20px); letter-spacing: 2px; color: var(--lg-text); white-space: nowrap; }
   .lg-brand-erp { color: var(--lg-accent); font-size: 0.7em; letter-spacing: 4px; }
 
   /* ── Carte ── */
-  .lg-card { width: 100%; max-width: 460px; padding: clamp(24px, 4vh, 36px) clamp(22px, 2.6vw, 36px) clamp(20px, 3.2vh, 28px); border-radius: 24px; background: var(--lg-card); border: 1px solid var(--lg-card-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 40px 100px -30px var(--lg-card-shadow); }
-  .lg-title { margin: 0 0 6px; text-align: center; font-size: clamp(24px, 3.4vh, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--lg-text); }
-  .lg-welcome { margin: 0 0 clamp(18px, 3vh, 26px); text-align: center; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
+  .lg-card { width: 100%; max-width: 440px; padding: clamp(24px, 4vh, 36px) clamp(22px, 2.6vw, 36px) clamp(20px, 3.2vh, 28px); border-radius: 24px; background: var(--lg-card-solid); border: 1px solid var(--lg-card-border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 40px 100px -30px var(--lg-card-shadow); }
+  .lg-title { margin: 0 0 6px; text-align: left; font-size: clamp(24px, 3.4vh, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--lg-text); }
+  .lg-welcome { margin: 0 0 clamp(18px, 3vh, 26px); text-align: left; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
 
   .lg-error { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--lg-error); font-size: 13.5px; animation: lgShake .5s ease; }
   .lg-error svg { flex-shrink: 0; }
@@ -400,7 +557,7 @@ const STYLES = `
   .lg-remember { display: flex; align-items: center; gap: 10px; min-height: 28px; margin: 2px 0 clamp(16px, 2.6vh, 22px); font-size: 13.5px; color: var(--lg-label); cursor: pointer; }
   .lg-remember input { width: 18px; height: 18px; accent-color: #8b5cf6; cursor: pointer; }
 
-  .lg-btn { width: 100%; height: clamp(48px, 6.2vh, 54px); display: flex; align-items: center; justify-content: center; gap: 10px; border: none; border-radius: 999px; background: var(--lg-btn-bg); color: var(--lg-btn-text); font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 40px var(--lg-btn-shadow); transition: transform .15s ease, box-shadow .25s ease, opacity .2s; touch-action: manipulation; }
+  .lg-btn { width: 100%; height: clamp(48px, 6.2vh, 54px); display: flex; align-items: center; justify-content: center; gap: 10px; border: none; border-radius: 999px; background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%); color: #ffffff; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 40px rgba(168,85,247,0.45); transition: transform .15s ease, box-shadow .25s ease, opacity .2s; touch-action: manipulation; }
   .lg-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 48px var(--lg-btn-shadow); }
   .lg-btn:active:not(:disabled) { transform: scale(0.98); }
   .lg-btn:disabled { opacity: .7; cursor: not-allowed; }
@@ -425,7 +582,7 @@ const STYLES = `
   .lg-anim { animation: lgFadeUp .6s cubic-bezier(0.22,1,0.36,1) both; }
   .lg-d1 { animation-delay: 120ms; }
   @media (prefers-reduced-motion: reduce) {
-    .lg-anim, .lg-error { animation: none !important; }
+    .lg-anim, .lg-error, .lg-aurora span, .lg-fx-beam span { animation: none !important; }
     .lg-btn, .lg-input { transition: none !important; }
   }
 `;
