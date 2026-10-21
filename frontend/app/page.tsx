@@ -291,7 +291,7 @@ export default function HomePage(): React.ReactElement {
   const brand = (
     <Link href="/" aria-label="Inovexa ERP" className="hp-brand">
       <span className="hp-logo">
-        <img src="/images/logo.png" alt="" width={64} height={64} />
+        <img src="/images/logo.png" alt="" width={88} height={88} />
       </span>
       <span className="hp-brand-name">
         <b>INOV</b>EXA <span className="hp-brand-erp">ERP</span>
@@ -450,25 +450,26 @@ const STYLES = `
 
   /* ── Marque ── */
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
-  .hp-logo { width: clamp(46px, 6.4vh, 64px); height: clamp(46px, 6.4vh, 64px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .hp-logo { width: clamp(60px, 8.6vh, 88px); height: clamp(60px, 8.6vh, 88px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
-  .hp-brand-name { font-family: ${LOGO_FONT}; font-size: clamp(15px, 1.2vw, 19px); letter-spacing: 2px; font-weight: 300; color: var(--hp-text); white-space: nowrap; }
+  .hp-brand-name { font-family: ${LOGO_FONT}; font-size: clamp(17px, 1.45vw, 23px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
   .hp-brand-name b { font-weight: 800; }
-  .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.68em; letter-spacing: 4px; }
+  .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
 
   /* ── En-tête mobile ── */
   .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: 72px; background: var(--hp-header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--hp-glass-line); display: flex; align-items: center; z-index: 150; padding: 0 16px; padding-top: env(safe-area-inset-top); }
-  .mobile-header .hp-logo { width: 48px; height: 48px; }
+  .mobile-header .hp-logo { width: 56px; height: 56px; }
+  .mobile-header .hp-brand-name { font-size: 17px; }
 
   /* ── Textes ── */
   .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.55em 1.1em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(11px, 0.85vw, 13px); font-weight: 600; margin-bottom: clamp(14px, 2.6vh, 26px); }
   .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
-  .hp-title { margin: 0 0 clamp(12px, 2.2vh, 22px); color: var(--hp-text); font-size: clamp(30px, min(3.5vw, 6.2vh), 56px); font-weight: 700; line-height: 1.07; letter-spacing: -0.03em; text-wrap: balance; }
+  .hp-title { margin: 0 0 clamp(12px, 2.2vh, 22px); color: var(--hp-text); font-size: clamp(28px, min(3.15vw, 5.8vh), 56px); font-weight: 700; line-height: 1.07; letter-spacing: -0.03em; text-wrap: balance; }
   .hp-subtitle { margin: 0 0 clamp(18px, 3.4vh, 34px); color: var(--hp-muted); font-size: clamp(14px, min(1.1vw, 1.95vh), 17px); line-height: 1.6; max-width: 480px; }
 
   /* ── Boutons ── */
-  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: clamp(20px, 4vh, 40px); }
+  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: clamp(16px, 3.6vh, 40px); }
   .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(46px, 6vh, 56px); padding: 0 clamp(20px, 1.8vw, 30px); border-radius: 999px; font-size: clamp(14px, 1vw, 16px); text-decoration: none; white-space: nowrap; }
   .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
   .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
@@ -480,7 +481,7 @@ const STYLES = `
 
   /* ── Liste en verre ── */
   .hp-glass-list { display: flex; flex-direction: column; border-radius: 16px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); max-width: 540px; font-size: clamp(13px, 0.95vw, 15px); }
-  .hp-glass-row { display: flex; align-items: center; gap: 0.9em; padding: clamp(9px, 1.5vh, 15px) 1.2em; border-bottom: 1px solid var(--hp-glass-line); }
+  .hp-glass-row { display: flex; align-items: center; gap: 0.9em; padding: clamp(8px, 1.35vh, 15px) 1.2em; border-bottom: 1px solid var(--hp-glass-line); }
   .hp-glass-row:last-child { border-bottom: none; }
   .hp-glass-row svg { flex-shrink: 0; }
   .hp-glass-title { flex: 1; font-weight: 600; color: var(--hp-text); }
