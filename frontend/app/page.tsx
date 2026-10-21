@@ -262,13 +262,6 @@ export default function HomePage(): React.ReactElement {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
-  // Format réel de la capture (largeur / hauteur), lu au chargement de l'image :
-  // l'écran du PC prend exactement ce format, l'image n'est ni coupée ni déformée.
-  const [shotRatio, setShotRatio] = useState(16 / 10);
-  const onShotLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
-    if (w > 0 && h > 0) setShotRatio(w / h);
-  };
   const langWrapRef = useRef<HTMLDivElement>(null);
   const langButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -422,7 +415,7 @@ export default function HomePage(): React.ReactElement {
       {!isMobile && (
         <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
           {/* Écran de bureau dessiné en CSS, avec la capture dedans */}
-          <div className="hp-monitor hp-rise hp-d2" style={{ ["--shot-ratio" as any]: shotRatio }}>
+          <div className="hp-monitor hp-rise hp-d2">
             <div className="hp-monitor-frame">
               <div className="hp-monitor-screen">
                 <img
@@ -430,7 +423,6 @@ export default function HomePage(): React.ReactElement {
                   src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
                   alt={text.previewAlt}
                   draggable={false}
-                  onLoad={onShotLoad}
                 />
               </div>
               <span className="hp-monitor-led" aria-hidden="true" />
@@ -525,16 +517,16 @@ const STYLES = `
   /* ── Côté droit ── */
   .hp-right {
     flex-shrink: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: clamp(18px, 3.2vh, 32px); padding: clamp(72px, 10vh, 100px) clamp(28px, 3.6vw, 64px) clamp(24px, 5vh, 56px);
+    gap: clamp(18px, 3.2vh, 32px); padding: clamp(28px, 6vh, 64px) clamp(28px, 3.6vw, 64px);
     border-left: 1px solid rgba(139,92,246,0.18);
     background-color: var(--hp-right-bg);
     background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
   }
   /* ── Écran de bureau ── */
-  .hp-monitor { width: min(100%, calc(50vh * var(--shot-ratio, 1.6))); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
+  .hp-monitor { width: min(100%, 86vh); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
   .hp-monitor-frame { position: relative; width: 100%; padding: 2% 2% 4.6%; border-radius: 18px; background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); }
-  .hp-monitor-screen { width: 100%; aspect-ratio: var(--shot-ratio, 1.6); border-radius: 6px; overflow: hidden; background: #0c0b12; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5); }
-  .hp-monitor-screen img { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; }
+  .hp-monitor-screen { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #0c0b12; }
+  .hp-monitor-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; user-select: none; }
   .hp-monitor-led { position: absolute; bottom: 1.8%; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #A855F7; box-shadow: 0 0 8px #A855F7; }
   .hp-monitor-neck { width: 13%; height: clamp(30px, 6vh, 64px); background: var(--hp-laptop-base); border-left: 1px solid var(--hp-laptop-edge); border-right: 1px solid var(--hp-laptop-edge); }
   .hp-monitor-foot { width: 38%; height: clamp(10px, 1.4vh, 14px); border-radius: 10px 10px 4px 4px; background: var(--hp-laptop-base); border: 1px solid var(--hp-laptop-edge); }
@@ -548,7 +540,7 @@ const STYLES = `
   /* ── Tablette / mobile ── */
   .is-compact .hp-left { min-height: auto; }
   .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
-  .is-compact .hp-monitor { width: min(100%, 720px, calc(60vh * var(--shot-ratio, 1.6))); }
+  .is-compact .hp-monitor { width: min(100%, 720px); }
   .is-mobile .hp-left { min-height: 100dvh; justify-content: flex-start; gap: 0; padding: 100px 20px 28px; }
   .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
   .is-mobile .hp-subtitle { font-size: 15px; }
