@@ -529,7 +529,7 @@ export default function HomePage(): React.ReactElement {
         </div>
 
         <footer className="hp-footer">
-          <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa. {text.copyright}</p>
+          <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa ERP. {text.copyright}</p>
           <nav aria-label="Legal" style={{ display: "flex", gap: 16 }}>
             <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
             <a href="https://inovexa-erp.com/terms.html" target="_blank" rel="noopener noreferrer">{text.terms}</a>
