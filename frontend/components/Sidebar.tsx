@@ -235,7 +235,6 @@ interface ThemeColors {
 }
 
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-// ✅ Orbitron + fallback Arial Black pour garantir un rendu très gras
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), 'Arial Black', sans-serif";
 
 let sidebarCachedUser: User | null = null;
@@ -546,7 +545,6 @@ export default function Sidebar() {
       zIndex: 998,
     },
     sidebar: {
-      // ✅ Largeur augmentée de 2px (280px → 282px)
       width: "289px",
       background: ct.surface,
       position: "fixed",
@@ -563,18 +561,14 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ Padding bas à 0 pour supprimer l'espace entre le logo et la ligne
     header: { padding: "12px 16px 0px", flexShrink: 0 },
-    // ✅ Exactement 2px d'espace entre le logo et le texte
     logoWrapper: { display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" },
-    // ✅ marginRight retiré pour laisser le gap de 2px agir
     logoImage: {
       width: "92px", height: "92px",
       display: "block", flexShrink: 0, objectFit: "contain",
       marginRight: "0px",
     },
     brandContainer: { flex: 1, minWidth: 0 },
-    // ✅ INOVEXA ERP en gras (900) + léger trait pour l'épaisseur
     logoTitle: {
       fontFamily: BRAND_FONT,
       fontWeight: 900,
@@ -606,7 +600,6 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ Margin haut à 0 pour coller la ligne au logo
     headerDivider: {
       height: "1px",
       margin: "0px 16px 0",
@@ -615,9 +608,7 @@ export default function Sidebar() {
       flexShrink: 0,
     },
 
-    // ✅ Espace ajouté entre la ligne et les noms de modules (padding top 16px)
     nav: { padding: "16px 10px 12px", flex: 1 },
-    // ✅ Espacement augmenté entre les modules (marginBottom + padding vertical)
     navItem: {
       display: "flex",
       alignItems: "center",
@@ -633,7 +624,6 @@ export default function Sidebar() {
       overflow: "hidden",
       fontFamily: FONT_STACK,
     },
-    // ✅ Taille augmentée (16px) + weight diminué (300)
     navLabel: {
       fontSize: "16px",
       fontWeight: 300,
@@ -644,12 +634,10 @@ export default function Sidebar() {
       textOverflow: "ellipsis",
       fontFamily: FONT_STACK,
     },
-    // ✅ Indicateur actif SUPPRIMÉ (plus de ligne verticale à gauche)
     activeIndicator: {
       display: "none",
     },
     divider: { height: 0, margin: "12px 0" },
-    // ✅ Taille augmentée (16px) + weight diminué (300)
     logoutBtn: {
       display: "flex",
       alignItems: "center",
@@ -747,7 +735,6 @@ export default function Sidebar() {
         onMouseLeave={() => { handleMouseLeave(); cancelHoverPrefetch(); }}
         style={getNavItemStyle()}
       >
-        {/* ✅ Indicateur actif supprimé — plus de ligne verticale à gauche */}
         <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
         <span style={styles.navLabel}>{label}</span>
       </Link>
@@ -839,7 +826,6 @@ export default function Sidebar() {
                         fontFamily: FONT_STACK,
                       }}
                     >
-                      {/* ✅ Indicateur actif supprimé */}
                       <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
                       <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
                     </Link>
