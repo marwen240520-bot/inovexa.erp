@@ -562,7 +562,8 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    header: { padding: "12px 16px 2px", flexShrink: 0 },
+    // ✅ Padding bas à 0 pour supprimer l'espace entre le logo et la ligne
+    header: { padding: "12px 16px 0px", flexShrink: 0 },
     // ✅ Espace supprimé entre logo et texte
     logoWrapper: { display: "flex", alignItems: "center", gap: "0px", cursor: "pointer" },
     // ✅ marginRight négatif pour coller le texte au logo (compense le padding transparent du PNG)
@@ -604,9 +605,10 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
+    // ✅ Margin haut à 0 pour coller la ligne au logo
     headerDivider: {
       height: "1px",
-      margin: "8px 16px 0",
+      margin: "0px 16px 0",
       background: `${ct.primary}26`,
       border: "none",
       flexShrink: 0,
@@ -628,8 +630,9 @@ export default function Sidebar() {
       overflow: "hidden",
       fontFamily: FONT_STACK,
     },
+    // ✅ Taille augmentée : 14.5px → 16px
     navLabel: {
-      fontSize: "14.5px",
+      fontSize: "16px",
       fontWeight: 400,
       letterSpacing: "-0.01em",
       lineHeight: 1.1,
@@ -647,6 +650,7 @@ export default function Sidebar() {
       borderRadius: "0 3px 3px 0",
     },
     divider: { height: 0, margin: "6px 0" },
+    // ✅ Taille augmentée : 14.5px → 16px
     logoutBtn: {
       display: "flex",
       alignItems: "center",
@@ -657,7 +661,7 @@ export default function Sidebar() {
       border: "1px solid rgba(239,68,68,0.14)",
       borderRadius: "10px",
       cursor: "pointer",
-      fontSize: "14.5px",
+      fontSize: "16px",
       fontWeight: 400,
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       fontFamily: FONT_STACK,
