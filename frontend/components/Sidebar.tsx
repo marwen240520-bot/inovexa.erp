@@ -563,10 +563,13 @@ export default function Sidebar() {
     },
 
     header: { padding: "12px 16px 2px", flexShrink: 0 },
-    logoWrapper: { display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" },
+    // ✅ Espace supprimé entre logo et texte
+    logoWrapper: { display: "flex", alignItems: "center", gap: "0px", cursor: "pointer" },
+    // ✅ marginRight négatif pour coller le texte au logo (compense le padding transparent du PNG)
     logoImage: {
       width: "92px", height: "92px",
       display: "block", flexShrink: 0, objectFit: "contain",
+      marginRight: "-12px",
     },
     brandContainer: { flex: 1, minWidth: 0 },
     // ✅ INOVEXA ERP en gras (900) + léger trait pour l'épaisseur
