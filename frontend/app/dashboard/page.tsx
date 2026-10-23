@@ -10,7 +10,15 @@ import GlobalSearch from "@/components/GlobalSearch";
 import type { TooltipItem } from "chart.js";
 import { Line, Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
+import { Caveat } from "next/font/google";
 
+// ✅ Police manuscrite — même police que « Votre ERP, partout avec vous. » sur la home
+const handwriting = Caveat({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  display: "swap",
+  variable: "--font-caveat",
+});
 
 // --- TYPES -------------------------------------------------------------------
 type SalesDataPoint = { month: string; sales: number };
@@ -571,8 +579,6 @@ export default function DashboardPage() {
     const token = localStorage.getItem("token");
     if (!token) router.push("/auth/login");
     const initPage = async () => {
-      // Utilisateur enregistré affiché tout de suite ; le profil à jour et les données du tableau
-      // de bord sont chargés EN PARALLÈLE (avant : profil, puis seulement ensuite les 7 listes).
       const userData = localStorage.getItem("user");
       if (userData) { try { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } } catch { /* profil local illisible */ } }
       const [freshUser] = await Promise.all([loadUserFromBackend(), fetchDashboardData()]);
@@ -823,11 +829,10 @@ export default function DashboardPage() {
     { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
   ];
 
-  // Corrected main container style with proper sidebar offset
   const mainContainerStyle = { 
     flex: 1, 
     margin: 0, 
-    marginLeft: isMobile ? "0" : "0px", // Match sidebar width
+    marginLeft: isMobile ? "0" : "0px",
     padding: isMobile ? "10px" : "16px", 
     paddingBottom: isMobile ? "70px" : "16px",
     width: isMobile ? "100%" : "auto",
@@ -843,7 +848,6 @@ export default function DashboardPage() {
     padding: isMobile ? "0" : "20px"
   };
 
-  // Loading component with proper page dimensions
   if (loading) {
     return <Spinner fullScreen />;
   }
@@ -879,7 +883,17 @@ export default function DashboardPage() {
             .activity-item:active { transform: scale(0.98); }
             .trend-up { color: #10b981; }
             .trend-down { color: #ef4444; }
-            .greeting-text { background: linear-gradient(135deg, ${theme.primary}, ${theme.secondary}); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+            /* ✅ Nom d'utilisateur en Caveat — même police que « Votre ERP, partout avec vous. » */
+            .greeting-text {
+              font-family: var(--font-caveat), "Segoe Script", "Brush Script MT", cursive;
+              font-weight: 700;
+              font-size: 1.15em;
+              letter-spacing: 0.5px;
+              background: linear-gradient(135deg, ${theme.primary}, ${theme.secondary});
+              -webkit-background-clip: text;
+              background-clip: text;
+              -webkit-text-fill-color: transparent;
+            }
             .profile-menu { animation: fadeInDown 0.2s ease; background: ${theme.surface}; border: 1px solid ${theme.border}; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
             .period-selector { transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
             .period-selector:active { transform: scale(0.95); }
@@ -899,7 +913,8 @@ export default function DashboardPage() {
           <div style={{ marginBottom: responsive.sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
               <div style={{ flex: isMobile ? "1 1 auto" : "0 1 auto", minWidth: isMobile ? "180px" : "auto" }}>
-                <h1 style={{ color: theme.text, fontSize: responsive.headerTitleSize, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                {/* ✅ className={handwriting.variable} injecte --font-caveat sur ce wrapper */}
+                <h1 className={handwriting.variable} style={{ color: theme.text, fontSize: responsive.headerTitleSize, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                   <Icon name={getWeatherIcon()} size={responsive.headerEmojiSize} color={theme.primary} />
                   <span style={{ fontSize: responsive.headerNameSize }}>
                     {getGreeting()}, <span className="greeting-text">{user?.name?.split(' ')[0] || "Utilisateur"}</span> !
@@ -916,7 +931,6 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* Recherche globale dans tout l'espace du client */}
               <div style={{ flex: isMobile ? "1 1 100%" : "1 1 320px", order: isMobile ? 3 : 0, minWidth: 0, display: "flex", justifyContent: "center", alignSelf: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: isMobile ? "100%" : "620px" }}>
                   <div style={{ flex: 1, minWidth: 0 }}><GlobalSearch isMobile={isMobile} /></div>
@@ -924,7 +938,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Image de profil */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
@@ -980,7 +993,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Rest of the dashboard content remains the same... */}
           {/* 4 Cartes KPI */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {kpiCards.map((card, idx) => (
