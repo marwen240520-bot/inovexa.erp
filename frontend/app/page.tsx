@@ -730,7 +730,8 @@ const STYLES = `
   .hp-modal-title { margin: 0 0 14px; padding-right: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
   .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 15px; line-height: 1.65; }
   .hp-modal-sub { margin: 22px 0 12px; font-size: 17px; font-weight: 700; }
-  .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 20px; }
+  /* « .home-page » devant : sans lui, la règle « .home-page ul { margin: 0 } » écrasait la marge du bas */
+  .home-page .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin: 0 0 28px; }
   .hp-modal-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; line-height: 1.5; color: var(--hp-text); }
   .hp-modal-check { display: inline-flex; flex-shrink: 0; margin-top: 3px; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
   .hp-modal-outro { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); font-size: 14.5px; font-weight: 600; line-height: 1.55; }
