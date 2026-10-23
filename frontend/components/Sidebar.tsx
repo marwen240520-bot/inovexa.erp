@@ -233,13 +233,13 @@ interface ThemeColors {
   gradient: string;
 }
 
-// Session cache: prevents the sidebar from re-fetching on every navigation
+// ✅ Police commune : Poppins via variable CSS (chargée dans app/layout.tsx)
+const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
 let sidebarCachedUser: User | null = null;
 let sidebarCachedModules: Record<string, boolean> | null = null;
 let modulesRefreshed = false;
 
-// Les modules du dernier chargement sont aussi gardés dans localStorage : au rechargement de la page,
-// le menu s'affiche immédiatement, puis il est mis à jour en arrière-plan.
 const MODULES_STORAGE_KEY = "sidebar_modules";
 function readStoredModules(userId?: string | number): Record<string, boolean> | null {
   try {
@@ -254,7 +254,6 @@ function storeModules(userId: string | number, modules: Record<string, boolean>)
   try { localStorage.setItem(MODULES_STORAGE_KEY, JSON.stringify({ userId, modules })); } catch { /* ignoré */ }
 }
 
-/** Modules activés pour le client connecté (null tant que non chargés) — utilisé par la recherche globale */
 export function getCachedModules(): Record<string, boolean> | null {
   return sidebarCachedModules;
 }
@@ -269,10 +268,8 @@ export default function Sidebar() {
   const [userModules, setUserModules] = useState<Record<string, boolean> | null>(sidebarCachedModules);
   const [loading, setLoading] = useState(sidebarCachedModules === null);
   const [navigationError, setNavigationError] = useState<string | null>(null);
-  // Thème connu dès le rendu serveur (cookie) : la barre a les bonnes couleurs immédiatement
   const [localTheme, setLocalTheme] = useState<ThemeColors | null>(theme);
   const [mounted, setMounted] = useState(false);
-  // Valeur initiale fournie par le serveur : bonne barre (latérale / du bas) dès le premier affichage
   const isMobileHint = useDeviceHint();
   const [isMobile, setIsMobile] = useState(isMobileHint);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -284,21 +281,15 @@ export default function Sidebar() {
   useEffect(() => { setLocalTheme(theme); }, [theme, themeId]);
 
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-    };
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
-    if (mobileMoreOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (mobileMoreOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
     return () => { document.body.style.overflow = ""; };
   }, [mobileMoreOpen]);
 
@@ -321,10 +312,8 @@ export default function Sidebar() {
       try {
         const u = JSON.parse(userData);
         setUser(u); sidebarCachedUser = u;
-        // Modules déjà connus (session, profil enregistré ou dernier chargement) → menu affiché tout de suite
         const known = sidebarCachedModules || normalizeModules(u.modules) || readStoredModules(u.id);
         if (known) { setUserModules(known); sidebarCachedModules = known; setLoading(false); }
-        // Mise à jour en arrière-plan (une seule fois par session)
         if (u.id && token && !modulesRefreshed) { modulesRefreshed = true; fetchUserModules(u.id, token); }
         else setLoading(false);
       } catch { setLoading(false); }
@@ -347,28 +336,21 @@ export default function Sidebar() {
 
   const CORE_MODULES = ["dashboard", "profile", "settings"];
   const isModuleActive = (id: string) => {
-    if (CORE_MODULES.includes(id)) return true;            // toujours accessibles
-    if (!userModules || Object.keys(userModules).length === 0) return true; // client non configuré : tout ouvert
-    // Modules ajoutés plus tard : visibles par défaut pour les clients dont la liste a été configurée avant leur création
+    if (CORE_MODULES.includes(id)) return true;
+    if (!userModules || Object.keys(userModules).length === 0) return true;
     if (id === "objectives") return userModules.objectives !== false;
     if (id === "pos") return userModules.pos !== undefined ? userModules.pos === true : (userModules.sales === true || userModules.purchases === true);
-    return userModules[id] === true;                       // sinon : actif seulement si explicitement true
+    return userModules[id] === true;
   };
 
-  /**
-   * Précharge une page au survol / focus / toucher : rendu serveur ET code JavaScript de la page
-   * sont récupérés pendant que la souris s'approche, le clic qui suit est quasi instantané.
-   */
   const prefetch = (path: string) => {
     if (path === pathname) return;
-    // Données de la page (gardées 30 s par le cache API, donc pas de requête en double)
     prefetchRouteData(path);
     if (prefetched.current.has(path)) return;
     prefetched.current.add(path);
     try { router.prefetch(path, { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
   };
 
-  /** Survol « intentionnel » : on ne précharge pas quand la souris ne fait que traverser le menu. */
   const hoverPrefetch = (path: string) => {
     if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
     hoverTimer.current = window.setTimeout(() => prefetch(path), 90);
@@ -377,11 +359,9 @@ export default function Sidebar() {
     if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
   };
 
-  /** Lien actif : page exacte, ou sous-page (ex. /dashboard/sales/123 garde « Ventes » actif). */
   const isActivePath = (path: string) =>
     pathname === path || (path !== "/dashboard" && !!pathname && pathname.startsWith(path + "/"));
 
-  /** Clic sur un lien du menu : laisse le navigateur gérer Ctrl/⌘-clic (nouvel onglet). */
   const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     const token = localStorage.getItem("token");
@@ -394,9 +374,7 @@ export default function Sidebar() {
     if (!token) { router.push("/auth/login"); return; }
     try {
       await router.push(path);
-      if (isMobile) {
-        setMobileMoreOpen(false);
-      }
+      if (isMobile) setMobileMoreOpen(false);
       setTimeout(() => setNavigationError(null), 3000);
     } catch (e: any) {
       setNavigationError(`Erreur navigation: ${e.message}`);
@@ -442,7 +420,7 @@ export default function Sidebar() {
     { id: "invoices",   path: "/dashboard/invoices",   label: "common.invoices",   iconKey: "invoices" },
     { id: "hr",         path: "/dashboard/hr",         label: "common.hr",         iconKey: "hr" },
     { id: "finance",    path: "/dashboard/finance",    label: "common.finance",    iconKey: "finance" },
-    { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" }, 
+    { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" },
     { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },
     { id: "reports",    path: "/dashboard/reports",    label: "common.reports",    iconKey: "reports" },
     { id: "analytics",  path: "/dashboard/analytics",  label: "common.analytics",  iconKey: "analytics" },
@@ -469,7 +447,6 @@ export default function Sidebar() {
   if (role === "admin") menuItems = adminMenuItems;
   if (role === "transporteur") menuItems = transporteurMenuItems;
 
-  // Styles avec typage correct
   const defaultStyles: ThemeColors = {
     background: "#f3f4f6",
     surface: "#ffffff",
@@ -481,11 +458,10 @@ export default function Sidebar() {
   };
 
   const ct = localTheme || defaultStyles;
-  // Texte des liens : noir en thème blanc, sinon la couleur secondaire du thème
   const navText = ct.navText || ct.textSecondary;
 
-  // ✅ Correction: Typage explicite des styles avec CSSProperties
   const styles: Record<string, CSSProperties> = {
+    // ✅ la police est appliquée ici
     mobileBottomNav: {
       position: "fixed",
       bottom: 0,
@@ -501,6 +477,7 @@ export default function Sidebar() {
       alignItems: "center",
       zIndex: 1000,
       boxShadow: "0 -4px 24px rgba(0,0,0,0.35)",
+      fontFamily: FONT_STACK,
     },
     mobileNavBtn: {
       display: "flex",
@@ -514,28 +491,25 @@ export default function Sidebar() {
       borderRadius: "12px",
       flex: 1,
       transition: "all 0.2s ease",
+      fontFamily: FONT_STACK,
     },
     mobileNavLabel: {
       fontSize: "10px",
       fontWeight: 400,
       letterSpacing: "0.01em",
       lineHeight: 1,
+      fontFamily: FONT_STACK,
     },
     mobileMoreOverlay: {
       position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(15,23,42,0.5)",
       backdropFilter: "blur(6px)",
       zIndex: 1001,
     },
     mobileMoreDrawer: {
       position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
+      bottom: 0, left: 0, right: 0,
       background: `linear-gradient(180deg, ${ct.surface} 0%, ${ct.background} 100%)`,
       borderTop: `1px solid ${ct.primary}26`,
       borderRadius: "24px 24px 0 0",
@@ -543,6 +517,7 @@ export default function Sidebar() {
       zIndex: 1002,
       maxHeight: "75vh",
       overflowY: "auto",
+      fontFamily: FONT_STACK,
     },
     mobileMoreHeader: {
       display: "flex",
@@ -557,13 +532,11 @@ export default function Sidebar() {
       color: navText,
       letterSpacing: "0.06em",
       textTransform: "uppercase" as const,
+      fontFamily: FONT_STACK,
     },
     overlay: {
       position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(0,0,0,0.5)",
       backdropFilter: "blur(4px)",
       zIndex: 998,
@@ -581,31 +554,21 @@ export default function Sidebar() {
       display: "flex",
       flexDirection: "column",
       transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      transform: "translateX(0)", // Always open
+      transform: "translateX(0)",
+      fontFamily: FONT_STACK, // ✅
     },
-    header: {
-      padding: "22px 16px 14px",
-      flexShrink: 0,
-    },
-    logoWrapper: {
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-      cursor: "pointer",
-    },
+    header: { padding: "22px 16px 14px", flexShrink: 0 },
+    logoWrapper: { display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" },
     logoImage: {
-      width: "92px",
-      height: "92px",
-      display: "block",
-      flexShrink: 0,
-      objectFit: "contain",
+      width: "92px", height: "92px",
+      display: "block", flexShrink: 0, objectFit: "contain",
     },
     brandContainer: { flex: 1, minWidth: 0 },
     logoTitle: {
       fontWeight: 700,
       fontSize: "19px",
       letterSpacing: "-0.02em",
-      
+      fontFamily: "var(--font-orbitron), var(--font-poppins), sans-serif", // ✅
     },
     logoRole: {
       fontSize: "10px",
@@ -616,6 +579,7 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       gap: "5px",
+      fontFamily: FONT_STACK, // ✅
     },
     nav: { padding: "12px 10px", flex: 1 },
     navItem: {
@@ -631,6 +595,7 @@ export default function Sidebar() {
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       position: "relative",
       overflow: "hidden",
+      fontFamily: FONT_STACK, // ✅
     },
     navLabel: {
       fontSize: "13.2px",
@@ -640,6 +605,7 @@ export default function Sidebar() {
       whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
+      fontFamily: FONT_STACK, // ✅
     },
     activeIndicator: {
       position: "absolute",
@@ -649,10 +615,7 @@ export default function Sidebar() {
       width: "3px",
       borderRadius: "0 3px 3px 0",
     },
-    divider: {
-      height: 0,
-      margin: "8px 0",
-    },
+    divider: { height: 0, margin: "8px 0" },
     logoutBtn: {
       display: "flex",
       alignItems: "center",
@@ -666,6 +629,7 @@ export default function Sidebar() {
       fontSize: "13.2px",
       fontWeight: 400,
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      fontFamily: FONT_STACK, // ✅
     },
     loadingContainer: {
       width: "280px",
@@ -676,8 +640,7 @@ export default function Sidebar() {
       justifyContent: "center",
     },
     spinner: {
-      width: "28px",
-      height: "28px",
+      width: "28px", height: "28px",
       border: `2px solid ${ct.border}`,
       borderTopColor: ct.primary,
       borderRadius: "50%",
@@ -701,13 +664,13 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       gap: "10px",
+      fontFamily: FONT_STACK, // ✅
     },
   };
 
   const handleMouseEnter = (itemId: string) => setHoveredItem(itemId);
   const handleMouseLeave = () => setHoveredItem(null);
 
-  // For mobile bottom nav: show first 3-4 items prominently, rest in "More" drawer
   const MOBILE_PRIMARY_COUNT = 4;
   const mobilePrimaryItems = menuItems.slice(0, MOBILE_PRIMARY_COUNT);
   const mobileMoreItems = menuItems.slice(MOBILE_PRIMARY_COUNT);
@@ -733,11 +696,7 @@ export default function Sidebar() {
           transform: "translateX(4px)",
         };
       }
-      return {
-        ...styles.navItem,
-        background: "transparent",
-        color: navText,
-      };
+      return { ...styles.navItem, background: "transparent", color: navText };
     };
 
     return (
@@ -761,8 +720,6 @@ export default function Sidebar() {
     );
   };
 
-  // Avant le montage (rendu serveur) ou tant que les modules sont inconnus : un rail vide à la
-  // place exacte de la barre latérale. Le contenu ne bouge donc plus quand le menu apparaît.
   if (loading || !mounted) {
     if (isMobile) return null;
     return (
@@ -798,10 +755,8 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* ── MOBILE: bottom tab bar ───────────────────────────── */}
       {mounted && isMobile && (
         <>
-          {/* More drawer overlay */}
           {mobileMoreOpen && (
             <>
               <div style={styles.mobileMoreOverlay} onClick={() => setMobileMoreOpen(false)} />
@@ -844,11 +799,12 @@ export default function Sidebar() {
                         cursor: "pointer",
                         position: "relative",
                         overflow: "hidden",
+                        fontFamily: FONT_STACK,
                       }}
                     >
                       {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
                       <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-                      <span style={{ fontSize: "14px", fontWeight: isActive ? 600 : 400 }}>{label}</span>
+                      <span style={{ fontSize: "14px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
                     </Link>
                   );
                 })}
@@ -865,6 +821,7 @@ export default function Sidebar() {
                     color: "#f87171",
                     cursor: "pointer",
                     border: "1px solid rgba(239,68,68,0.14)",
+                    fontFamily: FONT_STACK,
                   }}
                 >
                   <span style={{ display: "flex", flexShrink: 0 }}>{ICONS.logout}</span>
@@ -874,7 +831,6 @@ export default function Sidebar() {
             </>
           )}
 
-          {/* Bottom tab bar */}
           <div style={styles.mobileBottomNav}>
             {mobilePrimaryItems.map((item: any) => {
               const isActive = isActivePath(item.path);
@@ -898,12 +854,8 @@ export default function Sidebar() {
                   <div style={{
                     transform: isActive ? "scale(1.1)" : "scale(1)",
                     transition: "all 0.2s",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "36px",
-                    height: "28px",
-                    borderRadius: "10px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: "36px", height: "28px", borderRadius: "10px",
                     background: isActive ? `${ct.primary}18` : "transparent",
                   }}>
                     {icon}
@@ -919,7 +871,6 @@ export default function Sidebar() {
               );
             })}
 
-            {/* "More" button if there are extra items */}
             {mobileMoreItems.length > 0 && (
               <button
                 type="button"
@@ -931,12 +882,8 @@ export default function Sidebar() {
                 }}
               >
                 <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "36px",
-                  height: "28px",
-                  borderRadius: "10px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: "36px", height: "28px", borderRadius: "10px",
                   background: mobileMoreOpen ? `${ct.primary}18` : "transparent",
                   transition: "all 0.2s",
                 }}>
@@ -952,22 +899,14 @@ export default function Sidebar() {
               </button>
             )}
 
-            {/* Logout tab if there are only a few items and no "More" */}
             {mobileMoreItems.length === 0 && (
               <button
                 onClick={logout}
-                style={{
-                  ...(styles.mobileNavBtn as CSSProperties),
-                  color: "#f87171",
-                }}
+                style={{ ...(styles.mobileNavBtn as CSSProperties), color: "#f87171" }}
               >
                 <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "36px",
-                  height: "28px",
-                  borderRadius: "10px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: "36px", height: "28px", borderRadius: "10px",
                   background: "rgba(239,68,68,0.08)",
                   transition: "all 0.2s",
                 }}>
@@ -982,7 +921,6 @@ export default function Sidebar() {
         </>
       )}
 
-      {/* ── DESKTOP: fixed sidebar (always open) ───────────────────────────── */}
       {mounted && !isMobile && (
         <div style={styles.sidebar}>
           <div style={styles.header}>
