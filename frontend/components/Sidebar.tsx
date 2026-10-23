@@ -546,7 +546,8 @@ export default function Sidebar() {
       zIndex: 998,
     },
     sidebar: {
-      width: "280px",
+      // ✅ Largeur augmentée de 2px (280px → 282px)
+      width: "282px",
       background: ct.surface,
       position: "fixed",
       height: "100vh",
@@ -614,7 +615,8 @@ export default function Sidebar() {
       flexShrink: 0,
     },
 
-    nav: { padding: "8px 10px 12px", flex: 1 },
+    // ✅ Espace ajouté entre la ligne et les noms de modules (padding top 16px)
+    nav: { padding: "16px 10px 12px", flex: 1 },
     // ✅ Espacement augmenté entre les modules (marginBottom + padding vertical)
     navItem: {
       display: "flex",
@@ -668,7 +670,7 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
     loadingContainer: {
-      width: "280px",
+      width: "282px",
       background: ct.background,
       height: "100vh",
       display: "flex",
