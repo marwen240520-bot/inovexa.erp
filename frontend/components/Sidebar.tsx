@@ -606,11 +606,11 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ Ligne séparatrice supprimée (height: 0 pour ne pas affecter la mise en page)
+    // ✅ Margin haut à 0 pour coller la ligne au logo
     headerDivider: {
-      height: "0px",
+      height: "1px",
       margin: "0px 16px 0",
-      background: "transparent",
+      background: `${ct.primary}26`,
       border: "none",
       flexShrink: 0,
     },
@@ -644,11 +644,10 @@ export default function Sidebar() {
       textOverflow: "ellipsis",
       fontFamily: FONT_STACK,
     },
-    // ✅ Barre d'indicateur actif supprimée (display: none)
+    // ✅ Indicateur actif SUPPRIMÉ (plus de ligne verticale à gauche)
     activeIndicator: {
       display: "none",
     },
-    // ✅ Séparateur supprimé (height: 0)
     divider: { height: 0, margin: "12px 0" },
     // ✅ Taille augmentée (16px) + weight diminué (300)
     logoutBtn: {
@@ -748,7 +747,7 @@ export default function Sidebar() {
         onMouseLeave={() => { handleMouseLeave(); cancelHoverPrefetch(); }}
         style={getNavItemStyle()}
       >
-        {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
+        {/* ✅ Indicateur actif supprimé — plus de ligne verticale à gauche */}
         <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
         <span style={styles.navLabel}>{label}</span>
       </Link>
@@ -840,7 +839,7 @@ export default function Sidebar() {
                         fontFamily: FONT_STACK,
                       }}
                     >
-                      {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
+                      {/* ✅ Indicateur actif supprimé */}
                       <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
                       <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
                     </Link>
