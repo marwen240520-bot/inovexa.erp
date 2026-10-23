@@ -519,7 +519,7 @@ export default function Sidebar() {
       padding: "20px 16px 20px",
       zIndex: 1002,
       maxHeight: "75vh",
-      overflowY: "hidden",
+      overflowY: "auto",
       fontFamily: FONT_STACK,
     },
     mobileMoreHeader: {
@@ -549,7 +549,7 @@ export default function Sidebar() {
       background: ct.surface,
       position: "fixed",
       height: "100vh",
-      overflowY: "auto",
+      overflowY: "hidden",
       overflowX: "hidden",
       zIndex: 1000,
       top: 0,
