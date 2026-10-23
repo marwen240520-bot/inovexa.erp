@@ -235,7 +235,8 @@ interface ThemeColors {
 }
 
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), sans-serif";
+// ✅ Orbitron + fallback Arial Black pour garantir un rendu très gras
+const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), 'Arial Black', sans-serif";
 
 let sidebarCachedUser: User | null = null;
 let sidebarCachedModules: Record<string, boolean> | null = null;
@@ -496,7 +497,6 @@ export default function Sidebar() {
       transition: "all 0.2s ease",
       fontFamily: FONT_STACK,
     },
-    // ✅ taille augmentée : 10px → 11px
     mobileNavLabel: {
       fontSize: "11px",
       fontWeight: 400,
@@ -562,7 +562,6 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ── Header : espacements réduits, logo inchangé (92×92) ──
     header: { padding: "12px 16px 2px", flexShrink: 0 },
     logoWrapper: { display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" },
     logoImage: {
@@ -570,21 +569,24 @@ export default function Sidebar() {
       display: "block", flexShrink: 0, objectFit: "contain",
     },
     brandContainer: { flex: 1, minWidth: 0 },
+    // ✅ INOVEXA ERP en gras (900) + léger trait pour l'épaisseur
     logoTitle: {
       fontFamily: BRAND_FONT,
-      fontWeight: 800,
+      fontWeight: 900,
       fontSize: "clamp(14px, 2.3vh, 20px)",
       letterSpacing: "2px",
       color: brandText,
       whiteSpace: "nowrap",
       lineHeight: 1.05,
       margin: 0,
+      WebkitTextStroke: "0.3px currentColor",
     },
     logoErp: {
       color: brandErpColor,
       fontSize: "0.7em",
       letterSpacing: "4px",
-      fontWeight: 800,
+      fontWeight: 900,
+      WebkitTextStroke: "0.3px currentColor",
     },
     logoRole: {
       fontSize: "10px",
@@ -599,7 +601,6 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ Fine ligne de séparation sous le header
     headerDivider: {
       height: "1px",
       margin: "8px 16px 0",
@@ -624,7 +625,6 @@ export default function Sidebar() {
       overflow: "hidden",
       fontFamily: FONT_STACK,
     },
-    // ✅ taille augmentée : 13.2px → 14.5px
     navLabel: {
       fontSize: "14.5px",
       fontWeight: 400,
@@ -644,7 +644,6 @@ export default function Sidebar() {
       borderRadius: "0 3px 3px 0",
     },
     divider: { height: 0, margin: "6px 0" },
-    // ✅ taille augmentée : 13.2px → 14.5px
     logoutBtn: {
       display: "flex",
       alignItems: "center",
@@ -836,7 +835,6 @@ export default function Sidebar() {
                     >
                       {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
                       <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-                      {/* ✅ drawer mobile : 14px → 15px */}
                       <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
                     </Link>
                   );
@@ -858,7 +856,6 @@ export default function Sidebar() {
                   }}
                 >
                   <span style={{ display: "flex", flexShrink: 0 }}>{ICONS.logout}</span>
-                  {/* ✅ drawer mobile déconnexion : 14px → 15px */}
                   <span style={{ fontSize: "15px" }}>{getLabel("common.logout")}</span>
                 </div>
               </div>
@@ -1004,7 +1001,6 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* ✅ Fine ligne entre header et modules */}
           <div style={styles.headerDivider} aria-hidden="true" />
 
           <nav style={styles.nav}>
