@@ -234,7 +234,6 @@ interface ThemeColors {
   mode?: "light" | "dark";
 }
 
-// ✅ Variables de polices chargées dans app/layout.tsx via next/font/google
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), sans-serif";
 
@@ -464,8 +463,6 @@ export default function Sidebar() {
   const ct = localTheme || defaultStyles;
   const navText = ct.navText || ct.textSecondary;
   const brandText = ct.text || navText;
-
-  // ✅ Couleurs du login (alignées sur --lg-accent selon le mode)
   const isDarkMode = ct.mode === "dark";
   const brandErpColor = isDarkMode ? "#C4B5FD" : "#6D28D9";
 
@@ -563,14 +560,15 @@ export default function Sidebar() {
       transform: "translateX(0)",
       fontFamily: FONT_STACK,
     },
-    header: { padding: "22px 16px 14px", flexShrink: 0 },
-    logoWrapper: { display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" },
+
+    // ✅ ESPACEMENTS RÉDUITS — logo inchangé (92×92), polices inchangées
+    header: { padding: "12px 16px 2px", flexShrink: 0 },
+    logoWrapper: { display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" },
     logoImage: {
       width: "92px", height: "92px",
       display: "block", flexShrink: 0, objectFit: "contain",
     },
     brandContainer: { flex: 1, minWidth: 0 },
-    // ✅ EXACTEMENT identique à .lg-brand-name du login
     logoTitle: {
       fontFamily: BRAND_FONT,
       fontWeight: 800,
@@ -578,8 +576,9 @@ export default function Sidebar() {
       letterSpacing: "2px",
       color: brandText,
       whiteSpace: "nowrap",
+      lineHeight: 1.05,
+      margin: 0,
     },
-    // ✅ EXACTEMENT identique à .lg-brand-erp du login
     logoErp: {
       color: brandErpColor,
       fontSize: "0.7em",
@@ -592,18 +591,19 @@ export default function Sidebar() {
       letterSpacing: "0.04em",
       opacity: 1,
       marginTop: "1px",
+      lineHeight: 1,
       display: "flex",
       alignItems: "center",
       gap: "5px",
       fontFamily: FONT_STACK,
     },
-    nav: { padding: "12px 10px", flex: 1 },
+    nav: { padding: "2px 10px 12px", flex: 1 },
     navItem: {
       display: "flex",
       alignItems: "center",
       gap: "10px",
-      padding: "9px 12px 9px 14px",
-      marginBottom: "2px",
+      padding: "7px 12px 7px 14px",
+      marginBottom: "1px",
       cursor: "pointer",
       textDecoration: "none",
       outlineOffset: "2px",
@@ -631,12 +631,12 @@ export default function Sidebar() {
       width: "3px",
       borderRadius: "0 3px 3px 0",
     },
-    divider: { height: 0, margin: "8px 0" },
+    divider: { height: 0, margin: "6px 0" },
     logoutBtn: {
       display: "flex",
       alignItems: "center",
       gap: "10px",
-      padding: "9px 12px 9px 14px",
+      padding: "7px 12px 7px 14px",
       background: "rgba(239,68,68,0.08)",
       color: "#f87171",
       border: "1px solid rgba(239,68,68,0.14)",
@@ -745,7 +745,6 @@ export default function Sidebar() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/logo.png" alt="" width={92} height={92} style={styles.logoImage} />
             <div style={styles.brandContainer}>
-              {/* ✅ même rendu que le login */}
               <div style={styles.logoTitle}>
                 INOVEXA <span style={styles.logoErp}>ERP</span>
               </div>
@@ -967,7 +966,6 @@ export default function Sidebar() {
               </div>
 
               <div style={styles.brandContainer}>
-                {/* ✅ Même structure et même style que la page login */}
                 <div style={styles.logoTitle}>
                   INOVEXA <span style={styles.logoErp}>ERP</span>
                 </div>
