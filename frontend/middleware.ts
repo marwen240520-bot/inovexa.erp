@@ -68,14 +68,10 @@ export function middleware(request: NextRequest) {
 
     'script-src': scriptSrc,
 
-   'style-src': [
-  "'self'",
-  `'nonce-${nonce}'`,
-],
-
-'style-src-attr': [
-  "'unsafe-inline'",
-],
+    'style-src': [
+      "'self'",
+      "'unsafe-inline'",
+    ],
 
     'img-src': [
       "'self'",
@@ -155,17 +151,12 @@ export function middleware(request: NextRequest) {
     },
   });
 
- response.headers.set(
-  'Content-Security-Policy',
-  csp
-);
+  response.headers.set(
+    'Content-Security-Policy',
+    csp
+  );
 
-response.headers.set(
-  'X-Content-Type-Options',
-  'nosniff'
-);
-
-return response;
+  return response;
 }
 
 export const config = {
