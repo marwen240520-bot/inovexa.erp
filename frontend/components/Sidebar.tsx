@@ -496,8 +496,9 @@ export default function Sidebar() {
       transition: "all 0.2s ease",
       fontFamily: FONT_STACK,
     },
+    // ✅ taille augmentée : 10px → 11px
     mobileNavLabel: {
-      fontSize: "10px",
+      fontSize: "11px",
       fontWeight: 400,
       letterSpacing: "0.01em",
       lineHeight: 1,
@@ -613,7 +614,7 @@ export default function Sidebar() {
       alignItems: "center",
       gap: "10px",
       padding: "7px 12px 7px 14px",
-      marginBottom: "1px",
+      marginBottom: "2px",
       cursor: "pointer",
       textDecoration: "none",
       outlineOffset: "2px",
@@ -623,11 +624,12 @@ export default function Sidebar() {
       overflow: "hidden",
       fontFamily: FONT_STACK,
     },
+    // ✅ taille augmentée : 13.2px → 14.5px
     navLabel: {
-      fontSize: "13.2px",
+      fontSize: "14.5px",
       fontWeight: 400,
       letterSpacing: "-0.01em",
-      lineHeight: 1,
+      lineHeight: 1.1,
       whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
@@ -642,6 +644,7 @@ export default function Sidebar() {
       borderRadius: "0 3px 3px 0",
     },
     divider: { height: 0, margin: "6px 0" },
+    // ✅ taille augmentée : 13.2px → 14.5px
     logoutBtn: {
       display: "flex",
       alignItems: "center",
@@ -652,7 +655,7 @@ export default function Sidebar() {
       border: "1px solid rgba(239,68,68,0.14)",
       borderRadius: "10px",
       cursor: "pointer",
-      fontSize: "13.2px",
+      fontSize: "14.5px",
       fontWeight: 400,
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       fontFamily: FONT_STACK,
@@ -761,7 +764,6 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
-        {/* ✅ même ligne dans le squelette pour éviter un saut visuel */}
         <div style={styles.headerDivider} aria-hidden="true" />
       </div>
     );
@@ -834,7 +836,8 @@ export default function Sidebar() {
                     >
                       {isActive && <div style={{ ...styles.activeIndicator, background: ct.primary }} />}
                       <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-                      <span style={{ fontSize: "14px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
+                      {/* ✅ drawer mobile : 14px → 15px */}
+                      <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
                     </Link>
                   );
                 })}
@@ -855,7 +858,8 @@ export default function Sidebar() {
                   }}
                 >
                   <span style={{ display: "flex", flexShrink: 0 }}>{ICONS.logout}</span>
-                  <span style={{ fontSize: "14px" }}>{getLabel("common.logout")}</span>
+                  {/* ✅ drawer mobile déconnexion : 14px → 15px */}
+                  <span style={{ fontSize: "15px" }}>{getLabel("common.logout")}</span>
                 </div>
               </div>
             </>
@@ -1000,7 +1004,7 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* ✅ Fine ligne de séparation entre header et modules */}
+          {/* ✅ Fine ligne entre header et modules */}
           <div style={styles.headerDivider} aria-hidden="true" />
 
           <nav style={styles.nav}>
