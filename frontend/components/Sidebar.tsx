@@ -573,7 +573,7 @@ export default function Sidebar() {
     logoTitle: {
       fontFamily: BRAND_FONT,
       fontWeight: 800,
-      fontSize: "clamp(17px, 2.3vh, 20px)",
+      fontSize: "clamp(14px, 2.3vh, 20px)",
       letterSpacing: "2px",
       color: brandText,
       whiteSpace: "nowrap",
