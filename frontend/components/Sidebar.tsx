@@ -615,12 +615,13 @@ export default function Sidebar() {
     },
 
     nav: { padding: "8px 10px 12px", flex: 1 },
+    // ✅ Espacement augmenté entre les modules (marginBottom + padding vertical)
     navItem: {
       display: "flex",
       alignItems: "center",
       gap: "10px",
-      padding: "7px 12px 7px 14px",
-      marginBottom: "2px",
+      padding: "9px 12px 9px 14px",
+      marginBottom: "8px",
       cursor: "pointer",
       textDecoration: "none",
       outlineOffset: "2px",
@@ -630,10 +631,10 @@ export default function Sidebar() {
       overflow: "hidden",
       fontFamily: FONT_STACK,
     },
-    // ✅ Taille augmentée : 14.5px → 16px
+    // ✅ Taille augmentée (16px) + weight diminué (300)
     navLabel: {
       fontSize: "16px",
-      fontWeight: 400,
+      fontWeight: 300,
       letterSpacing: "-0.01em",
       lineHeight: 1.1,
       whiteSpace: "nowrap",
@@ -649,20 +650,20 @@ export default function Sidebar() {
       width: "3px",
       borderRadius: "0 3px 3px 0",
     },
-    divider: { height: 0, margin: "6px 0" },
-    // ✅ Taille augmentée : 14.5px → 16px
+    divider: { height: 0, margin: "12px 0" },
+    // ✅ Taille augmentée (16px) + weight diminué (300)
     logoutBtn: {
       display: "flex",
       alignItems: "center",
       gap: "10px",
-      padding: "7px 12px 7px 14px",
+      padding: "9px 12px 9px 14px",
       background: "rgba(239,68,68,0.08)",
       color: "#f87171",
       border: "1px solid rgba(239,68,68,0.14)",
       borderRadius: "10px",
       cursor: "pointer",
       fontSize: "16px",
-      fontWeight: 400,
+      fontWeight: 300,
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       fontFamily: FONT_STACK,
     },
