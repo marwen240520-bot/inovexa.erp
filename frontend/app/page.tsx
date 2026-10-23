@@ -7,10 +7,30 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useResponsive } from "@/hooks/useResponsive";
-import { Caveat } from "next/font/google";
+import { Caveat, Poppins, Orbitron } from "next/font/google";
 
-// Police manuscrite (effet « écrit au stylo ») pour le texte sous l'écran
-const handwriting = Caveat({ subsets: ["latin"], weight: ["500", "700"], display: "swap" });
+// ─── Polices (chargées au build par Next.js, servies depuis ton domaine) ───────
+// Elles ne dépendent donc plus d'une installation locale ni du cache du navigateur.
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-poppins",
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  display: "swap",
+  variable: "--font-orbitron",
+});
+
+const handwriting = Caveat({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  display: "swap",
+  variable: "--font-caveat",
+});
 
 // ─── Icônes SVG ────────────────────────────────────────────────────────────────
 
@@ -92,7 +112,7 @@ interface HomeText {
   features: { title: string; desc: string }[];
 }
 
-const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
+// ⚠️ Plus de constantes LOGO_FONT / fontFamily en dur : tout passe par les variables CSS
 const WEBSITE_URL = "https://www.inovexa-erp.com";
 const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "fr" },
@@ -102,14 +122,11 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 const DEVICE_ICONS = [IconMonitor, IconPhone, IconGlobe];
 
-// Largeurs des deux colonnes sur ordinateur
 const LEFT_WIDTH = "40%";
 const RIGHT_WIDTH = "60%";
-// Image du côté droit selon le thème
 const PREVIEW_DARK = "/images/2.png";
 const PREVIEW_LIGHT = "/images/1.png";
 
-// Traductions définies une seule fois (et non recréées à chaque rendu)
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
     title: "L'avenir de la gestion d'entreprise commence ici.",
@@ -242,7 +259,7 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
   },
 };
 
-// Couleurs de la page. Le panneau gauche « violet immersif » a sa propre variante claire.
+// Couleurs de la page
 const HP_DARK: Record<string, string> = {
   "--hp-bg": "#000000",
   "--hp-text": "#ffffff",
@@ -314,7 +331,6 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-laptop-floor": "rgba(46,16,101,0.25)",
 };
 
-/** Variables de couleur pour n'importe quel thème */
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return HP_DARK;
   if (themeId === "light") return HP_LIGHT;
@@ -346,22 +362,18 @@ export default function HomePage(): React.ReactElement {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  // Format réel de la capture (largeur / hauteur), lu au chargement de l'image :
-  // l'écran du PC prend exactement ce format, l'image n'est ni coupée ni déformée.
   const [shotRatio, setShotRatio] = useState(16 / 10);
   const shotRef = useRef<HTMLImageElement>(null);
   const readShotRatio = useCallback(() => {
     const img = shotRef.current;
     if (img && img.naturalWidth > 0 && img.naturalHeight > 0) setShotRatio(img.naturalWidth / img.naturalHeight);
   }, []);
-  // L'image peut être déjà en cache (chargée avant React) : on lit aussi son format au montage
   useEffect(() => { if (shotRef.current?.complete) readShotRatio(); }, [isLight, readShotRatio]);
   const langWrapRef = useRef<HTMLDivElement>(null);
   const langButtonRef = useRef<HTMLButtonElement>(null);
   const aboutBtnRef = useRef<HTMLButtonElement>(null);
   const aboutCloseRef = useRef<HTMLButtonElement>(null);
 
-  // Session + préchargement de la page suivante pour un clic instantané
   useEffect(() => {
     let token: string | null = null;
     try { token = localStorage.getItem("token"); } catch { /* stockage indisponible */ }
@@ -370,7 +382,6 @@ export default function HomePage(): React.ReactElement {
     try { router.prefetch(token ? "/dashboard" : "/auth/login", full); } catch { /* ignoré */ }
   }, [pathname, router]);
 
-  // Fermeture du menu de langue : clic à l'extérieur ou touche Échap
   useEffect(() => {
     if (!showLanguageMenu) return;
     const onPointer = (e: PointerEvent) => {
@@ -387,7 +398,6 @@ export default function HomePage(): React.ReactElement {
     };
   }, [showLanguageMenu]);
 
-  // Fenêtre « À propos » : Échap pour fermer, blocage du défilement, focus sur la croix
   const closeAbout = useCallback(() => {
     setShowAbout(false);
     aboutBtnRef.current?.focus();
@@ -430,7 +440,15 @@ export default function HomePage(): React.ReactElement {
 
   return (
     <div
-      className={"home-page " + (isLight ? "hp-light" : "hp-dark") + (isCompact ? " is-compact" : "") + (isMobile ? " is-mobile" : "")}
+      className={
+        "home-page " +
+        (isLight ? "hp-light" : "hp-dark") +
+        (isCompact ? " is-compact" : "") +
+        (isMobile ? " is-mobile" : "") +
+        " " +
+        // ✅ les variables de polices sont injectées ici
+        `${poppins.variable} ${orbitron.variable} ${handwriting.variable}`
+      }
       style={{
         ...themeVars,
         minHeight: "100dvh",
@@ -438,14 +456,13 @@ export default function HomePage(): React.ReactElement {
         display: "flex",
         flexDirection: isCompact ? "column" : "row",
         overflow: "hidden",
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+        // ✅ plus de 'Poppins' en dur : on utilise la variable
+        fontFamily: "var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif",
         position: "relative",
       }}
     >
-      {/* ── MOBILE : en-tête fixe ── */}
       {isMobile && <header className="mobile-header">{brand}</header>}
 
-      {/* ── Thème + langue ── */}
       <div style={{ position: "fixed", top: 16, right: 16, zIndex: 200, display: "flex", alignItems: "center", gap: 10 }}>
         <ThemeToggle variant="home" size={40} />
         <div ref={langWrapRef} style={{ position: "relative" }}>
@@ -482,7 +499,6 @@ export default function HomePage(): React.ReactElement {
         </div>
       </div>
 
-      {/* ── CÔTÉ GAUCHE — violet immersif ── */}
       <main className="hp-left" style={{ width: isCompact ? "100%" : LEFT_WIDTH }}>
         {!isMobile && <div className="hp-rise">{brand}</div>}
 
@@ -495,7 +511,6 @@ export default function HomePage(): React.ReactElement {
           <h1 className="hp-rise hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
 
-          {/* Le lien EST le bouton (pas de <button> dans un <a>) */}
           <div className="hp-rise hp-d3 hp-actions">
             <Link href={ctaHref} prefetch className="hp-cta">
               {isLoggedIn ? text.button : text.login}
@@ -513,7 +528,6 @@ export default function HomePage(): React.ReactElement {
             </button>
           </div>
 
-          {/* Fonctionnalités — liste en verre */}
           <ul className="hp-glass-list hp-rise hp-d4">
             {text.features.map((f, i) => {
               const Icon = FEATURE_ICONS[i];
@@ -537,10 +551,8 @@ export default function HomePage(): React.ReactElement {
         </footer>
       </main>
 
-      {/* ── CÔTÉ DROIT — image (2.png sombre / 1.png clair) puis texte ── */}
       {!isMobile && (
         <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
-          {/* Écran d'ordinateur : bord fin, l'image remplit tout l'écran (2.png sombre / 1.png clair) */}
           <div className="hp-pc" style={{ ["--shot-ratio" as any]: shotRatio }}>
             <div className="hp-pc-screen">
               <img
@@ -558,7 +570,6 @@ export default function HomePage(): React.ReactElement {
           </div>
           <div className={"hp-right-text " + handwriting.className}>
             <h2 className="hp-right-title hp-pen hp-pen-1">{text.previewTitle}</h2>
-            {/* Trait souligné tracé comme au stylo */}
             <svg className="hp-pen-underline" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true">
               <path d="M3 9 C 60 3, 110 12, 160 7 S 250 3, 297 8" />
             </svg>
@@ -573,7 +584,6 @@ export default function HomePage(): React.ReactElement {
         </aside>
       )}
 
-      {/* ── Fenêtre « À propos » ── */}
       {showAbout && (
         <div className="hp-overlay" onClick={closeAbout}>
           <div
@@ -625,8 +635,6 @@ export default function HomePage(): React.ReactElement {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-// Toutes les tailles sont fluides (clamp) : la page tient dans l'écran à 100 % de zoom,
-// de 1280×720 jusqu'à 1920×1080 et plus, sans débordement ni zoom CSS.
 
 const STYLES = `
   .home-page * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -649,7 +657,8 @@ const STYLES = `
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
   .hp-logo { width: clamp(60px, 8.6vh, 88px); height: clamp(60px, 8.6vh, 88px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
-  .hp-brand-name { font-family: ${LOGO_FONT}; font-size: clamp(17px, 1.45vw, 23px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
+  /* ✅ Orbitron via variable */
+  .hp-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-size: clamp(17px, 1.45vw, 23px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
   .hp-brand-name b { font-weight: 800; }
   .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
 
@@ -697,20 +706,18 @@ const STYLES = `
     background-color: var(--hp-right-bg);
     background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
   }
-  /* ── Écran d'ordinateur ── */
   .hp-pc { width: min(100%, calc(50vh * var(--shot-ratio, 1.6))); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
-  /* Bord fin : l'image touche presque le bord, aucune bande dessus ni dessous */
   .hp-pc-screen { width: 100%; padding: clamp(10px, 1.1vw, 18px); border-radius: clamp(16px, 1.4vw, 22px); background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); line-height: 0; }
   .hp-pc-screen img { display: block; width: 100%; height: auto; border-radius: 10px; user-select: none; -webkit-user-drag: none; }
-  /* Pied d'un seul bloc (trapèze), au lieu de deux barres */
   .hp-pc-stand { width: 26%; height: clamp(34px, 6.5vh, 70px); margin-top: -1px; background: var(--hp-laptop-base); clip-path: polygon(38% 0, 62% 0, 76% 82%, 100% 92%, 100% 100%, 0 100%, 0 92%, 24% 82%); }
   .hp-pc-shadow { width: 40%; height: 18px; margin-top: 2px; border-radius: 50%; background: radial-gradient(ellipse, var(--hp-laptop-floor), transparent 70%); }
-  .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; }
+  /* ✅ Caveat via variable */
+  .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; font-family: var(--font-caveat), cursive; }
   .hp-right-title { margin: 0; color: var(--hp-text); font-size: clamp(30px, min(3vw, 5vh), 46px); font-weight: 700; line-height: 1.1; text-wrap: balance; transform: rotate(-1.2deg); }
   .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(19px, min(1.5vw, 2.6vh), 24px); font-weight: 500; line-height: 1.35; max-width: 600px; transform: rotate(-0.6deg); }
-  .hp-devices { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; }
+  /* ✅ .hp-devices reste volontairement en Poppins (ce sont des icônes + labels, pas du manuscrit) */
+  .hp-devices { font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif; }
 
-  /* Effet « écrit au stylo » : le texte apparaît de gauche à droite, puis le trait se dessine */
   .hp-pen { clip-path: inset(0 100% 0 0); animation: hpWrite 1.6s cubic-bezier(.45,.05,.35,1) forwards; }
   .hp-pen-1 { animation-delay: .35s; }
   .hp-pen-2 { animation-delay: 1.9s; animation-duration: 2.4s; }
@@ -730,7 +737,6 @@ const STYLES = `
   .hp-modal-title { margin: 0 0 14px; padding-right: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
   .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 15px; line-height: 1.65; }
   .hp-modal-sub { margin: 22px 0 12px; font-size: 17px; font-weight: 700; }
-  /* « .home-page » devant : sans lui, la règle « .home-page ul { margin: 0 } » écrasait la marge du bas */
   .home-page .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin: 0 0 28px; }
   .hp-modal-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; line-height: 1.5; color: var(--hp-text); }
   .hp-modal-check { display: inline-flex; flex-shrink: 0; margin-top: 3px; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
