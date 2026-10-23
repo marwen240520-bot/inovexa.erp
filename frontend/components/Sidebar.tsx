@@ -546,8 +546,8 @@ export default function Sidebar() {
       zIndex: 998,
     },
     sidebar: {
-      // ✅ Largeur augmentée de 2px (280px → 282px)
-      width: "289px",
+      // ✅ Largeur 283px (282 + 1px demandé)
+      width: "283px",
       background: ct.surface,
       position: "fixed",
       height: "100vh",
@@ -563,7 +563,7 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ Padding bas à 0 pour supprimer l'espace entre le logo et la ligne
+    // ✅ Padding bas à 0 : plus de ligne, donc pas d'espace inutile
     header: { padding: "12px 16px 0px", flexShrink: 0 },
     // ✅ Exactement 2px d'espace entre le logo et le texte
     logoWrapper: { display: "flex", alignItems: "center", gap: "2px", cursor: "pointer" },
@@ -606,17 +606,10 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ Margin haut à 0 pour coller la ligne au logo
-    headerDivider: {
-      height: "1px",
-      margin: "0px 16px 0",
-      background: `${ct.primary}26`,
-      border: "none",
-      flexShrink: 0,
-    },
+    // ✅ headerDivider SUPPRIMÉ : plus de ligne en haut du Sidebar
 
-    // ✅ Espace ajouté entre la ligne et les noms de modules (padding top 16px)
-    nav: { padding: "16px 10px 12px", flex: 1 },
+    // ✅ Padding top ajusté (12px) puisque le divider n'existe plus
+    nav: { padding: "12px 10px 12px", flex: 1 },
     // ✅ Espacement augmenté entre les modules (marginBottom + padding vertical)
     navItem: {
       display: "flex",
@@ -670,7 +663,7 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
     loadingContainer: {
-      width: "282px",
+      width: "283px",
       background: ct.background,
       height: "100vh",
       display: "flex",
@@ -773,7 +766,6 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
-        <div style={styles.headerDivider} aria-hidden="true" />
       </div>
     );
   }
@@ -1010,8 +1002,6 @@ export default function Sidebar() {
               </div>
             </div>
           </div>
-
-          <div style={styles.headerDivider} aria-hidden="true" />
 
           <nav style={styles.nav}>
             {menuItems.map((item) => renderNavItem(item))}
