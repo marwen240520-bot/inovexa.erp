@@ -547,7 +547,7 @@ export default function Sidebar() {
     },
     sidebar: {
       // ✅ Largeur augmentée de 2px (280px → 282px)
-      width: "285px",
+      width: "287px",
       background: ct.surface,
       position: "fixed",
       height: "100vh",
