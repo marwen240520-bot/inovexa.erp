@@ -883,16 +883,18 @@ export default function DashboardPage() {
             .activity-item:active { transform: scale(0.98); }
             .trend-up { color: #10b981; }
             .trend-down { color: #ef4444; }
-            /* ✅ Nom d'utilisateur en Caveat — même police que « Votre ERP, partout avec vous. » */
+            /* ✅ Nom d'utilisateur en Caveat — CORRECTION : suppression du background-clip
+               qui coupait la dernière lettre, ajout de padding et line-height adaptés */
             .greeting-text {
               font-family: var(--font-caveat), "Segoe Script", "Brush Script MT", cursive;
               font-weight: 700;
               font-size: 1.15em;
               letter-spacing: 0.5px;
-              background: linear-gradient(135deg, ${theme.primary}, ${theme.secondary});
-              -webkit-background-clip: text;
-              background-clip: text;
-              -webkit-text-fill-color: transparent;
+              color: ${theme.primary};
+              display: inline-block;
+              padding-right: 2px;
+              padding-bottom: 1px;
+              line-height: 1.4;
             }
             .profile-menu { animation: fadeInDown 0.2s ease; background: ${theme.surface}; border: 1px solid ${theme.border}; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
             .period-selector { transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
@@ -917,7 +919,7 @@ export default function DashboardPage() {
                 <h1 className={handwriting.variable} style={{ color: theme.text, fontSize: responsive.headerTitleSize, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                   <Icon name={getWeatherIcon()} size={responsive.headerEmojiSize} color={theme.primary} />
                   <span style={{ fontSize: responsive.headerNameSize }}>
-                    {getGreeting()}, <span className="greeting-text">{user?.name?.split(' ')[0] || "Utilisateur"}</span> !
+                    {getGreeting()}, <span className="greeting-text">{user?.name || "Utilisateur"}</span> !
                   </span>
                 </h1>
                 <p style={{ color: theme.textSecondary, marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", fontSize: responsive.dateSize }}>
