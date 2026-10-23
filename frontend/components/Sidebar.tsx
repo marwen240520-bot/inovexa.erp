@@ -606,11 +606,11 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ Margin haut à 0 pour coller la ligne au logo
+    // ✅ Ligne séparatrice supprimée (height: 0 pour ne pas affecter la mise en page)
     headerDivider: {
-      height: "1px",
+      height: "0px",
       margin: "0px 16px 0",
-      background: `${ct.primary}26`,
+      background: "transparent",
       border: "none",
       flexShrink: 0,
     },
@@ -644,14 +644,11 @@ export default function Sidebar() {
       textOverflow: "ellipsis",
       fontFamily: FONT_STACK,
     },
+    // ✅ Barre d'indicateur actif supprimée (display: none)
     activeIndicator: {
-      position: "absolute",
-      left: 0,
-      top: "20%",
-      height: "60%",
-      width: "3px",
-      borderRadius: "0 3px 3px 0",
+      display: "none",
     },
+    // ✅ Séparateur supprimé (height: 0)
     divider: { height: 0, margin: "12px 0" },
     // ✅ Taille augmentée (16px) + weight diminué (300)
     logoutBtn: {
