@@ -10,7 +10,6 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { Caveat, Poppins, Orbitron } from "next/font/google";
 
 // ─── Polices (chargées au build par Next.js, servies depuis ton domaine) ───────
-// Elles ne dépendent donc plus d'une installation locale ni du cache du navigateur.
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -86,6 +85,22 @@ const IconGlobe = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
 
 type Lang = "fr" | "en" | "es";
 
+interface AboutSection {
+  title: string;
+  body: string;
+  items?: string[];
+}
+
+interface AboutContent {
+  headline: string;
+  intro: string[];
+  sections: AboutSection[];
+  ctaLabel: string;
+  ctaHref: string;
+  emailLabel: string;
+  email: string;
+}
+
 interface HomeText {
   title: string;
   modules: string;
@@ -95,12 +110,7 @@ interface HomeText {
   aboutBtn: string;
   aboutClose: string;
   aboutBadge: string;
-  aboutHeadline: string;
-  aboutIntro: [string, string];
-  aboutWhyTitle: string;
-  aboutWhy: string[];
-  aboutOutro: string;
-  aboutLink: string;
+  aboutContent: AboutContent;
   copyright: string;
   privacy: string;
   terms: string;
@@ -112,8 +122,6 @@ interface HomeText {
   features: { title: string; desc: string }[];
 }
 
-// ⚠️ Plus de constantes LOGO_FONT / fontFamily en dur : tout passe par les variables CSS
-const WEBSITE_URL = "https://www.inovexa-erp.com";
 const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "fr" },
   { code: "en", label: "English", flag: "gb" },
@@ -137,25 +145,88 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     aboutBtn: "À propos",
     aboutClose: "Fermer",
     aboutBadge: "Inovexa ERP — Next Generation ERP",
-    aboutHeadline: "La gestion de votre entreprise, 100 % en ligne.",
-    aboutIntro: [
-      "Inovexa ERP est une solution de gestion d’entreprise basée sur le modèle SaaS, conçue pour centraliser, simplifier et optimiser vos opérations quotidiennes.",
-      "Grâce à une plateforme unique accessible via Internet, gérez vos stocks, ventes, achats, facturation, finances, ressources humaines et bien plus encore.",
-    ],
-    aboutWhyTitle: "Pourquoi choisir Inovexa ERP ?",
-    aboutWhy: [
-      "Solution SaaS 100 % en ligne",
-      "Accès à distance depuis vos appareils compatibles",
-      "Gestion centralisée de votre entreprise",
-      "Intelligence artificielle intégrée",
-      "Tableaux de bord et indicateurs de performance",
-      "Gestion des utilisateurs et des autorisations",
-      "Modules adaptés à vos besoins",
-      "Automatisation et optimisation des processus",
-      "Solution évolutive pour accompagner votre croissance",
-    ],
-    aboutOutro: "Inovexa ERP : une gestion centralisée, une vision claire et une entreprise prête pour le digital.",
-    aboutLink: "Découvrir notre solution",
+    aboutContent: {
+      headline: "La gestion de votre entreprise, 100 % en ligne.",
+      intro: [
+        "Inovexa ERP est une solution de gestion d’entreprise basée sur le modèle SaaS, conçue pour centraliser, simplifier et optimiser vos opérations quotidiennes.",
+        "Grâce à une plateforme unique accessible via Internet, gérez vos stocks, ventes, achats, facturation, finances, ressources humaines et bien plus encore.",
+      ],
+      sections: [
+        {
+          title: "Notre mission",
+          body: "Accompagner les entreprises dans la digitalisation de leur gestion en proposant un environnement numérique qui facilite l’organisation des opérations et l’accès aux informations essentielles. Notre démarche vise une gestion plus structurée, favorisant la centralisation des données et la visibilité sur les activités.",
+        },
+        {
+          title: "Notre vision",
+          body: "Un environnement professionnel où les entreprises accèdent facilement à leurs données, organisent leurs processus et suivent leurs activités depuis un système de gestion intégré.",
+          items: [
+            "Digitalisation des processus métiers",
+            "Intégration des fonctions de gestion",
+            "Évolution technologique progressive",
+          ],
+        },
+        {
+          title: "Une solution ERP reposant sur le modèle SaaS",
+          body: "Inovexa ERP propose un environnement de gestion accessible via Internet depuis des appareils compatibles, selon les conditions d’accès applicables.",
+          items: [
+            "Accessibilité en ligne",
+            "Environnement de gestion centralisé",
+            "Approche modulaire",
+            "Évolution des besoins",
+            "Accès selon les autorisations",
+          ],
+        },
+        {
+          title: "Catalogue fonctionnel",
+          body: "Les modules couvrent l’ensemble des besoins opérationnels de l’entreprise :",
+          items: [
+            "Pilotage & tableau de bord",
+            "Produits, catégories et inventaire",
+            "Ventes, achats, commandes, caisse rapide",
+            "Clients, fournisseurs, factures",
+            "Finances et ressources humaines",
+            "Logistique, rapports et analytique",
+            "Assistant IA intégré",
+            "Profil et paramètres",
+          ],
+        },
+        {
+          title: "Les principes fondamentaux",
+          body: "Une approche structurée autour de la centralisation, de l’organisation et de la visibilité opérationnelle.",
+          items: [
+            "Centralisation des informations",
+            "Organisation des processus",
+            "Visibilité opérationnelle",
+            "Accessibilité en ligne",
+            "Assistance intelligente (IA)",
+            "Approche évolutive",
+          ],
+        },
+        {
+          title: "Secteurs d’activité",
+          body: "Inovexa ERP s’adresse notamment aux :",
+          items: [
+            "Commerces et distributeurs",
+            "Entreprises de services",
+            "Industries",
+            "Acteurs de la logistique",
+            "Entreprises en développement",
+          ],
+        },
+        {
+          title: "Sécurité & gestion des données",
+          body: "La protection repose sur la gestion des accès, l’authentification, la sécurisation des échanges et les procédures de maintenance. Les engagements précis sont présentés selon les dispositifs réellement déployés.",
+        },
+        {
+          title: "Notre engagement",
+          body: "Une approche orientée besoins, structurée autour de la clarté, l’organisation, l’accessibilité, l’adaptation, l’évolution et la transparence.",
+        },
+      ],
+      ctaLabel: "Découvrir notre solution",
+      ctaHref: "https://www.inovexa-erp.com/",
+      emailLabel: "Nous contacter",
+      email: "contact@inovexa.com",
+    },
     copyright: "Tous droits réservés.",
     privacy: "Confidentialité",
     terms: "Conditions",
@@ -180,25 +251,88 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     aboutBtn: "Acerca de",
     aboutClose: "Cerrar",
     aboutBadge: "Inovexa ERP — Next Generation ERP",
-    aboutHeadline: "La gestión de su empresa, 100 % en línea.",
-    aboutIntro: [
-      "Inovexa ERP es una solución de gestión empresarial basada en el modelo SaaS, diseñada para centralizar, simplificar y optimizar sus operaciones diarias.",
-      "Gracias a una plataforma única accesible a través de Internet, gestione sus existencias, ventas, compras, facturación, finanzas, recursos humanos y mucho más.",
-    ],
-    aboutWhyTitle: "¿Por qué elegir Inovexa ERP?",
-    aboutWhy: [
-      "Solución SaaS 100 % en línea",
-      "Acceso remoto desde sus dispositivos compatibles",
-      "Gestión centralizada de su empresa",
-      "Inteligencia artificial integrada",
-      "Paneles de control e indicadores de rendimiento",
-      "Gestión de usuarios y permisos",
-      "Módulos adaptados a sus necesidades",
-      "Automatización y optimización de procesos",
-      "Solución escalable para acompañar su crecimiento",
-    ],
-    aboutOutro: "Inovexa ERP: una gestión centralizada, una visión clara y una empresa preparada para lo digital.",
-    aboutLink: "Descubra nuestra solución",
+    aboutContent: {
+      headline: "La gestión de su empresa, 100 % en línea.",
+      intro: [
+        "Inovexa ERP es una solución de gestión empresarial basada en el modelo SaaS, diseñada para centralizar, simplificar y optimizar sus operaciones diarias.",
+        "Gracias a una plataforma única accesible a través de Internet, gestione sus existencias, ventas, compras, facturación, finanzas, recursos humanos y mucho más.",
+      ],
+      sections: [
+        {
+          title: "Nuestra misión",
+          body: "Acompañar a las empresas en la digitalización de su gestión ofreciendo un entorno digital que facilite la organización de las operaciones y el acceso a la información esencial.",
+        },
+        {
+          title: "Nuestra visión",
+          body: "Un entorno profesional donde las empresas accedan fácilmente a sus datos, organicen sus procesos y sigan sus actividades desde un sistema de gestión integrado.",
+          items: [
+            "Digitalización de los procesos de negocio",
+            "Integración de las funciones de gestión",
+            "Evolución tecnológica progresiva",
+          ],
+        },
+        {
+          title: "Una solución ERP basada en el modelo SaaS",
+          body: "Inovexa ERP ofrece un entorno de gestión accesible a través de Internet desde dispositivos compatibles, según las condiciones de acceso aplicables.",
+          items: [
+            "Accesibilidad en línea",
+            "Entorno de gestión centralizado",
+            "Enfoque modular",
+            "Evolución de las necesidades",
+            "Acceso según los permisos",
+          ],
+        },
+        {
+          title: "Catálogo funcional",
+          body: "Los módulos cubren todas las necesidades operativas de la empresa:",
+          items: [
+            "Pilotaje y panel de control",
+            "Productos, categorías e inventario",
+            "Ventas, compras, pedidos, caja rápida",
+            "Clientes, proveedores, facturas",
+            "Finanzas y recursos humanos",
+            "Logística, informes y analítica",
+            "Asistente de IA integrado",
+            "Perfil y parámetros",
+          ],
+        },
+        {
+          title: "Los principios fundamentales",
+          body: "Un enfoque estructurado en torno a la centralización, la organización y la visibilidad operativa.",
+          items: [
+            "Centralización de la información",
+            "Organización de los procesos",
+            "Visibilidad operativa",
+            "Accesibilidad en línea",
+            "Asistencia inteligente (IA)",
+            "Enfoque evolutivo",
+          ],
+        },
+        {
+          title: "Sectores de actividad",
+          body: "Inovexa ERP está dirigido en particular a:",
+          items: [
+            "Comercios y distribuidores",
+            "Empresas de servicios",
+            "Industrias",
+            "Actores de la logística",
+            "Empresas en desarrollo",
+          ],
+        },
+        {
+          title: "Seguridad y gestión de datos",
+          body: "La protección se basa en la gestión de accesos, la autenticación, la seguridad de los intercambios y los procedimientos de mantenimiento. Los compromisos precisos se presentan según los dispositivos realmente implementados.",
+        },
+        {
+          title: "Nuestro compromiso",
+          body: "Un enfoque orientado a las necesidades, estructurado en torno a la claridad, la organización, la accesibilidad, la adaptación, la evolución y la transparencia.",
+        },
+      ],
+      ctaLabel: "Descubra nuestra solución",
+      ctaHref: "https://www.inovexa-erp.com/",
+      emailLabel: "Contáctenos",
+      email: "contact@inovexa.com",
+    },
     copyright: "Todos los derechos reservados.",
     privacy: "Privacidad",
     terms: "Términos",
@@ -223,25 +357,88 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     aboutBtn: "About",
     aboutClose: "Close",
     aboutBadge: "Inovexa ERP — Next Generation ERP",
-    aboutHeadline: "Your business management, 100% online.",
-    aboutIntro: [
-      "Inovexa ERP is a SaaS-based business management solution designed to centralize, simplify and optimize your daily operations.",
-      "With a single platform accessible over the Internet, manage your stock, sales, purchases, invoicing, finance, human resources and much more.",
-    ],
-    aboutWhyTitle: "Why choose Inovexa ERP?",
-    aboutWhy: [
-      "100% online SaaS solution",
-      "Remote access from your compatible devices",
-      "Centralized management of your business",
-      "Built-in artificial intelligence",
-      "Dashboards and performance indicators",
-      "User and permission management",
-      "Modules tailored to your needs",
-      "Process automation and optimization",
-      "Scalable solution to support your growth",
-    ],
-    aboutOutro: "Inovexa ERP: centralized management, a clear vision and a business ready for the digital age.",
-    aboutLink: "Discover our solution",
+    aboutContent: {
+      headline: "Your business management, 100% online.",
+      intro: [
+        "Inovexa ERP is a SaaS-based business management solution designed to centralize, simplify and optimize your daily operations.",
+        "With a single platform accessible over the Internet, manage your stock, sales, purchases, invoicing, finance, human resources and much more.",
+      ],
+      sections: [
+        {
+          title: "Our mission",
+          body: "Support companies in the digitalization of their management by providing a digital environment that facilitates the organization of operations and access to essential information.",
+        },
+        {
+          title: "Our vision",
+          body: "A professional environment where companies can easily access their data, organize their processes and track their activities through an integrated management system.",
+          items: [
+            "Digitalization of business processes",
+            "Integration of management functions",
+            "Progressive technological evolution",
+          ],
+        },
+        {
+          title: "An ERP solution based on the SaaS model",
+          body: "Inovexa ERP provides a management environment accessible over the Internet from compatible devices, subject to applicable access conditions.",
+          items: [
+            "Online accessibility",
+            "Centralized management environment",
+            "Modular approach",
+            "Evolving needs",
+            "Access based on permissions",
+          ],
+        },
+        {
+          title: "Functional catalog",
+          body: "The modules cover all the operational needs of the company:",
+          items: [
+            "Steering & dashboard",
+            "Products, categories and inventory",
+            "Sales, purchases, orders, quick checkout",
+            "Customers, suppliers, invoices",
+            "Finance and human resources",
+            "Logistics, reports and analytics",
+            "Built-in AI assistant",
+            "Profile and settings",
+          ],
+        },
+        {
+          title: "Fundamental principles",
+          body: "A structured approach around centralization, organization and operational visibility.",
+          items: [
+            "Information centralization",
+            "Process organization",
+            "Operational visibility",
+            "Online accessibility",
+            "Intelligent assistance (AI)",
+            "Scalable approach",
+          ],
+        },
+        {
+          title: "Industries",
+          body: "Inovexa ERP is particularly aimed at:",
+          items: [
+            "Retail and distribution",
+            "Service companies",
+            "Industry",
+            "Logistics players",
+            "Growing businesses",
+          ],
+        },
+        {
+          title: "Security & data management",
+          body: "Protection relies on access management, authentication, secure exchanges and maintenance procedures. Specific commitments are presented according to the measures actually implemented.",
+        },
+        {
+          title: "Our commitment",
+          body: "A needs-oriented approach structured around clarity, organization, accessibility, adaptation, evolution and transparency.",
+        },
+      ],
+      ctaLabel: "Discover our solution",
+      ctaHref: "https://www.inovexa-erp.com/",
+      emailLabel: "Contact us",
+      email: "contact@inovexa.com",
+    },
     copyright: "All rights reserved.",
     privacy: "Privacy",
     terms: "Terms",
@@ -446,7 +643,6 @@ export default function HomePage(): React.ReactElement {
         (isCompact ? " is-compact" : "") +
         (isMobile ? " is-mobile" : "") +
         " " +
-        // ✅ les variables de polices sont injectées ici
         `${poppins.variable} ${orbitron.variable} ${handwriting.variable}`
       }
       style={{
@@ -456,7 +652,6 @@ export default function HomePage(): React.ReactElement {
         display: "flex",
         flexDirection: isCompact ? "column" : "row",
         overflow: "hidden",
-        // ✅ plus de 'Poppins' en dur : on utilise la variable
         fontFamily: "var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif",
         position: "relative",
       }}
@@ -604,27 +799,42 @@ export default function HomePage(): React.ReactElement {
             </button>
 
             <span className="hp-modal-badge">{text.aboutBadge}</span>
-            <h2 id="hp-about-title" className="hp-modal-title">{text.aboutHeadline}</h2>
-            {text.aboutIntro.map((p) => (
+            <h2 id="hp-about-title" className="hp-modal-title">{text.aboutContent.headline}</h2>
+            {text.aboutContent.intro.map((p) => (
               <p key={p} className="hp-modal-p">{p}</p>
             ))}
 
-            <h3 className="hp-modal-sub">{text.aboutWhyTitle}</h3>
-            <ul className="hp-modal-list">
-              {text.aboutWhy.map((item) => (
-                <li key={item}>
-                  <span className="hp-modal-check"><IconCheck color="var(--hp-accent-text)" /></span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            {text.aboutContent.sections.map((section) => (
+              <section key={section.title} className="hp-modal-section">
+                <h3 className="hp-modal-sub">{section.title}</h3>
+                <p className="hp-modal-p">{section.body}</p>
+                {section.items && section.items.length > 0 && (
+                  <ul className="hp-modal-list">
+                    {section.items.map((item) => (
+                      <li key={item}>
+                        <span className="hp-modal-check"><IconCheck color="var(--hp-accent-text)" /></span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ))}
 
-            <p className="hp-modal-outro">{text.aboutOutro}</p>
-
-            <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer" className="hp-cta hp-modal-link">
-              {text.aboutLink}
-              <span className="hp-cta-arrow"><IconArrowRight /></span>
-            </a>
+            <div className="hp-modal-actions">
+              <a
+                href={text.aboutContent.ctaHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hp-cta"
+              >
+                {text.aboutContent.ctaLabel}
+                <span className="hp-cta-arrow"><IconArrowRight /></span>
+              </a>
+              <a href={`mailto:${text.aboutContent.email}`} className="hp-ghost">
+                {text.aboutContent.emailLabel}
+              </a>
+            </div>
           </div>
         </div>
       )}
@@ -657,7 +867,6 @@ const STYLES = `
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
   .hp-logo { width: clamp(60px, 8.6vh, 88px); height: clamp(60px, 8.6vh, 88px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
-  /* ✅ Orbitron via variable */
   .hp-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-size: clamp(17px, 1.45vw, 23px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
   .hp-brand-name b { font-weight: 800; }
   .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
@@ -711,11 +920,9 @@ const STYLES = `
   .hp-pc-screen img { display: block; width: 100%; height: auto; border-radius: 10px; user-select: none; -webkit-user-drag: none; }
   .hp-pc-stand { width: 26%; height: clamp(34px, 6.5vh, 70px); margin-top: -1px; background: var(--hp-laptop-base); clip-path: polygon(38% 0, 62% 0, 76% 82%, 100% 92%, 100% 100%, 0 100%, 0 92%, 24% 82%); }
   .hp-pc-shadow { width: 40%; height: 18px; margin-top: 2px; border-radius: 50%; background: radial-gradient(ellipse, var(--hp-laptop-floor), transparent 70%); }
-  /* ✅ Caveat via variable */
   .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; font-family: var(--font-caveat), cursive; }
   .hp-right-title { margin: 0; color: var(--hp-text); font-size: clamp(30px, min(3vw, 5vh), 46px); font-weight: 700; line-height: 1.1; text-wrap: balance; transform: rotate(-1.2deg); }
   .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(19px, min(1.5vw, 2.6vh), 24px); font-weight: 500; line-height: 1.35; max-width: 600px; transform: rotate(-0.6deg); }
-  /* ✅ .hp-devices reste volontairement en Poppins (ce sont des icônes + labels, pas du manuscrit) */
   .hp-devices { font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif; }
 
   .hp-pen { clip-path: inset(0 100% 0 0); animation: hpWrite 1.6s cubic-bezier(.45,.05,.35,1) forwards; }
@@ -730,18 +937,21 @@ const STYLES = `
 
   /* ── Fenêtre « À propos » ── */
   .hp-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--hp-overlay); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: overlayIn .2s ease-out; }
-  .hp-modal { position: relative; width: 100%; max-width: 620px; max-height: min(88dvh, 780px); overflow-y: auto; padding: clamp(24px, 4vw, 40px); border-radius: 24px; background: var(--hp-modal-bg); border: 1px solid var(--hp-chip-border); box-shadow: 0 30px 80px var(--hp-shadow); color: var(--hp-text); animation: modalIn .25s cubic-bezier(0.22,1,0.36,1); }
+  .hp-modal { position: relative; width: 100%; max-width: 720px; max-height: min(88dvh, 820px); overflow-y: auto; padding: clamp(24px, 4vw, 40px); border-radius: 24px; background: var(--hp-modal-bg); border: 1px solid var(--hp-chip-border); box-shadow: 0 30px 80px var(--hp-shadow); color: var(--hp-text); animation: modalIn .25s cubic-bezier(0.22,1,0.36,1); }
   .hp-modal-close { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); cursor: pointer; transition: background .2s; }
   .hp-modal-close:hover { background: var(--hp-glass); }
   .hp-modal-badge { display: inline-block; padding: 0.45em 1em; margin-bottom: 16px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-accent-text); font-size: 12px; font-weight: 700; letter-spacing: 0.4px; }
   .hp-modal-title { margin: 0 0 14px; padding-right: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
   .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 15px; line-height: 1.65; }
-  .hp-modal-sub { margin: 22px 0 12px; font-size: 17px; font-weight: 700; }
-  .home-page .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin: 0 0 28px; }
+  .hp-modal-section { margin-bottom: 22px; }
+  .hp-modal-section:last-of-type { margin-bottom: 8px; }
+  .hp-modal-sub { margin: 22px 0 10px; font-size: 17px; font-weight: 700; color: var(--hp-text); }
+  .hp-modal-section .hp-modal-sub { margin-top: 0; }
+  .home-page .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin: 0 0 6px; }
   .hp-modal-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; line-height: 1.5; color: var(--hp-text); }
   .hp-modal-check { display: inline-flex; flex-shrink: 0; margin-top: 3px; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
-  .hp-modal-outro { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); font-size: 14.5px; font-weight: 600; line-height: 1.55; }
-  .hp-modal-link { align-self: flex-start; }
+  .hp-modal-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--hp-glass-line); }
+  .hp-modal .hp-cta, .hp-modal .hp-ghost { height: 48px; padding: 0 22px; }
   @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
 
