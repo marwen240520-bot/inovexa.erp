@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -7,23 +7,6 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageMenu from "@/components/ui/LanguageMenu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
-import { Poppins, Orbitron } from "next/font/google";
-
-// ─── Polices chargées par Next.js (servies depuis ton domaine) ────────────────
-// Plus de dépendance à une installation locale ni au cache du navigateur.
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-poppins",
-});
-
-const orbitron = Orbitron({
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
-  display: "swap",
-  variable: "--font-orbitron",
-});
 
 // ─── Couleurs ──────────────────────────────────────────────────────────────────
 
@@ -272,12 +255,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className={
-        "lg-root " +
-        (isLight ? "lg-light" : "lg-dark") +
-        // ✅ variables de polices injectées ici
-        ` ${poppins.variable} ${orbitron.variable}`
-      }
+      className={"lg-root " + (isLight ? "lg-light" : "lg-dark")}
       style={themeVars}
     >
       {BACKGROUND === "capture" && (
@@ -423,7 +401,6 @@ const STYLES = `
   .lg-root {
     min-height: 100vh; min-height: 100dvh; position: relative; overflow-x: hidden;
     display: flex; flex-direction: column; align-items: center;
-    /* ✅ Poppins via variable CSS (chargée par next/font) */
     font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--lg-text);
     background-color: var(--lg-base);
@@ -509,7 +486,6 @@ const STYLES = `
   .lg-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: clamp(18px, 3vh, 26px); }
   .lg-logo { width: clamp(50px, 7vh, 64px); height: clamp(50px, 7vh, 64px); flex-shrink: 0; border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); box-shadow: 0 0 28px rgba(168,85,247,0.4); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .lg-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 8px rgba(138,43,226,0.6)); }
-  /* ✅ Orbitron via variable */
   .lg-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-weight: 800; font-size: clamp(17px, 2.3vh, 20px); letter-spacing: 2px; color: var(--lg-text); white-space: nowrap; }
   .lg-brand-erp { color: var(--lg-accent); font-size: 0.7em; letter-spacing: 4px; }
 
