@@ -49,6 +49,9 @@ const IconChevronDown = ({ size = 11, color = "currentColor" }: IconProps) => (
 const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><polyline points="20 6 9 17 4 12" /></svg>
 );
+const IconClose = ({ size = 18, color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color, "2.5")}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+);
 const IconMonitor = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color)}><rect x="2" y="4" width="20" height="13" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
 );
@@ -69,7 +72,15 @@ interface HomeText {
   subtitle: string;
   button: string;
   login: string;
-  signin: string;
+  aboutBtn: string;
+  aboutClose: string;
+  aboutBadge: string;
+  aboutHeadline: string;
+  aboutIntro: [string, string];
+  aboutWhyTitle: string;
+  aboutWhy: string[];
+  aboutOutro: string;
+  aboutLink: string;
   copyright: string;
   privacy: string;
   terms: string;
@@ -82,6 +93,7 @@ interface HomeText {
 }
 
 const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
+const WEBSITE_URL = "https://www.inovexa-erp.com";
 const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "fr" },
   { code: "en", label: "English", flag: "gb" },
@@ -102,10 +114,31 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
     title: "L'avenir de la gestion d'entreprise commence ici.",
     modules: "Ventes · Stock · Factures · RH · Finance",
-    subtitle: "Un ERP clair et rapide pour gérer toute votre activité, en français, anglais et espagnol.",
+    subtitle: "Avec Inovexa ERP, gérez toute votre entreprise depuis une seule plateforme",
     button: "Accéder au Dashboard",
     login: "Commencer maintenant",
-    signin: "Se connecter",
+    aboutBtn: "À propos",
+    aboutClose: "Fermer",
+    aboutBadge: "Inovexa ERP — Next Generation ERP",
+    aboutHeadline: "La gestion de votre entreprise, 100 % en ligne.",
+    aboutIntro: [
+      "Inovexa ERP est une solution de gestion d’entreprise basée sur le modèle SaaS, conçue pour centraliser, simplifier et optimiser vos opérations quotidiennes.",
+      "Grâce à une plateforme unique accessible via Internet, gérez vos stocks, ventes, achats, facturation, finances, ressources humaines et bien plus encore.",
+    ],
+    aboutWhyTitle: "Pourquoi choisir Inovexa ERP ?",
+    aboutWhy: [
+      "Solution SaaS 100 % en ligne",
+      "Accès à distance depuis vos appareils compatibles",
+      "Gestion centralisée de votre entreprise",
+      "Intelligence artificielle intégrée",
+      "Tableaux de bord et indicateurs de performance",
+      "Gestion des utilisateurs et des autorisations",
+      "Modules adaptés à vos besoins",
+      "Automatisation et optimisation des processus",
+      "Solution évolutive pour accompagner votre croissance",
+    ],
+    aboutOutro: "Inovexa ERP : une gestion centralisée, une vision claire et une entreprise prête pour le digital.",
+    aboutLink: "Découvrir notre solution",
     copyright: "Tous droits réservés.",
     privacy: "Confidentialité",
     terms: "Conditions",
@@ -124,10 +157,31 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
   es: {
     title: "El futuro de la gestión empresarial comienza aquí.",
     modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas",
-    subtitle: "Un ERP claro y rápido para gestionar toda su actividad, en francés, inglés y español.",
+    subtitle: "Con Inovexa ERP, gestione toda su empresa desde una sola plataforma",
     button: "Panel de Control",
     login: "Empezar ahora",
-    signin: "Iniciar sesión",
+    aboutBtn: "Acerca de",
+    aboutClose: "Cerrar",
+    aboutBadge: "Inovexa ERP — Next Generation ERP",
+    aboutHeadline: "La gestión de su empresa, 100 % en línea.",
+    aboutIntro: [
+      "Inovexa ERP es una solución de gestión empresarial basada en el modelo SaaS, diseñada para centralizar, simplificar y optimizar sus operaciones diarias.",
+      "Gracias a una plataforma única accesible a través de Internet, gestione sus existencias, ventas, compras, facturación, finanzas, recursos humanos y mucho más.",
+    ],
+    aboutWhyTitle: "¿Por qué elegir Inovexa ERP?",
+    aboutWhy: [
+      "Solución SaaS 100 % en línea",
+      "Acceso remoto desde sus dispositivos compatibles",
+      "Gestión centralizada de su empresa",
+      "Inteligencia artificial integrada",
+      "Paneles de control e indicadores de rendimiento",
+      "Gestión de usuarios y permisos",
+      "Módulos adaptados a sus necesidades",
+      "Automatización y optimización de procesos",
+      "Solución escalable para acompañar su crecimiento",
+    ],
+    aboutOutro: "Inovexa ERP: una gestión centralizada, una visión clara y una empresa preparada para lo digital.",
+    aboutLink: "Descubra nuestra solución",
     copyright: "Todos los derechos reservados.",
     privacy: "Privacidad",
     terms: "Términos",
@@ -146,10 +200,31 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
   en: {
     title: "The future of business management starts here.",
     modules: "Sales · Stock · Invoices · HR · Finance",
-    subtitle: "A clear, fast ERP to run your whole business, in French, English and Spanish.",
+    subtitle: "With Inovexa ERP, run your entire business from a single platform",
     button: "Go to Dashboard",
     login: "Get Started Now",
-    signin: "Sign in",
+    aboutBtn: "About",
+    aboutClose: "Close",
+    aboutBadge: "Inovexa ERP — Next Generation ERP",
+    aboutHeadline: "Your business management, 100% online.",
+    aboutIntro: [
+      "Inovexa ERP is a SaaS-based business management solution designed to centralize, simplify and optimize your daily operations.",
+      "With a single platform accessible over the Internet, manage your stock, sales, purchases, invoicing, finance, human resources and much more.",
+    ],
+    aboutWhyTitle: "Why choose Inovexa ERP?",
+    aboutWhy: [
+      "100% online SaaS solution",
+      "Remote access from your compatible devices",
+      "Centralized management of your business",
+      "Built-in artificial intelligence",
+      "Dashboards and performance indicators",
+      "User and permission management",
+      "Modules tailored to your needs",
+      "Process automation and optimization",
+      "Scalable solution to support your growth",
+    ],
+    aboutOutro: "Inovexa ERP: centralized management, a clear vision and a business ready for the digital age.",
+    aboutLink: "Discover our solution",
     copyright: "All rights reserved.",
     privacy: "Privacy",
     terms: "Terms",
@@ -192,6 +267,8 @@ const HP_DARK: Record<string, string> = {
   "--hp-menu-bg": "rgba(16,10,30,0.97)",
   "--hp-menu-text": "rgba(255,255,255,0.88)",
   "--hp-shadow": "rgba(0,0,0,0.7)",
+  "--hp-modal-bg": "rgba(16,10,30,0.97)",
+  "--hp-overlay": "rgba(0,0,0,0.65)",
   "--hp-right-bg": "#05040a",
   "--hp-right-glow": "rgba(124,58,237,0.28)",
   "--hp-laptop-body": "linear-gradient(180deg, #2a2733, #16141d)",
@@ -225,6 +302,8 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-menu-bg": "rgba(255,255,255,0.98)",
   "--hp-menu-text": "#374151",
   "--hp-shadow": "rgba(17,24,39,0.18)",
+  "--hp-modal-bg": "rgba(255,255,255,0.99)",
+  "--hp-overlay": "rgba(30,16,53,0.45)",
   "--hp-right-bg": "#f8f7ff",
   "--hp-right-glow": "rgba(167,139,250,0.3)",
   "--hp-laptop-body": "linear-gradient(180deg, #e9e6f2, #d6d2e2)",
@@ -266,6 +345,7 @@ export default function HomePage(): React.ReactElement {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   // Format réel de la capture (largeur / hauteur), lu au chargement de l'image :
   // l'écran du PC prend exactement ce format, l'image n'est ni coupée ni déformée.
   const [shotRatio, setShotRatio] = useState(16 / 10);
@@ -278,6 +358,8 @@ export default function HomePage(): React.ReactElement {
   useEffect(() => { if (shotRef.current?.complete) readShotRatio(); }, [isLight, readShotRatio]);
   const langWrapRef = useRef<HTMLDivElement>(null);
   const langButtonRef = useRef<HTMLButtonElement>(null);
+  const aboutBtnRef = useRef<HTMLButtonElement>(null);
+  const aboutCloseRef = useRef<HTMLButtonElement>(null);
 
   // Session + préchargement de la page suivante pour un clic instantané
   useEffect(() => {
@@ -304,6 +386,27 @@ export default function HomePage(): React.ReactElement {
       document.removeEventListener("keydown", onKey);
     };
   }, [showLanguageMenu]);
+
+  // Fenêtre « À propos » : Échap pour fermer, blocage du défilement, focus sur la croix
+  const closeAbout = useCallback(() => {
+    setShowAbout(false);
+    aboutBtnRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!showAbout) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeAbout();
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    aboutCloseRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [showAbout, closeAbout]);
 
   const handleLanguageChange = useCallback((code: Lang) => {
     changeLanguage(code);
@@ -398,7 +501,16 @@ export default function HomePage(): React.ReactElement {
               {isLoggedIn ? text.button : text.login}
               <span className="hp-cta-arrow"><IconArrowRight /></span>
             </Link>
-            {!isLoggedIn && <Link href="/auth/login" className="hp-ghost">{text.signin}</Link>}
+            <button
+              ref={aboutBtnRef}
+              type="button"
+              className="hp-ghost"
+              aria-haspopup="dialog"
+              aria-expanded={showAbout}
+              onClick={() => setShowAbout(true)}
+            >
+              {text.aboutBtn}
+            </button>
           </div>
 
           {/* Fonctionnalités — liste en verre */}
@@ -461,6 +573,52 @@ export default function HomePage(): React.ReactElement {
         </aside>
       )}
 
+      {/* ── Fenêtre « À propos » ── */}
+      {showAbout && (
+        <div className="hp-overlay" onClick={closeAbout}>
+          <div
+            className="hp-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="hp-about-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              ref={aboutCloseRef}
+              type="button"
+              className="hp-modal-close"
+              aria-label={text.aboutClose}
+              onClick={closeAbout}
+            >
+              <IconClose />
+            </button>
+
+            <span className="hp-modal-badge">{text.aboutBadge}</span>
+            <h2 id="hp-about-title" className="hp-modal-title">{text.aboutHeadline}</h2>
+            {text.aboutIntro.map((p) => (
+              <p key={p} className="hp-modal-p">{p}</p>
+            ))}
+
+            <h3 className="hp-modal-sub">{text.aboutWhyTitle}</h3>
+            <ul className="hp-modal-list">
+              {text.aboutWhy.map((item) => (
+                <li key={item}>
+                  <span className="hp-modal-check"><IconCheck color="var(--hp-accent-text)" /></span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="hp-modal-outro">{text.aboutOutro}</p>
+
+            <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer" className="hp-cta hp-modal-link">
+              {text.aboutLink}
+              <span className="hp-cta-arrow"><IconArrowRight /></span>
+            </a>
+          </div>
+        </div>
+      )}
+
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
     </div>
   );
@@ -515,7 +673,7 @@ const STYLES = `
   .hp-cta:active { transform: translateY(0); }
   .hp-cta-arrow { display: inline-flex; transition: transform .2s; }
   .hp-cta:hover .hp-cta-arrow { transform: translateX(3px); }
-  .hp-ghost { border: 1px solid var(--hp-ghost-border); color: var(--hp-text) !important; font-weight: 600; transition: background .2s; }
+  .hp-ghost { background: transparent; border: 1px solid var(--hp-ghost-border); color: var(--hp-text) !important; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .2s; }
   .hp-ghost:hover { background: var(--hp-glass); }
 
   /* ── Liste en verre ── */
@@ -563,6 +721,23 @@ const STYLES = `
   .hp-devices { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: clamp(12.5px, 0.9vw, 14px); font-weight: 600; color: var(--hp-text); }
   .hp-devices li { display: inline-flex; align-items: center; gap: 7px; }
 
+  /* ── Fenêtre « À propos » ── */
+  .hp-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--hp-overlay); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: overlayIn .2s ease-out; }
+  .hp-modal { position: relative; width: 100%; max-width: 620px; max-height: min(88dvh, 780px); overflow-y: auto; padding: clamp(24px, 4vw, 40px); border-radius: 24px; background: var(--hp-modal-bg); border: 1px solid var(--hp-chip-border); box-shadow: 0 30px 80px var(--hp-shadow); color: var(--hp-text); animation: modalIn .25s cubic-bezier(0.22,1,0.36,1); }
+  .hp-modal-close { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); cursor: pointer; transition: background .2s; }
+  .hp-modal-close:hover { background: var(--hp-glass); }
+  .hp-modal-badge { display: inline-block; padding: 0.45em 1em; margin-bottom: 16px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-accent-text); font-size: 12px; font-weight: 700; letter-spacing: 0.4px; }
+  .hp-modal-title { margin: 0 0 14px; padding-right: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
+  .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 15px; line-height: 1.65; }
+  .hp-modal-sub { margin: 22px 0 12px; font-size: 17px; font-weight: 700; }
+  .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 20px; }
+  .hp-modal-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; line-height: 1.5; color: var(--hp-text); }
+  .hp-modal-check { display: inline-flex; flex-shrink: 0; margin-top: 3px; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
+  .hp-modal-outro { margin: 0 0 22px; padding: 14px 16px; border-radius: 14px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); font-size: 14.5px; font-weight: 600; line-height: 1.55; }
+  .hp-modal-link { align-self: flex-start; }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+
   /* ── Tablette / mobile ── */
   .is-compact .hp-left { min-height: auto; }
   .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
@@ -573,6 +748,8 @@ const STYLES = `
   .is-mobile .hp-actions { flex-direction: column; align-items: stretch; }
   .is-mobile .hp-cta, .is-mobile .hp-ghost { height: 52px; font-size: 15px; }
   .is-mobile .hp-footer { margin-top: 32px; flex-direction: column-reverse; align-items: flex-start; }
+  .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
+  .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
   @media (max-width: 420px) {
     .hp-glass-row { flex-wrap: wrap; row-gap: 2px; }
     .hp-glass-desc { flex-basis: 100%; padding-left: 2em; text-align: left; }
@@ -594,7 +771,7 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-live-dot, .hp-lang-menu { animation: none !important; }
+    .hp-rise, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal { animation: none !important; }
     .hp-pen { animation: none !important; clip-path: none !important; }
     .hp-pen-underline path { animation: none !important; stroke-dashoffset: 0 !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost { transition: none !important; }
