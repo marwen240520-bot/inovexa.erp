@@ -7,9 +7,25 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageMenu from "@/components/ui/LanguageMenu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
+import { Poppins, Orbitron } from "next/font/google";
+
+// ─── Polices chargées par Next.js (servies depuis ton domaine) ────────────────
+// Plus de dépendance à une installation locale ni au cache du navigateur.
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-poppins",
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  display: "swap",
+  variable: "--font-orbitron",
+});
 
 // ─── Couleurs ──────────────────────────────────────────────────────────────────
-// Même style « violet immersif » que la page d'accueil, avec une variante claire.
 
 const LG_DARK: Record<string, string> = {
   "--lg-base": "#0A0614",
@@ -66,7 +82,6 @@ const LG_LIGHT: Record<string, string> = {
   "--lg-warn": "#b45309",
 };
 
-/** Variables de couleur du login pour n'importe quel thème */
 function buildLgVars(themeId: string, theme: any): Record<string, string> {
   if (themeId === "dark") return LG_DARK;
   if (themeId === "light") return LG_LIGHT;
@@ -139,43 +154,12 @@ const translations = {
   },
 };
 
-// Capture du tableau de bord utilisée en fond flouté (même images que l'accueil)
 const BG_DARK = "/images/2.png";
 const BG_LIGHT = "/images/1.png";
 
-/**
- * Choix du fond de la page de connexion — changez simplement cette valeur :
- *  "capture" : capture du tableau de bord floutée (2.png / 1.png)
- *  "aurora"  : halos violets qui bougent lentement
- *  "grid"    : grille de points avec une lueur au centre
- *  "mesh"    : dégradé violet / indigo / rose, fixe
- *  "modules" : icônes des modules en filigrane
- *  "rays"      : rayons de lumière depuis le haut
- *  "spotlight" : projecteur au centre
- *  "horizon"   : sol en grille en perspective
- *  "waves"     : vagues violettes en bas
- *  "grain"     : lueur avec grain photo
- *  "rings"     : cercles concentriques
- *  "hexagons"  : motif d'hexagones
- *  "lines"     : quadrillage fin
- *  "split"     : coupe en diagonale violet / noir
- *  "bokeh"     : bulles de lumière floues
- *  "stars"     : ciel étoilé
- *  "nebula"    : nébuleuse colorée
- *  "sunset"    : coucher de soleil violet / rose
- *  "ocean"     : indigo et bleu-vert
- *  "midnight"  : nuit sobre, presque uni
- *  "shapes"    : grandes formes floues
- *  "topo"      : lignes de niveau (carte)
- *  "checker"   : damier très doux
- *  "beam"      : faisceau qui traverse lentement
- *  "stripes"   : rayures diagonales fines
- */
 const FX_BACKGROUNDS = ["rays", "spotlight", "horizon", "waves", "grain", "rings", "hexagons", "lines", "split", "bokeh", "stars", "nebula", "sunset", "ocean", "midnight", "shapes", "topo", "checker", "beam", "stripes"] as const;
 type LoginBackground = "capture" | "aurora" | "grid" | "mesh" | "modules" | (typeof FX_BACKGROUNDS)[number];
 const BACKGROUND: LoginBackground = "horizon";
-
-const LOGO_FONT = "'Orbitron', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif";
 
 // ─── Icônes ────────────────────────────────────────────────────────────────────
 
@@ -189,7 +173,6 @@ const IconArrowLeft = () => <svg width="16" height="16" {...svgProps} strokeWidt
 const IconArrowRight = () => <svg width="17" height="17" {...svgProps} strokeWidth={2.5}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
 const IconAlert = () => <svg width="16" height="16" {...svgProps} strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>;
 
-// Icônes des modules pour le fond « modules »
 const ico = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 const MODULE_ICONS = [
   () => <svg {...ico}><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>,
@@ -230,12 +213,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
-  // Précharge le tableau de bord pendant la saisie : il s'ouvre sans attente après la connexion
   useEffect(() => {
     try { router.prefetch("/dashboard", { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
   }, [router]);
 
-  // Pré-remplit l'e-mail mémorisé lors d'une précédente connexion
   useEffect(() => {
     try {
       const saved = localStorage.getItem("remember_email");
@@ -290,8 +271,15 @@ export default function LoginPage() {
   const year = new Date().getFullYear();
 
   return (
-    <div className={"lg-root " + (isLight ? "lg-light" : "lg-dark")} style={themeVars}>
-      {/* ── Fond : capture du tableau de bord, floutée et voilée ── */}
+    <div
+      className={
+        "lg-root " +
+        (isLight ? "lg-light" : "lg-dark") +
+        // ✅ variables de polices injectées ici
+        ` ${poppins.variable} ${orbitron.variable}`
+      }
+      style={themeVars}
+    >
       {BACKGROUND === "capture" && (
         <>
           <div className="lg-bg" aria-hidden="true">
@@ -315,7 +303,7 @@ export default function LoginPage() {
           ))}
         </div>
       )}
-      {/* ── Barre du haut : retour à gauche, thème + langue à droite ── */}
+
       <div className="lg-topbar">
         <Link href="/" className="lg-back">
           <IconArrowLeft />
@@ -327,7 +315,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Contenu centré ── */}
       <main className="lg-center">
         <div className="lg-card lg-anim">
           <Link href="/" aria-label="Inovexa ERP" className="lg-brand">
@@ -431,13 +418,14 @@ export default function LoginPage() {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-// Tailles fluides (clamp) : la carte tient dans l'écran à 100 % de zoom, de 1280×720 à 1920×1080.
 
 const STYLES = `
   .lg-root {
     min-height: 100vh; min-height: 100dvh; position: relative; overflow-x: hidden;
     display: flex; flex-direction: column; align-items: center;
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--lg-text);
+    /* ✅ Poppins via variable CSS (chargée par next/font) */
+    font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--lg-text);
     background-color: var(--lg-base);
     background-image:
       radial-gradient(ellipse 55% 50% at 15% 10%, var(--lg-glow-1), transparent 60%),
@@ -448,7 +436,6 @@ const STYLES = `
   .lg-veil { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--lg-veil); }
   .lg-center, .lg-footer { position: relative; z-index: 1; }
 
-  /* Fond « aurora » : halos qui bougent lentement */
   .lg-aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
   .lg-aurora span { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .75; }
   .lg-aurora span:nth-child(1) { width: 55vw; height: 55vw; left: -12vw; top: -18vw; background: #7C3AED; animation: lgFloat1 18s ease-in-out infinite alternate; }
@@ -459,14 +446,12 @@ const STYLES = `
   @keyframes lgFloat2 { to { transform: translate(-8vw, -10vh) scale(1.15); } }
   @keyframes lgFloat3 { to { transform: translate(-14vw, 22vh) scale(.9); } }
 
-  /* Fond « grid » : grille de points + lueur */
   .lg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background-image: radial-gradient(circle at 50% 45%, rgba(124,58,237,0.38), transparent 45%), radial-gradient(var(--lg-dot, rgba(196,181,253,0.22)) 1.2px, transparent 1.2px);
     background-size: 100% 100%, 26px 26px;
     -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 40%, transparent 100%); mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 40%, transparent 100%); }
   .lg-light .lg-grid { --lg-dot: rgba(109,40,217,0.22); }
 
-  /* Fond « mesh » : dégradé fixe */
   .lg-mesh { position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background:
       radial-gradient(at 12% 18%, rgba(124,58,237,0.75) 0, transparent 45%),
@@ -475,7 +460,6 @@ const STYLES = `
       radial-gradient(at 18% 92%, rgba(56,189,248,0.25) 0, transparent 40%); }
   .lg-light .lg-mesh { opacity: .5; }
 
-  /* ── 20 fonds supplémentaires (classe lg-fx-<nom>) ── */
   .lg-fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
   .lg-fx span { position: absolute; inset: 0; }
   .lg-light .lg-fx { opacity: .5; }
@@ -507,7 +491,6 @@ const STYLES = `
   @keyframes lgBeam { 0% { transform: translateX(-45%); } 100% { transform: translateX(45%); } }
   .lg-fx-stripes { background-image: repeating-linear-gradient(135deg, rgba(196,181,253,0.07) 0 2px, transparent 2px 22px), radial-gradient(ellipse 60% 55% at 50% 45%, rgba(124,58,237,0.35), transparent 70%); }
 
-  /* Fond « modules » : icônes en filigrane */
   .lg-modules { position: fixed; inset: 0; z-index: 0; pointer-events: none; color: var(--lg-accent); }
   .lg-modules span { position: absolute; display: block; aspect-ratio: 1; opacity: .14; }
   .lg-modules svg { width: 100%; height: 100%; }
@@ -515,24 +498,21 @@ const STYLES = `
   .lg-root * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   .lg-root :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
 
-  /* ── Barre du haut ── */
   .lg-topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 60; display: flex; align-items: center; justify-content: space-between; padding: max(env(safe-area-inset-top, 0px), 16px) clamp(16px, 2.2vw, 32px) 0; pointer-events: none; }
   .lg-topbar > * { pointer-events: auto; }
   .lg-back { display: inline-flex; align-items: center; gap: 8px; color: var(--lg-muted); font-size: 14px; font-weight: 500; text-decoration: none; padding: 8px 4px; transition: color .2s; }
   .lg-back:hover { color: var(--lg-text); }
   .lg-controls { display: flex; align-items: center; gap: 10px; }
 
-  /* ── Centre ── */
   .lg-center { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: clamp(72px, 9vh, 96px) 16px clamp(16px, 3vh, 32px); }
 
-  /* ── Marque (dans la carte) ── */
   .lg-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: clamp(18px, 3vh, 26px); }
   .lg-logo { width: clamp(50px, 7vh, 64px); height: clamp(50px, 7vh, 64px); flex-shrink: 0; border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); box-shadow: 0 0 28px rgba(168,85,247,0.4); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .lg-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 8px rgba(138,43,226,0.6)); }
-  .lg-brand-name { font-family: ${LOGO_FONT}; font-weight: 800; font-size: clamp(17px, 2.3vh, 20px); letter-spacing: 2px; color: var(--lg-text); white-space: nowrap; }
+  /* ✅ Orbitron via variable */
+  .lg-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-weight: 800; font-size: clamp(17px, 2.3vh, 20px); letter-spacing: 2px; color: var(--lg-text); white-space: nowrap; }
   .lg-brand-erp { color: var(--lg-accent); font-size: 0.7em; letter-spacing: 4px; }
 
-  /* ── Carte ── */
   .lg-card { width: 100%; max-width: 440px; padding: clamp(24px, 4vh, 36px) clamp(22px, 2.6vw, 36px) clamp(20px, 3.2vh, 28px); border-radius: 24px; background: var(--lg-card-solid); border: 1px solid var(--lg-card-border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 40px 100px -30px var(--lg-card-shadow); }
   .lg-title { margin: 0 0 6px; text-align: left; font-size: clamp(24px, 3.4vh, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--lg-text); }
   .lg-welcome { margin: 0 0 clamp(18px, 3vh, 26px); text-align: left; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
@@ -567,15 +547,13 @@ const STYLES = `
 
   .lg-footer { margin: 0; padding: 0 16px max(env(safe-area-inset-bottom, 0px), clamp(14px, 2.6vh, 24px)); font-size: 12px; color: var(--lg-faint); text-align: center; }
 
-  /* ── Mobile ── */
   @media (max-width: 520px) {
     .lg-back span { display: none; }
     .lg-back { width: 40px; height: 40px; justify-content: center; border-radius: 50%; background: var(--lg-chip-bg); border: 1px solid var(--lg-chip-border); padding: 0; }
     .lg-card { border-radius: 20px; padding: 24px 20px 20px; }
-    .lg-input { font-size: 16px; } /* évite le zoom automatique sur iPhone */
+    .lg-input { font-size: 16px; }
   }
 
-  /* ── Animations ── */
   @keyframes lgFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
   @keyframes lgShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
   @keyframes lgSpin { to { transform: rotate(360deg); } }
