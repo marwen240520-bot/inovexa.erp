@@ -561,7 +561,7 @@ export default function Sidebar() {
       fontFamily: FONT_STACK,
     },
 
-    // ✅ ESPACEMENTS RÉDUITS — logo inchangé (92×92), polices inchangées
+    // ── Header : espacements réduits, logo inchangé (92×92) ──
     header: { padding: "12px 16px 2px", flexShrink: 0 },
     logoWrapper: { display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" },
     logoImage: {
@@ -597,7 +597,17 @@ export default function Sidebar() {
       gap: "5px",
       fontFamily: FONT_STACK,
     },
-    nav: { padding: "2px 10px 12px", flex: 1 },
+
+    // ✅ Fine ligne de séparation sous le header
+    headerDivider: {
+      height: "1px",
+      margin: "8px 16px 0",
+      background: `${ct.primary}26`,
+      border: "none",
+      flexShrink: 0,
+    },
+
+    nav: { padding: "8px 10px 12px", flex: 1 },
     navItem: {
       display: "flex",
       alignItems: "center",
@@ -751,6 +761,8 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
+        {/* ✅ même ligne dans le squelette pour éviter un saut visuel */}
+        <div style={styles.headerDivider} aria-hidden="true" />
       </div>
     );
   }
@@ -987,6 +999,9 @@ export default function Sidebar() {
               </div>
             </div>
           </div>
+
+          {/* ✅ Fine ligne de séparation entre header et modules */}
+          <div style={styles.headerDivider} aria-hidden="true" />
 
           <nav style={styles.nav}>
             {menuItems.map((item) => renderNavItem(item))}
