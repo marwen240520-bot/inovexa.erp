@@ -229,12 +229,16 @@ interface ThemeColors {
   primary: string;
   textSecondary: string;
   navText?: string;
+  text?: string;
   border: string;
   gradient: string;
 }
 
-// ✅ Police commune : Poppins via variable CSS (chargée dans app/layout.tsx)
+// ✅ Polices : chargées une seule fois dans app/layout.tsx via next/font/google
+//   --font-poppins  → texte courant
+//   --font-orbitron → nom de marque « INOVEXA ERP » (identique à la page login)
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), sans-serif";
 
 let sidebarCachedUser: User | null = null;
 let sidebarCachedModules: Record<string, boolean> | null = null;
@@ -453,20 +457,19 @@ export default function Sidebar() {
     primary: "#4f46e5",
     textSecondary: "#6b7280",
     navText: "#111827",
+    text: "#111827",
     border: "#e5e7eb",
     gradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
   };
 
   const ct = localTheme || defaultStyles;
   const navText = ct.navText || ct.textSecondary;
+  const brandText = ct.text || navText;
 
   const styles: Record<string, CSSProperties> = {
-    // ✅ la police est appliquée ici
     mobileBottomNav: {
       position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
+      bottom: 0, left: 0, right: 0,
       background: `${ct.surface}f7`,
       backdropFilter: "blur(20px)",
       borderTop: `1px solid ${ct.primary}26`,
@@ -555,7 +558,7 @@ export default function Sidebar() {
       flexDirection: "column",
       transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       transform: "translateX(0)",
-      fontFamily: FONT_STACK, // ✅
+      fontFamily: FONT_STACK,
     },
     header: { padding: "22px 16px 14px", flexShrink: 0 },
     logoWrapper: { display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" },
@@ -564,11 +567,22 @@ export default function Sidebar() {
       display: "block", flexShrink: 0, objectFit: "contain",
     },
     brandContainer: { flex: 1, minWidth: 0 },
+    // ✅ Même police, graisse et letter-spacing que .lg-brand-name du login
     logoTitle: {
-      fontWeight: 700,
-      fontSize: "19px",
-      letterSpacing: "-0.02em",
-      fontFamily: "var(--font-orbitron), var(--font-poppins), sans-serif", // ✅
+      fontFamily: BRAND_FONT,
+      fontWeight: 800,
+      fontSize: "17px",
+      letterSpacing: "2px",
+      lineHeight: 1.1,
+      color: brandText,
+      whiteSpace: "nowrap",
+    },
+    // ✅ Même style que .lg-brand-erp du login
+    logoErp: {
+      color: ct.primary,
+      fontSize: "0.72em",
+      letterSpacing: "4px",
+      fontWeight: 800,
     },
     logoRole: {
       fontSize: "10px",
@@ -579,7 +593,7 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       gap: "5px",
-      fontFamily: FONT_STACK, // ✅
+      fontFamily: FONT_STACK,
     },
     nav: { padding: "12px 10px", flex: 1 },
     navItem: {
@@ -595,7 +609,7 @@ export default function Sidebar() {
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       position: "relative",
       overflow: "hidden",
-      fontFamily: FONT_STACK, // ✅
+      fontFamily: FONT_STACK,
     },
     navLabel: {
       fontSize: "13.2px",
@@ -605,7 +619,7 @@ export default function Sidebar() {
       whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
-      fontFamily: FONT_STACK, // ✅
+      fontFamily: FONT_STACK,
     },
     activeIndicator: {
       position: "absolute",
@@ -629,7 +643,7 @@ export default function Sidebar() {
       fontSize: "13.2px",
       fontWeight: 400,
       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-      fontFamily: FONT_STACK, // ✅
+      fontFamily: FONT_STACK,
     },
     loadingContainer: {
       width: "280px",
@@ -664,7 +678,7 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       gap: "10px",
-      fontFamily: FONT_STACK, // ✅
+      fontFamily: FONT_STACK,
     },
   };
 
@@ -729,7 +743,10 @@ export default function Sidebar() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/logo.png" alt="" width={92} height={92} style={styles.logoImage} />
             <div style={styles.brandContainer}>
-              <div style={{ ...styles.logoTitle, color: "var(--theme-text)" }}>Inovexa ERP</div>
+              {/* ✅ même rendu que le login */}
+              <div style={styles.logoTitle}>
+                INOVEXA <span style={styles.logoErp}>ERP</span>
+              </div>
             </div>
           </div>
         </div>
@@ -948,7 +965,10 @@ export default function Sidebar() {
               </div>
 
               <div style={styles.brandContainer}>
-                <div style={styles.logoTitle}>Inovexa ERP</div>
+                {/* ✅ Même rendu que la page login : INOVEXA + ERP en accent */}
+                <div style={styles.logoTitle}>
+                  INOVEXA <span style={styles.logoErp}>ERP</span>
+                </div>
                 <div style={{
                   ...styles.logoRole,
                   color: role === "admin" ? "#d97706" : role === "transporteur" ? "#10b981" : ct.primary,
