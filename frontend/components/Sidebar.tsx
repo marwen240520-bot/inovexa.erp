@@ -20,7 +20,6 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
   </svg>
 );
 
-// Libellés des modules ajoutés après les fichiers de traduction (fr / en / es)
 const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida" },
   "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
@@ -232,11 +231,10 @@ interface ThemeColors {
   text?: string;
   border: string;
   gradient: string;
+  mode?: "light" | "dark";
 }
 
-// ✅ Polices : chargées une seule fois dans app/layout.tsx via next/font/google
-//   --font-poppins  → texte courant
-//   --font-orbitron → nom de marque « INOVEXA ERP » (identique à la page login)
+// ✅ Variables de polices chargées dans app/layout.tsx via next/font/google
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), sans-serif";
 
@@ -460,11 +458,16 @@ export default function Sidebar() {
     text: "#111827",
     border: "#e5e7eb",
     gradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+    mode: "light",
   };
 
   const ct = localTheme || defaultStyles;
   const navText = ct.navText || ct.textSecondary;
   const brandText = ct.text || navText;
+
+  // ✅ Couleurs du login (alignées sur --lg-accent selon le mode)
+  const isDarkMode = ct.mode === "dark";
+  const brandErpColor = isDarkMode ? "#C4B5FD" : "#6D28D9";
 
   const styles: Record<string, CSSProperties> = {
     mobileBottomNav: {
@@ -567,20 +570,19 @@ export default function Sidebar() {
       display: "block", flexShrink: 0, objectFit: "contain",
     },
     brandContainer: { flex: 1, minWidth: 0 },
-    // ✅ Même police, graisse et letter-spacing que .lg-brand-name du login
+    // ✅ EXACTEMENT identique à .lg-brand-name du login
     logoTitle: {
       fontFamily: BRAND_FONT,
       fontWeight: 800,
-      fontSize: "17px",
+      fontSize: "clamp(17px, 2.3vh, 20px)",
       letterSpacing: "2px",
-      lineHeight: 1.1,
       color: brandText,
       whiteSpace: "nowrap",
     },
-    // ✅ Même style que .lg-brand-erp du login
+    // ✅ EXACTEMENT identique à .lg-brand-erp du login
     logoErp: {
-      color: ct.primary,
-      fontSize: "0.72em",
+      color: brandErpColor,
+      fontSize: "0.7em",
       letterSpacing: "4px",
       fontWeight: 800,
     },
@@ -965,7 +967,7 @@ export default function Sidebar() {
               </div>
 
               <div style={styles.brandContainer}>
-                {/* ✅ Même rendu que la page login : INOVEXA + ERP en accent */}
+                {/* ✅ Même structure et même style que la page login */}
                 <div style={styles.logoTitle}>
                   INOVEXA <span style={styles.logoErp}>ERP</span>
                 </div>
