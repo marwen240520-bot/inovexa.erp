@@ -40,6 +40,18 @@ const svgBase = (size: number | string, color: string, strokeWidth = "2") => ({
   focusable: "false" as const,
 });
 
+const IconTarget = ({ size = "1.4em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /></svg>
+);
+const IconBarChart = ({ size = "1.4em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color)}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+);
+const IconShield = ({ size = "1.4em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color)}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+);
+const IconUsers = ({ size = "1.4em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color)}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+);
 const IconArrowRight = ({ size = "1.1em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
 );
@@ -87,6 +99,7 @@ interface HomeText {
   privacy: string;
   terms: string;
   langLabel: string;
+  features: { title: string; desc: string }[];
 }
 
 const LANGS: { code: Lang; label: string; flag: string }[] = [
@@ -94,6 +107,8 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "en", label: "English", flag: "gb" },
   { code: "es", label: "Español", flag: "es" },
 ];
+const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
+
 // Image de fond (placer le fichier dans public/images/3.png)
 const BG_IMAGE = "/images/3.png";
 
@@ -193,6 +208,12 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Confidentialité",
     terms: "Conditions",
     langLabel: "Choisir la langue",
+    features: [
+      { title: "Solutions intégrées", desc: "Ventes, achats, stock" },
+      { title: "Analyses temps réel", desc: "Tableaux de bord en direct" },
+      { title: "Sécurisé & fiable", desc: "Données protégées" },
+      { title: "Votre équipe", desc: "RH, finance, logistique" },
+    ],
   },
   es: {
     title: "El futuro de la gestión empresarial comienza aquí.",
@@ -289,6 +310,12 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacidad",
     terms: "Términos",
     langLabel: "Elegir idioma",
+    features: [
+      { title: "Soluciones integradas", desc: "Ventas, compras, stock" },
+      { title: "Análisis en tiempo real", desc: "Paneles en vivo" },
+      { title: "Seguro y confiable", desc: "Datos protegidos" },
+      { title: "Su equipo", desc: "RR. HH., finanzas, logística" },
+    ],
   },
   en: {
     title: "The future of business management starts here.",
@@ -385,6 +412,12 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacy",
     terms: "Terms",
     langLabel: "Choose language",
+    features: [
+      { title: "Integrated solutions", desc: "Sales, purchases, stock" },
+      { title: "Real-time insights", desc: "Live dashboards" },
+      { title: "Secure & reliable", desc: "Protected data" },
+      { title: "Empower your team", desc: "HR, finance, logistics" },
+    ],
   },
 };
 
@@ -418,8 +451,8 @@ const HP_DARK: Record<string, string> = {
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
   "--hp-text": "#1E1035",
-  "--hp-muted": "#4B4466",
-  "--hp-faint": "#6B6485",
+  "--hp-muted": "#352C55",
+  "--hp-faint": "#4B4466",
   "--hp-glass": "rgba(255,255,255,0.7)",
   "--hp-glass-border": "rgba(109,40,217,0.14)",
   "--hp-glass-line": "rgba(109,40,217,0.1)",
@@ -438,8 +471,8 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-shadow": "rgba(17,24,39,0.18)",
   "--hp-modal-bg": "rgba(255,255,255,0.99)",
   "--hp-overlay": "rgba(30,16,53,0.45)",
-  "--hp-hero-overlay": "linear-gradient(90deg, rgba(248,247,255,0.96) 0%, rgba(245,243,255,0.86) 45%, rgba(245,243,255,0.2) 100%)",
-  "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(248,247,255,0.94) 0%, rgba(245,243,255,0.86) 55%, rgba(245,243,255,0.7) 100%)",
+  "--hp-hero-overlay": "linear-gradient(90deg, rgba(248,247,255,0.88) 0%, rgba(245,243,255,0.55) 34%, rgba(245,243,255,0.08) 62%, rgba(245,243,255,0) 100%)",
+  "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(248,247,255,0.86) 0%, rgba(245,243,255,0.6) 50%, rgba(245,243,255,0.25) 100%)",
 };
 
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
@@ -449,7 +482,7 @@ function buildHpVars(themeId: string, theme: any): Record<string, string> {
   return {
     ...(light ? HP_LIGHT : HP_DARK),
     "--hp-bg": theme.background,
-    };
+  };
 }
 
 // ─── Composant principal ───────────────────────────────────────────────────────
@@ -636,6 +669,21 @@ export default function HomePage(): React.ReactElement {
             </button>
           </div>
         </div>
+
+        <ul className="hp-cards hp-rise hp-d4">
+          {text.features.map((f, i) => {
+            const Icon = FEATURE_ICONS[i];
+            return (
+              <li key={f.title} className="hp-card">
+                <span className="hp-card-icon"><Icon color="var(--hp-icon)" /></span>
+                <div className="hp-card-text">
+                  <h3 className="hp-card-title">{f.title}</h3>
+                  <p className="hp-card-desc">{f.desc}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </main>
 
       <footer className="hp-footer">
@@ -724,30 +772,38 @@ const STYLES = `
 
   /* ── Structure ── */
   .hp-header { position: relative; z-index: 10; padding: clamp(18px, 3vh, 32px) clamp(20px, 4vw, 56px); }
-  .hp-main { position: relative; z-index: 10; flex: 1; display: flex; align-items: center; padding: clamp(16px, 3vh, 40px) clamp(20px, 4vw, 56px); }
-  .hp-content { display: flex; flex-direction: column; width: 100%; max-width: 640px; }
-  .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: clamp(14px, 2.4vh, 28px) clamp(20px, 4vw, 56px); font-size: 12px; color: var(--hp-faint); }
+  .hp-main { position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: clamp(22px, 4.5vh, 48px); padding: clamp(8px, 2vh, 24px) clamp(20px, 4vw, 56px); }
+  .hp-content { display: flex; flex-direction: column; width: 100%; max-width: 780px; }
+  .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: clamp(14px, 2.4vh, 28px) clamp(20px, 4vw, 56px); font-size: 14px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
+  /* ── Cartes ── */
+  .hp-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; max-width: 1180px; }
+  .hp-card { display: flex; flex-direction: column; gap: 14px; padding: clamp(16px, 2.2vh, 24px); border-radius: 20px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .2s, border-color .2s; }
+  .hp-card:hover { transform: translateY(-3px); border-color: var(--hp-chip-border); }
+  .hp-card-icon { width: 48px; height: 48px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
+  .hp-card-title { margin: 0 0 4px; font-size: clamp(16px, 1.25vw, 19px); font-weight: 700; color: var(--hp-text); line-height: 1.25; }
+  .hp-card-desc { margin: 0; font-size: clamp(14px, 1vw, 16px); color: var(--hp-muted); line-height: 1.45; }
+
   /* ── Marque ── */
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
-  .hp-logo { width: clamp(56px, 8vh, 80px); height: clamp(56px, 8vh, 80px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .hp-logo { width: clamp(64px, 9vh, 96px); height: clamp(64px, 9vh, 96px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
-  .hp-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-size: clamp(17px, 1.45vw, 23px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
+  .hp-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-size: clamp(20px, 1.8vw, 30px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
   .hp-brand-name b { font-weight: 800; }
   .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
 
   /* ── Textes ── */
-  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.55em 1.1em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(11px, 0.85vw, 13px); font-weight: 600; margin-bottom: clamp(14px, 2.6vh, 26px); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.55em 1.1em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(14px, 1.1vw, 18px); font-weight: 600; margin-bottom: clamp(16px, 3vh, 30px); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
-  .hp-title { margin: 0 0 clamp(14px, 2.4vh, 24px); color: var(--hp-text); font-size: clamp(32px, min(4.4vw, 7.4vh), 66px); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; text-wrap: balance; }
-  .hp-subtitle { margin: 0 0 clamp(22px, 4vh, 38px); color: var(--hp-muted); font-size: clamp(15px, min(1.25vw, 2.2vh), 19px); line-height: 1.6; max-width: 520px; }
+  .hp-title { margin: 0 0 clamp(14px, 2.4vh, 24px); color: var(--hp-text); font-size: clamp(38px, min(5.4vw, 9vh), 88px); font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; text-wrap: balance; }
+  .hp-subtitle { margin: 0 0 clamp(22px, 4vh, 38px); color: var(--hp-muted); font-size: clamp(18px, min(1.6vw, 2.9vh), 26px); line-height: 1.55; max-width: 680px; }
 
   /* ── Boutons ── */
   .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
-  .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(46px, 6vh, 56px); padding: 0 clamp(20px, 1.8vw, 30px); border-radius: 999px; font-size: clamp(14px, 1vw, 16px); text-decoration: none; white-space: nowrap; }
+  .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(54px, 7.2vh, 68px); padding: 0 clamp(24px, 2.2vw, 38px); border-radius: 999px; font-size: clamp(16px, 1.2vw, 20px); text-decoration: none; white-space: nowrap; }
   .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
   .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
   .hp-cta:active { transform: translateY(0); }
@@ -763,13 +819,13 @@ const STYLES = `
   .hp-modal-close:hover { background: var(--hp-glass); }
   .hp-modal-badge { display: inline-block; padding: 0.45em 1em; margin-bottom: 16px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-accent-text); font-size: 12px; font-weight: 700; letter-spacing: 0.4px; }
   .hp-modal-title { margin: 0 0 14px; padding-right: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
-  .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 15px; line-height: 1.65; }
+  .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 16.5px; line-height: 1.65; }
   .hp-modal-section { margin-bottom: 22px; }
   .hp-modal-section:last-of-type { margin-bottom: 8px; }
-  .hp-modal-sub { margin: 22px 0 10px; font-size: 17px; font-weight: 700; color: var(--hp-text); }
+  .hp-modal-sub { margin: 22px 0 10px; font-size: 19px; font-weight: 700; color: var(--hp-text); }
   .hp-modal-section .hp-modal-sub { margin-top: 0; }
   .home-page .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin: 0 0 6px; }
-  .hp-modal-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; line-height: 1.5; color: var(--hp-text); }
+  .hp-modal-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 16px; line-height: 1.5; color: var(--hp-text); }
   .hp-modal-check { display: inline-flex; flex-shrink: 0; margin-top: 3px; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
   .hp-modal-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--hp-glass-line); }
   .hp-modal .hp-cta, .hp-modal .hp-ghost { height: 48px; padding: 0 22px; }
@@ -777,37 +833,40 @@ const STYLES = `
   @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
 
   /* ── Tablette / mobile ── */
+  .is-compact .hp-cards { grid-template-columns: repeat(2, 1fr); }
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
   .is-compact .hp-bg-img { object-position: 65% center; }
+  .is-mobile .hp-cards { grid-template-columns: 1fr; gap: 12px; }
+  .is-mobile .hp-card { flex-direction: row; align-items: center; gap: 14px; }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); }
-  .is-mobile .hp-logo { width: 52px; height: 52px; }
-  .is-mobile .hp-brand-name { font-size: 15px; letter-spacing: 1px; }
+  .is-mobile .hp-logo { width: 56px; height: 56px; }
+  .is-mobile .hp-brand-name { font-size: 17px; letter-spacing: 1px; }
   .is-mobile .hp-brand-erp { letter-spacing: 2px; }
-  .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
-  .is-mobile .hp-subtitle { font-size: 15px; }
+  .is-mobile .hp-title { font-size: clamp(34px, 9.4vw, 46px); }
+  .is-mobile .hp-subtitle { font-size: 17px; }
   .is-mobile .hp-actions { flex-direction: column; align-items: stretch; width: 100%; }
-  .is-mobile .hp-cta, .is-mobile .hp-ghost { height: 52px; font-size: 15px; }
+  .is-mobile .hp-cta, .is-mobile .hp-ghost { height: 56px; font-size: 17px; }
   .is-mobile .hp-footer { flex-direction: column-reverse; align-items: flex-start; }
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
   /* ── Sélecteur de langue ── */
-  .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 12px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
+  .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 44px; padding: 0 16px; cursor: pointer; font-size: 14px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
   .hp-chevron { display: inline-flex; transition: transform .2s; }
   .hp-chevron.open { transform: rotate(180deg); }
   .hp-lang-menu { position: absolute; top: 48px; right: 0; background: var(--hp-menu-bg); backdrop-filter: blur(20px); border: 1px solid var(--hp-chip-border); border-radius: 14px; padding: 6px !important; min-width: 150px; box-shadow: 0 20px 40px var(--hp-shadow); z-index: 201; animation: menuIn .16s ease-out; }
-  .hp-lang-item { width: 100%; background: transparent; border: none; color: var(--hp-menu-text); padding: 11px 12px; min-height: 44px; border-radius: 9px; cursor: pointer; text-align: left; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 10px; }
+  .hp-lang-item { width: 100%; background: transparent; border: none; color: var(--hp-menu-text); padding: 11px 12px; min-height: 44px; border-radius: 9px; cursor: pointer; text-align: left; font-size: 15px; font-family: inherit; display: flex; align-items: center; gap: 10px; }
   .hp-lang-item:hover { background: rgba(167,139,250,0.12); }
   .hp-lang-item.active { background: rgba(167,139,250,0.2); color: var(--hp-accent-text); font-weight: 700; }
   @keyframes menuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
   /* ── Apparition sans JavaScript ── */
   .hp-rise { animation: hpRise .55s cubic-bezier(0.22,1,0.36,1) both; }
-  .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; }
+  .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; } .hp-d4 { animation-delay: 320ms; }
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
     .hp-rise, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal { animation: none !important; }
-    .hp-cta, .hp-cta-arrow, .hp-ghost { transition: none !important; }
+    .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card { transition: none !important; }
   }
 `;
