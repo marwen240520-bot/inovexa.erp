@@ -777,9 +777,10 @@ const STYLES = `
   .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: clamp(8px, 1.6vh, 18px) clamp(20px, 4vw, 56px); font-size: 13px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .hp-light .hp-footer a { color: #000000; }
 
   /* ── Cartes ── */
-  .hp-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 1240px; }
+  .hp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 720px; }
   .hp-card { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: clamp(10px, 1.8vh, 16px) clamp(12px, 1.2vw, 18px); border-radius: 16px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .2s, border-color .2s; }
   .hp-card:hover { transform: translateY(-3px); border-color: var(--hp-chip-border); }
   .hp-card-icon { width: clamp(36px, 5.4vh, 44px); height: clamp(36px, 5.4vh, 44px); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
@@ -833,11 +834,8 @@ const STYLES = `
   @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
 
   /* ── Tablette / mobile ── */
-  .is-compact .hp-cards { grid-template-columns: repeat(2, 1fr); }
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
   .is-compact .hp-bg-img { object-position: 65% center; }
-  .is-mobile .hp-cards { grid-template-columns: 1fr; gap: 12px; }
-  .is-mobile .hp-card { flex-direction: row; align-items: center; gap: 14px; }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
@@ -851,6 +849,9 @@ const STYLES = `
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
+
+  /* Cartes : 2 × 2 (les 2 dernières sous les 2 premières) ; 1 colonne sur petit mobile */
+  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 10px; } }
 
   /* ── Sélecteur de langue ── */
   .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
