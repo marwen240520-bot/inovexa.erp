@@ -595,47 +595,47 @@ export default function HomePage(): React.ReactElement {
       <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
       <div className="hp-bg-overlay" aria-hidden="true" />
 
-      {/* En-tête : logo uniquement */}
+      {/* En-tête : logo + contrôles thème & langue */}
       <header className="hp-header">
         <div className="hp-rise">{brand}</div>
-      </header>
 
-      {/* Thème + langue — fixés en haut à droite, toujours visibles */}
-      <div className="hp-top-controls">
-        <ThemeToggle variant="home" size={isMobile ? 36 : 40} />
-        <div ref={langWrapRef} style={{ position: "relative" }}>
-          <button
-            ref={langButtonRef}
-            type="button"
-            className="hp-chip-btn"
-            aria-haspopup="listbox"
-            aria-expanded={showLanguageMenu}
-            aria-label={`${text.langLabel} — ${currentLang.label}`}
-            onClick={() => setShowLanguageMenu((v) => !v)}
-          >
-            <img src={`https://flagcdn.com/w20/${currentLang.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
-            <span style={{ fontWeight: 700, letterSpacing: 0.5 }}>{lang.toUpperCase()}</span>
-            <span className={"hp-chevron" + (showLanguageMenu ? " open" : "")}><IconChevronDown color="var(--hp-muted)" /></span>
-          </button>
+        {/* Thème + langue — dans le header, défilent avec la page */}
+        <div className="hp-top-controls">
+          <ThemeToggle variant="home" size={isMobile ? 36 : 40} />
+          <div ref={langWrapRef} style={{ position: "relative" }}>
+            <button
+              ref={langButtonRef}
+              type="button"
+              className="hp-chip-btn"
+              aria-haspopup="listbox"
+              aria-expanded={showLanguageMenu}
+              aria-label={`${text.langLabel} — ${currentLang.label}`}
+              onClick={() => setShowLanguageMenu((v) => !v)}
+            >
+              <img src={`https://flagcdn.com/w20/${currentLang.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
+              <span style={{ fontWeight: 700, letterSpacing: 0.5 }}>{lang.toUpperCase()}</span>
+              <span className={"hp-chevron" + (showLanguageMenu ? " open" : "")}><IconChevronDown color="var(--hp-muted)" /></span>
+            </button>
 
-          {showLanguageMenu && (
-            <ul role="listbox" aria-label={text.langLabel} className="hp-lang-menu">
-              {LANGS.map((l) => {
-                const active = l.code === lang;
-                return (
-                  <li key={l.code} role="option" aria-selected={active}>
-                    <button type="button" lang={l.code} className={"hp-lang-item" + (active ? " active" : "")} onClick={() => handleLanguageChange(l.code)}>
-                      <img src={`https://flagcdn.com/w20/${l.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
-                      <span style={{ flex: 1 }}>{l.label}</span>
-                      {active && <IconCheck color="var(--hp-accent-text)" />}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+            {showLanguageMenu && (
+              <ul role="listbox" aria-label={text.langLabel} className="hp-lang-menu">
+                {LANGS.map((l) => {
+                  const active = l.code === lang;
+                  return (
+                    <li key={l.code} role="option" aria-selected={active}>
+                      <button type="button" lang={l.code} className={"hp-lang-item" + (active ? " active" : "")} onClick={() => handleLanguageChange(l.code)}>
+                        <img src={`https://flagcdn.com/w20/${l.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
+                        <span style={{ flex: 1 }}>{l.label}</span>
+                        {active && <IconCheck color="var(--hp-accent-text)" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Contenu principal */}
       <main className="hp-main">
@@ -763,19 +763,26 @@ const STYLES = `
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
-  /* ── Contrôles thème + langue ── */
+  /* ── En-tête ── */
+  .hp-header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: clamp(12px, 2.4vh, 26px) clamp(20px, 4vw, 56px) 0;
+  }
+
+  /* ── Contrôles thème + langue (dans le header) ── */
   .hp-top-controls {
-    position: fixed;
-    top: calc(12px + env(safe-area-inset-top, 0px));
-    right: calc(12px + env(safe-area-inset-right, 0px));
-    z-index: 200;
     display: flex;
     align-items: center;
     gap: 10px;
-    pointer-events: auto;
+    flex-shrink: 0;
   }
 
-  /* ── Fond : image alignée à GAUCHE (décalage supplémentaire en desktop) ── */
+  /* ── Fond : image alignée à GAUCHE ── */
   .hp-bg-img {
     position: absolute;
     inset: 0;
@@ -792,7 +799,6 @@ const STYLES = `
   .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
   /* ── Structure ── */
-  .hp-header { position: relative; z-index: 10; padding: clamp(12px, 2.4vh, 26px) clamp(20px, 4vw, 56px) 0; }
   .hp-main {
     position: relative;
     z-index: 10;
@@ -884,7 +890,7 @@ const STYLES = `
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
   .is-compact .hp-bg-img { object-position: 0% center; transform: none; }
-  .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); }
+  .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); padding-left: 18px; padding-right: 18px; }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
   .is-mobile .hp-brand-erp { letter-spacing: 2px; }
@@ -894,49 +900,51 @@ const STYLES = `
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
-  /* ── Mobile : compacter fortement la page ── */
-  .is-mobile .hp-main { gap: 10px; padding-top: 4px; padding-bottom: 4px; }
+  /* ── Mobile : compacter la page mais AÉRER les espacements ── */
+  .is-mobile .hp-main {
+    gap: 18px;            /* plus d'espace entre les blocs */
+    padding-top: 16px;
+    padding-bottom: 20px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
   .is-mobile .hp-modules {
     font-size: 12px;
-    padding: 0.35em 0.8em;
-    margin-bottom: 8px;
+    padding: 0.4em 0.9em;
+    margin-bottom: 14px;  /* écart badge ↔ titre */
   }
   .is-mobile .hp-title {
     font-size: clamp(26px, 8vw, 36px);
-    margin-bottom: 8px;
+    margin-bottom: 12px;  /* écart titre ↔ sous-titre */
   }
   .is-mobile .hp-subtitle {
     font-size: 15px;
-    line-height: 1.4;
-    margin-bottom: 12px;
+    line-height: 1.45;
+    margin-bottom: 18px;  /* écart sous-titre ↔ cards */
   }
   .is-mobile .hp-cards {
-    gap: 8px;
+    gap: 12px;            /* plus d'espace entre les cartes */
   }
   .is-mobile .hp-card {
-    padding: 10px 12px;
-    gap: 10px;
+    padding: 12px 14px;
+    gap: 12px;
     border-radius: 14px;
   }
   .is-mobile .hp-card-icon {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
   }
   .is-mobile .hp-card-icon svg { width: 1.15em; height: 1.15em; }
-  .is-mobile .hp-card-title {
-    font-size: 13.5px;
-  }
-  .is-mobile .hp-card-desc {
-    font-size: 12px;
-  }
+  .is-mobile .hp-card-title { font-size: 14px; }
+  .is-mobile .hp-card-desc  { font-size: 12.5px; }
 
-  /* Actions sous les cards — sur mobile en pleine largeur */
+  /* Actions sous les cards — pleine largeur et bien espacées */
   .is-mobile .hp-actions-below {
     flex-direction: column;
     align-items: stretch;
-    margin-top: 2px;
-    gap: 8px;
+    margin-top: 10px;     /* espace cards ↔ boutons */
+    gap: 10px;
   }
   .is-mobile .hp-actions-below .hp-cta,
   .is-mobile .hp-actions-below .hp-ghost {
@@ -948,7 +956,7 @@ const STYLES = `
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
   /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
-  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
+  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 10px; } }
 
   /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
