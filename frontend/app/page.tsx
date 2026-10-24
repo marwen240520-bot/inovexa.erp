@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useResponsive } from "@/hooks/useResponsive";
 import { Poppins, Orbitron } from "next/font/google";
 
-// ─── Polices (chargées au build par Next.js, servies depuis ton domaine) ───────
+// ─── Polices ──────────────────────────────────────────────────────────────────
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -25,7 +25,6 @@ const orbitron = Orbitron({
 });
 
 // ─── Icônes SVG ────────────────────────────────────────────────────────────────
-
 type IconProps = { size?: number | string; color?: string };
 const svgBase = (size: number | string, color: string, strokeWidth = "2") => ({
   width: size,
@@ -66,7 +65,6 @@ const IconClose = ({ size = 18, color = "currentColor" }: IconProps) => (
 );
 
 // ─── Types & constantes ────────────────────────────────────────────────────────
-
 type Lang = "fr" | "en" | "es";
 
 interface AboutSection {
@@ -109,7 +107,6 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
-// Image de fond (placer le fichier dans public/images/3.png)
 const BG_IMAGE = "/images/3.png";
 
 const TRANSLATIONS: Record<Lang, HomeText> = {
@@ -486,7 +483,6 @@ function buildHpVars(themeId: string, theme: any): Record<string, string> {
 }
 
 // ─── Composant principal ───────────────────────────────────────────────────────
-
 export default function HomePage(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
@@ -604,9 +600,9 @@ export default function HomePage(): React.ReactElement {
         <div className="hp-rise">{brand}</div>
       </header>
 
-      {/* Thème + langue */}
-      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 200, display: "flex", alignItems: "center", gap: 10 }}>
-        <ThemeToggle variant="home" size={40} />
+      {/* Thème + langue — fixés en haut à droite, toujours visibles */}
+      <div className="hp-top-controls">
+        <ThemeToggle variant="home" size={isMobile ? 36 : 40} />
         <div ref={langWrapRef} style={{ position: "relative" }}>
           <button
             ref={langButtonRef}
@@ -649,26 +645,9 @@ export default function HomePage(): React.ReactElement {
             {text.modules}
           </div>
 
+          {/* Espacement renforcé entre badge modules et titre */}
           <h1 className="hp-rise hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
-
-          {/* Actions — version desktop (dans le contenu) */}
-          <div className="hp-rise hp-d3 hp-actions hp-actions-desktop">
-            <Link href={ctaHref} prefetch className="hp-cta">
-              {isLoggedIn ? text.button : text.login}
-              <span className="hp-cta-arrow"><IconArrowRight /></span>
-            </Link>
-            <button
-              ref={aboutBtnRef}
-              type="button"
-              className="hp-ghost"
-              aria-haspopup="dialog"
-              aria-expanded={showAbout}
-              onClick={() => setShowAbout(true)}
-            >
-              {text.aboutBtn}
-            </button>
-          </div>
         </div>
 
         <ul className="hp-cards hp-rise hp-d4">
@@ -686,13 +665,14 @@ export default function HomePage(): React.ReactElement {
           })}
         </ul>
 
-        {/* Actions — version mobile (sous les cartes) */}
-        <div className="hp-rise hp-d3 hp-actions hp-actions-mobile">
+        {/* Actions — désormais SOUS les cards sur tous les écrans */}
+        <div className="hp-rise hp-d3 hp-actions hp-actions-below">
           <Link href={ctaHref} prefetch className="hp-cta">
             {isLoggedIn ? text.button : text.login}
             <span className="hp-cta-arrow"><IconArrowRight /></span>
           </Link>
           <button
+            ref={aboutBtnRef}
             type="button"
             className="hp-ghost"
             aria-haspopup="dialog"
@@ -778,19 +758,52 @@ export default function HomePage(): React.ReactElement {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-
 const STYLES = `
   .home-page * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
-  /* ── Fond : image alignée à GAUCHE ── */
-  .hp-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 0% center; transform: scale(1.06) translateX(0%); transform-origin: left center; user-select: none; -webkit-user-drag: none; z-index: 0; }
+  /* ── Contrôles thème + langue ── */
+  .hp-top-controls {
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+  }
+
+  /* ── Fond : image alignée à GAUCHE (décalage supplémentaire en desktop) ── */
+  .hp-bg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 0% center;
+    transform: scale(1.06) translateX(-4%);
+    transform-origin: left center;
+    user-select: none;
+    -webkit-user-drag: none;
+    z-index: 0;
+  }
   .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
   /* ── Structure ── */
   .hp-header { position: relative; z-index: 10; padding: clamp(12px, 2.4vh, 26px) clamp(20px, 4vw, 56px) 0; }
-  .hp-main { position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: clamp(14px, 3vh, 32px); padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 56px); }
+  .hp-main {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: clamp(14px, 3vh, 32px);
+    padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 56px);
+  }
   .hp-content { display: flex; flex-direction: column; width: 100%; max-width: 920px; }
   .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: clamp(8px, 1.6vh, 18px) clamp(20px, 4vw, 56px); font-size: 14px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
@@ -814,16 +827,31 @@ const STYLES = `
   .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
 
   /* ── Textes ── */
-  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.5em 1.05em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(13px, min(1.1vw, 2.3vh), 18px); font-weight: 600; margin-bottom: clamp(10px, 2vh, 22px); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .hp-modules {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    padding: 0.5em 1.05em;
+    border-radius: 999px;
+    background: var(--hp-chip-bg);
+    border: 1px solid var(--hp-chip-border);
+    color: var(--hp-text);
+    font-size: clamp(13px, min(1.1vw, 2.3vh), 18px);
+    font-weight: 600;
+    margin-bottom: clamp(12px, 2.4vh, 26px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
   .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
   .hp-title { margin: 0 0 clamp(10px, 1.8vh, 20px); color: var(--hp-text); font-size: clamp(30px, min(4.7vw, 7.2vh), 76px); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; text-wrap: balance; }
   .hp-subtitle { margin: 0 0 clamp(14px, 2.6vh, 28px); color: var(--hp-muted); font-size: clamp(16px, min(1.5vw, 2.9vh), 24px); line-height: 1.5; max-width: 680px; }
 
   /* ── Boutons ── */
-  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
-  .hp-actions-desktop { display: flex; }
-  .hp-actions-mobile { display: none; }
+  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; width: 100%; }
+  .hp-actions-below { margin-top: 4px; }
+
   .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(48px, 6.6vh, 62px); padding: 0 clamp(22px, 2vw, 34px); border-radius: 999px; font-size: clamp(15px, min(1.2vw, 2.4vh), 20px); text-decoration: none; white-space: nowrap; }
   .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
   .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
@@ -866,32 +894,74 @@ const STYLES = `
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
-  /* ── Actions : desktop dans le contenu, mobile sous les cartes ── */
-  .is-mobile .hp-actions-desktop { display: none; }
-  .is-mobile .hp-actions-mobile {
-    display: flex;
+  /* ── Mobile : compacter fortement la page ── */
+  .is-mobile .hp-main { gap: 10px; padding-top: 4px; padding-bottom: 4px; }
+  .is-mobile .hp-modules {
+    font-size: 12px;
+    padding: 0.35em 0.8em;
+    margin-bottom: 8px;
+  }
+  .is-mobile .hp-title {
+    font-size: clamp(26px, 8vw, 36px);
+    margin-bottom: 8px;
+  }
+  .is-mobile .hp-subtitle {
+    font-size: 15px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+  .is-mobile .hp-cards {
+    gap: 8px;
+  }
+  .is-mobile .hp-card {
+    padding: 10px 12px;
+    gap: 10px;
+    border-radius: 14px;
+  }
+  .is-mobile .hp-card-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  .is-mobile .hp-card-icon svg { width: 1.15em; height: 1.15em; }
+  .is-mobile .hp-card-title {
+    font-size: 13.5px;
+  }
+  .is-mobile .hp-card-desc {
+    font-size: 12px;
+  }
+
+  /* Actions sous les cards — sur mobile en pleine largeur */
+  .is-mobile .hp-actions-below {
     flex-direction: column;
     align-items: stretch;
-    width: 100%;
-    margin-top: 4px;
+    margin-top: 2px;
+    gap: 8px;
   }
-  .is-mobile .hp-actions-mobile .hp-cta,
-  .is-mobile .hp-actions-mobile .hp-ghost { height: 52px; font-size: 16px; }
+  .is-mobile .hp-actions-below .hp-cta,
+  .is-mobile .hp-actions-below .hp-ghost {
+    height: 46px;
+    font-size: 15px;
+    width: 100%;
+  }
 
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
-  /* Cartes : 2 × 2 (les 2 dernières sous les 2 premières) ; 1 colonne sur petit mobile */
-  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 10px; } }
+  /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
+  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
 
-  /* Remonte légèrement tout le bloc (badge, titre, boutons, cartes) sur ordinateur */
+  /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
 
-  /* ── Desktop : tailles réduites du badge modules, du titre et du sous-titre ── */
+  /* ── Desktop : image plus à gauche + tailles réduites ── */
   @media (min-width: 901px) {
+    .hp-bg-img {
+      transform: scale(1.08) translateX(-8%);
+    }
     .hp-modules {
       font-size: clamp(12px, min(0.95vw, 2vh), 15px);
       padding: 0.42em 0.95em;
-      margin-bottom: clamp(8px, 1.6vh, 16px);
+      margin-bottom: clamp(14px, 2.6vh, 26px);
     }
     .hp-title {
       font-size: clamp(28px, min(4vw, 6.2vh), 60px);
@@ -902,10 +972,14 @@ const STYLES = `
       max-width: 620px;
       margin-bottom: clamp(12px, 2.2vh, 24px);
     }
+    .hp-actions-below {
+      margin-top: 2px;
+    }
   }
 
   /* ── Sélecteur de langue ── */
   .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
+  .is-mobile .hp-chip-btn { height: 36px; padding: 0 10px; font-size: 12px; }
   .hp-chevron { display: inline-flex; transition: transform .2s; }
   .hp-chevron.open { transform: rotate(180deg); }
   .hp-lang-menu { position: absolute; top: 48px; right: 0; background: var(--hp-menu-bg); backdrop-filter: blur(20px); border: 1px solid var(--hp-chip-border); border-radius: 14px; padding: 6px !important; min-width: 150px; box-shadow: 0 20px 40px var(--hp-shadow); z-index: 201; animation: menuIn .16s ease-out; }
