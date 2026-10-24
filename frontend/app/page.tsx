@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useResponsive } from "@/hooks/useResponsive";
-import { Caveat, Poppins, Orbitron } from "next/font/google";
+import { Poppins, Orbitron } from "next/font/google";
 
 // ─── Polices (chargées au build par Next.js, servies depuis ton domaine) ───────
 const poppins = Poppins({
@@ -22,13 +22,6 @@ const orbitron = Orbitron({
   weight: ["700", "800", "900"],
   display: "swap",
   variable: "--font-orbitron",
-});
-
-const handwriting = Caveat({
-  subsets: ["latin"],
-  weight: ["500", "700"],
-  display: "swap",
-  variable: "--font-caveat",
 });
 
 // ─── Icônes SVG ────────────────────────────────────────────────────────────────
@@ -47,18 +40,6 @@ const svgBase = (size: number | string, color: string, strokeWidth = "2") => ({
   focusable: "false" as const,
 });
 
-const IconTarget = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /></svg>
-);
-const IconBarChart = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
-);
-const IconShield = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-);
-const IconUsers = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-);
 const IconArrowRight = ({ size = "1.1em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
 );
@@ -70,15 +51,6 @@ const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
 );
 const IconClose = ({ size = 18, color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-);
-const IconMonitor = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><rect x="2" y="4" width="20" height="13" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
-);
-const IconPhone = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><rect x="7" y="2" width="10" height="20" rx="2" /><line x1="11" y1="18" x2="13" y2="18" /></svg>
-);
-const IconGlobe = ({ size = "1.15em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20z" /></svg>
 );
 
 // ─── Types & constantes ────────────────────────────────────────────────────────
@@ -115,11 +87,6 @@ interface HomeText {
   privacy: string;
   terms: string;
   langLabel: string;
-  previewAlt: string;
-  previewTitle: string;
-  previewText: string;
-  devices: [string, string, string];
-  features: { title: string; desc: string }[];
 }
 
 const LANGS: { code: Lang; label: string; flag: string }[] = [
@@ -127,13 +94,8 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "en", label: "English", flag: "gb" },
   { code: "es", label: "Español", flag: "es" },
 ];
-const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
-const DEVICE_ICONS = [IconMonitor, IconPhone, IconGlobe];
-
-const LEFT_WIDTH = "40%";
-const RIGHT_WIDTH = "60%";
-const PREVIEW_DARK = "/images/2.png";
-const PREVIEW_LIGHT = "/images/1.png";
+// Image de fond (placer le fichier dans public/images/3.png)
+const BG_IMAGE = "/images/3.png";
 
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
@@ -231,16 +193,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Confidentialité",
     terms: "Conditions",
     langLabel: "Choisir la langue",
-    previewAlt: "Aperçu du tableau de bord Inovexa ERP",
-    previewTitle: "Votre ERP, partout avec vous.",
-    previewText: "Au bureau, en déplacement ou sur le terrain : accédez à vos données depuis n'importe quel appareil.",
-    devices: ["Ordinateur", "Mobile", "FR · EN · ES"],
-    features: [
-      { title: "Solutions intégrées", desc: "Ventes, achats, stock" },
-      { title: "Analyses temps réel", desc: "Tableaux de bord en direct" },
-      { title: "Sécurisé & fiable", desc: "Données protégées" },
-      { title: "Votre équipe", desc: "RH, finance, logistique" },
-    ],
   },
   es: {
     title: "El futuro de la gestión empresarial comienza aquí.",
@@ -337,16 +289,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacidad",
     terms: "Términos",
     langLabel: "Elegir idioma",
-    previewAlt: "Vista previa del panel de Inovexa ERP",
-    previewTitle: "Su ERP, siempre con usted.",
-    previewText: "En la oficina, de viaje o sobre el terreno: acceda a sus datos desde cualquier dispositivo.",
-    devices: ["Ordenador", "Móvil", "FR · EN · ES"],
-    features: [
-      { title: "Soluciones integradas", desc: "Ventas, compras, stock" },
-      { title: "Análisis en tiempo real", desc: "Paneles en vivo" },
-      { title: "Seguro & confiable", desc: "Datos protegidos" },
-      { title: "Su equipo", desc: "RR. HH., finanzas, logística" },
-    ],
   },
   en: {
     title: "The future of business management starts here.",
@@ -443,16 +385,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacy",
     terms: "Terms",
     langLabel: "Choose language",
-    previewAlt: "Inovexa ERP dashboard preview",
-    previewTitle: "Your ERP, wherever you are.",
-    previewText: "At the office, on the road or in the field: reach your data from any device.",
-    devices: ["Desktop", "Mobile", "FR · EN · ES"],
-    features: [
-      { title: "Integrated solutions", desc: "Sales, purchases, stock" },
-      { title: "Real-time insights", desc: "Live dashboards" },
-      { title: "Secure & reliable", desc: "Protected data" },
-      { title: "Empower your team", desc: "HR, finance, logistics" },
-    ],
   },
 };
 
@@ -462,9 +394,6 @@ const HP_DARK: Record<string, string> = {
   "--hp-text": "#ffffff",
   "--hp-muted": "rgba(233,227,255,0.75)",
   "--hp-faint": "rgba(233,227,255,0.6)",
-  "--hp-left-base": "#0A0614",
-  "--hp-left-glow-1": "rgba(124,58,237,0.55)",
-  "--hp-left-glow-2": "rgba(79,70,229,0.4)",
   "--hp-glass": "rgba(255,255,255,0.06)",
   "--hp-glass-border": "rgba(255,255,255,0.12)",
   "--hp-glass-line": "rgba(255,255,255,0.08)",
@@ -483,23 +412,14 @@ const HP_DARK: Record<string, string> = {
   "--hp-shadow": "rgba(0,0,0,0.7)",
   "--hp-modal-bg": "rgba(16,10,30,0.97)",
   "--hp-overlay": "rgba(0,0,0,0.65)",
-  "--hp-right-bg": "#05040a",
-  "--hp-right-glow": "rgba(124,58,237,0.28)",
-  "--hp-laptop-body": "linear-gradient(180deg, #2a2733, #16141d)",
-  "--hp-laptop-base": "linear-gradient(180deg, #3a3646, #1c1a24)",
-  "--hp-laptop-edge": "rgba(255,255,255,0.14)",
-  "--hp-laptop-cam": "#3a3646",
-  "--hp-laptop-notch": "#14121a",
-  "--hp-laptop-floor": "rgba(0,0,0,0.6)",
+  "--hp-hero-overlay": "linear-gradient(90deg, rgba(10,6,20,0.95) 0%, rgba(30,12,70,0.82) 45%, rgba(10,6,20,0.25) 100%)",
+  "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(10,6,20,0.9) 0%, rgba(30,12,70,0.8) 55%, rgba(10,6,20,0.6) 100%)",
 };
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
   "--hp-text": "#1E1035",
   "--hp-muted": "#4B4466",
   "--hp-faint": "#6B6485",
-  "--hp-left-base": "#F5F3FF",
-  "--hp-left-glow-1": "rgba(167,139,250,0.45)",
-  "--hp-left-glow-2": "rgba(129,140,248,0.3)",
   "--hp-glass": "rgba(255,255,255,0.7)",
   "--hp-glass-border": "rgba(109,40,217,0.14)",
   "--hp-glass-line": "rgba(109,40,217,0.1)",
@@ -518,14 +438,8 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-shadow": "rgba(17,24,39,0.18)",
   "--hp-modal-bg": "rgba(255,255,255,0.99)",
   "--hp-overlay": "rgba(30,16,53,0.45)",
-  "--hp-right-bg": "#f8f7ff",
-  "--hp-right-glow": "rgba(167,139,250,0.3)",
-  "--hp-laptop-body": "linear-gradient(180deg, #e9e6f2, #d6d2e2)",
-  "--hp-laptop-base": "linear-gradient(180deg, #dcd8e8, #bdb7cf)",
-  "--hp-laptop-edge": "rgba(46,16,101,0.18)",
-  "--hp-laptop-cam": "#a9a3bd",
-  "--hp-laptop-notch": "#b1abc6",
-  "--hp-laptop-floor": "rgba(46,16,101,0.25)",
+  "--hp-hero-overlay": "linear-gradient(90deg, rgba(248,247,255,0.96) 0%, rgba(245,243,255,0.86) 45%, rgba(245,243,255,0.2) 100%)",
+  "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(248,247,255,0.94) 0%, rgba(245,243,255,0.86) 55%, rgba(245,243,255,0.7) 100%)",
 };
 
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
@@ -535,8 +449,7 @@ function buildHpVars(themeId: string, theme: any): Record<string, string> {
   return {
     ...(light ? HP_LIGHT : HP_DARK),
     "--hp-bg": theme.background,
-    "--hp-right-bg": theme.background,
-  };
+    };
 }
 
 // ─── Composant principal ───────────────────────────────────────────────────────
@@ -559,13 +472,6 @@ export default function HomePage(): React.ReactElement {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const [shotRatio, setShotRatio] = useState(16 / 10);
-  const shotRef = useRef<HTMLImageElement>(null);
-  const readShotRatio = useCallback(() => {
-    const img = shotRef.current;
-    if (img && img.naturalWidth > 0 && img.naturalHeight > 0) setShotRatio(img.naturalWidth / img.naturalHeight);
-  }, []);
-  useEffect(() => { if (shotRef.current?.complete) readShotRatio(); }, [isLight, readShotRatio]);
   const langWrapRef = useRef<HTMLDivElement>(null);
   const langButtonRef = useRef<HTMLButtonElement>(null);
   const aboutBtnRef = useRef<HTMLButtonElement>(null);
@@ -643,21 +549,29 @@ export default function HomePage(): React.ReactElement {
         (isCompact ? " is-compact" : "") +
         (isMobile ? " is-mobile" : "") +
         " " +
-        `${poppins.variable} ${orbitron.variable} ${handwriting.variable}`
+        `${poppins.variable} ${orbitron.variable}`
       }
       style={{
         ...themeVars,
         minHeight: "100dvh",
         background: "var(--hp-bg)",
         display: "flex",
-        flexDirection: isCompact ? "column" : "row",
+        flexDirection: "column",
         overflow: "hidden",
         fontFamily: "var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif",
         position: "relative",
       }}
     >
-      {isMobile && <header className="mobile-header">{brand}</header>}
+      {/* Image de fond + dégradé de lisibilité */}
+      <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
+      <div className="hp-bg-overlay" aria-hidden="true" />
 
+      {/* En-tête : logo uniquement */}
+      <header className="hp-header">
+        <div className="hp-rise">{brand}</div>
+      </header>
+
+      {/* Thème + langue */}
       <div style={{ position: "fixed", top: 16, right: 16, zIndex: 200, display: "flex", alignItems: "center", gap: 10 }}>
         <ThemeToggle variant="home" size={40} />
         <div ref={langWrapRef} style={{ position: "relative" }}>
@@ -694,10 +608,9 @@ export default function HomePage(): React.ReactElement {
         </div>
       </div>
 
-      <main className="hp-left" style={{ width: isCompact ? "100%" : LEFT_WIDTH }}>
-        {!isMobile && <div className="hp-rise">{brand}</div>}
-
-        <div className="hp-left-body">
+      {/* Contenu principal */}
+      <main className="hp-main">
+        <div className="hp-content">
           <div className="hp-rise hp-d1 hp-modules">
             <span className="hp-live-dot" aria-hidden="true" />
             {text.modules}
@@ -722,62 +635,16 @@ export default function HomePage(): React.ReactElement {
               {text.aboutBtn}
             </button>
           </div>
-
-          <ul className="hp-glass-list hp-rise hp-d4">
-            {text.features.map((f, i) => {
-              const Icon = FEATURE_ICONS[i];
-              return (
-                <li key={f.title} className="hp-glass-row">
-                  <Icon color="var(--hp-icon)" />
-                  <span className="hp-glass-title">{f.title}</span>
-                  <span className="hp-glass-desc">{f.desc}</span>
-                </li>
-              );
-            })}
-          </ul>
         </div>
-
-        <footer className="hp-footer">
-          <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa ERP. {text.copyright}</p>
-          <nav aria-label="Legal" style={{ display: "flex", gap: 16 }}>
-            <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
-            <a href="https://inovexa-erp.com/terms.html" target="_blank" rel="noopener noreferrer">{text.terms}</a>
-          </nav>
-        </footer>
       </main>
 
-      {!isMobile && (
-        <aside className="hp-right" style={{ width: isTablet ? "100%" : RIGHT_WIDTH }}>
-          <div className="hp-pc" style={{ ["--shot-ratio" as any]: shotRatio }}>
-            <div className="hp-pc-screen">
-              <img
-                key={isLight ? "light" : "dark"}
-                src={isLight ? PREVIEW_LIGHT : PREVIEW_DARK}
-                alt={text.previewAlt}
-                draggable={false}
-                ref={shotRef}
-                onLoad={readShotRatio}
-                decoding="async"
-              />
-            </div>
-            <div className="hp-pc-stand" aria-hidden="true" />
-            <div className="hp-pc-shadow" aria-hidden="true" />
-          </div>
-          <div className={"hp-right-text " + handwriting.className}>
-            <h2 className="hp-right-title hp-pen hp-pen-1">{text.previewTitle}</h2>
-            <svg className="hp-pen-underline" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M3 9 C 60 3, 110 12, 160 7 S 250 3, 297 8" />
-            </svg>
-            <p className="hp-right-sub hp-pen hp-pen-2">{text.previewText}</p>
-            <ul className="hp-devices">
-              {text.devices.map((d, i) => {
-                const Icon = DEVICE_ICONS[i];
-                return <li key={d}><Icon color="var(--hp-icon)" />{d}</li>;
-              })}
-            </ul>
-          </div>
-        </aside>
-      )}
+      <footer className="hp-footer">
+        <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa ERP. {text.copyright}</p>
+        <nav aria-label="Legal" style={{ display: "flex", gap: 16 }}>
+          <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
+          <a href="https://inovexa-erp.com/terms.html" target="_blank" rel="noopener noreferrer">{text.terms}</a>
+        </nav>
+      </footer>
 
       {showAbout && (
         <div className="hp-overlay" onClick={closeAbout}>
@@ -851,40 +718,35 @@ const STYLES = `
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
-  /* ── Panneau gauche ── */
-  .hp-left {
-    display: flex; flex-direction: column; justify-content: space-between; gap: clamp(16px, 3vh, 32px);
-    position: relative; z-index: 10; min-height: 100vh;
-    padding: clamp(22px, 4vh, 44px) clamp(28px, 3.4vw, 64px) clamp(18px, 3vh, 32px);
-    background-color: var(--hp-left-base);
-    background-image:
-      radial-gradient(ellipse 80% 60% at 0% 0%, var(--hp-left-glow-1), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 100% 100%, var(--hp-left-glow-2), transparent 60%);
-  }
-  .hp-left-body { display: flex; flex-direction: column; max-width: 560px; }
+  /* ── Fond ── */
+  .hp-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% center; user-select: none; -webkit-user-drag: none; z-index: 0; }
+  .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
+
+  /* ── Structure ── */
+  .hp-header { position: relative; z-index: 10; padding: clamp(18px, 3vh, 32px) clamp(20px, 4vw, 56px); }
+  .hp-main { position: relative; z-index: 10; flex: 1; display: flex; align-items: center; padding: clamp(16px, 3vh, 40px) clamp(20px, 4vw, 56px); }
+  .hp-content { display: flex; flex-direction: column; width: 100%; max-width: 640px; }
+  .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: clamp(14px, 2.4vh, 28px) clamp(20px, 4vw, 56px); font-size: 12px; color: var(--hp-faint); }
+  .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
+  .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
   /* ── Marque ── */
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
-  .hp-logo { width: clamp(60px, 8.6vh, 88px); height: clamp(60px, 8.6vh, 88px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .hp-logo { width: clamp(56px, 8vh, 80px); height: clamp(56px, 8vh, 80px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
   .hp-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-size: clamp(17px, 1.45vw, 23px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
   .hp-brand-name b { font-weight: 800; }
   .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
 
-  /* ── En-tête mobile ── */
-  .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: 72px; background: var(--hp-header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--hp-glass-line); display: flex; align-items: center; z-index: 150; padding: 0 16px; padding-top: env(safe-area-inset-top); }
-  .mobile-header .hp-logo { width: 56px; height: 56px; }
-  .mobile-header .hp-brand-name { font-size: 17px; }
-
   /* ── Textes ── */
-  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.55em 1.1em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(11px, 0.85vw, 13px); font-weight: 600; margin-bottom: clamp(14px, 2.6vh, 26px); }
+  .hp-modules { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 0.55em 1.1em; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); font-size: clamp(11px, 0.85vw, 13px); font-weight: 600; margin-bottom: clamp(14px, 2.6vh, 26px); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
-  .hp-title { margin: 0 0 clamp(12px, 2.2vh, 22px); color: var(--hp-text); font-size: clamp(28px, min(3.15vw, 5.8vh), 56px); font-weight: 700; line-height: 1.07; letter-spacing: -0.03em; text-wrap: balance; }
-  .hp-subtitle { margin: 0 0 clamp(18px, 3.4vh, 34px); color: var(--hp-muted); font-size: clamp(14px, min(1.1vw, 1.95vh), 17px); line-height: 1.6; max-width: 480px; }
+  .hp-title { margin: 0 0 clamp(14px, 2.4vh, 24px); color: var(--hp-text); font-size: clamp(32px, min(4.4vw, 7.4vh), 66px); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; text-wrap: balance; }
+  .hp-subtitle { margin: 0 0 clamp(22px, 4vh, 38px); color: var(--hp-muted); font-size: clamp(15px, min(1.25vw, 2.2vh), 19px); line-height: 1.6; max-width: 520px; }
 
   /* ── Boutons ── */
-  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: clamp(16px, 3.6vh, 40px); }
+  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
   .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(46px, 6vh, 56px); padding: 0 clamp(20px, 1.8vw, 30px); border-radius: 999px; font-size: clamp(14px, 1vw, 16px); text-decoration: none; white-space: nowrap; }
   .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
   .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
@@ -893,47 +755,6 @@ const STYLES = `
   .hp-cta:hover .hp-cta-arrow { transform: translateX(3px); }
   .hp-ghost { background: transparent; border: 1px solid var(--hp-ghost-border); color: var(--hp-text) !important; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .2s; }
   .hp-ghost:hover { background: var(--hp-glass); }
-
-  /* ── Liste en verre ── */
-  .hp-glass-list { display: flex; flex-direction: column; border-radius: 16px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); max-width: 540px; font-size: clamp(13px, 0.95vw, 15px); }
-  .hp-glass-row { display: flex; align-items: center; gap: 0.9em; padding: clamp(8px, 1.35vh, 15px) 1.2em; border-bottom: 1px solid var(--hp-glass-line); }
-  .hp-glass-row:last-child { border-bottom: none; }
-  .hp-glass-row svg { flex-shrink: 0; }
-  .hp-glass-title { flex: 1; font-weight: 600; color: var(--hp-text); }
-  .hp-glass-desc { font-size: 0.88em; color: var(--hp-muted); text-align: right; }
-
-  /* ── Pied de page ── */
-  .hp-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 12px; color: var(--hp-faint); }
-  .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
-  .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-  /* ── Côté droit ── */
-  .hp-right {
-    flex-shrink: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: clamp(18px, 3.2vh, 32px); padding: clamp(72px, 10vh, 100px) clamp(28px, 3.6vw, 64px) clamp(24px, 5vh, 56px);
-    border-left: 1px solid rgba(139,92,246,0.18);
-    background-color: var(--hp-right-bg);
-    background-image: radial-gradient(ellipse 70% 40% at 50% 0%, var(--hp-right-glow), transparent 70%);
-  }
-  .hp-pc { width: min(100%, calc(50vh * var(--shot-ratio, 1.6))); display: flex; flex-direction: column; align-items: center; flex-shrink: 1; min-height: 0; }
-  .hp-pc-screen { width: 100%; padding: clamp(10px, 1.1vw, 18px); border-radius: clamp(16px, 1.4vw, 22px); background: var(--hp-laptop-body); border: 1px solid var(--hp-laptop-edge); box-shadow: 0 40px 90px -30px var(--hp-cta-shadow); line-height: 0; }
-  .hp-pc-screen img { display: block; width: 100%; height: auto; border-radius: 10px; user-select: none; -webkit-user-drag: none; }
-  .hp-pc-stand { width: 26%; height: clamp(34px, 6.5vh, 70px); margin-top: -1px; background: var(--hp-laptop-base); clip-path: polygon(38% 0, 62% 0, 76% 82%, 100% 92%, 100% 100%, 0 100%, 0 92%, 24% 82%); }
-  .hp-pc-shadow { width: 40%; height: 18px; margin-top: 2px; border-radius: 50%; background: radial-gradient(ellipse, var(--hp-laptop-floor), transparent 70%); }
-  .hp-right-text { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; flex-shrink: 0; font-family: var(--font-caveat), cursive; }
-  .hp-right-title { margin: 0; color: var(--hp-text); font-size: clamp(30px, min(3vw, 5vh), 46px); font-weight: 700; line-height: 1.1; text-wrap: balance; transform: rotate(-1.2deg); }
-  .hp-right-sub { margin: 0 0 clamp(12px, 2vh, 20px); color: var(--hp-muted); font-size: clamp(19px, min(1.5vw, 2.6vh), 24px); font-weight: 500; line-height: 1.35; max-width: 600px; transform: rotate(-0.6deg); }
-  .hp-devices { font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif; }
-
-  .hp-pen { clip-path: inset(0 100% 0 0); animation: hpWrite 1.6s cubic-bezier(.45,.05,.35,1) forwards; }
-  .hp-pen-1 { animation-delay: .35s; }
-  .hp-pen-2 { animation-delay: 1.9s; animation-duration: 2.4s; }
-  @keyframes hpWrite { to { clip-path: inset(0 -2% 0 0); } }
-  .hp-pen-underline { width: min(70%, 360px); height: 14px; margin: 2px 0 10px; overflow: visible; }
-  .hp-pen-underline path { fill: none; stroke: var(--hp-icon); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 320; stroke-dashoffset: 320; animation: hpDraw .9s ease-out 1.75s forwards; }
-  @keyframes hpDraw { to { stroke-dashoffset: 0; } }
-  .hp-devices { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: clamp(12.5px, 0.9vw, 14px); font-weight: 600; color: var(--hp-text); }
-  .hp-devices li { display: inline-flex; align-items: center; gap: 7px; }
 
   /* ── Fenêtre « À propos » ── */
   .hp-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--hp-overlay); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: overlayIn .2s ease-out; }
@@ -956,21 +777,19 @@ const STYLES = `
   @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
 
   /* ── Tablette / mobile ── */
-  .is-compact .hp-left { min-height: auto; }
-  .is-compact .hp-right { height: auto; border-left: none; border-top: 1px solid rgba(139,92,246,0.18); padding: 40px 24px; }
-  .is-compact .hp-pc { width: min(100%, 720px, calc(60vh * var(--shot-ratio, 1.6))); }
-  .is-mobile .hp-left { min-height: 100dvh; justify-content: flex-start; gap: 0; padding: 100px 20px 28px; }
+  .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
+  .is-compact .hp-bg-img { object-position: 65% center; }
+  .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); }
+  .is-mobile .hp-logo { width: 52px; height: 52px; }
+  .is-mobile .hp-brand-name { font-size: 15px; letter-spacing: 1px; }
+  .is-mobile .hp-brand-erp { letter-spacing: 2px; }
   .is-mobile .hp-title { font-size: clamp(30px, 8.6vw, 40px); }
   .is-mobile .hp-subtitle { font-size: 15px; }
-  .is-mobile .hp-actions { flex-direction: column; align-items: stretch; }
+  .is-mobile .hp-actions { flex-direction: column; align-items: stretch; width: 100%; }
   .is-mobile .hp-cta, .is-mobile .hp-ghost { height: 52px; font-size: 15px; }
-  .is-mobile .hp-footer { margin-top: 32px; flex-direction: column-reverse; align-items: flex-start; }
+  .is-mobile .hp-footer { flex-direction: column-reverse; align-items: flex-start; }
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
-  @media (max-width: 420px) {
-    .hp-glass-row { flex-wrap: wrap; row-gap: 2px; }
-    .hp-glass-desc { flex-basis: 100%; padding-left: 2em; text-align: left; }
-  }
 
   /* ── Sélecteur de langue ── */
   .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 12px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
@@ -984,13 +803,11 @@ const STYLES = `
 
   /* ── Apparition sans JavaScript ── */
   .hp-rise { animation: hpRise .55s cubic-bezier(0.22,1,0.36,1) both; }
-  .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; } .hp-d4 { animation-delay: 320ms; }
+  .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; }
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
     .hp-rise, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal { animation: none !important; }
-    .hp-pen { animation: none !important; clip-path: none !important; }
-    .hp-pen-underline path { animation: none !important; stroke-dashoffset: 0 !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost { transition: none !important; }
   }
 `;
