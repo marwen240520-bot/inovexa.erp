@@ -784,8 +784,8 @@ const STYLES = `
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
-  /* ── Fond ── */
-  .hp-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 100% center; transform: scale(1.06) translateX(0%); transform-origin: right center; user-select: none; -webkit-user-drag: none; z-index: 0; }
+  /* ── Fond : image alignée à GAUCHE ── */
+  .hp-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 0% center; transform: scale(1.06) translateX(0%); transform-origin: left center; user-select: none; -webkit-user-drag: none; z-index: 0; }
   .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
   /* ── Structure ── */
@@ -855,7 +855,7 @@ const STYLES = `
 
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
-  .is-compact .hp-bg-img { object-position: 100% center; transform: none; }
+  .is-compact .hp-bg-img { object-position: 0% center; transform: none; }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
