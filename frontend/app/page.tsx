@@ -442,7 +442,7 @@ const HP_DARK: Record<string, string> = {
   "--hp-shadow": "rgba(0,0,0,0.7)",
   "--hp-modal-bg": "rgba(16,10,30,0.97)",
   "--hp-overlay": "rgba(0,0,0,0.65)",
-  "--hp-hero-overlay": "linear-gradient(90deg, rgba(10,6,20,0.15) 0%, rgba(10,6,20,0.55) 42%, rgba(10,6,20,0.92) 78%, #000000 100%)",
+  "--hp-hero-overlay": "linear-gradient(90deg, rgba(10,6,20,0.95) 0%, rgba(30,12,70,0.82) 45%, rgba(10,6,20,0.25) 100%)",
   "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(10,6,20,0.9) 0%, rgba(30,12,70,0.8) 55%, rgba(10,6,20,0.6) 100%)",
 };
 const HP_LIGHT: Record<string, string> = {
@@ -468,7 +468,7 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-shadow": "rgba(17,24,39,0.18)",
   "--hp-modal-bg": "rgba(255,255,255,0.99)",
   "--hp-overlay": "rgba(30,16,53,0.45)",
-  "--hp-hero-overlay": "linear-gradient(90deg, rgba(248,247,255,0.1) 0%, rgba(248,247,255,0.5) 40%, rgba(248,247,255,0.92) 75%, #f8f7ff 100%)",
+  "--hp-hero-overlay": "linear-gradient(90deg, rgba(248,247,255,0.88) 0%, rgba(245,243,255,0.55) 34%, rgba(245,243,255,0.08) 62%, rgba(245,243,255,0) 100%)",
   "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(248,247,255,0.86) 0%, rgba(245,243,255,0.6) 50%, rgba(245,243,255,0.25) 100%)",
 };
 
@@ -591,10 +591,8 @@ export default function HomePage(): React.ReactElement {
         position: "relative",
       }}
     >
-      {/* Image 3.png positionnée à GAUCHE de l'écran */}
-      <div className="hp-bg-media" aria-hidden="true">
-        <img className="hp-bg-img" src={BG_IMAGE} alt="" draggable={false} decoding="async" />
-      </div>
+      {/* Image de fond + dégradé de lisibilité */}
+      <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
       <div className="hp-bg-overlay" aria-hidden="true" />
 
       {/* En-tête : logo uniquement */}
@@ -639,7 +637,7 @@ export default function HomePage(): React.ReactElement {
         </div>
       </div>
 
-      {/* Contenu principal — aligné à DROITE en desktop pour laisser l'image à gauche */}
+      {/* Contenu principal */}
       <main className="hp-main">
         <div className="hp-content">
           <div className="hp-rise hp-d1 hp-modules">
@@ -647,41 +645,42 @@ export default function HomePage(): React.ReactElement {
             {text.modules}
           </div>
 
+          {/* Espacement renforcé entre badge modules et titre */}
           <h1 className="hp-rise hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
+        </div>
 
-          <ul className="hp-cards hp-rise hp-d4">
-            {text.features.map((f, i) => {
-              const Icon = FEATURE_ICONS[i];
-              return (
-                <li key={f.title} className="hp-card">
-                  <span className="hp-card-icon"><Icon color="var(--hp-icon)" /></span>
-                  <div className="hp-card-text">
-                    <h3 className="hp-card-title">{f.title}</h3>
-                    <p className="hp-card-desc">{f.desc}</p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+        <ul className="hp-cards hp-rise hp-d4">
+          {text.features.map((f, i) => {
+            const Icon = FEATURE_ICONS[i];
+            return (
+              <li key={f.title} className="hp-card">
+                <span className="hp-card-icon"><Icon color="var(--hp-icon)" /></span>
+                <div className="hp-card-text">
+                  <h3 className="hp-card-title">{f.title}</h3>
+                  <p className="hp-card-desc">{f.desc}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
 
-          {/* Actions — sous les cards */}
-          <div className="hp-rise hp-d3 hp-actions hp-actions-below">
-            <Link href={ctaHref} prefetch className="hp-cta">
-              {isLoggedIn ? text.button : text.login}
-              <span className="hp-cta-arrow"><IconArrowRight /></span>
-            </Link>
-            <button
-              ref={aboutBtnRef}
-              type="button"
-              className="hp-ghost"
-              aria-haspopup="dialog"
-              aria-expanded={showAbout}
-              onClick={() => setShowAbout(true)}
-            >
-              {text.aboutBtn}
-            </button>
-          </div>
+        {/* Actions — désormais SOUS les cards sur tous les écrans */}
+        <div className="hp-rise hp-d3 hp-actions hp-actions-below">
+          <Link href={ctaHref} prefetch className="hp-cta">
+            {isLoggedIn ? text.button : text.login}
+            <span className="hp-cta-arrow"><IconArrowRight /></span>
+          </Link>
+          <button
+            ref={aboutBtnRef}
+            type="button"
+            className="hp-ghost"
+            aria-haspopup="dialog"
+            aria-expanded={showAbout}
+            onClick={() => setShowAbout(true)}
+          >
+            {text.aboutBtn}
+          </button>
         </div>
       </main>
 
@@ -764,7 +763,7 @@ const STYLES = `
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
-  /* ── Contrôles thème + langue (fixés) ── */
+  /* ── Contrôles thème + langue ── */
   .hp-top-controls {
     position: fixed;
     top: calc(12px + env(safe-area-inset-top, 0px));
@@ -776,33 +775,21 @@ const STYLES = `
     pointer-events: auto;
   }
 
-  /* ── Image 3.png : placée À GAUCHE de l'écran ── */
-  .hp-bg-media {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 60%;
-    z-index: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
+  /* ── Fond : image alignée à GAUCHE (décalage supplémentaire en desktop) ── */
   .hp-bg-img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: left center;
+    object-position: 0% center;
+    transform: scale(1.06) translateX(-4%);
+    transform-origin: left center;
     user-select: none;
     -webkit-user-drag: none;
-    display: block;
+    z-index: 0;
   }
-  /* Dégradé horizontal : transparent à gauche (sur l'image), opaque à droite (zone texte) */
-  .hp-bg-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: var(--hp-hero-overlay);
-  }
+  .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
   /* ── Structure ── */
   .hp-header { position: relative; z-index: 10; padding: clamp(12px, 2.4vh, 26px) clamp(20px, 4vw, 56px) 0; }
@@ -817,7 +804,6 @@ const STYLES = `
     gap: clamp(14px, 3vh, 32px);
     padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 56px);
   }
-  /* Contenu texte poussé à DROITE en desktop */
   .hp-content { display: flex; flex-direction: column; width: 100%; max-width: 920px; }
   .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: clamp(8px, 1.6vh, 18px) clamp(20px, 4vw, 56px); font-size: 14px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
@@ -895,53 +881,83 @@ const STYLES = `
   @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
 
-  /* ── Tablette / mobile : image plein écran ── */
-  .is-compact .hp-bg-media { width: 100%; }
-  .is-compact .hp-bg-img { object-position: center top; }
+  /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
+  .is-compact .hp-bg-img { object-position: 0% center; transform: none; }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
   .is-mobile .hp-brand-erp { letter-spacing: 2px; }
+  .is-mobile .hp-title { font-size: clamp(32px, 9vw, 44px); }
+  .is-mobile .hp-subtitle { font-size: 17px; }
   .is-mobile .hp-footer { flex-direction: column-reverse; align-items: flex-start; }
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
   /* ── Mobile : compacter fortement la page ── */
   .is-mobile .hp-main { gap: 10px; padding-top: 4px; padding-bottom: 4px; }
-  .is-mobile .hp-modules { font-size: 12px; padding: 0.35em 0.8em; margin-bottom: 8px; }
-  .is-mobile .hp-title { font-size: clamp(26px, 8vw, 36px); margin-bottom: 8px; }
-  .is-mobile .hp-subtitle { font-size: 15px; line-height: 1.4; margin-bottom: 12px; }
-  .is-mobile .hp-cards { gap: 8px; }
-  .is-mobile .hp-card { padding: 10px 12px; gap: 10px; border-radius: 14px; }
-  .is-mobile .hp-card-icon { width: 34px; height: 34px; border-radius: 10px; }
+  .is-mobile .hp-modules {
+    font-size: 12px;
+    padding: 0.35em 0.8em;
+    margin-bottom: 8px;
+  }
+  .is-mobile .hp-title {
+    font-size: clamp(26px, 8vw, 36px);
+    margin-bottom: 8px;
+  }
+  .is-mobile .hp-subtitle {
+    font-size: 15px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+  .is-mobile .hp-cards {
+    gap: 8px;
+  }
+  .is-mobile .hp-card {
+    padding: 10px 12px;
+    gap: 10px;
+    border-radius: 14px;
+  }
+  .is-mobile .hp-card-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
   .is-mobile .hp-card-icon svg { width: 1.15em; height: 1.15em; }
-  .is-mobile .hp-card-title { font-size: 13.5px; }
-  .is-mobile .hp-card-desc { font-size: 12px; }
+  .is-mobile .hp-card-title {
+    font-size: 13.5px;
+  }
+  .is-mobile .hp-card-desc {
+    font-size: 12px;
+  }
 
-  /* Actions sous les cards — mobile pleine largeur */
-  .is-mobile .hp-actions-below { flex-direction: column; align-items: stretch; margin-top: 2px; gap: 8px; }
+  /* Actions sous les cards — sur mobile en pleine largeur */
+  .is-mobile .hp-actions-below {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 2px;
+    gap: 8px;
+  }
   .is-mobile .hp-actions-below .hp-cta,
-  .is-mobile .hp-actions-below .hp-ghost { height: 46px; font-size: 15px; width: 100%; }
+  .is-mobile .hp-actions-below .hp-ghost {
+    height: 46px;
+    font-size: 15px;
+    width: 100%;
+  }
 
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
   /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
   @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
 
-  /* ── Desktop : contenu poussé à droite, image à gauche ── */
-  @media (min-width: 901px) {
-    .hp-main {
-      padding-bottom: clamp(24px, 8vh, 90px);
-      align-items: flex-end;
-    }
-    .hp-content {
-      margin-left: auto;
-      max-width: min(52vw, 760px);
-    }
-    .hp-bg-media { width: 58%; }
-    .hp-bg-img { object-position: left center; }
+  /* Remonte légèrement tout le bloc sur ordinateur */
+  @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
 
+  /* ── Desktop : image plus à gauche + tailles réduites ── */
+  @media (min-width: 901px) {
+    .hp-bg-img {
+      transform: scale(1.08) translateX(-8%);
+    }
     .hp-modules {
       font-size: clamp(12px, min(0.95vw, 2vh), 15px);
       padding: 0.42em 0.95em;
@@ -956,8 +972,9 @@ const STYLES = `
       max-width: 620px;
       margin-bottom: clamp(12px, 2.2vh, 24px);
     }
-    .hp-actions-below { margin-top: 2px; }
-    .hp-footer { padding-right: calc(56px + 58%); }
+    .hp-actions-below {
+      margin-top: 2px;
+    }
   }
 
   /* ── Sélecteur de langue ── */
