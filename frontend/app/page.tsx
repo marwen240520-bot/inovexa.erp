@@ -652,7 +652,8 @@ export default function HomePage(): React.ReactElement {
           <h1 className="hp-rise hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
 
-          <div className="hp-rise hp-d3 hp-actions">
+          {/* Actions — version desktop (dans le contenu) */}
+          <div className="hp-rise hp-d3 hp-actions hp-actions-desktop">
             <Link href={ctaHref} prefetch className="hp-cta">
               {isLoggedIn ? text.button : text.login}
               <span className="hp-cta-arrow"><IconArrowRight /></span>
@@ -684,6 +685,23 @@ export default function HomePage(): React.ReactElement {
             );
           })}
         </ul>
+
+        {/* Actions — version mobile (sous les cartes) */}
+        <div className="hp-rise hp-d3 hp-actions hp-actions-mobile">
+          <Link href={ctaHref} prefetch className="hp-cta">
+            {isLoggedIn ? text.button : text.login}
+            <span className="hp-cta-arrow"><IconArrowRight /></span>
+          </Link>
+          <button
+            type="button"
+            className="hp-ghost"
+            aria-haspopup="dialog"
+            aria-expanded={showAbout}
+            onClick={() => setShowAbout(true)}
+          >
+            {text.aboutBtn}
+          </button>
+        </div>
       </main>
 
       <footer className="hp-footer">
@@ -767,7 +785,7 @@ const STYLES = `
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
   /* ── Fond ── */
-  .hp-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 40% center; transform: scale(1.06) translateX(4%); transform-origin: right center; user-select: none; -webkit-user-drag: none; z-index: 0; }
+  .hp-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 100% center; transform: scale(1.06) translateX(0%); transform-origin: right center; user-select: none; -webkit-user-drag: none; z-index: 0; }
   .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
   /* ── Structure ── */
@@ -804,6 +822,8 @@ const STYLES = `
 
   /* ── Boutons ── */
   .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+  .hp-actions-desktop { display: flex; }
+  .hp-actions-mobile { display: none; }
   .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(48px, 6.6vh, 62px); padding: 0 clamp(22px, 2vw, 34px); border-radius: 999px; font-size: clamp(15px, min(1.2vw, 2.4vh), 20px); text-decoration: none; white-space: nowrap; }
   .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
   .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
@@ -835,18 +855,28 @@ const STYLES = `
 
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
-  .is-compact .hp-bg-img { object-position: 50% center; transform: none; }
+  .is-compact .hp-bg-img { object-position: 100% center; transform: none; }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
   .is-mobile .hp-brand-erp { letter-spacing: 2px; }
   .is-mobile .hp-title { font-size: clamp(32px, 9vw, 44px); }
   .is-mobile .hp-subtitle { font-size: 17px; }
-  .is-mobile .hp-actions { flex-direction: column; align-items: stretch; width: 100%; }
-  .is-mobile .hp-cta, .is-mobile .hp-ghost { height: 52px; font-size: 16px; }
   .is-mobile .hp-footer { flex-direction: column-reverse; align-items: flex-start; }
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
+
+  /* ── Actions : desktop dans le contenu, mobile sous les cartes ── */
+  .is-mobile .hp-actions-desktop { display: none; }
+  .is-mobile .hp-actions-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .is-mobile .hp-actions-mobile .hp-cta,
+  .is-mobile .hp-actions-mobile .hp-ghost { height: 52px; font-size: 16px; }
 
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
@@ -855,6 +885,24 @@ const STYLES = `
 
   /* Remonte légèrement tout le bloc (badge, titre, boutons, cartes) sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
+
+  /* ── Desktop : tailles réduites du badge modules, du titre et du sous-titre ── */
+  @media (min-width: 901px) {
+    .hp-modules {
+      font-size: clamp(12px, min(0.95vw, 2vh), 15px);
+      padding: 0.42em 0.95em;
+      margin-bottom: clamp(8px, 1.6vh, 16px);
+    }
+    .hp-title {
+      font-size: clamp(28px, min(4vw, 6.2vh), 60px);
+      margin-bottom: clamp(8px, 1.5vh, 16px);
+    }
+    .hp-subtitle {
+      font-size: clamp(15px, min(1.25vw, 2.4vh), 19px);
+      max-width: 620px;
+      margin-bottom: clamp(12px, 2.2vh, 24px);
+    }
+  }
 
   /* ── Sélecteur de langue ── */
   .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
