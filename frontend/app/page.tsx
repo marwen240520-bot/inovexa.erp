@@ -900,30 +900,30 @@ const STYLES = `
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
-  /* ── Mobile : compacter la page mais AÉRER les espacements ── */
+  /* ── Mobile : aérer sans trop espacer ── */
   .is-mobile .hp-main {
-    gap: 18px;            /* plus d'espace entre les blocs */
-    padding-top: 16px;
-    padding-bottom: 20px;
+    gap: 14px;            /* espace global entre blocs */
+    padding-top: 12px;
+    padding-bottom: 18px;
     padding-left: 18px;
     padding-right: 18px;
   }
   .is-mobile .hp-modules {
     font-size: 12px;
     padding: 0.4em 0.9em;
-    margin-bottom: 14px;  /* écart badge ↔ titre */
+    margin-bottom: 12px;
   }
   .is-mobile .hp-title {
     font-size: clamp(26px, 8vw, 36px);
-    margin-bottom: 12px;  /* écart titre ↔ sous-titre */
+    margin-bottom: 10px;
   }
   .is-mobile .hp-subtitle {
     font-size: 15px;
     line-height: 1.45;
-    margin-bottom: 18px;  /* écart sous-titre ↔ cards */
+    margin-bottom: 4px;   /* ← marge réduite entre sous-titre et cards */
   }
   .is-mobile .hp-cards {
-    gap: 12px;            /* plus d'espace entre les cartes */
+    gap: 10px;
   }
   .is-mobile .hp-card {
     padding: 12px 14px;
@@ -943,7 +943,7 @@ const STYLES = `
   .is-mobile .hp-actions-below {
     flex-direction: column;
     align-items: stretch;
-    margin-top: 10px;     /* espace cards ↔ boutons */
+    margin-top: 10px;
     gap: 10px;
   }
   .is-mobile .hp-actions-below .hp-cta,
@@ -956,7 +956,7 @@ const STYLES = `
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
   /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
-  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 10px; } }
+  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
 
   /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
