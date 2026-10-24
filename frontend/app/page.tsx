@@ -902,28 +902,29 @@ const STYLES = `
 
   /* ── Mobile : aérer sans trop espacer ── */
   .is-mobile .hp-main {
-    gap: 14px;            /* espace global entre blocs */
-    padding-top: 12px;
-    padding-bottom: 18px;
+    gap: 10px;            /* espace global réduit entre blocs */
+    padding-top: 10px;
+    padding-bottom: 16px;
     padding-left: 18px;
     padding-right: 18px;
   }
   .is-mobile .hp-modules {
     font-size: 12px;
     padding: 0.4em 0.9em;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   .is-mobile .hp-title {
     font-size: clamp(26px, 8vw, 36px);
-    margin-bottom: 10px;
+    margin-bottom: 6px;   /* ← marge réduite sous le titre */
   }
   .is-mobile .hp-subtitle {
     font-size: 15px;
     line-height: 1.45;
-    margin-bottom: 4px;   /* ← marge réduite entre sous-titre et cards */
+    margin-bottom: 0;     /* ← marge supprimée sous le sous-titre */
   }
   .is-mobile .hp-cards {
     gap: 10px;
+    margin-top: 0;        /* ← pas de marge parasite au-dessus des cards */
   }
   .is-mobile .hp-card {
     padding: 12px 14px;
@@ -943,7 +944,7 @@ const STYLES = `
   .is-mobile .hp-actions-below {
     flex-direction: column;
     align-items: stretch;
-    margin-top: 10px;
+    margin-top: 8px;
     gap: 10px;
   }
   .is-mobile .hp-actions-below .hp-cta,
@@ -951,6 +952,17 @@ const STYLES = `
     height: 46px;
     font-size: 15px;
     width: 100%;
+  }
+
+  /* ── Image de fond mobile : cadrage corrigé ── */
+  .is-mobile .hp-bg-img {
+    object-fit: cover;
+    object-position: 0% center;
+    transform: none;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
   }
 
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
