@@ -785,13 +785,13 @@ const STYLES = `
   /* ── Fond : image alignée à GAUCHE ── */
   .hp-bg-img {
     position: absolute;
-    inset: 0;
-    width: 100%;
+    top: 0;
+    bottom: 0;
+    left: -6%;
+    width: 112%;
     height: 100%;
     object-fit: cover;
     object-position: 0% center;
-    transform: scale(1.06) translateX(-4%);
-    transform-origin: left center;
     user-select: none;
     -webkit-user-drag: none;
     z-index: 0;
@@ -889,7 +889,7 @@ const STYLES = `
 
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
-  .is-compact .hp-bg-img { object-position: 0% center; transform: none; }
+  .is-compact .hp-bg-img { object-position: 0% center; left: 0; width: 100%; }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); padding-left: 18px; padding-right: 18px; }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
@@ -958,7 +958,7 @@ const STYLES = `
   .is-mobile .hp-bg-img {
     object-fit: cover;
     object-position: 0% center;
-    transform: none;
+    left: 0;
     width: 100%;
     height: 100%;
     max-width: 100%;
@@ -976,7 +976,8 @@ const STYLES = `
   /* ── Desktop : image plus à gauche + tailles réduites ── */
   @media (min-width: 901px) {
     .hp-bg-img {
-      transform: scale(1.08) translateX(-8%);
+      left: -10%;
+      width: 116%;
     }
     .hp-modules {
       font-size: clamp(12px, min(0.95vw, 2vh), 15px);
