@@ -107,6 +107,8 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
+const BG_IMAGE = "/images/3.png";
+
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
     title: "L'avenir de la gestion d'entreprise commence ici.",
@@ -589,7 +591,8 @@ export default function HomePage(): React.ReactElement {
         position: "relative",
       }}
     >
-      {/* Dégradé de fond */}
+      {/* Image de fond + dégradé de lisibilité */}
+      <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
       <div className="hp-bg-overlay" aria-hidden="true" />
 
       {/* En-tête : logo + contrôles thème & langue */}
@@ -779,7 +782,20 @@ const STYLES = `
     flex-shrink: 0;
   }
 
-  /* ── Fond ── */
+  /* ── Fond : image alignée à GAUCHE ── */
+  .hp-bg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 0% center;
+    transform: scale(1.06) translateX(-4%);
+    transform-origin: left center;
+    user-select: none;
+    -webkit-user-drag: none;
+    z-index: 0;
+  }
   .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
   /* ── Structure ── */
@@ -873,6 +889,7 @@ const STYLES = `
 
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
+  .is-compact .hp-bg-img { object-position: 0% center; transform: none; }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); padding-left: 18px; padding-right: 18px; }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
@@ -937,6 +954,17 @@ const STYLES = `
     width: 100%;
   }
 
+  /* ── Image de fond mobile : cadrage corrigé ── */
+  .is-mobile .hp-bg-img {
+    object-fit: cover;
+    object-position: 0% center;
+    transform: none;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
   /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
@@ -945,8 +973,11 @@ const STYLES = `
   /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
 
-  /* ── Desktop : tailles réduites ── */
+  /* ── Desktop : image plus à gauche + tailles réduites ── */
   @media (min-width: 901px) {
+    .hp-bg-img {
+      transform: scale(1.08) translateX(-8%);
+    }
     .hp-modules {
       font-size: clamp(12px, min(0.95vw, 2vh), 15px);
       padding: 0.42em 0.95em;
