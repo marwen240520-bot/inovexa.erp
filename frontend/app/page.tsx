@@ -856,7 +856,7 @@ const STYLES = `
 
   /* ── Boutons ── */
   .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; width: 100%; }
-  .hp-actions-below { margin-top: clamp(18px, 3.5vh, 36px); }
+  .hp-actions-below { margin-top: 4px; }
 
   .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(48px, 6.6vh, 62px); padding: 0 clamp(22px, 2vw, 34px); border-radius: 999px; font-size: clamp(15px, min(1.2vw, 2.4vh), 20px); text-decoration: none; white-space: nowrap; }
   .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
@@ -944,7 +944,7 @@ const STYLES = `
   .is-mobile .hp-actions-below {
     flex-direction: column;
     align-items: stretch;
-    margin-top: 20px;
+    margin-top: 8px;
     gap: 10px;
   }
   .is-mobile .hp-actions-below .hp-cta,
@@ -993,7 +993,7 @@ const STYLES = `
       margin-bottom: clamp(12px, 2.2vh, 24px);
     }
     .hp-actions-below {
-      margin-top: clamp(20px, 4vh, 40px);
+      margin-top: 2px;
     }
   }
 
