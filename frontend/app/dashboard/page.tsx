@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import type { TooltipItem } from "chart.js";
 import { Line, Doughnut } from "@/components/charts/LazyCharts";
@@ -249,6 +248,96 @@ const Icon = ({ name, size = "1em", color = "currentColor", style = {} }: { name
     </span>
   );
 };
+
+// --- BOUTON DE THÈME PERSONNALISÉ ---------------------------------------------
+// Remplace <ThemeToggle /> : icône Soleil/Lune animée + glow + rotation au clic
+function CustomThemeButton({ size = 48 }: { size?: number }) {
+  const { theme, themeMode, setThemeMode } = useTheme() as any;
+  const isDark = themeMode === "dark" || theme?.name === "dark" || theme?.mode === "dark";
+
+  const handleToggle = () => {
+    const next = isDark ? "light" : "dark";
+    if (typeof setThemeMode === "function") {
+      setThemeMode(next);
+    } else if (typeof (useTheme as any).toggleTheme === "function") {
+      // fallback si le contexte expose une méthode toggleTheme
+      (useTheme as any).toggleTheme();
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleToggle}
+      aria-label={isDark ? "Passer en thème clair" : "Passer en thème sombre"}
+      title={isDark ? "Thème clair" : "Thème sombre"}
+      className="theme-btn"
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        minWidth: `${size}px`,
+        borderRadius: "50%",
+        border: `1px solid ${theme.border}`,
+        background: isDark
+          ? "radial-gradient(circle at 30% 30%, #1f2937, #0f172a)"
+          : "radial-gradient(circle at 30% 30%, #fef9c3, #fde68a)",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        boxShadow: isDark
+          ? "0 0 0 1px rgba(255,255,255,0.05), 0 4px 14px rgba(0,0,0,0.4)"
+          : "0 0 0 1px rgba(0,0,0,0.04), 0 4px 14px rgba(245,158,11,0.25)",
+        WebkitTapHighlightColor: "transparent",
+      }}
+    >
+      {/* Halo lumineux */}
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          background: isDark
+            ? "radial-gradient(circle, rgba(96,165,250,0.35), transparent 70%)"
+            : "radial-gradient(circle, rgba(245,158,11,0.45), transparent 70%)",
+          opacity: isDark ? 0.6 : 1,
+          transition: "opacity 0.4s ease",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Icône animée */}
+      <span
+        className="theme-icon"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: isDark ? "#93c5fd" : "#b45309",
+          fontSize: `${size * 0.42}px`,
+          transform: isDark ? "rotate(0deg)" : "rotate(180deg)",
+          transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.4s ease",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {isDark ? <Icons.Moon /> : <Icons.Sun />}
+      </span>
+      <style>{`
+        .theme-btn:hover { transform: translateY(-2px) scale(1.05); }
+        .theme-btn:hover .theme-icon { transform: rotate(${isDark ? "20deg" : "200deg"}); }
+        .theme-btn:active { transform: scale(0.94); }
+        .theme-btn:focus-visible { outline: 2px solid ${theme.primary}; outline-offset: 2px; }
+        @media (hover: none) {
+          .theme-btn:hover { transform: none; }
+        }
+      `}</style>
+    </button>
+  );
+}
 
 // --- BARRES VENTES / ACHATS (SVG léger, sans dépendance) -----------------------
 function SalesPurchasesBars({ labels, sales, purchases, salesColor, purchasesColor, textColor, gridColor, height, formatValue }: {
@@ -986,7 +1075,8 @@ export default function DashboardPage() {
               <div style={{ flex: isMobile ? "1 1 100%" : "1 1 420px", order: isMobile ? 3 : 0, minWidth: 0, display: "flex", justifyContent: "center", alignSelf: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: isMobile ? "100%" : "760px" }}>
                   <div style={{ flex: 1, minWidth: 0 }}><GlobalSearch isMobile={isMobile} /></div>
-                  <ThemeToggle size={isMobile ? 46 : 48} />
+                  {/* ✅ Remplacement du bouton de thème par le composant personnalisé */}
+                  <CustomThemeButton size={isMobile ? 46 : 48} />
                 </div>
               </div>
 
