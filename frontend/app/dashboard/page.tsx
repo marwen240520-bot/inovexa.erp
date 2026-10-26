@@ -998,7 +998,7 @@ export default function DashboardPage() {
                 <div style={{ 
                   flex: 1, 
                   minWidth: 0, 
-                  maxWidth: isMobile ? "100%" : "300px",
+                  maxWidth: isMobile ? "100%" : "600px",
                   width: isMobile ? "100%" : "280px"
                 }}>
                   <GlobalSearch isMobile={isMobile} />
