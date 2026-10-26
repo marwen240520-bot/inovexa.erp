@@ -405,7 +405,6 @@ const STYLES = `
     color: var(--lg-text);
     background-color: var(--lg-base);
     background-image:
-      radial-gradient(ellipse 55% 50% at 15% 10%, var(--lg-glow-1), transparent 60%),
       radial-gradient(ellipse 50% 45% at 85% 95%, var(--lg-glow-2), transparent 60%);
   }
   .lg-bg { position: fixed; inset: -60px; z-index: 0; pointer-events: none; }
