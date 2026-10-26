@@ -961,11 +961,11 @@ export default function DashboardPage() {
             .no-touch-scroll { -webkit-overflow-scrolling: touch; }
           `}</style>
 
-          {/* Header */}
+          {/* Header — barre de recherche déplacée à droite */}
           <div style={{ marginBottom: responsive.sectionMargin, animation: "fadeInDown 0.5s ease", opacity: animateCards ? 1 : 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
+              {/* Partie gauche : salutation + date */}
               <div style={{ flex: isMobile ? "1 1 auto" : "0 1 auto", minWidth: isMobile ? "180px" : "auto" }}>
-                {/* ✅ className={handwriting.variable} injecte --font-caveat sur ce wrapper */}
                 <h1 className={handwriting.variable} style={{ color: theme.text, fontSize: responsive.headerTitleSize, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                   <Icon name={getWeatherIcon()} size={responsive.headerEmojiSize} color={theme.primary} />
                   <span style={{ fontSize: responsive.headerNameSize }}>
@@ -983,64 +983,78 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div style={{ flex: isMobile ? "1 1 100%" : "1 1 420px", order: isMobile ? 3 : 0, minWidth: 0, display: "flex", justifyContent: "center", alignSelf: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: isMobile ? "100%" : "760px" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}><GlobalSearch isMobile={isMobile} /></div>
-                  <ThemeToggle size={isMobile ? 46 : 48} />
+              {/* Partie droite : barre de recherche + thème + profil */}
+              <div style={{ 
+                flex: isMobile ? "1 1 100%" : "0 1 auto", 
+                order: isMobile ? 3 : 0, 
+                minWidth: 0, 
+                display: "flex", 
+                alignItems: "center", 
+                gap: "10px",
+                justifyContent: "flex-end",
+                width: isMobile ? "100%" : "auto"
+              }}>
+                {/* Barre de recherche — maintenant à droite, avant le toggle thème */}
+                <div style={{ 
+                  flex: 1, 
+                  minWidth: 0, 
+                  maxWidth: isMobile ? "100%" : "300px",
+                  width: isMobile ? "100%" : "280px"
+                }}>
+                  <GlobalSearch isMobile={isMobile} />
                 </div>
-              </div>
+                
+                <ThemeToggle size={isMobile ? 46 : 48} />
 
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                <div style={{ position: "relative" }}>
-                  <div 
-                    onClick={() => setShowProfileMenu(!showProfileMenu)} 
-                    style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)", WebkitTapHighlightColor: "transparent" }}
-                  >
-                    {profileImage && !imageError ? (
-                      <img 
-                        src={avatarSrc(profileImage)} 
-                        alt="Profile" 
-                        style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover" }}
-                        onError={() => { setImageError(true); refreshUserData(); }} 
-                        loading="lazy" 
-                      />
-                    ) : (
-                      <div style={{ width: isMobile ? "40px" : responsive.profileImageSize, height: isMobile ? "40px" : responsive.profileImageSize, borderRadius: isMobile ? "12px" : responsive.profileImageRadius, background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "white" }}>
-                        {getInitials(user?.name)}
+                {/* Profil utilisateur */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                  <div style={{ position: "relative" }}>
+                    <div 
+                      onClick={() => setShowProfileMenu(!showProfileMenu)} 
+                      style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)", WebkitTapHighlightColor: "transparent" }}
+                    >
+                      {profileImage && !imageError ? (
+                        <img 
+                          src={avatarSrc(profileImage)} 
+                          alt="Profile" 
+                          style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover" }}
+                          onError={() => { setImageError(true); refreshUserData(); }} 
+                          loading="lazy" 
+                        />
+                      ) : (
+                        <div style={{ width: isMobile ? "40px" : responsive.profileImageSize, height: isMobile ? "40px" : responsive.profileImageSize, borderRadius: isMobile ? "12px" : responsive.profileImageRadius, background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "white" }}>
+                          {getInitials(user?.name)}
+                        </div>
+                      )}
+                    </div>
+
+                    {showProfileMenu && (
+                      <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(17,24,39,0.18)" }}>
+                        <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                          {profileImage && !imageError ? (
+                            <img src={avatarSrc(profileImage)} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
+                          ) : (
+                            <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
+                          )}
+                          <div>
+                            <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "11px" : "13px" }}>{user?.name}</div>
+                            <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px" }}>{user?.email}</div>
+                          </div>
+                        </div>
+                        <div onClick={() => { router.push("/dashboard/profile"); setShowProfileMenu(false); setTimeout(() => refreshUserData(), 500); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                          <Icon name="User" size="0.9em" /> {getTempTranslation("common.profile")}
+                        </div>
+                        <div onClick={() => { router.push("/dashboard/settings"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                          <Icon name="Settings" size="0.9em" /> {getTempTranslation("common.settings")}
+                        </div>
+                        <div style={{ height: "1px", background: theme.border }} />
+                        <div onClick={() => { localStorage.clear(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                          <Icon name="LogOut" size="0.9em" color="#f87171" /> {t("common.logout")}
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {showProfileMenu && (
-                    <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(17,24,39,0.18)" }}>
-                      <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
-                        {profileImage && !imageError ? (
-                          <img src={avatarSrc(profileImage)} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
-                        ) : (
-                          <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
-                        )}
-                        <div>
-                          <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "11px" : "13px" }}>{user?.name}</div>
-                          <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px" }}>{user?.email}</div>
-                        </div>
-                      </div>
-                      <div onClick={() => { router.push("/dashboard/profile"); setShowProfileMenu(false); setTimeout(() => refreshUserData(), 500); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                        <Icon name="User" size="0.9em" /> {getTempTranslation("common.profile")}
-                      </div>
-                      <div onClick={() => { router.push("/dashboard/settings"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                        <Icon name="Settings" size="0.9em" /> {getTempTranslation("common.settings")}
-                      </div>
-                      <div style={{ height: "1px", background: theme.border }} />
-                      <div onClick={() => { localStorage.clear(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                        <Icon name="LogOut" size="0.9em" color="#f87171" /> {t("common.logout")}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-              </div>
               </div>
             </div>
           </div>
