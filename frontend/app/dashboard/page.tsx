@@ -250,6 +250,51 @@ const Icon = ({ name, size = "1em", color = "currentColor", style = {} }: { name
   );
 };
 
+// --- BARRES VENTES / ACHATS (SVG léger, sans dépendance) -----------------------
+function SalesPurchasesBars({ labels, sales, purchases, salesColor, purchasesColor, textColor, gridColor, height, formatValue }: {
+  labels: string[]; sales: number[]; purchases: number[];
+  salesColor: string; purchasesColor: string; textColor: string; gridColor: string;
+  height: string; formatValue: (v: number) => string;
+}) {
+  const W = 800, H = 260, left = 46, right = 8, top = 14, bottom = 28;
+  const n = labels.length;
+  const rawMax = Math.max(1, ...sales, ...purchases);
+  const mag = Math.pow(10, Math.floor(Math.log10(rawMax)));
+  const yMax = Math.ceil(rawMax / mag) * mag;
+  const plotH = H - top - bottom;
+  const y = (v: number) => top + plotH - (v / yMax) * plotH;
+  const gw = (W - left - right) / Math.max(n, 1);
+  const barW = Math.min(26, gw * 0.32);
+  const short = (v: number) => v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : String(Math.round(v));
+  const skip = n > 12 ? Math.ceil(n / 12) : 1;
+  return (
+    <div style={{ height, width: "100%" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "100%" }} role="img" aria-label="Ventes et achats">
+        {[0, 1, 2, 3, 4].map(i => {
+          const v = (yMax / 4) * i;
+          return (
+            <g key={i}>
+              <line x1={left} y1={y(v)} x2={W - right} y2={y(v)} stroke={gridColor} />
+              <text x={left - 8} y={y(v) + 4} fill={textColor} fontSize="11" textAnchor="end">{short(v)}</text>
+            </g>
+          );
+        })}
+        {labels.map((label, i) => {
+          const cx = left + gw * i + gw / 2;
+          const sv = sales[i] || 0; const pv = purchases[i] || 0;
+          return (
+            <g key={i}>
+              <rect x={cx - barW - 1.5} y={y(sv)} width={barW} height={Math.max(0, y(0) - y(sv))} rx={3} fill={salesColor}><title>{label} : {formatValue(sv)}</title></rect>
+              <rect x={cx + 1.5} y={y(pv)} width={barW} height={Math.max(0, y(0) - y(pv))} rx={3} fill={purchasesColor}><title>{label} : {formatValue(pv)}</title></rect>
+              {i % skip === 0 && <text x={cx} y={H - 8} fill={textColor} fontSize="12" textAnchor="middle">{label}</text>}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 export default function DashboardPage() { 
   const router = useRouter();
   const { t, language } = useLanguage();
@@ -829,6 +874,11 @@ export default function DashboardPage() {
     { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
   ];
 
+  const barLabels = salesData.map(d => d.month);
+  const barSales = salesData.map(d => d.sales);
+  const barPurchases = salesData.map((d, i) => Math.max(0, d.sales - (profitData[i]?.profit ?? 0)));
+  const salesPurchasesTitle = language === 'fr' ? "Ventes et achats" : language === 'es' ? "Ventas y compras" : "Sales and purchases";
+
   const mainContainerStyle = { 
     flex: 1, 
     margin: 0, 
@@ -933,8 +983,8 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div style={{ flex: isMobile ? "1 1 100%" : "1 1 320px", order: isMobile ? 3 : 0, minWidth: 0, display: "flex", justifyContent: "center", alignSelf: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: isMobile ? "100%" : "620px" }}>
+              <div style={{ flex: isMobile ? "1 1 100%" : "1 1 420px", order: isMobile ? 3 : 0, minWidth: 0, display: "flex", justifyContent: "center", alignSelf: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: isMobile ? "100%" : "760px" }}>
                   <div style={{ flex: 1, minWidth: 0 }}><GlobalSearch isMobile={isMobile} /></div>
                   <ThemeToggle size={isMobile ? 46 : 48} />
                 </div>
@@ -1060,6 +1110,26 @@ export default function DashboardPage() {
                 <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
+                        <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
+                <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Icon name="BarChart2" size="1em" color={theme.primary} /> {salesPurchasesTitle}
+                </h3>
+                <div style={{ display: "flex", gap: "12px", fontSize: isMobile ? "9px" : "10px", color: theme.textSecondary }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: theme.primary, display: "inline-block" }} />{t("dashboard.revenue")}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#f59e0b", display: "inline-block" }} />{t("dashboard.purchases")}</span>
+                </div>
+              </div>
+              {barSales.length > 0 && barSales.some(v => v > 0) ? (
+                <SalesPurchasesBars labels={barLabels} sales={barSales} purchases={barPurchases} salesColor={theme.primary} purchasesColor="#f59e0b" textColor={theme.textSecondary} gridColor={theme.border} height={responsive.chartHeight} formatValue={formatCurrency} />
+              ) : (
+                <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
+              )}
+            </div>
+          </div>
+
+          {/* Évolution du bénéfice — pleine largeur */}
+          <div style={{ marginBottom: responsive.sectionMargin }}>
             <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
                 <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1070,7 +1140,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               {profitData.length > 0 && profitData.some(d => d.profit !== 0) ? (
-                <div style={{ height: responsive.chartHeight }}><Line data={profitChartData} options={chartOptions} /></div>
+                <div style={{ height: isMobile ? "200px" : "280px" }}><Line data={profitChartData} options={{ ...chartOptions, maintainAspectRatio: false }} /></div>
               ) : (
                 <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
