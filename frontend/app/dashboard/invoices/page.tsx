@@ -966,7 +966,13 @@ export default function InvoicesPage() {
               .notes-box { background: #f5f5f5; padding: 14px; border-radius: 8px; margin-bottom: 20px; }
               .notes-box p { font-size: 12px; color: #111; line-height: 1.5; }
               .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 11px; color: #333; }
-              @media print { body { padding: 20px; } }
+              @media print {
+                @page { margin: 12mm; }
+                body { padding: 0; }
+                * { background: transparent !important; box-shadow: none !important; -webkit-print-color-adjust: economy; print-color-adjust: economy; }
+                .invoice-title .badge { color: #000 !important; border: 1px solid #000; }
+                .items-table th { color: #000 !important; border-bottom: 2px solid #000; }
+              }
             </style>
           </head>
           <body>
@@ -1045,6 +1051,40 @@ export default function InvoicesPage() {
       printWindow.document.close();
       printWindow.print();
     }
+  };
+
+  // Imprime UNIQUEMENT la facture de l'aperçu (via un iframe caché) :
+  // window.print() imprimait toute la page et le modal "fixed" se répétait sur chaque page.
+  const printInvoicePreview = () => {
+    const area = document.getElementById("invoice-print-area");
+    if (!area) return;
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
+    document.body.appendChild(iframe);
+    const win = iframe.contentWindow;
+    const doc = win?.document;
+    if (!win || !doc) { document.body.removeChild(iframe); return; }
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Facture ${viewInvoice?.reference ?? ""}</title>
+    <style>
+      @page { margin: 12mm; }
+      html, body { margin: 0; padding: 0; background: #fff !important; }
+      * { background: transparent !important; box-shadow: none !important; -webkit-print-color-adjust: economy; print-color-adjust: economy; }
+      .no-print { display: none !important; }
+    </style>
+  </head>
+  <body>${area.outerHTML}</body>
+</html>`);
+    doc.close();
+    setTimeout(() => {
+      win.focus();
+      win.print();
+      setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 1500);
+    }, 400);
   };
 
   const openEditModal = (invoice: any) => {
@@ -1897,7 +1937,7 @@ export default function InvoicesPage() {
                   {isMobile ? "PDF" : t.pdf}
                 </button>
                 <button
-                  onClick={() => window.print()}
+                  onClick={printInvoicePreview}
                   style={{
                     padding: isMobile ? "6px 10px" : "8px 16px",
                     background: "#bfdbfe",
