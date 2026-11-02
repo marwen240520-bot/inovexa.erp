@@ -6,6 +6,10 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Bar, Line, Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
+import { Nunito } from "next/font/google";
+
+// Police du chat IA (changez "Nunito" par "Poppins", "Inter", "Montserrat"... si vous préférez)
+const chatFont = Nunito({ subsets: ["latin"], display: "swap" });
 
 
 // ==================== SVG ICONS ====================
@@ -50,6 +54,34 @@ const IconCopy = ({ size = 16 }: { size?: number }) => (<Icon size={size}><rect 
 const IconTrash = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>);
 const IconMenu = ({ size = 24 }: { size?: number }) => (<Icon size={size}><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></Icon>);
 const IconX = ({ size = 24 }: { size?: number }) => (<Icon size={size}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>);
+
+// Enlève la syntaxe markdown (**gras**, ### titres, * puces) et affiche le gras proprement, sans étoiles
+const stripMarkdown = (text: string): string =>
+  String(text || "")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^(\s*)[*-]\s+/gm, "$1• ")
+    .replace(/\*/g, "");
+
+const renderChatText = (text: string): React.ReactNode => {
+  if (!text) return null;
+  const lines = String(text).split("\n");
+  return lines.map((rawLine, li) => {
+    const line = rawLine
+      .replace(/^\s{0,3}#{1,6}\s+/, "")
+      .replace(/^(\s*)[*-]\s+/, "$1• ");
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <span key={li}>
+        {parts.map((p, pi) =>
+          p.length > 4 && p.startsWith("**") && p.endsWith("**")
+            ? <strong key={pi} style={{ fontWeight: 700 }}>{p.slice(2, -2)}</strong>
+            : <span key={pi}>{p.replace(/\*/g, "")}</span>
+        )}
+        {li < lines.length - 1 ? "\n" : null}
+      </span>
+    );
+  });
+};
 
 const animations = `
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -1100,7 +1132,7 @@ export default function IAPage() {
   };
 
   const copyConversation = () => {
-    const conversation = chatMessages.map(msg => `${msg.role === "user" ? " " + (language === 'fr' ? "Vous" : language === 'es' ? "Té" : "You") : " IA"}: ${msg.content}`).join("\n\n");
+    const conversation = chatMessages.map(msg => `${msg.role === "user" ? " " + (language === 'fr' ? "Vous" : language === 'es' ? "Té" : "You") : " IA"}: ${stripMarkdown(msg.content)}`).join("\n\n");
     navigator.clipboard.writeText(conversation);
     if (isMobile) {
       const toast = document.createElement('div');
@@ -1509,8 +1541,8 @@ export default function IAPage() {
                       </div>
                     )}
                     <div style={{ maxWidth: isMobile ? "85%" : "75%" }}>
-                      <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: theme.text, fontSize: isMobile ? "12px" : "13px", lineHeight: "1.5", whiteSpace: "pre-wrap", wordBreak: "break-word", boxShadow: msg.role === "user" ? `0 2px 10px ${theme.primary}40` : "none" }}>
-                        {msg.content}
+                      <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: theme.text, fontSize: isMobile ? "12px" : "13px", lineHeight: "1.5", fontFamily: chatFont.style.fontFamily, whiteSpace: "pre-wrap", wordBreak: "break-word", boxShadow: msg.role === "user" ? `0 2px 10px ${theme.primary}40` : "none" }}>
+                        {renderChatText(msg.content)}
                       </div>
                       {msg.actions && msg.actions.length > 0 && msg.role !== "user" && (
                         <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
@@ -1596,7 +1628,7 @@ export default function IAPage() {
                       fontSize: isMobile ? "16px" : "13px", 
                       outline: "none", 
                       resize: "none", 
-                      fontFamily: "inherit", 
+                      fontFamily: chatFont.style.fontFamily, 
                       maxHeight: isMobile ? "100px" : "100px", 
                       transition: "all 0.2s",
                       WebkitAppearance: "none"
