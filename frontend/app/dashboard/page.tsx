@@ -985,7 +985,7 @@ export default function DashboardPage() {
 
               {/* Partie droite : barre de recherche + thème + profil */}
               <div style={{ 
-                flex: isMobile ? "1 1 100%" : "0 1 auto", 
+                flex: isMobile ? "1 1 100%" : "1 1 auto", 
                 order: isMobile ? 3 : 0, 
                 minWidth: 0, 
                 display: "flex", 
@@ -998,8 +998,8 @@ export default function DashboardPage() {
                 <div style={{ 
                   flex: 1, 
                   minWidth: 0, 
-                  maxWidth: isMobile ? "100%" : "300px",
-                  width: isMobile ? "100%" : "500px"
+                  maxWidth: isMobile ? "100%" : "600px",
+                  width: isMobile ? "100%" : "600px"
                 }}>
                   <GlobalSearch isMobile={isMobile} />
                 </div>
