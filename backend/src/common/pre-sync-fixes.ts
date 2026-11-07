@@ -39,8 +39,20 @@ async function fixExpenses(client: any): Promise<void> {
   }
 }
 
+/** products / sales / purchases : `quantity` passe d'entier à décimal (kg, mètres…). Conversion sur place, sans perte. */
+async function fixQuantities(client: any): Promise<void> {
+  for (const table of ['products', 'sales', 'purchases']) {
+    const q = await columnInfo(client, table, 'quantity');
+    if (q && q.data_type !== 'numeric') {
+      await client.query(`ALTER TABLE "${table}" ALTER COLUMN "quantity" TYPE numeric(14,3) USING "quantity"::numeric(14,3)`);
+      console.log(`[pre-sync] ${table}.quantity converti en numeric(14,3) (données conservées)`);
+    }
+  }
+}
+
 const FIXES: Array<{ name: string; run: (client: any) => Promise<void> }> = [
   { name: 'expenses', run: fixExpenses },
+  { name: 'quantities', run: fixQuantities },
 ];
 
 export async function runPreSyncFixes(databaseUrl?: string): Promise<void> {

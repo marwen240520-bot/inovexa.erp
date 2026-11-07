@@ -6,6 +6,7 @@ import { Purchase } from '../purchases/entities/purchase.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Supplier } from '../suppliers/supplier.entity';
 import { normalizePaymentMethod, toNumber } from '../../common/import-utils';
+import { StockService } from '../stock/stock.service';
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -21,7 +22,7 @@ export interface PosLine { productId: number; quantity: number; unitPrice?: numb
  */
 @Injectable()
 export class PosService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource, private readonly stock: StockService) {}
 
   async checkout(userId: number, body: any) {
     const mode: 'sale' | 'purchase' | null = body?.mode === 'sale' ? 'sale' : body?.mode === 'purchase' ? 'purchase' : null;
@@ -94,16 +95,19 @@ export class PosService {
             userId, productId: product.id, productName: product.name, clientName: counterpartName || 'Client comptoir',
             quantity, unitPrice, total, status: 'completed', paymentMethod,
           } as any));
-          product.quantity = (product.quantity || 0) - quantity;
         } else {
           await manager.save(Purchase, manager.create(Purchase, {
             userId, productId: product.id, productName: product.name, supplierName: counterpartName || undefined,
             quantity, unitPrice, total, status: 'received', paymentMethod,
           } as any));
-          product.quantity = (product.quantity || 0) + quantity;
         }
-        await manager.save(Product, product);
-        lines.push({ productId: product.id, productName: product.name, quantity, unitPrice, total, newStock: product.quantity });
+        // Le mouvement de stock est tracé dans le journal (et le stock total du produit mis à jour).
+        await this.stock.move(manager, {
+          userId, productId: product.id, quantity: mode === 'sale' ? -quantity : quantity, reason: 'pos', refType: 'pos',
+          refId: product.id, unitCost: mode === 'purchase' ? unitPrice : undefined, note: `Caisse — ${mode === 'sale' ? 'vente' : 'achat'}`,
+        });
+        const fresh = await manager.findOne(Product, { where: { id: product.id } });
+        lines.push({ productId: product.id, productName: product.name, quantity, unitPrice, total, newStock: fresh ? fresh.quantity : product.quantity });
       }
 
       const now = new Date();

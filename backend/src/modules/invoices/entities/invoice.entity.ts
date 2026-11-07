@@ -75,6 +75,10 @@ export class Invoice {
   @Column({ default: 'pending' })
   status: string;
 
+  // Document commercial (module Documents) dont cette ligne est le reflet : null pour une facture saisie ici.
+  @Column({ type: 'int', nullable: true })
+  documentId: number | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

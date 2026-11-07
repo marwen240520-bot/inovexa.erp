@@ -6,8 +6,10 @@ import { Purchase } from './entities/purchase.entity';
 import { Product } from '../products/product.entity';
 import { Supplier } from '../suppliers/supplier.entity';
 
+import { StockModule } from '../stock/stock.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Purchase, Product, Supplier])],
+  imports: [TypeOrmModule.forFeature([Purchase, Product, Supplier]), StockModule],
   controllers: [PurchasesController],
   providers: [PurchasesService],
   exports: [PurchasesService],

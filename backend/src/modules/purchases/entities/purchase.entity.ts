@@ -1,4 +1,5 @@
 ﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { QTY } from '../../../common/column-transformers';
 import { Product } from '../../products/product.entity';
 
 @Entity('purchases')
@@ -18,7 +19,7 @@ export class Purchase {
   @Column({ nullable: true })
   supplierName: string;
 
-  @Column({ default: 1 })
+  @Column({ ...QTY, default: 1 })
   quantity: number;
 
   @Column({ default: 0, type: 'decimal', precision: 10, scale: 2 })
@@ -32,6 +33,10 @@ export class Purchase {
 
   @Column({ type: 'varchar', length: 30, nullable: true })
   paymentMethod: string | null;
+
+  // Document commercial à l'origine de cette ligne (bon de réception…) : null pour un achat saisi directement.
+  @Column({ type: 'int', nullable: true })
+  documentId: number | null;
 
   @CreateDateColumn()
   createdAt: Date;

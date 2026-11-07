@@ -13,24 +13,24 @@ export class UsersController {
 
   @Get('profile')
   async getProfile(@Request() req: any) {
-    return this.usersService.getProfile(req.user.userId);
+    return this.usersService.getProfile(req.user.actorId ?? req.user.userId);
   }
 
   @Patch('profile')
   async updateProfile(@Request() req: any, @Body() body: { name?: string; email?: string; phone?: string; companyName?: string }) {
-    return this.usersService.updateProfile(req.user.userId, body);
+    return this.usersService.updateProfile(req.user.actorId ?? req.user.userId, body);
   }
 
   @Patch('change-password')
   async changePassword(@Request() req: any, @Body() body: { oldPassword: string; newPassword: string }) {
-    return this.usersService.changePassword(req.user.userId, body.oldPassword, body.newPassword);
+    return this.usersService.changePassword(req.user.actorId ?? req.user.userId, body.oldPassword, body.newPassword);
   }
 
   // GET /users/:id/modules -> configuration des modules de l'utilisateur
   @Get(':id/modules')
   async getUserModules(@Param('id') id: string, @Request() req: any) {
     const targetId = parseInt(id, 10);
-    if (req.user.role !== 'admin' && Number(req.user.userId) !== targetId) {
+    if (req.user.role !== 'admin' && Number(req.user.userId) !== targetId && Number(req.user.actorId) !== targetId) {
       throw new ForbiddenException('Acces non autorise');
     }
     return this.usersService.getUserModules(targetId);
