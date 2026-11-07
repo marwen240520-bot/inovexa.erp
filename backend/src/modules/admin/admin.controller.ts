@@ -2,6 +2,9 @@
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminService } from './admin.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Administration plateforme')
+@ApiBearerAuth()
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
 export class AdminController {

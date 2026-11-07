@@ -3,6 +3,8 @@ import { SearchModuleService } from './search.service';
 import { CreateSearchModuleDto } from './dto/create-search.dto';
 import { UpdateSearchModuleDto } from './dto/update-search.dto';
 
+import { ApiTags } from '@nestjs/swagger';
+@ApiTags('Recherche')
 @Controller('search')
 export class SearchModuleController {
   constructor(private readonly searchService: SearchModuleService) {}

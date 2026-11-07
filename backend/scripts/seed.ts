@@ -7,6 +7,7 @@ import { User } from '../src/modules/users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
 async function seed() {
+  if (process.env.NODE_ENV === 'production') throw new Error('seed.ts crée des comptes de démonstration aux mots de passe connus : interdit en production. Utilisez « npm run admin:create ».');
   console.log('🌱 Seeding database...');
   
   const app = await NestFactory.createApplicationContext(AppModule);

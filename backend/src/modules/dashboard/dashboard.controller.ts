@@ -2,6 +2,9 @@
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Tableau de bord')
+@ApiBearerAuth()
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {

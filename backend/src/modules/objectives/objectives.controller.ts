@@ -2,6 +2,9 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Request,
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ObjectivesService } from './objectives.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Objectifs')
+@ApiBearerAuth()
 @Controller('objectives')
 @UseGuards(JwtAuthGuard)
 export class ObjectivesController {

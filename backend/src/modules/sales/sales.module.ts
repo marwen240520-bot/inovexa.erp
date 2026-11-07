@@ -6,8 +6,10 @@ import { Sale } from './entities/sale.entity';
 import { Product } from '../products/product.entity';
 import { Client } from '../clients/entities/client.entity';
 
+import { StockModule } from '../stock/stock.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Sale, Product, Client])],
+  imports: [TypeOrmModule.forFeature([Sale, Product, Client]), StockModule],
   controllers: [SalesController],
   providers: [SalesService],
   exports: [SalesService],

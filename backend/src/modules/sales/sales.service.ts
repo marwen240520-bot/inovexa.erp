@@ -1,6 +1,8 @@
 ﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { StockService } from '../stock/stock.service';
 import { Sale } from './entities/sale.entity';
 import { Product } from '../products/product.entity';
 import { Client } from '../clients/entities/client.entity';
@@ -15,6 +17,9 @@ export class SalesService {
     private productRepository: Repository<Product>,
     @InjectRepository(Client)
     private clientRepository: Repository<Client>,
+    @InjectDataSource()
+    private dataSource: DataSource,
+    private stock: StockService,
   ) {}
 
   /** Si un nom de client est saisi et n'existe pas encore, le crée dans le module Clients. */
@@ -57,36 +62,40 @@ export class SalesService {
   }
 
   async create(userId: number, data: any) {
-    const product = await this.productRepository.findOne({ 
-      where: { id: data.productId, userId } 
-    });
-    
-    if (!product) {
-      throw new NotFoundException('Produit non trouvé');
-    }
-    
-    if ((product.quantity || 0) < (data.quantity || 0)) {
-      throw new BadRequestException(`Stock insuffisant pour ${product.name}. Disponible: ${product.quantity || 0}, Demandé: ${data.quantity}`);
-    }
-    
-    product.quantity = (product.quantity || 0) - (data.quantity || 0);
-    await this.productRepository.save(product);
-    
+    const quantity = Number(data.quantity || 0);
     // Auto-création du client si le nom saisi n'existe pas dans le module Clients
     const client = await this.ensureClientExists(userId, data.clientName);
-    
-    const sale = this.saleRepository.create({ 
-      ...data, 
-      clientName: client ? client.name : (data.clientName || null),
-      userId,
-      total: (data.unitPrice || 0) * (data.quantity || 1)
+
+    // Une seule transaction : la vente et son mouvement de stock réussissent ou échouent ensemble.
+    return this.dataSource.transaction(async (em) => {
+      const product = await em.findOne(Product, { where: { id: data.productId, userId } });
+      if (!product) {
+        throw new NotFoundException('Produit non trouvé');
+      }
+      if (product.isStockable !== false && Number(product.quantity || 0) < quantity) {
+        throw new BadRequestException(`Stock insuffisant pour ${product.name}. Disponible: ${product.quantity || 0}, Demandé: ${data.quantity}`);
+      }
+
+      const { documentId: _ignored, ...input } = data || {};
+      const sale = em.create(Sale, {
+        ...input,
+        clientName: client ? client.name : (data.clientName || null),
+        userId,
+        total: (data.unitPrice || 0) * (data.quantity || 1),
+      } as any) as unknown as Sale;
+      const savedSale = await em.save(Sale, sale);
+
+      await this.stock.move(em, {
+        userId, productId: product.id, quantity: -quantity, reason: 'sale', refType: 'sale', refId: savedSale.id,
+        note: `Vente #${savedSale.id}${savedSale.clientName ? ' — ' + savedSale.clientName : ''}`,
+      });
+      const fresh = await em.findOne(Product, { where: { id: product.id } });
+
+      return {
+        ...savedSale,
+        newStock: fresh ? fresh.quantity : product.quantity,
+      };
     });
-    const savedSale = await this.saleRepository.save(sale);
-    
-    return {
-      ...savedSale,
-      newStock: product.quantity
-    };
   }
 
   async updateStatus(id: number, userId: number, status: string) {
@@ -97,17 +106,20 @@ export class SalesService {
 
   async delete(id: number, userId: number) {
     const sale = await this.findOne(id, userId);
-    
-    const product = await this.productRepository.findOne({ 
-      where: { id: sale.productId, userId } 
-    });
-    
-    if (product) {
-      product.quantity = (product.quantity || 0) + (sale.quantity || 0);
-      await this.productRepository.save(product);
+    if (sale.documentId) {
+      throw new BadRequestException('Cette ligne vient d’un document commercial validé : corrigez-la par un avoir, pas en la supprimant.');
     }
-    
-    await this.saleRepository.delete(id);
+
+    await this.dataSource.transaction(async (em) => {
+      const product = await em.findOne(Product, { where: { id: sale.productId, userId } });
+      if (product) {
+        await this.stock.move(em, {
+          userId, productId: product.id, quantity: Number(sale.quantity || 0), reason: 'sale_cancel', refType: 'sale', refId: sale.id,
+          note: `Annulation de la vente #${sale.id}`,
+        });
+      }
+      await em.delete(Sale, id);
+    });
     return { success: true, message: 'Vente supprimée, stock rétabli' };
   }
 
@@ -183,10 +195,10 @@ export class SalesService {
           ),
           ...(date ? { createdAt: date } : {}),
         });
-        await this.saleRepository.save(sale);
-
-        product.quantity = (product.quantity || 0) - quantity;
-        await this.productRepository.save(product);
+        await this.dataSource.transaction(async (em) => {
+          const saved = await em.save(Sale, sale);
+          await this.stock.move(em, { userId, productId: product!.id, quantity: -quantity, reason: 'sale', refType: 'sale', refId: saved.id, note: 'Import de ventes' });
+        });
         success++;
       } catch (e) {
         details.push({ row: i + 2, error: errorMessage(e) });

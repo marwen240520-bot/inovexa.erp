@@ -1,5 +1,23 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { buildTypeOrmOptions, isSynchronizeEnabled } from './database/typeorm.config';
+import { UserThrottlerGuard } from './common/user-throttler.guard';
+import { AccessGuard } from './modules/auth/access.guard';
+import { AuditModule } from './common/audit/audit.module';
+import { MailModule } from './common/mail/mail.service';
+import { CompanyModule } from './modules/company/company.module';
+import { StockModule } from './modules/stock/stock.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { ProductionModule } from './modules/production/production.module';
+import { TeamModule } from './modules/team/team.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
+import { HrModule } from './modules/hr/hr.module';
+import { CrmModule } from './modules/crm/crm.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { BusinessReportsModule } from './modules/business-reports/business-reports.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -39,18 +57,33 @@ import { ObjectivesModule } from './modules/objectives/objectives.module';
   imports: [
     TypeOrmModule.forRootAsync({
       useFactory: async () => {
-        // Convertit sur place les colonnes dont le type diffère de l'entité (évite le « drop + recréation » de TypeORM)
-        await runPreSyncFixes(process.env.DATABASE_URL);
-        return {
-          type: 'postgres' as const,
-          url: process.env.DATABASE_URL,
-          ssl: false,
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true,
-          logging: false,
-        };
+        // En développement (synchronize) : convertit sur place les colonnes dont le type diffère de l'entité
+        // (évite le « drop + recréation » de TypeORM). En production, ce sont les migrations qui font foi.
+        if (isSynchronizeEnabled()) await runPreSyncFixes(process.env.DATABASE_URL);
+        return buildTypeOrmOptions();
       },
     }),
+    // Limite de débit : par personne connectée (sinon par IP). Protège l'API contre les abus.
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,
+        limit: (ctx: any) => (ctx.switchToHttp().getRequest()?.user ? 900 : 120),
+      },
+    ]),
+    AuditModule,
+    MailModule,
+    CompanyModule,
+    StockModule,
+    FinanceModule,
+    ProductionModule,
+    TeamModule,
+    DocumentsModule,
+    AccountingModule,
+    HrModule,
+    CrmModule,
+    NotificationsModule,
+    BusinessReportsModule,
     PosModule,
     ObjectivesModule,
     AuthModule,
@@ -80,7 +113,12 @@ import { ObjectivesModule } from './modules/objectives/objectives.module';
     ProjectsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Ordre important : d'abord l'authentification + droits, ensuite la limitation de débit (qui a besoin de savoir QUI appelle).
+    { provide: APP_GUARD, useClass: AccessGuard },
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
+  ],
 })
 export class AppModule {}
 

@@ -2,6 +2,9 @@
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IaService } from './ia.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Assistant IA')
+@ApiBearerAuth()
 @Controller('ia')
 @UseGuards(JwtAuthGuard)
 export class IaController {

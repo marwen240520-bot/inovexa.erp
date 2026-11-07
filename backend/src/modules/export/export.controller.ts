@@ -3,6 +3,8 @@ import { ExportModuleService } from './export.service';
 import { CreateExportModuleDto } from './dto/create-export.dto';
 import { UpdateExportModuleDto } from './dto/update-export.dto';
 
+import { ApiTags } from '@nestjs/swagger';
+@ApiTags('Exports')
 @Controller('export')
 export class ExportModuleController {
   constructor(private readonly exportService: ExportModuleService) {}

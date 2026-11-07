@@ -1,12 +1,15 @@
 ﻿// products.service.ts
+import { VAT_RATES } from '../../common/fiscal';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { Product } from './product.entity';
+import { StockService } from '../stock/stock.service';
 
 import { toNumber } from '../../common/import-utils';
 @Injectable()
@@ -14,7 +17,25 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    @InjectDataSource()
+    private dataSource: DataSource,
+    private stock: StockService,
   ) {}
+
+  /** Crée le produit ; son stock de départ entre dans le journal des mouvements (type « opening »). */
+  private async createWithOpeningStock(userId: number, productData: any, costPrice?: number) {
+    const openingQty = this.parseNumber(productData.quantity);
+    return this.dataSource.transaction(async (em) => {
+      const saved = await em.save(Product, em.create(Product, { ...productData, quantity: 0, avgCost: 0 }) as unknown as Product);
+      if (openingQty > 0) {
+        await this.stock.move(em, {
+          userId, productId: saved.id, quantity: openingQty, reason: 'opening', type: 'opening',
+          unitCost: costPrice !== undefined && Number.isFinite(costPrice) ? costPrice : undefined, note: 'Stock initial',
+        });
+      }
+      return (await em.findOne(Product, { where: { id: saved.id } })) as Product;
+    });
+  }
 
   async findAll(userId: number) {
     return this.productRepository.find({
@@ -39,10 +60,31 @@ export class ProductsService {
       quantity: this.parseNumber(data.quantity),
       categoryId: this.parseCategoryId(data.categoryId),
       imageUrl: this.cleanImage(data.imageUrl),
+      ...this.erpFields(data),
       userId: userId,
     };
-    const product = this.productRepository.create(productData);
-    return this.productRepository.save(product);
+    return this.createWithOpeningStock(userId, productData, this.optionalCost(data));
+  }
+
+  /** Champs ERP d'un produit (TVA, unité, seuil d'alerte, code-barres, service/stockable, lots), validés. */
+  private erpFields(data: any): Record<string, any> {
+    const out: Record<string, any> = {};
+    if (!data || typeof data !== 'object') return out;
+    if (data.vatRate !== undefined && data.vatRate !== null && data.vatRate !== '') {
+      const v = Number(data.vatRate);
+      if (!(VAT_RATES as readonly number[]).includes(v)) throw new BadRequestException(`Taux de TVA invalide (${VAT_RATES.join(', ')} %).`);
+      out.vatRate = v;
+    }
+    if (data.minStock !== undefined && data.minStock !== null && data.minStock !== '') {
+      const m = Number(data.minStock);
+      if (!Number.isFinite(m) || m < 0) throw new BadRequestException('Seuil d’alerte invalide.');
+      out.minStock = m;
+    }
+    if (data.unit !== undefined) out.unit = String(data.unit || 'pce').slice(0, 20);
+    if (data.barcode !== undefined) out.barcode = data.barcode ? String(data.barcode).slice(0, 60) : null;
+    if (data.isStockable !== undefined) out.isStockable = data.isStockable === true || data.isStockable === 'true';
+    if (data.trackLots !== undefined) out.trackLots = data.trackLots === true || data.trackLots === 'true';
+    return out;
   }
 
   async importProducts(userId: number, products: any[]) {
@@ -89,8 +131,7 @@ export class ProductsService {
           userId: userId,
         };
 
-        const product = this.productRepository.create(productData);
-        await this.productRepository.save(product);
+        await this.createWithOpeningStock(userId, productData, this.optionalCost(data));
         success++;
       } catch (error) {
         errors++;
@@ -115,9 +156,10 @@ export class ProductsService {
   async update(id: number, userId: number, data: any) {
     const product = await this.findOne(id, userId);
     // On n'autorise pas la modification de l'identité / du propriétaire ni du stock (calculé par achats et ventes)
-    const { quantity, id: _id, userId: _userId, user: _user, category: _category, createdAt: _c, updatedAt: _u, ...updateData } = data || {};
+    // Le coût moyen (avgCost) est calculé par le module Stock : il ne se modifie pas ici.
+    const { quantity, avgCost: _avg, id: _id, userId: _userId, user: _user, category: _category, createdAt: _c, updatedAt: _u, vatRate: _v, minStock: _m, unit: _un, barcode: _b, isStockable: _s, trackLots: _t, ...updateData } = data || {};
     if ('imageUrl' in updateData) updateData.imageUrl = this.cleanImage(updateData.imageUrl);
-    Object.assign(product, updateData);
+    Object.assign(product, updateData, this.erpFields(data));
     return this.productRepository.save(product);
   }
 
@@ -170,6 +212,14 @@ export class ProductsService {
     if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(v)) return v;
     if (/^https?:\/\/[^\s<>"']+$/i.test(v)) return v;
     throw new BadRequestException('Format d\'image non pris en charge (utilisez PNG, JPEG, WebP ou GIF)');
+  }
+
+  /** Prix d'achat facultatif fourni à la création (« costPrice » / « prix d'achat ») : coût initial du stock. */
+  private optionalCost(data: any): number | undefined {
+    const raw = this.findField(data, ['costPrice', 'cost_price', 'cost', "prix d'achat", 'prix achat', 'prix_achat', 'cout', 'coût']);
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    const n = toNumber(raw, NaN);
+    return Number.isFinite(n) && n >= 0 ? n : undefined;
   }
 
   private parseNumber(value: any): number {

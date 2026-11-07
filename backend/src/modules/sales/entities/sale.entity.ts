@@ -1,4 +1,5 @@
 ﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { QTY } from '../../../common/column-transformers';
 
 @Entity('sales')
 export class Sale {
@@ -17,7 +18,7 @@ export class Sale {
   @Column({ nullable: true })
   productName: string;
 
-  @Column({ default: 1 })
+  @Column({ ...QTY, default: 1 })
   quantity: number;
 
   @Column({ default: 0, type: 'decimal', precision: 10, scale: 2 })
@@ -32,6 +33,17 @@ export class Sale {
   // Moyen de paiement (caisse rapide) : cash | card | transfer | check | draft | mobile | other
   @Column({ type: 'varchar', length: 30, nullable: true })
   paymentMethod: string | null;
+
+  // Document commercial à l'origine de cette ligne (devis/facture…) : null pour une vente saisie directement.
+  @Column({ type: 'int', nullable: true })
+  documentId: number | null;
+
+  // Caisse : session de caisse et ticket d'origine (null hors caisse).
+  @Column({ type: 'int', nullable: true })
+  posSessionId: number | null;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  ticketNumber: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

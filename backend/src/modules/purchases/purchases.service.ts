@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { StockService } from '../stock/stock.service';
 import { Purchase } from './entities/purchase.entity';
 import { Product } from '../products/product.entity';
 import { Supplier } from '../suppliers/supplier.entity';
@@ -15,6 +17,9 @@ export class PurchasesService {
     private productRepository: Repository<Product>,
     @InjectRepository(Supplier)
     private supplierRepository: Repository<Supplier>,
+    @InjectDataSource()
+    private dataSource: DataSource,
+    private stock: StockService,
   ) {}
 
   /** Si un nom de fournisseur est saisi et n'existe pas encore, le crée dans le module Fournisseurs. */
@@ -62,31 +67,37 @@ export class PurchasesService {
       throw new BadRequestException('Le produit est requis');
     }
 
-    const product = await this.productRepository.findOne({ where: { id: data.productId } });
-    if (!product) {
-      throw new NotFoundException('Produit non trouve');
-    }
-
     // Auto-création du fournisseur si le nom saisi n'existe pas dans le module Fournisseurs
     const supplier = await this.ensureSupplierExists(userId, data.supplierName);
 
-    const purchase = this.purchaseRepository.create({
-      ...data,
-      supplierName: supplier ? supplier.name : (data.supplierName || null),
-      userId,
-      productName: product.name,
-      total: (data.unitPrice || 0) * (data.quantity || 1)
+    return this.dataSource.transaction(async (em) => {
+      const product = await em.findOne(Product, { where: { id: data.productId, userId } });
+      if (!product) {
+        throw new NotFoundException('Produit non trouve');
+      }
+
+      const { documentId: _ignored, ...input } = data || {};
+      const purchase = em.create(Purchase, {
+        ...input,
+        supplierName: supplier ? supplier.name : (data.supplierName || null),
+        userId,
+        productName: product.name,
+        total: (data.unitPrice || 0) * (data.quantity || 1),
+      } as any) as unknown as Purchase;
+      const savedPurchase = await em.save(Purchase, purchase);
+
+      // ✅ Entrée en stock tracée dans le journal ; le prix d'achat alimente le coût moyen pondéré (CMUP).
+      await this.stock.move(em, {
+        userId, productId: product.id, quantity: Number(data.quantity || 0), reason: 'purchase', refType: 'purchase', refId: savedPurchase.id,
+        unitCost: Number(data.unitPrice || 0), note: `Achat #${savedPurchase.id}${savedPurchase.supplierName ? ' — ' + savedPurchase.supplierName : ''}`,
+      });
+      const fresh = await em.findOne(Product, { where: { id: product.id } });
+
+      return {
+        ...savedPurchase,
+        newStock: fresh ? fresh.quantity : product.quantity,
+      };
     });
-    const savedPurchase = await this.purchaseRepository.save(purchase);
-
-    // ✅ Mettre à jour le stock du produit après un achat
-    product.quantity = (product.quantity || 0) + (data.quantity || 0);
-    await this.productRepository.save(product);
-
-    return {
-      ...savedPurchase,
-      newStock: product.quantity
-    };
   }
 
   async updateStatus(id: number, userId: number, status: string) {
@@ -98,15 +109,24 @@ export class PurchasesService {
 
   async delete(id: number, userId: number) {
     const purchase = await this.findOne(id, userId);
-
-    // ✅ Rétablir le stock si l'achat est supprimé
-    const product = await this.productRepository.findOne({ where: { id: purchase.productId } });
-    if (product) {
-      product.quantity = Math.max(0, (product.quantity || 0) - (purchase.quantity || 0));
-      await this.productRepository.save(product);
+    if (purchase.documentId) {
+      throw new BadRequestException('Cette ligne vient d’un bon de réception validé : corrigez-la par un avoir fournisseur, pas en la supprimant.');
     }
 
-    await this.purchaseRepository.delete(id);
+    await this.dataSource.transaction(async (em) => {
+      // ✅ Rétablir le stock si l'achat est supprimé (sans jamais passer sous zéro)
+      const product = await em.findOne(Product, { where: { id: purchase.productId, userId } });
+      if (product) {
+        const take = Math.min(Number(purchase.quantity || 0), Math.max(0, Number(product.quantity || 0)));
+        if (take > 0) {
+          await this.stock.move(em, {
+            userId, productId: product.id, quantity: -take, reason: 'purchase_cancel', refType: 'purchase', refId: purchase.id,
+            note: `Annulation de l'achat #${purchase.id}`,
+          });
+        }
+      }
+      await em.delete(Purchase, id);
+    });
     return { success: true, message: 'Achat supprimé, stock rétabli' };
   }
 
@@ -166,11 +186,11 @@ export class PurchasesService {
           ),
           ...(date ? { createdAt: date } : {}),
         });
-        await this.purchaseRepository.save(purchase);
-
-        // Même règle que la création manuelle : un achat augmente le stock
-        product.quantity = (product.quantity || 0) + quantity;
-        await this.productRepository.save(product);
+        // Même règle que la création manuelle : un achat augmente le stock (tracé dans le journal)
+        await this.dataSource.transaction(async (em) => {
+          const saved = await em.save(Purchase, purchase);
+          await this.stock.move(em, { userId, productId: product!.id, quantity, reason: 'purchase', refType: 'purchase', refId: saved.id, unitCost: unitPrice, note: 'Import d\'achats' });
+        });
         success++;
       } catch (e) {
         details.push({ row: i + 2, error: errorMessage(e) });

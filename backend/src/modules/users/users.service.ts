@@ -1,4 +1,5 @@
-﻿import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+﻿import { assertStrongPassword } from '../auth/auth.service';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -43,6 +44,7 @@ export class UsersService {
       throw new UnauthorizedException('Ancien mot de passe incorrect');
     }
     
+    assertStrongPassword(newPassword);
     user.password = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
     
@@ -52,7 +54,9 @@ export class UsersService {
   // Lit la configuration des modules depuis la colonne user.modules
   // (la même source que l'admin édite via /admin/clients/:id/modules)
   async getUserModules(id: number): Promise<Record<string, boolean>> {
-    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'modules'] });
+    let user = await this.userRepository.findOne({ where: { id }, select: ['id', 'modules', 'ownerId'] });
+    // Un membre d'équipe utilise les modules activés pour la société de son propriétaire
+    if (user && user.ownerId) user = await this.userRepository.findOne({ where: { id: user.ownerId }, select: ['id', 'modules'] });
     const stored = (user && user.modules) || {};
     // Client jamais configuré : tous les modules actifs par défaut
     if (Object.keys(stored).length === 0) {

@@ -3,6 +3,8 @@ import { CustomersModuleService } from './customers.service';
 import { CreateCustomersModuleDto } from './dto/create-customers.dto';
 import { UpdateCustomersModuleDto } from './dto/update-customers.dto';
 
+import { ApiTags } from '@nestjs/swagger';
+@ApiTags('Clients (CRM historique)')
 @Controller('customers')
 export class CustomersModuleController {
   constructor(private readonly customersService: CustomersModuleService) {}
