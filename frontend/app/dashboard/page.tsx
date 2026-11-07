@@ -896,7 +896,9 @@ export default function DashboardPage() {
     maxWidth: isMobile ? "100%" : "1400px", 
     margin: "0 auto", 
     width: "100%",
-    padding: isMobile ? "0" : "20px"
+    padding: isMobile ? "0" : "20px",
+    // Tableau de bord affiché à 90 % (plus de contenu visible) sur bureau et tablette
+    zoom: isMobile ? 1 : 0.9,
   };
 
   if (loading) {
@@ -1005,7 +1007,7 @@ export default function DashboardPage() {
                   <GlobalSearch isMobile={isMobile} />
                 </div>
                 
-                <NotificationBell variant="inline" isMobile={isMobile} size={isMobile ? 46 : 48} />
+                <NotificationBell isMobile={isMobile} size={isMobile ? 46 : 48} />
 
                 <ThemeToggle size={isMobile ? 46 : 48} />
 

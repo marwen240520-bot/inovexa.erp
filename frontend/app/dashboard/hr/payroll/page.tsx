@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import HrNav from "@/components/erp/HrNav";
 import {
-  api, Badge, Btn, Card, Empty, ErrorBox, Field, fetchFile, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, Tabs, td, th,
+  api, Badge, Btn, Card, Empty, ErrorBox, Field, fetchFile, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, td, th,
   todayISO, useLoad, useNotice, useRequireAuth,
 } from "@/components/erp/kit";
 
@@ -12,14 +13,23 @@ const LEAVE_STATUS: Record<string, [string, "amber" | "green" | "red" | "gray"]>
 const SLIP_STATUS: Record<string, [string, "amber" | "blue" | "green"]> = { draft: ["Brouillon", "amber"], validated: ["Validé", "blue"], paid: ["Payé", "green"] };
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
+const SUBTITLE: Record<Tab, string> = { payroll: "Bulletins de paie mensuels", leaves: "Demandes et soldes de congés", settings: "Paramètres de paie (taux, barème, cotisations)" };
+
 export default function PayrollPage() {
+  return <Suspense fallback={<Loading />}><PayrollContent /></Suspense>;
+}
+
+/** Onglet lu dans l'adresse (?tab=payroll|leaves|settings) : la sous-navigation RH y mène directement. */
+function PayrollContent() {
   useRequireAuth();
-  const [tab, setTab] = useState<Tab>("payroll");
+  const params = useSearchParams();
+  const raw = params.get("tab");
+  const tab: Tab = raw === "leaves" || raw === "settings" ? raw : "payroll";
   const [notice, notify] = useNotice();
   return (
-    <Page title="Paie et congés" subtitle="Bulletins mensuels, soldes de congés et paramètres de paie" actions={<Link href="/dashboard/hr"><Btn>← Employés</Btn></Link>}>
+    <Page title="Ressources humaines" subtitle={SUBTITLE[tab]}>
+      <HrNav />
       {notice}
-      <Tabs<Tab> value={tab} onChange={setTab} tabs={[["payroll", "Bulletins de paie"], ["leaves", "Congés"], ["settings", "Paramètres de paie"]]} />
       {tab === "payroll" && <Payslips notify={notify} />}
       {tab === "leaves" && <Leaves notify={notify} />}
       {tab === "settings" && <Settings notify={notify} />}

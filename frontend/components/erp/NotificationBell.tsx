@@ -22,11 +22,8 @@ const ago = (iso: string) => {
   return `il y a ${Math.round(s / 86400)} j`;
 };
 
-/**
- * `variant="floating"` (défaut) : bouton fixe (bord du menu en bureau, bas à droite en mobile), utilisé par le layout.
- * `variant="inline"` : bouton dans le flux, à placer dans l'en-tête d'une page (taille `size`) ; le panneau s'accroche au bouton.
- */
-export default function NotificationBell({ isMobile, variant = "floating", size }: { isMobile: boolean; variant?: "floating" | "inline"; size?: number }) {
+/** Bouton à placer dans l'en-tête d'une page (taille `size`, comme le bouton de thème) ; le panneau s'accroche au bouton. */
+export default function NotificationBell({ isMobile, size }: { isMobile: boolean; size?: number }) {
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
   const [open, setOpen] = useState(false);
@@ -88,24 +85,15 @@ export default function NotificationBell({ isMobile, variant = "floating", size 
     if (n.link) { setOpen(false); router.push(n.link); }
   }
 
-  const inline = variant === "inline";
-  const btnSize = size ?? (isMobile ? 44 : 34);
+  const btnSize = size ?? (isMobile ? 44 : 40);
   const iconSize = Math.max(16, Math.round(btnSize * 0.46));
-  const trigger: React.CSSProperties = inline
-    ? { position: "relative" }
-    : isMobile
-    ? { position: "fixed", right: 14, bottom: 88, zIndex: 1001 }
-    : { position: "fixed", left: 240, top: 66, zIndex: 1001 };
-  const panel: React.CSSProperties = inline
-    ? isMobile
-      ? { position: "fixed", left: 8, right: 8, top: panelTop, maxHeight: `calc(100vh - ${panelTop + 16}px)` }
-      : { position: "absolute", right: 0, top: btnSize + 8, width: 400, maxHeight: "80vh" }
-    : isMobile
-    ? { position: "fixed", left: 8, right: 8, bottom: 140, maxHeight: "65vh" }
-    : { position: "fixed", left: 296, top: 60, width: 400, maxHeight: "80vh" };
+  const trigger: React.CSSProperties = { position: "relative" };
+  const panel: React.CSSProperties = isMobile
+    ? { position: "fixed", left: 8, right: 8, top: panelTop, maxHeight: `calc(100vh - ${panelTop + 16}px)` }
+    : { position: "absolute", right: 0, top: btnSize + 8, width: 400, maxHeight: "80vh" };
 
   return (
-    <div ref={box} style={inline ? { position: "relative", flexShrink: 0 } : undefined}>
+    <div ref={box} style={{ position: "relative", flexShrink: 0 }}>
       <button
         type="button"
         aria-label={unread ? `Alertes : ${unread} non lue(s)` : "Alertes"}
@@ -117,7 +105,7 @@ export default function NotificationBell({ isMobile, variant = "floating", size 
         }}
         style={{
           ...trigger, width: btnSize, height: btnSize, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          background: "var(--theme-surface)", color: "var(--theme-text)", border: "1px solid var(--theme-border)", boxShadow: isMobile && !inline ? "0 4px 14px rgba(0,0,0,.25)" : "none",
+          background: "var(--theme-surface)", color: "var(--theme-text)", border: "1px solid var(--theme-border)", boxShadow: "none",
         }}
       >
         <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
