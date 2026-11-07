@@ -101,7 +101,7 @@ function Overview({ notify }: { notify: (m: string, t?: "ok" | "err") => void })
         <>
           {k.overCreditLimit && <Notice>Plafond d’encours dépassé : {moneyDT(k.outstanding)} dus pour un plafond de {moneyDT(k.creditLimit)}. Les nouvelles factures à crédit sont bloquées.</Notice>}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-            <Stat label="CA net 12 mois (TTC)" value={moneyDT(k.netRevenue12m)} sub={`${k.invoiceCount} facture(s)`} />
+            <Stat label="CA net 12 mois (TTC)" value={moneyDT(k.netRevenue12m)} sub={`${k.invoiceCount ?? 0} facture(s)${k.legacyCount ? ` · ${k.legacyCount} vente(s) caisse / ancien module` : ""}`} />
             <Stat label="Encours" value={moneyDT(k.outstanding)} sub={k.creditLimit != null ? `${k.creditUsedPct ?? 0} % du plafond` : "Pas de plafond"} tone={k.overCreditLimit ? "bad" : undefined} />
             <Stat label="En retard" value={moneyDT(k.overdue)} tone={k.overdue > 0 ? "bad" : "good"} />
             <Stat label="Délai moyen de règlement" value={k.averagePaymentDays == null ? "—" : `${k.averagePaymentDays} j`} sub={k.lastInvoice ? `Dernière facture ${fmtDate(k.lastInvoice)}` : undefined} />
@@ -138,6 +138,17 @@ function Overview({ notify }: { notify: (m: string, t?: "ok" | "err") => void })
               )}
             </Card>
           </div>
+
+          {!!ov.data.legacySales?.length && (
+            <Card title="Ventes en caisse et ancien module Ventes (sans facture)" pad={false}>
+              <TableWrap min={420}>
+                <thead><tr><th style={th}>Date</th><th style={th}>Article</th><th style={{ ...th, ...num }}>Qté</th><th style={{ ...th, ...num }}>Total</th><th style={th}>Ticket</th></tr></thead>
+                <tbody>{ov.data.legacySales.map((x: any) => (
+                  <tr key={x.id}><td style={td}>{fmtDate(x.date)}</td><td style={td}>{x.productName || "—"}</td><td style={{ ...td, ...num }}>{Number(x.quantity || 0).toLocaleString("fr-FR")}</td><td style={{ ...td, ...num }}>{money(x.total)}</td><td style={td}>{x.ticketNumber || "—"}</td></tr>
+                ))}</tbody>
+              </TableWrap>
+            </Card>
+          )}
 
           <Card title="Historique des échanges" right={<Btn variant="primary" onClick={() => setInter({ kind: "call", subject: "", content: "", followUpDate: "" })}>+ Noter un échange</Btn>} pad={false}>
             {!ov.data.interactions.length ? <Empty>Aucun échange enregistré.</Empty> : ov.data.interactions.map((i: any) => (

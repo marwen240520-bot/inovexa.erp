@@ -27,6 +27,7 @@ const MODULE_OF: Record<SearchType, string> = {
 
 const TEXTS: Record<string, any> = {
   fr: {
+    micNetwork: "Service de reconnaissance vocale injoignable : vérifiez la connexion internet", micNoSpeech: "Rien entendu : réessayez en parlant plus près du micro", micNoDevice: "Aucun micro détecté sur cet appareil", micOther: "Reconnaissance vocale indisponible sur ce navigateur",
     voice: "Recherche vocale", listening: "À l’écoute… parlez maintenant", micDenied: "Micro refusé : autorisez-le dans le navigateur",
     placeholder: "Rechercher dans votre espace…",
     hint: "Clients, produits, factures, ventes, employés…",
@@ -40,6 +41,7 @@ const TEXTS: Record<string, any> = {
     groups: { clients: "Clients", suppliers: "Fournisseurs", products: "Produits", categories: "Catégories", invoices: "Factures", sales: "Ventes", purchases: "Achats", orders: "Commandes", employees: "Employés", shipments: "Expéditions" },
   },
   en: {
+    micNetwork: "Speech service unreachable: check your internet connection", micNoSpeech: "Nothing heard: try again closer to the microphone", micNoDevice: "No microphone found on this device", micOther: "Voice recognition is unavailable in this browser",
     voice: "Voice search", listening: "Listening… speak now", micDenied: "Microphone blocked: allow it in your browser",
     placeholder: "Search your workspace…",
     hint: "Clients, products, invoices, sales, employees…",
@@ -53,6 +55,7 @@ const TEXTS: Record<string, any> = {
     groups: { clients: "Clients", suppliers: "Suppliers", products: "Products", categories: "Categories", invoices: "Invoices", sales: "Sales", purchases: "Purchases", orders: "Orders", employees: "Employees", shipments: "Shipments" },
   },
   es: {
+    micNetwork: "Servicio de voz no disponible: compruebe la conexión a internet", micNoSpeech: "No se oyó nada: inténtelo de nuevo más cerca del micrófono", micNoDevice: "No se detectó ningún micrófono", micOther: "El reconocimiento de voz no está disponible en este navegador",
     voice: "Búsqueda por voz", listening: "Escuchando… hable ahora", micDenied: "Micrófono bloqueado: permítalo en el navegador",
     placeholder: "Buscar en su espacio…",
     hint: "Clientes, productos, facturas, ventas, empleados…",
@@ -195,7 +198,12 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
     };
     rec.onerror = (e: any) => {
       setListening(false);
-      setVoiceError(e?.error === "not-allowed" || e?.error === "service-not-allowed" ? t.micDenied : null);
+      const code = String(e?.error || "");
+      const msg: Record<string, string | null> = {
+        "not-allowed": t.micDenied, "service-not-allowed": t.micDenied, network: t.micNetwork, "no-speech": t.micNoSpeech,
+        "audio-capture": t.micNoDevice, aborted: null,
+      };
+      setVoiceError(code in msg ? msg[code] : t.micOther);
     };
     rec.onend = () => { setListening(false); inputRef.current?.focus(); };
     recognitionRef.current = rec;
