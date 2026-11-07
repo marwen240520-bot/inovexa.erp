@@ -2,6 +2,9 @@
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PurchasesService } from './purchases.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Achats (historique)')
+@ApiBearerAuth()
 @Controller('purchases')
 @UseGuards(JwtAuthGuard)
 export class PurchasesController {

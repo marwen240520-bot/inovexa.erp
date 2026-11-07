@@ -1,15 +1,22 @@
-﻿FROM node:20-alpine AS builder
+# Image de production de l'interface Next.js (contexte de build : la racine du dépôt)
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ .
+# Les variables NEXT_PUBLIC_* sont figées dans le code au moment du build
+ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 FROM node:20-alpine
+ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/next.config.* ./
 COPY frontend/package*.json ./
+USER node
 EXPOSE 3000
 CMD ["npm", "start"]

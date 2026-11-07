@@ -2,6 +2,9 @@ import { Body, Controller, Get, Param, ParseIntPipe, Post, Request, UseGuards } 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PosService } from './pos.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Caisse (POS)')
+@ApiBearerAuth()
 @Controller('pos')
 @UseGuards(JwtAuthGuard)
 export class PosController {

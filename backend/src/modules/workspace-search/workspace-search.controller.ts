@@ -2,6 +2,9 @@ import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WorkspaceSearchService } from './workspace-search.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Recherche globale')
+@ApiBearerAuth()
 @Controller('workspace-search')
 @UseGuards(JwtAuthGuard)
 export class WorkspaceSearchController {

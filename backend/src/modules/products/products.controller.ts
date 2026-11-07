@@ -2,6 +2,9 @@
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProductsService } from './products.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Produits')
+@ApiBearerAuth()
 @Controller('products')
 @UseGuards(JwtAuthGuard)
 export class ProductsController {

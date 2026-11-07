@@ -2,6 +2,9 @@
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProductionService } from './production.service';
 
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+@ApiTags('Production')
+@ApiBearerAuth()
 @Controller('production/orders')
 @UseGuards(JwtAuthGuard)
 export class ProductionController {
