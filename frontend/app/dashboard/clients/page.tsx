@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import ModuleNav, { CLIENT_TABS } from "@/components/erp/ModuleNav";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -653,6 +654,9 @@ export default function ClientsPage() {
               </button>
             </div>
           </div>
+
+          {/* -- Sous-navigation du module Clients (liste, fiche 360°, relances, listes de prix) -- */}
+          <Suspense fallback={null}><ModuleNav tabs={CLIENT_TABS} label="Clients" /></Suspense>
 
           {/* -- Message -- */}
           {message && (

@@ -1,8 +1,10 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import ModuleNav, { CLIENT_TABS } from "@/components/erp/ModuleNav";
 import {
-  api, Badge, Btn, Card, Empty, ErrorBox, Field, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, StatusBadge, TableWrap, Tabs, td, th,
+  api, Badge, Btn, Card, Empty, ErrorBox, Field, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, StatusBadge, TableWrap, td, th,
   useLoad, useNotice, useRequireAuth,
 } from "@/components/erp/kit";
 
@@ -13,14 +15,26 @@ const KIND: Record<string, string> = { call: "Appel", email: "Email", meeting: "
 const DOC_LABEL: Record<string, string> = { invoice: "Facture", credit_note: "Avoir", quote: "Devis", delivery_note: "Bon de livraison", purchase_order: "Bon de commande", goods_receipt: "Bon de réception", supplier_invoice: "Facture fournisseur", supplier_credit_note: "Avoir fournisseur" };
 const toNum = (v: string) => (v.trim() === "" ? null : Number(v.replace(",", ".")));
 
+const SUBTITLE: Record<Tab, string> = {
+  overview: "Fiche 360° : encours, retards, conditions commerciales et historique des échanges",
+  followups: "Échanges à suivre et relances à faire",
+  prices: "Tarifs spécifiques par liste de prix",
+};
+
 export default function CrmPage() {
+  return <Suspense fallback={<Loading />}><CrmContent /></Suspense>;
+}
+
+/** Onglet lu dans l'adresse (?tab=overview|followups|prices) : la sous-navigation Clients y mène directement. */
+function CrmContent() {
   useRequireAuth();
-  const [tab, setTab] = useState<Tab>("overview");
+  const raw = useSearchParams().get("tab");
+  const tab: Tab = raw === "followups" || raw === "prices" ? raw : "overview";
   const [notice, notify] = useNotice();
   return (
-    <Page title="Relation client" subtitle="Fiche 360°, conditions commerciales, historique des échanges, relances et listes de prix">
+    <Page title="Clients" subtitle={SUBTITLE[tab]}>
+      <ModuleNav tabs={CLIENT_TABS} label="Clients" />
       {notice}
-      <Tabs<Tab> value={tab} onChange={setTab} tabs={[["overview", "Fiche 360°"], ["followups", "À relancer"], ["prices", "Listes de prix"]]} />
       {tab === "overview" && <Overview notify={notify} />}
       {tab === "followups" && <FollowUps />}
       {tab === "prices" && <PriceLists notify={notify} />}

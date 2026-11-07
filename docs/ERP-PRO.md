@@ -68,16 +68,16 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 | ----- | ------- | ------- |
 | Factures & devis (documents commerciaux) | `/dashboard/documents` (+ `/new`, `/[id]`, `/[id]/edit`) — `/dashboard/invoices` y redirige | Liste par type et statut, import d’un historique Excel, éditeur de brouillon, fiche (validation, encaissement, conversion, avoir, envoi, PDF) |
 | Règlements et créances | `/dashboard/documents/payments` | Journal des règlements, balance âgée clients / fournisseurs |
-| Société | `/dashboard/company` | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
+| Paramètres › Société & fiscalité | `/dashboard/company` (sous-onglet de Paramètres) | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
 | Comptabilité | `/dashboard/accounting` | Journal, balance, résultat, TVA, rapprochement bancaire, écritures manuelles, export |
 | Ressources humaines | `/dashboard/hr` (employés) et `/dashboard/hr/payroll?tab=payroll|leaves|settings` | Un seul module avec sous-onglets : employés, bulletins (génération, validation, paiement, PDF), congés et soldes, paramètres de paie |
-| Relation client | `/dashboard/crm` | Fiche 360°, conditions, échanges, relances, listes de prix |
+| Clients › Fiche 360° / À relancer / Listes de prix | `/dashboard/crm?tab=overview|followups|prices` (sous-onglets de Clients) | Fiche 360°, conditions, échanges, relances, listes de prix |
 | Rapports de gestion | `/dashboard/reports/business` | Ventes, marges, valorisation du stock, exports Excel |
 | Sessions de caisse | `/dashboard/pos/sessions` | Ouverture / clôture, rapport Z, recherche de ticket |
 | Alertes | cloche dans l’en-tête du tableau de bord | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
 
 Ces écrans suivent les modules activés du compte (entrées du menu rattachées à `invoices`, `finance`, `hr`, `reports`, `clients`, `pos`, `settings`) et partagent
-un petit kit de composants (`frontend/components/erp/kit.tsx`).
+un petit kit de composants (`frontend/components/erp/kit.tsx`). La barre de recherche du tableau de bord accepte la **voix** (bouton micro, navigateurs Chrome / Edge / Safari).
 
 ## 9. Sécurité et traçabilité
 

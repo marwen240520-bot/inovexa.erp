@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import HrNav from "@/components/erp/HrNav";
+import ModuleNav, { HR_TABS } from "@/components/erp/ModuleNav";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -685,7 +685,7 @@ export default function HRPage() {
           </div>
 
           {/* -- Sous-navigation du module RH (employés, paie, congés) -- */}
-          <Suspense fallback={null}><HrNav /></Suspense>
+          <Suspense fallback={null}><ModuleNav tabs={HR_TABS} label="Ressources humaines" /></Suspense>
 
           {/* -- Message -- */}
           {message && (

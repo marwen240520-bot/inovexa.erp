@@ -1,7 +1,7 @@
 "use client";
 import React, { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import HrNav from "@/components/erp/HrNav";
+import ModuleNav, { HR_TABS } from "@/components/erp/ModuleNav";
 import {
   api, Badge, Btn, Card, Empty, ErrorBox, Field, fetchFile, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, td, th,
   todayISO, useLoad, useNotice, useRequireAuth,
@@ -28,7 +28,7 @@ function PayrollContent() {
   const [notice, notify] = useNotice();
   return (
     <Page title="Ressources humaines" subtitle={SUBTITLE[tab]}>
-      <HrNav />
+      <ModuleNav tabs={HR_TABS} label="Ressources humaines" />
       {notice}
       {tab === "payroll" && <Payslips notify={notify} />}
       {tab === "leaves" && <Leaves notify={notify} />}
