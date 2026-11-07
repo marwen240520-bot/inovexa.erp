@@ -1,0 +1,92 @@
+name: Sauvegarde de la base
+
+# Sauvegarde chiffrée quotidienne, suivie d'une restauration de contrôle dans une base temporaire.
+# Secrets à créer (Settings → Secrets and variables → Actions) :
+#   DATABASE_URL        base de production (accessible depuis Internet, SSL recommandé)
+#   BACKUP_PASSPHRASE   phrase de passe de chiffrement — CONSERVEZ-LA AILLEURS : sans elle la sauvegarde est inutilisable
+#   BACKUP_S3_URI       (conseillé) ex. s3://mon-bucket/inovexa ; + AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_DEFAULT_REGION
+#   BACKUP_S3_ENDPOINT  (optionnel) pour un stockage compatible S3 autre qu'AWS
+# Sans BACKUP_S3_URI, la sauvegarde chiffrée est conservée 30 jours comme artefact du workflow.
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      BACKUP_S3_URI: ${{ secrets.BACKUP_S3_URI }}
+      BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      BACKUP_DIR: ${{ github.workspace }}/backups
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier la configuration
+        run: |
+          [ -n "$DATABASE_URL" ] || { echo "::error::Secret DATABASE_URL manquant"; exit 1; }
+          [ -n "$BACKUP_PASSPHRASE" ] || { echo "::error::Secret BACKUP_PASSPHRASE manquant : une sauvegarde non chiffrée ne doit pas quitter le serveur"; exit 1; }
+      - name: Installer le client PostgreSQL 16
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16
+      - name: Sauvegarder
+        run: bash backend/scripts/ops/backup.sh
+      - name: Conserver la sauvegarde chiffrée (si pas de stockage externe)
+        if: env.BACKUP_S3_URI == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: sauvegarde-${{ github.run_id }}
+          path: backups/*
+          retention-days: 30
+
+  restore-check:
+    # Une sauvegarde jamais restaurée n'est qu'une hypothèse : on restaure pour de vrai celle qui vient d'être faite.
+    needs: backup
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      ADMIN_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      BACKUP_DIR: ${{ github.workspace }}/backups
+      BACKUP_S3_URI: ${{ secrets.BACKUP_S3_URI }}
+      BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer la sauvegarde
+        if: env.BACKUP_S3_URI == ''
+        uses: actions/download-artifact@v4
+        with:
+          name: sauvegarde-${{ github.run_id }}
+          path: backups
+      - name: Récupérer la sauvegarde (stockage externe)
+        if: env.BACKUP_S3_URI != ''
+        run: |
+          EP=(); [ -n "$BACKUP_S3_ENDPOINT" ] && EP=(--endpoint-url "$BACKUP_S3_ENDPOINT")
+          mkdir -p backups
+          LATEST=$(aws "${EP[@]}" s3 ls "${BACKUP_S3_URI%/}/" | grep -E 'inovexa-.*\.gpg$' | sort | tail -1 | awk '{print $4}')
+          aws "${EP[@]}" s3 cp "${BACKUP_S3_URI%/}/$LATEST" backups/ --only-show-errors
+          aws "${EP[@]}" s3 cp "${BACKUP_S3_URI%/}/$LATEST.sha256" backups/ --only-show-errors
+      - name: Installer le client PostgreSQL 16
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16
+      - name: Restaurer dans une base temporaire et comparer
+        run: bash backend/scripts/ops/verify-restore.sh

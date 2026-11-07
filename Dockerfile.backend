@@ -1,14 +1,21 @@
-﻿FROM node:20-alpine AS builder
+# Image de production de l'API (contexte de build : la racine du dépôt)
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY backend/package*.json ./
 RUN npm ci
 COPY backend/ .
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 
 FROM node:20-alpine
+ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
 COPY backend/package*.json ./
-EXPOSE 3000
-CMD ["node", "dist/main"]
+RUN mkdir -p uploads && chown -R node:node /app
+USER node
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:${PORT:-3001}/ >/dev/null || exit 1
+# Les migrations s'appliquent automatiquement au démarrage (NODE_ENV=production).
+CMD ["node", "dist/main.js"]

@@ -13,6 +13,10 @@ import { SequenceService } from '../../common/sequences/sequence.service';
 import { StockService, MoveInput } from '../stock/stock.service';
 import { AccountingService } from '../accounting/accounting.service';
 import { LegacyMirrorService } from './legacy-mirror.service';
+<<<<<<< HEAD
+=======
+import { LegacyImportService } from './legacy-import.service';
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
 import { DocumentPdfService } from './document-pdf.service';
 import { MailService } from '../../common/mail/mail.service';
 import { PermissionsService } from '../auth/permissions.service';
@@ -90,6 +94,10 @@ export class DocumentsService {
     private readonly pdf: DocumentPdfService,
     private readonly mail: MailService,
     private readonly permissions: PermissionsService,
+<<<<<<< HEAD
+=======
+    private readonly legacyImport: LegacyImportService,
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
   ) {}
 
   // ═════════════════════════════ Lecture ═════════════════════════════
@@ -106,6 +114,10 @@ export class DocumentsService {
     userId: number,
     f: { type?: string; status?: string; paymentStatus?: string; partyId?: number; from?: string; to?: string; search?: string; overdue?: boolean; limit?: number; offset?: number },
   ) {
+<<<<<<< HEAD
+=======
+    await this.legacyImport.ensure(userId);
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
     await this.refreshExpired(userId);
     const qb = this.ds.getRepository(Document).createQueryBuilder('d').where('d.userId = :userId', { userId });
     if (f.type) {

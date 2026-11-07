@@ -68,7 +68,11 @@ export const MODULE_ROUTES: Record<ModuleName, string> = {
   categories: "/dashboard/categories",
   clients: "/dashboard/clients",
   orders: "/dashboard/orders",
+<<<<<<< HEAD
   invoices: "/dashboard/invoices",
+=======
+  invoices: "/dashboard/documents",
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
   employees: "/dashboard/hr",
   suppliers: "/dashboard/suppliers",
   expenses: "/dashboard/finance",

@@ -6,6 +6,10 @@ import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Actor, DocumentsService } from './documents.service';
 import { PaymentsService } from './payments.service';
+<<<<<<< HEAD
+=======
+import { LegacyImportService } from './legacy-import.service';
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
 import { DOC_META } from './documents.types';
 import { PAYMENT_METHODS } from './entities/payment.entity';
 import { DOCUMENT_TYPES } from './entities/document.entity';
@@ -14,7 +18,11 @@ import {
   ApplyCreditDto, CancelDto, ConvertDto, CreateDocumentDto, InstallmentsDto, PaymentDto, RemindDto, SendDto, UpdateDocumentDto, VoidPaymentDto,
 } from './documents.dto';
 
+<<<<<<< HEAD
 const actorOf = (req: any): Actor => ({
+=======
+export const actorOf = (req: any): Actor => ({
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
   userId: req.user.userId,
   actorId: req.user.actorId ?? req.user.userId,
   role: req.user.role,
@@ -35,7 +43,11 @@ const int = (v: any) => (v === undefined || v === '' ? undefined : Number.isFini
 @UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class DocumentsController {
+<<<<<<< HEAD
   constructor(private readonly docs: DocumentsService, private readonly payments: PaymentsService) {}
+=======
+  constructor(private readonly docs: DocumentsService, private readonly payments: PaymentsService, private readonly legacyImport: LegacyImportService) {}
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
 
   // ── Routes statiques d'abord (avant « :id ») ──
 
@@ -89,6 +101,15 @@ export class DocumentsController {
     });
   }
 
+<<<<<<< HEAD
+=======
+  @Post('import-legacy')
+  @ApiOperation({ summary: 'Reprend les factures de l’ancien module (sans documentId) comme documents validés ; idempotent' })
+  importLegacy(@Request() req: any) {
+    return this.legacyImport.importAll(req.user.userId);
+  }
+
+>>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
   @Post()
   @ApiOperation({ summary: 'Crée un brouillon' })
   create(@Request() req: any, @Body() body: CreateDocumentDto) {

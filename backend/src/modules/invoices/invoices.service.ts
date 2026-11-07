@@ -93,6 +93,8 @@ export class InvoicesService {
 
   async create(userId: number, data: any) {
     const dueDate = this.getValidDate(data.dueDate);
+    // Historique importé d'Excel : la date de la facture d'origine devient la date de création (reprise dans Documents).
+    const createdAt = this.getValidDate(data.createdAt);
     const type = data.type || 'debit';
 
     let clientId = this.toIntOrNull(data.clientId);
@@ -154,6 +156,7 @@ export class InvoicesService {
       paymentMethod: normalizePaymentMethod(data.paymentMethod),
       notes: data.notes || '',
       status: data.status || 'pending',
+      ...(createdAt && createdAt.getTime() <= Date.now() ? { createdAt } : {}),
     });
     
     try {
@@ -332,6 +335,7 @@ export class InvoicesService {
           taxAmount,
           amount,
           dueDate: toDate(pick(row, ['dueDate', 'due date', 'echeance', 'date echeance', "date d'echeance"])),
+          createdAt: toDate(pick(row, ['date', 'date facture', 'invoice date', 'issueDate', 'date emission', "date d'emission"])),
           paymentTerms: toText(pick(row, ['paymentTerms', 'payment terms', 'conditions de paiement', 'conditions de reglement', 'delai de paiement'])) || 'Net 30',
           paymentMethod: pick(row, ['paymentMethod', 'payment method', 'moyen de paiement', 'mode de paiement', 'mode de reglement', 'reglement', 'paiement']),
           notes: toText(pick(row, ['notes', 'note', 'remarque', 'commentaire'])) || '',

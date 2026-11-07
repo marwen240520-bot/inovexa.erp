@@ -1,6 +1,25 @@
+# Dépendances et compilation
 node_modules/
 .next/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Secrets et configuration locale — ne JAMAIS les versionner
 .env
+.env.*
+!.env.example
 .env.local
+admin-register.json
+
+# Données
+backend/uploads/*
+!backend/uploads/.gitkeep
+backups/
+
+# Parasites
 .DS_Store
 *.log
+*.bak
+*.backup
+*.zip

@@ -23,6 +23,8 @@ export interface SearchHit {
   subtitle: string;
   /** Page de l'application où le résultat se trouve */
   path: string;
+  /** Lien direct vers la fiche, quand il existe */
+  href?: string;
 }
 
 const MIN_LENGTH = 2;
@@ -90,7 +92,7 @@ export class WorkspaceSearchService {
       ...suppliers.map((s): SearchHit => ({ type: 'suppliers', id: s.id, title: s.name, subtitle: join(s.contact, s.email, s.phone), path: '/dashboard/suppliers' })),
       ...products.map((p): SearchHit => ({ type: 'products', id: p.id, title: p.name, subtitle: join(p.sku && `SKU ${p.sku}`, money(p.price), `stock ${p.quantity ?? 0}`), path: '/dashboard/products' })),
       ...categories.map((c): SearchHit => ({ type: 'categories', id: c.id, title: c.name, subtitle: join(c.description), path: '/dashboard/categories' })),
-      ...invoices.map((i): SearchHit => ({ type: 'invoices', id: i.id, title: i.reference || i.operationNumber, subtitle: join(i.clientName || i.supplierName, money(i.amount), i.status), path: '/dashboard/invoices' })),
+      ...invoices.map((i): SearchHit => ({ type: 'invoices', id: i.id, title: i.reference || i.operationNumber, subtitle: join(i.clientName || i.supplierName, money(i.amount), i.status), path: '/dashboard/documents', href: i.documentId ? `/dashboard/documents/${i.documentId}` : undefined })),
       ...sales.map((s): SearchHit => ({ type: 'sales', id: s.id, title: s.productName || `Vente #${s.id}`, subtitle: join(s.clientName, money(s.total), s.status), path: '/dashboard/sales' })),
       ...purchases.map((p): SearchHit => ({ type: 'purchases', id: p.id, title: p.productName || `Achat #${p.id}`, subtitle: join(p.supplierName, money(p.total), p.status), path: '/dashboard/purchases' })),
       ...orders.map((o): SearchHit => ({ type: 'orders', id: o.id, title: o.productName || `Commande #${o.id}`, subtitle: join(o.clientName, money(o.total), o.status), path: '/dashboard/orders' })),
