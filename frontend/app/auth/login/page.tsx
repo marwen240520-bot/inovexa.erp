@@ -388,7 +388,7 @@ export default function LoginPage() {
         </div>
       </main>
 
-      <p className="lg-footer" suppressHydrationWarning>© {year} Inovexa. {t.rights}</p>
+      
 
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
     </div>
