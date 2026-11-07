@@ -2,7 +2,8 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api, Btn, Card, Empty, ErrorBox, fmtDate, inputStyle, Loading, money, num, Page, Row, StatusBadge, TableWrap, td, th, useLoad, useRequireAuth } from "@/components/erp/kit";
+import { api, Btn, Card, Empty, ErrorBox, fmtDate, inputStyle, Loading, money, num, Page, Row, StatusBadge, TableWrap, td, th, useLoad, useNotice, useRequireAuth } from "@/components/erp/kit";
+import ImportButton from "@/components/ui/ImportButton";
 
 const SALES = [["invoice", "Factures"], ["quote", "Devis"], ["delivery_note", "Bons de livraison"], ["credit_note", "Avoirs"]] as const;
 const PURCHASES = [["supplier_invoice", "Factures fournisseurs"], ["purchase_order", "Bons de commande"], ["goods_receipt", "Réceptions"], ["supplier_credit_note", "Avoirs fournisseurs"]] as const;
@@ -25,6 +26,18 @@ function DocumentsList() {
   const side = PURCHASES.some(([t]) => t === type) ? "purchases" : "sales";
   const tabs = side === "sales" ? SALES : PURCHASES;
   const settles = SETTLES.has(type);
+  const [notice, notify] = useNotice();
+
+  /** Reprise d'un historique Excel (ancien format « Factures ») : les lignes deviennent des factures validées. */
+  async function importHistory(rows: any[]) {
+    try {
+      const r = await api<any>("/invoices/import", { method: "POST", body: { invoices: rows } });
+      const n = Number(r?.migrated?.imported ?? r?.success ?? 0);
+      const failed = Number(r?.errors ?? 0) + Number(r?.migrated?.skipped?.length ?? 0);
+      notify(`${n} facture(s) reprise(s)${failed ? `, ${failed} ligne(s) ignorée(s)` : ""}.`, failed && !n ? "err" : "ok");
+      list.reload();
+    } catch (e: any) { notify(e.message, "err"); }
+  }
 
   const list = useLoad(
     () => api<{ total: number; items: any[] }>("/documents", { query: { type, search: search.trim(), status, overdue: overdue || undefined, limit } }),
@@ -39,11 +52,13 @@ function DocumentsList() {
       subtitle="Devis, livraisons, factures et avoirs — achats et ventes, numérotation légale sans trou"
       actions={
         <>
+          {settles && !SINGULAR[type].includes("avoir") && <ImportButton onImport={importHistory} label="Importer un historique (Excel)" />}
           <Link href="/dashboard/documents/payments"><Btn>Règlements</Btn></Link>
           <Btn variant="primary" onClick={() => router.push(`/dashboard/documents/new?type=${type}`)}>+ Nouveau {SINGULAR[type]}</Btn>
         </>
       }
     >
+      {notice}
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <Btn variant={side === "sales" ? "primary" : "ghost"} onClick={() => switchSide("sales")}>Ventes</Btn>
         <Btn variant={side === "purchases" ? "primary" : "ghost"} onClick={() => switchSide("purchases")}>Achats</Btn>

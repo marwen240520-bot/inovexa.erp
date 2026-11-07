@@ -13,6 +13,7 @@ import { SequenceService } from '../../common/sequences/sequence.service';
 import { StockService, MoveInput } from '../stock/stock.service';
 import { AccountingService } from '../accounting/accounting.service';
 import { LegacyMirrorService } from './legacy-mirror.service';
+import { LegacyImportService } from './legacy-import.service';
 import { DocumentPdfService } from './document-pdf.service';
 import { MailService } from '../../common/mail/mail.service';
 import { PermissionsService } from '../auth/permissions.service';
@@ -90,6 +91,7 @@ export class DocumentsService {
     private readonly pdf: DocumentPdfService,
     private readonly mail: MailService,
     private readonly permissions: PermissionsService,
+    private readonly legacyImport: LegacyImportService,
   ) {}
 
   // ═════════════════════════════ Lecture ═════════════════════════════
@@ -106,6 +108,7 @@ export class DocumentsService {
     userId: number,
     f: { type?: string; status?: string; paymentStatus?: string; partyId?: number; from?: string; to?: string; search?: string; overdue?: boolean; limit?: number; offset?: number },
   ) {
+    await this.legacyImport.ensure(userId);
     await this.refreshExpired(userId);
     const qb = this.ds.getRepository(Document).createQueryBuilder('d').where('d.userId = :userId', { userId });
     if (f.type) {

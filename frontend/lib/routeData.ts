@@ -19,7 +19,6 @@ const ROUTE_ENDPOINTS: Record<string, string[]> = {
   "/dashboard/orders": ["/orders", "/clients", "/products"],
   "/dashboard/clients": ["/clients"],
   "/dashboard/suppliers": ["/suppliers"],
-  "/dashboard/invoices": ["/invoices", "/clients", "/suppliers"],
   "/dashboard/hr": ["/employees", "/departments"],
   "/dashboard/pos": ["/products", "/pos/today"],
   "/dashboard/objectives": ["/objectives"],

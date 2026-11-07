@@ -8,6 +8,14 @@ appliquées et — surtout — **ce qui doit être validé par votre expert-comp
 Un moteur unique pour 8 types de pièces : devis, bon de livraison, facture, avoir (ventes) et bon de commande, bon de réception,
 facture fournisseur, avoir fournisseur (achats).
 
+**Ancien module « Factures » fusionné.** La table `invoices` n'est plus qu'un reflet en lecture seule des factures validées
+(elle continue d'alimenter le tableau de bord, les analyses et l'assistant). Les factures saisies dans l'ancien écran sont reprises
+automatiquement dans Documents à la première consultation (`POST /documents/import-legacy` pour forcer) : numéro d'origine conservé
+(suffixé seulement en cas de doublon), montants repris tels quels, règlement « repris » pour les factures payées, sans écriture
+comptable ni mouvement de stock (historique déjà traité). `POST /invoices`, `PUT` et `DELETE` répondent 410 ; `PATCH /invoices/:id/pay`
+règle le document correspondant ; `POST /invoices/import` (historique Excel, colonne `date` = date de la facture) reprend aussitôt
+les lignes dans Documents. L'adresse `/dashboard/invoices` redirige vers `/dashboard/documents`.
+
 - **Brouillon modifiable → validation → pièce figée.** À la validation la pièce reçoit son numéro légal (`FA-2026-00001`, par type et par année,
   **sans trou** : le numéro est attribué dans la même transaction que la validation, une erreur n'en consomme aucun). Une pièce validée ne peut
   plus être modifiée ni supprimée (HTTP 409) ; une erreur se corrige par un **avoir**.
@@ -58,7 +66,7 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 
 | Écran | Adresse | Contenu |
 | ----- | ------- | ------- |
-| Documents commerciaux | `/dashboard/documents` (+ `/new`, `/[id]`, `/[id]/edit`) | Liste par type et statut, éditeur de brouillon, fiche (validation, encaissement, conversion, avoir, envoi, PDF) |
+| Factures & devis (documents commerciaux) | `/dashboard/documents` (+ `/new`, `/[id]`, `/[id]/edit`) — `/dashboard/invoices` y redirige | Liste par type et statut, import d’un historique Excel, éditeur de brouillon, fiche (validation, encaissement, conversion, avoir, envoi, PDF) |
 | Règlements et créances | `/dashboard/documents/payments` | Journal des règlements, balance âgée clients / fournisseurs |
 | Société | `/dashboard/company` | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
 | Comptabilité | `/dashboard/accounting` | Journal, balance, résultat, TVA, rapprochement bancaire, écritures manuelles, export |
@@ -66,7 +74,7 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 | Relation client | `/dashboard/crm` | Fiche 360°, conditions, échanges, relances, listes de prix |
 | Rapports de gestion | `/dashboard/reports/business` | Ventes, marges, valorisation du stock, exports Excel |
 | Sessions de caisse | `/dashboard/pos/sessions` | Ouverture / clôture, rapport Z, recherche de ticket |
-| Alertes | cloche dans le menu latéral | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
+| Alertes | cloche dans l’en-tête du tableau de bord (bouton flottant sur les autres pages) | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
 
 Ces écrans suivent les modules activés du compte (entrées du menu rattachées à `invoices`, `finance`, `hr`, `reports`, `clients`, `pos`, `settings`) et partagent
 un petit kit de composants (`frontend/components/erp/kit.tsx`).

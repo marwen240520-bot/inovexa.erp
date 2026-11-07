@@ -7,6 +7,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
+import NotificationBell from "@/components/erp/NotificationBell";
 import type { TooltipItem } from "chart.js";
 import { Line, Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
@@ -1004,6 +1005,8 @@ export default function DashboardPage() {
                   <GlobalSearch isMobile={isMobile} />
                 </div>
                 
+                <NotificationBell variant="inline" isMobile={isMobile} size={isMobile ? 46 : 48} />
+
                 <ThemeToggle size={isMobile ? 46 : 48} />
 
                 {/* Profil utilisateur */}
@@ -1257,7 +1260,7 @@ export default function DashboardPage() {
                   const typeIcon: keyof typeof Icons = activity.type === "order" ? "ClipboardList" : "Receipt";
                   const typeColor = activity.type === "order" ? "#f59e0b" : theme.primary;
                   return (
-                    <div key={idx} className="activity-item" style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", padding: isMobile ? "8px" : "10px", background: theme.surfaceHover, borderRadius: "10px", borderLeft: `3px solid ${typeColor}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "all 0.25s ease", WebkitTapHighlightColor: "transparent" }} onMouseEnter={() => setHoveredActivity(idx)} onMouseLeave={() => setHoveredActivity(null)} onClick={() => router.push(activity.type === "order" ? "/dashboard/orders" : "/dashboard/invoices")}>
+                    <div key={idx} className="activity-item" style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", padding: isMobile ? "8px" : "10px", background: theme.surfaceHover, borderRadius: "10px", borderLeft: `3px solid ${typeColor}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "all 0.25s ease", WebkitTapHighlightColor: "transparent" }} onMouseEnter={() => setHoveredActivity(idx)} onMouseLeave={() => setHoveredActivity(null)} onClick={() => router.push(activity.type === "order" ? "/dashboard/orders" : "/dashboard/documents")}>
                       <div style={{ width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", display: "flex", alignItems: "center", justifyContent: "center", background: `${typeColor}20`, borderRadius: "8px", transition: "transform 0.2s", transform: hoveredActivity === idx ? "scale(1.1)" : "scale(1)" }}>
                         <Icon name={typeIcon} size={isMobile ? "16px" : "18px"} color={typeColor} />
                       </div>

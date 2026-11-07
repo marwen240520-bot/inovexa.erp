@@ -5,9 +5,10 @@ import { InvoicesService } from './invoices.service';
 import { Invoice } from './entities/invoice.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Supplier } from '../suppliers/supplier.entity';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Invoice, Client, Supplier])],
+  imports: [TypeOrmModule.forFeature([Invoice, Client, Supplier]), DocumentsModule],
   controllers: [InvoicesController],
   providers: [InvoicesService],
   exports: [InvoicesService],

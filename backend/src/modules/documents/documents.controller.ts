@@ -6,6 +6,7 @@ import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Actor, DocumentsService } from './documents.service';
 import { PaymentsService } from './payments.service';
+import { LegacyImportService } from './legacy-import.service';
 import { DOC_META } from './documents.types';
 import { PAYMENT_METHODS } from './entities/payment.entity';
 import { DOCUMENT_TYPES } from './entities/document.entity';
@@ -14,7 +15,7 @@ import {
   ApplyCreditDto, CancelDto, ConvertDto, CreateDocumentDto, InstallmentsDto, PaymentDto, RemindDto, SendDto, UpdateDocumentDto, VoidPaymentDto,
 } from './documents.dto';
 
-const actorOf = (req: any): Actor => ({
+export const actorOf = (req: any): Actor => ({
   userId: req.user.userId,
   actorId: req.user.actorId ?? req.user.userId,
   role: req.user.role,
@@ -35,7 +36,7 @@ const int = (v: any) => (v === undefined || v === '' ? undefined : Number.isFini
 @UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class DocumentsController {
-  constructor(private readonly docs: DocumentsService, private readonly payments: PaymentsService) {}
+  constructor(private readonly docs: DocumentsService, private readonly payments: PaymentsService, private readonly legacyImport: LegacyImportService) {}
 
   // ── Routes statiques d'abord (avant « :id ») ──
 
@@ -87,6 +88,12 @@ export class DocumentsController {
       type: q.type, status: q.status, paymentStatus: q.paymentStatus, partyId: int(q.partyId), from: q.from, to: q.to,
       search: q.search, overdue: q.overdue === 'true' || q.overdue === '1', limit: int(q.limit), offset: int(q.offset),
     });
+  }
+
+  @Post('import-legacy')
+  @ApiOperation({ summary: 'Reprend les factures de l’ancien module (sans documentId) comme documents validés ; idempotent' })
+  importLegacy(@Request() req: any) {
+    return this.legacyImport.importAll(req.user.userId);
   }
 
   @Post()

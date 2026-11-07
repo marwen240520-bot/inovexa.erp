@@ -12,3 +12,6 @@ backups/
 admin-register.json
 *.bak
 *.zip
+
+# Sorties des tests de bout en bout
+test/e2e/*.pdf

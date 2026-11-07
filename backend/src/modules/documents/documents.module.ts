@@ -5,17 +5,19 @@ import { DocumentsService } from './documents.service';
 import { PaymentsService } from './payments.service';
 import { DocumentPdfService } from './document-pdf.service';
 import { LegacyMirrorService } from './legacy-mirror.service';
+import { LegacyImportService } from './legacy-import.service';
 import { Document } from './entities/document.entity';
 import { DocumentLine } from './entities/document-line.entity';
 import { Payment } from './entities/payment.entity';
 import { DocumentInstallment } from './entities/document-installment.entity';
+import { Invoice } from '../invoices/entities/invoice.entity';
 import { StockModule } from '../stock/stock.module';
 import { AccountingModule } from '../accounting/accounting.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Document, DocumentLine, Payment, DocumentInstallment]), StockModule, AccountingModule],
+  imports: [TypeOrmModule.forFeature([Document, DocumentLine, Payment, DocumentInstallment, Invoice]), StockModule, AccountingModule],
   controllers: [DocumentsController],
-  providers: [DocumentsService, PaymentsService, DocumentPdfService, LegacyMirrorService],
-  exports: [DocumentsService, PaymentsService, DocumentPdfService],
+  providers: [DocumentsService, PaymentsService, DocumentPdfService, LegacyMirrorService, LegacyImportService],
+  exports: [DocumentsService, PaymentsService, DocumentPdfService, LegacyImportService],
 })
 export class DocumentsModule {}

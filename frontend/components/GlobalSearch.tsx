@@ -12,6 +12,7 @@ interface Hit {
   type: SearchType;
   id: number;
   title: string;
+  href?: string;
   subtitle: string;
   path: string;
 }
@@ -67,6 +68,8 @@ const TEXTS: Record<string, any> = {
 const LOCAL_SOURCES: Record<SearchType, {
   url: string; path: string; fields: string[];
   title: (r: any) => string; subtitle: (r: any) => string;
+  /** Lien direct vers la fiche (sinon la page de liste, filtrée sur le terme). */
+  href?: (r: any) => string | null;
 }> = (() => {
   const money = (n: any) => `${Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €`;
   const join = (...p: any[]) => p.filter((x) => x !== null && x !== undefined && String(x).trim() !== "").join(" · ");
@@ -75,7 +78,7 @@ const LOCAL_SOURCES: Record<SearchType, {
     suppliers: { url: "suppliers", path: "/dashboard/suppliers", fields: ["name", "contact", "email", "phone", "address"], title: (r) => r.name, subtitle: (r) => join(r.contact, r.email, r.phone) },
     products: { url: "products", path: "/dashboard/products", fields: ["name", "sku"], title: (r) => r.name, subtitle: (r) => join(r.sku && `SKU ${r.sku}`, money(r.price), `stock ${r.quantity ?? 0}`) },
     categories: { url: "categories", path: "/dashboard/categories", fields: ["name", "description"], title: (r) => r.name, subtitle: (r) => join(r.description) },
-    invoices: { url: "invoices", path: "/dashboard/invoices", fields: ["reference", "operationNumber", "clientName", "supplierName", "description"], title: (r) => r.reference || r.operationNumber, subtitle: (r) => join(r.clientName || r.supplierName, money(r.amount), r.status) },
+    invoices: { url: "invoices", path: "/dashboard/documents", href: (r) => (r.documentId ? `/dashboard/documents/${r.documentId}` : null), fields: ["reference", "operationNumber", "clientName", "supplierName", "description"], title: (r) => r.reference || r.operationNumber, subtitle: (r) => join(r.clientName || r.supplierName, money(r.amount), r.status) },
     sales: { url: "sales", path: "/dashboard/sales", fields: ["productName", "clientName"], title: (r) => r.productName || `Vente #${r.id}`, subtitle: (r) => join(r.clientName, money(r.total), r.status) },
     purchases: { url: "purchases", path: "/dashboard/purchases", fields: ["productName", "supplierName"], title: (r) => r.productName || `Achat #${r.id}`, subtitle: (r) => join(r.supplierName, money(r.total), r.status) },
     orders: { url: "orders", path: "/dashboard/orders", fields: ["productName", "clientName"], title: (r) => r.productName || `Commande #${r.id}`, subtitle: (r) => join(r.clientName, money(r.total), r.status) },
@@ -114,7 +117,7 @@ function searchLocalLists(data: Partial<Record<SearchType, any[]>>, query: strin
     (data[type] || [])
       .filter((r) => src.fields.some((f) => normalizeText(r?.[f]).includes(q)))
       .slice(0, limit)
-      .forEach((r) => hits.push({ type, id: r.id, title: String(src.title(r) ?? ""), subtitle: String(src.subtitle(r) ?? ""), path: src.path }));
+      .forEach((r) => hits.push({ type, id: r.id, title: String(src.title(r) ?? ""), subtitle: String(src.subtitle(r) ?? ""), path: src.path, href: src.href?.(r) || undefined }));
   });
   return hits;
 }
@@ -258,7 +261,7 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
   const go = useCallback((hit: Hit) => {
     setOpen(false);
     // La page de destination s'ouvre déjà filtrée sur le terme recherché
-    router.push(`${hit.path}?q=${encodeURIComponent(searched || trimmed)}`);
+    router.push(hit.href || `${hit.path}?q=${encodeURIComponent(searched || trimmed)}`);
   }, [router, searched, trimmed]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
