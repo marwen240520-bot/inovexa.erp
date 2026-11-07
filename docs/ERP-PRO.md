@@ -54,7 +54,24 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 `/notifications` (stock bas, factures en retard, devis qui expirent, péremption, échéances fournisseurs ; dédoublonnées, récapitulatif par email),
 `/reports/business` (CA net, marges par produit/client, exports Excel ventes, marges, balance âgée, valorisation du stock).
 
-## 8. Sécurité et traçabilité
+## 8. Écrans (interface)
+
+| Écran | Adresse | Contenu |
+| ----- | ------- | ------- |
+| Documents commerciaux | `/dashboard/documents` (+ `/new`, `/[id]`, `/[id]/edit`) | Liste par type et statut, éditeur de brouillon, fiche (validation, encaissement, conversion, avoir, envoi, PDF) |
+| Règlements et créances | `/dashboard/documents/payments` | Journal des règlements, balance âgée clients / fournisseurs |
+| Société | `/dashboard/company` | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
+| Comptabilité | `/dashboard/accounting` | Journal, balance, résultat, TVA, rapprochement bancaire, écritures manuelles, export |
+| Paie et congés | `/dashboard/hr/payroll` | Bulletins (génération, validation, paiement, PDF), congés et soldes, paramètres de paie |
+| Relation client | `/dashboard/crm` | Fiche 360°, conditions, échanges, relances, listes de prix |
+| Rapports de gestion | `/dashboard/reports/business` | Ventes, marges, valorisation du stock, exports Excel |
+| Sessions de caisse | `/dashboard/pos/sessions` | Ouverture / clôture, rapport Z, recherche de ticket |
+| Alertes | cloche dans le menu latéral | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
+
+Ces écrans suivent les modules activés du compte (entrées du menu rattachées à `invoices`, `finance`, `hr`, `reports`, `clients`, `pos`, `settings`) et partagent
+un petit kit de composants (`frontend/components/erp/kit.tsx`).
+
+## 9. Sécurité et traçabilité
 
 Droits par ressource et par action (propriétaire / équipe), journal d'audit des opérations, limitation de débit, en-têtes de sécurité (helmet),
 double authentification, validation stricte des entrées.
