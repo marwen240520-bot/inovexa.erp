@@ -6,6 +6,7 @@ import { PaymentsService } from './payments.service';
 import { DocumentPdfService } from './document-pdf.service';
 import { LegacyMirrorService } from './legacy-mirror.service';
 import { LegacyImportService } from './legacy-import.service';
+import { TeifService } from './teif.service';
 import { Document } from './entities/document.entity';
 import { DocumentLine } from './entities/document-line.entity';
 import { Payment } from './entities/payment.entity';
@@ -17,7 +18,7 @@ import { AccountingModule } from '../accounting/accounting.module';
 @Module({
   imports: [TypeOrmModule.forFeature([Document, DocumentLine, Payment, DocumentInstallment, Invoice]), StockModule, AccountingModule],
   controllers: [DocumentsController],
-  providers: [DocumentsService, PaymentsService, DocumentPdfService, LegacyMirrorService, LegacyImportService],
-  exports: [DocumentsService, PaymentsService, DocumentPdfService, LegacyImportService],
+  providers: [DocumentsService, PaymentsService, DocumentPdfService, LegacyMirrorService, LegacyImportService, TeifService],
+  exports: [DocumentsService, PaymentsService, DocumentPdfService, LegacyImportService, TeifService],
 })
 export class DocumentsModule {}

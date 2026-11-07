@@ -29,7 +29,7 @@ export class HrService {
     const current = await this.settings(userId);
     const next: any = { ...current };
     const rates = ['cnssEmployeeRate', 'cnssEmployerRate', 'workAccidentRate', 'professionalExpensesRate', 'solidarityRate'];
-    const amounts = ['professionalExpensesCap', 'headOfFamilyDeduction', 'childDeduction', 'maxChildrenDeducted', 'leaveDaysPerMonth'];
+    const amounts = ['professionalExpensesCap', 'headOfFamilyDeduction', 'childDeduction', 'maxChildrenDeducted', 'leaveDaysPerMonth', 'solidarityExemptionThreshold'];
     for (const k of rates) if ((patch as any)[k] !== undefined) {
       const v = Number((patch as any)[k]);
       if (!Number.isFinite(v) || v < 0 || v > 100) throw new BadRequestException(`${k} doit être un pourcentage entre 0 et 100.`);

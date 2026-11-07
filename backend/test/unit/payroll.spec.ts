@@ -8,12 +8,15 @@ describe('annualIncomeTax (barème progressif)', () => {
     expect(annualIncomeTax(5000, S.brackets)).toBe(0);
   });
   it('applique chaque tranche à la part qui lui revient', () => {
-    expect(annualIncomeTax(30000, S.brackets)).toBe(6700); // 15 000 × 26 % + 10 000 × 28 %
-    expect(annualIncomeTax(60000, S.brackets)).toBe(16600); // + 20 000 × 32 % + 10 000 × 35 %
+    // Barème LF 2025 : 5 000 × 15 % + 10 000 × 25 % + 10 000 × 30 %
+    expect(annualIncomeTax(30000, S.brackets)).toBe(6250);
+    // + 10 000 × 33 % + 10 000 × 36 % + 10 000 × 38 %
+    expect(annualIncomeTax(60000, S.brackets)).toBe(16950);
+    expect(annualIncomeTax(100000, S.brackets)).toBe(32750); // + 10 000 × 38 % + 30 000 × 40 %
   });
   it('est continu à la frontière des tranches', () => {
-    expect(annualIncomeTax(20000, S.brackets)).toBe(3900);
-    expect(annualIncomeTax(20001, S.brackets)).toBe(3900.28); // le dinar suivant est taxé à 28 %
+    expect(annualIncomeTax(20000, S.brackets)).toBe(3250);
+    expect(annualIncomeTax(20001, S.brackets)).toBe(3250.3); // le dinar suivant est taxé à 30 %
   });
 });
 
@@ -23,9 +26,10 @@ describe('computePayslip', () => {
     expect(r.employeeCnss).toBe(183.6);
     expect(r.details.professionalExpenses).toBe(2000); // plafonné
     expect(r.details.familyDeduction).toBe(500);
-    expect(r.incomeTax).toBe(309.764);
-    expect(r.solidarityContribution).toBe(16.081);
-    expect(r.netSalary).toBe(1490.555);
+    expect(r.details.annualTaxable).toBe(19296.8);
+    expect(r.incomeTax).toBe(256.183); // (750 + 9 296,8 × 25 %) / 12
+    expect(r.solidarityContribution).toBe(8.04); // 0,5 % du revenu imposable mensuel (1 608,067)
+    expect(r.netSalary).toBe(1552.177);
     expect(r.employerCnss).toBe(341.4);
     expect(r.employerCost).toBe(2341.4);
   });
@@ -40,8 +44,8 @@ describe('computePayslip', () => {
   it('petit salaire : pas d’impôt', () => {
     const r = computePayslip({ grossSalary: 500 }, S);
     expect(r.incomeTax).toBe(0);
-    expect(r.solidarityContribution).toBeGreaterThanOrEqual(0);
-    expect(r.netSalary).toBeCloseTo(500 - r.employeeCnss - r.solidarityContribution, 3);
+    expect(r.solidarityContribution).toBe(0); // revenu imposable ≤ 5 000 DT/an : exonéré de CSS
+    expect(r.netSalary).toBeCloseTo(500 - r.employeeCnss, 3);
   });
 
   it('plafonne les enfants déduits', () => {

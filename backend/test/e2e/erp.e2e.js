@@ -74,15 +74,15 @@ const today = iso(new Date());
   const pAli = pay.items.find((p) => p.employeeId === ali.id);
   const pSami = pay.items.find((p) => p.employeeId === sami.id);
   check('bulletin Ali : CNSS 183,600', near(pAli.employeeCnss, 183.6), pAli);
-  check('bulletin Ali : IRPP mensuel 309,764 et CSS 16,081', near(pAli.incomeTax, 309.764) && near(pAli.solidarityContribution, 16.081), pAli);
-  check('bulletin Ali : net 1 490,555', near(pAli.netSalary, 1490.555), pAli);
+  check('bulletin Ali : IRPP mensuel 256,183 (barème LF 2025) et CSS 8,040 (0,5 %)', near(pAli.incomeTax, 256.183) && near(pAli.solidarityContribution, 8.04), pAli);
+  check('bulletin Ali : net 1 552,177', near(pAli.netSalary, 1552.177), pAli);
   check('bulletin Ali : charges patronales 341,400', near(pAli.employerCnss, 341.4) && near(pAli.employerCost, 2341.4), pAli);
   check('absence déduite chez Sami (2/22 de 1 500)', near(pSami.grossSalary, 1500 - (1500 * 2) / 22, 0.002) && near(pSami.details.absenceDeduction, 136.364, 0.002), pSami);
 
   r = await api('PUT', `/hr/payroll/${pAli.id}`, { bonuses: 100 });
   check('prime ajoutée au brouillon, recalcul', r.status === 200 && near(r.body.bonuses, 100) && r.body.netSalary > pAli.netSalary, r.body);
   r = await api('PUT', `/hr/payroll/${pAli.id}`, { bonuses: 0 });
-  check('retour à 0 prime', near(r.body.netSalary, 1490.555), r.body);
+  check('retour à 0 prime', near(r.body.netSalary, 1552.177), r.body);
 
   r = await api('POST', `/hr/payroll/${pAli.id}/pay`, { method: 'transfer' });
   check('paiement avant validation refusé', r.status === 400, r);
@@ -98,7 +98,7 @@ const today = iso(new Date());
   let tb = (await api('GET', `/accounting/trial-balance?from=2026-03-01&to=2026-03-31`)).body;
   const acc = (code) => tb.accounts.find((a) => a.code === code) || { debit: 0, credit: 0 };
   check('écriture de paie : 641 débit 2 000, 645 débit 341,400', near(acc('641').debit, 2000) && near(acc('645').debit, 341.4), tb.accounts.map((a) => [a.code, a.debit, a.credit]));
-  check('écriture de paie : 421 crédit net, 431 crédit CNSS, 4369 crédit impôts', near(acc('421').credit, 1490.555) && near(acc('431').credit, 525) && near(acc('4369').credit, 325.845), tb.accounts.map((a) => [a.code, a.debit, a.credit]));
+  check('écriture de paie : 421 crédit net, 431 crédit CNSS, 4369 crédit impôts', near(acc('421').credit, 1552.177) && near(acc('431').credit, 525) && near(acc('4369').credit, 264.223), tb.accounts.map((a) => [a.code, a.debit, a.credit]));
   check('balance équilibrée après la paie', near(tb.totals.debit, tb.totals.credit), tb.totals);
 
   r = await api('POST', `/hr/payroll/${pAli.id}/pay`, { method: 'transfer', date: '2026-03-31' });
@@ -106,7 +106,7 @@ const today = iso(new Date());
   r = await api('POST', `/hr/payroll/${pAli.id}/pay`, { method: 'transfer' });
   check('double paiement refusé', r.status === 400, r);
   tb = (await api('GET', `/accounting/trial-balance?from=2026-03-01&to=2026-03-31`)).body;
-  check('421 soldé après paiement', near(acc('421').debit, 1490.555) && near(acc('512').credit, 1490.555), tb.accounts.map((a) => [a.code, a.debit, a.credit]));
+  check('421 soldé après paiement', near(acc('421').debit, 1552.177) && near(acc('512').credit, 1552.177), tb.accounts.map((a) => [a.code, a.debit, a.credit]));
   check('balance toujours équilibrée', near(tb.totals.debit, tb.totals.credit), tb.totals);
 
   const pdf = await api('GET', `/hr/payroll/${pAli.id}/pdf`, null, true);

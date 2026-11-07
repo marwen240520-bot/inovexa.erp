@@ -91,8 +91,8 @@ double authentification, validation stricte des entrées.
 | Sujet | Situation |
 | ----- | --------- |
 | **Plan comptable** | Les codes de comptes par défaut sont **indicatifs** (`company.accountMap`, modifiable). L'expert-comptable doit valider/adapter le plan et les comptes d'imputation. |
-| **Paie** | Taux CNSS, plafonds, barème IRPP, CSS, déductions : valeurs de départ **non officielles** stockées dans les paramètres société (`/hr/payroll/settings`, `validated: false` tant qu'elles ne sont pas confirmées). Les primes sont annualisées dans le calcul mensuel ; la régularisation annuelle de l'IRPP n'est pas calculée. |
-| **Facture électronique** | Le JSON produit est un jeu de données prêt à transmettre, **pas une facture certifiée** (pas d'intégration TTN / El Fatoora, pas de signature). |
+| **Paie** | Taux CNSS (9,18 % / 16,57 %), barème IRPP de la LF 2025, CSS 0,5 % (LF 2026, exonération ≤ 5 000 DT), déductions familiales : valeurs **alignées sur les textes 2026** mais à faire valider (dossier `docs/VALIDATION-PAIE-COMPTA.md`, case « validés » dans Paramètres de paie). Les primes sont annualisées dans le calcul mensuel ; la régularisation annuelle de l'IRPP n'est pas calculée. |
+| **Facture électronique** | L'ERP produit le fichier **TEIF 1.8.8** attendu par El Fatoora (validé contre le schéma XSD de TTN). La signature et la transmission se font sur la plateforme avec le certificat de la société : voir `docs/EL-FATOORA.md`. |
 | **Retenue à la source / timbre** | Taux et seuil paramétrables ; vérifier qu'ils correspondent à la loi de finances en vigueur et à vos clients. |
 | **TVA** | La déclaration est calculée sur la **date de facture** (régime des débits), pas sur l'encaissement. |
 | **PDF** | Texte latin uniquement (polices standard) : pas d'arabe dans les documents imprimés. |

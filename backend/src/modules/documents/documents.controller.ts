@@ -158,6 +158,20 @@ export class DocumentsController {
     return this.docs.send(actorOf(req), id, body || {});
   }
 
+  @Get(':id/teif')
+  @ApiOperation({ summary: 'Facture électronique TEIF 1.8.8 (El Fatoora / TTN), non signée ; ?check=1 renvoie seulement les manques' })
+  async teif(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Query('check') check: string, @Res() res: Response) {
+    const out = await this.docs.renderTeif(req.user.userId, id);
+    if (check === '1') { res.json({ ok: out.problems.length === 0, problems: out.problems, filename: out.filename }); return; }
+    const xml = out.xml();
+    res.set({
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${out.filename}"`,
+      'Cache-Control': 'private, no-store',
+    });
+    res.end(xml);
+  }
+
   @Get(':id/pdf')
   @ApiOperation({ summary: 'Télécharge le PDF (mentions légales, TVA par taux, timbre, retenue, montant en lettres)' })
   async pdf(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Query('download') download: string, @Res() res: Response) {

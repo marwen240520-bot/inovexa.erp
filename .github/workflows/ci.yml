@@ -32,6 +32,8 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
+      - name: xmllint (validation XSD des factures électroniques TEIF)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxml2-utils
       - name: Vérification des types
         run: npm run typecheck
       - name: Tests unitaires

@@ -206,6 +206,33 @@ const year = today.slice(0, 4);
   r = await api('GET', `/documents/${fa1.id}/einvoice`);
   check('jeu de données e-facture', r.status === 200 && r.body.seller.taxId.startsWith('1234567X') && r.body.totals.netToPay === 572.2, r.body.totals);
 
+  console.log('— El Fatoora (TEIF 1.8.8)');
+  r = await api('GET', `/documents/${fa1.id}/teif?check=1`);
+  check('matricule client incomplet signalé avant export', r.status === 200 && r.body.ok === false && /client/.test(r.body.problems.join(' ')), r.body);
+  r = await api('PUT', `/clients/${client.id}`, { taxId: '7654321B/A/M/000' });
+  check('matricule complet sur la fiche client', r.status === 200 && r.body.taxId === '7654321B/A/M/000', r.body);
+  r = await api('GET', `/documents/${fa1.id}/teif?check=1`);
+  check('export possible une fois la fiche client complétée', r.status === 200 && r.body.ok === true && r.body.filename === `TEIF-FA-${year}-00001.xml`, r.body);
+  const teif = await api('GET', `/documents/${fa1.id}/teif`, null, true);
+  const xml = await teif.text();
+  check('fichier TEIF téléchargeable', teif.status === 200 && /xml/.test(teif.headers.get('content-type')) && xml.startsWith('<?xml') && xml.includes('<TEIF version="1.8.8" controlingAgency="TTN">'), [teif.status, xml.slice(0, 80)]);
+  check('TEIF : émetteur, client, numéro, totaux', xml.includes('<MessageSenderIdentifier type="I-01">1234567XAM000</MessageSenderIdentifier>') && xml.includes('<MessageRecieverIdentifier type="I-01">7654321BAM000</MessageRecieverIdentifier>') && xml.includes(`<DocumentIdentifier>FA-${year}-00001</DocumentIdentifier>`) && xml.includes('amountTypeCode="I-176"'), xml.slice(0, 400));
+  {
+    const { spawnSync } = require('child_process');
+    const fs = require('fs'), path = require('path'), os = require('os');
+    if (!spawnSync('xmllint', ['--version']).error) {
+      const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'teif-')), 'fa1.xml');
+      fs.writeFileSync(file, xml);
+      const v = spawnSync('xmllint', ['--noout', '--schema', path.resolve(__dirname, '../../resources/teif/teif-1.8.8-withoutSig.xsd'), file], { encoding: 'utf8' });
+      check('TEIF valide selon le schéma XSD de TTN (xmllint)', v.status === 0, v.stderr);
+    } else console.log('  (xmllint absent : validation XSD non exécutée)');
+  }
+  const cnTeif = await api('GET', `/documents/${cn.id}/teif`, null, true);
+  const cnXml = await cnTeif.text();
+  check('avoir : TEIF I-12 référençant la facture', cnTeif.status === 200 && cnXml.includes('<DocumentType code="I-12">') && cnXml.includes(`<Reference refID="I-89">FA-${year}-00002</Reference>`), cnXml.slice(0, 600));
+  r = await api('GET', `/documents/${quote.id}/teif`);
+  check('devis : pas d’export El Fatoora', r.status === 400, r.status);
+
   console.log('— Comptabilité');
   r = await api('GET', '/accounting/trial-balance');
   check('balance générale équilibrée', r.status === 200 && r.body.balanced, r.body.totals);

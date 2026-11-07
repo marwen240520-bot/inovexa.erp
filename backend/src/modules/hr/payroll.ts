@@ -3,10 +3,11 @@ import { round } from '../../common/money';
 /**
  * Calcul de la paie mensuelle (Tunisie).
  *
- * ⚠ Les taux, plafonds et barèmes changent avec les lois de finances et les conventions collectives, et les sources
- * publiques divergent : ils ne sont donc PAS écrits en dur. Les valeurs ci-dessous sont des valeurs de départ
- * indicatives, stockées dans la fiche société (`payrollSettings`) et conservées sur chaque bulletin. Faites-les
- * valider par votre expert-comptable avant d'établir de vrais bulletins.
+ * ⚠ Les taux, plafonds et barèmes changent avec les lois de finances et les conventions collectives : ils ne sont
+ * donc PAS écrits en dur. Les valeurs ci-dessous sont des valeurs de départ alignées sur les textes en vigueur en 2026
+ * (barème IRPP de la loi de finances 2025, CNSS régime général, CSS 2026 — voir docs/VALIDATION-PAIE-COMPTA.md pour
+ * les sources), stockées dans la fiche société (`payrollSettings`) et conservées sur chaque bulletin. Elles restent
+ * à faire valider par l'expert-comptable (case « validés » dans Paramètres de paie) avant d'établir de vrais bulletins.
  */
 export interface PayrollBracket {
   /** Plafond de la tranche en DT par an (null = sans limite). */
@@ -27,6 +28,10 @@ export interface PayrollSettings {
   maxChildrenDeducted: number;
   /** Contribution sociale de solidarité, en % du revenu imposable. */
   solidarityRate: number;
+  /** Revenu net imposable annuel (après déductions) en deçà duquel la CSS n'est pas due (5 000 DT en 2026). */
+  solidarityExemptionThreshold: number;
+  /** Année des textes de référence des valeurs par défaut (information). */
+  referenceYear: number;
   brackets: PayrollBracket[];
   /** Jours de congé payé acquis par mois de travail. */
   leaveDaysPerMonth: number;
@@ -44,13 +49,20 @@ export const DEFAULT_PAYROLL_SETTINGS: PayrollSettings = {
   headOfFamilyDeduction: 300,
   childDeduction: 100,
   maxChildrenDeducted: 4,
-  solidarityRate: 1,
+  // CSS personnes physiques : 1 % − 0,5 point (réduction temporaire LF 2026, art. 87) ; exonération ≤ 5 000 DT.
+  solidarityRate: 0.5,
+  solidarityExemptionThreshold: 5000,
+  referenceYear: 2026,
+  // Barème IRPP (loi de finances 2025, JORT du 10/12/2024 ; inchangé par la LF 2026), tranches annuelles en DT.
   brackets: [
     { upTo: 5000, rate: 0 },
-    { upTo: 20000, rate: 26 },
-    { upTo: 30000, rate: 28 },
-    { upTo: 50000, rate: 32 },
-    { upTo: null, rate: 35 },
+    { upTo: 10000, rate: 15 },
+    { upTo: 20000, rate: 25 },
+    { upTo: 30000, rate: 30 },
+    { upTo: 40000, rate: 33 },
+    { upTo: 50000, rate: 36 },
+    { upTo: 70000, rate: 38 },
+    { upTo: null, rate: 40 },
   ],
   leaveDaysPerMonth: 1,
   workingWeek: [1, 2, 3, 4, 5],
@@ -124,7 +136,8 @@ export function computePayslip(input: PayrollInput, settings: PayrollSettings): 
 
   const incomeTax = round(annualTax / 12, 3);
   const taxableIncome = round(annualTaxable / 12, 3);
-  const solidarityContribution = round((taxableIncome * settings.solidarityRate) / 100, 3);
+  const solidarityExempt = annualTaxable <= (Number(settings.solidarityExemptionThreshold) || 0);
+  const solidarityContribution = solidarityExempt ? 0 : round((taxableIncome * settings.solidarityRate) / 100, 3);
   const otherDeductions = Math.max(0, round(Number(input.otherDeductions) || 0, 3));
   const netSalary = round(totalGross - employeeCnss - incomeTax - solidarityContribution - otherDeductions, 3);
   const employerCnss = round((totalGross * (settings.cnssEmployerRate + settings.workAccidentRate)) / 100, 3);
