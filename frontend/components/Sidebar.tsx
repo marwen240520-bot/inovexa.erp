@@ -25,11 +25,7 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
   "common.more": { fr: "Plus", en: "More", es: "Más" },
   "common.menu": { fr: "Menu", en: "Menu", es: "Menú" },
-<<<<<<< HEAD
-  "nav.documents": { fr: "Devis, factures & avoirs", en: "Quotes, invoices & credit notes", es: "Presupuestos, facturas y abonos" },
-=======
   "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos" },
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
   "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
   "nav.payroll": { fr: "Paie & congés", en: "Payroll & leave", es: "Nóminas y vacaciones" },
   "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión" },
@@ -435,10 +431,6 @@ export default function Sidebar() {
     { id: "clients",    path: "/dashboard/clients",    label: "common.clients",    iconKey: "clients" },
     { id: "crm",        gate: "clients", path: "/dashboard/crm", label: "nav.crm", iconKey: "clients" },
     { id: "suppliers",  path: "/dashboard/suppliers",  label: "common.suppliers",  iconKey: "suppliers" },
-<<<<<<< HEAD
-    { id: "invoices",   path: "/dashboard/invoices",   label: "common.invoices",   iconKey: "invoices" },
-=======
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
     { id: "documents",  gate: "invoices", path: "/dashboard/documents", label: "nav.documents", iconKey: "invoices" },
     { id: "hr",         path: "/dashboard/hr",         label: "common.hr",         iconKey: "hr" },
     { id: "payroll",    gate: "hr", path: "/dashboard/hr/payroll", label: "nav.payroll", iconKey: "hr" },

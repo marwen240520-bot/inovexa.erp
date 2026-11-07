@@ -22,15 +22,11 @@ const ago = (iso: string) => {
   return `il y a ${Math.round(s / 86400)} j`;
 };
 
-<<<<<<< HEAD
-export default function NotificationBell({ isMobile }: { isMobile: boolean }) {
-=======
 /**
  * `variant="floating"` (défaut) : bouton fixe (bord du menu en bureau, bas à droite en mobile), utilisé par le layout.
  * `variant="inline"` : bouton dans le flux, à placer dans l'en-tête d'une page (taille `size`) ; le panneau s'accroche au bouton.
  */
 export default function NotificationBell({ isMobile, variant = "floating", size }: { isMobile: boolean; variant?: "floating" | "inline"; size?: number }) {
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
   const [open, setOpen] = useState(false);
@@ -38,10 +34,7 @@ export default function NotificationBell({ isMobile, variant = "floating", size 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-<<<<<<< HEAD
-=======
   const [panelTop, setPanelTop] = useState(72);
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
   const box = useRef<HTMLDivElement>(null);
 
   // Réservé aux comptes entreprise (ni l'opérateur plateforme, ni les transporteurs).
@@ -95,12 +88,6 @@ export default function NotificationBell({ isMobile, variant = "floating", size 
     if (n.link) { setOpen(false); router.push(n.link); }
   }
 
-<<<<<<< HEAD
-  const trigger: React.CSSProperties = isMobile
-    ? { position: "fixed", right: 14, bottom: 88, zIndex: 1001 }
-    : { position: "fixed", left: 240, top: 66, zIndex: 1001 };
-  const panel: React.CSSProperties = isMobile
-=======
   const inline = variant === "inline";
   const btnSize = size ?? (isMobile ? 44 : 34);
   const iconSize = Math.max(16, Math.round(btnSize * 0.46));
@@ -114,30 +101,16 @@ export default function NotificationBell({ isMobile, variant = "floating", size 
       ? { position: "fixed", left: 8, right: 8, top: panelTop, maxHeight: `calc(100vh - ${panelTop + 16}px)` }
       : { position: "absolute", right: 0, top: btnSize + 8, width: 400, maxHeight: "80vh" }
     : isMobile
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
     ? { position: "fixed", left: 8, right: 8, bottom: 140, maxHeight: "65vh" }
     : { position: "fixed", left: 296, top: 60, width: 400, maxHeight: "80vh" };
 
   return (
-<<<<<<< HEAD
-    <div ref={box}>
-=======
     <div ref={box} style={inline ? { position: "relative", flexShrink: 0 } : undefined}>
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
       <button
         type="button"
         aria-label={unread ? `Alertes : ${unread} non lue(s)` : "Alertes"}
         aria-expanded={open}
         aria-haspopup="dialog"
-<<<<<<< HEAD
-        onClick={() => { setOpen((o) => !o); if (!open) load(false); }}
-        style={{
-          ...trigger, width: isMobile ? 44 : 34, height: isMobile ? 44 : 34, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          background: "var(--theme-surface)", color: "var(--theme-text)", border: "1px solid var(--theme-border)", boxShadow: isMobile ? "0 4px 14px rgba(0,0,0,.25)" : "none",
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-=======
         onClick={() => {
           if (!open) { load(false); setPanelTop(Math.round((box.current?.getBoundingClientRect().bottom ?? 60) + 8)); }
           setOpen((o) => !o);
@@ -148,7 +121,6 @@ export default function NotificationBell({ isMobile, variant = "floating", size 
         }}
       >
         <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         {unread > 0 && (

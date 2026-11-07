@@ -51,12 +51,8 @@ export default function DashboardLayout({
           donc elle ne se remonte plus a chaque navigation (fini le reload mobile).
           Le composant se positionne lui-meme : rail fixe en desktop, barre du bas en mobile. */}
       <Sidebar />
-<<<<<<< HEAD
-      {mounted && <NotificationBell isMobile={isMobile} />}
-=======
       {/* Sur l'accueil, la cloche est dans l'en-tête de la page ; ailleurs, bouton flottant. */}
       {mounted && pathname !== "/dashboard" && <NotificationBell isMobile={isMobile} />}
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
 
       {/* Contenu principal */}
       <main

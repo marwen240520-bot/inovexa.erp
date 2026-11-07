@@ -10,17 +10,12 @@ import { actorOf } from '../documents/documents.controller';
 import { PAYMENT_METHODS } from '../documents/entities/payment.entity';
 import { InvoicesService } from './invoices.service';
 
-<<<<<<< HEAD
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-@ApiTags('Factures (historique)')
-=======
 /**
  * Ancien module « Factures ». Depuis la fusion avec les documents commerciaux, la table `invoices` n'est plus
  * qu'un REFLET en lecture seule des factures validées (tableau de bord, analyses, assistant). Les factures
  * saisies ici avant la fusion sont reprises automatiquement dans Documents (voir LegacyImportService).
  */
 @ApiTags('Factures (ancien module — lecture seule)')
->>>>>>> 808ae4f19ef0ab35f54afe3c9405e1dd88b29bac
 @ApiBearerAuth()
 @Controller('invoices')
 @UseGuards(JwtAuthGuard)
