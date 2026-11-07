@@ -17,6 +17,7 @@ export const DEFAULT_NUMBERING: Record<string, string> = {
   payment: 'RG',
   stock_transfer: 'TR',
   stock_count: 'INV',
+  cash_session: 'Z',
 };
 
 const EDITABLE: Array<keyof Company> = [

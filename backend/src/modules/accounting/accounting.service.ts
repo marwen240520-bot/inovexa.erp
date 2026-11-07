@@ -26,7 +26,7 @@ export interface PostLine {
   partyId?: number | null;
 }
 
-interface EntryInput {
+export interface EntryInput {
   journal: string;
   date: string;
   label: string;
@@ -89,7 +89,7 @@ export class AccountingService {
    * Crée une écriture ÉQUILIBRÉE. Un déséquilibre est une erreur de programmation (jamais une saisie) :
    * il interrompt la transaction appelante pour qu'aucune pièce ne parte sans sa contrepartie comptable.
    */
-  private async createEntry(em: EntityManager, userId: number, e: EntryInput): Promise<JournalEntry | null> {
+  async postEntry(em: EntityManager, userId: number, e: EntryInput): Promise<JournalEntry | null> {
     const lines = e.lines
       .map((l) => {
         let debit = round(l.debit || 0, 3);
@@ -175,7 +175,7 @@ export class AccountingService {
       add(map.withholdingPayable, doc.withholdingAmount, 'C', 'Retenue à la source opérée');
     }
 
-    return this.createEntry(em, userId, {
+    return this.postEntry(em, userId, {
       journal: client ? 'VT' : 'AC', date: doc.issueDate,
       label: `${meta.label} ${doc.number} — ${doc.partyName}`,
       refType: 'document', refId: doc.id, lines: out, actorId,
@@ -199,7 +199,7 @@ export class AccountingService {
     const lines: PostLine[] = treasuryIsDebit
       ? [{ accountCode: treasury, debit: payment.amount, label: payment.number }, { accountCode: control, credit: payment.amount, label: doc.number, ...party }]
       : [{ accountCode: control, debit: payment.amount, label: doc.number, ...party }, { accountCode: treasury, credit: payment.amount, label: payment.number }];
-    return this.createEntry(em, userId, {
+    return this.postEntry(em, userId, {
       journal: cash ? 'CA' : 'BQ', date: payment.date,
       label: `Règlement ${payment.number || ''} — ${doc.number} — ${doc.partyName}`.replace(/\s+/g, ' '),
       refType: 'payment', refId: payment.id, lines, actorId,
@@ -215,7 +215,7 @@ export class AccountingService {
 
   private async reverseInTx(em: EntityManager, userId: number, actorId: number | null, original: JournalEntry, date: string, label: string) {
     const lines = await em.getRepository(JournalLine).find({ where: { entryId: original.id } });
-    const reversal = await this.createEntry(em, userId, {
+    const reversal = await this.postEntry(em, userId, {
       journal: original.journal, date, label, refType: 'reversal', refId: original.id, actorId,
       lines: lines.map((l) => ({ accountCode: l.accountCode, debit: l.credit, credit: l.debit, label: l.label, partyType: l.partyType, partyId: l.partyId })),
     });
@@ -244,7 +244,7 @@ export class AccountingService {
     const totalC = dto.lines.reduce((s, l) => s + toMillimes(Number(l.credit || 0)), 0);
     if (totalD !== totalC) throw new BadRequestException(`Écriture déséquilibrée : débit ${fromMillimes(totalD)}, crédit ${fromMillimes(totalC)}.`);
     const entry = await this.ds.transaction((em) =>
-      this.createEntry(em, userId, {
+      this.postEntry(em, userId, {
         journal, date: dto.date, label: dto.label, refType: 'manual', refId: null, actorId,
         lines: dto.lines.map((l) => ({ ...l, accountCode: String(l.accountCode), debit: Number(l.debit || 0), credit: Number(l.credit || 0) })),
       }),

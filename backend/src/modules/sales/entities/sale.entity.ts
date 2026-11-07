@@ -38,6 +38,13 @@ export class Sale {
   @Column({ type: 'int', nullable: true })
   documentId: number | null;
 
+  // Caisse : session de caisse et ticket d'origine (null hors caisse).
+  @Column({ type: 'int', nullable: true })
+  posSessionId: number | null;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  ticketNumber: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

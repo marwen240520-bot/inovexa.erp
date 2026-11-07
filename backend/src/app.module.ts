@@ -14,6 +14,10 @@ import { ProductionModule } from './modules/production/production.module';
 import { TeamModule } from './modules/team/team.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
+import { HrModule } from './modules/hr/hr.module';
+import { CrmModule } from './modules/crm/crm.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { BusinessReportsModule } from './modules/business-reports/business-reports.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -76,6 +80,10 @@ import { ObjectivesModule } from './modules/objectives/objectives.module';
     TeamModule,
     DocumentsModule,
     AccountingModule,
+    HrModule,
+    CrmModule,
+    NotificationsModule,
+    BusinessReportsModule,
     PosModule,
     ObjectivesModule,
     AuthModule,
