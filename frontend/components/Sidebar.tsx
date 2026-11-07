@@ -28,8 +28,6 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos" },
   "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
   "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión" },
-  "nav.crm": { fr: "Relation client", en: "Customer relations", es: "Relación con clientes" },
-  "nav.company": { fr: "Société", en: "Company", es: "Empresa" },
   "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja" },
 };
 
@@ -369,8 +367,9 @@ export default function Sidebar() {
   const pathMatches = (path: string) =>
     pathname === path || (path !== "/dashboard" && !!pathname && pathname.startsWith(path + "/"));
   // Le lien le plus précis gagne : /dashboard/hr/payroll n'allume pas aussi « Ressources humaines ».
-  const isActivePath = (path: string) =>
-    pathMatches(path) && !menuItems.some((m: { path: string }) => m.path.length > path.length && pathMatches(m.path));
+  const isActivePath = (path: string, also?: string[]) =>
+    (pathMatches(path) && !menuItems.some((m: { path: string }) => m.path.length > path.length && pathMatches(m.path))) ||
+    !!also?.some((p) => pathMatches(p));
 
   const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
@@ -417,7 +416,8 @@ export default function Sidebar() {
   const role = user?.role;
 
   // `gate` : module de l'abonnement qui autorise l'entrée (par défaut, son propre id).
-  const allModules: Array<{ id: string; gate?: string; path: string; label: string; iconKey: string }> = [
+  // `also` : autres chemins qui allument l'entrée (sous-pages d'un même module).
+  const allModules: Array<{ id: string; gate?: string; path: string; label: string; iconKey: string; also?: string[] }> = [
     { id: "dashboard",  path: "/dashboard",            label: "common.dashboard",  iconKey: "dashboard" },
     { id: "products",   path: "/dashboard/products",   label: "common.products",   iconKey: "products" },
     { id: "categories", path: "/dashboard/categories", label: "common.categories", iconKey: "categories" },
@@ -427,8 +427,7 @@ export default function Sidebar() {
     { id: "pos",        path: "/dashboard/pos",        label: "common.pos",        iconKey: "pos" },
     { id: "pos-sessions", gate: "pos", path: "/dashboard/pos/sessions", label: "nav.posSessions", iconKey: "pos" },
     { id: "orders",     path: "/dashboard/orders",     label: "common.orders",     iconKey: "orders" },
-    { id: "clients",    path: "/dashboard/clients",    label: "common.clients",    iconKey: "clients" },
-    { id: "crm",        gate: "clients", path: "/dashboard/crm", label: "nav.crm", iconKey: "clients" },
+    { id: "clients",    path: "/dashboard/clients",    label: "common.clients",    iconKey: "clients", also: ["/dashboard/crm"] },
     { id: "suppliers",  path: "/dashboard/suppliers",  label: "common.suppliers",  iconKey: "suppliers" },
     { id: "documents",  gate: "invoices", path: "/dashboard/documents", label: "nav.documents", iconKey: "invoices" },
     { id: "hr",         path: "/dashboard/hr",         label: "common.hr",         iconKey: "hr" },
@@ -441,8 +440,7 @@ export default function Sidebar() {
     { id: "analytics",  path: "/dashboard/analytics",  label: "common.analytics",  iconKey: "analytics" },
     { id: "objectives", path: "/dashboard/objectives", label: "common.objectives", iconKey: "objectives" },
     { id: "profile",    path: "/dashboard/profile",    label: "common.profile",    iconKey: "profile" },
-    { id: "company",    gate: "settings", path: "/dashboard/company", label: "nav.company", iconKey: "settings" },
-    { id: "settings",   path: "/dashboard/settings",   label: "common.settings",   iconKey: "settings" },
+    { id: "settings",   path: "/dashboard/settings",   label: "common.settings",   iconKey: "settings", also: ["/dashboard/company"] },
   ];
 
   const clientMenuItems = allModules.filter(m => isModuleActive(m.gate ?? m.id));
@@ -715,7 +713,7 @@ export default function Sidebar() {
   const mobileMoreItems = menuItems.slice(MOBILE_PRIMARY_COUNT);
 
   const renderNavItem = (item: any) => {
-    const isActive = isActivePath(item.path);
+    const isActive = isActivePath(item.path, item.also);
     const isHovered = hoveredItem === item.path;
     const label = getLabel(item.label);
     const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
@@ -814,7 +812,7 @@ export default function Sidebar() {
                   </button>
                 </div>
                 {mobileMoreItems.map((item: any) => {
-                  const isActive = isActivePath(item.path);
+                  const isActive = isActivePath(item.path, item.also);
                   const label = getLabel(item.label);
                   const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
                   return (
@@ -873,7 +871,7 @@ export default function Sidebar() {
 
           <div style={styles.mobileBottomNav}>
             {mobilePrimaryItems.map((item: any) => {
-              const isActive = isActivePath(item.path);
+              const isActive = isActivePath(item.path, item.also);
               const label = getLabel(item.label);
               const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
               return (

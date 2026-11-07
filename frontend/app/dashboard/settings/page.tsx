@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import ModuleNav, { SETTINGS_TABS } from "@/components/erp/ModuleNav";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -256,6 +257,9 @@ export default function SettingsPage() {
               {t("settings.subtitle")}
             </p>
           </div>
+
+          {/* -- Sous-navigation : préférences / société & fiscalité -- */}
+          <Suspense fallback={null}><ModuleNav tabs={SETTINGS_TABS} label="Paramètres" /></Suspense>
 
           {/* Notification */}
           {message && (

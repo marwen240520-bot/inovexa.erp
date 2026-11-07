@@ -68,16 +68,16 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 | ----- | ------- | ------- |
 | Factures & devis (documents commerciaux) | `/dashboard/documents` (+ `/new`, `/[id]`, `/[id]/edit`) — `/dashboard/invoices` y redirige | Liste par type et statut, import d’un historique Excel, éditeur de brouillon, fiche (validation, encaissement, conversion, avoir, envoi, PDF) |
 | Règlements et créances | `/dashboard/documents/payments` | Journal des règlements, balance âgée clients / fournisseurs |
-| Société | `/dashboard/company` | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
+| Paramètres › Société & fiscalité | `/dashboard/company` (sous-onglet de Paramètres) | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
 | Comptabilité | `/dashboard/accounting` | Journal, balance, résultat, TVA, rapprochement bancaire, écritures manuelles, export |
 | Ressources humaines | `/dashboard/hr` (employés) et `/dashboard/hr/payroll?tab=payroll|leaves|settings` | Un seul module avec sous-onglets : employés, bulletins (génération, validation, paiement, PDF), congés et soldes, paramètres de paie |
-| Relation client | `/dashboard/crm` | Fiche 360°, conditions, échanges, relances, listes de prix |
+| Clients › Fiche 360° / À relancer / Listes de prix | `/dashboard/crm?tab=overview|followups|prices` (sous-onglets de Clients) | Fiche 360°, conditions, échanges, relances, listes de prix |
 | Rapports de gestion | `/dashboard/reports/business` | Ventes, marges, valorisation du stock, exports Excel |
 | Sessions de caisse | `/dashboard/pos/sessions` | Ouverture / clôture, rapport Z, recherche de ticket |
 | Alertes | cloche dans l’en-tête du tableau de bord | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
 
 Ces écrans suivent les modules activés du compte (entrées du menu rattachées à `invoices`, `finance`, `hr`, `reports`, `clients`, `pos`, `settings`) et partagent
-un petit kit de composants (`frontend/components/erp/kit.tsx`).
+un petit kit de composants (`frontend/components/erp/kit.tsx`). La barre de recherche du tableau de bord accepte la **voix** (bouton micro, navigateurs Chrome / Edge / Safari).
 
 ## 9. Sécurité et traçabilité
 
@@ -91,8 +91,8 @@ double authentification, validation stricte des entrées.
 | Sujet | Situation |
 | ----- | --------- |
 | **Plan comptable** | Les codes de comptes par défaut sont **indicatifs** (`company.accountMap`, modifiable). L'expert-comptable doit valider/adapter le plan et les comptes d'imputation. |
-| **Paie** | Taux CNSS, plafonds, barème IRPP, CSS, déductions : valeurs de départ **non officielles** stockées dans les paramètres société (`/hr/payroll/settings`, `validated: false` tant qu'elles ne sont pas confirmées). Les primes sont annualisées dans le calcul mensuel ; la régularisation annuelle de l'IRPP n'est pas calculée. |
-| **Facture électronique** | Le JSON produit est un jeu de données prêt à transmettre, **pas une facture certifiée** (pas d'intégration TTN / El Fatoora, pas de signature). |
+| **Paie** | Taux CNSS (9,18 % / 16,57 %), barème IRPP de la LF 2025, CSS 0,5 % (LF 2026, exonération ≤ 5 000 DT), déductions familiales : valeurs **alignées sur les textes 2026** mais à faire valider (dossier `docs/VALIDATION-PAIE-COMPTA.md`, case « validés » dans Paramètres de paie). Les primes sont annualisées dans le calcul mensuel ; la régularisation annuelle de l'IRPP n'est pas calculée. |
+| **Facture électronique** | L'ERP produit le fichier **TEIF 1.8.8** attendu par El Fatoora (validé contre le schéma XSD de TTN). La signature et la transmission se font sur la plateforme avec le certificat de la société : voir `docs/EL-FATOORA.md`. |
 | **Retenue à la source / timbre** | Taux et seuil paramétrables ; vérifier qu'ils correspondent à la loi de finances en vigueur et à vos clients. |
 | **TVA** | La déclaration est calculée sur la **date de facture** (régime des débits), pas sur l'encaissement. |
 | **PDF** | Texte latin uniquement (polices standard) : pas d'arabe dans les documents imprimés. |

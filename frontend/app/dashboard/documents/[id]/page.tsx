@@ -96,6 +96,9 @@ export default function DocumentDetail() {
           {a.pay && d.type === "invoice" && d.overdue && <Btn onClick={() => setModal("remind")}>Relancer</Btn>}
           {a.send && <Btn onClick={openSend}>Envoyer</Btn>}
           {d.lockedAt && <Btn onClick={() => fetchFile(`/documents/${d.id}/pdf`, { open: true }).catch((e) => notify(e.message, "err"))}>PDF</Btn>}
+          {d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
+            <Btn title="Fichier TEIF 1.8.8 à déposer sur la plateforme El Fatoora (TTN)" onClick={() => fetchFile(`/documents/${d.id}/teif`).catch((e) => notify(e.message, "err"))}>El Fatoora (XML)</Btn>
+          )}
           <Btn busy={busy === "dup"} onClick={() => run("dup", () => api(`/documents/${d.id}/duplicate`, { method: "POST" }), "Copie créée en brouillon.", (r) => router.push(`/dashboard/documents/${r.id}`))}>Dupliquer</Btn>
           {a.cancel && <Btn variant="danger" onClick={() => { setReason(""); setModal("cancel"); }}>Annuler</Btn>}
           {a.delete && <Btn variant="danger" busy={busy === "del"} onClick={() => { if (confirm("Supprimer ce brouillon ?")) run("del", () => api(`/documents/${d.id}`, { method: "DELETE" }), "Brouillon supprimé.", () => router.push("/dashboard/documents")); }}>Supprimer</Btn>}

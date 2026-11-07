@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
+import ModuleNav, { SETTINGS_TABS } from "@/components/erp/ModuleNav";
 import { api, Btn, Card, ErrorBox, Field, inputStyle, Loading, Notice, Page, Row, useLoad, useNotice, useRequireAuth } from "@/components/erp/kit";
 
 const NUMBERING_LABEL: Record<string, string> = {
@@ -22,8 +23,8 @@ export default function CompanyPage() {
 
   useEffect(() => { if (company.data) setForm({ ...company.data, numbering: { ...(company.data.numbering || {}) } }); }, [company.data]);
 
-  if (company.loading && !form) return <Page title="Société"><Loading /></Page>;
-  if (!form) return <Page title="Société">{company.error && <ErrorBox message={company.error} onRetry={company.reload} />}</Page>;
+  if (company.loading && !form) return <Page title="Paramètres"><Loading /></Page>;
+  if (!form) return <Page title="Paramètres">{company.error && <ErrorBox message={company.error} onRetry={company.reload} />}</Page>;
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const numeric = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => set(k, e.target.value === "" ? null : e.target.value);
@@ -53,8 +54,9 @@ export default function CompanyPage() {
 
   const gaps: string[] = company.data?.legalGaps || [];
   return (
-    <Page title="Société et paramètres fiscaux" subtitle="Ces informations figurent sur vos factures : elles sont obligatoires pour valider une facture"
+    <Page title="Paramètres" subtitle="Société et fiscalité : ces informations figurent sur vos factures et sont obligatoires pour les valider"
       actions={<Btn variant="primary" busy={saving} onClick={save}>Enregistrer</Btn>}>
+      <Suspense fallback={null}><ModuleNav tabs={SETTINGS_TABS} label="Paramètres" /></Suspense>
       {notice}
       {gaps.length > 0 && <Notice>Mentions légales manquantes pour valider une facture : <strong>{gaps.join(", ")}</strong>.</Notice>}
 

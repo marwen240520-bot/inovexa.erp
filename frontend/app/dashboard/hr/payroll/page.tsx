@@ -1,7 +1,7 @@
 "use client";
 import React, { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import HrNav from "@/components/erp/HrNav";
+import ModuleNav, { HR_TABS } from "@/components/erp/ModuleNav";
 import {
   api, Badge, Btn, Card, Empty, ErrorBox, Field, fetchFile, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, td, th,
   todayISO, useLoad, useNotice, useRequireAuth,
@@ -28,7 +28,7 @@ function PayrollContent() {
   const [notice, notify] = useNotice();
   return (
     <Page title="Ressources humaines" subtitle={SUBTITLE[tab]}>
-      <HrNav />
+      <ModuleNav tabs={HR_TABS} label="Ressources humaines" />
       {notice}
       {tab === "payroll" && <Payslips notify={notify} />}
       {tab === "leaves" && <Leaves notify={notify} />}
@@ -189,7 +189,7 @@ function Settings({ notify }: { notify: (m: string, t?: "ok" | "err") => void })
     setBusy(true);
     try {
       const body: any = { validated: !!form.validated, brackets: form.brackets.map((b: any) => ({ upTo: b.upTo === null || b.upTo === "" ? null : Number(b.upTo), rate: Number(b.rate) })) };
-      ["cnssEmployeeRate", "cnssEmployerRate", "workAccidentRate", "professionalExpensesRate", "professionalExpensesCap", "headOfFamilyDeduction", "childDeduction", "maxChildrenDeducted", "solidarityRate", "leaveDaysPerMonth"].forEach((k) => { body[k] = Number(form[k]); });
+      ["cnssEmployeeRate", "cnssEmployerRate", "workAccidentRate", "professionalExpensesRate", "professionalExpensesCap", "headOfFamilyDeduction", "childDeduction", "maxChildrenDeducted", "solidarityRate", "solidarityExemptionThreshold", "leaveDaysPerMonth"].forEach((k) => { body[k] = Number(form[k]); });
       await api("/hr/payroll/settings", { method: "PUT", body });
       notify("Paramètres de paie enregistrés.");
       data.reload();
@@ -199,7 +199,7 @@ function Settings({ notify }: { notify: (m: string, t?: "ok" | "err") => void })
     <>
       <Notice>Valeurs de départ <strong>non officielles</strong> : taux CNSS, plafonds, déductions et barème changent avec les lois de finances et les conventions collectives. Faites-les valider par votre expert-comptable, puis cochez « Paramètres validés ».</Notice>
       <Card title="Cotisations et contributions">
-        <Row>{field("cnssEmployeeRate", "CNSS salarié (%)")}{field("cnssEmployerRate", "CNSS employeur (%)")}{field("workAccidentRate", "Accident du travail (%)", "À la charge de l’employeur")}{field("solidarityRate", "Contribution sociale de solidarité (%)")}</Row>
+        <Row>{field("cnssEmployeeRate", "CNSS salarié (%)")}{field("cnssEmployerRate", "CNSS employeur (%)")}{field("workAccidentRate", "Accident du travail (%)", "À la charge de l’employeur")}{field("solidarityRate", "Contribution sociale de solidarité (%)")}{field("solidarityExemptionThreshold", "CSS : exonération jusqu’à (DT/an)", "Revenu net imposable annuel")}</Row>
       </Card>
       <Card title="Déductions pour l’impôt sur le revenu">
         <Row>{field("professionalExpensesRate", "Frais professionnels (%)")}{field("professionalExpensesCap", "Plafond annuel des frais (DT)")}{field("headOfFamilyDeduction", "Chef de famille (DT/an)")}{field("childDeduction", "Par enfant (DT/an)")}{field("maxChildrenDeducted", "Enfants déduits (max)")}{field("leaveDaysPerMonth", "Jours de congé acquis / mois")}</Row>

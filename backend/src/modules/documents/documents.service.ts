@@ -15,6 +15,7 @@ import { AccountingService } from '../accounting/accounting.service';
 import { LegacyMirrorService } from './legacy-mirror.service';
 import { LegacyImportService } from './legacy-import.service';
 import { DocumentPdfService } from './document-pdf.service';
+import { TeifService, partyIdentifier } from './teif.service';
 import { MailService } from '../../common/mail/mail.service';
 import { PermissionsService } from '../auth/permissions.service';
 import { Product } from '../products/product.entity';
@@ -92,6 +93,7 @@ export class DocumentsService {
     private readonly mail: MailService,
     private readonly permissions: PermissionsService,
     private readonly legacyImport: LegacyImportService,
+    private readonly teif: TeifService,
   ) {}
 
   // ═════════════════════════════ Lecture ═════════════════════════════
@@ -676,6 +678,25 @@ export class DocumentsService {
     const safe = (full.number || `brouillon-${full.id}`).replace(/[^A-Za-z0-9_.-]/g, '_');
     return { buffer, filename: `${safe}.pdf`, number: full.number };
   }
+  /** Fichier TEIF (facture électronique El Fatoora / TTN), non signé. `check` = seulement la liste des manques. */
+  async renderTeif(userId: number, id: number) {
+    const doc = await this.get(userId, id);
+    const company = await this.company.getOrCreate(userId);
+    let credited: { number: string | null; issueDate: string | null } | null = null;
+    if (doc.creditedDocumentId) {
+      const src = await this.ds.getRepository(Document).findOne({ where: { id: doc.creditedDocumentId, userId } });
+      if (src) credited = { number: src.number, issueDate: src.issueDate };
+    }
+    // Le document fige le matricule du client au moment de la validation ; s'il était incomplet, la fiche client
+    // actuelle (même tiers) peut avoir été complétée depuis : on la prend alors.
+    if (!partyIdentifier(doc.partyTaxId) && doc.partyType === 'client' && doc.partyId) {
+      const [client] = await this.ds.query(`SELECT "taxId" FROM "clients" WHERE "id" = $1 AND "userId" = $2`, [doc.partyId, userId]);
+      if (client && partyIdentifier(client.taxId)) (doc as any).partyTaxId = client.taxId;
+    }
+    const input = { company, doc: doc as any, credited };
+    return { problems: this.teif.problems(input), xml: () => this.teif.render(input), filename: this.teif.filename(doc as any) };
+  }
+
 
   async send(actor: Actor, id: number, dto: SendDto) {
     const doc = await this.get(actor.userId, id);

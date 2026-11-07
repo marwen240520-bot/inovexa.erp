@@ -27,6 +27,7 @@ const MODULE_OF: Record<SearchType, string> = {
 
 const TEXTS: Record<string, any> = {
   fr: {
+    voice: "Recherche vocale", listening: "À l’écoute… parlez maintenant", micDenied: "Micro refusé : autorisez-le dans le navigateur",
     placeholder: "Rechercher dans votre espace…",
     hint: "Clients, produits, factures, ventes, employés…",
     searching: "Recherche en cours…",
@@ -39,6 +40,7 @@ const TEXTS: Record<string, any> = {
     groups: { clients: "Clients", suppliers: "Fournisseurs", products: "Produits", categories: "Catégories", invoices: "Factures", sales: "Ventes", purchases: "Achats", orders: "Commandes", employees: "Employés", shipments: "Expéditions" },
   },
   en: {
+    voice: "Voice search", listening: "Listening… speak now", micDenied: "Microphone blocked: allow it in your browser",
     placeholder: "Search your workspace…",
     hint: "Clients, products, invoices, sales, employees…",
     searching: "Searching…",
@@ -51,6 +53,7 @@ const TEXTS: Record<string, any> = {
     groups: { clients: "Clients", suppliers: "Suppliers", products: "Products", categories: "Categories", invoices: "Invoices", sales: "Sales", purchases: "Purchases", orders: "Orders", employees: "Employees", shipments: "Shipments" },
   },
   es: {
+    voice: "Búsqueda por voz", listening: "Escuchando… hable ahora", micDenied: "Micrófono bloqueado: permítalo en el navegador",
     placeholder: "Buscar en su espacio…",
     hint: "Clientes, productos, facturas, ventas, empleados…",
     searching: "Buscando…",
@@ -163,6 +166,43 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
   const [active, setActive] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Recherche vocale (Web Speech API : Chrome, Edge, Safari ; absente de Firefox → bouton masqué)
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+  useEffect(() => {
+    const w = window as any;
+    setVoiceSupported(!!(w.SpeechRecognition || w.webkitSpeechRecognition));
+    return () => { try { recognitionRef.current?.abort(); } catch { /* ignoré */ } };
+  }, []);
+  const toggleVoice = () => {
+    if (listening) { try { recognitionRef.current?.stop(); } catch { /* ignoré */ } return; }
+    const w = window as any;
+    const Recognition = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!Recognition) return;
+    const rec = new Recognition();
+    rec.lang = language === "en" ? "en-US" : language === "es" ? "es-ES" : "fr-FR";
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e: any) => {
+      let text = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
+      const spoken = text.trim().replace(/[.!?]+$/, "");
+      setQuery(spoken);
+      setOpen(true);
+    };
+    rec.onerror = (e: any) => {
+      setListening(false);
+      setVoiceError(e?.error === "not-allowed" || e?.error === "service-not-allowed" ? t.micDenied : null);
+    };
+    rec.onend = () => { setListening(false); inputRef.current?.focus(); };
+    recognitionRef.current = rec;
+    setVoiceError(null);
+    setListening(true);
+    try { rec.start(); } catch { setListening(false); }
+  };
   const abortRef = useRef<AbortController | null>(null);
 
   const trimmed = query.trim();
@@ -308,7 +348,7 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
           style={{
             width: "100%",
             boxSizing: "border-box",
-            padding: isMobile ? "14px 40px 14px 42px" : "12px 70px 12px 42px",
+            padding: isMobile ? (voiceSupported ? "14px 76px 14px 42px" : "14px 40px 14px 42px") : (voiceSupported ? "12px 104px 12px 42px" : "12px 70px 12px 42px"),
             fontSize: isMobile ? 16 : 14,
             color: "var(--theme-text)",
             background: "var(--theme-surface)",
@@ -322,6 +362,31 @@ export default function GlobalSearch({ isMobile = false }: { isMobile?: boolean 
           onBlur={(e) => { e.currentTarget.style.borderColor = "var(--theme-border)"; }}
           onFocusCapture={(e) => { e.currentTarget.style.borderColor = "var(--theme-primary, #6366f1)"; }}
         />
+        {voiceSupported && (
+          <button
+            type="button"
+            aria-label={listening ? t.listening : t.voice}
+            aria-pressed={listening}
+            title={listening ? t.listening : t.voice}
+            onClick={toggleVoice}
+            style={{
+              position: "absolute", right: query ? 42 : isMobile ? 8 : 70, top: "50%", transform: "translateY(-50%)", width: 30, height: 30, borderRadius: 8,
+              border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              background: listening ? "rgba(239,68,68,.14)" : "transparent", color: listening ? "#ef4444" : "var(--theme-text-secondary)",
+              animation: listening ? "ix-pulse 1.2s ease-in-out infinite" : undefined,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+            <style>{`@keyframes ix-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,.35); } 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } }`}</style>
+          </button>
+        )}
+        {(listening || voiceError) && !showPanel && (
+          <div role="status" style={{ position: "absolute", left: 0, right: 0, top: "calc(100% + 6px)", fontSize: 12, padding: "6px 12px", borderRadius: 8, background: "var(--theme-surface)", border: "1px solid var(--theme-border)", color: voiceError ? "#ef4444" : "var(--theme-text-secondary)", zIndex: 2501 }}>
+            {voiceError || t.listening}
+          </div>
+        )}
         {query ? (
           <button
             type="button"
