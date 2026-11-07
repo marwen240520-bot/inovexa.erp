@@ -4,7 +4,6 @@ import Sidebar from "@/components/Sidebar";
 import { useState, useEffect } from "react";
 import { useDeviceHint } from "@/contexts/DeviceContext";
 import { AppShellProvider } from "@/components/ui/PageSkeleton";
-import NotificationBell from "@/components/erp/NotificationBell";
 
 export default function DashboardLayout({
   children,
@@ -51,8 +50,6 @@ export default function DashboardLayout({
           donc elle ne se remonte plus a chaque navigation (fini le reload mobile).
           Le composant se positionne lui-meme : rail fixe en desktop, barre du bas en mobile. */}
       <Sidebar />
-      {/* Sur l'accueil, la cloche est dans l'en-tête de la page ; ailleurs, bouton flottant. */}
-      {mounted && pathname !== "/dashboard" && <NotificationBell isMobile={isMobile} />}
 
       {/* Contenu principal */}
       <main

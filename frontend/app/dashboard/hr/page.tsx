@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import HrNav from "@/components/erp/HrNav";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -682,6 +683,9 @@ export default function HRPage() {
               </div>
             </div>
           </div>
+
+          {/* -- Sous-navigation du module RH (employés, paie, congés) -- */}
+          <Suspense fallback={null}><HrNav /></Suspense>
 
           {/* -- Message -- */}
           {message && (

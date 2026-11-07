@@ -70,11 +70,11 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 | Règlements et créances | `/dashboard/documents/payments` | Journal des règlements, balance âgée clients / fournisseurs |
 | Société | `/dashboard/company` | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
 | Comptabilité | `/dashboard/accounting` | Journal, balance, résultat, TVA, rapprochement bancaire, écritures manuelles, export |
-| Paie et congés | `/dashboard/hr/payroll` | Bulletins (génération, validation, paiement, PDF), congés et soldes, paramètres de paie |
+| Ressources humaines | `/dashboard/hr` (employés) et `/dashboard/hr/payroll?tab=payroll|leaves|settings` | Un seul module avec sous-onglets : employés, bulletins (génération, validation, paiement, PDF), congés et soldes, paramètres de paie |
 | Relation client | `/dashboard/crm` | Fiche 360°, conditions, échanges, relances, listes de prix |
 | Rapports de gestion | `/dashboard/reports/business` | Ventes, marges, valorisation du stock, exports Excel |
 | Sessions de caisse | `/dashboard/pos/sessions` | Ouverture / clôture, rapport Z, recherche de ticket |
-| Alertes | cloche dans l’en-tête du tableau de bord (bouton flottant sur les autres pages) | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
+| Alertes | cloche dans l’en-tête du tableau de bord | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
 
 Ces écrans suivent les modules activés du compte (entrées du menu rattachées à `invoices`, `finance`, `hr`, `reports`, `clients`, `pos`, `settings`) et partagent
 un petit kit de composants (`frontend/components/erp/kit.tsx`).
