@@ -6,6 +6,7 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Bar, Line, Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
+import AssistantChat from "@/components/assistant/AssistantChat";
 import { Nunito } from "next/font/google";
 
 // Police du chat IA (changez "Nunito" par "Poppins", "Inter", "Montserrat"... si vous préférez)
@@ -54,34 +55,6 @@ const IconCopy = ({ size = 16 }: { size?: number }) => (<Icon size={size}><rect 
 const IconTrash = ({ size = 16 }: { size?: number }) => (<Icon size={size}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>);
 const IconMenu = ({ size = 24 }: { size?: number }) => (<Icon size={size}><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></Icon>);
 const IconX = ({ size = 24 }: { size?: number }) => (<Icon size={size}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>);
-
-// Enlève la syntaxe markdown (**gras**, ### titres, * puces) et affiche le gras proprement, sans étoiles
-const stripMarkdown = (text: string): string =>
-  String(text || "")
-    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-    .replace(/^(\s*)[*-]\s+/gm, "$1• ")
-    .replace(/\*/g, "");
-
-const renderChatText = (text: string): React.ReactNode => {
-  if (!text) return null;
-  const lines = String(text).split("\n");
-  return lines.map((rawLine, li) => {
-    const line = rawLine
-      .replace(/^\s{0,3}#{1,6}\s+/, "")
-      .replace(/^(\s*)[*-]\s+/, "$1• ");
-    const parts = line.split(/(\*\*[^*]+\*\*)/g);
-    return (
-      <span key={li}>
-        {parts.map((p, pi) =>
-          p.length > 4 && p.startsWith("**") && p.endsWith("**")
-            ? <strong key={pi} style={{ fontWeight: 700 }}>{p.slice(2, -2)}</strong>
-            : <span key={pi}>{p.replace(/\*/g, "")}</span>
-        )}
-        {li < lines.length - 1 ? "\n" : null}
-      </span>
-    );
-  });
-};
 
 const animations = `
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -198,15 +171,13 @@ const translations = {
 export default function IAPage() {
   const router = useRouter();
   const { language, t: globalT } = useLanguage();
-  const { formatCurrency } = useAppSettings();
+  const { formatCurrency, currency, getCurrencySymbol } = useAppSettings();
   const { theme } = useTheme();
   
   const t = translations[language as keyof typeof translations] || translations.fr;
   
   // Détection mobile améliorée
   const [isMobile, setIsMobile] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   
   // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
@@ -217,20 +188,8 @@ export default function IAPage() {
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    
-    // Détection du clavier mobile
-    const handleResize = () => {
-      if (isMobile) {
-        setKeyboardVisible(window.innerHeight < 500);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isMobile]);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
   
   // Styles responsifs optimisés
   const responsive = {
@@ -249,9 +208,8 @@ export default function IAPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [rawData, setRawData] = useState<any>(null); // brut multi-modules pour le contexte RAG
+  const [rawData, setRawData] = useState<any>(null); // données brutes de TOUS les modules → Assistant IA
+  const [initialQuestion, setInitialQuestion] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [predictions, setPredictions] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
@@ -263,25 +221,27 @@ export default function IAPage() {
   const [topClients, setTopClients] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [forecastPeriod, setForecastPeriod] = useState("6months");
-  const [loadingAI, setLoadingAI] = useState(false);
   const [historicalSales, setHistoricalSales] = useState<number[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<"optimistic" | "realistic" | "pessimistic">("realistic");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [isTyping, setIsTyping] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hasLoadedRef = useRef(false);
 
-  // Auto-resize textarea pour mobile
+  // Liens profonds : /dashboard/ai?tab=chat  ·  /dashboard/ai?q=Quel%20est%20mon%20CA
   useEffect(() => {
-    if (textareaRef.current && isMobile) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 80) + 'px';
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const tab = sp.get("tab");
+      if (tab && ["dashboard", "chat", "forecasts", "recommendations", "analytics"].includes(tab)) setActiveTab(tab);
+      const q = sp.get("q");
+      if (q && q.trim()) {
+        setActiveTab("chat");
+        setInitialQuestion(q.trim().slice(0, 500));
+      }
+    } catch {
+      /* URL inaccessible */
     }
-  }, [chatInput, isMobile]);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -295,12 +255,6 @@ export default function IAPage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
-
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [chatMessages, streamingContent, isTyping]);
 
   useEffect(() => {
     setTimeout(() => setAnimateCards(true), 100);
@@ -326,22 +280,30 @@ export default function IAPage() {
   };
 
   const fetchAllData = async () => {
-    const token = localStorage.getItem("token");
-    setLoading(true);
+    // Écran de chargement uniquement au 1er chargement : les actualisations (bouton, toutes les 5 min)
+    // se font en arrière-plan sans démonter l'Assistant IA ni couper une réponse en cours.
+    if (!hasLoadedRef.current) setLoading(true);
     
     try {
-      const [sales, purchases, products, clients, orders, invoices, employees] = await Promise.all([
-        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/sales`),
-        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/purchases`),
-        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/products`),
-        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/clients`),
-        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/orders`),
-        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/invoices`),
-        fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/employees`)
+      const API = process.env.NEXT_PUBLIC_API_URL;
+      const [sales, purchases, products, clients, orders, invoices, employees, suppliers, categories, expenses, projects, shipments] = await Promise.all([
+        fetchWithAuth(`${API}/sales`),
+        fetchWithAuth(`${API}/purchases`),
+        fetchWithAuth(`${API}/products`),
+        fetchWithAuth(`${API}/clients`),
+        fetchWithAuth(`${API}/orders`),
+        fetchWithAuth(`${API}/invoices`),
+        fetchWithAuth(`${API}/employees`),
+        // Modules supplémentaires utilisés par l'Assistant IA (un module absent renvoie simplement [])
+        fetchWithAuth(`${API}/suppliers`),
+        fetchWithAuth(`${API}/categories`),
+        fetchWithAuth(`${API}/expenses`),
+        fetchWithAuth(`${API}/projects`),
+        fetchWithAuth(`${API}/logistics/shipments`),
       ]);
 
-      // Conserver le brut de chaque module pour le contexte RAG du chat IA
-      setRawData({ sales, purchases, products, clients, orders, invoices, employees });
+      // Données brutes de chaque module : l'Assistant IA calcule ses réponses sur la totalité
+      setRawData({ sales, purchases, products, clients, orders, invoices, employees, suppliers, categories, expenses, projects, shipments });
 
       const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
       const totalExpenses = purchases.reduce((sum: number, p: any) => sum + (Number(p.total) || 0), 0);
@@ -425,26 +387,13 @@ export default function IAPage() {
         ebitda: (totalRevenue * 0.25).toFixed(0)
       });
 
-      if (chatMessages.length === 0) {
-        setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]);
-      }
-
     } catch (error) {
       console.error("Erreur fetch:", error);
       setStats(null);
     } finally {
+      hasLoadedRef.current = true;
       setLoading(false);
     }
-  };
-
-  const getWelcomeActions = () => {
-    return [
-      { label: t.askRevenue, icon: IconRevenue, query: t.askRevenue },
-      { label: t.askSummary, icon: IconDashboard, query: t.askSummary },
-      { label: t.askTopProducts, icon: IconTrophy, query: t.askTopProducts },
-      { label: t.askStock, icon: IconPackage, query: t.askStock },
-      { label: t.askForecast, icon: IconPredictions, query: t.askForecast }
-    ];
   };
 
   const getForecastData = () => {
@@ -479,263 +428,7 @@ export default function IAPage() {
   const getUpperBoundData = () => getForecastData().map(v => Math.round(v * 1.12));
   const getLowerBoundData = () => getForecastData().map(v => Math.round(v * 0.88));
 
-  // ────────────────────────────────────────────────────────────────
-  //  Contexte RAG v2 : agrégats précalculés + filtrage par question
-  //  - "aggregates" = chiffres exacts calculés côté client (le modèle
-  //    n'a plus à additionner des listes tronquées → zéro erreur).
-  //  - Les "samples" non pertinents pour la question sont omis
-  //    → prompt plus court, réponse plus rapide et moins chère.
-  // ────────────────────────────────────────────────────────────────
-  const detectTopics = (question: string): Set<string> => {
-    const q = (question || "").toLowerCase();
-    const topics = new Set<string>();
-    const match = (words: string[]) => words.some(w => q.includes(w));
-    if (match(["produit", "stock", "rupture", "inventaire", "product", "inventory", "producto", "réappro", "reappro", "sku", "منتج", "مخزون"])) topics.add("products");
-    if (match(["vente", "ventes", "ca ", "chiffre", "revenu", "sale", "revenue", "venta", "ingreso", "مبيع"])) topics.add("sales");
-    if (match(["client", "customer", "fidel", "cliente", "عميل", "زبون"])) topics.add("clients");
-    if (match(["commande", "order", "livraison", "pedido", "logisti", "طلب"])) topics.add("orders");
-    if (match(["facture", "invoice", "impay", "unpaid", "factura", "créance", "creance", "échéance", "echeance", "فاتورة"])) topics.add("invoices");
-    if (match(["achat", "fournisseur", "purchase", "supplier", "compra", "proveedor", "شراء", "مورد"])) topics.add("purchases");
-    if (match(["employé", "employe", "rh", "salari", "équipe", "equipe", "employee", "hr", "staff", "empleado", "موظف"])) topics.add("employees");
-    if (match(["bénéfice", "benefice", "profit", "marge", "margin", "ebitda", "roi", "finance", "prévision", "prevision", "forecast", "ربح"])) { topics.add("sales"); topics.add("purchases"); topics.add("invoices"); }
-    return topics;
-  };
-
-  const buildErpContext = (question?: string) => {
-    const r = rawData || {};
-    const n = (v: any) => Number(v) || 0;
-    const cap = (arr: any, k: number) => (Array.isArray(arr) ? arr.slice(0, k) : []);
-    const last = (arr: any, k: number) => (Array.isArray(arr) ? arr.slice(-k).reverse() : []);
-    const arr = (x: any): any[] => (Array.isArray(x) ? x : []);
-
-    // ── Agrégats exacts précalculés ──
-    const salesArr = arr(r.sales);
-    const invoicesArr = arr(r.invoices);
-    const productsArr = arr(r.products);
-    const now = new Date();
-
-    // CA mensuel des 12 derniers mois (série exacte)
-    const monthlyRevenue: Record<string, number> = {};
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      monthlyRevenue[`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`] = 0;
-    }
-    salesArr.forEach((s: any) => {
-      const d = new Date(s.createdAt ?? s.date ?? 0);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (key in monthlyRevenue) monthlyRevenue[key] += n(s.total);
-    });
-
-    // Top produits par CA (exact, sur toutes les ventes)
-    const revByProduct: Record<string, { revenue: number; qty: number }> = {};
-    salesArr.forEach((s: any) => {
-      const name = s.productName ?? s.product ?? "?";
-      if (!revByProduct[name]) revByProduct[name] = { revenue: 0, qty: 0 };
-      revByProduct[name].revenue += n(s.total);
-      revByProduct[name].qty += n(s.quantity);
-    });
-    const topProductsByRevenue = Object.entries(revByProduct)
-      .map(([name, v]) => ({ name, revenue: Math.round(v.revenue), qty: v.qty }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10);
-
-    // Créances : factures impayées / en retard (exact)
-    const unpaid = invoicesArr.filter((iv: any) => iv.status === "pending" || iv.status === "unpaid");
-    const overdue = unpaid.filter((iv: any) => iv.dueDate && new Date(iv.dueDate) < now);
-    const receivables = {
-      unpaidCount: unpaid.length,
-      unpaidTotal: Math.round(unpaid.reduce((s: number, iv: any) => s + n(iv.total), 0)),
-      overdueCount: overdue.length,
-      overdueTotal: Math.round(overdue.reduce((s: number, iv: any) => s + n(iv.total), 0)),
-    };
-
-    // Valeur du stock (exact)
-    const stockValue = Math.round(productsArr.reduce((s: number, p: any) => s + n(p.price) * n(p.quantity), 0));
-
-    // ── Filtrage des samples selon la question ──
-    const topics = detectTopics(question || "");
-    const wantAll = topics.size === 0; // question générale → tout envoyer
-    const want = (t: string) => wantAll || topics.has(t);
-
-    const samples: any = {};
-    if (want("products")) samples.products = cap(productsArr, 120).map((p: any) => ({
-      name: p.name,
-      category: p.category ?? p.categoryName ?? null,
-      price: n(p.price),
-      quantity: n(p.quantity),
-      ref: p.sku ?? p.reference ?? null,
-    }));
-    if (want("sales")) samples.recentSales = last(salesArr, 60).map((s: any) => ({
-      date: s.createdAt ?? s.date ?? null,
-      client: s.clientName ?? null,
-      product: s.productName ?? s.product ?? null,
-      qty: n(s.quantity),
-      total: n(s.total),
-    }));
-    if (want("clients")) samples.clients = cap(r.clients, 80).map((c: any) => ({
-      name: c.name,
-      status: c.status ?? null,
-      email: c.email ?? null,
-      phone: c.phone ?? null,
-    }));
-    if (want("orders")) samples.orders = last(r.orders, 60).map((o: any) => ({
-      ref: o.reference ?? o.id ?? null,
-      client: o.clientName ?? null,
-      status: o.status ?? null,
-      total: n(o.total),
-      date: o.createdAt ?? null,
-    }));
-    if (want("invoices")) samples.invoices = last(invoicesArr, 60).map((iv: any) => ({
-      ref: iv.reference ?? iv.number ?? iv.id ?? null,
-      client: iv.clientName ?? null,
-      status: iv.status ?? null,
-      total: n(iv.total),
-      dueDate: iv.dueDate ?? null,
-      date: iv.createdAt ?? null,
-    }));
-    if (want("purchases")) samples.purchases = last(r.purchases, 40).map((p: any) => ({
-      supplier: p.supplierName ?? p.supplier ?? null,
-      total: n(p.total),
-      date: p.createdAt ?? null,
-    }));
-    if (want("employees")) samples.employees = cap(r.employees, 40).map((e: any) => ({
-      name: e.name ?? `${e.firstName ?? ""} ${e.lastName ?? ""}`.trim(),
-      role: e.role ?? e.position ?? null,
-      department: e.department ?? null,
-    }));
-
-    return {
-      currency: "DT (TND)",
-      aggregates: {
-        monthlyRevenue,
-        topProductsByRevenue,
-        receivables,
-        stockValue,
-      },
-      stats,
-      predictions,
-      topProducts,
-      topClients,
-      recommendations,
-      alerts: (alerts || []).map((a: any) => ({ type: a.type, message: a.message })),
-      lowStock: (r.products || [])
-        .filter((p: any) => n(p.quantity) > 0 && n(p.quantity) < 10)
-        .map((p: any) => ({ name: p.name, quantity: n(p.quantity) }))
-        .slice(0, 50),
-      outOfStock: (r.products || [])
-        .filter((p: any) => n(p.quantity) === 0)
-        .map((p: any) => ({ name: p.name }))
-        .slice(0, 50),
-      counts: {
-        products: (r.products || []).length,
-        clients: (r.clients || []).length,
-        sales: (r.sales || []).length,
-        orders: (r.orders || []).length,
-        invoices: (r.invoices || []).length,
-        purchases: (r.purchases || []).length,
-        employees: (r.employees || []).length,
-      },
-      samples,
-      note: "Les listes 'samples' sont tronquees et filtrees selon la question ; 'counts' donne les totaux reels ; 'aggregates' contient des chiffres exacts deja calcules.",
-    };
-  };
-
-  // Animation d'ecriture mot-a-mot (reutilisee par l'IA et par le repli local)
-  const streamAssistant = (response: string, actions: any[]) => {
-    setIsTyping(false);
-    setIsStreaming(true);
-    setStreamingContent("");
-    let fullResponse = "";
-    const words = response.split(/(\s+)/);
-    let index = 0;
-    const interval = setInterval(() => {
-      if (index < words.length) {
-        fullResponse += words[index];
-        setStreamingContent(fullResponse);
-        index++;
-      } else {
-        clearInterval(interval);
-        setChatMessages(prev => [...prev, { role: "assistant", content: fullResponse, timestamp: new Date(), actions }]);
-        setLoadingAI(false);
-        setIsStreaming(false);
-        setStreamingContent("");
-      }
-    }, isMobile ? 20 : 15);
-  };
-
-  const sendMessage = async () => {
-    if (!chatInput.trim() || loadingAI) return;
-    const userMessage = chatInput;
-
-    // Historique (incluant le nouveau message) normalise pour l'API.
-    const history = [...chatMessages, { role: "user", content: userMessage }]
-      .filter((m: any) => m.role === "user" || m.role === "assistant")
-      .map((m: any) => ({ role: m.role, content: String(m.content || "") }))
-      .slice(-12);
-
-    setChatMessages(prev => [...prev, { role: "user", content: userMessage, timestamp: new Date() }]);
-    setChatInput("");
-    setLoadingAI(true);
-    setIsTyping(true);
-
-    const actions = getContextualActions(userMessage);
-
-    // 1) Vrai assistant IA en STREAMING temps réel (route serveur + contexte RAG filtré).
-    // 2) Repli local par mots-clés si indisponible.
-    try {
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language, context: buildErpContext(userMessage), messages: history }),
-      });
-
-      if (res.ok && res.body) {
-        // ── Lecture du flux : affichage progressif en TEMPS RÉEL ──
-        setIsTyping(false);
-        setIsStreaming(true);
-        setStreamingContent("");
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let full = "";
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            full += decoder.decode(value, { stream: true });
-            setStreamingContent(full);
-          }
-          full += decoder.decode();
-        } finally {
-          reader.releaseLock();
-        }
-
-        const text = full.trim();
-        if (text) {
-          setChatMessages(prev => [...prev, { role: "assistant", content: text, timestamp: new Date(), actions }]);
-          setLoadingAI(false);
-          setIsStreaming(false);
-          setStreamingContent("");
-          return;
-        }
-        // Flux vide → repli local.
-        setIsStreaming(false);
-        setStreamingContent("");
-        setIsTyping(true);
-      }
-      // 503 (cle absente), erreur upstream, etc. -> repli local ci-dessous.
-    } catch {
-      // Erreur reseau ou flux interrompu -> repli local.
-      setIsStreaming(false);
-      setStreamingContent("");
-      setIsTyping(true);
-    }
-
-    // Repli hors-ligne : matcher par mots-cles existant.
-    streamAssistant(generateAIResponse(userMessage), actions);
-  };
-
+  // Repli hors-ligne historique (dernier recours si l'assistant local ne reconnaît pas la question)
   const generateAIResponse = (question: string): string => {
     const q = question.toLowerCase();
     const revenue = stats?.sales?.revenue || 0;
@@ -1077,89 +770,6 @@ export default function IAPage() {
            `${L.coverAll}`;
   };
 
-  const getContextualActions = (question: string) => {
-    const q = question.toLowerCase();
-    const actions: { label: string; icon: ({ size }: { size?: number }) => JSX.Element; path: string }[] = [];
-    if (q.match(/produit|stock|inventaire|producto/)) actions.push({ label: t.viewStock, icon: IconPackage, path: "/dashboard/stock" });
-    if (q.match(/client|cliente/)) actions.push({ label: "Voir clients", icon: IconUsers, path: "/dashboard/clients" });
-    if (q.match(/commande|pedido|order/)) actions.push({ label: t.viewOrders, icon: IconShoppingCart, path: "/dashboard/orders" });
-    if (q.match(/facture|invoice|impay/)) actions.push({ label: "Voir factures", icon: IconShoppingCart, path: "/dashboard/invoices" });
-    if (q.match(/fournisseur|supplier|achat|purchase/)) actions.push({ label: "Voir achats", icon: IconShoppingCart, path: "/dashboard/purchases" });
-    if (q.match(/employ|salari|\brh\b|personnel/)) actions.push({ label: "Voir RH", icon: IconUsers, path: "/dashboard/hr" });
-    if (q.match(/logistique|logistics|livraison|transport/)) actions.push({ label: "Logistique", icon: IconShoppingCart, path: "/dashboard/logistics" });
-    if (q.match(/prévision|forecast|tendance|prevision/)) actions.push({ label: "Voir prévisions", icon: IconPredictions, path: "/dashboard/ai?tab=forecasts" });
-    if (q.match(/vente|ca|chiffre|ventas|ingresos/)) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
-    if (actions.length === 0) actions.push({ label: t.dashboardBtn, icon: IconDashboard, path: "/dashboard" });
-    return actions.slice(0, 4);
-  };
-
-  const getWelcomeMessage = () => {
-    const firstName = (currentUser?.name?.split(' ')[0] || "").trim();
-    const hour = new Date().getHours();
-    const W: Record<string, any> = {
-      fr: {
-        excl: " !", morning: "Bonjour", afternoon: "Bon après-midi", evening: "Bonsoir",
-        can: ["Analyser vos ventes et bénéfices", "Vérifier l'état de votre stock", "Identifier vos meilleurs clients et produits", "Générer des prévisions précises", "Vous donner un résumé complet"],
-        help: "Comment puis-je vous aider aujourd'hui ?",
-      },
-      en: {
-        excl: "!", morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening",
-        can: ["Analyze your sales and profit", "Check your stock status", "Identify your best clients and products", "Generate accurate forecasts", "Give you a full summary"],
-        help: "How can I help you today?",
-      },
-      es: {
-        excl: "!", morning: "Buenos días", afternoon: "Buenas tardes", evening: "Buenas noches",
-        can: ["Analizar tus ventas y beneficios", "Comprobar el estado del stock", "Identificar tus mejores clientes y productos", "Generar previsiones precisas", "Darte un resumen completo"],
-        help: "¿En qué puedo ayudarte hoy?",
-      },
-    };
-    const w = W[language] || W.fr;
-    const greeting = hour < 12 ? w.morning : hour < 18 ? w.afternoon : w.evening;
-    const hello = firstName ? `${greeting} ${firstName}` : greeting;
-    const can: string[] = isMobile ? w.can.slice(0, 4) : w.can;
-
-    return `${hello}${w.excl}\n\n` +
-           ` **${t.aiAssistant}**\n\n` +
-           ` **${t.whatCanIDo}${w.excl === " !" ? " :" : ":"}**\n` +
-           can.map((c: string) => `• ${c}`).join("\n") + `\n\n` +
-           ` **${t.tryQuestions}${w.excl === " !" ? " :" : ":"}**\n` +
-           `• "${t.askRevenue}"\n` +
-           `• "${t.askSummary}"\n` +
-           `• "${t.askTopProducts}"\n` +
-           `• "${t.askStock}"\n` +
-           (isMobile ? "" : `• "${t.askForecast}"\n`) +
-           `\n${w.help}`;
-  };
-
-  const copyConversation = () => {
-    const conversation = chatMessages.map(msg => `${msg.role === "user" ? " " + (language === 'fr' ? "Vous" : language === 'es' ? "Té" : "You") : " IA"}: ${stripMarkdown(msg.content)}`).join("\n\n");
-    navigator.clipboard.writeText(conversation);
-    if (isMobile) {
-      const toast = document.createElement('div');
-      toast.textContent = t.conversationCopied;
-      toast.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${theme.primary};color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10000;animation:fadeInUp 0.3s ease`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
-    } else {
-      alert(t.conversationCopied);
-    }
-  };
-
-  const clearConversation = () => {
-    if (confirm(language === 'fr' ? "Effacer toute la conversation ?" : language === 'es' ? "éBorrar toda la conversacién?" : "Clear entire conversation?")) {
-      setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]);
-      if (isMobile) {
-        const toast = document.createElement('div');
-        toast.textContent = t.conversationCleared;
-        toast.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${theme.primary};color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10000;animation:fadeInUp 0.3s ease`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-      } else {
-        alert(t.conversationCleared);
-      }
-    }
-  };
-
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
@@ -1243,17 +853,6 @@ export default function IAPage() {
     { id: "analytics", label: t.analytics, Icon: IconAnalytics }
   ];
 
-  const quickSuggestions = [
-    { Icon: IconRevenue, text: t.revenue, query: t.askRevenue, color: theme.accent },
-    { Icon: IconDashboard, text: t.askSummary, query: t.askSummary, color: theme.primary },
-    { Icon: IconTrophy, text: t.topProducts, query: t.askTopProducts, color: "#f59e0b" },
-    { Icon: IconStar, text: t.topClients, query: "Top clients", color: "#8b5cf6" },
-    { Icon: IconPackage, text: t.stockStatus, query: t.askStock, color: "#10b981" },
-    { Icon: IconPredictions, text: t.forecasts, query: t.askForecast, color: "#ec489a" }
-  ];
-
-  const mobileQuickSuggestions = quickSuggestions.slice(0, 4);
-
   // FIX: Loading state with sidebar
   if (loading) {
     return <Spinner fullScreen />;
@@ -1287,7 +886,8 @@ export default function IAPage() {
       }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
           
-          {/* Header Desktop et Mobile unifié */}
+          {/* Header Desktop et Mobile unifié (sur mobile, masqué dans l'onglet Chat IA : le module a son propre en-tête) */}
+          {!(isMobile && activeTab === "chat") && (
           <div style={{ 
             marginBottom: responsive.gapLarge, 
             animation: "fadeInDown 0.4s ease", 
@@ -1338,15 +938,16 @@ export default function IAPage() {
               </p>
             )}
           </div>
+          )}
           
-          {lastRefresh && !refreshing && isMobile && (
+          {lastRefresh && !refreshing && isMobile && activeTab !== "chat" && (
             <p style={{ fontSize: "9px", color: theme.textSecondary, marginTop: "-12px", marginBottom: responsive.gapSmall, textAlign: "right" }}>
                {lastRefresh.toLocaleTimeString()}
             </p>
           )}
 
-          {/* Alertes */}
-          {alerts.length > 0 && (
+          {/* Alertes (masquées dans l'onglet Chat IA : l'assistant prend toute la place) */}
+          {activeTab !== "chat" && alerts.length > 0 && (
             <div style={{ marginBottom: responsive.gapMedium, display: "flex", flexDirection: "column", gap: "8px" }}>
               {alerts.slice(0, isMobile ? 2 : 3).map((alert, idx) => {
                 const colors: any = { danger: { bg: "rgba(239,68,68,0.1)", border: "#ef4444" }, warning: { bg: "rgba(245,158,11,0.1)", border: "#f59e0b" }, info: { bg: "rgba(59,130,246,0.1)", border: "#3b82f6" } };
@@ -1384,7 +985,8 @@ export default function IAPage() {
             </div>
           )}
 
-          {/* KPI Cards - grille 2x2 sur mobile */}
+          {/* KPI Cards - grille 2x2 sur mobile (masquées dans l'onglet Chat IA) */}
+          {activeTab !== "chat" && (
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fit, minmax(200px, 1fr))", gap: responsive.gapMedium, marginBottom: responsive.gapLarge }}>
             {kpiCards.map((card, idx) => (
               <div 
@@ -1406,6 +1008,7 @@ export default function IAPage() {
               </div>
             ))}
           </div>
+          )}
 
           {/* Tabs - scrollable horizontal sur mobile */}
           <div style={{ display: "flex", gap: "2px", marginBottom: responsive.gapMedium, borderBottom: `1px solid ${theme.border}`, overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scrollbar">
@@ -1470,213 +1073,25 @@ export default function IAPage() {
             </div>
           )}
 
-          {/* Chat IA Tab */}
+          {/* Chat IA Tab — module Assistant IA (components/assistant/AssistantChat) */}
           {activeTab === "chat" && (
-            <div style={{ 
-              background: theme.surface, 
-              borderRadius: responsive.cardRadius, 
-              border: `1px solid ${theme.border}`, 
-              display: "flex", 
-              flexDirection: "column", 
-              height: isMobile 
-                ? (keyboardVisible ? "350px" : "calc(100vh - 140px)") 
-                : "580px", 
-              overflow: "hidden", 
-              boxShadow: "0 8px 25px rgba(0,0,0,0.1)" 
-            }}>
-              {!isMobile && (
-                <div style={{ padding: "14px 18px", borderBottom: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${theme.surfaceHover}, ${theme.surface})` }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ width: "44px", height: "44px", borderRadius: "22px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${theme.primary}40`, animation: "pulse 2s infinite" }}>
-                      <IconRobot size={22} />
-                    </div>
-                    <div>
-                      <div style={{ color: theme.text, fontWeight: "bold", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                        {t.aiAssistant}
-                        <span style={{ background: `${theme.accent}25`, color: theme.accent, fontSize: "9px", padding: "2px 8px", borderRadius: "20px", fontWeight: "normal" }}>GPT-4</span>
-                      </div>
-                      <div style={{ color: theme.textSecondary, fontSize: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} /> {t.online}
-                        </span>
-                        <span>.</span>
-                        <span>{chatMessages.length} messages</span>
-                        <span>.</span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><IconCheckCircle size={10} /> {t.instantAnswers}</span>
-                      </div>
-                    </div>
-                    <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
-                      <button onClick={copyConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }}>
-                        <IconCopy size={12} /> {t.copyConversation}
-                      </button>
-                      <button onClick={clearConversation} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }}>
-                        <IconTrash size={12} /> {t.clearConversation}
-                      </button>
-                      <button onClick={() => { setChatMessages([{ role: "assistant", content: getWelcomeMessage(), timestamp: new Date(), actions: getWelcomeActions() }]); }} style={{ background: `${theme.primary}20`, border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "10px", display: "flex", alignItems: "center", gap: "5px", color: theme.textSecondary, transition: "all 0.2s" }}>
-                        <IconRefresh size={12} /> {t.newChat}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div 
-                ref={chatContainerRef} 
-                style={{ 
-                  flex: 1, 
-                  overflowY: "auto", 
-                  padding: isMobile ? "12px" : "18px", 
-                  display: "flex", 
-                  flexDirection: "column", 
-                  gap: isMobile ? "12px" : "16px", 
-                  background: theme.background,
-                  WebkitOverflowScrolling: "touch"
-                }}
-              >
-                {chatMessages.map((msg, idx) => (
-                  <div key={idx} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", animation: "slideIn 0.3s ease" }}>
-                    {msg.role !== "user" && !isMobile && (
-                      <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px", flexShrink: 0, boxShadow: `0 2px 8px ${theme.primary}40` }}>
-                        <IconRobot size={18} />
-                      </div>
-                    )}
-                    <div style={{ maxWidth: isMobile ? "85%" : "75%" }}>
-                      <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: msg.role === "user" ? theme.gradient : theme.surfaceHover, color: theme.text, fontSize: isMobile ? "12px" : "13px", lineHeight: "1.5", fontFamily: chatFont.style.fontFamily, whiteSpace: "pre-wrap", wordBreak: "break-word", boxShadow: msg.role === "user" ? `0 2px 10px ${theme.primary}40` : "none" }}>
-                        {renderChatText(msg.content)}
-                      </div>
-                      {msg.actions && msg.actions.length > 0 && msg.role !== "user" && (
-                        <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
-                          {msg.actions.slice(0, isMobile ? 3 : 4).map((action: any, ai: number) => (
-                            <button 
-                              key={ai} 
-                              onClick={() => action.query ? setChatInput(action.query) : action.path ? router.push(action.path) : null} 
-                              style={{ 
-                                background: `${theme.primary}15`, 
-                                border: "none", 
-                                borderRadius: "20px", 
-                                padding: isMobile ? "5px 12px" : "5px 14px", 
-                                fontSize: isMobile ? "10px" : "10px", 
-                                color: theme.primary, 
-                                cursor: "pointer", 
-                                display: "flex", 
-                                alignItems: "center", 
-                                gap: "6px", 
-                                transition: "all 0.2s",
-                                WebkitTapHighlightColor: "transparent"
-                              }}
-                            >
-                              {action.icon && <action.icon size={isMobile ? 11 : 11} />} {action.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "4px", marginLeft: isMobile ? "4px" : "8px" }}>
-                        {msg.timestamp?.toLocaleTimeString?.([], { hour: '2-digit', minute: '2-digit' }) || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    {msg.role === "user" && !isMobile && (
-                      <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.surfaceHover, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "12px", flexShrink: 0, border: `1px solid ${theme.border}` }}>
-                        <IconUser size={16} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                {isTyping && (
-                  <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                    {!isMobile && <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>}
-                    <div style={{ padding: isMobile ? "10px 16px" : "12px 20px", borderRadius: "20px", background: theme.surfaceHover, display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ width: "6px", height: "6px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0s" }} />
-                      <span style={{ width: "6px", height: "6px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.15s" }} />
-                      <span style={{ width: "6px", height: "6px", background: theme.primary, borderRadius: "50%", display: "inline-block", animation: "bounce 0.6s infinite 0.3s" }} />
-                      <span style={{ fontSize: isMobile ? "10px" : "11px", color: theme.textSecondary, marginLeft: "4px" }}>{t.aiThoughts}</span>
-                    </div>
-                  </div>
-                )}
-                
-                {isStreaming && streamingContent && (
-                  <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                    {!isMobile && <div style={{ width: "36px", height: "36px", borderRadius: "18px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "12px" }}><IconRobot size={18} /></div>}
-                    <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderRadius: "20px", background: theme.surfaceHover, fontSize: isMobile ? "12px" : "13px", maxWidth: isMobile ? "85%" : "75%", lineHeight: "1.5", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                      {streamingContent}<span style={{ display: "inline-block", width: "2px", height: "12px", background: theme.primary, marginLeft: "2px", animation: "blink 1s infinite", verticalAlign: "middle" }} />
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Zone de saisie améliorée pour mobile */}
-              <div style={{ padding: isMobile ? "12px" : "14px 18px", paddingBottom: isMobile ? "calc(12px + env(safe-area-inset-bottom, 0px))" : "14px", borderTop: `1px solid ${theme.border}`, background: theme.surface }}>
-                <div style={{ display: "flex", gap: isMobile ? "8px" : "12px", alignItems: "flex-end" }}>
-                  <textarea 
-                    ref={textareaRef}
-                    placeholder={t.typeMessage}
-                    value={chatInput} 
-                    onChange={e => setChatInput(e.target.value)} 
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !isMobile) { e.preventDefault(); sendMessage(); } }} 
-                    rows={isMobile ? 2 : 1} 
-                    enterKeyHint="send"
-                    aria-label={t.typeMessage}
-                    style={{ 
-                      flex: 1, 
-                      padding: isMobile ? "10px 14px" : "10px 16px", 
-                      background: theme.surfaceHover, 
-                      border: `1px solid ${theme.border}`, 
-                      borderRadius: "20px", 
-                      color: theme.text, 
-                      // 16px sur mobile : empêche le zoom automatique d'iOS au focus.
-                      fontSize: isMobile ? "16px" : "13px", 
-                      outline: "none", 
-                      resize: "none", 
-                      fontFamily: chatFont.style.fontFamily, 
-                      maxHeight: isMobile ? "100px" : "100px", 
-                      transition: "all 0.2s",
-                      WebkitAppearance: "none"
-                    }} 
-                    onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.background = theme.surface; }} 
-                    onBlur={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.surfaceHover; }} 
-                  />
-                  <button 
-                    onClick={sendMessage} 
-                    disabled={loadingAI || !chatInput.trim()} 
-                    style={{ 
-                      background: (!chatInput.trim() || loadingAI) ? theme.border : theme.gradient, 
-                      color: (!chatInput.trim() || loadingAI) ? "var(--theme-text)" : "white", 
-                      border: "none", 
-                      borderRadius: "25px", 
-                      padding: isMobile ? "10px 20px" : "9px 22px", 
-                      minHeight: isMobile ? "44px" : undefined,
-                      cursor: (!chatInput.trim() || loadingAI) ? "not-allowed" : "pointer", 
-                      fontSize: isMobile ? "13px" : "13px", 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: "6px", 
-                      fontWeight: "500", 
-                      transition: "all 0.2s", 
-                      whiteSpace: "nowrap",
-                      WebkitTapHighlightColor: "transparent"
-                    }}
-                  >
-                    <IconSend size={isMobile ? 14 : 14} /> {t.send}
-                  </button>
-                </div>
-                
-                {!isMobile && (
-                  <div style={{ marginTop: "14px" }}>
-                    <div style={{ fontSize: "10px", color: theme.textSecondary, marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <IconZap size={12} /> {t.quickActions}
-                    </div>
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                      {quickSuggestions.map((s, idx) => (
-                        <button key={idx} onClick={() => setChatInput(s.query)} style={{ background: `${s.color}15`, border: `1px solid ${s.color}25`, borderRadius: "20px", padding: "6px 14px", fontSize: "10px", color: s.color, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "all 0.2s", whiteSpace: "nowrap" }}>
-                          <s.Icon size={11} /> {s.text}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <AssistantChat
+              dataset={rawData}
+              language={language}
+              theme={theme}
+              isMobile={isMobile}
+              formatCurrency={(n: number) => formatCurrency(n)}
+              currency={{ code: currency || "tnd", symbol: getCurrencySymbol() }}
+              userName={(currentUser?.name || "").split(" ")[0]}
+              userKey={String(currentUser?.id ?? currentUser?.email ?? "default")}
+              height={isMobile ? "calc(100dvh - 150px)" : "max(520px, min(860px, calc(100vh - 205px)))"}
+              onNavigate={(path: string) => router.push(path)}
+              fallbackAnswer={generateAIResponse}
+              onRefreshData={refreshData}
+              refreshing={refreshing}
+              fontFamily={chatFont.style.fontFamily}
+              initialQuestion={initialQuestion}
+            />
           )}
 
           {/* Forecasts Tab */}
