@@ -7,6 +7,8 @@ import { Client } from '../clients/entities/client.entity';
 import { Supplier } from '../suppliers/supplier.entity';
 import { normalizePaymentMethod, toNumber } from '../../common/import-utils';
 import { StockService } from '../stock/stock.service';
+import { AccountingService } from '../accounting/accounting.service';
+import { round } from '../../common/money';
 import { CashSession } from './entities/cash-session.entity';
 import { SequenceService } from '../../common/sequences/sequence.service';
 import { CompanyService } from '../company/company.service';
@@ -25,7 +27,13 @@ export interface PosLine { productId: number; quantity: number; unitPrice?: numb
  */
 @Injectable()
 export class PosService {
-  constructor(private readonly dataSource: DataSource, private readonly stock: StockService, private readonly sequences: SequenceService, private readonly company: CompanyService) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly stock: StockService,
+    private readonly sequences: SequenceService,
+    private readonly company: CompanyService,
+    private readonly accounting: AccountingService,
+  ) {}
 
   async checkout(userId: number, body: any) {
     const mode: 'sale' | 'purchase' | null = body?.mode === 'sale' ? 'sale' : body?.mode === 'purchase' ? 'purchase' : null;
@@ -72,7 +80,7 @@ export class PosService {
       if (mode === 'sale') {
         const short = ids
           .map((id) => ({ p: byId.get(id)!, qty: merged.get(id)!.quantity }))
-          .filter(({ p, qty }) => (p.quantity || 0) < qty)
+          .filter(({ p, qty }) => p.isStockable !== false && (p.quantity || 0) < qty) // les services ne se stockent pas
           .map(({ p, qty }) => `${p.name} (disponible : ${p.quantity || 0}, demandé : ${qty})`);
         if (short.length) throw new BadRequestException(`Stock insuffisant : ${short.join(' ; ')}`);
       }
@@ -98,21 +106,27 @@ export class PosService {
         const unitPrice = round2(given !== undefined ? given : Number(product.price) || 0);
         const total = round2(unitPrice * quantity);
 
+        let rowId: number;
         if (mode === 'sale') {
-          await manager.save(Sale, manager.create(Sale, {
+          const row = await manager.save(Sale, manager.create(Sale, {
             userId, productId: product.id, productName: product.name, clientName: counterpartName || 'Client comptoir',
             quantity, unitPrice, total, status: 'completed', paymentMethod, posSessionId: session?.id ?? null, ticketNumber,
-          } as any));
+          } as any)) as unknown as Sale;
+          rowId = row.id;
         } else {
-          await manager.save(Purchase, manager.create(Purchase, {
+          const row = await manager.save(Purchase, manager.create(Purchase, {
             userId, productId: product.id, productName: product.name, supplierName: counterpartName || undefined,
             quantity, unitPrice, total, status: 'received', paymentMethod, posSessionId: session?.id ?? null, ticketNumber,
-          } as any));
+          } as any)) as unknown as Purchase;
+          rowId = row.id;
         }
-        // Le mouvement de stock est tracé dans le journal (et le stock total du produit mis à jour).
-        await this.stock.move(manager, {
-          userId, productId: product.id, quantity: mode === 'sale' ? -quantity : quantity, reason: 'pos', refType: 'pos',
-          refId: product.id, unitCost: mode === 'purchase' ? unitPrice : undefined, note: `Caisse — ${mode === 'sale' ? 'vente' : 'achat'}`,
+        // Le mouvement de stock est tracé dans le journal (et le stock total du produit mis à jour), rattaché à la ligne de
+        // caisse (pos_sale / pos_purchase) pour la valorisation du coût des ventes à la clôture Z.
+        // Les prix de caisse sont des montants encaissés (TTC) : le coût d'entrée d'un achat en caisse est ramené hors taxe.
+        const vatRate = Number(product.vatRate) || 0;
+        if (product.isStockable !== false) await this.stock.move(manager, {
+          userId, productId: product.id, quantity: mode === 'sale' ? -quantity : quantity, reason: 'pos', refType: mode === 'sale' ? 'pos_sale' : 'pos_purchase',
+          refId: rowId, unitCost: mode === 'purchase' ? round(unitPrice / (1 + vatRate / 100), 3) : undefined, note: `Caisse — ${mode === 'sale' ? 'vente' : 'achat'} ${ticketNumber}`,
         });
         const fresh = await manager.findOne(Product, { where: { id: product.id } });
         lines.push({ productId: product.id, productName: product.name, quantity, unitPrice, total, newStock: fresh ? fresh.quantity : product.quantity });
@@ -206,6 +220,10 @@ export class PosService {
       session.variance = round2(counted - report.expectedCash);
       session.report = { ...report, openingFloat: Number(session.openingFloat), countedCash: round2(counted), variance: session.variance };
       if (dto.note) session.note = [session.note, dto.note].filter(Boolean).join(' — ').slice(0, 300);
+      // Écriture de caisse du jour (journal CA) : ventes HT + TVA par taux, encaissements par moyen de paiement, sortie de stock.
+      const closedOn = `${session.closedAt.getFullYear()}-${String(session.closedAt.getMonth() + 1).padStart(2, '0')}-${String(session.closedAt.getDate()).padStart(2, '0')}`;
+      const entry = await this.accounting.postCashSession(em, userId, actorId, session.id, `Caisse ${session.number} — rapport Z`, closedOn);
+      if (entry) session.report = { ...session.report, journalEntry: { id: entry.id, number: entry.number, journal: entry.journal } };
       return em.save(session);
     });
   }

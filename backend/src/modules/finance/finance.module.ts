@@ -1,4 +1,5 @@
 ﻿import { Module } from '@nestjs/common';
+import { AccountingModule } from '../accounting/accounting.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FinanceController } from './finance.controller';
 import { FinanceService } from './finance.service';
@@ -7,7 +8,7 @@ import { Budget } from './entities/budget.entity';
 import { BankAccount } from './entities/bank-account.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Expense, Budget, BankAccount])],
+  imports: [TypeOrmModule.forFeature([Expense, Budget, BankAccount]), AccountingModule],
   controllers: [FinanceController],
   providers: [FinanceService],
   exports: [FinanceService],

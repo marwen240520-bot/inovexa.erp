@@ -18,12 +18,12 @@ export class FinanceController {
 
   @Post('expenses')
   async addExpense(@Request() req: any, @Body() body: any) {
-    return this.financeService.addExpense(req.user.userId, body);
+    return this.financeService.addExpense(req.user.userId, body, req.user.actorId ?? req.user.userId);
   }
 
   @Delete('expenses/:id')
   async deleteExpense(@Param('id') id: string, @Request() req: any) {
-    return this.financeService.deleteExpense(parseInt(id), req.user.userId);
+    return this.financeService.deleteExpense(parseInt(id), req.user.userId, req.user.actorId ?? req.user.userId);
   }
 
   // Budgets

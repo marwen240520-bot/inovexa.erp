@@ -34,6 +34,10 @@ export class Order {
   @Column({ default: 'pending' })
   status: string;
 
+  /** Document commercial créé à partir de la commande (devis, bon de livraison ou facture). */
+  @Column({ type: 'int', nullable: true })
+  documentId: number | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
