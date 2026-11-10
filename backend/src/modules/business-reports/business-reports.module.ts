@@ -95,11 +95,34 @@ export class BusinessReportsService {
          FROM x GROUP BY "partyId", (CASE WHEN "partyId" IS NULL THEN "partyName" END) ORDER BY revenue DESC LIMIT 20`,
       [userId, p.from, p.to],
     );
+    // Ventes en caisse (tickets des sessions clôturées, non facturés) : montants TTC encaissés, HT extrait au taux du produit.
+    const posRows = await this.ds.query(
+      `SELECT to_char(z."closedAt", 'YYYY-MM') AS month, COUNT(DISTINCT s."ticketNumber") AS tickets,
+              COALESCE(SUM(s."total"),0) AS ttc, COALESCE(SUM(s."total" / (1 + COALESCE(p."vatRate", 0) / 100)),0) AS ht
+         FROM "sales" s JOIN "cash_sessions" z ON z."id" = s."posSessionId" AND z."status" = 'closed'
+         LEFT JOIN "products" p ON p."id" = s."productId"
+        WHERE s."userId" = $1 AND s."documentId" IS NULL AND z."closedAt"::date BETWEEN $2::date AND $3::date
+        GROUP BY 1 ORDER BY 1`,
+      [userId, p.from, p.to],
+    );
+    const pos = {
+      tickets: posRows.reduce((t: number, r: any) => t + Number(r.tickets), 0),
+      ht: round(posRows.reduce((t: number, r: any) => t + num(r.ht), 0), 3),
+      ttc: round(posRows.reduce((t: number, r: any) => t + num(r.ttc), 0), 3),
+    };
+    const monthMap = new Map<string, { month: string; revenue: number; invoices: number; pos: number }>();
+    for (const r of byMonth) monthMap.set(r.month, { month: r.month, revenue: round(num(r.revenue), 3), invoices: Number(r.invoices), pos: 0 });
+    for (const r of posRows) {
+      const cur = monthMap.get(r.month) || { month: r.month, revenue: 0, invoices: 0, pos: 0 };
+      cur.pos = round(num(r.ht), 3);
+      monthMap.set(r.month, cur);
+    }
     const totalRevenue = totals.netHT || 0;
     return {
       period: p,
-      totals,
-      byMonth: byMonth.map((r: any) => ({ month: r.month, revenue: round(num(r.revenue), 3), invoices: Number(r.invoices) })),
+      totals: { ...totals, posHT: pos.ht, posTTC: pos.ttc, posTickets: pos.tickets, allHT: round(totals.netHT + pos.ht, 3) },
+      pos,
+      byMonth: [...monthMap.values()].sort((a, b) => a.month.localeCompare(b.month)),
       topProducts: byProduct.map((r: any) => ({ productId: r.productId, sku: r.sku || null, name: r.name, quantity: round(num(r.qty), 3), revenue: round(num(r.revenue), 3), share: totalRevenue > 0 ? round((num(r.revenue) / totalRevenue) * 100, 1) : null })),
       topClients: byClient.map((r: any) => ({ clientId: r.partyId, name: r.name, revenue: round(num(r.revenue), 3), invoices: Number(r.invoices), share: totalRevenue > 0 ? round((num(r.revenue) / totalRevenue) * 100, 1) : null })),
     };

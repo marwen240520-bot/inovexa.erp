@@ -55,6 +55,11 @@ const monthStart = today.slice(0, 8) + '01';
   r = await api('GET', `/accounting/entries/${z.report.journalEntry.id}`);
   check('écriture CA équilibrée', r.status === 200 && near(r.body.totalDebit, r.body.totalCredit) && near(r.body.totalDebit, 238 + 50 + 140 + 20 + 3.8), [r.body.totalDebit, r.body.totalCredit]);
 
+  r = await api('GET', `/accounting/vat?from=${monthStart}&to=${today}`);
+  check('déclaration de TVA : la caisse y figure (collectée 45,983 ; déductible 3,8)', r.status === 200 && near(r.body.sources.pos.collected.vat, 45.983) && near(r.body.sources.pos.deductible.vat, 3.8) && near(r.body.collected.vat, 45.983), r.body.sources);
+  r = await api('GET', `/reports/business/sales?from=${monthStart}&to=${today}`);
+  check('rapport Ventes : caisse comptée à part et dans le total', r.status === 200 && near(r.body.totals.posHT, 242.017) && near(r.body.totals.posTTC, 288) && r.body.totals.posTickets === 2 && near(r.body.totals.allHT, 242.017), r.body.totals);
+
   // ═════════════════════ 2. Finances → comptabilité ═════════════════════
   console.log('— Finances → comptabilité');
   r = await api('POST', '/finance/expenses', { amount: 119, amountHT: 100, taxAmount: 19, taxRate: 19, category: 'Loyer', description: 'Loyer du local', date: today, paymentMethod: 'transfer', vendor: 'SCI Carthage' });
@@ -62,6 +67,8 @@ const monthStart = today.slice(0, 8) + '01';
   const expense = r.body;
   acc = await balance();
   check('616 charge 100 ; 4366 TVA +19 ; 512 banque crédit 119', near(acc('616').debit, 100) && near(acc('4366').debit, 3.8 + 19) && near(acc('512').credit, 119), [acc('616'), acc('4366'), acc('512')]);
+  r = await api('GET', `/accounting/vat?from=${monthStart}&to=${today}`);
+  check('déclaration de TVA : la dépense y figure (déductible +19)', r.status === 200 && near(r.body.sources.expenses.deductible.vat, 19) && near(r.body.deductible.vat, 3.8 + 19), r.body.sources);
   r = await api('GET', `/finance/stats?year=${today.slice(0, 4)}`);
   check('synthèse Finances : dépenses, caisse clôturée, factures', r.status === 200 && near(r.body.totalExpenses, 119) && near(r.body.pos.sales, 288) && r.body.documents && typeof r.body.documents.receivables === 'number', r.body);
   r = await api('DELETE', `/finance/expenses/${expense.id}`);

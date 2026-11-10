@@ -154,6 +154,44 @@ export class AccountingReportsService {
     };
     const collected = side('invoice', 'credit_note');
     const deductible = side('supplier_invoice', 'supplier_credit_note');
+
+    // Caisse (sessions clôturées sur la période) : TVA extraite des montants encaissés, au taux de chaque produit.
+    const posRows = await this.ds.query(
+      `SELECT t.kind, COALESCE(p."vatRate", 0)::numeric AS rate, COALESCE(SUM(t.total / (1 + COALESCE(p."vatRate", 0) / 100)),0) AS base,
+              COALESCE(SUM(t.total - t.total / (1 + COALESCE(p."vatRate", 0) / 100)),0) AS vat
+         FROM (SELECT 'sale' AS kind, s."productId", s."total", s."posSessionId", s."userId" FROM "sales" s WHERE s."documentId" IS NULL
+               UNION ALL SELECT 'purchase', a."productId", a."total", a."posSessionId", a."userId" FROM "purchases" a WHERE a."documentId" IS NULL) t
+         JOIN "cash_sessions" z ON z."id" = t."posSessionId" AND z."status" = 'closed'
+         LEFT JOIN "products" p ON p."id" = t."productId"
+        WHERE t."userId" = $1 AND z."closedAt"::date BETWEEN $2 AND $3 GROUP BY 1, 2`,
+      [userId, from, to],
+    );
+    // Dépenses du module Finances (TVA déductible saisie).
+    const expenseRows = await this.ds.query(
+      `SELECT COALESCE("taxRate", 0)::numeric AS rate, COALESCE(SUM(COALESCE("amountHT", "amount" - COALESCE("taxAmount", 0))),0) AS base, COALESCE(SUM(COALESCE("taxAmount", 0)),0) AS vat
+         FROM "expenses" WHERE "userId" = $1 AND "date"::date BETWEEN $2 AND $3 GROUP BY 1`,
+      [userId, from, to],
+    );
+    const merge = (target: { byRate: Array<{ rate: number; baseHT: number; vat: number }>; baseHT: number; vat: number }, rows: any[]) => {
+      for (const r of rows) {
+        const rate = Number(r.rate);
+        const cur = target.byRate.find((x) => x.rate === rate);
+        if (cur) { cur.baseHT = round(cur.baseHT + Number(r.base), 3); cur.vat = round(cur.vat + Number(r.vat), 3); }
+        else target.byRate.push({ rate, baseHT: round(Number(r.base), 3), vat: round(Number(r.vat), 3) });
+      }
+      target.byRate.sort((a, b) => a.rate - b.rate);
+      target.baseHT = round(target.byRate.reduce((s, x) => s + x.baseHT, 0), 3);
+      target.vat = round(target.byRate.reduce((s, x) => s + x.vat, 0), 3);
+    };
+    const sum = (rows: any[]) => ({ baseHT: round(rows.reduce((s, r) => s + Number(r.base), 0), 3), vat: round(rows.reduce((s, r) => s + Number(r.vat), 0), 3) });
+    const sources = {
+      documents: { collected: { baseHT: collected.baseHT, vat: collected.vat }, deductible: { baseHT: deductible.baseHT, vat: deductible.vat } },
+      pos: { collected: sum(posRows.filter((r: any) => r.kind === 'sale')), deductible: sum(posRows.filter((r: any) => r.kind === 'purchase')) },
+      expenses: { deductible: sum(expenseRows) },
+    };
+    merge(collected, posRows.filter((r: any) => r.kind === 'sale'));
+    merge(deductible, posRows.filter((r: any) => r.kind === 'purchase'));
+    merge(deductible, expenseRows);
     const [tax] = await this.ds.query(
       `SELECT COALESCE(SUM(CASE WHEN d."type" = 'invoice' THEN d."stampDuty" ELSE 0 END),0) AS stamp,
               COALESCE(SUM(CASE WHEN d."type" IN ('invoice','credit_note') THEN (CASE WHEN d."type" = 'credit_note' THEN -1 ELSE 1 END) * d."withholdingAmount" ELSE 0 END),0) AS suffered,
@@ -163,8 +201,8 @@ export class AccountingReportsService {
     );
     const net = round(collected.vat - deductible.vat, 3);
     return {
-      from, to, basis: 'date de facture',
-      collected, deductible,
+      from, to, basis: 'date de facture (documents), date de clôture Z (caisse), date de la dépense (Finances)',
+      collected, deductible, sources,
       vatPayable: net > 0 ? net : 0,
       vatCredit: net < 0 ? -net : 0,
       stampDutyCollected: Number(tax.stamp),

@@ -91,6 +91,12 @@ un petit kit de composants (`frontend/components/erp/kit.tsx`). La barre de rech
 | Commandes → documents | « Créer… » sur une commande : devis, bon de livraison ou facture (brouillon) avec la ligne de la commande ; une commande ne donne qu'un document, qui suit ensuite le circuit normal |
 | Production → stock | ordre de production avec produit fini et nomenclature (composants par unité) : à chaque avancement, le produit fini entre en stock et les composants sortent (refus si composants insuffisants). Pas d'écran web dédié : API `/production/orders` |
 | Documents → anciennes tables | les factures validées se reflètent dans `invoices`, `sales` et `purchases` (tableau de bord, analyses, assistant) |
+| Déclaration de TVA | factures et avoirs (documents) + caisse (sessions clôturées) + dépenses Finances ; l'origine des montants est détaillée dans Comptabilité › TVA |
+| Rapports de gestion › Ventes | factures (HT net) et caisse (HT extrait des encaissements) : total, détail par mois |
+
+Limites connues : l'ancien écran Ventes / Achats crée des mouvements de stock sans écriture comptable ; le tableau de bord
+d'accueil additionne tickets de caisse (TTC encaissé) et lignes de factures (HT) — les chiffres de référence sont ceux de
+Rapports de gestion, Comptabilité et Finances › Chiffres réels.
 
 ## 10. Sécurité et traçabilité
 
