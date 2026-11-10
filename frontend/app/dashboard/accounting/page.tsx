@@ -161,6 +161,19 @@ function Vat({ from, to }: { from: string; to: string }) {
             <Stat label="Timbre facturé" value={moneyDT(d.stampDutyCollected)} /><Stat label="Retenues subies" value={moneyDT(d.withholdingSuffered)} /><Stat label="Retenues opérées" value={moneyDT(d.withholdingOperated)} />
           </div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>{side("TVA collectée (ventes)", d.collected)}{side("TVA déductible (achats)", d.deductible)}</div>
+          {d.sources && (
+            <Card title="Origine des montants" pad={false}>
+              <TableWrap min={420}>
+                <thead><tr><th style={th}>Source</th><th style={{ ...th, ...num }}>TVA collectée</th><th style={{ ...th, ...num }}>TVA déductible</th></tr></thead>
+                <tbody>
+                  <tr><td style={td}>Factures et avoirs (documents validés)</td><td style={{ ...td, ...num }}>{money(d.sources.documents.collected.vat)}</td><td style={{ ...td, ...num }}>{money(d.sources.documents.deductible.vat)}</td></tr>
+                  <tr><td style={td}>Caisse (sessions clôturées)</td><td style={{ ...td, ...num }}>{money(d.sources.pos.collected.vat)}</td><td style={{ ...td, ...num }}>{money(d.sources.pos.deductible.vat)}</td></tr>
+                  <tr><td style={td}>Dépenses (Finances)</td><td style={{ ...td, ...num }}>—</td><td style={{ ...td, ...num }}>{money(d.sources.expenses.deductible.vat)}</td></tr>
+                </tbody>
+              </TableWrap>
+              <p style={{ margin: 0, padding: "8px 16px", fontSize: 12, color: "var(--theme-text-secondary)" }}>Base : {d.basis}.</p>
+            </Card>
+          )}
         </>
       )}
     </>

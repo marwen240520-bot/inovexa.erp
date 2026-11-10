@@ -21,7 +21,7 @@ export default function BusinessReportsPage() {
   const stock = useLoad(() => (tab === "stock" ? api<any>("/stock/valuation") : Promise.resolve(null)), [tab]);
 
   const exportKind = tab === "sales" ? "sales" : tab === "margins" ? "margins" : "stock-valuation";
-  const maxMonth = Math.max(1, ...((sales.data?.byMonth || []).map((m: any) => Math.abs(m.revenue))));
+  const maxMonth = Math.max(1, ...((sales.data?.byMonth || []).map((m: any) => Math.abs(m.revenue) + Math.abs(m.pos || 0))));
 
   return (
     <Page title="Rapports de gestion" subtitle="Chiffre d’affaires net (factures − avoirs), marges et valorisation du stock"
@@ -46,18 +46,23 @@ export default function BusinessReportsPage() {
           {sales.loading && !sales.data ? <Loading /> : sales.data && (
             <>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-                <Stat label="CA net HT" value={moneyDT(sales.data.totals.netHT)} sub={`${sales.data.totals.invoices} facture(s), ${sales.data.totals.creditNotes} avoir(s)`} />
-                <Stat label="CA net TTC" value={moneyDT(sales.data.totals.netTTC)} />
+                <Stat label="CA total HT (factures + caisse)" value={moneyDT(sales.data.totals.allHT)} />
+                <Stat label="Factures : CA net HT" value={moneyDT(sales.data.totals.netHT)} sub={`${sales.data.totals.invoices} facture(s), ${sales.data.totals.creditNotes} avoir(s)`} />
+                <Stat label="Caisse : ventes HT" value={moneyDT(sales.data.totals.posHT)} sub={`${sales.data.totals.posTickets} ticket(s) · ${money(sales.data.totals.posTTC)} DT encaissés`} />
+                <Stat label="Factures : CA net TTC" value={moneyDT(sales.data.totals.netTTC)} />
                 <Stat label="Avoirs (HT)" value={moneyDT(sales.data.totals.creditedHT)} />
                 <Stat label="Facture moyenne HT" value={moneyDT(sales.data.totals.averageInvoiceHT)} />
               </div>
-              <Card title="Chiffre d’affaires par mois" pad>
+              <Card title="Chiffre d’affaires HT par mois (factures en bleu, caisse en vert)" pad>
                 {!sales.data.byMonth.length ? <Empty>Aucune vente validée sur la période.</Empty> : (
                   <div role="img" aria-label="Chiffre d’affaires par mois" style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 180, overflowX: "auto" }}>
                     {sales.data.byMonth.map((m: any) => (
                       <div key={m.month} style={{ flex: "1 0 54px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: 4 }}>
-                        <span style={{ fontSize: 11, fontVariantNumeric: "tabular-nums" }}>{money(m.revenue)}</span>
-                        <div style={{ width: "100%", maxWidth: 48, height: `${Math.max(4, (Math.abs(m.revenue) / maxMonth) * 120)}px`, background: m.revenue < 0 ? "var(--theme-danger, #ef4444)" : "var(--theme-primary, #4f46e5)", borderRadius: "6px 6px 0 0" }} />
+                        <span style={{ fontSize: 11, fontVariantNumeric: "tabular-nums" }}>{money(m.revenue + (m.pos || 0))}</span>
+                        <div title={`Factures ${money(m.revenue)} · Caisse ${money(m.pos || 0)}`} style={{ width: "100%", maxWidth: 48, display: "flex", flexDirection: "column", justifyContent: "flex-end", height: `${Math.max(4, ((Math.abs(m.revenue) + Math.abs(m.pos || 0)) / maxMonth) * 120)}px`, borderRadius: "6px 6px 0 0", overflow: "hidden" }}>
+                          <div style={{ flex: `${Math.abs(m.pos || 0)} 0 0`, background: "var(--theme-success, #10b981)" }} />
+                          <div style={{ flex: `${Math.abs(m.revenue)} 0 0`, background: m.revenue < 0 ? "var(--theme-danger, #ef4444)" : "var(--theme-primary, #4f46e5)" }} />
+                        </div>
                         <span style={{ fontSize: 11, color: "var(--theme-text-secondary)" }}>{m.month.slice(5)}/{m.month.slice(2, 4)}</span>
                       </div>
                     ))}
