@@ -79,7 +79,20 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 Ces écrans suivent les modules activés du compte (entrées du menu rattachées à `invoices`, `finance`, `hr`, `reports`, `clients`, `pos`, `settings`) et partagent
 un petit kit de composants (`frontend/components/erp/kit.tsx`). La barre de recherche du tableau de bord accepte la **voix** (bouton micro, navigateurs Chrome / Edge / Safari).
 
-## 9. Sécurité et traçabilité
+## 9. Liens entre modules
+
+| Flux | Ce qui se passe |
+| ---- | --------------- |
+| Caisse → stock | chaque ticket sort (vente) ou entre (achat, coût ramené hors taxe) du stock ; les services ne se stockent pas |
+| Caisse → comptabilité | à la clôture Z : écriture au journal de caisse (ventes HT et TVA par taux, encaissements espèces / banque par moyen de paiement, achats réglés en caisse, sortie de stock au coût moyen). **Les prix de caisse sont des montants TTC encaissés.** Le numéro d'écriture figure sur le rapport Z |
+| Ventes / Achats (anciens écrans) → stock | mouvements de stock, mais pas d'écriture comptable : préférer Documents ou Caisse |
+| Finances (dépenses) → comptabilité | chaque dépense génère son écriture (charge HT, TVA déductible, règlement caisse ou banque) ; sa suppression la contre-passe. Compte par catégorie : clé `expense:<catégorie>` dans la correspondance des comptes |
+| Finances ← documents et caisse | synthèse réelle : CA facturé, achats fournisseurs, encours clients, dettes fournisseurs, ventes caisse clôturées |
+| Commandes → documents | « Créer… » sur une commande : devis, bon de livraison ou facture (brouillon) avec la ligne de la commande ; une commande ne donne qu'un document, qui suit ensuite le circuit normal |
+| Production → stock | ordre de production avec produit fini et nomenclature (composants par unité) : à chaque avancement, le produit fini entre en stock et les composants sortent (refus si composants insuffisants). Pas d'écran web dédié : API `/production/orders` |
+| Documents → anciennes tables | les factures validées se reflètent dans `invoices`, `sales` et `purchases` (tableau de bord, analyses, assistant) |
+
+## 10. Sécurité et traçabilité
 
 Droits par ressource et par action (propriétaire / équipe), journal d'audit des opérations, limitation de débit, en-têtes de sécurité (helmet),
 double authentification, validation stricte des entrées.

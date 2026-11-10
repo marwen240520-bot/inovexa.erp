@@ -18,6 +18,8 @@ interface Order {
   unitPrice: number;
   total: number;
   status: string;
+  /** Document commercial créé à partir de la commande */
+  documentId?: number | null;
   createdAt: string;
 }
 
@@ -372,6 +374,18 @@ export default function OrdersPage() {
     } finally {
       setUpdatingStatus(null);
     }
+  };
+
+  // Commande → document commercial (brouillon) : la pièce suit ensuite le circuit habituel (validation, stock, comptabilité).
+  const convertOrder = async (order: any, type: "invoice" | "delivery_note" | "quote") => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${order.id}/convert`, {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) { showMessage(body?.message || "Conversion impossible", "error"); return; }
+    showMessage(type === "invoice" ? "Facture brouillon créée" : type === "delivery_note" ? "Bon de livraison brouillon créé" : "Devis brouillon créé", "success");
+    router.push(`/dashboard/documents/${body.document.id}`);
   };
 
   const deleteOrder = async (id: number) => {
@@ -832,7 +846,29 @@ export default function OrdersPage() {
                         )}
                       </td>
 
-                      <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center" }}>
+                      <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                        {order.documentId ? (
+                          <button
+                            type="button"
+                            title="Ouvrir le document créé à partir de cette commande"
+                            onClick={() => router.push(`/dashboard/documents/${order.documentId}`)}
+                            style={{ background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)", borderRadius: "8px", padding: isMobile ? "10px 13px" : "5px 10px", cursor: "pointer", marginRight: 6, fontSize: tableFontSize }}
+                          >
+                            Document
+                          </button>
+                        ) : order.status !== "cancelled" && (
+                          <select
+                            aria-label="Créer un document"
+                            value=""
+                            onChange={(e) => { const v = e.target.value as any; if (v) convertOrder(order, v); }}
+                            style={{ background: "rgba(79,70,229,0.12)", color: "var(--theme-primary, #4f46e5)", border: "1px solid rgba(79,70,229,0.3)", borderRadius: "8px", padding: isMobile ? "10px 8px" : "5px 8px", cursor: "pointer", marginRight: 6, fontSize: tableFontSize }}
+                          >
+                            <option value="">Créer…</option>
+                            <option value="invoice">Facture</option>
+                            <option value="delivery_note">Bon de livraison</option>
+                            <option value="quote">Devis</option>
+                          </select>
+                        )}
                         <button
                           onClick={() => deleteOrder(order.id)}
                           style={{

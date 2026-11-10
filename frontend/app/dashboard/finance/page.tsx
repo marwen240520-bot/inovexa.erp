@@ -955,7 +955,7 @@ export default function FinancePage() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
 
-  const [expenseForm, setExpenseForm] = useState({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: 20 });
+  const [expenseForm, setExpenseForm] = useState({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: 19 });
   const [budgetForm, setBudgetForm] = useState({ category: "revenue", amount: "", year: new Date().getFullYear(), department: "all" });
   const [bankForm, setBankForm] = useState({ name: "", type: "checking", balance: 0, accountNumber: "", iban: "" });
 
@@ -1037,6 +1037,7 @@ export default function FinancePage() {
     if (!token) { router.push("/auth/login"); return; }
     loadLocalData();
     fetchAllModuleData();
+    loadServerFinance();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1044,6 +1045,20 @@ export default function FinancePage() {
     if (!loading) calculateAllFinancialStats();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriod, selectedYear, selectedMonth, selectedQuarter, expenses, budgets, bankAccounts]);
+
+  // Dépenses : enregistrées sur le serveur (chaque dépense génère son écriture comptable) ; synthèse réelle des pièces validées.
+  const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token") || ""}` });
+  const [ledger, setLedger] = useState<any>(null);
+  const loadServerFinance = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/expenses`, { headers: authHeaders() });
+      if (res.ok) { const list = await res.json(); if (Array.isArray(list)) setExpenses(list); }
+    } catch (e) { console.error(e); }
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/stats?year=${selectedYear}`, { headers: authHeaders() });
+      if (res.ok) setLedger(await res.json());
+    } catch (e) { console.error(e); }
+  };
 
   const loadLocalData = () => {
     try {
@@ -1333,21 +1348,28 @@ export default function FinancePage() {
     ]);
   };
 
-  const addExpense = () => {
+  const addExpense = async () => {
     if (!expenseForm.amount || !expenseForm.category) { showMessage(`${tCommon.error}: ${tCommon.fillAmountAndCategory}`, "error"); return; }
-    const taxAmt = parseFloat(expenseForm.amount) * (parseFloat(String(expenseForm.taxRate)) / 100);
-    const newExpense = {
-      id: Date.now(), amount: parseFloat(expenseForm.amount) + taxAmt,
-      amountHT: parseFloat(expenseForm.amount), taxAmount: taxAmt,
+    const amountHT = Math.round(parseFloat(expenseForm.amount) * 1000) / 1000;
+    const taxAmt = Math.round(amountHT * (parseFloat(String(expenseForm.taxRate)) / 100) * 1000) / 1000;
+    const payload = {
+      amount: Math.round((amountHT + taxAmt) * 1000) / 1000, amountHT, taxAmount: taxAmt,
       taxRate: parseFloat(String(expenseForm.taxRate)), category: expenseForm.category,
       description: expenseForm.description, date: expenseForm.date || new Date().toISOString().split("T")[0],
-      paymentMethod: expenseForm.paymentMethod, vendor: expenseForm.vendor,
-      invoiceNumber: expenseForm.invoiceNumber, createdAt: new Date().toISOString()
+      paymentMethod: expenseForm.paymentMethod, vendor: expenseForm.vendor, invoiceNumber: expenseForm.invoiceNumber,
     };
-    saveExpenses([newExpense, ...expenses]);
-    setExpenseModalOpen(false);
-    setExpenseForm({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: 20 });
-    showMessage(`${tCommon.success}: ${tCommon.expenseAdded}`, "success");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/expenses`, { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+      const saved = await res.json().catch(() => null);
+      if (!res.ok) { showMessage(saved?.message || tCommon.error, "error"); return; }
+      setExpenses([saved, ...expenses]);
+      setExpenseModalOpen(false);
+      setExpenseForm({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: 19 });
+      showMessage(`${tCommon.success}: ${tCommon.expenseAdded}${saved?.journalEntry ? ` — écriture ${saved.journalEntry.number}` : ""}`, "success");
+      loadServerFinance();
+    } catch (e) {
+      showMessage(`${tCommon.error}: serveur injoignable`, "error");
+    }
   };
 
   const addBudget = () => {
@@ -1370,10 +1392,16 @@ export default function FinancePage() {
     showMessage(`${tCommon.success}: ${tCommon.accountAdded}`, "success");
   };
 
-  const deleteExpense = (id: number) => { 
-    if (confirm(tCommon.confirmDelete)) {
-      saveExpenses(expenses.filter(e => e.id !== id)); 
-      showMessage(`${tCommon.success}: ${tCommon.expenseDeleted}`, "success");
+  const deleteExpense = async (id: number) => {
+    if (!confirm(tCommon.confirmDelete)) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/expenses/${id}`, { method: "DELETE", headers: authHeaders() });
+      if (!res.ok) { const b = await res.json().catch(() => null); showMessage(b?.message || tCommon.error, "error"); return; }
+      setExpenses(expenses.filter(e => e.id !== id));
+      showMessage(`${tCommon.success}: ${tCommon.expenseDeleted} (écriture contre-passée)`, "success");
+      loadServerFinance();
+    } catch (e) {
+      showMessage(`${tCommon.error}: serveur injoignable`, "error");
     }
   };
 
@@ -1968,6 +1996,27 @@ export default function FinancePage() {
           {/* TABLEAU DE BORD */}
           {activeTab === "dashboard" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
+              {ledger && ledger.documents && (
+                <SectionCard title={<><Icon.Scale /> Chiffres réels {selectedYear} — pièces validées (factures, caisse, dépenses)</>} theme={theme} style={{ marginBottom: "20px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: "14px" }}>
+                    {[
+                      ["CA facturé HT", ledger.documents.revenueHT, `${ledger.documents.clientInvoices} facture(s)`],
+                      ["Ventes caisse (Z)", ledger.pos?.sales, `${ledger.pos?.sessions ?? 0} session(s) clôturée(s)`],
+                      ["Achats fournisseurs HT", ledger.documents.purchasesHT, `${ledger.documents.supplierInvoices} facture(s)`],
+                      ["Dépenses saisies", ledger.totalExpenses, "TTC, écritures générées"],
+                      ["Encours clients", ledger.documents.receivables, "reste à encaisser"],
+                      ["Dettes fournisseurs", ledger.documents.payables, "reste à payer"],
+                    ].map(([label, value, detail]: any) => (
+                      <div key={label} style={{ padding: "12px 14px", borderRadius: "12px", background: theme.surfaceHover || "rgba(127,127,127,0.08)" }}>
+                        <div style={{ fontSize: "11px", color: theme.textSecondary, fontWeight: 600 }}>{label}</div>
+                        <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 800, marginTop: 4 }}>{formatCurrency(Number(value) || 0)}</div>
+                        <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: 2 }}>{detail}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: "12px", color: theme.textSecondary, margin: "12px 0 0" }}>Les indicateurs ci-dessus viennent de la comptabilité (documents validés, rapports Z, dépenses). Les cartes en haut de page sont des estimations calculées à partir des ventes, achats et stocks.</p>
+                </SectionCard>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
                 <SectionCard title={<><Icon.TrendUp /> {t.revenue} & {tCommon.expenses}</>} theme={theme}>
                   <div style={{ height: chartHeight, position: "relative" }}>

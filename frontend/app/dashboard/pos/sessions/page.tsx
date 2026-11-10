@@ -39,7 +39,12 @@ function ZReport({ session }: { session: any }) {
             <tbody>{r.topProducts.map((p: any, i: number) => <tr key={i}><td style={td}>{p.name}</td><td style={{ ...td, ...num }}>{qty(p.quantity)}</td><td style={{ ...td, ...num }}>{money(p.total)}</td></tr>)}</tbody></TableWrap>
         </>
       )}
-      {r.note && <p style={{ fontSize: 12, color: "var(--theme-text-secondary)", marginTop: 12 }}>{r.note}</p>}
+      {r.journalEntry && (
+        <p style={{ fontSize: 13, marginTop: 12 }}>
+          Écriture comptable : <Link href="/dashboard/accounting" style={{ fontWeight: 700 }}>{r.journalEntry.number}</Link> (journal de caisse) — ventes HT et TVA par taux, encaissements par moyen de paiement, sortie de stock au coût.
+        </p>
+      )}
+      {r.note && <p style={{ fontSize: 12, color: "var(--theme-text-secondary)", marginTop: 12 }}>{r.note} Les prix de caisse sont des montants TTC encaissés.</p>}
     </div>
   );
 }

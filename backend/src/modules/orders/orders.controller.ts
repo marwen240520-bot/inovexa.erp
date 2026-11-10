@@ -1,8 +1,9 @@
 ﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OrdersService } from './orders.service';
+import { actorOf } from '../documents/documents.controller';
 
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 @ApiTags('Commandes')
 @ApiBearerAuth()
 @Controller('orders')
@@ -38,6 +39,12 @@ export class OrdersController {
   @Patch(':id/status')
   async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
     return this.ordersService.updateStatus(parseInt(id), req.user.userId, body.status);
+  }
+
+  @Post(':id/convert')
+  @ApiOperation({ summary: 'Crée le devis, le bon de livraison ou la facture (brouillon) correspondant à la commande' })
+  convert(@Param('id') id: string, @Request() req: any, @Body() body: { type?: 'quote' | 'delivery_note' | 'invoice' }) {
+    return this.ordersService.convert(actorOf(req), parseInt(id, 10), body?.type || 'invoice');
   }
 
   @Delete(':id')

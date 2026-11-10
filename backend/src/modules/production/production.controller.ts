@@ -27,17 +27,17 @@ export class ProductionController {
 
   @Put(':id')
   async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
-    return this.productionService.update(parseInt(id), req.user.userId, body);
+    return this.productionService.update(parseInt(id), req.user.userId, body, req.user.actorId ?? req.user.userId);
   }
 
   @Patch(':id/status')
   async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
-    return this.productionService.updateStatus(parseInt(id), req.user.userId, body.status);
+    return this.productionService.updateStatus(parseInt(id), req.user.userId, body.status, req.user.actorId ?? req.user.userId);
   }
 
   @Patch(':id/progress')
   async updateProgress(@Param('id') id: string, @Request() req: any, @Body() body: { progress: number }) {
-    return this.productionService.updateProgress(parseInt(id), req.user.userId, body.progress);
+    return this.productionService.updateProgress(parseInt(id), req.user.userId, body.progress, req.user.actorId ?? req.user.userId);
   }
 
   @Delete(':id')

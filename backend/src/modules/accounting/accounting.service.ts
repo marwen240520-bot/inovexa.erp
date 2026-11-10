@@ -206,6 +206,100 @@ export class AccountingService {
     });
   }
 
+  // ═══════════════════ Caisse (clôture Z), dépenses du module Finances ═══════════════════
+
+  /**
+   * Écriture de caisse d'une session clôturée (rapport Z). Les prix de caisse sont des montants encaissés (TTC) :
+   * la TVA est extraite au taux de chaque produit. Débit caisse / banque par moyen de paiement ; crédit ventes HT
+   * (marchandises ou services) et TVA collectée par taux ; sortie de stock au coût moyen ; achats réglés en caisse
+   * (stock ou charges, TVA déductible). Idempotent : une session n'est comptabilisée qu'une fois.
+   */
+  async postCashSession(em: EntityManager, userId: number, actorId: number | null, sessionId: number, label: string, date: string) {
+    const existing = await em.getRepository(JournalEntry).findOne({ where: { userId, refType: 'cash_session', refId: sessionId } });
+    if (existing) return existing;
+    const company = await this.company.getOrCreate(userId, em);
+    const map = this.accountMap(company);
+    const bankMethods = new Set(['card', 'transfer', 'check', 'draft', 'mobile']);
+    const groups = async (table: 'sales' | 'purchases') =>
+      (await em.query(
+        `SELECT COALESCE(t."paymentMethod",'cash') AS method, COALESCE(p."vatRate", $3)::float AS rate, COALESCE(p."isStockable", true) AS stockable,
+                COALESCE(SUM(t."total"),0)::float AS total
+           FROM "${table}" t LEFT JOIN "products" p ON p."id" = t."productId"
+          WHERE t."userId" = $1 AND t."posSessionId" = $2 GROUP BY 1, 2, 3`,
+        [userId, sessionId, Number(company.defaultVatRate) || 0],
+      )) as Array<{ method: string; rate: number; stockable: boolean; total: number }>;
+    const [sales, purchases] = await Promise.all([groups('sales'), groups('purchases')]);
+    const [cogs] = await em.query(
+      `SELECT COALESCE(SUM(ABS(m."quantity") * m."unitCost"),0)::float AS cost FROM "stock_movements" m
+        WHERE m."userId" = $1 AND m."refType" = 'pos_sale' AND m."refId" IN (SELECT s."id"::text FROM "sales" s WHERE s."userId" = $1 AND s."posSessionId" = $2)`,
+      [userId, sessionId],
+    );
+    const lines: PostLine[] = [];
+    const split = (total: number, rate: number) => {
+      const ht = round(total / (1 + rate / 100), 3);
+      return { ht, vat: round(total - ht, 3) };
+    };
+    let cashIn = 0, bankIn = 0, cashOut = 0, bankOut = 0;
+    for (const g of sales) {
+      if (bankMethods.has(g.method)) bankIn += g.total; else cashIn += g.total;
+      const { ht, vat } = split(g.total, g.rate);
+      lines.push({ accountCode: g.stockable ? map.sales : map.salesServices, credit: ht, label: `Ventes caisse HT (TVA ${g.rate} %)` });
+      lines.push({ accountCode: map.vatCollected, credit: vat, label: `TVA collectée ${g.rate} %` });
+    }
+    for (const g of purchases) {
+      if (bankMethods.has(g.method)) bankOut += g.total; else cashOut += g.total;
+      const { ht, vat } = split(g.total, g.rate);
+      lines.push({ accountCode: g.stockable ? map.stock : map.purchasesExpense, debit: ht, label: `Achats caisse HT (TVA ${g.rate} %)` });
+      lines.push({ accountCode: map.vatDeductible, debit: vat, label: `TVA déductible ${g.rate} %` });
+    }
+    if (cashIn) lines.push({ accountCode: map.cash, debit: round(cashIn, 3), label: 'Encaissements espèces' });
+    if (bankIn) lines.push({ accountCode: map.bank, debit: round(bankIn, 3), label: 'Encaissements carte / virement / chèque' });
+    if (cashOut) lines.push({ accountCode: map.cash, credit: round(cashOut, 3), label: 'Décaissements espèces' });
+    if (bankOut) lines.push({ accountCode: map.bank, credit: round(bankOut, 3), label: 'Décaissements carte / virement / chèque' });
+    const cost = round(Number(cogs?.cost) || 0, 3);
+    if (cost > 0) {
+      lines.push({ accountCode: map.cogs, debit: cost, label: 'Coût des marchandises vendues en caisse' });
+      lines.push({ accountCode: map.stock, credit: cost, label: 'Sortie de stock (caisse)' });
+    }
+    return this.postEntry(em, userId, { journal: 'CA', date, label, refType: 'cash_session', refId: sessionId, actorId, lines });
+  }
+
+  /** Écriture d'une dépense saisie dans Finances : charge HT + TVA déductible, réglée par caisse ou banque. */
+  async postExpense(em: EntityManager, userId: number, actorId: number | null, expense: { id: number; amount: number; amountHT?: number | null; taxAmount?: number | null; category?: string | null; description?: string | null; date: Date | string; paymentMethod?: string | null; vendor?: string | null }) {
+    const existing = await em.getRepository(JournalEntry).findOne({ where: { userId, refType: 'expense', refId: expense.id } });
+    if (existing) return existing;
+    const company = await this.company.getOrCreate(userId, em);
+    const map = this.accountMap(company);
+    const total = round(Number(expense.amount) || 0, 3);
+    if (total <= 0) return null;
+    let vat = round(Number(expense.taxAmount) || 0, 3);
+    if (vat < 0 || vat > total) vat = 0;
+    const ht = round(total - vat, 3);
+    const category = String(expense.category || '').trim();
+    const account = (company.accountMap || {})[`expense:${category.toLowerCase()}`] || map.purchasesExpense;
+    const bankMethods = new Set(['card', 'transfer', 'check', 'draft', 'mobile', 'bank', 'virement', 'carte', 'cheque', 'chèque']);
+    const paidBy = bankMethods.has(String(expense.paymentMethod || '').toLowerCase()) ? map.bank : map.cash;
+    const d = expense.date instanceof Date ? expense.date : new Date(expense.date);
+    const date = Number.isNaN(d.getTime()) ? today() : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return this.postEntry(em, userId, {
+      journal: paidBy === map.bank ? 'BQ' : 'CA', date,
+      label: `Dépense${category ? ' ' + category : ''}${expense.vendor ? ' — ' + expense.vendor : ''}${expense.description ? ' — ' + expense.description : ''}`,
+      refType: 'expense', refId: expense.id, actorId,
+      lines: [
+        { accountCode: account, debit: ht, label: category || 'Dépense' },
+        { accountCode: map.vatDeductible, debit: vat, label: 'TVA déductible' },
+        { accountCode: paidBy, credit: total, label: paidBy === map.bank ? 'Règlement banque' : 'Règlement espèces' },
+      ],
+    });
+  }
+
+  /** Contre-passe l'écriture liée à une pièce supprimée (dépense…) ; l'écriture d'origine est conservée. */
+  async reverseByRef(em: EntityManager, userId: number, actorId: number | null, refType: string, refId: number, label: string) {
+    const original = await em.getRepository(JournalEntry).findOne({ where: { userId, refType, refId } });
+    if (!original || original.reversedBy) return null;
+    return this.reverseInTx(em, userId, actorId, original, today(), label);
+  }
+
   /** Contre-passe l'écriture d'un règlement annulé (l'écriture d'origine n'est jamais effacée). */
   async reversePayment(em: EntityManager, userId: number, actorId: number | null, payment: Payment, reason: string) {
     const original = await em.getRepository(JournalEntry).findOne({ where: { userId, refType: 'payment', refId: payment.id } });

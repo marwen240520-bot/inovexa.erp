@@ -1,14 +1,51 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository, Between } from 'typeorm';
 import { Order } from './entities/order.entity';
+import { DocumentsService, Actor } from '../documents/documents.service';
+import { Product } from '../products/product.entity';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    @InjectDataSource() private readonly ds: DataSource,
+    private readonly documents: DocumentsService,
   ) {}
+
+  /**
+   * Transforme la commande en document commercial (brouillon) : devis, bon de livraison ou facture.
+   * La ligne reprend le produit, la quantité et le prix de la commande ; la TVA est celle du produit.
+   * Une commande ne donne qu'un seul document (voir `documentId`), qui suit ensuite le circuit habituel
+   * (validation → numéro légal, stock, comptabilité).
+   */
+  async convert(actor: Actor, id: number, type: 'quote' | 'delivery_note' | 'invoice') {
+    if (!['quote', 'delivery_note', 'invoice'].includes(type)) throw new BadRequestException('Type attendu : quote, delivery_note ou invoice.');
+    const order = await this.findOne(id, actor.userId);
+    if (order.documentId) throw new ConflictException(`Un document a déjà été créé pour cette commande (#${order.documentId}).`);
+    if (order.status === 'cancelled') throw new BadRequestException('Commande annulée.');
+    const product = order.productId ? await this.ds.getRepository(Product).findOne({ where: { id: order.productId, userId: actor.userId } }) : null;
+    const [client] = order.clientId ? await this.ds.query(`SELECT "id" FROM "clients" WHERE "id" = $1 AND "userId" = $2`, [order.clientId, actor.userId]) : [null];
+    const doc = await this.documents.create(actor, {
+      type,
+      partyId: client ? order.clientId : undefined,
+      partyName: client ? undefined : order.clientName || 'Client',
+      externalRef: `CMD-${order.id}`,
+      notes: `Commande n° ${order.id} du ${new Date(order.createdAt).toLocaleDateString('fr-FR')}`,
+      lines: [{
+        productId: product ? product.id : undefined,
+        description: order.productName || product?.name || 'Article',
+        quantity: Number(order.quantity) || 1,
+        unitPriceHT: Number(order.unitPrice) || 0,
+        vatRate: product ? Number(product.vatRate) : undefined,
+      }],
+    } as any);
+    order.documentId = doc.id;
+    if (order.status === 'pending') order.status = 'processing';
+    await this.orderRepository.save(order);
+    return { order, document: doc };
+  }
 
   async findAll(userId: number, period?: string) {
     let where: any = { userId };
