@@ -1,34 +1,12 @@
 ﻿import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
-import localFont from "next/font/local";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import AppBoot from "@/components/AppBoot";
 import { LANG_COOKIE, deepMerge, pickLanguage, type Lang } from "@/lib/i18n";
 import { THEMES, THEME_COOKIE, normalizeThemeId, themeCssVars } from "@/lib/themes";
-
-const poppins = localFont({
-  src: [
-    { path: "./fonts/poppins-regular.woff2",   weight: "400", style: "normal" },
-    { path: "./fonts/poppins-medium.woff2",    weight: "500", style: "normal" },
-    { path: "./fonts/poppins-semibold.woff2",  weight: "600", style: "normal" },
-    { path: "./fonts/poppins-bold.woff2",      weight: "700", style: "normal" },
-    { path: "./fonts/poppins-extrabold.woff2", weight: "800", style: "normal" },
-  ],
-  display: "swap",
-  variable: "--font-poppins",
-});
-
-const orbitron = localFont({
-  src: [
-    { path: "./fonts/orbitron-bold.woff2",      weight: "700", style: "normal" },
-    { path: "./fonts/orbitron-extrabold.woff2", weight: "800", style: "normal" },
-    { path: "./fonts/orbitron-black.woff2",     weight: "900", style: "normal" },
-  ],
-  display: "swap",
-  variable: "--font-orbitron",
-});
+import { fontVariables } from "./fonts";
 
 import fr from "@/public/locales/fr.json";
 import en from "@/public/locales/en.json";
@@ -37,6 +15,7 @@ import es from "@/public/locales/es.json";
 // @ts-ignore
 import "./globals.css";
 import "./theme-remap.css";
+import "./typography.css";
 
 const RAW_MESSAGES: Record<Lang, any> = { fr, en, es };
 const MERGED_MESSAGES: Partial<Record<Lang, any>> = {};
@@ -91,7 +70,7 @@ export default function RootLayout({
       lang={language}
       data-theme={themeId}
       data-mode={theme.mode === "light" ? "light" : "dark"}
-      className={`${poppins.variable} ${orbitron.variable}`}
+      className={fontVariables}
       style={htmlStyle}
       suppressHydrationWarning
     >
