@@ -66,6 +66,13 @@ export class LegacyImportService {
     const paid = inv.status === 'paid';
     const cancelled = inv.status === 'cancelled';
     const number = await this.uniqueNumber(em, inv.userId, type, (inv.reference || inv.operationNumber || `FAC-${inv.id}`).trim().slice(0, 36));
+    // Ancienne facture saisie avec un nom de tiers sans fiche liée : on retrouve la fiche par son nom (fiche 360°, encours, relances).
+    let partyId = client ? inv.clientId : inv.supplierId;
+    const partyName = (client ? inv.clientName : inv.supplierName) || '';
+    if (!partyId && partyName.trim()) {
+      const [row] = await em.query(`SELECT "id" FROM "${client ? 'clients' : 'suppliers'}" WHERE "userId" = $1 AND lower(trim("name")) = lower(trim($2)) ORDER BY "id" LIMIT 1`, [inv.userId, partyName]);
+      partyId = row?.id ?? null;
+    }
 
     const lines: Array<Partial<DocumentLine>> = (items.length ? items : [{ description: inv.description || number, quantity: 1, unitPrice: totalHT, vatRate: inv.taxRate, total: totalHT }])
       .map((it, i) => {
@@ -102,7 +109,7 @@ export class LegacyImportService {
         status: cancelled ? 'cancelled' : 'validated',
         paymentStatus: cancelled ? 'none' : paid ? 'paid' : 'unpaid',
         partyType: client ? 'client' : 'supplier',
-        partyId: client ? inv.clientId : inv.supplierId,
+        partyId,
         partyName: (client ? inv.clientName : inv.supplierName) || (client ? 'Client' : 'Fournisseur'),
         partyTaxId: inv.clientSiret || null,
         partyAddress: inv.clientAddress || null,

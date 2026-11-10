@@ -46,7 +46,8 @@ const SECURITY_HEADERS = [
   },
   {
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+    // microphone=(self) : la recherche vocale du tableau de bord utilise le micro (demande d'autorisation au clic).
+    value: 'camera=(), microphone=(self), geolocation=(), interest-cohort=()',
   },
   ...(IS_PROD
     ? [

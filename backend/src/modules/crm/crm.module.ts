@@ -221,17 +221,47 @@ export class CrmService {
       [userId, partyType, id],
     );
     const interactions = await this.interactions(userId, { partyType, partyId: id, limit: 10 });
+    // Ventes / achats des anciens modules (caisse, écran Ventes) non rattachés à un document : rapprochés par le nom du tiers.
+    const legacyTable = partyType === 'client' ? 'sales' : 'purchases';
+    const legacyNameCol = partyType === 'client' ? 'clientName' : 'supplierName';
+    const [legacyStats] = await this.ds.query(
+      `SELECT COALESCE(SUM("total") FILTER (WHERE "createdAt" >= now() - interval '365 days'),0)::float AS "amount12m", COUNT(*)::int AS "count", to_char(MAX("createdAt"),'YYYY-MM-DD') AS "last"
+         FROM "${legacyTable}" WHERE "userId" = $1 AND "documentId" IS NULL AND lower(trim("${legacyNameCol}")) = lower(trim($2))`,
+      [userId, party.name || ''],
+    );
+    const legacyRecent = await this.ds.query(
+      `SELECT "id", "productName", "quantity"::float AS "quantity", "total"::float AS "total", "status", "paymentMethod", to_char("createdAt",'YYYY-MM-DD') AS "date", "ticketNumber"
+         FROM "${legacyTable}" WHERE "userId" = $1 AND "documentId" IS NULL AND lower(trim("${legacyNameCol}")) = lower(trim($2)) ORDER BY "createdAt" DESC, "id" DESC LIMIT 10`,
+      [userId, party.name || ''],
+    );
+    const legacyTop = await this.ds.query(
+      `SELECT "productName" AS "description", SUM("quantity")::float AS "quantity", SUM("total")::float AS "revenue"
+         FROM "${legacyTable}" WHERE "userId" = $1 AND "documentId" IS NULL AND lower(trim("${legacyNameCol}")) = lower(trim($2)) GROUP BY "productName" ORDER BY SUM("total") DESC LIMIT 5`,
+      [userId, party.name || ''],
+    );
+    const mergedTop = new Map<string, { productId: number | null; description: string; quantity: number; revenue: number }>();
+    for (const t of [...topProducts, ...legacyTop]) {
+      const key = String(t.description || '').trim().toLowerCase();
+      const cur = mergedTop.get(key) || { productId: t.productId ?? null, description: t.description, quantity: 0, revenue: 0 };
+      cur.quantity = round(cur.quantity + Number(t.quantity || 0), 3);
+      cur.revenue = round(cur.revenue + Number(t.revenue || 0), 3);
+      mergedTop.set(key, cur);
+    }
     const outstanding = Number(stats.outstanding);
     const creditLimit = party.creditLimit === null || party.creditLimit === undefined ? null : Number(party.creditLimit);
     return {
       party: { ...party, creditLimit },
       kpis: {
-        billed12m: Number(stats.billed12m), credited12m: Number(stats.credited12m), netRevenue12m: round(Number(stats.billed12m) - Number(stats.credited12m), 3),
+        billed12m: Number(stats.billed12m), credited12m: Number(stats.credited12m),
+        netRevenue12m: round(Number(stats.billed12m) - Number(stats.credited12m) + Number(legacyStats.amount12m), 3),
+        documentsRevenue12m: round(Number(stats.billed12m) - Number(stats.credited12m), 3),
+        legacyRevenue12m: round(Number(legacyStats.amount12m), 3), legacyCount: legacyStats.count, lastLegacy: legacyStats.last,
         outstanding, overdue: Number(stats.overdue), creditsAvailable: Number(stats.creditsAvailable), invoiceCount: stats.invoiceCount, lastInvoice: stats.lastInvoice,
         averagePaymentDays: delay.n ? round(delay.avgDays, 1) : null,
         creditLimit, creditUsedPct: creditLimit ? round((outstanding / creditLimit) * 100, 1) : null, overCreditLimit: creditLimit !== null && outstanding > creditLimit,
       },
-      topProducts: topProducts.map((p: any) => ({ ...p, revenue: round(p.revenue, 3) })),
+      topProducts: [...mergedTop.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5),
+      legacySales: legacyRecent.map((r: any) => ({ ...r, total: round(r.total, 3) })),
       recentDocuments: recent.map((d: any) => ({ ...d, totalTTC: Number(d.totalTTC), balanceDue: Number(d.balanceDue) })),
       interactions,
     };

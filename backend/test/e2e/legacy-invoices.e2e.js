@@ -10,6 +10,10 @@ const near = (a, b, eps = 0.0006) => Math.abs(Number(a) - Number(b)) <= eps;
   setToken(r.body.access_token || r.body.token);
   const me = (await api('GET', '/auth/me')).body;
 
+  // Fiche client existante : les anciennes factures saisies avec ce nom lui seront rattachées
+  const histo = (await api('POST', '/clients', { name: 'Client Histo', email: 'histo@test.tn' })).body;
+  check('client Histo créé', !!histo.id, histo);
+
   // ── Anciennes factures saisies avant la fusion (insérées directement, comme l'ancien écran le faisait) ──
   const pg = new Client({ connectionString: process.env.DATABASE_URL });
   await pg.connect();
@@ -50,6 +54,17 @@ const near = (a, b, eps = 0.0006) => Math.abs(Number(a) - Number(b)) <= eps;
 
   r = await api('POST', '/documents/import-legacy');
   check('reprise idempotente', r.status === 201 && r.body.imported === 0 && r.body.remaining === 0, r.body);
+  check('anciennes factures rattachées à la fiche client par le nom', a.partyId === histo.id && b.partyId === histo.id, [a.partyId, b.partyId, histo.id]);
+
+  // ── Fiche 360° : factures reprises + ventes caisse de l'ancien module ──
+  const prod = (await api('POST', '/products', { name: 'Cartouche', sku: 'CART', price: 20, quantity: 10 })).body;
+  r = await api('POST', '/pos/checkout', { mode: 'sale', counterpart: 'Client Histo', lines: [{ productId: prod.id, quantity: 2, unitPrice: 20 }], paymentMethod: 'cash' });
+  check('vente caisse au nom du client', r.status === 201, r.body);
+  r = await api('GET', `/crm/clients/${histo.id}/overview`);
+  const k = r.body.kpis || {};
+  check('fiche 360° : factures reprises comptées', r.status === 200 && k.invoiceCount === 2 && near(k.outstanding, 119) && r.body.recentDocuments.length === 2, [r.status, k, r.body.recentDocuments]);
+  check('fiche 360° : vente caisse comptée dans le CA et listée', k.legacyCount === 1 && near(k.legacyRevenue12m, 40) && near(k.netRevenue12m, 40) && r.body.legacySales.length === 1 && r.body.legacySales[0].productName === 'Cartouche', [k, r.body.legacySales]);
+  check('fiche 360° : meilleurs produits fusionnés', r.body.topProducts.some((t) => /cartouche/i.test(t.description) && near(t.revenue, 40)) && r.body.topProducts.some((t) => /imprimante/i.test(t.description)), r.body.topProducts);
 
   // ── L'ancien module est en lecture seule ──
   r = await api('POST', '/invoices', { reference: 'X' }); check('POST /invoices refusé (410)', r.status === 410, r.status);
@@ -88,6 +103,8 @@ const near = (a, b, eps = 0.0006) => Math.abs(Number(a) - Number(b)) <= eps;
   // ── Le tableau de bord (ancien écran) voit tout : reflets + reprises ──
   r = await api('GET', '/invoices');
   check('reflet complet pour les anciens écrans', r.status === 200 && r.body.length === 7, r.body.length);
+  r = await api('GET', '/clients');
+  check('la vente caisse n’a pas créé de doublon de client', r.body.filter((c) => /histo/i.test(c.name)).length === 1, r.body.map((c) => c.name));
 
   summary();
 })().catch((e) => { console.error(e); process.exit(2); });
