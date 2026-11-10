@@ -73,6 +73,7 @@ export class CompanyService {
       if (!check.valid) throw new BadRequestException(check.message);
       patch.taxId = check.normalized || null;
     }
+    if (patch.logoDataUrl === '') patch.logoDataUrl = null; // « Retirer le logo » → logo par défaut
     if (patch.logoDataUrl) {
       if (!/^data:image\/(png|jpe?g);base64,[A-Za-z0-9+/=]+$/i.test(patch.logoDataUrl)) {
         throw new BadRequestException('Le logo doit être une image PNG ou JPEG.');

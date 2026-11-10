@@ -158,6 +158,12 @@ export class DocumentsController {
     return this.docs.send(actorOf(req), id, body || {});
   }
 
+  @Put(':id/ttn')
+  @ApiOperation({ summary: 'Enregistre la référence El Fatoora (TTN) attestant la certification ; référence vide = non certifiée' })
+  setTtn(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Body() body: { reference?: string | null; validatedAt?: string | null }) {
+    return this.docs.setTtnReference(actorOf(req), id, body?.reference, body?.validatedAt);
+  }
+
   @Get(':id/teif')
   @ApiOperation({ summary: 'Facture électronique TEIF 1.8.8 (El Fatoora / TTN), non signée ; ?check=1 renvoie seulement les manques' })
   async teif(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Query('check') check: string, @Res() res: Response) {

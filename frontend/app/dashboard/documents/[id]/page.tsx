@@ -96,9 +96,7 @@ export default function DocumentDetail() {
           {a.pay && d.type === "invoice" && d.overdue && <Btn onClick={() => setModal("remind")}>Relancer</Btn>}
           {a.send && <Btn onClick={openSend}>Envoyer</Btn>}
           {d.lockedAt && <Btn onClick={() => fetchFile(`/documents/${d.id}/pdf`, { open: true }).catch((e) => notify(e.message, "err"))}>PDF</Btn>}
-          {d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
-            <Btn title="Fichier TEIF 1.8.8 à déposer sur la plateforme El Fatoora (TTN)" onClick={() => fetchFile(`/documents/${d.id}/teif`).catch((e) => notify(e.message, "err"))}>El Fatoora (XML)</Btn>
-          )}
+
           <Btn busy={busy === "dup"} onClick={() => run("dup", () => api(`/documents/${d.id}/duplicate`, { method: "POST" }), "Copie créée en brouillon.", (r) => router.push(`/dashboard/documents/${r.id}`))}>Dupliquer</Btn>
           {a.cancel && <Btn variant="danger" onClick={() => { setReason(""); setModal("cancel"); }}>Annuler</Btn>}
           {a.delete && <Btn variant="danger" busy={busy === "del"} onClick={() => { if (confirm("Supprimer ce brouillon ?")) run("del", () => api(`/documents/${d.id}`, { method: "DELETE" }), "Brouillon supprimé.", () => router.push("/dashboard/documents")); }}>Supprimer</Btn>}
@@ -111,7 +109,30 @@ export default function DocumentDetail() {
         {d.lockedAt && settles && <StatusBadge status={d.paymentStatus} />}
         {d.overdue && <Badge tone="red">En retard</Badge>}
         {d.lockedAt && <Badge tone="violet">Figé — non modifiable</Badge>}
+        {d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
+          d.ttnReference
+            ? <Badge tone="green">Certifiée El Fatoora — réf. TTN {d.ttnReference}{d.ttnValidatedAt ? ` (${fmtDate(d.ttnValidatedAt)})` : ""}</Badge>
+            : <Badge tone="amber">Non certifiée El Fatoora</Badge>
+        )}
       </div>
+
+      {d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
+        <Card title="Facture électronique (El Fatoora / TTN)">
+          <p style={{ margin: "0 0 10px", fontSize: 14, color: "var(--theme-text-secondary)" }}>
+            {d.ttnReference
+              ? "Cette pièce a été signée et validée sur la plateforme El Fatoora : la référence TTN figure sur le PDF."
+              : "Cette pièce n’est pas encore certifiée : exportez le fichier XML, déposez-le et signez-le sur El Fatoora, puis saisissez ici la référence attribuée par TTN."}
+          </p>
+          <Row>
+            <Btn onClick={() => fetchFile(`/documents/${d.id}/teif`).catch((e) => notify(e.message, "err"))}>Télécharger le fichier El Fatoora (XML)</Btn>
+            <Btn variant={d.ttnReference ? undefined : "primary"} busy={busy === "ttn"} onClick={() => {
+              const reference = prompt("Référence attribuée par TTN (El Fatoora) :", d.ttnReference || "");
+              if (reference === null) return;
+              run("ttn", () => api(`/documents/${d.id}/ttn`, { method: "PUT", body: { reference } }), reference.trim() ? "Référence TTN enregistrée." : "Référence TTN effacée.");
+            }}>{d.ttnReference ? "Modifier la référence TTN" : "Saisir la référence TTN"}</Btn>
+          </Row>
+        </Card>
+      )}
 
       {!d.lockedAt && <Notice tone="blue">Brouillon : le numéro légal sera attribué à la validation. Après validation, la pièce ne pourra plus être modifiée ; une erreur se corrige par un avoir.</Notice>}
 

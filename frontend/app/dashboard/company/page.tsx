@@ -40,6 +40,7 @@ export default function CompanyPage() {
       ["shareCapital", "defaultVatRate", "stampDutyAmount", "withholdingThreshold", "defaultPaymentTermsDays", "quoteValidityDays"].forEach((k) => { if (diff(k) && form[k] !== null && form[k] !== "") body[k] = Number(form[k]); });
       if (!!form.stampDutyEnabled !== !!orig.stampDutyEnabled) body.stampDutyEnabled = !!form.stampDutyEnabled;
       ["invoiceFooter", "defaultNotes"].forEach((k) => { if (diff(k)) body[k] = form[k] ?? ""; });
+      if (diff("logoDataUrl")) body.logoDataUrl = form.logoDataUrl ?? "";
       if (JSON.stringify(form.numbering) !== JSON.stringify(orig.numbering || {})) body.numbering = form.numbering;
       if (!Object.keys(body).length) { notify("Aucune modification à enregistrer."); setSaving(false); return; }
       const saved = await api<any>("/company", { method: "PUT", body });
@@ -59,6 +60,35 @@ export default function CompanyPage() {
       <Suspense fallback={null}><ModuleNav tabs={SETTINGS_TABS} label="Paramètres" /></Suspense>
       {notice}
       {gaps.length > 0 && <Notice>Mentions légales manquantes pour valider une facture : <strong>{gaps.join(", ")}</strong>.</Notice>}
+
+      <Card title="Logo des documents">
+        <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ width: 96, height: 96, borderRadius: 12, border: "1px dashed var(--theme-border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", background: "var(--theme-surface-hover)" }}>
+            {form.logoDataUrl
+              ? <img src={form.logoDataUrl} alt="Logo de la société" style={{ maxWidth: "100%", maxHeight: "100%" }} />
+              : <img src="/logo.png" alt="Logo par défaut" style={{ maxWidth: "70%", maxHeight: "70%", opacity: 0.6 }} />}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "1 1 260px" }}>
+            <span style={{ fontSize: 13, color: "var(--theme-text-secondary)" }}>
+              {form.logoDataUrl ? "Votre logo est imprimé en haut de chaque facture, devis et bon." : "Sans logo chargé, les documents utilisent le logo par défaut de l’application."} PNG ou JPEG, 400 Ko maximum.
+            </span>
+            <Row>
+              <label style={{ display: "inline-block" }}>
+                <span style={{ ...inputStyle, display: "inline-block", width: "auto", cursor: "pointer" }}>Choisir une image…</span>
+                <input type="file" accept="image/png,image/jpeg" style={{ display: "none" }} onChange={(e) => {
+                  const f = e.target.files?.[0]; e.target.value = "";
+                  if (!f) return;
+                  if (f.size > 400_000) { notify("Image trop lourde (400 Ko maximum) : réduisez-la avant l’envoi.", "err"); return; }
+                  const r = new FileReader();
+                  r.onload = () => set("logoDataUrl", String(r.result || ""));
+                  r.readAsDataURL(f);
+                }} />
+              </label>
+              {form.logoDataUrl && <Btn variant="danger" onClick={() => set("logoDataUrl", "")}>Retirer le logo</Btn>}
+            </Row>
+          </div>
+        </div>
+      </Card>
 
       <Card title="Identité et coordonnées">
         <Row>
