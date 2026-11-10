@@ -1022,12 +1022,12 @@ export default function DashboardPage() {
                         <img 
                           src={avatarSrc(profileImage)} 
                           alt="Profile" 
-                          style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover" }}
+                          style={{ width: isMobile ? "46px" : "48px", height: isMobile ? "46px" : "48px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
                           onError={() => { setImageError(true); refreshUserData(); }} 
                           loading="lazy" 
                         />
                       ) : (
-                        <div style={{ width: isMobile ? "40px" : responsive.profileImageSize, height: isMobile ? "40px" : responsive.profileImageSize, borderRadius: isMobile ? "12px" : responsive.profileImageRadius, background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "white" }}>
+                        <div style={{ width: isMobile ? "46px" : "48px", height: isMobile ? "46px" : "48px", borderRadius: "50%", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "18px" : "20px", fontWeight: "bold", color: "white", flexShrink: 0 }}>
                           {getInitials(user?.name)}
                         </div>
                       )}
