@@ -18,7 +18,7 @@ export default function BusinessReportsPage() {
 
   const sales = useLoad(() => (tab === "sales" ? api<any>("/reports/business/sales", { query: { from, to } }) : Promise.resolve(null)), [tab, from, to]);
   const margins = useLoad(() => (tab === "margins" ? api<any>("/reports/business/margins", { query: { from, to, by } }) : Promise.resolve(null)), [tab, from, to, by]);
-  const stock = useLoad(() => (tab === "stock" ? api<any>("/stock/reports/valuation") : Promise.resolve(null)), [tab]);
+  const stock = useLoad(() => (tab === "stock" ? api<any>("/stock/valuation") : Promise.resolve(null)), [tab]);
 
   const exportKind = tab === "sales" ? "sales" : tab === "margins" ? "margins" : "stock-valuation";
   const maxMonth = Math.max(1, ...((sales.data?.byMonth || []).map((m: any) => Math.abs(m.revenue))));
