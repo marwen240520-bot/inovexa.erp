@@ -331,6 +331,9 @@ export default function DashboardPage() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [imageError, setImageError] = useState(false);
 
+  // ✅ Taille commune : bouton de thème, cloche et photo de profil
+  const headerButtonSize = isMobile ? 46 : 48;
+
   const getTempTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
       "dashboard.profile": { fr: "Mon profil", en: "My profile", es: "Mi perfil" },
@@ -348,7 +351,7 @@ export default function DashboardPage() {
       return {
         headerTitleSize: "18px", headerEmojiSize: "20px", headerNameSize: "14px",
         dateSize: "9px", kpiValueSize: "20px", kpiLabelSize: "9px", kpiIconSize: "18px",
-        chartHeight: "180px", profileImageSize: "40px", profileImageRadius: "12px",
+        chartHeight: "180px", profileImageSize: `${headerButtonSize}px`, profileImageRadius: "12px",
         companyFontSize: "7px", cardPadding: "10px", cardRadius: "12px",
         gridGap: "10px", sectionMargin: "16px", secondaryCardPadding: "8px",
         secondaryCardValueSize: "16px"
@@ -357,7 +360,7 @@ export default function DashboardPage() {
       return {
         headerTitleSize: "22px", headerEmojiSize: "24px", headerNameSize: "18px",
         dateSize: "11px", kpiValueSize: "24px", kpiLabelSize: "10px", kpiIconSize: "22px",
-        chartHeight: "220px", profileImageSize: "60px", profileImageRadius: "20px",
+        chartHeight: "220px", profileImageSize: `${headerButtonSize}px`, profileImageRadius: "12px",
         companyFontSize: "8px", cardPadding: "14px", cardRadius: "14px",
         gridGap: "14px", sectionMargin: "20px", secondaryCardPadding: "10px",
         secondaryCardValueSize: "20px"
@@ -366,7 +369,7 @@ export default function DashboardPage() {
       return {
         headerTitleSize: "24px", headerEmojiSize: "28px", headerNameSize: "20px",
         dateSize: "12px", kpiValueSize: "28px", kpiLabelSize: "11px", kpiIconSize: "24px",
-        chartHeight: "250px", profileImageSize: "75px", profileImageRadius: "25px",
+        chartHeight: "250px", profileImageSize: `${headerButtonSize}px`, profileImageRadius: "12px",
         companyFontSize: "9px", cardPadding: "16px", cardRadius: "16px",
         gridGap: "16px", sectionMargin: "24px", secondaryCardPadding: "12px",
         secondaryCardValueSize: "22px"
@@ -1007,34 +1010,34 @@ export default function DashboardPage() {
                   <GlobalSearch isMobile={isMobile} />
                 </div>
                 
-                <NotificationBell isMobile={isMobile} size={isMobile ? 46 : 48} />
+                <NotificationBell isMobile={isMobile} size={headerButtonSize} />
 
-                <ThemeToggle size={isMobile ? 46 : 48} />
+                <ThemeToggle size={headerButtonSize} />
 
-                {/* Profil utilisateur */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                {/* Profil utilisateur — même taille que le bouton de thème */}
+                <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
                   <div style={{ position: "relative" }}>
                     <div 
                       onClick={() => setShowProfileMenu(!showProfileMenu)} 
-                      style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)", WebkitTapHighlightColor: "transparent" }}
+                      style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)", WebkitTapHighlightColor: "transparent", width: responsive.profileImageSize, height: responsive.profileImageSize, display: "flex" }}
                     >
                       {profileImage && !imageError ? (
                         <img 
                           src={avatarSrc(profileImage)} 
                           alt="Profile" 
-                          style={{ width: isMobile ? "46px" : "48px", height: isMobile ? "46px" : "48px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                          style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover", display: "block" }}
                           onError={() => { setImageError(true); refreshUserData(); }} 
                           loading="lazy" 
                         />
                       ) : (
-                        <div style={{ width: isMobile ? "46px" : "48px", height: isMobile ? "46px" : "48px", borderRadius: "50%", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "18px" : "20px", fontWeight: "bold", color: "white", flexShrink: 0 }}>
+                        <div style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: "bold", color: "white" }}>
                           {getInitials(user?.name)}
                         </div>
                       )}
                     </div>
 
                     {showProfileMenu && (
-                      <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(17,24,39,0.18)" }}>
+                      <div className="profile-menu" style={{ position: "absolute", top: `${headerButtonSize + 8}px`, right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(17,24,39,0.18)" }}>
                         <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
                           {profileImage && !imageError ? (
                             <img src={avatarSrc(profileImage)} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
