@@ -86,10 +86,12 @@ export class DocumentPdfService {
       try { logo = Buffer.from(company.logoDataUrl.split(',')[1], 'base64'); } catch { logo = null; }
     }
     if (!logo) logo = brandLogo();
+    let logoBottom = y;
     if (logo) {
       try {
-        pdf.image(logo, PAGE.margin, y, { fit: [56, 56] });
-        textX = PAGE.margin + 68;
+        pdf.image(logo, PAGE.margin, y, { fit: [88, 88] });
+        textX = PAGE.margin + 100;
+        logoBottom = y + 88;
       } catch {
         /* logo illisible : on continue sans */
       }
@@ -115,7 +117,7 @@ export class DocumentPdfService {
     if (meta.settles && !meta.isCredit && doc.dueDate) pdf.text(`Échéance : ${formatDate(doc.dueDate)}`, rightX, pdf.y, { width: 220, align: 'right' });
     if (doc.externalRef) pdf.text(`Réf. : ${clean(doc.externalRef)}`, rightX, pdf.y, { width: 220, align: 'right' });
     if (doc.sources?.length) pdf.text(`${meta.isCredit ? 'Facture' : 'Réf. documents'} : ${doc.sources.map((s: any) => s.number).filter(Boolean).join(', ')}`, rightX, pdf.y, { width: 220, align: 'right' });
-    y = Math.max(leftBottom, pdf.y) + 14;
+    y = Math.max(leftBottom, pdf.y, logoBottom) + 14;
 
     // ── Tiers ──
     const partyLabel = meta.party === 'client' ? 'CLIENT' : 'FOURNISSEUR';
