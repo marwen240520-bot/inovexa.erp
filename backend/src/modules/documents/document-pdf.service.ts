@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import PDFDocument = require('pdfkit');
 import { Company } from '../company/company.entity';
 import { DOC_META } from './documents.types';
@@ -35,12 +37,28 @@ const formatDate = (d: string | Date | null | undefined) => {
   return `${day}/${m}/${y}`;
 };
 
+/** Logo par défaut des documents (backend/resources/brand/logo.png) quand la société n'a pas chargé le sien. */
+let defaultLogo: Buffer | null | undefined;
+function brandLogo(): Buffer | null {
+  if (defaultLogo !== undefined) return defaultLogo;
+  const candidates = [
+    path.resolve(process.cwd(), 'resources/brand/logo.png'),
+    path.resolve(__dirname, '../../../resources/brand/logo.png'), // src/modules/documents (ts-node)
+    path.resolve(__dirname, '../../../../resources/brand/logo.png'), // dist/src/modules/documents
+  ];
+  defaultLogo = null;
+  for (const c of candidates) {
+    try { if (fs.existsSync(c)) { defaultLogo = fs.readFileSync(c); break; } } catch { /* suivant */ }
+  }
+  return defaultLogo;
+}
+
 @Injectable()
 export class DocumentPdfService {
   /** Génère le PDF d'un document commercial (le « document » est le résultat de DocumentsService.get). */
   render(company: Company, doc: any): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const pdf = new PDFDocument({ size: 'A4', margin: PAGE.margin, bufferPages: true, info: { Title: `${doc.typeLabel} ${doc.number || ''}`.trim(), Author: clean(company.legalName) || 'Inovexa ERP' } });
+      const pdf = new PDFDocument({ size: 'A4', margins: { top: PAGE.margin, left: PAGE.margin, right: PAGE.margin, bottom: 92 }, bufferPages: true, info: { Title: `${doc.typeLabel} ${doc.number || ''}`.trim(), Author: clean(company.legalName) || 'Inovexa ERP' } });
       const chunks: Buffer[] = [];
       pdf.on('data', (c: Buffer) => chunks.push(c));
       pdf.on('end', () => resolve(Buffer.concat(chunks)));
@@ -62,11 +80,16 @@ export class DocumentPdfService {
     // ── En-tête : société à gauche, document à droite ──
     let y = PAGE.margin;
     let textX = PAGE.margin;
+    // Logo : celui chargé par la société (Paramètres › Société), sinon le logo par défaut de l'application.
+    let logo: Buffer | null = null;
     if (company.logoDataUrl) {
+      try { logo = Buffer.from(company.logoDataUrl.split(',')[1], 'base64'); } catch { logo = null; }
+    }
+    if (!logo) logo = brandLogo();
+    if (logo) {
       try {
-        const raw = company.logoDataUrl.split(',')[1];
-        pdf.image(Buffer.from(raw, 'base64'), PAGE.margin, y, { fit: [90, 50] });
-        textX = PAGE.margin + 100;
+        pdf.image(logo, PAGE.margin, y, { fit: [56, 56] });
+        textX = PAGE.margin + 68;
       } catch {
         /* logo illisible : on continue sans */
       }
@@ -78,7 +101,7 @@ export class DocumentPdfService {
       company.country && company.country !== 'Tunisie' ? company.country : '',
       company.taxId ? `MF : ${company.taxId}` : '',
       company.tradeRegister ? `RC : ${company.tradeRegister}` : '',
-      [company.phone ? `Tél : ${company.phone}` : '', company.email || ''].filter(Boolean).join('  -  '),
+      company.phone ? `Tél : ${company.phone}` : '',
     ].filter(Boolean);
     for (const l of companyLines) pdf.text(clean(l), textX, pdf.y, { width: 250 });
     const leftBottom = pdf.y;
@@ -101,7 +124,7 @@ export class DocumentPdfService {
       doc.partyName,
       doc.partyTaxId ? `MF : ${doc.partyTaxId}` : '',
       doc.partyAddress || '',
-      [doc.partyPhone, doc.partyEmail].filter(Boolean).join('  -  '),
+      doc.partyPhone ? `Tél : ${doc.partyPhone}` : '',
     ].filter(Boolean);
     const boxH = 22 + partyLines.length * 12 + 6;
     pdf.roundedRect(boxX, y, 260, boxH, 4).strokeColor(LINE).lineWidth(0.8).stroke();
@@ -219,8 +242,8 @@ export class DocumentPdfService {
     y = pdf.y + 8;
 
     // Conditions
+    // (Les conditions de règlement ne sont plus imprimées : l'échéance figure dans l'en-tête.)
     const conditions: string[] = [];
-    if (doc.paymentTerms && meta.settles && !meta.isCredit) conditions.push(`Conditions de règlement : ${doc.paymentTerms}`);
     if (meta.settles && !meta.isCredit && doc.installments?.length) {
       conditions.push('Échéancier : ' + doc.installments.map((i: any) => `${formatDate(i.dueDate)} : ${formatAmount(i.amount)}`).join('  |  '));
     }
@@ -233,8 +256,9 @@ export class DocumentPdfService {
 
     // ── Pied de page sur toutes les pages + filigrane brouillon ──
     const range = pdf.bufferedPageRange();
+    // Pied de page : mentions légales sans répéter le nom (déjà dans l'en-tête).
     const legal = [
-      [company.legalName, company.legalForm].filter(Boolean).join(' '),
+      company.legalForm ? `${company.legalForm}` : '',
       company.shareCapital ? `Capital : ${formatAmount(company.shareCapital)} ${company.currency}` : '',
       company.taxId ? `MF : ${company.taxId}` : '',
       company.tradeRegister ? `RC : ${company.tradeRegister}` : '',
@@ -252,6 +276,10 @@ export class DocumentPdfService {
       pdf.restore();
       pdf.page.margins.bottom = 0;
       pdf.fillColor(MUTED).font('Helvetica').fontSize(7);
+      if (doc.ttnReference) {
+        pdf.fillColor(INK).text(`Facture électronique validée par Tunisie TradeNet (El Fatoora) - Réf. TTN : ${clean(doc.ttnReference)}`, PAGE.margin, PAGE.h - 74, { width: CONTENT_W, align: 'center', lineBreak: false, height: 12, ellipsis: true });
+        pdf.fillColor(MUTED);
+      }
       if (doc.footer) pdf.text(clean(doc.footer), PAGE.margin, PAGE.h - 62, { width: CONTENT_W, align: 'center', lineBreak: false, height: 12, ellipsis: true });
       pdf.text(clean(legal), PAGE.margin, PAGE.h - 46, { width: CONTENT_W, align: 'center', lineBreak: false, height: 10, ellipsis: true });
       pdf.text(`Page ${i + 1} / ${range.count}`, PAGE.margin, PAGE.h - 34, { width: CONTENT_W, align: 'center', lineBreak: false });

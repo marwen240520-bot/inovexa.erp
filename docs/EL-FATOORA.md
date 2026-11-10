@@ -9,7 +9,7 @@
 | 3. Adhérer à El Fatoora et obtenir le **certificat de signature** | À faire par la société | Société + TTN + TunTrust |
 | 4. **Signer** le fichier (XAdES) | Sur la plateforme El Fatoora, ou avec l'outil de signature TTN : la clé privée reste chez la société | Société |
 | 5. **Transmettre** à TTN et recevoir la référence TTN | Dépôt du fichier sur la plateforme (ou connecteur EDI, voir plus bas) | Société |
-| 6. Archiver la facture validée (référence TTN, cachet) | À faire : rattacher la référence au document | ERP (évolution) |
+| 6. Conserver la preuve de certification | **Fait** — saisie de la référence TTN sur la facture (`PUT /documents/:id/ttn`) : statut « Certifiée El Fatoora » dans l'ERP et mention sur le PDF | Société (saisie) |
 
 Tant que les étapes 3 à 5 ne sont pas faites, **l'ERP ne produit pas de facture électronique certifiée** : il
 produit le fichier que la plateforme attend. C'est l'adhésion et la signature qui donnent la valeur légale.
@@ -46,8 +46,9 @@ Vérifiez avec votre expert-comptable si votre activité est déjà soumise à l
 3. Valider la facture dans l'ERP, puis cliquer sur **El Fatoora (XML)** : le fichier `TEIF-FA-AAAA-NNNNN.xml`
    est téléchargé.
 4. Sur la plateforme El Fatoora : déposer le fichier, le signer avec le certificat, l'envoyer. TTN renvoie la
-   **référence TTN** et le cachet électronique visible (code) : les reporter dans le champ *Notes* de la
-   facture en attendant le rattachement automatique.
+   **référence TTN** : la saisir sur la facture (*Saisir la référence TTN*). La facture passe alors au statut
+   « Certifiée El Fatoora » et la mention, avec la référence, est imprimée en bas du PDF. Sans référence, la
+   facture est affichée « Non certifiée ».
 5. Un avoir est exporté de la même façon (type « Facture d'avoir », référence I-89 vers la facture d'origine).
 
 ## Ce que contient le fichier (correspondance TEIF ↔ ERP)

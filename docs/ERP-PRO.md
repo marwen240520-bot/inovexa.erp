@@ -27,7 +27,7 @@ les lignes dans Documents. L'adresse `/dashboard/invoices` redirige vers `/dashb
 - **Avoirs** partiels (par ligne et quantité), retour en stock optionnel, retenue reprise.
 - **Règlements** : partiels, trop-perçu refusé, annulation (avec contre-passation comptable), imputation d'un avoir sur une facture, échéanciers.
 - **Suivi des impayés** : balance âgée clients/fournisseurs, relevé de compte d'un tiers, relances par niveau (email + trace CRM).
-- **PDF** (facture, devis, BL…) avec mentions légales, montant en lettres, RIB ; **données de facture électronique** (JSON).
+- **PDF** (facture, devis, BL…) avec logo (celui de la société ou le logo par défaut), mentions légales, montant en lettres, RIB, mention de certification El Fatoora quand la référence TTN est saisie ; **fichier TEIF** et données de facture électronique (JSON).
 - Plafond d'encours client : dépassement signalé en avertissement (non bloquant).
 
 ## 2. Stock

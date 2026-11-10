@@ -98,6 +98,13 @@ export class Document {
   @Column({ type: 'text', nullable: true })
   footer: string | null;
 
+  /** Référence attribuée par Tunisie TradeNet (El Fatoora) une fois la facture signée et validée ; null = non certifiée. */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  ttnReference: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  ttnValidatedAt: Date | null;
+
   // --- Montants (dinars, 3 décimales) ---
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 0, transformer: numericTransformer })
   globalDiscountPct: number;

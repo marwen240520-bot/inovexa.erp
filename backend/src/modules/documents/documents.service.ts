@@ -630,6 +630,24 @@ export class DocumentsService {
 
   // ═════════════════════════════ Annulation / décisions ═════════════════════════════
 
+  /** Enregistre (ou efface) la référence El Fatoora d'une facture validée : c'est elle qui atteste la certification. */
+  async setTtnReference(actor: Actor, id: number, reference: string | null | undefined, validatedAt?: string | null) {
+    const doc = await this.ds.getRepository(Document).findOne({ where: { id, userId: actor.userId } });
+    if (!doc) throw new NotFoundException('Document introuvable');
+    if (!['invoice', 'credit_note'].includes(doc.type)) throw new BadRequestException('Seules les factures et avoirs de vente sont certifiés par El Fatoora.');
+    if (!doc.lockedAt) throw new BadRequestException('Validez la facture avant d’enregistrer sa référence TTN.');
+    const ref = String(reference || '').trim().replace(/\s+/g, '').slice(0, 64);
+    if (ref && !/^[A-Za-z0-9/_.-]{4,64}$/.test(ref)) throw new BadRequestException('Référence TTN invalide (lettres, chiffres, -, _, /, . ; 4 à 64 caractères).');
+    doc.ttnReference = ref || null;
+    if (!ref) doc.ttnValidatedAt = null;
+    else {
+      const d = validatedAt ? new Date(validatedAt) : new Date();
+      doc.ttnValidatedAt = Number.isNaN(d.getTime()) ? new Date() : d;
+    }
+    await this.ds.getRepository(Document).save(doc);
+    return this.get(actor.userId, id);
+  }
+
   async cancel(actor: Actor, id: number, reason?: string) {
     await this.ds.transaction(async (em) => {
       const doc = await em.getRepository(Document).findOne({ where: { id, userId: actor.userId }, lock: { mode: 'pessimistic_write' } });
