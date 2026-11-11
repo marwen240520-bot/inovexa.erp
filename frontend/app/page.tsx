@@ -63,6 +63,14 @@ const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
 const IconClose = ({ size = 18, color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 );
+// Étincelles « IA » de la carte mise en avant
+const IconSparkles = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
+  <svg {...svgBase(size, color, "1.8")}>
+    <path d="M11 4 Q12.5 10.5 19 12 Q12.5 13.5 11 20 Q9.5 13.5 3 12 Q9.5 10.5 11 4 Z" fill={color} />
+    <path d="M19 2.5v4M17 4.5h4" />
+    <path d="M19.5 17v3M18 18.5h3" />
+  </svg>
+);
 
 // ─── Types & constantes ────────────────────────────────────────────────────────
 type Lang = "fr" | "en" | "es";
@@ -87,7 +95,6 @@ interface HomeText {
   title: string;
   modules: string;
   subtitle: string;
-  aiTag: string;
   button: string;
   login: string;
   aboutBtn: string;
@@ -98,6 +105,7 @@ interface HomeText {
   privacy: string;
   terms: string;
   langLabel: string;
+  ai: { title: string; badge: string; desc: string };
   features: { title: string; desc: string }[];
 }
 
@@ -381,7 +389,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "L'avenir de la gestion d'entreprise commence ici.",
     modules: "Ventes · Stock · Factures · RH · Finance et plus ...",
     subtitle: "Avec Inovexa ERP, gérez toute votre entreprise depuis une seule plateforme",
-    aiTag: "Système intelligent IA intégré",
     button: "Accéder au Dashboard",
     login: "Commencer maintenant",
     aboutBtn: "À propos",
@@ -473,6 +480,11 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Confidentialité",
     terms: "Conditions",
     langLabel: "Choisir la langue",
+    ai: {
+      title: "Système intelligent",
+      badge: "IA intégrée",
+      desc: "Un assistant IA qui répond à vos questions à partir de vos propres données.",
+    },
     features: [
       { title: "Gestion centralisée", desc: "Tous vos processus métier réunis sur une seule plateforme." },
       { title: "Pilotage intelligent", desc: "Transformez vos données en décisions stratégiques." },
@@ -484,7 +496,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "El futuro de la gestión empresarial comienza aquí.",
     modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas y más ...",
     subtitle: "Con Inovexa ERP, gestione toda su empresa desde una sola plataforma",
-    aiTag: "Sistema inteligente con IA integrada",
     button: "Panel de Control",
     login: "Empezar ahora",
     aboutBtn: "Acerca de",
@@ -576,6 +587,11 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacidad",
     terms: "Términos",
     langLabel: "Elegir idioma",
+    ai: {
+      title: "Sistema inteligente",
+      badge: "IA integrada",
+      desc: "Un asistente de IA que responde a sus preguntas a partir de sus propios datos.",
+    },
     features: [
       { title: "Gestión centralizada", desc: "Todos sus procesos de negocio reunidos en una sola plataforma." },
       { title: "Pilotaje inteligente", desc: "Transforme sus datos en decisiones estratégicas." },
@@ -587,7 +603,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "The future of business management starts here.",
     modules: "Sales · Stock · Invoices · HR · Finance and more ...",
     subtitle: "With Inovexa ERP, run your entire business from a single platform",
-    aiTag: "Built-in intelligent AI system",
     button: "Go to Dashboard",
     login: "Get Started Now",
     aboutBtn: "About",
@@ -679,6 +694,11 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacy",
     terms: "Terms",
     langLabel: "Choose language",
+    ai: {
+      title: "Intelligent system",
+      badge: "Built-in AI",
+      desc: "An AI assistant that answers your questions using your own data.",
+    },
     features: [
       { title: "Centralized management", desc: "All your business processes brought together on a single platform." },
       { title: "Smart insights", desc: "Turn your data into strategic decisions." },
@@ -725,6 +745,12 @@ const HP_DARK: Record<string, string> = {
   "--hp-orbit-tip-bg": "rgba(16,10,30,0.94)",
   "--hp-orbit-tip-text": "#ffffff",
   "--hp-orbit-tip-border": "rgba(255,255,255,0.16)",
+  "--hp-ai-bg": "linear-gradient(120deg, rgba(124,58,237,0.26) 0%, rgba(192,38,211,0.14) 55%, rgba(8,145,178,0.12) 100%)",
+  "--hp-ai-ring": "linear-gradient(120deg, #A78BFA 0%, #F0ABFC 50%, #67E8F9 100%)",
+  "--hp-ai-icon-bg": "linear-gradient(140deg, #7C3AED 0%, #C026D3 100%)",
+  "--hp-ai-glow": "rgba(167,139,250,0.45)",
+  "--hp-ai-shadow": "rgba(124,58,237,0.28)",
+  "--hp-ai-shine": "rgba(255,255,255,0.13)",
 };
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
@@ -762,6 +788,12 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-orbit-tip-bg": "#2E1065",
   "--hp-orbit-tip-text": "#ffffff",
   "--hp-orbit-tip-border": "rgba(255,255,255,0.12)",
+  "--hp-ai-bg": "linear-gradient(120deg, rgba(255,255,255,0.9) 0%, rgba(245,240,255,0.86) 55%, rgba(236,254,255,0.82) 100%)",
+  "--hp-ai-ring": "linear-gradient(120deg, #7B5CFF 0%, #C026D3 50%, #0891B2 100%)",
+  "--hp-ai-icon-bg": "linear-gradient(140deg, #6D28D9 0%, #A21CAF 100%)",
+  "--hp-ai-glow": "rgba(123,92,255,0.32)",
+  "--hp-ai-shadow": "rgba(76,29,149,0.14)",
+  "--hp-ai-shine": "rgba(123,92,255,0.14)",
 };
 
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
@@ -943,16 +975,20 @@ export default function HomePage(): React.ReactElement {
           {/* Espacement renforcé entre badge modules et titre */}
           <h1 className="hp-slide hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
-          <p className="hp-rise hp-d3 hp-ai-tag">
-            <svg {...svgBase("1.25em", "currentColor")}>
-              <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
-              <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
-            </svg>
-            {text.aiTag}
-          </p>
         </div>
 
         <ul className="hp-cards hp-rise hp-d4">
+          {/* Carte mise en avant : système intelligent à IA intégrée (pleine largeur) */}
+          <li className="hp-card hp-card-ai">
+            <span className="hp-card-icon hp-ai-icon"><IconSparkles color="#ffffff" /></span>
+            <div className="hp-card-text">
+              <h3 className="hp-card-title hp-ai-title">
+                {text.ai.title}{" "}
+                <span className="hp-ai-badge">{text.ai.badge}</span>
+              </h3>
+              <p className="hp-card-desc">{text.ai.desc}</p>
+            </div>
+          </li>
           {text.features.map((f, i) => {
             const Icon = FEATURE_ICONS[i];
             return (
@@ -1217,6 +1253,55 @@ const STYLES = `
   .hp-card-title { margin: 0 0 2px; font-size: clamp(13.5px, min(1vw, 2vh), 16px); font-weight: 700; color: var(--hp-text); line-height: 1.2; }
   .hp-card-desc { margin: 0; font-size: clamp(12px, min(0.85vw, 1.8vh), 14px); color: var(--hp-muted); line-height: 1.35; }
 
+  /* ── Carte mise en avant : système intelligent · IA intégrée (pleine largeur, en tête des cartes) ── */
+  .hp-card.hp-card-ai {
+    grid-column: 1 / -1;
+    position: relative;
+    border-color: transparent;
+    background:
+      linear-gradient(110deg, transparent 35%, var(--hp-ai-shine) 50%, transparent 65%) no-repeat,
+      var(--hp-ai-bg);
+    background-size: 250% 100%, 100% 100%;
+    background-position: 110% 0, 0 0;
+    box-shadow: 0 12px 34px var(--hp-ai-shadow);
+    transition: transform .2s, box-shadow .2s;
+    animation: hpAiShine 7s ease-in-out 1.4s infinite;
+  }
+  .hp-card.hp-card-ai:hover { box-shadow: 0 16px 42px var(--hp-ai-glow); }
+  /* Liseré dégradé : seul le contour est peint, le centre garde l'effet verre */
+  .hp-card-ai::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--hp-ai-ring);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .hp-card-icon.hp-ai-icon { background: var(--hp-ai-icon-bg); border-color: transparent; box-shadow: 0 6px 18px var(--hp-ai-glow); }
+  .hp-ai-icon svg { animation: hpAiTwinkle 4.8s ease-in-out infinite; }
+  .hp-ai-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+  .hp-ai-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28em 0.7em;
+    border-radius: 999px;
+    background: var(--hp-ai-icon-bg);
+    color: #ffffff;
+    font-size: max(9.5px, 0.7em);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+  }
+  @keyframes hpAiShine { 0% { background-position: 110% 0, 0 0; } 30%, 100% { background-position: -10% 0, 0 0; } }
+  @keyframes hpAiTwinkle { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.12) rotate(10deg); } }
+
   /* ── Marque ── */
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
   .hp-logo { width: clamp(52px, 7.8vh, 80px); height: clamp(52px, 7.8vh, 80px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -1246,9 +1331,6 @@ const STYLES = `
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
   .hp-title { margin: 0 0 clamp(10px, 1.8vh, 20px); color: var(--hp-text); font-size: clamp(30px, min(4.7vw, 7.2vh), 76px); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; text-wrap: balance; }
   .hp-subtitle { margin: 0 0 clamp(14px, 2.6vh, 28px); color: var(--hp-muted); font-size: clamp(16px, min(1.5vw, 2.9vh), 24px); line-height: 1.5; max-width: 680px; }
-  .hp-ai-tag { display: flex; align-items: center; gap: 8px; margin: -6px 0 clamp(14px, 2.6vh, 28px); color: var(--hp-accent-text); font-size: clamp(14px, min(1.15vw, 2.2vh), 18px); font-weight: 700; letter-spacing: 0.01em; }
-  .hp-ai-tag svg { flex-shrink: 0; }
-  .is-mobile .hp-ai-tag { font-size: 13px; margin: 8px 0 0; gap: 6px; }
 
   /* ── Boutons ── */
   .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; width: 100%; }
@@ -1365,6 +1447,8 @@ const STYLES = `
 
   /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
+  /* Ordinateur peu haut : espacements resserrés pour que la carte IA ne repousse pas le pied de page hors de l'écran */
+  @media (min-width: 901px) and (max-height: 820px) { .hp-main { gap: clamp(12px, 2.4vh, 24px); padding-bottom: clamp(12px, 3vh, 28px); } }
 
   /* ── Desktop : texte limité à la moitié gauche (ne recouvre pas le portable) + tailles réduites ── */
   @media (min-width: 901px) {
@@ -1416,7 +1500,7 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal, .hp-orbit-item { animation: none !important; }
+    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal, .hp-orbit-item, .hp-card-ai, .hp-ai-icon svg { animation: none !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card, .hp-orbit-tile, .hp-orbit-tip { transition: none !important; }
     .hp-orbit-item:hover .hp-orbit-tile { transform: none; }
   }
