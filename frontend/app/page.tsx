@@ -900,64 +900,68 @@ const STYLES = `
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
-  /* ── Mobile : aérer sans trop espacer ── */
+  /* ── Mobile : textes et cartes compacts ── */
   .is-mobile .hp-main {
-    gap: 10px;            /* espace global réduit entre blocs */
+    gap: 10px;
     padding-top: 10px;
     padding-bottom: 16px;
     padding-left: 18px;
     padding-right: 18px;
   }
   .is-mobile .hp-modules {
-    font-size: 12px;
-    padding: 0.4em 0.9em;
+    font-size: 11px;
+    padding: 0.35em 0.85em;
+    gap: 6px;
     margin-bottom: 8px;
   }
+  .is-mobile .hp-live-dot { width: 6px; height: 6px; }
   .is-mobile .hp-title {
-    font-size: clamp(26px, 8vw, 36px);
-    margin-bottom: 6px;   /* ← marge réduite sous le titre */
+    font-size: clamp(21px, 6.2vw, 27px);
+    line-height: 1.12;
+    margin-bottom: 6px;
   }
   .is-mobile .hp-subtitle {
-    font-size: 15px;
+    font-size: 13px;
     line-height: 1.45;
-    margin-bottom: 0;     /* ← marge supprimée sous le sous-titre */
+    margin-bottom: 0;
   }
   .is-mobile .hp-cards {
-    gap: 10px;
-    margin-top: 0;        /* ← pas de marge parasite au-dessus des cards */
+    gap: 7px;
+    margin-top: 0;
   }
   .is-mobile .hp-card {
-    padding: 12px 14px;
-    gap: 12px;
-    border-radius: 14px;
+    padding: 8px 11px;
+    gap: 10px;
+    border-radius: 12px;
   }
   .is-mobile .hp-card-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
   }
-  .is-mobile .hp-card-icon svg { width: 1.15em; height: 1.15em; }
-  .is-mobile .hp-card-title { font-size: 14px; }
-  .is-mobile .hp-card-desc  { font-size: 12.5px; }
+  .is-mobile .hp-card-icon svg { width: 1em; height: 1em; }
+  .is-mobile .hp-card-title { font-size: 12.5px; margin-bottom: 1px; }
+  .is-mobile .hp-card-desc  { font-size: 11.5px; line-height: 1.3; }
 
-  /* Actions sous les cards — pleine largeur et bien espacées */
+  /* Actions sous les cards — pleine largeur */
   .is-mobile .hp-actions-below {
     flex-direction: column;
     align-items: stretch;
-    margin-top: 8px;
-    gap: 10px;
+    margin-top: 6px;
+    gap: 8px;
   }
   .is-mobile .hp-actions-below .hp-cta,
   .is-mobile .hp-actions-below .hp-ghost {
-    height: 46px;
-    font-size: 15px;
+    height: 42px;
+    font-size: 14px;
     width: 100%;
   }
+  .is-mobile .hp-footer { font-size: 12px; }
 
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
   /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
-  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
+  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 7px; } }
 
   /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
