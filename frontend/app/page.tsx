@@ -112,7 +112,7 @@ const BG_IMAGE = "/images/3.png";
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
     title: "L'avenir de la gestion d'entreprise commence ici.",
-    modules: "Ventes · Stock · Factures · RH · Finance",
+    modules: "Ventes · Stock · Factures · RH · Finance et plus ...",
     subtitle: "Avec Inovexa ERP, gérez toute votre entreprise depuis une seule plateforme",
     button: "Accéder au Dashboard",
     login: "Commencer maintenant",
@@ -214,7 +214,7 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
   },
   es: {
     title: "El futuro de la gestión empresarial comienza aquí.",
-    modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas",
+    modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas y más ...",
     subtitle: "Con Inovexa ERP, gestione toda su empresa desde una sola plataforma",
     button: "Panel de Control",
     login: "Empezar ahora",
@@ -316,7 +316,7 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
   },
   en: {
     title: "The future of business management starts here.",
-    modules: "Sales · Stock · Invoices · HR · Finance",
+    modules: "Sales · Stock · Invoices · HR · Finance and more ...",
     subtitle: "With Inovexa ERP, run your entire business from a single platform",
     button: "Go to Dashboard",
     login: "Get Started Now",
