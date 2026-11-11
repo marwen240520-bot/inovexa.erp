@@ -978,7 +978,7 @@ export default function HomePage(): React.ReactElement {
         <ul className="hp-cards hp-rise hp-d4">
           {/* Carte mise en avant : système intelligent à IA intégrée (pleine largeur) */}
           <li className="hp-card hp-card-ai">
-            <span className="hp-card-icon hp-ai-icon"><IconSparkles color="#ffffff" /></span>
+            <span className="hp-card-icon hp-ai-icon"><IconSparkles color="var(--hp-icon)" /></span>
             <div className="hp-card-text">
               <h3 className="hp-card-title hp-ai-title">
                 {text.ai.title}{" "}
@@ -1274,22 +1274,21 @@ const STYLES = `
     mask-composite: exclude;
     pointer-events: none;
   }
-  .hp-card-icon.hp-ai-icon { background: var(--hp-ai-icon-bg); border-color: transparent; box-shadow: 0 6px 18px var(--hp-ai-glow); }
   .hp-ai-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
   .hp-ai-badge {
     display: inline-flex;
     align-items: center;
     padding: 0.28em 0.7em;
     border-radius: 999px;
-    background: var(--hp-ai-icon-bg);
-    color: #ffffff;
+    background: var(--hp-chip-bg);
+    border: 1px solid var(--hp-chip-border);
+    color: var(--hp-icon);
     font-size: max(9.5px, 0.7em);
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     line-height: 1.2;
     white-space: nowrap;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
   }
 
   /* ── Marque ── */
