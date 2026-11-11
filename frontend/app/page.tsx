@@ -87,6 +87,7 @@ interface HomeText {
   title: string;
   modules: string;
   subtitle: string;
+  aiTag: string;
   button: string;
   login: string;
   aboutBtn: string;
@@ -380,6 +381,7 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "L'avenir de la gestion d'entreprise commence ici.",
     modules: "Ventes · Stock · Factures · RH · Finance et plus ...",
     subtitle: "Avec Inovexa ERP, gérez toute votre entreprise depuis une seule plateforme",
+    aiTag: "Système intelligent IA intégré",
     button: "Accéder au Dashboard",
     login: "Commencer maintenant",
     aboutBtn: "À propos",
@@ -482,6 +484,7 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "El futuro de la gestión empresarial comienza aquí.",
     modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas y más ...",
     subtitle: "Con Inovexa ERP, gestione toda su empresa desde una sola plataforma",
+    aiTag: "Sistema inteligente con IA integrada",
     button: "Panel de Control",
     login: "Empezar ahora",
     aboutBtn: "Acerca de",
@@ -584,6 +587,7 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     title: "The future of business management starts here.",
     modules: "Sales · Stock · Invoices · HR · Finance and more ...",
     subtitle: "With Inovexa ERP, run your entire business from a single platform",
+    aiTag: "Built-in intelligent AI system",
     button: "Go to Dashboard",
     login: "Get Started Now",
     aboutBtn: "About",
@@ -939,6 +943,13 @@ export default function HomePage(): React.ReactElement {
           {/* Espacement renforcé entre badge modules et titre */}
           <h1 className="hp-slide hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
+          <p className="hp-rise hp-d3 hp-ai-tag">
+            <svg {...svgBase("1.25em", "currentColor")}>
+              <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+              <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
+            </svg>
+            {text.aiTag}
+          </p>
         </div>
 
         <ul className="hp-cards hp-rise hp-d4">
@@ -1235,6 +1246,9 @@ const STYLES = `
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
   .hp-title { margin: 0 0 clamp(10px, 1.8vh, 20px); color: var(--hp-text); font-size: clamp(30px, min(4.7vw, 7.2vh), 76px); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; text-wrap: balance; }
   .hp-subtitle { margin: 0 0 clamp(14px, 2.6vh, 28px); color: var(--hp-muted); font-size: clamp(16px, min(1.5vw, 2.9vh), 24px); line-height: 1.5; max-width: 680px; }
+  .hp-ai-tag { display: flex; align-items: center; gap: 8px; margin: -6px 0 clamp(14px, 2.6vh, 28px); color: var(--hp-accent-text); font-size: clamp(14px, min(1.15vw, 2.2vh), 18px); font-weight: 700; letter-spacing: 0.01em; }
+  .hp-ai-tag svg { flex-shrink: 0; }
+  .is-mobile .hp-ai-tag { font-size: 13px; margin: 8px 0 0; gap: 6px; }
 
   /* ── Boutons ── */
   .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; width: 100%; }
