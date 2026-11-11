@@ -750,7 +750,6 @@ const HP_DARK: Record<string, string> = {
   "--hp-ai-icon-bg": "linear-gradient(140deg, #7C3AED 0%, #C026D3 100%)",
   "--hp-ai-glow": "rgba(167,139,250,0.45)",
   "--hp-ai-shadow": "rgba(124,58,237,0.28)",
-  "--hp-ai-shine": "rgba(255,255,255,0.13)",
 };
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
@@ -793,7 +792,6 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-ai-icon-bg": "linear-gradient(140deg, #6D28D9 0%, #A21CAF 100%)",
   "--hp-ai-glow": "rgba(123,92,255,0.32)",
   "--hp-ai-shadow": "rgba(76,29,149,0.14)",
-  "--hp-ai-shine": "rgba(123,92,255,0.14)",
 };
 
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
@@ -1258,14 +1256,9 @@ const STYLES = `
     grid-column: 1 / -1;
     position: relative;
     border-color: transparent;
-    background:
-      linear-gradient(110deg, transparent 35%, var(--hp-ai-shine) 50%, transparent 65%) no-repeat,
-      var(--hp-ai-bg);
-    background-size: 250% 100%, 100% 100%;
-    background-position: 110% 0, 0 0;
+    background: var(--hp-ai-bg);
     box-shadow: 0 12px 34px var(--hp-ai-shadow);
     transition: transform .2s, box-shadow .2s;
-    animation: hpAiShine 7s ease-in-out 1.4s infinite;
   }
   .hp-card.hp-card-ai:hover { box-shadow: 0 16px 42px var(--hp-ai-glow); }
   /* Liseré dégradé : seul le contour est peint, le centre garde l'effet verre */
@@ -1282,7 +1275,6 @@ const STYLES = `
     pointer-events: none;
   }
   .hp-card-icon.hp-ai-icon { background: var(--hp-ai-icon-bg); border-color: transparent; box-shadow: 0 6px 18px var(--hp-ai-glow); }
-  .hp-ai-icon svg { animation: hpAiTwinkle 4.8s ease-in-out infinite; }
   .hp-ai-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
   .hp-ai-badge {
     display: inline-flex;
@@ -1299,8 +1291,6 @@ const STYLES = `
     white-space: nowrap;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
   }
-  @keyframes hpAiShine { 0% { background-position: 110% 0, 0 0; } 30%, 100% { background-position: -10% 0, 0 0; } }
-  @keyframes hpAiTwinkle { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.12) rotate(10deg); } }
 
   /* ── Marque ── */
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
@@ -1500,7 +1490,7 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal, .hp-orbit-item, .hp-card-ai, .hp-ai-icon svg { animation: none !important; }
+    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal, .hp-orbit-item { animation: none !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card, .hp-orbit-tile, .hp-orbit-tip { transition: none !important; }
     .hp-orbit-item:hover .hp-orbit-tile { transform: none; }
   }
