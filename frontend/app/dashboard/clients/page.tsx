@@ -570,15 +570,20 @@ export default function ClientsPage() {
         <div style={innerContainerStyle}>
           <style>{animations}</style>
 
-          {/* -- Header -- */}
+          {/* -- Header : titre à gauche, actions à droite (comme Fournisseurs / Achats) -- */}
           <div style={{
             marginBottom: sectionMargin,
             animation: "fadeInDown 0.5s ease",
             opacity: animateCards ? 1 : 0,
             transform: animateCards ? "translateY(0)" : "translateY(-20px)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
           }}>
-            {/* Row 1: title + subtitle */}
-            <div style={{ marginBottom: "12px" }}>
+            {/* Gauche : titre + sous-titre */}
+            <div style={{ minWidth: 0 }}>
               <h1 style={{
                 color: theme.text,
                 fontSize: headerTitleSize,
@@ -595,8 +600,16 @@ export default function ClientsPage() {
               </p>
             </div>
 
-            {/* Row 2: actions */}
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+            {/* Droite : vue liste/grille, import, export, ajout.
+                marginLeft "auto" garde le groupe à droite même quand il passe sous le titre (mobile). */}
+            <div style={{
+              display: "flex",
+              gap: "8px",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              marginLeft: "auto",
+            }}>
               {/* View toggle */}
               <div style={{
                 display: "flex",
