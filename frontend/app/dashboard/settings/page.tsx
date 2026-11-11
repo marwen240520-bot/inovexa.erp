@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import ModuleNav, { SETTINGS_TABS } from "@/components/erp/ModuleNav";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LANGUAGE_NAMES, isSupportedLanguage } from "@/lib/i18n";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import Spinner from "@/components/ui/Spinner";
@@ -198,14 +199,8 @@ export default function SettingsPage() {
     return `${amount.toLocaleString()} ${symbols[settings.currency] || "€"}`;
   };
 
-  const getCurrentLanguageName = () => {
-    switch (settings.language) {
-      case "fr": return "Français";
-      case "en": return "English";
-      case "es": return "Español";
-      default: return "Français";
-    }
-  };
+  const getCurrentLanguageName = () =>
+    isSupportedLanguage(settings.language) ? LANGUAGE_NAMES[settings.language] : LANGUAGE_NAMES.fr;
 
   const animations = `
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -328,6 +323,7 @@ export default function SettingsPage() {
               <option value="fr">FRANÇAIS</option>
               <option value="en">ENGLISH</option>
               <option value="es">ESPAÑOL</option>
+              
             </select>
             <div style={{ marginTop: "12px", padding: "10px", background: `${theme.primary}15`, borderRadius: "8px", border: `1px solid ${theme.primary}30`, fontSize: isMobile ? "11px" : "12px" }}>
               <span style={{ color: theme.textSecondary }}>

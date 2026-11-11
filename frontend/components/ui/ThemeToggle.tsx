@@ -15,6 +15,7 @@ const LABELS: Record<string, { toDark: string; toLight: string }> = {
   fr: { toDark: "Passer au thème sombre", toLight: "Passer au thème clair" },
   en: { toDark: "Switch to dark theme", toLight: "Switch to light theme" },
   es: { toDark: "Cambiar al tema oscuro", toLight: "Cambiar al tema claro" },
+  ar: { toDark: "التبديل إلى المظهر الداكن", toLight: "التبديل إلى المظهر الفاتح" },
 };
 
 /** Bouton soleil / lune : bascule entre le thème clair et le thème sombre. */

@@ -64,6 +64,22 @@ const TX: Record<string, Record<string, string>> = {
     fallbackNote: "Modo de respaldo: el servidor aún no está actualizado. La operación se guarda en Ventas / Compras; solo no se conserva el método de pago.",
     partial: "línea(s) ya guardada(s) antes del error",
   },
+  ar: {
+    title: "الصندوق السريع", subtitle: "بِع أو اشترِ المنتجات في ثوانٍ",
+    sale: "بيع", purchase: "شراء", todaySales: "مبيعات اليوم", todayPurchases: "مشتريات اليوم",
+    search: "ابحث عن منتج أو امسح رمزًا (SKU)…", empty: "لم يُعثر على أي منتج", noProducts: "لا توجد منتجات: أضف منتجات من وحدة المنتجات.",
+    outOfStock: "نفد المخزون", stock: "المخزون", cart: "السلة", cartEmpty: "اضغط على منتج لإضافته",
+    customer: "العميل (اختياري)", supplier: "المورد (اختياري)", customerPh: "عميل عابر", payment: "طريقة الدفع",
+    total: "المجموع", items: "منتج", clear: "إفراغ", chargeSale: "تحصيل", chargePurchase: "تسجيل الشراء",
+    unitPrice: "سعر الوحدة", maxStock: "بلغت الحد الأقصى للمخزون", viewCart: "عرض السلة",
+    ticket: "الوصل", newSale: "بيع جديد", newPurchase: "شراء جديد", print: "طباعة", close: "إغلاق", saved: "تم تسجيل العملية",
+    cash: "نقدًا", card: "بطاقة", transfer: "تحويل", check: "شيك", mobile: "الهاتف الجوال", other: "أخرى",
+    errServer: "خطأ في الخادم. أعد المحاولة.", errNetwork: "تعذّر الاتصال بالخادم.", errAuth: "انتهت الجلسة: سجّل دخولك من جديد.",
+    purchaseHint: "شراء: يرتفع المخزون وسعر الشراء قابل للتعديل.", remove: "إزالة",
+    priceHint: "سعر كل سطر قابل للتعديل (تخفيض، سعر متفاوض عليه).",
+    fallbackNote: "وضع احتياطي: الخادم لم يُحدَّث بعد. تم تسجيل العملية في المبيعات / المشتريات؛ فقط طريقة الدفع لم تُحفظ.",
+    partial: "سطر سُجّل قبل وقوع الخطأ",
+  },
 };
 
 const norm = (v: any) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();

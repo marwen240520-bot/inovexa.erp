@@ -355,6 +355,7 @@ export default function ReportsPage() {
       fr: { summary: "Résumé", data: "Données" },
       en: { summary: "Summary", data: "Data" },
       es: { summary: "Resumen", data: "Datos" },
+      ar: { summary: "الملخص", data: "البيانات" },
     };
     const labels = { ...(L[language as string] || L.fr), indicator: t("reports.indicator"), value: t("reports.value") };
     const blob = await buildXlsx(reportToSheets(data, labels));
@@ -629,7 +630,7 @@ export default function ReportsPage() {
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", animation: isMobile ? "fadeInDown 0.2s ease" : undefined }}>
                         <div>
                           <label style={{ fontSize: "10px", color: theme.textSecondary, display: "block", marginBottom: "4px" }}>
-                            {language === "fr" ? "Début" : "Start"}
+                            {language === "fr" ? "Début" : language === "ar" ? "البداية" : "Start"}
                           </label>
                           <input
                             type="date"
@@ -648,7 +649,7 @@ export default function ReportsPage() {
                         </div>
                         <div>
                           <label style={{ fontSize: "10px", color: theme.textSecondary, display: "block", marginBottom: "4px" }}>
-                            {language === "fr" ? "Fin" : "End"}
+                            {language === "fr" ? "Fin" : language === "ar" ? "النهاية" : "End"}
                           </label>
                           <input
                             type="date"

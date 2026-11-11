@@ -207,7 +207,7 @@ function SelectAllCheckbox({ items, selectedIds, onSelect, onSelectAll, getItemI
 
 export default function OrdersPage() {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t, language, locale } = useLanguage();
   const { formatCurrency } = useAppSettings();
   const { theme } = useTheme();
   const { isMobile, isTablet, isDesktop } = useResponsive();
@@ -841,9 +841,7 @@ export default function OrdersPage() {
                       </td>
 
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
-                        {new Date(order.createdAt).toLocaleDateString(
-                          language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US"
-                        )}
+                        {new Date(order.createdAt).toLocaleDateString(locale)}
                       </td>
 
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "center", whiteSpace: "nowrap" }}>

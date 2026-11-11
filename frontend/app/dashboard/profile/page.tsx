@@ -98,6 +98,36 @@ const profileTranslations = {
       profileUpdated: "Profile updated",
       logoutAllConfirm: "Log out from all devices?"
     }
+  },
+  ar: {
+    profile: {
+      oldPassword: "كلمة المرور القديمة",
+      newPassword: "كلمة المرور الجديدة",
+      confirmPassword: "تأكيد كلمة المرور",
+      changePassword: "تغيير كلمة المرور",
+      oldPasswordRequired: "يرجى إدخال كلمة المرور الحالية",
+      passwordMismatch: "كلمتا المرور غير متطابقتين",
+      passwordMinLength: "يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل",
+      passwordChanged: "تم تغيير كلمة المرور بنجاح",
+      personalInfo: "المعلومات الشخصية",
+      security: "الأمان",
+      activity: "النشاط",
+      company: "الشركة",
+      memberSince: "عضو منذ",
+      lastLogin: "آخر تسجيل دخول",
+      admin: "مسؤول",
+      transporter: "ناقل",
+      client: "عميل",
+      dangerZone: "منطقة الخطر",
+      logoutAllWarning: "تسجيل الخروج من جميع الأجهزة",
+      logoutAllDevices: "تسجيل الخروج من جميع الأجهزة",
+      personalStats: "الإحصائيات الشخصية",
+      revenueGenerated: "رقم المعاملات المحقق",
+      currentSession: "الجلسة الحالية",
+      connectedSince: "متصل منذ",
+      profileUpdated: "تم تحديث الملف الشخصي",
+      logoutAllConfirm: "تسجيل الخروج من جميع الأجهزة؟"
+    }
   }
 };
 
@@ -271,7 +301,7 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t, language, locale } = useLanguage();
   const { formatCurrency } = useAppSettings();
   const { theme: globalTheme, themeId: globalThemeId, setTheme: setGlobalTheme } = useTheme();
   const { isMobile } = useResponsive();
@@ -311,7 +341,8 @@ export default function ProfilePage() {
   const themeTranslations = {
     fr: { themeChanged: "Thème changé", chooseTheme: "Choisir un thème" },
     en: { themeChanged: "Theme changed", chooseTheme: "Choose a theme" },
-    es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" }
+    es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" },
+    ar: { themeChanged: "تم تغيير المظهر", chooseTheme: "اختيار المظهر" }
   };
   const themeT = themeTranslations[language as keyof typeof themeTranslations] || themeTranslations.fr;
 
@@ -334,14 +365,14 @@ export default function ProfilePage() {
 
   const getThemeName = (themeId: string) => {
     const themesMap: Record<string, Record<string, string>> = {
-      dark: { fr: "Sombre", en: "Dark", es: "Oscuro" },
-      light: { fr: "Clair", en: "Light", es: "Claro" },
-      lightPremium: { fr: "Premium Clair", en: "Premium Light", es: "Premium Claro" },
-      blue: { fr: "Bleu Océan", en: "Ocean Blue", es: "Azul Océano" },
-      purple: { fr: "Violet", en: "Purple", es: "Púrpura" },
-      green: { fr: "Forêt", en: "Forest", es: "Bosque" },
-      sunset: { fr: "Coucher de Soleil", en: "Sunset", es: "Atardecer" },
-      rose: { fr: "Rose", en: "Rose", es: "Rosa" }
+      dark: { fr: "Sombre", en: "Dark", es: "Oscuro", ar: "داكن" },
+      light: { fr: "Clair", en: "Light", es: "Claro", ar: "فاتح" },
+      lightPremium: { fr: "Premium Clair", en: "Premium Light", es: "Premium Claro", ar: "فاتح مميز" },
+      blue: { fr: "Bleu Océan", en: "Ocean Blue", es: "Azul Océano", ar: "أزرق المحيط" },
+      purple: { fr: "Violet", en: "Purple", es: "Púrpura", ar: "بنفسجي" },
+      green: { fr: "Forêt", en: "Forest", es: "Bosque", ar: "الغابة" },
+      sunset: { fr: "Coucher de Soleil", en: "Sunset", es: "Atardecer", ar: "الغروب" },
+      rose: { fr: "Rose", en: "Rose", es: "Rosa", ar: "وردي" }
     };
     return themesMap[themeId]?.[language as keyof typeof themesMap.dark] || themeId;
   };
@@ -405,7 +436,6 @@ export default function ProfilePage() {
   const fetchUserStats = async () => {
     const token = localStorage.getItem("token");
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-    const locale = language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US';
     try {
       const salesRes = await fetch(`${API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } });
       let sales = await salesRes.json();
@@ -1211,7 +1241,7 @@ export default function ProfilePage() {
                       {profileT.profile.currentSession || "Session actuelle"}
                     </div>
                     <div style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px" }}>
-                      {profileT.profile.connectedSince || "Connecté depuis"} {new Date().toLocaleString(language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US')}
+                      {profileT.profile.connectedSince || "Connecté depuis"} {new Date().toLocaleString(locale)}
                     </div>
                   </div>
                 </div>

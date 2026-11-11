@@ -295,7 +295,8 @@ export default function LogisticsPage() {
     const translations = {
       fr: "Sélectionner un transporteur",
       en: "Select a carrier",
-      es: "Seleccionar un transportista"
+      es: "Seleccionar un transportista",
+      ar: "اختر ناقلًا"
     };
     return translations[language as keyof typeof translations] || translations.fr;
   };

@@ -257,7 +257,7 @@ function StatusSelect({ purchaseId, status, onUpdate, updatingStatus, isMobile, 
 
 export default function PurchasesPage() {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t, language, locale } = useLanguage();
   const { formatCurrency } = useAppSettings();
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
@@ -1010,9 +1010,7 @@ export default function PurchasesPage() {
                       </td>
                       <td style={{ padding: "10px", color: theme.textSecondary, fontSize: tableFontSize }}>
                         {purchase.createdAt
-                          ? new Date(purchase.createdAt).toLocaleDateString(
-                              language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US"
-                            )
+                          ? new Date(purchase.createdAt).toLocaleDateString(locale)
                           : "-"}
                       </td>
                       <td style={{ padding: "10px", textAlign: "center" }}>

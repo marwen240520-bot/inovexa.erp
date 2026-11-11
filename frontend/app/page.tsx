@@ -111,7 +111,7 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "fr" },
   { code: "en", label: "English", flag: "gb" },
   { code: "es", label: "Español", flag: "es" },
-  { code: "ar", label: "العربية", flag: "tn" },
+ 
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 

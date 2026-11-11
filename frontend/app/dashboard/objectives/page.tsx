@@ -76,6 +76,24 @@ const TX: Record<string, Record<string, string>> = {
     hintRevenue: "Total de ventas del periodo", hintProfit: "Ventas − compras del periodo", hintSales: "Número de ventas registradas", hintClients: "Clientes añadidos en el periodo",
     tplRevMonth: "Ingresos del mes", tplProfitQuarter: "Beneficio del trimestre", tplSalesMonth: "Ventas del mes", tplClientsMonth: "Nuevos clientes del mes",
   },
+  ar: {
+    title: "الأهداف", subtitle: "حدّد أهدافًا وتابع تقدمها في الوقت الحقيقي", add: "هدف جديد",
+    inProgress: "قيد التنفيذ", done: "محققة", late: "متأخرة", all: "الكل", ended: "منتهية",
+    revenue: "رقم المعاملات",
+    orders_count: "الطلبيات", purchases_count: "المشتريات (العدد)", invoices_paid_amount: "الفواتير المحصّلة (المبلغ)", invoices_paid_count: "الفواتير المدفوعة (العدد)", shipments_delivered: "الشحنات المُسلَّمة", average_basket: "متوسط السلة", manual: "هدف حر (إدخال يدوي)",
+    optAuto: "تلقائية", optFree: "هدف حر", currentValue: "القيمة الحالية", unitLabel: "الوحدة (مثال: توظيفات)", markDone: "تعليم كمحقق", manualHint: "تحدّث التقدم بنفسك: توظيف، افتتاح، مشروع…", goalAchieved: "تم تحقيق الهدف!",
+    hintOrders: "عدد الطلبيات", hintPurchases: "عدد المشتريات", hintInvPaidAmount: "مجموع الفواتير المدفوعة", hintInvPaidCount: "عدد الفواتير المدفوعة", hintShipments: "الشحنات التي تم تسليمها", hintBasket: "المبيعات ÷ عدد المبيعات", profit: "الربح", sales_count: "عدد المبيعات", new_clients: "عملاء جدد",
+    month: "هذا الشهر", quarter: "هذا الربع", year: "هذه السنة", custom: "مخصصة",
+    achieved: "محقق", on_track: "في الموعد", behind: "متأخر", missed: "لم يتحقق", upcoming: "قادم",
+    target: "الهدف", current: "المحقق", remaining: "المتبقي", daysLeft: "يوم متبقٍّ", perDay: "مطلوب يوميًا", ended2: "انتهت الفترة",
+    editTitle: "تعديل الهدف", newTitle: "هدف جديد", name: "العنوان", metric: "المؤشر", period: "الفترة", from: "من", to: "إلى", targetValue: "القيمة المستهدفة",
+    save: "حفظ", cancel: "إلغاء", edit: "تعديل", del: "حذف", confirmDel: "حذف هذا الهدف؟",
+    empty: "لا توجد أهداف حاليًا", emptyHint: "أنشئ هدفك الأول: يُحسب التقدم تلقائيًا من مبيعاتك.",
+    templates: "نماذج سريعة", saved: "تم حفظ الهدف", deleted: "تم حذف الهدف", errServer: "خطأ في الخادم. أعد المحاولة.", errNetwork: "تعذّر الاتصال بالخادم.",
+    unavailable: "وحدة الأهداف غير متاحة بعد على الخادم (يلزم تحديث الخادم).",
+    hintRevenue: "مجموع المبيعات خلال الفترة", hintProfit: "المبيعات − المشتريات خلال الفترة", hintSales: "عدد المبيعات المسجلة", hintClients: "العملاء المضافون خلال الفترة",
+    tplRevMonth: "رقم معاملات الشهر", tplProfitQuarter: "ربح الربع", tplSalesMonth: "مبيعات الشهر", tplClientsMonth: "عملاء الشهر الجدد",
+  },
 };
 
 const STATUS_STYLE: Record<Status, { bg: string; fg: string }> = {

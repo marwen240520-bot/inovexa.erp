@@ -165,6 +165,36 @@ const translations = {
     totalSales: "Total sales", averageTicket: "Average ticket", growthRate: "Growth rate",
     profitMargin: "Profit margin", totalExpenses: "Total expenses", conversionRate: "Conversion rate",
     inventoryTurnover: "Inventory turnover", productivity: "Productivity per employee"
+  },
+  ar: {
+    dashboard: "لوحة القيادة", chat: "محادثة الذكاء الاصطناعي", forecasts: "التوقعات", recommendations: "التوصيات", analytics: "التحليلات",
+    revenue: "رقم المعاملات", profit: "الربح الصافي", activeClients: "العملاء النشطون", products: "المنتجات",
+    salesEvolution: "تطور المبيعات", profitEvolution: "تطور الربح", topProducts: "أفضل المنتجات", topClients: "أفضل العملاء",
+    forecastGrowth: "النمو المتوقع", projectedRevenue: "رقم المعاملات المتوقع", projectedProfit: "الربح المتوقع",
+    instantAnswers: "إجابات فورية", vsPrevShort: "مقارنة بالسابق", vsPrevPeriod: "مقارنة بالفترة السابقة", nextMonthShort: "الشهر القادم", nextMonthLong: "للشهر القادم", estimateShort: "تقدير", estimateMargin: "تقدير بهامش 35%", recommendedLabel: "الموصى به:", unitsWord: "وحدة", breakdownTitle: "التوزيع", keyKpis: "المؤشرات الرئيسية",
+    threeMonths: "3 أشهر", sixMonths: "6 أشهر", twelveMonths: "12 شهرًا",
+    optimistic: "متفائل", realistic: "واقعي", pessimistic: "متشائم",
+    salesForecast: "توقعات المبيعات", lowStock: "منتجات بمخزون منخفض", outOfStock: "منتجات نفد مخزونها",
+    pendingOrders: "طلبيات قيد الانتظار", send: "إرسال", newChat: "محادثة جديدة", online: "متصل",
+    loading: "جارٍ التحميل...", questionPlaceholder: "اطرح سؤالك", refreshing: "جارٍ التحديث...",
+    welcome: "مرحبًا", whatCanIDo: "ما الذي يمكنني فعله", tryQuestions: "جرّب",
+    askRevenue: "ما هو رقم معاملاتي؟", askSummary: "ملخص نشاطي",
+    askTopProducts: "أفضل المنتجات", askStock: "حالة المخزون", askForecast: "التوقعات",
+    viewStock: "عرض المخزون", restock: "إعادة التزويد", viewOrders: "عرض الطلبيات",
+    dashboardBtn: "لوحة القيادة", aiAssistant: "المساعد الذكي", aiSubtitle: "ذكاء اصطناعي للتحليل والتوقعات",
+    priorityHigh: "أولوية عالية", priorityMedium: "أولوية متوسطة", priorityLow: "أولوية منخفضة",
+    orderNow: "اطلب الآن", stockStatus: "حالة المخزون", monthlyDemand: "الطلب الشهري",
+    recommendedStock: "المخزون الموصى به", urgency: "الاستعجال", action: "الإجراء",
+    confidence: "مستوى الثقة", highConfidence: "ثقة عالية", mediumConfidence: "ثقة متوسطة",
+    upperBound: "السيناريو المتفائل", lowerBound: "السيناريو المتشائم", roi: "العائد على الاستثمار",
+    backToDashboard: "العودة إلى لوحة القيادة", quickActions: "إجراءات سريعة", aiThoughts: "الذكاء الاصطناعي يحلل بياناتك...",
+    typeMessage: "اكتب رسالتك...", newMessage: "رسالة جديدة", copyConversation: "نسخ المحادثة",
+    clearConversation: "مسح المحادثة", conversationCopied: "تم نسخ المحادثة!", conversationCleared: "تم مسح المحادثة",
+    typing: "يكتب الآن...", aiResponding: "الذكاء الاصطناعي يجيب...",
+    suggestedQuestions: "أسئلة مقترحة", askQuestion: "اطرح سؤالًا", welcomeBack: "مرحبًا بعودتك",
+    totalSales: "إجمالي المبيعات", averageTicket: "متوسط قيمة البيع", growthRate: "نسبة النمو",
+    profitMargin: "هامش الربح", totalExpenses: "إجمالي المصاريف", conversionRate: "نسبة التحويل",
+    inventoryTurnover: "دوران المخزون", productivity: "الإنتاجية لكل موظف"
   }
 };
 
@@ -568,16 +598,56 @@ export default function IAPage() {
         quickOverview: "Resumen rápido de tu actividad", productsWord: "productos", outWord: "sin stock", pendingOrders: "Pedidos pendientes",
         coverAll: "Cubro **todos los módulos**. Pregunta por: ventas, beneficios, stock, productos, clientes, pedidos, facturas, compras, proveedores, RR. HH., categorías o previsiones.",
       },
+      ar: {
+        colon: ":",
+        assistant: "مساعد Inovexa",
+        greet: (n: string) => `مرحبًا${n}! يمكنني تحليل **جميع وحداتك**: المبيعات، الأرباح، المخزون، المنتجات، العملاء، الطلبيات، الفواتير، المشتريات، الموردون، الموارد البشرية والتوقعات.`,
+        greetTry: `جرّب: «ملخص نشاطي»، «حالة المخزون»، «الفواتير غير المدفوعة»، «أفضل العملاء» أو «التوقعات».`,
+        aiAnalysis: "التحليل", total: "المجموع",
+        revTier: ["نمو استثنائي، تهانينا!", "حركية تجارية جيدة.", "نمو يستوجب المتابعة عن قرب."],
+        ebitdaEst: "EBITDA التقديري",
+        profitTier: ["هامش ممتاز، واصل على هذا النحو!", "هامش جيد — فكّر في تحسين تكاليفك.", "هامش يحتاج إلى تحسين: حلّل مصاريفك."],
+        report: "تقرير النشاط",
+        finances: "المالية", clientsH: "العملاء", productsH: "المنتجات", ordersH: "الطلبيات", forecastH: "التوقعات",
+        catalog: "قائمة المنتجات", stockValue: "قيمة المخزون", recommendation: "توصية",
+        summaryTier: ["استثمر هذه الحركية!", "حسّن إجراءاتك لتسريع النمو."],
+        ca: "رقم المعاملات", salesUnits: "المبيعات", units: "وحدة",
+        coreBiz: "هذه المنتجات هي أساس نشاطك. ركّز جهودك التسويقية عليها!",
+        purchasesL: "المشتريات", ordersL: "الطلبيات",
+        loyalty: "ضع برنامج وفاء مميزًا لهؤلاء العملاء الاستراتيجيين!",
+        overview: "نظرة عامة", outOfStock: "نفاد المخزون", totalValue: "القيمة الإجمالية",
+        restockUrgent: "إعادة تزويد ذات أولوية", demand: "الطلب", perMonth: "شهر",
+        restockAction: (n: number) => `إجراء موصى به: إعادة تزويد المنتجات ذات الأولوية (${n}).`,
+        stockOk: "لا شيء عاجل — مستوى المخزون سليم.", stockBravo: "إدارتك للمخزون مثالية.",
+        trends: "الاتجاهات المرصودة", estimated: "تقديري", ebitdaProj: "EBITDA المتوقع",
+        monthlyProj: "التوقعات الشهرية", strategicAdvice: "نصيحة استراتيجية",
+        forecastTier: ["استعدّ للنمو القوي: عزّز مخزونك وفريقك التجاري.", "نمو معتدل في الأفق: حافظ على استثماراتك.", "كن حذرًا في الاستثمارات وحسّن تكاليفك."],
+        guide: "دليل الاستخدام", possibleQ: "أسئلة ممكنة", askRoi: "ما هو العائد على استثماري؟", askPerf: "الأداء العام",
+        quickActions: "إجراءات سريعة", qa: ["تحليل المبيعات", "متابعة المخزون", "التوقعات المالية", "توصيات المنتجات"],
+        tip: "نصيحة: كلما كان سؤالك أدق كانت الإجابة أنسب.",
+        ordersLog: "الطلبيات واللوجستيك", pending: "قيد الانتظار", cumValue: "القيمة الإجمالية", byStatus: "حسب الحالة",
+        orderAction: (n: number) => `إجراء: طلبيات تنتظر المعالجة (${n}).`, noPending: "لا توجد طلبيات قيد الانتظار.",
+        invoices: "الفواتير", noInvoices: "لا توجد فواتير في البيانات المحمّلة. راجع وحدة الفواتير.",
+        amount: "المبلغ الإجمالي", unpaid: "غير مدفوعة / قيد الانتظار",
+        invAction: (n: number) => `إجراء: ذكّر بالفواتير غير المدفوعة (${n}).`, allPaid: "كل الفواتير مسدَّدة.",
+        purchasesSuppliers: "المشتريات والموردون", spent: "إجمالي الإنفاق", purchaseCount: "عدد المشتريات", distinctSuppliers: "عدد الموردين",
+        seePurchases: "راجع وحدة المشتريات للتفاصيل.",
+        hr: "الموارد البشرية", headcount: "عدد الموظفين", payroll: "كتلة الأجور (الشهرية)", seeHr: "راجع وحدة الموارد البشرية لإدارة الموظفين.",
+        categories: "الأصناف", distinctCats: "عدد الأصناف", distribution: "التوزيع (المنتجات)", noCat: "بدون صنف",
+        clients: "العملاء", active: "نشطون", askTopClients: "اسأل عن «أفضل العملاء» لمعرفة أفضل عملائك.",
+        quickOverview: "لمحة سريعة عن نشاطك", stockLabel: "المخزون", productsWord: "منتج", outWord: "نفد مخزونها", pendingOrders: "طلبيات قيد الانتظار",
+        coverAll: "أغطّي **جميع الوحدات**. اسأل عن: المبيعات، الأرباح، المخزون، المنتجات، العملاء، الطلبيات، الفواتير، المشتريات، الموردين، الموارد البشرية، الأصناف أو التوقعات.",
+      },
     };
     const L = AI_L[language] || AI_L.fr;
 
     // ── Salutations ──
-    if (q.match(/\b(hi|hello|hey|yo|bonjour|bjr|salut|slt|coucou|cc|hola|buenas|salam|salem|ahla)\b/)) {
+    if (q.match(/\b(hi|hello|hey|yo|bonjour|bjr|salut|slt|coucou|cc|hola|buenas|salam|salem|ahla)\b/) || q.match(/مرحبا|أهلا|اهلا|السلام عليكم|صباح الخير|مساء الخير/)) {
       return `**${L.assistant}**\n\n${L.greet(nm)}\n\n${L.greetTry}`;
     }
 
     // ── Chiffre d'affaires ──
-    if (q.match(/vente|chiffre|\bca\b|revenue|recette|ventas|ingresos|sales/)) {
+    if (q.match(/vente|chiffre|\bca\b|revenue|recette|ventas|ingresos|sales|مبيعات|معاملات|مداخيل|إيرادات|ايرادات/)) {
       const tier = Number(growth) > 15 ? L.revTier[0] : Number(growth) > 8 ? L.revTier[1] : L.revTier[2];
       return `**${t.revenue}**\n\n` +
              `• **${L.total}${L.colon}** ${money(revenue)}\n` +
@@ -588,7 +658,7 @@ export default function IAPage() {
     }
 
     // ── Bénéfice ──
-    if (q.match(/bénéfice|benefice|profit|beneficio|ganancia|marge|margen/)) {
+    if (q.match(/bénéfice|benefice|profit|beneficio|ganancia|marge|margen|ربح|أرباح|ارباح|هامش/)) {
       const tier = Number(margin) > 25 ? L.profitTier[0] : Number(margin) > 15 ? L.profitTier[1] : L.profitTier[2];
       return `**${t.profit}**\n\n` +
              `• **${t.profit}${L.colon}** ${money(profit)}\n` +
@@ -600,7 +670,7 @@ export default function IAPage() {
     }
 
     // ── Résumé / rapport ──
-    if (q.match(/résumé|resume|synthése|synthese|bilan|rapport|summary|resumen/)) {
+    if (q.match(/résumé|resume|synthése|synthese|bilan|rapport|summary|resumen|ملخص|تقرير|حصيلة|خلاصة/)) {
       const tier = Number(growth) > 10 ? L.summaryTier[0] : L.summaryTier[1];
       const conv = stats?.clients?.total > 0 ? Math.round((stats?.clients?.active || 0) / (stats?.clients?.total || 1) * 100) : 0;
       const turn = stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0;
@@ -629,7 +699,7 @@ export default function IAPage() {
     }
 
     // ── Top produits ──
-    if (q.match(/top produits|meilleurs produits|top products|best products|best sellers|top productos|mejores productos/)) {
+    if (q.match(/top produits|meilleurs produits|top products|best products|best sellers|top productos|mejores productos|أفضل المنتجات|افضل المنتجات|المنتجات الأكثر مبيع/)) {
       let out = `**${t.topProducts}**\n\n`;
       topProducts.slice(0, 4).forEach((p, i) => {
         out += `${i + 1}. **${p.name}**\n   • ${L.ca}${L.colon} ${money(p.amount)}\n   • ${L.salesUnits}${L.colon} ${p.sales} ${L.units}\n\n`;
@@ -639,7 +709,7 @@ export default function IAPage() {
     }
 
     // ── Top clients ──
-    if (q.match(/top clients|meilleurs clients|best customers|top clientes|mejores clientes/)) {
+    if (q.match(/top clients|meilleurs clients|best customers|top clientes|mejores clientes|أفضل العملاء|افضل العملاء|أفضل الحرفاء|افضل الحرفاء/)) {
       let out = `**${t.topClients}**\n\n`;
       topClients.slice(0, 4).forEach((c, i) => {
         out += `${i + 1}. **${c.name}**\n   • ${L.purchasesL}${L.colon} ${money(c.amount)}\n   • ${L.ordersL}${L.colon} ${c.orders}\n\n`;
@@ -649,7 +719,7 @@ export default function IAPage() {
     }
 
     // ── Stock ──
-    if (q.match(/stock|inventaire|inventory|inventario|estado del stock/)) {
+    if (q.match(/stock|inventaire|inventory|inventario|estado del stock|مخزون|جرد/)) {
       const urgent = recommendations.filter(r => r.urgency === "high").slice(0, 3);
       const turn = stats?.products?.totalValue > 0 ? (revenue / (stats?.products?.totalValue || 1)).toFixed(1) : 0;
       let out = `**${t.stockStatus}**\n\n**${L.overview}**\n` +
@@ -669,7 +739,7 @@ export default function IAPage() {
     }
 
     // ── Prévisions ──
-    if (q.match(/prévision|prevision|forecast|tendance|prediction|previsiones|predicci[oó]n/)) {
+    if (q.match(/prévision|prevision|forecast|tendance|prediction|previsiones|predicci[oó]n|توقع|تنبؤ/)) {
       const advice = Number(growth) > 15 ? L.forecastTier[0] : Number(growth) > 5 ? L.forecastTier[1] : L.forecastTier[2];
       return `**${t.salesForecast}**\n\n**${L.trends}**\n` +
              `• ${t.growthRate}${L.colon} +${growth}%\n` +
@@ -686,7 +756,7 @@ export default function IAPage() {
     }
 
     // ── Aide / guide ──
-    if (q.match(/aide|help|ayuda|que faire|guide|gu[ií]a|que puis-je/)) {
+    if (q.match(/aide|help|ayuda|que faire|guide|gu[ií]a|que puis-je|مساعدة|دليل|ماذا يمكن/)) {
       return `**${L.guide}**\n\n**${L.possibleQ}**\n` +
              `• "${t.askRevenue}"\n` +
              `• "${t.askSummary}"\n` +
@@ -701,7 +771,7 @@ export default function IAPage() {
     }
 
     // ── Commandes & logistique ──
-    if (q.match(/commande|order\b|orders|pedido|livraison|logistique|logistics|log[ií]stica|exp[ée]dition|shipment|transport/)) {
+    if (q.match(/commande|order\b|orders|pedido|livraison|logistique|logistics|log[ií]stica|exp[ée]dition|shipment|transport|طلبي|طلبات|شحن|توصيل|لوجست/)) {
       const orders = arr(rd.orders);
       const totalOrders = stats?.orders?.total || orders.length || 0;
       const pending = stats?.orders?.pending ?? orders.filter((o: any) => o.status === "pending").length;
@@ -716,7 +786,7 @@ export default function IAPage() {
     }
 
     // ── Factures ──
-    if (q.match(/facture|invoice|factura|impay|unpaid|impagad|paiement|payment|pago/)) {
+    if (q.match(/facture|invoice|factura|impay|unpaid|impagad|paiement|payment|pago|فاتور|فواتير|غير مدفوع|الدفع/)) {
       const inv = arr(rd.invoices);
       if (!inv.length) return `**${L.invoices}**\n\n${L.noInvoices}`;
       const total = inv.reduce((s: number, iv: any) => s + (Number(iv.total) || 0), 0);
@@ -726,7 +796,7 @@ export default function IAPage() {
     }
 
     // ── Achats & fournisseurs ──
-    if (q.match(/fournisseur|supplier|proveedor|achat|purchase|compra|approvision/)) {
+    if (q.match(/fournisseur|supplier|proveedor|achat|purchase|compra|approvision|مورد|مزود|مشتريات|شراء/)) {
       const pur = arr(rd.purchases);
       const spent = stats?.purchases?.spent || pur.reduce((s: number, p: any) => s + (Number(p.total) || 0), 0);
       const suppliers = new Set(pur.map((p: any) => p.supplierName || p.supplier).filter(Boolean));
@@ -734,7 +804,7 @@ export default function IAPage() {
     }
 
     // ── Ressources humaines ──
-    if (q.match(/employ|salari|personnel|\bstaff\b|\brh\b|\bhr\b|ressources humaines|recursos humanos|empleado/)) {
+    if (q.match(/employ|salari|personnel|\bstaff\b|\brh\b|\bhr\b|ressources humaines|recursos humanos|empleado|موظف|أجور|رواتب|موارد بشرية/)) {
       const emp = arr(rd.employees);
       const total = stats?.employees?.total || emp.length || 0;
       const pr = emp.reduce((s: number, e: any) => s + (Number(e.salary) || 0), 0);
@@ -742,7 +812,7 @@ export default function IAPage() {
     }
 
     // ── Catégories ──
-    if (q.match(/cat[ée]gorie|category|categories|categor[ií]a|rayon/)) {
+    if (q.match(/cat[ée]gorie|category|categories|categor[ií]a|rayon|صنف|أصناف|اصناف/)) {
       const prods = arr(rd.products);
       const byCat: Record<string, number> = {};
       prods.forEach((p: any) => { const c = p.category || p.categoryName || L.noCat; byCat[c] = (byCat[c] || 0) + 1; });
@@ -753,7 +823,7 @@ export default function IAPage() {
     }
 
     // ── Clients (vue générale) ──
-    if (q.match(/client|cliente|customer/)) {
+    if (q.match(/client|cliente|customer|عميل|عملاء|حريف|حرفاء|زبون|زبائن/)) {
       const totalC = stats?.clients?.total || 0;
       const activeC = stats?.clients?.active || 0;
       const rate = totalC > 0 ? Math.round((activeC / totalC) * 100) : 0;
@@ -765,7 +835,7 @@ export default function IAPage() {
            `• ${t.revenue}${L.colon} ${money(revenue)}\n` +
            `• ${t.profit}${L.colon} ${money(profit)}\n` +
            `• ${L.clientsH}${L.colon} ${stats?.clients?.total || 0} (${stats?.clients?.active || 0} ${String(L.active).toLowerCase()})\n` +
-           `• Stock${L.colon} ${stats?.products?.total || 0} ${L.productsWord}, ${stats?.products?.outOfStock || 0} ${L.outWord}\n` +
+           `• ${L.stockLabel || "Stock"}${L.colon} ${stats?.products?.total || 0} ${L.productsWord}, ${stats?.products?.outOfStock || 0} ${L.outWord}\n` +
            `• ${L.pendingOrders}${L.colon} ${stats?.orders?.pending || 0}\n\n` +
            `${L.coverAll}`;
   };
@@ -833,7 +903,7 @@ export default function IAPage() {
     labels: getForecastLabels(), 
     datasets: [
       { label: t.upperBound, data: getUpperBoundData(), borderColor: "rgba(16,185,129,0.4)", backgroundColor: "rgba(16,185,129,0.05)", borderWidth: 1.5, fill: "+1", tension: 0.3, pointRadius: 0 },
-      { label: t.salesForecast + " (" + (language === 'fr' ? "Réaliste" : language === 'es' ? "Realista" : "Realistic") + ")", data: getForecastData(), borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.25)", borderWidth: isMobile ? 2 : 2.5, fill: true, tension: 0.3, pointBackgroundColor: "#f59e0b", pointRadius: isMobile ? 2 : 5, pointHoverRadius: isMobile ? 4 : 7 },
+      { label: t.salesForecast + " (" + (language === 'fr' ? "Réaliste" : language === 'es' ? "Realista" : language === 'ar' ? "واقعي" : "Realistic") + ")", data: getForecastData(), borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.25)", borderWidth: isMobile ? 2 : 2.5, fill: true, tension: 0.3, pointBackgroundColor: "#f59e0b", pointRadius: isMobile ? 2 : 5, pointHoverRadius: isMobile ? 4 : 7 },
       { label: t.lowerBound, data: getLowerBoundData(), borderColor: "rgba(239,68,68,0.4)", backgroundColor: "rgba(239,68,68,0.05)", borderWidth: 1.5, fill: false, tension: 0.3, pointRadius: 0 }
     ] 
   };
