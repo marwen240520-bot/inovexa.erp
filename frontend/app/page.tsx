@@ -206,10 +206,10 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     terms: "Conditions",
     langLabel: "Choisir la langue",
     features: [
-      { title: "Solutions intégrées", desc: "Ventes, achats, stock" },
-      { title: "Analyses temps réel", desc: "Tableaux de bord en direct" },
-      { title: "Sécurisé & fiable", desc: "Données protégées" },
-      { title: "Votre équipe", desc: "RH, finance, logistique" },
+      { title: "Gestion centralisée", desc: "Tous vos processus métier réunis sur une seule plateforme." },
+      { title: "Pilotage intelligent", desc: "Transformez vos données en décisions stratégiques." },
+      { title: "Sécurité avancée", desc: "Une infrastructure conçue pour protéger vos données." },
+      { title: "Écosystème connecté", desc: "Connectez vos équipes et synchronisez vos activités pour une gestion plus fluide et efficace." },
     ],
   },
   es: {
@@ -308,10 +308,10 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     terms: "Términos",
     langLabel: "Elegir idioma",
     features: [
-      { title: "Soluciones integradas", desc: "Ventas, compras, stock" },
-      { title: "Análisis en tiempo real", desc: "Paneles en vivo" },
-      { title: "Seguro y confiable", desc: "Datos protegidos" },
-      { title: "Su equipo", desc: "RR. HH., finanzas, logística" },
+      { title: "Gestión centralizada", desc: "Todos sus procesos de negocio reunidos en una sola plataforma." },
+      { title: "Pilotaje inteligente", desc: "Transforme sus datos en decisiones estratégicas." },
+      { title: "Seguridad avanzada", desc: "Una infraestructura diseñada para proteger sus datos." },
+      { title: "Ecosistema conectado", desc: "Conecte a sus equipos y sincronice sus actividades para una gestión más fluida y eficaz." },
     ],
   },
   en: {
@@ -410,10 +410,10 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     terms: "Terms",
     langLabel: "Choose language",
     features: [
-      { title: "Integrated solutions", desc: "Sales, purchases, stock" },
-      { title: "Real-time insights", desc: "Live dashboards" },
-      { title: "Secure & reliable", desc: "Protected data" },
-      { title: "Empower your team", desc: "HR, finance, logistics" },
+      { title: "Centralized management", desc: "All your business processes brought together on a single platform." },
+      { title: "Smart insights", desc: "Turn your data into strategic decisions." },
+      { title: "Advanced security", desc: "Infrastructure designed to protect your data." },
+      { title: "Connected ecosystem", desc: "Connect your teams and sync your activities for smoother, more efficient management." },
     ],
   },
 };
