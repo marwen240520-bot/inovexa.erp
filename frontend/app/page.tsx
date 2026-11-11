@@ -231,9 +231,10 @@ const MODULE_ICONS: Record<ModuleKey, React.ReactNode> = {
   ),
   production: (
     <>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M2 12h2M20 12h2M17.66 17.66l1.41 1.41M5.34 6.34L3.93 4.93" />
-      <path d="M12 2v2M12 20v2" />
+      <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
+      <line x1="7" y1="18" x2="8" y2="18" />
+      <line x1="12" y1="18" x2="13" y2="18" />
+      <line x1="17" y1="18" x2="18" y2="18" />
     </>
   ),
   ai: (
@@ -284,12 +285,12 @@ const ORBIT_ITEMS: { key: ModuleKey; x: number; y: number }[] = [
   { key: "objectives", x: 1037.7, y: 253.2 },
   { key: "hr", x: 1105.6, y: 213.6 },
   { key: "finance", x: 1179.2, y: 186.3 },
-  { key: "production", x: 1256.4, y: 172.1 },
+  { key: "ai", x: 1256.4, y: 172.1 },
   { key: "logistics", x: 1334.9, y: 171.3 },
   { key: "shipments", x: 1412.4, y: 184.1 },
   { key: "reports", x: 1486.5, y: 210.0 },
   { key: "analytics", x: 1555.1, y: 248.2 },
-  { key: "ai", x: 1616.1, y: 297.7 },
+  { key: "production", x: 1616.1, y: 297.7 },
 ];
 
 const MODULE_LABELS: Record<Lang, Record<ModuleKey, string>> = {
