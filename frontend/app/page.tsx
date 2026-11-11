@@ -646,7 +646,7 @@ export default function HomePage(): React.ReactElement {
           </div>
 
           {/* Espacement renforcé entre badge modules et titre */}
-          <h1 className="hp-rise hp-d2 hp-title">{text.title}</h1>
+          <h1 className="hp-slide hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
         </div>
 
@@ -1002,11 +1002,14 @@ const STYLES = `
 
   /* ── Apparition sans JavaScript ── */
   .hp-rise { animation: hpRise .55s cubic-bezier(0.22,1,0.36,1) both; }
+  /* Titre (élément LCP) : glissement seul, sans opacité 0, pour être peint dès la première image */
+  .hp-slide { animation: hpSlide .55s cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes hpSlide { from { transform: translateY(14px); } to { transform: none; } }
   .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; } .hp-d4 { animation-delay: 320ms; }
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal { animation: none !important; }
+    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal { animation: none !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card { transition: none !important; }
   }
 `;
