@@ -168,7 +168,8 @@ export class DocumentsService {
         pay: meta.settles && frozen && doc.balanceDue > EPS,
         convertTo: canConvert ? meta.convertsTo : [],
         cancel: ['quote', 'purchase_order', 'delivery_note', 'goods_receipt'].includes(doc.type) && frozen && !['cancelled', 'invoiced', 'converted'].includes(doc.status) && !lines.some((l) => l.processedQty > EPS),
-        send: frozen && doc.status !== 'cancelled',
+        // Les factures ne s'envoient pas par email depuis l'ERP
+        send: frozen && doc.status !== 'cancelled' && !['invoice', 'supplier_invoice'].includes(doc.type),
         decide: doc.type === 'quote' && ['validated', 'sent'].includes(doc.status),
       },
     };
@@ -718,8 +719,9 @@ export class DocumentsService {
 
   async send(actor: Actor, id: number, dto: SendDto) {
     const doc = await this.get(actor.userId, id);
+    if (['invoice', 'supplier_invoice'].includes(doc.type)) throw new BadRequestException('L’envoi par email n’est pas disponible pour les factures.');
     if (!doc.lockedAt) throw new BadRequestException('Validez le document avant de l’envoyer.');
-    const to = (dto.to || doc.partyEmail || '').trim();
+    const to =(dto.to || doc.partyEmail || '').trim();
     if (!to) throw new BadRequestException('Aucune adresse email : renseignez-la sur la fiche du tiers ou dans la demande.');
     const company = await this.company.getOrCreate(actor.userId);
     const { buffer, filename } = await this.renderPdf(actor.userId, id);
