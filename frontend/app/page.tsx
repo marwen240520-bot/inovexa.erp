@@ -107,7 +107,7 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
-const BG_IMAGE = "/images/Inovexa_ERP_visuel_dashboard.png";
+const BG_IMAGE = "/images/3.png";
 
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
