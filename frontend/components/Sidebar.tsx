@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect, useRef, CSSProperties, type JSX } from "react";
+import { useState, useEffect, useRef, CSSProperties } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDeviceHint } from "@/contexts/DeviceContext";
@@ -29,6 +29,13 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
   "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión" },
   "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja" },
+  // Titres des sections de la barre latérale
+  "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial" },
+  "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento" },
+  "nav.groups.inventory": { fr: "Stock & logistique", en: "Inventory & logistics", es: "Inventario y logística" },
+  "nav.groups.finance": { fr: "Finance & RH", en: "Finance & HR", es: "Finanzas y RR. HH." },
+  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Análisis" },
+  "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta" },
 };
 
 const ICONS: Record<string, JSX.Element> = {
@@ -214,6 +221,16 @@ const ICONS: Record<string, JSX.Element> = {
       <line x1="21" y1="12" x2="9" y2="12"/>
     </Icon>
   ),
+  chevron: (
+    <svg
+      width="14" height="14" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0 }}
+    >
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  ),
 };
 
 interface User {
@@ -238,6 +255,53 @@ interface ThemeColors {
   mode?: "light" | "dark";
 }
 
+// `gate` : module de l'abonnement qui autorise l'entrée (par défaut, son propre id).
+// `also` : autres chemins qui allument l'entrée (sous-pages d'un même module).
+interface NavItem {
+  id: string;
+  gate?: string;
+  path: string;
+  label: string;
+  iconKey: string;
+  also?: string[];
+}
+
+interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+// ─── Sections de la barre latérale ────────────────────────────────────────────
+// Chaque section liste les identifiants des modules (voir `allModules`) dans l'ordre d'affichage.
+// Pour déplacer un module, déplacez simplement son identifiant d'une section à l'autre.
+// Un module qui n'apparaît dans aucune section s'affiche en haut, hors section (ex. le tableau de bord).
+// Une section dont aucun module n'est actif dans l'abonnement n'est pas affichée.
+const NAV_GROUPS: Array<{ id: string; label: string; items: string[] }> = [
+  { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "pos", "pos-sessions"] },
+  { id: "procurement", label: "nav.groups.procurement", items: ["purchases", "suppliers"] },
+  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "categories", "stock", "logistics"] },
+  { id: "finance",     label: "nav.groups.finance",     items: ["finance", "accounting", "hr"] },
+  { id: "insights",    label: "nav.groups.insights",    items: ["reports", "business-reports", "analytics", "objectives", "ai"] },
+  { id: "account",     label: "nav.groups.account",     items: ["profile", "settings"] },
+];
+
+/** Répartit les entrées visibles : d'abord celles hors section, puis les sections non vides. */
+function buildSections(items: NavItem[]): { top: NavItem[]; groups: NavGroup[] } {
+  const byId = new Map(items.map((m) => [m.id, m] as const));
+  const placed = new Set<string>();
+  const groups: NavGroup[] = [];
+  for (const g of NAV_GROUPS) {
+    const groupItems: NavItem[] = [];
+    for (const id of g.items) {
+      const item = byId.get(id);
+      if (item && !placed.has(id)) { groupItems.push(item); placed.add(id); }
+    }
+    if (groupItems.length > 0) groups.push({ id: g.id, label: g.label, items: groupItems });
+  }
+  return { top: items.filter((m) => !placed.has(m.id)), groups };
+}
+
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), 'Arial Black', sans-serif";
 
@@ -258,6 +322,10 @@ function readStoredModules(userId?: string | number): Record<string, boolean> | 
 function storeModules(userId: string | number, modules: Record<string, boolean>) {
   try { localStorage.setItem(MODULES_STORAGE_KEY, JSON.stringify({ userId, modules })); } catch { /* ignoré */ }
 }
+
+// Sections ouvertes. Au chargement, toutes les sections sont fermées, sauf celle de la page ouverte.
+// Ce que l'utilisateur ouvre reste ouvert pendant la navigation, puis tout se referme au rechargement.
+let sidebarOpenGroups: Record<string, boolean> = {};
 
 export function getCachedModules(): Record<string, boolean> | null {
   return sidebarCachedModules;
@@ -281,6 +349,7 @@ export default function Sidebar() {
   const prefetched = useRef<Set<string>>(new Set());
   const hoverTimer = useRef<number | null>(null);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => sidebarOpenGroups);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setLocalTheme(theme); }, [theme, themeId]);
@@ -348,76 +417,9 @@ export default function Sidebar() {
     return userModules[id] === true;
   };
 
-  const prefetch = (path: string) => {
-    if (path === pathname) return;
-    prefetchRouteData(path);
-    if (prefetched.current.has(path)) return;
-    prefetched.current.add(path);
-    try { router.prefetch(path, { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
-  };
-
-  const hoverPrefetch = (path: string) => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = window.setTimeout(() => prefetch(path), 90);
-  };
-  const cancelHoverPrefetch = () => {
-    if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
-  };
-
-  const pathMatches = (path: string) =>
-    pathname === path || (path !== "/dashboard" && !!pathname && pathname.startsWith(path + "/"));
-  // Le lien le plus précis gagne : /dashboard/hr/payroll n'allume pas aussi « Ressources humaines ».
-  const isActivePath = (path: string, also?: string[]) =>
-    (pathMatches(path) && !menuItems.some((m: { path: string }) => m.path.length > path.length && pathMatches(m.path))) ||
-    !!also?.some((p) => pathMatches(p));
-
-  const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    const token = localStorage.getItem("token");
-    if (!token) { e.preventDefault(); router.push("/auth/login"); return; }
-    if (isMobile) setMobileMoreOpen(false);
-  };
-
-  const handleNavigation = async (path: string, label: string) => {
-    const token = localStorage.getItem("token");
-    if (!token) { router.push("/auth/login"); return; }
-    try {
-      await router.push(path);
-      if (isMobile) setMobileMoreOpen(false);
-      setTimeout(() => setNavigationError(null), 3000);
-    } catch (e: any) {
-      setNavigationError(`Erreur navigation: ${e.message}`);
-    }
-  };
-
-  const logout = () => {
-    if (confirm(t("common.logoutWarning") || "Confirmer la déconnexion ?")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      try { localStorage.removeItem(MODULES_STORAGE_KEY); } catch { /* ignoré */ }
-      sidebarCachedUser = null;
-      sidebarCachedModules = null;
-      modulesRefreshed = false;
-      clearApiCache();
-      router.push("/");
-    }
-  };
-
-  const getLabel = (key: string) => {
-    if (EXTRA_LABELS[key]) return EXTRA_LABELS[key][language] || EXTRA_LABELS[key].fr;
-    try {
-      const v = t(key);
-      return v === key ? key.split(".").pop() ?? key : v;
-    } catch {
-      return key.split(".").pop() ?? key;
-    }
-  };
-
   const role = user?.role;
 
-  // `gate` : module de l'abonnement qui autorise l'entrée (par défaut, son propre id).
-  // `also` : autres chemins qui allument l'entrée (sous-pages d'un même module).
-  const allModules: Array<{ id: string; gate?: string; path: string; label: string; iconKey: string; also?: string[] }> = [
+  const allModules: NavItem[] = [
     { id: "dashboard",  path: "/dashboard",            label: "common.dashboard",  iconKey: "dashboard" },
     { id: "products",   path: "/dashboard/products",   label: "common.products",   iconKey: "products" },
     { id: "categories", path: "/dashboard/categories", label: "common.categories", iconKey: "categories" },
@@ -445,21 +447,112 @@ export default function Sidebar() {
 
   const clientMenuItems = allModules.filter(m => isModuleActive(m.gate ?? m.id));
 
-  const adminMenuItems = [
+  const adminMenuItems: NavItem[] = [
     { id: "adminClients", path: "/admin/clients",      label: "admin.clients",    iconKey: "adminClients" },
     { id: "profile",      path: "/dashboard/profile",  label: "common.profile",   iconKey: "profile" },
     { id: "settings",     path: "/dashboard/settings", label: "common.settings",  iconKey: "settings" },
   ];
 
-  const transporteurMenuItems = [
+  const transporteurMenuItems: NavItem[] = [
     { id: "shipments", path: "/transporteur/shipments", label: "logistics.shipments", iconKey: "shipments" },
     { id: "profile",   path: "/dashboard/profile",      label: "common.profile",      iconKey: "profile" },
     { id: "settings",  path: "/dashboard/settings",     label: "common.settings",     iconKey: "settings" },
   ];
 
-  let menuItems = clientMenuItems;
-  if (role === "admin") menuItems = adminMenuItems;
-  if (role === "transporteur") menuItems = transporteurMenuItems;
+  let roleMenuItems: NavItem[] = clientMenuItems;
+  if (role === "admin") roleMenuItems = adminMenuItems;
+  if (role === "transporteur") roleMenuItems = transporteurMenuItems;
+
+  const sections = buildSections(roleMenuItems);
+  // Ordre d'affichage réel (sections comprises) : sert à la barre du bas mobile et au lien actif.
+  const menuItems: NavItem[] = [...sections.top, ...sections.groups.flatMap((g) => g.items)];
+
+  const pathMatches = (path: string) =>
+    pathname === path || (path !== "/dashboard" && !!pathname && pathname.startsWith(path + "/"));
+  // Le lien le plus précis gagne : /dashboard/hr/payroll n'allume pas aussi « Ressources humaines ».
+  const isActivePath = (path: string, also?: string[]) =>
+    (pathMatches(path) && !menuItems.some((m) => m.path.length > path.length && pathMatches(m.path))) ||
+    !!also?.some((p) => pathMatches(p));
+
+  const activeGroupId = sections.groups.find((g) => g.items.some((m) => isActivePath(m.path, m.also)))?.id ?? null;
+
+  // La section de la page ouverte s'ouvre d'elle-même (au chargement et à chaque changement de page).
+  useEffect(() => {
+    if (!activeGroupId) return;
+    setOpenGroups((prev) => {
+      if (prev[activeGroupId]) return prev;
+      const next = { ...prev, [activeGroupId]: true };
+      sidebarOpenGroups = next;
+      return next;
+    });
+  }, [activeGroupId, pathname]);
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [groupId]: !prev[groupId] };
+      sidebarOpenGroups = next;
+      return next;
+    });
+  };
+
+  const prefetch = (path: string) => {
+    if (path === pathname) return;
+    prefetchRouteData(path);
+    if (prefetched.current.has(path)) return;
+    prefetched.current.add(path);
+    try { router.prefetch(path, { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1]); } catch { /* ignoré */ }
+  };
+
+  const hoverPrefetch = (path: string) => {
+    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => prefetch(path), 90);
+  };
+  const cancelHoverPrefetch = () => {
+    if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+  };
+
+  const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    const token = localStorage.getItem("token");
+    if (!token) { e.preventDefault(); router.push("/auth/login"); return; }
+    if (isMobile) setMobileMoreOpen(false);
+  };
+
+  const handleNavigation = async (path: string, label: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) { router.push("/auth/login"); return; }
+    try {
+      await router.push(path);
+      if (isMobile) setMobileMoreOpen(false);
+      setTimeout(() => setNavigationError(null), 3000);
+    } catch (e: any) {
+      setNavigationError(`Erreur navigation: ${e.message}`);
+    }
+  };
+
+  const logout = () => {
+    if (confirm(t("common.logoutWarning") || "Confirmer la déconnexion ?")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      try { localStorage.removeItem(MODULES_STORAGE_KEY); } catch { /* ignoré */ }
+      sidebarCachedUser = null;
+      sidebarCachedModules = null;
+      sidebarOpenGroups = {};
+      modulesRefreshed = false;
+      clearApiCache();
+      router.push("/");
+    }
+  };
+
+  const getLabel = (key: string) => {
+    if (EXTRA_LABELS[key]) return EXTRA_LABELS[key][language] || EXTRA_LABELS[key].fr;
+    try {
+      const v = t(key);
+      return v === key ? key.split(".").pop() ?? key : v;
+    } catch {
+      return key.split(".").pop() ?? key;
+    }
+  };
 
   const defaultStyles: ThemeColors = {
     background: "#f3f4f6",
@@ -475,6 +568,7 @@ export default function Sidebar() {
 
   const ct = localTheme || defaultStyles;
   const navText = ct.navText || ct.textSecondary;
+  const groupText = ct.textSecondary;
   const brandText = ct.text || navText;
   const isDarkMode = ct.mode === "dark";
   const brandErpColor = isDarkMode ? "#C4B5FD" : "#6D28D9";
@@ -539,8 +633,8 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: "16px",
-      paddingBottom: "12px",
+      marginBottom: "8px",
+      paddingBottom: "4px",
     },
     mobileMoreTitle: {
       fontSize: "13px",
@@ -548,6 +642,15 @@ export default function Sidebar() {
       color: navText,
       letterSpacing: "0.06em",
       textTransform: "uppercase" as const,
+      fontFamily: FONT_STACK,
+    },
+    mobileGroupTitle: {
+      padding: "12px 14px 6px",
+      fontSize: "11px",
+      fontWeight: 600,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase" as const,
+      color: groupText,
       fontFamily: FONT_STACK,
     },
     overlay: {
@@ -629,7 +732,7 @@ export default function Sidebar() {
       alignItems: "center",
       gap: "10px",
       padding: "9px 12px 9px 14px",
-      marginBottom: "8px",
+      marginBottom: "2px",
       cursor: "pointer",
       textDecoration: "none",
       outlineOffset: "2px",
@@ -648,6 +751,45 @@ export default function Sidebar() {
       overflow: "hidden",
       textOverflow: "ellipsis",
       fontFamily: FONT_STACK,
+    },
+    groupHeader: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      width: "100%",
+      padding: "16px 12px 6px 14px",
+      background: "transparent",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+      textAlign: "left",
+      transition: "color 0.2s ease",
+      fontFamily: FONT_STACK,
+    },
+    groupLabel: {
+      flex: 1,
+      minWidth: 0,
+      fontSize: "11px",
+      fontWeight: 600,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase" as const,
+      lineHeight: 1.2,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      fontFamily: FONT_STACK,
+    },
+    groupDot: {
+      width: "6px",
+      height: "6px",
+      borderRadius: "50%",
+      flexShrink: 0,
+    },
+    groupChevron: {
+      display: "flex",
+      flexShrink: 0,
+      opacity: 0.75,
+      transition: "transform 0.2s ease",
     },
     activeIndicator: {
       display: "none",
@@ -708,11 +850,18 @@ export default function Sidebar() {
   const handleMouseEnter = (itemId: string) => setHoveredItem(itemId);
   const handleMouseLeave = () => setHoveredItem(null);
 
+  // Mobile : les 4 premières entrées (dans l'ordre des sections) vont dans la barre du bas,
+  // le reste dans le tiroir « Plus », regroupé par section.
   const MOBILE_PRIMARY_COUNT = 4;
   const mobilePrimaryItems = menuItems.slice(0, MOBILE_PRIMARY_COUNT);
   const mobileMoreItems = menuItems.slice(MOBILE_PRIMARY_COUNT);
+  const mobilePrimaryIds = new Set(mobilePrimaryItems.map((m) => m.id));
+  const mobileMoreTop = sections.top.filter((m) => !mobilePrimaryIds.has(m.id));
+  const mobileMoreGroups = sections.groups
+    .map((g) => ({ ...g, items: g.items.filter((m) => !mobilePrimaryIds.has(m.id)) }))
+    .filter((g) => g.items.length > 0);
 
-  const renderNavItem = (item: any) => {
+  const renderNavItem = (item: NavItem) => {
     const isActive = isActivePath(item.path, item.also);
     const isHovered = hoveredItem === item.path;
     const label = getLabel(item.label);
@@ -756,6 +905,92 @@ export default function Sidebar() {
     );
   };
 
+  const renderGroup = (group: NavGroup) => {
+    const open = !!openGroups[group.id];
+    const containsActive = group.id === activeGroupId;
+    const hoverKey = `group:${group.id}`;
+    const isHovered = hoveredItem === hoverKey;
+    const headerId = `ix-nav-group-${group.id}-title`;
+    const bodyId = `ix-nav-group-${group.id}`;
+    const label = getLabel(group.label);
+
+    return (
+      <div key={group.id}>
+        <button
+          type="button"
+          id={headerId}
+          className="ix-nav-group-btn"
+          aria-expanded={open}
+          aria-controls={bodyId}
+          onClick={() => toggleGroup(group.id)}
+          onMouseEnter={() => handleMouseEnter(hoverKey)}
+          onMouseLeave={handleMouseLeave}
+          style={{ ...styles.groupHeader, color: isHovered ? ct.primary : groupText }}
+        >
+          <span style={styles.groupLabel}>{label}</span>
+          {!open && containsActive && (
+            <span aria-hidden="true" style={{ ...styles.groupDot, background: ct.primary }} />
+          )}
+          <span
+            aria-hidden="true"
+            style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+          >
+            {ICONS.chevron}
+          </span>
+        </button>
+        <div
+          id={bodyId}
+          role="group"
+          aria-labelledby={headerId}
+          className="ix-nav-group-body"
+          data-open={open ? "true" : "false"}
+        >
+          <div className="ix-nav-group-clip">
+            <div className="ix-nav-group-items">
+              {group.items.map((item) => renderNavItem(item))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMobileMoreItem = (item: NavItem) => {
+    const isActive = isActivePath(item.path, item.also);
+    const label = getLabel(item.label);
+    const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
+    return (
+      <Link
+        key={item.path}
+        href={item.path}
+        prefetch={false}
+        aria-current={isActive ? "page" : undefined}
+        className="ix-nav-link"
+        onClick={(e) => onNavClick(e, item.path)}
+        onTouchStart={() => prefetch(item.path)}
+        onFocus={() => prefetch(item.path)}
+        style={{
+          textDecoration: "none",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "12px 14px",
+          marginBottom: "4px",
+          borderRadius: "12px",
+          background: isActive ? `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)` : "transparent",
+          color: isActive ? ct.primary : navText,
+          cursor: "pointer",
+          position: "relative",
+          overflow: "hidden",
+          fontFamily: FONT_STACK,
+        }}
+      >
+        <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
+        <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
+      </Link>
+    );
+  };
+
   if (loading || !mounted) {
     if (isMobile) return null;
     return (
@@ -779,8 +1014,21 @@ export default function Sidebar() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        .ix-nav-link:focus-visible { outline: 2px solid var(--theme-primary); outline-offset: 2px; }
-        .ix-nav-link { -webkit-tap-highlight-color: transparent; }
+        .ix-nav-link:focus-visible, .ix-nav-group-btn:focus-visible { outline: 2px solid var(--theme-primary); outline-offset: 2px; }
+        .ix-nav-link, .ix-nav-group-btn { -webkit-tap-highlight-color: transparent; }
+        .ix-nav-group-body {
+          display: grid; grid-template-rows: 1fr; opacity: 1; visibility: visible;
+          transition: grid-template-rows 0.24s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, visibility 0s linear 0s;
+        }
+        .ix-nav-group-body[data-open="false"] {
+          grid-template-rows: 0fr; opacity: 0; visibility: hidden;
+          transition: grid-template-rows 0.24s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.16s ease, visibility 0s linear 0.24s;
+        }
+        .ix-nav-group-clip { min-height: 0; overflow: hidden; margin: 0 -8px; }
+        .ix-nav-group-items { padding: 2px 8px; }
+        @media (prefers-reduced-motion: reduce) {
+          .ix-nav-group-body, .ix-nav-group-body[data-open="false"] { transition: none; }
+        }
       ` }} />
       {navigationError && (
         <div onClick={() => setNavigationError(null)} style={styles.errorToast}>
@@ -811,39 +1059,14 @@ export default function Sidebar() {
                     {ICONS.close}
                   </button>
                 </div>
-                {mobileMoreItems.map((item: any) => {
-                  const isActive = isActivePath(item.path, item.also);
-                  const label = getLabel(item.label);
-                  const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
+                {mobileMoreTop.map((item) => renderMobileMoreItem(item))}
+                {mobileMoreGroups.map((group) => {
+                  const label = getLabel(group.label);
                   return (
-                    <Link
-                      key={item.path}
-                      href={item.path}
-                      prefetch={false}
-                      aria-current={isActive ? "page" : undefined}
-                      className="ix-nav-link"
-                      onClick={(e) => onNavClick(e, item.path)}
-                      onTouchStart={() => prefetch(item.path)}
-                      onFocus={() => prefetch(item.path)}
-                      style={{
-                        textDecoration: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "12px 14px",
-                        marginBottom: "4px",
-                        borderRadius: "12px",
-                        background: isActive ? `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)` : "transparent",
-                        color: isActive ? ct.primary : navText,
-                        cursor: "pointer",
-                        position: "relative",
-                        overflow: "hidden",
-                        fontFamily: FONT_STACK,
-                      }}
-                    >
-                      <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-                      <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
-                    </Link>
+                    <div key={group.id} role="group" aria-label={label}>
+                      <div style={styles.mobileGroupTitle} aria-hidden="true">{label}</div>
+                      {group.items.map((item) => renderMobileMoreItem(item))}
+                    </div>
                   );
                 })}
                 <div style={styles.divider} />
@@ -870,7 +1093,7 @@ export default function Sidebar() {
           )}
 
           <div style={styles.mobileBottomNav}>
-            {mobilePrimaryItems.map((item: any) => {
+            {mobilePrimaryItems.map((item) => {
               const isActive = isActivePath(item.path, item.also);
               const label = getLabel(item.label);
               const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
@@ -1010,8 +1233,9 @@ export default function Sidebar() {
 
           <div style={styles.headerDivider} aria-hidden="true" />
 
-          <nav style={styles.nav}>
-            {menuItems.map((item) => renderNavItem(item))}
+          <nav style={styles.nav} aria-label={getLabel("common.menu")}>
+            {sections.top.map((item) => renderNavItem(item))}
+            {sections.groups.map((group) => renderGroup(group))}
             <div style={styles.divider} />
             <div
               onClick={logout}
