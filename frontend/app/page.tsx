@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React from "react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -108,6 +108,271 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
 const BG_IMAGE = "/images/3.png";
+
+// ─── Orbite des modules (icônes posées sur l'image, nom au survol) ─────────────
+// Les positions sont exprimées en pixels de l'image de fond (1672 × 941).
+// La couche .hp-orbit-box reproduit le cadrage « object-fit: cover » de .hp-bg-img
+// (object-position: 100% 55%) : les icônes restent collées au portable quelle que soit la taille d'écran.
+type ModuleKey =
+  | "dashboard" | "products" | "categories" | "stock" | "pos" | "sales" | "purchases" | "orders" | "invoices"
+  | "clients" | "suppliers" | "objectives" | "hr" | "finance" | "production" | "logistics" | "shipments"
+  | "reports" | "analytics" | "ai";
+
+const MODULE_ICONS: Record<ModuleKey, React.ReactNode> = {
+  dashboard: (
+    <>
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </>
+  ),
+  products: (
+    <>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </>
+  ),
+  categories: (
+    <>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <line x1="9" y1="9" x2="15" y2="9" /><line x1="9" y1="13" x2="12" y2="13" />
+    </>
+  ),
+  stock: (
+    <>
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+      <line x1="2" y1="20" x2="22" y2="20" />
+    </>
+  ),
+  pos: (
+    <>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <rect x="8" y="6" width="8" height="4" rx="1" />
+      <line x1="8" y1="14" x2="8.01" y2="14" /><line x1="12" y1="14" x2="12.01" y2="14" /><line x1="16" y1="14" x2="16.01" y2="14" />
+      <line x1="8" y1="18" x2="8.01" y2="18" /><line x1="12" y1="18" x2="16" y2="18" />
+    </>
+  ),
+  objectives: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </>
+  ),
+  sales: (
+    <>
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </>
+  ),
+  purchases: (
+    <>
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </>
+  ),
+  orders: (
+    <>
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <line x1="9" y1="12" x2="15" y2="12" />
+      <line x1="9" y1="16" x2="13" y2="16" />
+    </>
+  ),
+  clients: (
+    <>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  suppliers: (
+    <>
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </>
+  ),
+  invoices: (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <line x1="10" y1="9" x2="8" y2="9" />
+    </>
+  ),
+  hr: (
+    <>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  finance: (
+    <>
+      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+      <line x1="1" y1="10" x2="23" y2="10" />
+    </>
+  ),
+  logistics: (
+    <>
+      <rect x="1" y="3" width="15" height="13" rx="1" />
+      <path d="M16 8h4l3 5v3h-7V8z" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </>
+  ),
+  production: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M2 12h2M20 12h2M17.66 17.66l1.41 1.41M5.34 6.34L3.93 4.93" />
+      <path d="M12 2v2M12 20v2" />
+    </>
+  ),
+  ai: (
+    <>
+      <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+      <circle cx="9" cy="14" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="14" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  reports: (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="12" y2="17" />
+    </>
+  ),
+  analytics: (
+    <>
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    </>
+  ),
+  shipments: (
+    <>
+      <rect x="9" y="11" width="14" height="10" rx="1" />
+      <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
+      <circle cx="12" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+    </>
+  ),
+};
+
+const ORBIT_IMG_W = 1672;
+const ORBIT_IMG_H = 941;
+
+// Centre de chaque tuile, en pixels de l'image (arc intérieur puis arc extérieur)
+const ORBIT_ITEMS: { key: ModuleKey; x: number; y: number }[] = [
+  { key: "dashboard", x: 998.1, y: 428.9 },
+  { key: "products", x: 1048.2, y: 367.7 },
+  { key: "categories", x: 1110.6, y: 318.9 },
+  { key: "stock", x: 1182.1, y: 284.9 },
+  { key: "pos", x: 1259.2, y: 267.3 },
+  { key: "sales", x: 1338.4, y: 267.1 },
+  { key: "purchases", x: 1415.7, y: 284.1 },
+  { key: "orders", x: 1487.4, y: 317.6 },
+  { key: "invoices", x: 1550.1, y: 366.0 },
+  { key: "clients", x: 927.3, y: 364.0 },
+  { key: "suppliers", x: 977.7, y: 303.8 },
+  { key: "objectives", x: 1037.7, y: 253.2 },
+  { key: "hr", x: 1105.6, y: 213.6 },
+  { key: "finance", x: 1179.2, y: 186.3 },
+  { key: "production", x: 1256.4, y: 172.1 },
+  { key: "logistics", x: 1334.9, y: 171.3 },
+  { key: "shipments", x: 1412.4, y: 184.1 },
+  { key: "reports", x: 1486.5, y: 210.0 },
+  { key: "analytics", x: 1555.1, y: 248.2 },
+  { key: "ai", x: 1616.1, y: 297.7 },
+];
+
+const MODULE_LABELS: Record<Lang, Record<ModuleKey, string>> = {
+  fr: {
+    dashboard: "Tableau de bord", products: "Produits", categories: "Catégories", stock: "Inventaire",
+    pos: "Caisse rapide", sales: "Ventes", purchases: "Achats", orders: "Commandes", invoices: "Factures & devis",
+    clients: "Clients", suppliers: "Fournisseurs", objectives: "Objectifs", hr: "Ressources Humaines",
+    finance: "Finances", production: "Production", logistics: "Logistique", shipments: "Expéditions",
+    reports: "Rapports", analytics: "Analytique", ai: "Assistant IA",
+  },
+  en: {
+    dashboard: "Dashboard", products: "Products", categories: "Categories", stock: "Inventory",
+    pos: "Quick checkout", sales: "Sales", purchases: "Purchases", orders: "Orders", invoices: "Invoices & quotes",
+    clients: "Customers", suppliers: "Suppliers", objectives: "Objectives", hr: "Human Resources",
+    finance: "Finance", production: "Production", logistics: "Logistics", shipments: "Shipments",
+    reports: "Reports", analytics: "Analytics", ai: "AI Assistant",
+  },
+  es: {
+    dashboard: "Panel de control", products: "Productos", categories: "Categorías", stock: "Inventario",
+    pos: "Caja rápida", sales: "Ventas", purchases: "Compras", orders: "Pedidos", invoices: "Facturas y presupuestos",
+    clients: "Clientes", suppliers: "Proveedores", objectives: "Objetivos", hr: "Recursos Humanos",
+    finance: "Finanzas", production: "Producción", logistics: "Logística", shipments: "Envíos",
+    reports: "Informes", analytics: "Analítica", ai: "Asistente IA",
+  },
+};
+
+const ORBIT_ARIA: Record<Lang, string> = {
+  fr: "Modules d'Inovexa ERP",
+  en: "Inovexa ERP modules",
+  es: "Módulos de Inovexa ERP",
+};
+
+function ModuleOrbit({ lang }: { lang: Lang }): React.ReactElement {
+  const labels = MODULE_LABELS[lang];
+  return (
+    <div className="hp-orbit">
+      <div className="hp-orbit-box">
+        <svg className="hp-orbit-lines" viewBox={`0 0 ${ORBIT_IMG_W} ${ORBIT_IMG_H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="hp-orbit-icon-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+              <stop offset="0" style={{ stopColor: "var(--hp-orbit-icon-a)" }} />
+              <stop offset="1" style={{ stopColor: "var(--hp-orbit-icon-b)" }} />
+            </linearGradient>
+            <linearGradient id="hp-orbit-line-in" gradientUnits="userSpaceOnUse" x1="982" y1="0" x2="1576" y2="0">
+              <stop offset="0" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0 }} />
+              <stop offset="0.12" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.85 }} />
+              <stop offset="0.88" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.85 }} />
+              <stop offset="1" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0 }} />
+            </linearGradient>
+            <linearGradient id="hp-orbit-line-out" gradientUnits="userSpaceOnUse" x1="902" y1="0" x2="1659" y2="0">
+              <stop offset="0" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0 }} />
+              <stop offset="0.12" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.5 }} />
+              <stop offset="1" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.5 }} />
+            </linearGradient>
+            <filter id="hp-orbit-glow" x="-5%" y="-5%" width="110%" height="110%">
+              <feGaussianBlur stdDeviation="1.6" result="b" />
+              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+          <path d="M 982.1 456.0 A 360 360 0 0 1 1575.8 393.6" fill="none" stroke="url(#hp-orbit-line-in)" strokeWidth="1.4" filter="url(#hp-orbit-glow)" />
+          <path d="M 902.0 404.4 A 455 455 0 0 1 1658.5 344.9" fill="none" stroke="url(#hp-orbit-line-out)" strokeWidth="1.2" filter="url(#hp-orbit-glow)" />
+        </svg>
+
+        <ul className="hp-orbit-list" aria-label={ORBIT_ARIA[lang]}>
+          {ORBIT_ITEMS.map((m, i) => (
+            <li
+              key={m.key}
+              className={"hp-orbit-item" + (m.x >= 1600 ? " is-end" : "")}
+              style={{ left: `${(m.x / ORBIT_IMG_W) * 100}%`, top: `${(m.y / ORBIT_IMG_H) * 100}%`, "--i": i } as React.CSSProperties}
+            >
+              <span className="hp-orbit-tile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="url(#hp-orbit-icon-grad)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                  {MODULE_ICONS[m.key]}
+                </svg>
+              </span>
+              <span className="hp-orbit-tip">{labels[m.key]}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
@@ -444,6 +709,17 @@ const HP_DARK: Record<string, string> = {
   "--hp-overlay": "rgba(0,0,0,0.65)",
   "--hp-hero-overlay": "linear-gradient(90deg, rgba(10,6,20,0.95) 0%, rgba(30,12,70,0.82) 45%, rgba(10,6,20,0.25) 100%)",
   "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(10,6,20,0.9) 0%, rgba(30,12,70,0.8) 55%, rgba(10,6,20,0.6) 100%)",
+  "--hp-orbit-tile": "linear-gradient(150deg, rgba(62,46,120,0.94) 0%, rgba(28,20,58,0.94) 100%)",
+  "--hp-orbit-border": "rgba(255,255,255,0.2)",
+  "--hp-orbit-border-hover": "rgba(196,181,253,0.75)",
+  "--hp-orbit-shadow": "0 10px 24px rgba(0,0,0,0.35), 0 0 18px rgba(167,139,250,0.16)",
+  "--hp-orbit-shadow-hover": "0 14px 30px rgba(0,0,0,0.45), 0 0 26px rgba(167,139,250,0.5)",
+  "--hp-orbit-icon-a": "#EDE9FE",
+  "--hp-orbit-icon-b": "#A78BFA",
+  "--hp-orbit-line": "#E9E3FF",
+  "--hp-orbit-tip-bg": "rgba(16,10,30,0.94)",
+  "--hp-orbit-tip-text": "#ffffff",
+  "--hp-orbit-tip-border": "rgba(255,255,255,0.16)",
 };
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
@@ -470,6 +746,17 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-overlay": "rgba(30,16,53,0.45)",
   "--hp-hero-overlay": "none",
   "--hp-hero-overlay-compact": "none",
+  "--hp-orbit-tile": "linear-gradient(150deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.56) 100%)",
+  "--hp-orbit-border": "rgba(255,255,255,0.78)",
+  "--hp-orbit-border-hover": "rgba(109,40,217,0.45)",
+  "--hp-orbit-shadow": "0 10px 24px rgba(40,30,150,0.14), 0 0 20px rgba(255,255,255,0.38), inset 0 1px 0 rgba(255,255,255,0.85)",
+  "--hp-orbit-shadow-hover": "0 16px 32px rgba(40,30,150,0.24), 0 0 26px rgba(255,255,255,0.6), inset 0 1px 0 rgba(255,255,255,0.9)",
+  "--hp-orbit-icon-a": "#7B5CFF",
+  "--hp-orbit-icon-b": "#4B37E2",
+  "--hp-orbit-line": "#ffffff",
+  "--hp-orbit-tip-bg": "#2E1065",
+  "--hp-orbit-tip-text": "#ffffff",
+  "--hp-orbit-tip-border": "rgba(255,255,255,0.12)",
 };
 
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
@@ -594,6 +881,9 @@ export default function HomePage(): React.ReactElement {
       {/* Image de fond + dégradé de lisibilité */}
       <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
       <div className="hp-bg-overlay" aria-hidden="true" />
+
+      {/* Icônes des modules posées autour du portable — nom affiché au survol (ordinateur) */}
+      <ModuleOrbit lang={lang} />
 
       {/* En-tête : logo + contrôles thème & langue */}
       <header className="hp-header">
@@ -796,6 +1086,96 @@ const STYLES = `
   }
   .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
+  /* ── Orbite des modules : même cadrage que .hp-bg-img (object-fit: cover ; object-position: 100% 55%) ── */
+  .hp-orbit { position: absolute; inset: 0; z-index: 2; pointer-events: none; container-type: size; }
+  .hp-orbit-box {
+    --u: max(calc(100vw / 1672), calc(100vh / 941));
+    position: absolute;
+    width: calc(1672 * var(--u));
+    height: calc(941 * var(--u));
+    left: calc(100vw - 1672 * var(--u));
+    top: calc((100vh - 941 * var(--u)) * 0.55);
+  }
+  @supports (width: 1cqw) {
+    .hp-orbit-box {
+      --u: max(calc(100cqw / 1672), calc(100cqh / 941));
+      left: calc(100cqw - 1672 * var(--u));
+      top: calc((100cqh - 941 * var(--u)) * 0.55);
+    }
+  }
+  .hp-orbit-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .home-page .hp-orbit-list { position: absolute; inset: 0; }
+  .hp-orbit-item {
+    position: absolute;
+    width: calc(48 * var(--u));
+    height: calc(48 * var(--u));
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    animation: hpOrbitIn .5s cubic-bezier(0.22,1,0.36,1) both;
+    animation-delay: calc(380ms + var(--i, 0) * 28ms);
+  }
+  .hp-orbit-item:hover { z-index: 3; }
+  .hp-orbit-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: calc(13 * var(--u));
+    background: var(--hp-orbit-tile);
+    border: 1px solid var(--hp-orbit-border);
+    box-shadow: var(--hp-orbit-shadow);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--hp-orbit-icon-b);
+    transition: transform .22s cubic-bezier(0.22,1,0.36,1), box-shadow .22s, border-color .22s;
+  }
+  .hp-orbit-tile svg { width: 50%; height: 50%; overflow: visible; }
+  .hp-orbit-item:hover .hp-orbit-tile {
+    transform: translateY(-3px) scale(1.12);
+    border-color: var(--hp-orbit-border-hover);
+    box-shadow: var(--hp-orbit-shadow-hover);
+  }
+  .hp-orbit-tip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 12px);
+    transform: translate(-50%, 6px);
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--hp-orbit-tip-bg);
+    color: var(--hp-orbit-tip-text);
+    border: 1px solid var(--hp-orbit-tip-border);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    box-shadow: 0 10px 24px rgba(17,12,46,0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .hp-orbit-tip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--hp-orbit-tip-bg);
+  }
+  .hp-orbit-item:hover .hp-orbit-tip { opacity: 1; transform: translate(-50%, 0); }
+  /* Dernière icône, près du bord droit : bulle alignée à droite pour ne pas être coupée */
+  .hp-orbit-item.is-end .hp-orbit-tip { left: auto; right: -6px; transform: translate(0, 6px); }
+  .hp-orbit-item.is-end:hover .hp-orbit-tip { transform: translate(0, 0); }
+  .hp-orbit-item.is-end .hp-orbit-tip::after { left: auto; right: calc(24 * var(--u)); transform: none; }
+  @keyframes hpOrbitIn { from { opacity: 0; transform: translate(-50%, -50%) scale(.85); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+  /* Les zones vides du header et du contenu laissent passer la souris jusqu'aux icônes */
+  .hp-header, .hp-main { pointer-events: none; }
+  .hp-header > *, .hp-content > *, .hp-cards, .hp-actions > * { pointer-events: auto; }
+
   /* ── Structure ── */
   .hp-main {
     position: relative;
@@ -890,6 +1270,8 @@ const STYLES = `
 
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
+  /* Tablette / mobile : le texte occupe toute la largeur, l'orbite est masquée */
+  .is-compact .hp-orbit { display: none; }
   /* Paysage (tablette couchée) : portable visible à droite. Portrait : partie gauche épurée, texte lisible. */
   .is-compact .hp-bg-img { object-position: 100% 55%; }
   @media (orientation: portrait) { .is-compact .hp-bg-img { object-position: 0% center; } }
@@ -992,6 +1374,13 @@ const STYLES = `
     }
   }
 
+  /* ── Orbite visible à partir de 1200 px de large : le texte s'arrête avant la première icône ──
+     (bord gauche de l'orbite = 100vw − 768.7 px d'image × échelle du fond) */
+  @media (min-width: 1200px) {
+    .hp-content { max-width: min(920px, 54vw, calc(100vw - 768.7 * max(100vw / 1672, 100vh / 941) - clamp(20px, 4vw, 56px) - 32px)); }
+  }
+  @media (max-width: 1199px) { .hp-orbit { display: none; } }
+
   /* ── Sélecteur de langue ── */
   .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
   .is-mobile .hp-chip-btn { height: 36px; padding: 0 10px; font-size: 12px; }
@@ -1012,7 +1401,8 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal { animation: none !important; }
-    .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card { transition: none !important; }
+    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal, .hp-orbit-item { animation: none !important; }
+    .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card, .hp-orbit-tile, .hp-orbit-tip { transition: none !important; }
+    .hp-orbit-item:hover .hp-orbit-tile { transform: none; }
   }
 `;
