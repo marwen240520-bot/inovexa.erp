@@ -468,8 +468,8 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-shadow": "rgba(17,24,39,0.18)",
   "--hp-modal-bg": "rgba(255,255,255,0.99)",
   "--hp-overlay": "rgba(30,16,53,0.45)",
-  "--hp-hero-overlay": "none",
-  "--hp-hero-overlay-compact": "none",
+  "--hp-hero-overlay": "linear-gradient(90deg, rgba(248,247,255,0.88) 0%, rgba(245,243,255,0.55) 34%, rgba(245,243,255,0.08) 62%, rgba(245,243,255,0) 100%)",
+  "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(248,247,255,0.86) 0%, rgba(245,243,255,0.6) 50%, rgba(245,243,255,0.25) 100%)",
 };
 
 function buildHpVars(themeId: string, theme: any): Record<string, string> {
@@ -813,8 +813,6 @@ const STYLES = `
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
   .hp-light .hp-footer a { color: #000000; }
-  /* Sans voile sur le fond : copyright plus foncé pour rester lisible sur la vague colorée */
-  .hp-light .hp-footer { color: #1E1035; font-weight: 500; }
 
   /* ── Cartes ── */
   .hp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; max-width: 800px; }
