@@ -816,13 +816,14 @@ const STYLES = `
   /* Sans voile sur le fond : copyright plus foncé pour rester lisible sur la vague colorée */
   .hp-light .hp-footer { color: #1E1035; font-weight: 500; }
 
-  /* ── Cartes ── */
-  .hp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; max-width: 800px; }
-  .hp-card { display: flex; flex-direction: row; align-items: center; gap: 14px; padding: clamp(12px, 2vh, 20px) clamp(14px, 1.4vw, 22px); border-radius: 18px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .2s, border-color .2s; }
+  /* ── Cartes (format compact) ── */
+  .hp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 720px; }
+  .hp-card { display: flex; flex-direction: row; align-items: center; gap: 11px; padding: clamp(10px, 1.5vh, 14px) clamp(12px, 1vw, 16px); border-radius: 14px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .2s, border-color .2s; }
   .hp-card:hover { transform: translateY(-3px); border-color: var(--hp-chip-border); }
-  .hp-card-icon { width: clamp(40px, 6vh, 52px); height: clamp(40px, 6vh, 52px); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
-  .hp-card-title { margin: 0 0 2px; font-size: clamp(15px, min(1.25vw, 2.5vh), 20px); font-weight: 700; color: var(--hp-text); line-height: 1.2; }
-  .hp-card-desc { margin: 0; font-size: clamp(13px, min(1vw, 2.1vh), 16px); color: var(--hp-muted); line-height: 1.35; }
+  .hp-card-icon { width: clamp(34px, 4.6vh, 42px); height: clamp(34px, 4.6vh, 42px); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
+  .hp-card-icon svg { width: 1.15em; height: 1.15em; }
+  .hp-card-title { margin: 0 0 2px; font-size: clamp(13.5px, min(1vw, 2vh), 16px); font-weight: 700; color: var(--hp-text); line-height: 1.2; }
+  .hp-card-desc { margin: 0; font-size: clamp(12px, min(0.85vw, 1.8vh), 14px); color: var(--hp-muted); line-height: 1.35; }
 
   /* ── Marque ── */
   .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
@@ -928,22 +929,22 @@ const STYLES = `
     margin-bottom: 0;
   }
   .is-mobile .hp-cards {
-    gap: 10px;
+    gap: 8px;
     margin-top: 0;
   }
   .is-mobile .hp-card {
-    padding: 8px 11px;
-    gap: 10px;
-    border-radius: 12px;
+    padding: 7px 10px;
+    gap: 9px;
+    border-radius: 11px;
   }
   .is-mobile .hp-card-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 9px;
+    width: 27px;
+    height: 27px;
+    border-radius: 8px;
   }
-  .is-mobile .hp-card-icon svg { width: 1em; height: 1em; }
-  .is-mobile .hp-card-title { font-size: 12.5px; margin-bottom: 1px; }
-  .is-mobile .hp-card-desc  { font-size: 11.5px; line-height: 1.3; }
+  .is-mobile .hp-card-icon svg { width: 0.9em; height: 0.9em; }
+  .is-mobile .hp-card-title { font-size: 12px; margin-bottom: 1px; }
+  .is-mobile .hp-card-desc  { font-size: 11px; line-height: 1.3; }
 
   /* Actions sous les cards — pleine largeur */
   .is-mobile .hp-actions-below {
@@ -963,7 +964,7 @@ const STYLES = `
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
   /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
-  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 10px; } }
+  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
 
   /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
@@ -971,7 +972,7 @@ const STYLES = `
   /* ── Desktop : texte limité à la moitié gauche (ne recouvre pas le portable) + tailles réduites ── */
   @media (min-width: 901px) {
     .hp-content { max-width: min(920px, 54vw); }
-    .hp-cards { max-width: min(800px, 50vw); }
+    .hp-cards { max-width: min(700px, 46vw); }
     .hp-modules {
       font-size: clamp(12px, min(0.95vw, 2vh), 15px);
       padding: 0.42em 0.95em;
