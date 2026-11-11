@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useState, useEffect, CSSProperties } from "react";
+import { useState, useEffect, CSSProperties, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";

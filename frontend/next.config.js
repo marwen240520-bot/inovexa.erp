@@ -63,6 +63,9 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   output: 'standalone',
+  // Le dépôt contient aussi un package-lock.json à la racine : on fixe la racine sur ce dossier
+  // (comportement de Next 14) au lieu de laisser Next.js 16 la deviner.
+  outputFileTracingRoot: __dirname,
   generateEtags: true,
   poweredByHeader: false,
 
@@ -144,15 +147,8 @@ const nextConfig = {
         source: '/:path*',
         headers: SECURITY_HEADERS,
       },
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
+      // /_next/static : Next.js envoie déjà « public, max-age=31536000, immutable » en production.
+      // Next.js 16 déconseille de redéfinir cet en-tête (il perturbe le mode développement).
       {
         source: '/api/:path*',
         headers: [

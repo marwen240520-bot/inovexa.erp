@@ -30,7 +30,8 @@ function apiOrigins(): { origin: string; ws: string } {
   }
 }
 
-export function middleware(request: NextRequest) {
+// Next.js 16 : l'ancien middleware.ts s'appelle désormais proxy.ts (exécuté par Node.js).
+export function proxy(request: NextRequest) {
   const nonce = Buffer.from(
     crypto.randomUUID()
   ).toString('base64');

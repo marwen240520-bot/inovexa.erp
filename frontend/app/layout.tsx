@@ -68,13 +68,14 @@ export const metadata: Metadata = {
   icons: { icon: "/images/logo.png" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const h = headers();
+  // Next.js 16 : headers() et cookies() sont asynchrones.
+  const h = await headers();
   h.get("x-nonce");
 
-  const jar = cookies();
+  const jar = await cookies();
   const language = pickLanguage(jar.get(LANG_COOKIE)?.value, h.get("accept-language"));
   const themeId = normalizeThemeId(jar.get(THEME_COOKIE)?.value);
   const theme = THEMES[themeId];
