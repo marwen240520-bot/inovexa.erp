@@ -71,7 +71,7 @@ const IconSparkles = ({ size = "1.35em", color = "currentColor" }: IconProps) =>
 );
 
 // ─── Types & constantes ────────────────────────────────────────────────────────
-type Lang = "fr" | "en" | "es";
+type Lang = "fr" | "en" | "es" | "ar";
 
 interface AboutSection {
   title: string;
@@ -111,6 +111,7 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "fr" },
   { code: "en", label: "English", flag: "gb" },
   { code: "es", label: "Español", flag: "es" },
+  { code: "ar", label: "العربية", flag: "tn" },
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
@@ -322,12 +323,20 @@ const MODULE_LABELS: Record<Lang, Record<ModuleKey, string>> = {
     finance: "Finanzas", production: "Producción", logistics: "Logística", shipments: "Envíos",
     reports: "Informes", analytics: "Analítica", ai: "Asistente IA",
   },
+  ar: {
+    dashboard: "لوحة القيادة", products: "المنتجات", categories: "الأصناف", stock: "المخزون",
+    pos: "الصندوق السريع", sales: "المبيعات", purchases: "المشتريات", orders: "الطلبيات", invoices: "الفواتير وعروض الأسعار",
+    clients: "العملاء", suppliers: "الموردون", objectives: "الأهداف", hr: "الموارد البشرية",
+    finance: "المالية", production: "الإنتاج", logistics: "اللوجستيك", shipments: "الشحنات",
+    reports: "التقارير", analytics: "التحليلات", ai: "المساعد الذكي",
+  },
 };
 
 const ORBIT_ARIA: Record<Lang, string> = {
   fr: "Modules d'Inovexa ERP",
   en: "Inovexa ERP modules",
   es: "Módulos de Inovexa ERP",
+  ar: "وحدات Inovexa ERP",
 };
 
 function ModuleOrbit({ lang }: { lang: Lang }): React.ReactElement {
@@ -704,6 +713,113 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
       { title: "Connected ecosystem", desc: "Connect your teams and sync your activities for smoother, more efficient management." },
     ],
   },
+  ar: {
+    title: "مستقبل إدارة الأعمال يبدأ من هنا.",
+    modules: "المبيعات · المخزون · الفواتير · الموارد البشرية · المالية والمزيد...",
+    subtitle: "مع Inovexa ERP، أدِر مؤسستك كاملةً من منصة واحدة",
+    button: "الدخول إلى لوحة القيادة",
+    login: "ابدأ الآن",
+    aboutBtn: "من نحن",
+    aboutClose: "إغلاق",
+    aboutBadge: "Inovexa ERP — نظام ERP من الجيل الجديد",
+    aboutContent: {
+      headline: "إدارة مؤسستك، 100% عبر الإنترنت.",
+      intro: [
+        "Inovexa ERP حلّ لإدارة المؤسسات يعتمد نموذج SaaS، صُمّم لتجميع عملياتك اليومية وتبسيطها وتحسينها.",
+        "بفضل منصة واحدة متاحة عبر الإنترنت، أدِر مخزونك ومبيعاتك ومشترياتك وفواتيرك وماليتك ومواردك البشرية وغير ذلك الكثير.",
+      ],
+      sections: [
+        {
+          title: "مهمتنا",
+          body: "مرافقة المؤسسات في رقمنة إدارتها عبر توفير بيئة رقمية تسهّل تنظيم العمليات والوصول إلى المعلومات الأساسية. نسعى إلى إدارة أكثر تنظيمًا تدعم تجميع البيانات ووضوح الرؤية على الأنشطة.",
+        },
+        {
+          title: "رؤيتنا",
+          body: "بيئة مهنية تصل فيها المؤسسات إلى بياناتها بسهولة، وتنظّم إجراءاتها، وتتابع أنشطتها من نظام إدارة متكامل.",
+          items: [
+            "رقمنة إجراءات العمل",
+            "تكامل وظائف الإدارة",
+            "تطور تكنولوجي تدريجي",
+          ],
+        },
+        {
+          title: "حلّ ERP يعتمد نموذج SaaS",
+          body: "يوفّر Inovexa ERP بيئة إدارة متاحة عبر الإنترنت من الأجهزة المتوافقة، وفق شروط الوصول المعمول بها.",
+          items: [
+            "إتاحة عبر الإنترنت",
+            "بيئة إدارة مركزية",
+            "مقاربة قائمة على الوحدات",
+            "مواكبة تطور الحاجات",
+            "وصول حسب الصلاحيات",
+          ],
+        },
+        {
+          title: "قائمة الوظائف",
+          body: "تغطي الوحدات مجمل الحاجات التشغيلية للمؤسسة:",
+          items: [
+            "المتابعة ولوحة القيادة",
+            "المنتجات والأصناف والمخزون",
+            "المبيعات والمشتريات والطلبيات والصندوق السريع",
+            "العملاء والموردون والفواتير",
+            "المالية والموارد البشرية",
+            "اللوجستيك والتقارير والتحليلات",
+            "مساعد ذكي مدمج",
+            "الملف الشخصي والإعدادات",
+          ],
+        },
+        {
+          title: "المبادئ الأساسية",
+          body: "مقاربة منظَّمة تقوم على تجميع المعلومات والتنظيم ووضوح الرؤية التشغيلية.",
+          items: [
+            "تجميع المعلومات",
+            "تنظيم الإجراءات",
+            "وضوح الرؤية التشغيلية",
+            "إتاحة عبر الإنترنت",
+            "مساعدة ذكية (ذكاء اصطناعي)",
+            "مقاربة قابلة للتطور",
+          ],
+        },
+        {
+          title: "قطاعات النشاط",
+          body: "يتوجّه Inovexa ERP خاصةً إلى:",
+          items: [
+            "المتاجر والموزعين",
+            "مؤسسات الخدمات",
+            "المؤسسات الصناعية",
+            "الفاعلين في اللوجستيك",
+            "المؤسسات في طور النمو",
+          ],
+        },
+        {
+          title: "الأمان وإدارة البيانات",
+          body: "تقوم الحماية على إدارة صلاحيات الوصول، والتحقق من الهوية، وتأمين تبادل البيانات، وإجراءات الصيانة. وتُعرَض الالتزامات الدقيقة بحسب الآليات المعتمدة فعليًا.",
+        },
+        {
+          title: "التزامنا",
+          body: "مقاربة موجَّهة نحو حاجاتكم، تقوم على الوضوح والتنظيم وسهولة الوصول والتكيّف والتطور والشفافية.",
+        },
+      ],
+      ctaLabel: "اكتشف حلّنا",
+      ctaHref: "https://www.inovexa-erp.com/",
+      emailLabel: "اتصل بنا",
+      email: "contact@inovexa.com",
+    },
+    copyright: "جميع الحقوق محفوظة.",
+    privacy: "الخصوصية",
+    terms: "الشروط",
+    langLabel: "اختيار اللغة",
+    ai: {
+      title: "نظام ذكي",
+      badge: "ذكاء اصطناعي مدمج",
+      desc: "مساعد ذكي يجيب عن أسئلتك انطلاقًا من بياناتك الخاصة.",
+    },
+    features: [
+      { title: "إدارة مركزية", desc: "كل إجراءات عملك مجتمعة في منصة واحدة." },
+      { title: "قيادة ذكية", desc: "حوّل بياناتك إلى قرارات استراتيجية." },
+      { title: "أمان متقدم", desc: "بنية تحتية مصمَّمة لحماية بياناتك." },
+      { title: "منظومة مترابطة", desc: "اربط فرق عملك ونسّق أنشطتك لإدارة أكثر سلاسة وفعالية." },
+    ],
+  },
 };
 
 // Couleurs de la page
@@ -758,7 +874,7 @@ export default function HomePage(): React.ReactElement {
   const { isMobile, isTablet } = useResponsive();
   const isCompact = isMobile || isTablet;
 
-  const lang: Lang = (["fr", "en", "es"] as const).includes(language as Lang) ? (language as Lang) : "en";
+  const lang: Lang = (["fr", "en", "es", "ar"] as const).includes(language as Lang) ? (language as Lang) : "en";
   const text = TRANSLATIONS[lang];
   const currentLang = LANGS.find((l) => l.code === lang)!;
 
@@ -828,7 +944,7 @@ export default function HomePage(): React.ReactElement {
       <span className="hp-logo">
         <img src="/images/logo.png" alt="" width={88} height={88} />
       </span>
-      <span className="hp-brand-name">
+      <span className="hp-brand-name" lang="en" dir="ltr">
         <b>INOV</b>EXA <span className="hp-brand-erp">ERP</span>
       </span>
     </Link>
@@ -1279,10 +1395,10 @@ const STYLES = `
   /* ── Fenêtre « À propos » ── */
   .hp-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--hp-overlay); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: overlayIn .2s ease-out; }
   .hp-modal { position: relative; width: 100%; max-width: 720px; max-height: min(88dvh, 820px); overflow-y: auto; padding: clamp(24px, 4vw, 40px); border-radius: 24px; background: var(--hp-modal-bg); border: 1px solid var(--hp-chip-border); box-shadow: 0 30px 80px var(--hp-shadow); color: var(--hp-text); animation: modalIn .25s cubic-bezier(0.22,1,0.36,1); }
-  .hp-modal-close { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); cursor: pointer; transition: background .2s; }
+  .hp-modal-close { position: absolute; top: 14px; inset-inline-end: 14px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); cursor: pointer; transition: background .2s; }
   .hp-modal-close:hover { background: var(--hp-glass); }
   .hp-modal-badge { display: inline-block; padding: 0.45em 1em; margin-bottom: 16px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-accent-text); font-size: 12px; font-weight: 700; letter-spacing: 0.4px; }
-  .hp-modal-title { margin: 0 0 14px; padding-right: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
+  .hp-modal-title { margin: 0 0 14px; padding-inline-end: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
   .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 15.5px; line-height: 1.65; }
   .hp-modal-section { margin-bottom: 22px; }
   .hp-modal-section:last-of-type { margin-bottom: 8px; }
@@ -1416,11 +1532,28 @@ const STYLES = `
   .is-mobile .hp-chip-btn { height: 36px; padding: 0 10px; font-size: 12px; }
   .hp-chevron { display: inline-flex; transition: transform .2s; }
   .hp-chevron.open { transform: rotate(180deg); }
-  .hp-lang-menu { position: absolute; top: 48px; right: 0; background: var(--hp-menu-bg); backdrop-filter: blur(20px); border: 1px solid var(--hp-chip-border); border-radius: 14px; padding: 6px !important; min-width: 150px; box-shadow: 0 20px 40px var(--hp-shadow); z-index: 201; animation: menuIn .16s ease-out; }
-  .hp-lang-item { width: 100%; background: transparent; border: none; color: var(--hp-menu-text); padding: 11px 12px; min-height: 44px; border-radius: 9px; cursor: pointer; text-align: left; font-size: 14px; font-family: inherit; display: flex; align-items: center; gap: 10px; }
+  .hp-lang-menu { position: absolute; top: 48px; inset-inline-end: 0; background: var(--hp-menu-bg); backdrop-filter: blur(20px); border: 1px solid var(--hp-chip-border); border-radius: 14px; padding: 6px !important; min-width: 150px; box-shadow: 0 20px 40px var(--hp-shadow); z-index: 201; animation: menuIn .16s ease-out; }
+  .hp-lang-item { width: 100%; background: transparent; border: none; color: var(--hp-menu-text); padding: 11px 12px; min-height: 44px; border-radius: 9px; cursor: pointer; text-align: start; font-size: 14px; font-family: inherit; display: flex; align-items: center; gap: 10px; }
   .hp-lang-item:hover { background: rgba(167,139,250,0.12); }
   .hp-lang-item.active { background: rgba(167,139,250,0.2); color: var(--hp-accent-text); font-weight: 700; }
   @keyframes menuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+  /* ── Arabe (lecture de droite à gauche) ──
+     L'image de fond ne se retourne pas (le portable et ses icônes restent à droite) : sur ordinateur,
+     la colonne de texte reste donc dans la moitié gauche ; elle est simplement alignée à droite et
+     s'arrête, comme en français, avant le portable (mêmes largeurs que .hp-content ci-dessus). */
+  @media (min-width: 901px) {
+    [dir="rtl"] .hp-main { padding-inline-start: calc(100% - clamp(20px, 4vw, 56px) - min(920px, 54vw)); }
+  }
+  @media (min-width: 1200px) {
+    [dir="rtl"] .hp-main { padding-inline-start: calc(100% - clamp(20px, 4vw, 56px) - min(920px, 54vw, calc(100vw - 768.7 * max(100vw / 1672, 100vh / 941) - clamp(20px, 4vw, 56px) - 32px))); }
+  }
+  /* L'écriture arabe est plus haute que l'écriture latine : interligne des titres relâché */
+  [dir="rtl"] .hp-title { line-height: 1.3; }
+  [dir="rtl"] .hp-modal-title { line-height: 1.4; }
+  /* Flèche des boutons : pointe vers la gauche, dans le sens de la lecture */
+  [dir="rtl"] .hp-cta-arrow svg { transform: scaleX(-1); }
+  [dir="rtl"] .hp-cta:hover .hp-cta-arrow { transform: translateX(-3px); }
 
   /* ── Apparition sans JavaScript ── */
   .hp-rise { animation: hpRise .55s cubic-bezier(0.22,1,0.36,1) both; }

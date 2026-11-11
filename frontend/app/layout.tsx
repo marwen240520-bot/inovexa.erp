@@ -5,7 +5,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import AppBoot from "@/components/AppBoot";
-import { LANG_COOKIE, deepMerge, pickLanguage, type Lang } from "@/lib/i18n";
+import { LANG_COOKIE, deepMerge, languageDir, pickLanguage, type Lang } from "@/lib/i18n";
 import { THEMES, THEME_COOKIE, normalizeThemeId, themeCssVars } from "@/lib/themes";
 
 const poppins = localFont({
@@ -33,12 +33,13 @@ const orbitron = localFont({
 import fr from "@/public/locales/fr.json";
 import en from "@/public/locales/en.json";
 import es from "@/public/locales/es.json";
+import ar from "@/public/locales/ar.json";
 
 // @ts-ignore
 import "./globals.css";
 import "./theme-remap.css";
 
-const RAW_MESSAGES: Record<Lang, any> = { fr, en, es };
+const RAW_MESSAGES: Record<Lang, any> = { fr, en, es, ar };
 const MERGED_MESSAGES: Partial<Record<Lang, any>> = {};
 function messagesFor(lang: Lang) {
   if (!MERGED_MESSAGES[lang]) {
@@ -90,6 +91,7 @@ export default async function RootLayout({
   return (
     <html
       lang={language}
+      dir={languageDir(language)}
       data-theme={themeId}
       data-mode={theme.mode === "light" ? "light" : "dark"}
       className={`${poppins.variable} ${orbitron.variable}`}

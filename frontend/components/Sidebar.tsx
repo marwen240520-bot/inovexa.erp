@@ -21,21 +21,21 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
 );
 
 const EXTRA_LABELS: Record<string, Record<string, string>> = {
-  "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida" },
-  "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
-  "common.more": { fr: "Plus", en: "More", es: "Más" },
-  "common.menu": { fr: "Menu", en: "Menu", es: "Menú" },
-  "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos" },
-  "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
-  "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión" },
-  "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja" },
+  "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida", ar: "الصندوق السريع" },
+  "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos", ar: "الأهداف" },
+  "common.more": { fr: "Plus", en: "More", es: "Más", ar: "المزيد" },
+  "common.menu": { fr: "Menu", en: "Menu", es: "Menú", ar: "القائمة" },
+  "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos", ar: "الفواتير وعروض الأسعار" },
+  "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad", ar: "المحاسبة" },
+  "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión", ar: "تقارير التسيير" },
+  "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja", ar: "جلسات الصندوق" },
   // Titres des sections de la barre latérale
-  "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial" },
-  "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento" },
-  "nav.groups.inventory": { fr: "Stock & logistique", en: "Inventory & logistics", es: "Inventario y logística" },
-  "nav.groups.finance": { fr: "Finance & RH", en: "Finance & HR", es: "Finanzas y RR. HH." },
-  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Análisis" },
-  "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta" },
+  "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial", ar: "المبيعات والعملاء" },
+  "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento", ar: "التزويد" },
+  "nav.groups.inventory": { fr: "Stock & logistique", en: "Inventory & logistics", es: "Inventario y logística", ar: "المخزون واللوجستيك" },
+  "nav.groups.finance": { fr: "Finance & RH", en: "Finance & HR", es: "Finanzas y RR. HH.", ar: "المالية والموارد البشرية" },
+  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Análisis", ar: "المتابعة والتحليل" },
+  "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta", ar: "الحساب" },
 };
 
 const ICONS: Record<string, React.ReactElement> = {
@@ -336,7 +336,7 @@ export function getCachedModules(): Record<string, boolean> | null {
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { t, language } = useLanguage();
+  const { t, language, isRtl } = useLanguage();
   const { theme, themeId } = useTheme();
 
   const [user, setUser] = useState<User | null>(sidebarCachedUser);
@@ -673,7 +673,7 @@ export default function Sidebar() {
   msOverflowStyle: "none",
   zIndex: 1000,
   top: 0,
-  left: 0,
+  insetInlineStart: 0,
   display: "flex",
   flexDirection: "column",
   transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -733,7 +733,8 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       gap: "10px",
-      padding: "9px 12px 9px 14px",
+      padding: "9px 12px",
+      paddingInlineStart: "14px",
       marginBottom: "2px",
       cursor: "pointer",
       textDecoration: "none",
@@ -759,12 +760,13 @@ export default function Sidebar() {
       alignItems: "center",
       gap: "8px",
       width: "100%",
-      padding: "16px 12px 6px 14px",
+      padding: "16px 12px 6px",
+      paddingInlineStart: "14px",
       background: "transparent",
       border: "none",
       borderRadius: "8px",
       cursor: "pointer",
-      textAlign: "left",
+      textAlign: "start",
       transition: "color 0.2s ease",
       fontFamily: FONT_STACK,
     },
@@ -801,7 +803,8 @@ export default function Sidebar() {
       display: "flex",
       alignItems: "center",
       gap: "10px",
-      padding: "9px 12px 9px 14px",
+      padding: "9px 12px",
+      paddingInlineStart: "14px",
       background: "rgba(239,68,68,0.08)",
       color: "#f87171",
       border: "1px solid rgba(239,68,68,0.14)",
@@ -849,6 +852,8 @@ export default function Sidebar() {
     },
   };
 
+  const hoverShift = isRtl ? "translateX(-4px)" : "translateX(4px)";
+
   const handleMouseEnter = (itemId: string) => setHoveredItem(itemId);
   const handleMouseLeave = () => setHoveredItem(null);
 
@@ -881,7 +886,7 @@ export default function Sidebar() {
           ...styles.navItem,
           background: `${ct.primary}0f`,
           color: ct.primary,
-          transform: "translateX(4px)",
+          transform: hoverShift,
         };
       }
       return { ...styles.navItem, background: "transparent", color: navText };
@@ -935,7 +940,7 @@ export default function Sidebar() {
           )}
           <span
             aria-hidden="true"
-            style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+            style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : isRtl ? "rotate(90deg)" : "rotate(-90deg)" }}
           >
             {ICONS.chevron}
           </span>
@@ -1002,7 +1007,7 @@ export default function Sidebar() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/logo.png" alt="" width={92} height={92} style={styles.logoImage} />
             <div style={styles.brandContainer}>
-              <div style={styles.logoTitle}>
+              <div style={styles.logoTitle} lang="en" dir="ltr">
                 INOVEXA <span style={styles.logoErp}>ERP</span>
               </div>
             </div>
@@ -1040,7 +1045,7 @@ export default function Sidebar() {
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           {navigationError}
-          <span style={{ opacity: 0.6, marginLeft: "4px" }}>✕</span>
+          <span style={{ opacity: 0.6, marginInlineStart: "4px" }}>✕</span>
         </div>
       )}
 
@@ -1054,7 +1059,7 @@ export default function Sidebar() {
                   <span style={styles.mobileMoreTitle}>{getLabel("common.menu")}</span>
                   <button
                     type="button"
-                    aria-label="Fermer"
+                    aria-label={getLabel("common.close")}
                     onClick={() => setMobileMoreOpen(false)}
                     style={{ background: "transparent", border: "none", cursor: "pointer", color: navText, padding: "4px" }}
                   >
@@ -1211,7 +1216,7 @@ export default function Sidebar() {
               </div>
 
               <div style={styles.brandContainer}>
-                <div style={styles.logoTitle}>
+                <div style={{ ...styles.logoTitle, textAlign: isRtl ? "right" : "left" }} lang="en" dir="ltr">
                   INOVEXA <span style={styles.logoErp}>ERP</span>
                 </div>
                 <div style={{
@@ -1226,7 +1231,7 @@ export default function Sidebar() {
                   {role === "admin"
                     ? getLabel("admin.title")
                     : role === "transporteur"
-                    ? "Transporteur"
+                    ? getLabel("profile.transporter")
                     : getLabel("common.profile")}
                 </div>
               </div>
@@ -1244,7 +1249,7 @@ export default function Sidebar() {
               style={styles.logoutBtn}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(239,68,68,0.15)";
-                e.currentTarget.style.transform = "translateX(4px)";
+                e.currentTarget.style.transform = hoverShift;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "rgba(239,68,68,0.08)";

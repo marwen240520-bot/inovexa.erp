@@ -119,14 +119,14 @@ export default function TransporteurLayout({
 
   const getTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
-      'common.loading': { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...' },
-      'common.logout': { fr: 'Déconnexion', en: 'Logout', es: 'Cerrar sesión' },
-      'common.logoutWarning': { fr: 'Êtes-vous sûr de vouloir vous déconnecter ?', en: 'Are you sure you want to logout?', es: '¿Estás seguro de que quieres cerrar sesión?' },
-      'transporteur.dashboard.title': { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel de control' },
-      'transporteur.shipments.title': { fr: 'Mes livraisons', en: 'My shipments', es: 'Mis entregas' },
-      'transporteur.profile.title': { fr: 'Mon profil', en: 'My profile', es: 'Mi perfil' },
-      'transporteur.settings.title': { fr: 'Paramètres', en: 'Settings', es: 'Configuración' },
-      'transporteur.role.label': { fr: 'Transporteur', en: 'Transporter', es: 'Transportista' },
+      'common.loading': { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...', ar: 'جارٍ التحميل...' },
+      'common.logout': { fr: 'Déconnexion', en: 'Logout', es: 'Cerrar sesión', ar: 'تسجيل الخروج' },
+      'common.logoutWarning': { fr: 'Êtes-vous sûr de vouloir vous déconnecter ?', en: 'Are you sure you want to logout?', es: '¿Estás seguro de que quieres cerrar sesión?', ar: 'هل أنت متأكد من أنك تريد تسجيل الخروج؟' },
+      'transporteur.dashboard.title': { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel de control', ar: 'لوحة القيادة' },
+      'transporteur.shipments.title': { fr: 'Mes livraisons', en: 'My shipments', es: 'Mis entregas', ar: 'شحناتي' },
+      'transporteur.profile.title': { fr: 'Mon profil', en: 'My profile', es: 'Mi perfil', ar: 'ملفي الشخصي' },
+      'transporteur.settings.title': { fr: 'Paramètres', en: 'Settings', es: 'Configuración', ar: 'الإعدادات' },
+      'transporteur.role.label': { fr: 'Transporteur', en: 'Transporter', es: 'Transportista', ar: 'ناقل' },
     };
 
     if (translations[key] && translations[key][language]) {
@@ -272,10 +272,10 @@ export default function TransporteurLayout({
         <div style={{
           width: "260px",
           background: "var(--theme-surface)",
-          borderRight: "1px solid var(--theme-border)",
+          borderInlineEnd: "1px solid var(--theme-border)",
           position: "fixed",
           height: "100vh",
-          left: 0,
+          insetInlineStart: 0,
           top: 0,
           zIndex: 50,
           display: "flex",
@@ -418,13 +418,13 @@ export default function TransporteurLayout({
       )}
 
       {/* Bouton de thème (clair / sombre) */}
-      <div style={{ position: "fixed", top: "12px", right: "14px", zIndex: 900 }}>
+      <div style={{ position: "fixed", top: "12px", insetInlineEnd: "14px", zIndex: 900 }}>
         <ThemeToggle size={38} />
       </div>
 
       {/* Main Content */}
       <div style={{
-        marginLeft: !isMobile ? "260px" : 0,
+        marginInlineStart: !isMobile ? "260px" : 0,
         marginBottom: isMobile ? "70px" : 0,
         minHeight: "100vh",
         background: "var(--theme-background)"

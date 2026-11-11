@@ -142,7 +142,7 @@ const Ic = {
 
 export default function TransporteurDashboard() {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t, language, locale } = useLanguage();
   const [user, setUser] = useState<{ name: string; role: string } | null>(null);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, inTransit: 0, delivered: 0, cancelled: 0 });
@@ -171,50 +171,50 @@ export default function TransporteurDashboard() {
 
   const getTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
-      'common.loading': { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...' },
-      'common.error': { fr: 'Erreur', en: 'Error', es: 'Error' },
-      'dashboard.greeting_morning': { fr: 'Bonjour', en: 'Good morning', es: 'Buenos días' },
-      'dashboard.greeting_afternoon': { fr: 'Bon après-midi', en: 'Good afternoon', es: 'Buenas tardes' },
-      'dashboard.greeting_evening': { fr: 'Bonsoir', en: 'Good evening', es: 'Buenas noches' },
-      'dashboard.completed_deliveries': { fr: 'livraisons complétées', en: 'completed deliveries', es: 'entregas completadas' },
-      'dashboard.pending_notification': { fr: 'livraison(s) en attente', en: 'pending delivery(ies)', es: 'entrega(s) pendiente(s)' },
-      'dashboard.all_up_to_date': { fr: 'Tout est à jour', en: 'All up to date', es: 'Todo está al día' },
-      'dashboard.refresh': { fr: 'Actualiser', en: 'Refresh', es: 'Actualizar' },
-      'dashboard.notifications_title': { fr: 'Notifications', en: 'Notifications', es: 'Notificaciones' },
-      'dashboard.now': { fr: 'Maintenant', en: 'Now', es: 'Ahora' },
-      'dashboard.today': { fr: "Aujourd'hui", en: 'Today', es: 'Hoy' },
-      'dashboard.shipment': { fr: 'Livraison', en: 'Shipment', es: 'Envío' },
-      'dashboard.delivered_status': { fr: 'livrée', en: 'delivered', es: 'entregado' },
-      'dashboard.in_transit_status': { fr: 'en transit', en: 'in transit', es: 'en tránsito' },
-      'dashboard.pending_status': { fr: 'en attente', en: 'pending', es: 'pendiente' },
-      'dashboard.total_deliveries': { fr: 'Livraisons totales', en: 'Total deliveries', es: 'Entregas totales' },
-      'dashboard.pending': { fr: 'En attente', en: 'Pending', es: 'Pendientes' },
-      'dashboard.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
-      'dashboard.delivered': { fr: 'Livrées', en: 'Delivered', es: 'Entregadas' },
-      'dashboard.success_rate': { fr: 'Taux de réussite', en: 'Success rate', es: 'Tasa de éxito' },
-      'dashboard.performance': { fr: 'Performance', en: 'Performance', es: 'Rendimiento' },
-      'dashboard.to_process': { fr: 'À traiter', en: 'To process', es: 'Por procesar' },
-      'dashboard.in_progress': { fr: 'En cours', en: 'In progress', es: 'En progreso' },
-      'dashboard.excellent': { fr: 'Excellent', en: 'Excellent', es: 'Excelente' },
-      'dashboard.to_improve': { fr: 'À améliorer', en: 'To improve', es: 'Por mejorar' },
-      'dashboard.progressing': { fr: 'Progression', en: 'Progressing', es: 'Progresando' },
-      'dashboard.new': { fr: 'Nouveau', en: 'New', es: 'Nuevo' },
-      'dashboard.delivery_evolution': { fr: 'Évolution des livraisons', en: 'Delivery evolution', es: 'Evolución de entregas' },
-      'dashboard.week': { fr: 'Semaine', en: 'Week', es: 'Semana' },
-      'dashboard.month': { fr: 'Mois', en: 'Month', es: 'Mes' },
-      'dashboard.year': { fr: 'Année', en: 'Year', es: 'Año' },
-      'dashboard.no_data': { fr: 'Aucune donnée disponible', en: 'No data available', es: 'No hay datos disponibles' },
-      'dashboard.assigned_shipments': { fr: 'Livraisons assignées', en: 'Assigned shipments', es: 'Envíos asignados' },
-      'dashboard.completed_shipments': { fr: 'Livraisons complétées', en: 'Completed shipments', es: 'Entregas completadas' },
-      'dashboard.my_deliveries': { fr: 'Mes livraisons', en: 'My deliveries', es: 'Mis entregas' },
-      'dashboard.all': { fr: 'Toutes', en: 'All', es: 'Todas' },
-      'dashboard.no_deliveries': { fr: 'Aucune livraison assignée', en: 'No deliveries assigned', es: 'No hay entregas asignadas' },
-      'dashboard.admin_will_assign': { fr: 'Un administrateur vous assignera des livraisons', en: 'An administrator will assign deliveries to you', es: 'Un administrador le asignará entregas' },
-      'status.delivered': { fr: 'Livrée', en: 'Delivered', es: 'Entregado' },
-      'status.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
-      'status.pending': { fr: 'En attente', en: 'Pending', es: 'Pendiente' },
-      'shipments.unknown_client': { fr: 'Client inconnu', en: 'Unknown client', es: 'Cliente desconocido' },
-      'shipments.no_address': { fr: 'Adresse non disponible', en: 'Address not available', es: 'Dirección no disponible' },
+      'common.loading': { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...', ar: 'جارٍ التحميل...' },
+      'common.error': { fr: 'Erreur', en: 'Error', es: 'Error', ar: 'خطأ' },
+      'dashboard.greeting_morning': { fr: 'Bonjour', en: 'Good morning', es: 'Buenos días', ar: 'صباح الخير' },
+      'dashboard.greeting_afternoon': { fr: 'Bon après-midi', en: 'Good afternoon', es: 'Buenas tardes', ar: 'مساء الخير' },
+      'dashboard.greeting_evening': { fr: 'Bonsoir', en: 'Good evening', es: 'Buenas noches', ar: 'مساء الخير' },
+      'dashboard.completed_deliveries': { fr: 'livraisons complétées', en: 'completed deliveries', es: 'entregas completadas', ar: 'شحنات مكتملة' },
+      'dashboard.pending_notification': { fr: 'livraison(s) en attente', en: 'pending delivery(ies)', es: 'entrega(s) pendiente(s)', ar: 'شحنات قيد الانتظار' },
+      'dashboard.all_up_to_date': { fr: 'Tout est à jour', en: 'All up to date', es: 'Todo está al día', ar: 'كل شيء محدَّث' },
+      'dashboard.refresh': { fr: 'Actualiser', en: 'Refresh', es: 'Actualizar', ar: 'تحديث' },
+      'dashboard.notifications_title': { fr: 'Notifications', en: 'Notifications', es: 'Notificaciones', ar: 'الإشعارات' },
+      'dashboard.now': { fr: 'Maintenant', en: 'Now', es: 'Ahora', ar: 'الآن' },
+      'dashboard.today': { fr: "Aujourd'hui", en: 'Today', es: 'Hoy', ar: 'اليوم' },
+      'dashboard.shipment': { fr: 'Livraison', en: 'Shipment', es: 'Envío', ar: 'الشحنة' },
+      'dashboard.delivered_status': { fr: 'livrée', en: 'delivered', es: 'entregado', ar: 'تم تسليمها' },
+      'dashboard.in_transit_status': { fr: 'en transit', en: 'in transit', es: 'en tránsito', ar: 'قيد النقل' },
+      'dashboard.pending_status': { fr: 'en attente', en: 'pending', es: 'pendiente', ar: 'قيد الانتظار' },
+      'dashboard.total_deliveries': { fr: 'Livraisons totales', en: 'Total deliveries', es: 'Entregas totales', ar: 'إجمالي الشحنات' },
+      'dashboard.pending': { fr: 'En attente', en: 'Pending', es: 'Pendientes', ar: 'قيد الانتظار' },
+      'dashboard.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito', ar: 'قيد النقل' },
+      'dashboard.delivered': { fr: 'Livrées', en: 'Delivered', es: 'Entregadas', ar: 'مُسلَّمة' },
+      'dashboard.success_rate': { fr: 'Taux de réussite', en: 'Success rate', es: 'Tasa de éxito', ar: 'نسبة النجاح' },
+      'dashboard.performance': { fr: 'Performance', en: 'Performance', es: 'Rendimiento', ar: 'الأداء' },
+      'dashboard.to_process': { fr: 'À traiter', en: 'To process', es: 'Por procesar', ar: 'للمعالجة' },
+      'dashboard.in_progress': { fr: 'En cours', en: 'In progress', es: 'En progreso', ar: 'قيد التنفيذ' },
+      'dashboard.excellent': { fr: 'Excellent', en: 'Excellent', es: 'Excelente', ar: 'ممتاز' },
+      'dashboard.to_improve': { fr: 'À améliorer', en: 'To improve', es: 'Por mejorar', ar: 'يحتاج إلى تحسين' },
+      'dashboard.progressing': { fr: 'Progression', en: 'Progressing', es: 'Progresando', ar: 'في تقدم' },
+      'dashboard.new': { fr: 'Nouveau', en: 'New', es: 'Nuevo', ar: 'جديد' },
+      'dashboard.delivery_evolution': { fr: 'Évolution des livraisons', en: 'Delivery evolution', es: 'Evolución de entregas', ar: 'تطور الشحنات' },
+      'dashboard.week': { fr: 'Semaine', en: 'Week', es: 'Semana', ar: 'أسبوع' },
+      'dashboard.month': { fr: 'Mois', en: 'Month', es: 'Mes', ar: 'شهر' },
+      'dashboard.year': { fr: 'Année', en: 'Year', es: 'Año', ar: 'سنة' },
+      'dashboard.no_data': { fr: 'Aucune donnée disponible', en: 'No data available', es: 'No hay datos disponibles', ar: 'لا توجد بيانات متاحة' },
+      'dashboard.assigned_shipments': { fr: 'Livraisons assignées', en: 'Assigned shipments', es: 'Envíos asignados', ar: 'الشحنات المُسنَدة' },
+      'dashboard.completed_shipments': { fr: 'Livraisons complétées', en: 'Completed shipments', es: 'Entregas completadas', ar: 'الشحنات المكتملة' },
+      'dashboard.my_deliveries': { fr: 'Mes livraisons', en: 'My deliveries', es: 'Mis entregas', ar: 'شحناتي' },
+      'dashboard.all': { fr: 'Toutes', en: 'All', es: 'Todas', ar: 'الكل' },
+      'dashboard.no_deliveries': { fr: 'Aucune livraison assignée', en: 'No deliveries assigned', es: 'No hay entregas asignadas', ar: 'لا توجد شحنات مُسنَدة' },
+      'dashboard.admin_will_assign': { fr: 'Un administrateur vous assignera des livraisons', en: 'An administrator will assign deliveries to you', es: 'Un administrador le asignará entregas', ar: 'سيُسند إليك أحد المسؤولين شحنات' },
+      'status.delivered': { fr: 'Livrée', en: 'Delivered', es: 'Entregado', ar: 'تم التسليم' },
+      'status.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito', ar: 'قيد النقل' },
+      'status.pending': { fr: 'En attente', en: 'Pending', es: 'Pendiente', ar: 'قيد الانتظار' },
+      'shipments.unknown_client': { fr: 'Client inconnu', en: 'Unknown client', es: 'Cliente desconocido', ar: 'عميل غير معروف' },
+      'shipments.no_address': { fr: 'Adresse non disponible', en: 'Address not available', es: 'Dirección no disponible', ar: 'العنوان غير متوفر' },
     };
     if (translations[key] && translations[key][language]) {
       return translations[key][language];
@@ -288,12 +288,10 @@ export default function TransporteurDashboard() {
 
   const getCurrentDate = () => {
     const now = new Date();
-    const locale = language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US";
     return now.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   const getFormattedTime = () => {
-    const locale = language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US";
     return currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -383,7 +381,6 @@ export default function TransporteurDashboard() {
         const year = monthIndex < 0 ? currentYear - 1 : currentYear;
         const realMonthIndex = ((monthIndex % 12) + 12) % 12;
         const date = new Date(year, realMonthIndex, 1);
-        const locale = language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-US";
         labels.push(date.toLocaleDateString(locale, { month: 'short' }));
         const monthStart = new Date(year, realMonthIndex, 1);
         monthStart.setHours(0, 0, 0, 0);

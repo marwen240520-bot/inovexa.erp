@@ -333,10 +333,10 @@ export default function DashboardPage() {
 
   const getTempTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
-      "dashboard.profile": { fr: "Mon profil", en: "My profile", es: "Mi perfil" },
-      "dashboard.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes" },
-      "common.profile": { fr: "Profil", en: "Profile", es: "Perfil" },
-      "common.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes" }
+      "dashboard.profile": { fr: "Mon profil", en: "My profile", es: "Mi perfil", ar: "ملفي الشخصي" },
+      "dashboard.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes", ar: "الإعدادات" },
+      "common.profile": { fr: "Profil", en: "Profile", es: "Perfil", ar: "الملف الشخصي" },
+      "common.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes", ar: "الإعدادات" }
     };
     if (translations[key] && translations[key][language]) return translations[key][language];
     const translated = t(key);
@@ -424,6 +424,7 @@ export default function DashboardPage() {
     switch(language) {
       case 'fr': return 'fr-FR';
       case 'es': return 'es-ES';
+      case 'ar': return 'ar-TN';
       default: return 'en-US';
     }
   };
@@ -454,11 +455,11 @@ export default function DashboardPage() {
   };
 
   const getPeriodOptions = (): { value: string; label: string; icon: keyof typeof Icons }[] => [
-    { value: "day",     label: language === 'fr' ? "Jour"      : language === 'es' ? "Déa"       : "Day",     icon: "DayIcon"     },
-    { value: "week",    label: language === 'fr' ? "Semaine"   : language === 'es' ? "Semana"    : "Week",    icon: "WeekIcon"    },
-    { value: "month",   label: language === 'fr' ? "Mois"      : language === 'es' ? "Mes"       : "Month",   icon: "MonthIcon"   },
-    { value: "quarter", label: language === 'fr' ? "Trimestre" : language === 'es' ? "Trimestre" : "Quarter", icon: "QuarterIcon" },
-    { value: "year",    label: language === 'fr' ? "Année"     : language === 'es' ? "Aéo"       : "Year",    icon: "YearIcon"    }
+    { value: "day",     label: language === 'fr' ? "Jour"      : language === 'es' ? "Déa"       : language === 'ar' ? "يوم"   : "Day",     icon: "DayIcon"     },
+    { value: "week",    label: language === 'fr' ? "Semaine"   : language === 'es' ? "Semana"    : language === 'ar' ? "أسبوع" : "Week",    icon: "WeekIcon"    },
+    { value: "month",   label: language === 'fr' ? "Mois"      : language === 'es' ? "Mes"       : language === 'ar' ? "شهر"   : "Month",   icon: "MonthIcon"   },
+    { value: "quarter", label: language === 'fr' ? "Trimestre" : language === 'es' ? "Trimestre" : language === 'ar' ? "ربع سنة" : "Quarter", icon: "QuarterIcon" },
+    { value: "year",    label: language === 'fr' ? "Année"     : language === 'es' ? "Aéo"       : language === 'ar' ? "سنة"   : "Year",    icon: "YearIcon"    }
   ];
 
   const periodOptions = getPeriodOptions();
@@ -471,7 +472,10 @@ export default function DashboardPage() {
       for (let i = 6; i >= 0; i--) {
         const date = new Date(); date.setDate(now.getDate() - i);
         if (isMobile) {
-          labels.push(date.toLocaleDateString(getLocale(), { weekday: 'short' }).substring(0, 1) + date.getDate());
+          const initial = language === 'ar'
+            ? date.toLocaleDateString(getLocale(), { weekday: 'narrow' })
+            : date.toLocaleDateString(getLocale(), { weekday: 'short' }).substring(0, 1);
+          labels.push(initial + date.getDate());
         } else {
           const day = date.toLocaleDateString(getLocale(), { weekday: 'short' });
           const dayNum = date.getDate();
@@ -480,12 +484,15 @@ export default function DashboardPage() {
       }
       return labels;
     } else if (period === "week") {
+      if (language === 'ar') return ["الأسبوع 1", "الأسبوع 2", "الأسبوع 3", "الأسبوع 4"];
       return ["S1", "S2", "S3", "S4"];
     } else if (period === "month") {
       if (language === 'fr') return ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoé", "Sep", "Oct", "Nov", "Déc"];
       else if (language === 'es') return ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      else if (language === 'ar') return ["جانفي", "فيفري", "مارس", "أفريل", "ماي", "جوان", "جويلية", "أوت", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
       else return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     } else if (period === "quarter") {
+      if (language === 'ar') return ["الربع 1", "الربع 2", "الربع 3", "الربع 4"];
       return [`T1`, `T2`, `T3`, `T4`];
     } else {
       const labels: string[] = [];
@@ -878,7 +885,7 @@ export default function DashboardPage() {
   const barLabels = salesData.map(d => d.month);
   const barSales = salesData.map(d => d.sales);
   const barPurchases = salesData.map((d, i) => Math.max(0, d.sales - (profitData[i]?.profit ?? 0)));
-  const salesPurchasesTitle = language === 'fr' ? "Ventes et achats" : language === 'es' ? "Ventas y compras" : "Sales and purchases";
+  const salesPurchasesTitle = language === 'fr' ? "Ventes et achats" : language === 'es' ? "Ventas y compras" : language === 'ar' ? "المبيعات والمشتريات" : "Sales and purchases";
 
   const mainContainerStyle = { 
     flex: 1, 
@@ -1257,8 +1264,8 @@ export default function DashboardPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {recentActivities.slice(0, isMobile ? 5 : 8).map((activity, idx) => {
                   const typeLabel = activity.type === "order"
-                    ? (language === 'fr' ? "Commande" : language === 'es' ? "Pedido" : "Order")
-                    : (language === 'fr' ? "Facture" : language === 'es' ? "Factura" : "Invoice");
+                    ? (language === 'fr' ? "Commande" : language === 'es' ? "Pedido" : language === 'ar' ? "طلبية" : "Order")
+                    : (language === 'fr' ? "Facture" : language === 'es' ? "Factura" : language === 'ar' ? "فاتورة" : "Invoice");
                   const typeIcon: keyof typeof Icons = activity.type === "order" ? "ClipboardList" : "Receipt";
                   const typeColor = activity.type === "order" ? "#f59e0b" : theme.primary;
                   return (

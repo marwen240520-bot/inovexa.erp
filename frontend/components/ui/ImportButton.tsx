@@ -194,15 +194,15 @@ export default function ImportButton({
 
   const getTranslatedText = (key: string): string => {
     const texts: Record<string, Record<string, string>> = {
-      import: { fr: "Importer", en: "Import", es: "Importar" },
-      importing: { fr: "Import en cours...", en: "Importing...", es: "Importando..." },
-      preview: { fr: "Aperçu des données", en: "Data Preview", es: "Vista previa" },
-      confirm: { fr: "Confirmer l'import", en: "Confirm Import", es: "Confirmar importación" },
-      cancel: { fr: "Annuler", en: "Cancel", es: "Cancelar" },
-      totalRows: { fr: "Total lignes", en: "Total rows", es: "Total filas" },
-      fileName: { fr: "Nom du fichier", en: "File name", es: "Nombre del archivo" },
-      fileSize: { fr: "Taille", en: "Size", es: "Tamaño" },
-      fileType: { fr: "Type", en: "Type", es: "Tipo" }
+      import: { fr: "Importer", en: "Import", es: "Importar", ar: "استيراد" },
+      importing: { fr: "Import en cours...", en: "Importing...", es: "Importando...", ar: "جارٍ الاستيراد..." },
+      preview: { fr: "Aperçu des données", en: "Data Preview", es: "Vista previa", ar: "معاينة البيانات" },
+      confirm: { fr: "Confirmer l'import", en: "Confirm Import", es: "Confirmar importación", ar: "تأكيد الاستيراد" },
+      cancel: { fr: "Annuler", en: "Cancel", es: "Cancelar", ar: "إلغاء" },
+      totalRows: { fr: "Total lignes", en: "Total rows", es: "Total filas", ar: "إجمالي الأسطر" },
+      fileName: { fr: "Nom du fichier", en: "File name", es: "Nombre del archivo", ar: "اسم الملف" },
+      fileSize: { fr: "Taille", en: "Size", es: "Tamaño", ar: "الحجم" },
+      fileType: { fr: "Type", en: "Type", es: "Tipo", ar: "النوع" }
     };
     return texts[key]?.[language] || texts[key]?.en || key;
   };

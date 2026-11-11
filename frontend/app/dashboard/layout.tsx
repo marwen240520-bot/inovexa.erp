@@ -56,9 +56,9 @@ export default function DashboardLayout({
         id="contenu"
         style={{
           flex: 1,
-          marginLeft: sidebarWidth,
+          marginInlineStart: sidebarWidth,
           width: `calc(100% - ${sidebarWidth}px)`,
-          transition: mounted ? "margin-left 0.3s ease, width 0.3s ease" : "none",
+          transition: mounted ? "margin 0.3s ease, width 0.3s ease" : "none",
           minHeight: "100vh",
           position: "relative",
           minWidth: 0,

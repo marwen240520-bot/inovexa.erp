@@ -1,14 +1,50 @@
 // lib/i18n.ts
 // Utilitaires de traduction partagés serveur / client (pas de "use client").
 
-export const SUPPORTED_LANGUAGES = ["fr", "en", "es"] as const;
+export const SUPPORTED_LANGUAGES = ["fr", "en", "es", "ar"] as const;
 export type Lang = (typeof SUPPORTED_LANGUAGES)[number];
+
+/** Langues écrites de droite à gauche (la page entière est alors mise en miroir : dir="rtl"). */
+export const RTL_LANGUAGES: readonly Lang[] = ["ar"];
+
+/** Nom de chaque langue, écrit dans la langue elle-même (menus de choix de la langue). */
+export const LANGUAGE_NAMES: Record<Lang, string> = {
+  fr: "Français",
+  en: "English",
+  es: "Español",
+  ar: "العربية",
+};
+
+/**
+ * Locale utilisée pour les dates et les nombres (Intl, toLocaleString…).
+ * Arabe : « ar-TN » — mois et jours en arabe, chiffres 0-9 (usage du Maghreb).
+ */
+export const INTL_LOCALES: Record<Lang, string> = {
+  fr: "fr-FR",
+  en: "en-US",
+  es: "es-ES",
+  ar: "ar-TN",
+};
 
 /** Nom du cookie qui mémorise la langue (lu par le serveur pour rendre la page déjà traduite) */
 export const LANG_COOKIE = "lang";
 
 export function isSupportedLanguage(lang: unknown): lang is Lang {
   return typeof lang === "string" && (SUPPORTED_LANGUAGES as readonly string[]).includes(lang);
+}
+
+export function isRtlLanguage(lang: unknown): boolean {
+  return (RTL_LANGUAGES as readonly string[]).includes(lang as string);
+}
+
+/** Sens d'écriture de la langue : valeur de l'attribut HTML « dir ». */
+export function languageDir(lang: unknown): "ltr" | "rtl" {
+  return isRtlLanguage(lang) ? "rtl" : "ltr";
+}
+
+/** Locale Intl de la langue de l'interface (français si la langue est inconnue). */
+export function intlLocale(lang: unknown): string {
+  return isSupportedLanguage(lang) ? INTL_LOCALES[lang] : INTL_LOCALES.fr;
 }
 
 /** Choisit la langue à partir du cookie, sinon de l'en-tête Accept-Language, sinon le français. */

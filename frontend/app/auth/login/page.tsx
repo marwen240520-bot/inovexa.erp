@@ -135,6 +135,26 @@ const translations = {
     capsLock: "Bloq Mayús activado",
     rights: "Todos los derechos reservados.",
   },
+  ar: {
+    backToHome: "العودة إلى الصفحة الرئيسية",
+    remember: "تذكّر بريدي الإلكتروني",
+    secure: "اتصال آمن",
+    welcome: "ادخل إلى فضاء الإدارة الخاص بك.",
+    signIn: "سجّل دخولك",
+    email: "البريد الإلكتروني",
+    password: "كلمة المرور",
+    login: "تسجيل الدخول",
+    loggingIn: "جارٍ تسجيل الدخول...",
+    invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    serverError: "خطأ في الاتصال بالخادم",
+    tooMany: "محاولات كثيرة. أعد المحاولة لاحقًا.",
+    emailPlaceholder: "example@inovexa.com",
+    passwordPlaceholder: "كلمة المرور",
+    showPassword: "إظهار كلمة المرور",
+    hidePassword: "إخفاء كلمة المرور",
+    capsLock: "مفتاح Caps Lock مفعّل",
+    rights: "جميع الحقوق محفوظة.",
+  },
 };
 
 const BG_DARK = "/images/2.png";
@@ -299,7 +319,7 @@ export default function LoginPage() {
             <span className="lg-logo">
               <img src="/images/logo.png" alt="" width={64} height={64} />
             </span>
-            <span className="lg-brand-name">
+            <span className="lg-brand-name" lang="en" dir="ltr">
               INOVEXA <span className="lg-brand-erp">ERP</span>
             </span>
           </Link>
@@ -489,8 +509,8 @@ const STYLES = `
   .lg-brand-erp { color: var(--lg-accent); font-size: 0.7em; letter-spacing: 4px; }
 
   .lg-card { width: 100%; max-width: 440px; padding: clamp(24px, 4vh, 36px) clamp(22px, 2.6vw, 36px) clamp(20px, 3.2vh, 28px); border-radius: 24px; background: var(--lg-card-solid); border: 1px solid var(--lg-card-border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 40px 100px -30px var(--lg-card-shadow); }
-  .lg-title { margin: 0 0 6px; text-align: left; font-size: clamp(24px, 3.4vh, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--lg-text); }
-  .lg-welcome { margin: 0 0 clamp(18px, 3vh, 26px); text-align: left; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
+  .lg-title { margin: 0 0 6px; text-align: start; font-size: clamp(24px, 3.4vh, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--lg-text); }
+  .lg-welcome { margin: 0 0 clamp(18px, 3vh, 26px); text-align: start; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
 
   .lg-error { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--lg-error); font-size: 13.5px; animation: lgShake .5s ease; }
   .lg-error svg { flex-shrink: 0; }
@@ -498,14 +518,14 @@ const STYLES = `
   .lg-field { margin-bottom: clamp(12px, 2vh, 18px); }
   .lg-label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 500; color: var(--lg-label); }
   .lg-input-wrap { position: relative; }
-  .lg-input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; color: var(--lg-muted); pointer-events: none; }
-  .lg-input { width: 100%; height: clamp(46px, 6vh, 52px); padding: 0 16px 0 46px; border-radius: 12px; border: 1px solid var(--lg-input-border); background: var(--lg-input-bg); color: var(--lg-text); font-family: inherit; font-size: 15.5px; outline: none; -webkit-appearance: none; transition: border-color .2s, box-shadow .2s; }
-  .lg-input-pass { padding-right: 50px; }
+  .lg-input-icon { position: absolute; inset-inline-start: 15px; top: 50%; transform: translateY(-50%); display: flex; color: var(--lg-muted); pointer-events: none; }
+  .lg-input { width: 100%; height: clamp(46px, 6vh, 52px); padding: 0; padding-inline: 46px 16px; border-radius: 12px; border: 1px solid var(--lg-input-border); background: var(--lg-input-bg); color: var(--lg-text); font-family: inherit; font-size: 15.5px; outline: none; -webkit-appearance: none; transition: border-color .2s, box-shadow .2s; }
+  .lg-input-pass { padding-inline-end: 50px; }
   .lg-input::placeholder { color: var(--lg-placeholder); }
   .lg-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.25); }
   .lg-input[aria-invalid="true"] { border-color: rgba(239,68,68,0.55); }
   .lg-input:-webkit-autofill, .lg-input:-webkit-autofill:hover, .lg-input:-webkit-autofill:focus { -webkit-text-fill-color: var(--lg-text); -webkit-box-shadow: 0 0 0 1000px var(--lg-autofill) inset; transition: background-color 5000s ease-in-out 0s; }
-  .lg-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; border-radius: 10px; color: var(--lg-muted); cursor: pointer; }
+  .lg-eye { position: absolute; inset-inline-end: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; border-radius: 10px; color: var(--lg-muted); cursor: pointer; }
   .lg-eye:hover { color: var(--lg-text); }
   .lg-caps { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12.5px; color: var(--lg-warn); }
 
@@ -528,6 +548,9 @@ const STYLES = `
     .lg-card { border-radius: 20px; padding: 24px 20px 20px; }
     .lg-input { font-size: 16px; }
   }
+
+  /* Arabe : les flèches (retour, valider) suivent le sens de la lecture */
+  [dir="rtl"] .lg-back svg, [dir="rtl"] .lg-btn svg { transform: scaleX(-1); }
 
   @keyframes lgFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
   @keyframes lgShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }

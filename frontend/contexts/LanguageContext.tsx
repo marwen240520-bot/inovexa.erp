@@ -1,10 +1,15 @@
 ﻿// contexts/LanguageContext.tsx
 "use client";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { LANG_COOKIE, deepMerge, isSupportedLanguage, lookup } from "@/lib/i18n";
+import { LANG_COOKIE, deepMerge, intlLocale, isSupportedLanguage, languageDir, lookup } from "@/lib/i18n";
 
 interface LanguageContextType {
   language: string;
+  /** Sens d'écriture de la langue courante : "rtl" pour l'arabe. */
+  dir: "ltr" | "rtl";
+  isRtl: boolean;
+  /** Locale Intl de la langue courante (dates, nombres) : "fr-FR", "en-US", "es-ES", "ar-TN". */
+  locale: string;
   setLanguage: (lang: string) => void;
   changeLanguage: (lang: string) => Promise<void>;
   t: (key: string) => string;
@@ -37,13 +42,20 @@ async function loadMessages(lang: string): Promise<any> {
 function persistLanguage(lang: string) {
   try { localStorage.setItem("language", lang); } catch { /* stockage indisponible */ }
   try { document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`; } catch { /* ignoré */ }
-  try { document.documentElement.lang = lang; } catch { /* ignoré */ }
+}
+
+/** Langue et sens d'écriture (gauche → droite, ou droite → gauche pour l'arabe) posés sur <html>. */
+function applyDocumentLanguage(lang: string) {
+  try {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = languageDir(lang);
+  } catch { /* ignoré */ }
 }
 
 /**
  * Les traductions de la langue courante sont fournies par le serveur (app/layout.tsx) :
- * la page est rendue directement traduite, sans spinner ni téléchargement des 3 fichiers
- * fr/en/es au démarrage. Les autres langues ne sont chargées qu'au moment du changement.
+ * la page est rendue directement traduite, sans spinner ni téléchargement de tous les fichiers
+ * fr/en/es/ar au démarrage. Les autres langues ne sont chargées qu'au moment du changement.
  */
 export function LanguageProvider({
   children,
@@ -68,7 +80,11 @@ export function LanguageProvider({
     try {
       const messages = await loadMessages(lang);
       // Ignore une réponse arrivée après un autre changement de langue
-      if (requested.current === lang) setState({ language: lang, messages });
+      if (requested.current === lang) {
+        // Le sens d'écriture bascule en même temps que les textes (pas avant leur chargement)
+        applyDocumentLanguage(lang);
+        setState({ language: lang, messages });
+      }
     } catch (error) {
       console.error("Erreur chargement traductions:", error);
     }
@@ -83,6 +99,7 @@ export function LanguageProvider({
       changeLanguage(saved);
     } else {
       persistLanguage(state.language);
+      applyDocumentLanguage(state.language);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -99,10 +116,10 @@ export function LanguageProvider({
 
   const setLanguage = useCallback((lang: string) => { void changeLanguage(lang); }, [changeLanguage]);
 
-  const value = useMemo(
-    () => ({ language, setLanguage, changeLanguage, t }),
-    [language, setLanguage, changeLanguage, t]
-  );
+  const value = useMemo(() => {
+    const dir = languageDir(language);
+    return { language, dir, isRtl: dir === "rtl", locale: intlLocale(language), setLanguage, changeLanguage, t };
+  }, [language, setLanguage, changeLanguage, t]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
