@@ -38,7 +38,7 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta" },
 };
 
-const ICONS: Record<string, JSX.Element> = {
+const ICONS: Record<string, React.ReactElement> = {
   dashboard: (
     <Icon>
       <rect x="3" y="3" width="7" height="7" rx="1.5"/>
@@ -511,18 +511,18 @@ export default function Sidebar() {
     if (hoverTimer.current) { window.clearTimeout(hoverTimer.current); hoverTimer.current = null; }
   };
 
-  const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+  const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, _path: string) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     const token = localStorage.getItem("token");
     if (!token) { e.preventDefault(); router.push("/auth/login"); return; }
     if (isMobile) setMobileMoreOpen(false);
   };
 
-  const handleNavigation = async (path: string, label: string) => {
+  const handleNavigation = async (_path: string, _label: string) => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/auth/login"); return; }
     try {
-      await router.push(path);
+      router.push(_path);
       if (isMobile) setMobileMoreOpen(false);
       setTimeout(() => setNavigationError(null), 3000);
     } catch (e: any) {
