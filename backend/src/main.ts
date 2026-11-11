@@ -3,7 +3,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { json, urlencoded } from 'express';
+import { json, urlencoded, type NextFunction, type Request, type Response } from 'express';
 import compression = require('compression');
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -13,6 +13,10 @@ async function bootstrap() {
 
   // Derrière un reverse-proxy (Render, Railway, Vercel…) : l'adresse IP réelle vient de X-Forwarded-For.
   app.set('trust proxy', 1);
+
+  // Express 5 lit les paramètres d'URL en mode « simple » : on garde le mode « extended » d'Express 4
+  // (ex. ?filtre[statut]=payee → { filtre: { statut: 'payee' } } et ?ids[]=1&ids[]=2 → { ids: ['1', '2'] }).
+  app.set('query parser', 'extended');
 
   // 🛡️ En-têtes de sécurité (HSTS, X-Content-Type-Options, X-Frame-Options…).
   // Les images /uploads sont affichées par le site (autre origine) : d'où cross-origin.
@@ -41,6 +45,13 @@ async function bootstrap() {
   // ✅ زيادة حجم الطلب المسموح به (افتراضياً 100kb فقط)
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
+
+  // Express 5 laisse req.body à undefined quand la requête n'a pas de corps (Express 4 donnait {}) :
+  // on garde l'ancien comportement pour les contrôleurs qui lisent body.xxx sans vérification.
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    if (req.body === undefined) req.body = {};
+    next();
+  });
 
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
