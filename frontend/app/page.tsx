@@ -107,7 +107,7 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
-const BG_IMAGE = "/images/3.png";
+const BG_IMAGE = "/images/Inovexa_ERP_visuel_dashboard.png";
 
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
@@ -782,16 +782,14 @@ const STYLES = `
     flex-shrink: 0;
   }
 
-  /* ── Fond : image alignée à GAUCHE ── */
+  /* ── Fond : image plein cadre, ancrée à DROITE (le portable reste toujours visible) ── */
   .hp-bg-img {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: -6%;
-    width: 112%;
+    inset: 0;
+    width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 0% center;
+    object-position: 100% 55%;
     user-select: none;
     -webkit-user-drag: none;
     z-index: 0;
@@ -889,7 +887,9 @@ const STYLES = `
 
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
-  .is-compact .hp-bg-img { object-position: 0% center; left: 0; width: 100%; }
+  /* Paysage (tablette couchée) : portable visible à droite. Portrait : partie gauche épurée, texte lisible. */
+  .is-compact .hp-bg-img { object-position: 100% 55%; }
+  @media (orientation: portrait) { .is-compact .hp-bg-img { object-position: 0% center; } }
   .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); padding-left: 18px; padding-right: 18px; }
   .is-mobile .hp-logo { width: 50px; height: 50px; }
   .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
@@ -954,17 +954,6 @@ const STYLES = `
     width: 100%;
   }
 
-  /* ── Image de fond mobile : cadrage corrigé ── */
-  .is-mobile .hp-bg-img {
-    object-fit: cover;
-    object-position: 0% center;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-  }
-
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
 
   /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
@@ -973,12 +962,10 @@ const STYLES = `
   /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
 
-  /* ── Desktop : image plus à gauche + tailles réduites ── */
+  /* ── Desktop : texte limité à la moitié gauche (ne recouvre pas le portable) + tailles réduites ── */
   @media (min-width: 901px) {
-    .hp-bg-img {
-      left: -10%;
-      width: 116%;
-    }
+    .hp-content { max-width: min(920px, 54vw); }
+    .hp-cards { max-width: min(800px, 50vw); }
     .hp-modules {
       font-size: clamp(12px, min(0.95vw, 2vh), 15px);
       padding: 0.42em 0.95em;
