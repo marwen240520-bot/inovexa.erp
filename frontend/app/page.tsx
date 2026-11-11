@@ -271,11 +271,11 @@ const ORBIT_IMG_H = 941;
 
 // Centre de chaque tuile, en pixels de l'image (arc intérieur puis arc extérieur)
 const ORBIT_ITEMS: { key: ModuleKey; x: number; y: number }[] = [
-  { key: "dashboard", x: 998.1, y: 428.9 },
+  { key: "pos", x: 998.1, y: 428.9 },
   { key: "products", x: 1048.2, y: 367.7 },
   { key: "categories", x: 1110.6, y: 318.9 },
   { key: "stock", x: 1182.1, y: 284.9 },
-  { key: "pos", x: 1259.2, y: 267.3 },
+  { key: "dashboard", x: 1259.2, y: 267.3 },
   { key: "sales", x: 1338.4, y: 267.1 },
   { key: "purchases", x: 1415.7, y: 284.1 },
   { key: "orders", x: 1487.4, y: 317.6 },
