@@ -1,11 +1,9 @@
 ﻿"use client";
 import React from "react";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useResponsive } from "@/hooks/useResponsive";
 import { Poppins, Orbitron } from "next/font/google";
 
@@ -709,48 +707,6 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
 };
 
 // Couleurs de la page
-const HP_DARK: Record<string, string> = {
-  "--hp-bg": "#000000",
-  "--hp-text": "#ffffff",
-  "--hp-muted": "rgba(233,227,255,0.75)",
-  "--hp-faint": "rgba(233,227,255,0.6)",
-  "--hp-glass": "rgba(255,255,255,0.06)",
-  "--hp-glass-border": "rgba(255,255,255,0.12)",
-  "--hp-glass-line": "rgba(255,255,255,0.08)",
-  "--hp-chip-bg": "rgba(255,255,255,0.08)",
-  "--hp-chip-border": "rgba(255,255,255,0.16)",
-  "--hp-icon": "#C4B5FD",
-  "--hp-accent-text": "#C4B5FD",
-  "--hp-cta-bg": "#ffffff",
-  "--hp-cta-text": "#2E1065",
-  "--hp-cta-shadow": "rgba(167,139,250,0.45)",
-  "--hp-ghost-border": "rgba(255,255,255,0.3)",
-  "--hp-link": "#DDD6FE",
-  "--hp-header-bg": "rgba(10,6,20,0.85)",
-  "--hp-menu-bg": "rgba(16,10,30,0.97)",
-  "--hp-menu-text": "rgba(255,255,255,0.88)",
-  "--hp-shadow": "rgba(0,0,0,0.7)",
-  "--hp-modal-bg": "rgba(16,10,30,0.97)",
-  "--hp-overlay": "rgba(0,0,0,0.65)",
-  "--hp-hero-overlay": "linear-gradient(90deg, rgba(10,6,20,0.95) 0%, rgba(30,12,70,0.82) 45%, rgba(10,6,20,0.25) 100%)",
-  "--hp-hero-overlay-compact": "linear-gradient(180deg, rgba(10,6,20,0.9) 0%, rgba(30,12,70,0.8) 55%, rgba(10,6,20,0.6) 100%)",
-  "--hp-orbit-tile": "linear-gradient(150deg, rgba(62,46,120,0.94) 0%, rgba(28,20,58,0.94) 100%)",
-  "--hp-orbit-border": "rgba(255,255,255,0.2)",
-  "--hp-orbit-border-hover": "rgba(196,181,253,0.75)",
-  "--hp-orbit-shadow": "0 10px 24px rgba(0,0,0,0.35), 0 0 18px rgba(167,139,250,0.16)",
-  "--hp-orbit-shadow-hover": "0 14px 30px rgba(0,0,0,0.45), 0 0 26px rgba(167,139,250,0.5)",
-  "--hp-orbit-icon-a": "#EDE9FE",
-  "--hp-orbit-icon-b": "#A78BFA",
-  "--hp-orbit-line": "#E9E3FF",
-  "--hp-orbit-tip-bg": "rgba(16,10,30,0.94)",
-  "--hp-orbit-tip-text": "#ffffff",
-  "--hp-orbit-tip-border": "rgba(255,255,255,0.16)",
-  "--hp-ai-bg": "linear-gradient(120deg, rgba(124,58,237,0.26) 0%, rgba(192,38,211,0.14) 55%, rgba(8,145,178,0.12) 100%)",
-  "--hp-ai-ring": "linear-gradient(120deg, #A78BFA 0%, #F0ABFC 50%, #67E8F9 100%)",
-  "--hp-ai-icon-bg": "linear-gradient(140deg, #7C3AED 0%, #C026D3 100%)",
-  "--hp-ai-glow": "rgba(167,139,250,0.45)",
-  "--hp-ai-shadow": "rgba(124,58,237,0.28)",
-};
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
   "--hp-text": "#1E1035",
@@ -794,26 +750,12 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-ai-shadow": "rgba(76,29,149,0.14)",
 };
 
-function buildHpVars(themeId: string, theme: any): Record<string, string> {
-  if (themeId === "dark") return HP_DARK;
-  if (themeId === "light") return HP_LIGHT;
-  const light = isLightTheme(theme);
-  return {
-    ...(light ? HP_LIGHT : HP_DARK),
-    "--hp-bg": theme.background,
-  };
-}
-
 // ─── Composant principal ───────────────────────────────────────────────────────
 export default function HomePage(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const { language, changeLanguage } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
-  const { theme, themeId } = useTheme();
-
-  const isLight = isLightTheme(theme);
-  const themeVars = useMemo(() => buildHpVars(themeId, theme) as React.CSSProperties, [themeId, theme]);
   const isCompact = isMobile || isTablet;
 
   const lang: Lang = (["fr", "en", "es"] as const).includes(language as Lang) ? (language as Lang) : "en";
@@ -896,14 +838,15 @@ export default function HomePage(): React.ReactElement {
     <div
       className={
         "home-page " +
-        (isLight ? "hp-light" : "hp-dark") +
+        "hp-light" +
         (isCompact ? " is-compact" : "") +
         (isMobile ? " is-mobile" : "") +
         " " +
         `${poppins.variable} ${orbitron.variable}`
       }
       style={{
-        ...themeVars,
+        ...(HP_LIGHT as React.CSSProperties),
+        colorScheme: "light",
         minHeight: "100dvh",
         background: "var(--hp-bg)",
         display: "flex",
@@ -920,13 +863,12 @@ export default function HomePage(): React.ReactElement {
       {/* Icônes des modules posées autour du portable — nom affiché au survol (ordinateur) */}
       <ModuleOrbit lang={lang} />
 
-      {/* En-tête : logo + contrôles thème & langue */}
+      {/* En-tête : logo + contrôle de langue */}
       <header className="hp-header">
         <div className="hp-rise">{brand}</div>
 
-        {/* Thème + langue — dans le header, défilent avec la page */}
+        {/* Langue — dans le header, défile avec la page */}
         <div className="hp-top-controls">
-          <ThemeToggle variant="home" size={isMobile ? 36 : 40} />
           <div ref={langWrapRef} style={{ position: "relative" }}>
             <button
               ref={langButtonRef}
