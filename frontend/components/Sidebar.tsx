@@ -323,9 +323,11 @@ function storeModules(userId: string | number, modules: Record<string, boolean>)
   try { localStorage.setItem(MODULES_STORAGE_KEY, JSON.stringify({ userId, modules })); } catch { /* ignoré */ }
 }
 
-// Sections ouvertes. Au chargement, toutes les sections sont fermées, sauf celle de la page ouverte.
-// Ce que l'utilisateur ouvre reste ouvert pendant la navigation, puis tout se referme au rechargement.
-let sidebarOpenGroups: Record<string, boolean> = {};
+// Sections ouvertes. Au chargement, Commercial, Approvisionnement et Stock & logistique sont ouvertes,
+// ainsi que la section de la page ouverte. Ce que l'utilisateur ouvre ou ferme est conservé pendant
+// la navigation, puis l'état initial revient au rechargement.
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = { commercial: true, procurement: true, inventory: true };
+let sidebarOpenGroups: Record<string, boolean> = { ...DEFAULT_OPEN_GROUPS };
 
 export function getCachedModules(): Record<string, boolean> | null {
   return sidebarCachedModules;
@@ -537,7 +539,7 @@ export default function Sidebar() {
       try { localStorage.removeItem(MODULES_STORAGE_KEY); } catch { /* ignoré */ }
       sidebarCachedUser = null;
       sidebarCachedModules = null;
-      sidebarOpenGroups = {};
+      sidebarOpenGroups = { ...DEFAULT_OPEN_GROUPS };
       modulesRefreshed = false;
       clearApiCache();
       router.push("/");
