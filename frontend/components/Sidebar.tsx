@@ -323,18 +323,9 @@ function storeModules(userId: string | number, modules: Record<string, boolean>)
   try { localStorage.setItem(MODULES_STORAGE_KEY, JSON.stringify({ userId, modules })); } catch { /* ignoré */ }
 }
 
-// Sections repliées par l'utilisateur (mémorisées dans le navigateur).
-const GROUPS_STORAGE_KEY = "sidebar_collapsed_groups";
-function readCollapsedGroups(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
-  try {
-    const parsed = JSON.parse(localStorage.getItem(GROUPS_STORAGE_KEY) || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch { return {}; }
-}
-function storeCollapsedGroups(state: Record<string, boolean>) {
-  try { localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(state)); } catch { /* ignoré */ }
-}
+// Sections ouvertes. Au chargement, toutes les sections sont fermées, sauf celle de la page ouverte.
+// Ce que l'utilisateur ouvre reste ouvert pendant la navigation, puis tout se referme au rechargement.
+let sidebarOpenGroups: Record<string, boolean> = {};
 
 export function getCachedModules(): Record<string, boolean> | null {
   return sidebarCachedModules;
@@ -358,7 +349,7 @@ export default function Sidebar() {
   const prefetched = useRef<Set<string>>(new Set());
   const hoverTimer = useRef<number | null>(null);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(readCollapsedGroups);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => sidebarOpenGroups);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setLocalTheme(theme); }, [theme, themeId]);
@@ -485,24 +476,21 @@ export default function Sidebar() {
 
   const activeGroupId = sections.groups.find((g) => g.items.some((m) => isActivePath(m.path, m.also)))?.id ?? null;
 
-  // La section de la page ouverte se déplie d'elle-même si elle était repliée.
+  // La section de la page ouverte s'ouvre d'elle-même (au chargement et à chaque changement de page).
   useEffect(() => {
     if (!activeGroupId) return;
-    setCollapsedGroups((prev) => {
-      if (!prev[activeGroupId]) return prev;
-      const next = { ...prev };
-      delete next[activeGroupId];
-      storeCollapsedGroups(next);
+    setOpenGroups((prev) => {
+      if (prev[activeGroupId]) return prev;
+      const next = { ...prev, [activeGroupId]: true };
+      sidebarOpenGroups = next;
       return next;
     });
   }, [activeGroupId, pathname]);
 
   const toggleGroup = (groupId: string) => {
-    setCollapsedGroups((prev) => {
-      const next = { ...prev };
-      if (next[groupId]) delete next[groupId];
-      else next[groupId] = true;
-      storeCollapsedGroups(next);
+    setOpenGroups((prev) => {
+      const next = { ...prev, [groupId]: !prev[groupId] };
+      sidebarOpenGroups = next;
       return next;
     });
   };
@@ -549,6 +537,7 @@ export default function Sidebar() {
       try { localStorage.removeItem(MODULES_STORAGE_KEY); } catch { /* ignoré */ }
       sidebarCachedUser = null;
       sidebarCachedModules = null;
+      sidebarOpenGroups = {};
       modulesRefreshed = false;
       clearApiCache();
       router.push("/");
@@ -917,7 +906,7 @@ export default function Sidebar() {
   };
 
   const renderGroup = (group: NavGroup) => {
-    const open = !collapsedGroups[group.id];
+    const open = !!openGroups[group.id];
     const containsActive = group.id === activeGroupId;
     const hoverKey = `group:${group.id}`;
     const isHovered = hoveredItem === hoverKey;
