@@ -8,6 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import NotificationBell from "@/components/erp/NotificationBell";
+import Spinner from "@/components/ui/Spinner";
 import type { TooltipItem } from "chart.js";
 import { Line, Doughnut } from "@/components/charts/LazyCharts";
 import { Caveat } from "next/font/google";
@@ -635,7 +636,8 @@ export default function DashboardPage() {
     const initPage = async () => {
       const userData = localStorage.getItem("user");
       if (userData) { try { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } } catch { /* profil local illisible */ } }
-      loadDashboardCache();
+      // Ancien cache local : supprimé (le tableau de bord charge désormais comme la page Ventes)
+      try { Object.keys(localStorage).filter(k => k.startsWith("dashboardCache:")).forEach(k => localStorage.removeItem(k)); } catch { /* stockage indisponible */ }
       const [freshUser] = await Promise.all([loadUserFromBackend(), fetchDashboardData()]);
       if (freshUser) { setUser(freshUser); const fi = freshUser.avatar || freshUser.profileImage; if (fi) { setProfileImage(fi); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } }
       setRefreshTime(formatDateTime(new Date()));
@@ -660,39 +662,6 @@ export default function DashboardPage() {
     const { labels, salesValues, profitValues } = aggregateDataByPeriod(rawSales, rawPurchases, selectedPeriod);
     setSalesData(labels.map((label, i) => ({ month: label, sales: salesValues[i] })));
     setProfitData(labels.map((label, i) => ({ month: label, profit: profitValues[i] })));
-  };
-
-  // Cache local des données du tableau de bord : affichage instantané aux visites suivantes,
-  // puis rafraîchissement en arrière-plan (stale-while-revalidate). Seuls les champs utilisés sont gardés.
-  const dashboardCacheKey = () => {
-    try { const u = JSON.parse(localStorage.getItem("user") || "{}"); return `dashboardCache:${u?.id ?? "me"}`; } catch { return "dashboardCache:me"; }
-  };
-  const saveDashboardCache = (d: Record<string, any[]>) => {
-    try {
-      const slim = {
-        v: 1, at: Date.now(),
-        sales: d.sales.map((x: any) => ({ id: x.id, total: x.total, createdAt: x.createdAt, productName: x.productName, clientName: x.clientName })),
-        purchases: d.purchases.map((x: any) => ({ total: x.total, createdAt: x.createdAt })),
-        clients: d.clients.map((x: any) => ({ createdAt: x.createdAt })),
-        products: d.products.map((x: any) => ({ quantity: x.quantity })),
-        invoices: d.invoices.map((x: any) => ({ id: x.id, status: x.status, createdAt: x.createdAt })),
-        orders: d.orders.map((x: any) => ({ id: x.id, status: x.status, createdAt: x.createdAt })),
-        employees: d.employees.map((x: any) => ({ status: x.status })),
-      };
-      const json = JSON.stringify(slim);
-      if (json.length < 2_000_000) localStorage.setItem(dashboardCacheKey(), json);
-    } catch { /* stockage plein ou indisponible : on ignore */ }
-  };
-  const loadDashboardCache = (): boolean => {
-    try {
-      const raw = localStorage.getItem(dashboardCacheKey());
-      if (!raw) return false;
-      const c = JSON.parse(raw);
-      if (c?.v !== 1) return false;
-      applyDashboardData(c.sales || [], c.purchases || [], c.clients || [], c.products || [], c.invoices || [], c.orders || [], c.employees || []);
-      setLoading(false);
-      return true;
-    } catch { return false; }
   };
 
   const fetchDashboardData = async () => {
@@ -725,12 +694,11 @@ export default function DashboardPage() {
       employees = Array.isArray(employees) ? employees : [];
 
       applyDashboardData(sales, purchases, clients, products, invoices, orders, employees);
-      saveDashboardCache({ sales, purchases, clients, products, invoices, orders, employees });
     } catch(e) { console.error("Erreur:", e); }
     setLoading(false);
   };
 
-  // Calcule tous les indicateurs à partir des listes (données réseau ou cache)
+  // Calcule tous les indicateurs à partir des listes reçues du serveur
   const applyDashboardData = (sales: any[], purchases: any[], clients: any[], products: any[], invoices: any[], orders: any[], employees: any[]) => {
     {
       setRawSales(sales); setRawPurchases(purchases);
@@ -1046,6 +1014,11 @@ export default function DashboardPage() {
   const chartPlaceholder = (h: string) => (
     <div className="skel" style={{ height: h, borderRadius: "10px", background: theme.surfaceHover }} />
   );
+
+  // Chargement : spinner plein écran, puis la page complète (même comportement que la page Ventes)
+  if (loading) {
+    return <Spinner fullScreen />;
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0, margin: 0 }}>
