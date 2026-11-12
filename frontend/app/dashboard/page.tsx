@@ -1143,7 +1143,10 @@ export default function DashboardPage() {
                   flex: 1, 
                   minWidth: 0, 
                   maxWidth: isMobile ? "100%" : "600px",
-                  width: isMobile ? "100%" : "600px"
+                  width: isMobile ? "100%" : "600px",
+                  // Barre collée au bouton de notification (la recherche fait 560 px max dans 600 px)
+                  display: "flex",
+                  justifyContent: "flex-end"
                 }}>
                   <GlobalSearch isMobile={isMobile} />
                 </div>
