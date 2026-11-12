@@ -79,6 +79,8 @@ export function proxy(request: NextRequest) {
       'data:',
       'blob:',
       'https://flagcdn.com',
+      // Photos des produits de démonstration (liens Unsplash, voir backend/src/modules/admin/demo-product-images.ts)
+      'https://images.unsplash.com',
       API_ORIGIN,
     ],
 
