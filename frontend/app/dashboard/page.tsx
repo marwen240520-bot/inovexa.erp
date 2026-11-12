@@ -928,6 +928,58 @@ export default function DashboardPage() {
     zoom: isMobile ? 1 : 0.9,
   };
 
+  // Bloc profil (photo + menu) : à droite de la barre d'outils sur ordinateur, en haut à droite du header sur mobile
+  const profileBlock = (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                  <div style={{ position: "relative" }}>
+                    <div 
+                      onClick={() => setShowProfileMenu(!showProfileMenu)} 
+                      style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)", WebkitTapHighlightColor: "transparent" }}
+                    >
+                      {profileImage && !imageError ? (
+                        <img 
+                          src={avatarSrc(profileImage)} 
+                          alt="Profile" 
+                          style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover" }}
+                          onError={() => { setImageError(true); refreshUserData(); }} 
+                          loading="lazy" 
+                        />
+                      ) : (
+                        <div style={{ width: isMobile ? "40px" : responsive.profileImageSize, height: isMobile ? "40px" : responsive.profileImageSize, borderRadius: isMobile ? "12px" : responsive.profileImageRadius, background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "white" }}>
+                          {getInitials(user?.name)}
+                        </div>
+                      )}
+                    </div>
+
+                    {showProfileMenu && (
+                      <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(17,24,39,0.18)" }}>
+                        <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                          {profileImage && !imageError ? (
+                            <img src={avatarSrc(profileImage)} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
+                          ) : (
+                            <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
+                          )}
+                          <div>
+                            <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "11px" : "13px" }}>{user?.name}</div>
+                            <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px" }}>{user?.email}</div>
+                          </div>
+                        </div>
+                        <div onClick={() => { router.push("/dashboard/profile"); setShowProfileMenu(false); setTimeout(() => refreshUserData(), 500); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                          <Icon name="User" size="0.9em" /> {getTempTranslation("common.profile")}
+                        </div>
+                        <div onClick={() => { router.push("/dashboard/settings"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                          <Icon name="Settings" size="0.9em" /> {getTempTranslation("common.settings")}
+                        </div>
+                        <div style={{ height: "1px", background: theme.border }} />
+                        <div onClick={() => { localStorage.clear(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                          <Icon name="LogOut" size="0.9em" color="#f87171" /> {t("common.logout")}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+  );
+
   if (loading) {
     return <Spinner fullScreen />;
   }
@@ -995,11 +1047,11 @@ export default function DashboardPage() {
               .kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; text-align: center; }
               /* Carte KPI seule sur sa ligne (ex. Produits) : icône en haut, valeur, puis nom en bas */
               .kpi-main > *:last-child:nth-child(odd) { display: flex; flex-direction: column; align-items: center; }
-              .kpi-main > *:last-child:nth-child(odd) > div:first-child { display: contents; }
+              .kpi-main > *:last-child:nth-child(odd) > div:first-child { display: contents !important; }
               .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:last-child { order: 0; margin-bottom: 4px; }
               .kpi-main > *:last-child:nth-child(odd) > div:nth-child(2) { order: 1; }
               .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:first-child { order: 2; margin-top: 4px; }
-              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(3) { order: 3; justify-content: center; }
+              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(3) { order: 3; justify-content: center !important; }
             }
           `}</style>
 
@@ -1024,6 +1076,9 @@ export default function DashboardPage() {
                   )}
                 </p>
               </div>
+
+              {/* Mobile : photo de profil en haut à droite, sur la même ligne que la salutation */}
+              {isMobile && <div style={{ order: 2, flexShrink: 0, marginLeft: "auto" }}>{profileBlock}</div>}
 
               {/* Partie droite : barre de recherche + thème + profil */}
               <div style={{ 
@@ -1050,55 +1105,7 @@ export default function DashboardPage() {
 
                 <ThemeToggle size={isMobile ? 46 : 48} />
 
-                {/* Profil utilisateur */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                  <div style={{ position: "relative" }}>
-                    <div 
-                      onClick={() => setShowProfileMenu(!showProfileMenu)} 
-                      style={{ cursor: "pointer", transition: "transform 0.3s ease", transform: showProfileMenu ? "scale(1.05)" : "scale(1)", WebkitTapHighlightColor: "transparent" }}
-                    >
-                      {profileImage && !imageError ? (
-                        <img 
-                          src={avatarSrc(profileImage)} 
-                          alt="Profile" 
-                          style={{ width: responsive.profileImageSize, height: responsive.profileImageSize, borderRadius: responsive.profileImageRadius, objectFit: "cover" }}
-                          onError={() => { setImageError(true); refreshUserData(); }} 
-                          loading="lazy" 
-                        />
-                      ) : (
-                        <div style={{ width: isMobile ? "40px" : responsive.profileImageSize, height: isMobile ? "40px" : responsive.profileImageSize, borderRadius: isMobile ? "12px" : responsive.profileImageRadius, background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: "white" }}>
-                          {getInitials(user?.name)}
-                        </div>
-                      )}
-                    </div>
-
-                    {showProfileMenu && (
-                      <div className="profile-menu" style={{ position: "absolute", top: isMobile ? "45px" : "60px", right: "0", background: theme.surface, borderRadius: "16px", border: `1px solid ${theme.border}`, minWidth: isMobile ? "160px" : "200px", overflow: "hidden", zIndex: 1000, boxShadow: "0 10px 40px rgba(17,24,39,0.18)" }}>
-                        <div style={{ padding: "12px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
-                          {profileImage && !imageError ? (
-                            <img src={avatarSrc(profileImage)} alt="Profile" style={{ width: "35px", height: "35px", borderRadius: "17px", objectFit: "cover" }} onError={() => setImageError(true)} />
-                          ) : (
-                            <div style={{ width: "35px", height: "35px", borderRadius: "17px", background: theme.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>{getInitials(user?.name)}</div>
-                          )}
-                          <div>
-                            <div style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "11px" : "13px" }}>{user?.name}</div>
-                            <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px" }}>{user?.email}</div>
-                          </div>
-                        </div>
-                        <div onClick={() => { router.push("/dashboard/profile"); setShowProfileMenu(false); setTimeout(() => refreshUserData(), 500); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                          <Icon name="User" size="0.9em" /> {getTempTranslation("common.profile")}
-                        </div>
-                        <div onClick={() => { router.push("/dashboard/settings"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: theme.textSecondary, cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                          <Icon name="Settings" size="0.9em" /> {getTempTranslation("common.settings")}
-                        </div>
-                        <div style={{ height: "1px", background: theme.border }} />
-                        <div onClick={() => { localStorage.clear(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                          <Icon name="LogOut" size="0.9em" color="#f87171" /> {t("common.logout")}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {!isMobile && profileBlock}
               </div>
             </div>
           </div>
