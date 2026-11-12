@@ -82,7 +82,7 @@ export class AdminService {
     
     await this.userRepository.save(client);
 
-    // Entre 50 et 100 éléments de démonstration dans chaque module du nouveau client.
+    // Éléments de démonstration sur 13 mois dans chaque module du nouveau client (volumes : DEMO_RANGES).
     // Le client est déjà créé : un échec ici ne doit pas annuler sa création.
     let demoData: { seeded: boolean; perModule: number; min: number; max: number; total: number; error?: string } = {
       seeded: false,

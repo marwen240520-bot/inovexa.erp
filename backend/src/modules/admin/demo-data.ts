@@ -16,20 +16,43 @@ import { Shipment } from '../logistics/entities/shipment.entity';
 import { Objective } from '../objectives/entities/objective.entity';
 import { periodBounds } from '../objectives/objectives.service';
 
-/** Chaque module d'un nouveau client reçoit un nombre aléatoire d'éléments de démonstration entre ces deux bornes. */
-export const DEMO_MIN_ITEMS = 50;
-export const DEMO_MAX_ITEMS = 100;
-/** Valeur minimale (conservée pour compatibilité avec le code qui lisait l'ancienne constante). */
-export const DEMO_ITEMS_PER_MODULE = DEMO_MIN_ITEMS;
-
 export type DemoModuleKey =
   | 'categories' | 'products' | 'clients' | 'suppliers' | 'finance_flow' | 'orders' | 'invoices'
   | 'departments' | 'employees' | 'budgets' | 'bank_accounts' | 'shipments' | 'objectives';
 
+/** Nombre de mois couverts par les données de démonstration (le dernier élément date d'hier). */
+export const DEMO_MONTHS = 13;
+
+/**
+ * Fourchette [min, max] d'éléments créés pour chaque module d'un nouveau client (tirage au hasard).
+ * Les flux (ventes / achats / dépenses) sont les plus volumineux : 30 à 40 lignes par mois sur 13 mois.
+ */
+export const DEMO_RANGES: Record<DemoModuleKey, [number, number]> = {
+  finance_flow: [390, 520], // ventes, achats et dépenses (même nombre chacun)
+  orders: [260, 390],
+  invoices: [260, 390],
+  clients: [150, 250],
+  products: [150, 250],
+  shipments: [150, 250],
+  suppliers: [100, 150],
+  employees: [100, 150],
+  categories: [30, 60],
+  departments: [30, 60],
+  budgets: [30, 60],
+  bank_accounts: [30, 60],
+  objectives: [30, 60],
+};
+
+/** Bornes globales (toutes fourchettes confondues) — conservées pour le code qui lit ces constantes. */
+export const DEMO_MIN_ITEMS = Math.min(...Object.values(DEMO_RANGES).map(([a]) => a));
+export const DEMO_MAX_ITEMS = Math.max(...Object.values(DEMO_RANGES).map(([, b]) => b));
+/** Valeur minimale (conservée pour compatibilité avec le code qui lisait l'ancienne constante). */
+export const DEMO_ITEMS_PER_MODULE = DEMO_MIN_ITEMS;
+
 export interface DemoOptions {
   /** Générateur aléatoire (Math.random par défaut) — injectable pour les tests. */
   random?: () => number;
-  /** Nombre d'éléments imposé pour un module (sinon tirage entre DEMO_MIN_ITEMS et DEMO_MAX_ITEMS).
+  /** Nombre d'éléments imposé pour un module (sinon tirage dans DEMO_RANGES).
    *  `finance_flow` = ventes, achats et dépenses (liés entre eux pour garantir un bénéfice positif). */
   counts?: Partial<Record<DemoModuleKey, number>>;
 }
@@ -38,6 +61,8 @@ const pad = (n: number, size = 3) => String(n).padStart(size, '0');
 const pick = <T>(list: T[], i: number): T => list[i % list.length];
 const range = (count: number) => Array.from({ length: count }, (_, i) => i);
 const round2 = (n: number) => Math.round(n * 100) / 100;
+/** Insertion par lots : évite des requêtes trop longues avec plusieurs centaines de lignes. */
+const CHUNK = { chunk: 100 };
 
 /** Date située `days` jours avant aujourd'hui (pour que les graphiques aient des données). */
 const daysAgo = (days: number): Date => {
@@ -46,9 +71,25 @@ const daysAgo = (days: number): Date => {
   d.setDate(d.getDate() - days);
   return d;
 };
-/** Répartit `n` éléments sur ~6 mois : l'élément 0 est le plus ancien, le dernier date d'hier. */
-const dateAt = (i: number, n: number): Date => daysAgo(1 + Math.round(((n - 1 - i) * 179) / Math.max(1, n - 1)));
+
+/** Nombre de jours entre aujourd'hui et la même date il y a DEMO_MONTHS mois. */
+const periodDays = (): number => {
+  const today = new Date();
+  today.setHours(10, 0, 0, 0);
+  const start = new Date(today);
+  start.setMonth(start.getMonth() - DEMO_MONTHS);
+  return Math.round((today.getTime() - start.getTime()) / 86_400_000);
+};
+
+/** Répartit `n` éléments sur les DEMO_MONTHS derniers mois : l'élément 0 est le plus ancien, le dernier date d'hier. */
+const dateAt = (i: number, n: number): Date => {
+  const span = periodDays() - 1;
+  return daysAgo(1 + Math.round(((n - 1 - i) * span) / Math.max(1, n - 1)));
+};
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
+
+/** Saisonnalité du chiffre d'affaires (janvier → décembre) : creux en hiver, pics l'été et en fin d'année. */
+const SEASONALITY = [0.85, 0.8, 0.95, 1.0, 1.05, 1.1, 1.2, 1.15, 0.95, 1.0, 1.1, 1.3];
 
 // ───────────────────────── Jeux de données ─────────────────────────
 
@@ -84,8 +125,15 @@ const SUPPLIER_NAMES = [
   'Santé Distribution', 'Sport Équipement', 'Jouets Express', 'Lumière Design', 'Librairie Grossiste',
 ];
 
-const FIRST_NAMES = ['Ahmed', 'Sarra', 'Mohamed', 'Leila', 'Youssef', 'Amel', 'Karim', 'Nadia', 'Walid', 'Ines'];
-const LAST_NAMES = ['Ben Ali', 'Trabelsi', 'Gharbi', 'Mejri', 'Jebali', 'Haddad', 'Chaabane', 'Bouzid', 'Ferchichi', 'Sassi'];
+// 20 prénoms × 20 noms = 400 combinaisons sans doublon (voir la formule dans la génération des employés)
+const FIRST_NAMES = [
+  'Ahmed', 'Sarra', 'Mohamed', 'Leila', 'Youssef', 'Amel', 'Karim', 'Nadia', 'Walid', 'Ines',
+  'Hichem', 'Rania', 'Sami', 'Olfa', 'Mehdi', 'Salma', 'Anis', 'Hela', 'Bilel', 'Yasmine',
+];
+const LAST_NAMES = [
+  'Ben Ali', 'Trabelsi', 'Gharbi', 'Mejri', 'Jebali', 'Haddad', 'Chaabane', 'Bouzid', 'Ferchichi', 'Sassi',
+  'Hammami', 'Khelifi', 'Mansouri', 'Dridi', 'Zouari', 'Ayari', 'Ben Amor', 'Jlassi', 'Karray', 'Masmoudi',
+];
 
 const DEPARTMENTS = [
   'Direction générale', 'Ressources humaines', 'Finance', 'Comptabilité', 'Commercial',
@@ -117,13 +165,13 @@ const PURCHASE_STATUSES = ['received', 'received', 'pending', 'received', 'order
 const BANK_NAMES = ['Banque de Tunis', 'BIAT', 'Attijari Bank', 'Amen Bank', 'STB', 'BH Bank', 'UIB', 'ATB', 'BNA', 'Zitouna'];
 
 const slug = (s: string) =>
-  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
 
 // ───────────────────────── Variantes (pour dépasser les 20 éléments de base) ─────────────────────────
 
 const CATEGORY_VARIANTS = ['Entrée de gamme', 'Premium', 'Accessoires', 'Professionnel', 'Occasion', 'Éco', 'Import'];
-const PRODUCT_SERIES = ['Série B', 'Série C', 'Série D', 'Série E'];
-const POSITION_LEVELS = ['junior', 'confirmé', 'senior', 'principal'];
+const PRODUCT_SERIES = ['Série B', 'Série C', 'Série D', 'Série E', 'Série F', 'Série G', 'Série H', 'Série J', 'Série K', 'Série L', 'Série M', 'Série N'];
+const POSITION_LEVELS = ['junior', 'confirmé', 'senior', 'principal', 'expert', 'stagiaire', 'adjoint', 'chef d\'équipe'];
 
 /** Nom unique pour le i-ème élément : les 20 premiers gardent leur nom d'origine, les suivants reçoivent un suffixe. */
 const variantName = (base: string[], i: number, suffix: (round: number, i: number) => string) => {
@@ -131,7 +179,12 @@ const variantName = (base: string[], i: number, suffix: (round: number, i: numbe
   const name = base[i % base.length];
   return round === 0 ? name : `${name}${suffix(round, i)}`;
 };
-const cityVariant = (round: number, i: number) => ` ${CITIES[(round * 3 + i) % CITIES.length]}`;
+/** Suffixe ville ; au-delà de 10 tours, on ajoute un numéro pour garder des noms uniques. */
+const cityVariant = (round: number, i: number) => {
+  const city = CITIES[(round * 3 + i) % CITIES.length];
+  const lap = Math.floor((round - 1) / CITIES.length);
+  return lap === 0 ? ` ${city}` : ` ${city} ${lap + 1}`;
+};
 
 // ───────────────────────── Génération ─────────────────────────
 
@@ -145,18 +198,20 @@ export interface DemoDataSummary {
 }
 
 /**
- * Crée entre DEMO_MIN_ITEMS et DEMO_MAX_ITEMS éléments (tirage au hasard, module par module) pour le client `userId`.
- * À appeler dans une transaction : tout est créé ou rien.
+ * Crée les éléments de démonstration du client `userId` (volumes tirés au hasard dans DEMO_RANGES, module par module),
+ * répartis sur les DEMO_MONTHS derniers mois. À appeler dans une transaction : tout est créé ou rien.
  *
  * Ventes, achats et dépenses forment un seul flux (même nombre de lignes, mêmes dates) : pour chaque ligne,
  * vente > achat + dépense, donc le bénéfice est positif quel que soit le regroupement (jour, mois, année).
+ * Le chiffre d'affaires suit une tendance de croissance (~+35 % sur la période) et une saisonnalité mensuelle.
  */
 export async function seedDemoData(manager: EntityManager, userId: number, options: DemoOptions = {}): Promise<DemoDataSummary> {
   const random = options.random || Math.random;
   const count = (key: DemoModuleKey): number => {
     const forced = options.counts?.[key];
     if (forced !== undefined) return Math.max(1, Math.round(forced));
-    return DEMO_MIN_ITEMS + Math.floor(random() * (DEMO_MAX_ITEMS - DEMO_MIN_ITEMS + 1));
+    const [min, max] = DEMO_RANGES[key];
+    return min + Math.floor(random() * (max - min + 1));
   };
   const created: Record<string, number> = {};
   const mark = (key: string, rows: unknown[]) => { created[key] = rows.length; };
@@ -166,9 +221,14 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
   const categories = await manager.save(
     Category,
     range(nCategories).map((i) => {
-      const name = variantName(CATEGORIES, i, (r) => ` — ${CATEGORY_VARIANTS[(r - 1) % CATEGORY_VARIANTS.length]}`);
+      const name = variantName(CATEGORIES, i, (r) => {
+        const variant = CATEGORY_VARIANTS[(r - 1) % CATEGORY_VARIANTS.length];
+        const lap = Math.floor((r - 1) / CATEGORY_VARIANTS.length);
+        return lap === 0 ? ` — ${variant}` : ` — ${variant} ${lap + 1}`;
+      });
       return manager.create(Category, { userId, name, description: `Catégorie ${name}`, createdAt: dateAt(i, nCategories) });
     }),
+    CHUNK,
   );
   mark('categories', categories);
 
@@ -179,24 +239,28 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
     range(nProducts).map((i) => {
       const [baseName, basePrice, baseStock] = PRODUCTS[i % PRODUCTS.length];
       const round = Math.floor(i / PRODUCTS.length);
-      const name = round === 0 ? baseName : `${baseName} · ${PRODUCT_SERIES[(round - 1) % PRODUCT_SERIES.length]}`;
-      const price = round === 0 ? basePrice : round2(basePrice * (1 + 0.12 * round));
+      const series = PRODUCT_SERIES[(round - 1) % PRODUCT_SERIES.length];
+      const lap = Math.floor((round - 1) / PRODUCT_SERIES.length);
+      const name = round === 0 ? baseName : `${baseName} · ${series}${lap === 0 ? '' : ` ${lap + 1}`}`;
+      // Les séries suivantes sont un peu plus chères (+8 % par série, plafonné à +90 %)
+      const price = round === 0 ? basePrice : round2(basePrice * (1 + Math.min(0.9, 0.08 * round)));
       // quelques stocks bas ou nuls pour alimenter les alertes
       const quantity = round === 0 ? baseStock : i % 9 === 4 ? i % 5 : Math.max(0, baseStock + ((i * 17) % 45) - 10);
       return manager.create(Product, {
         userId,
         categoryId: categories[i % categories.length].id,
         name,
-        sku: `SKU-${pad(i + 1)}`,
+        sku: `SKU-${pad(i + 1, 4)}`,
         price,
         quantity,
         createdAt: dateAt(i, nProducts),
       });
     }),
+    CHUNK,
   );
   mark('products', products);
 
-  // 3. Clients
+  // 3. Clients (arrivée progressive sur 13 mois → courbe « nouveaux clients » réaliste)
   const nClients = count('clients');
   const clients = await manager.save(
     Client,
@@ -207,12 +271,13 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         name,
         email: `contact@${slug(name)}.tn`,
         phone: `${pick([20, 22, 24, 25, 28, 50, 52, 55, 90, 98], i)}${pad(100 + i * 37 % 900)}${pad(i * 53 % 1000)}`.slice(0, 8),
-        address: `${10 + i} rue de la République, ${pick(CITIES, i)}`,
+        address: `${10 + (i % 190)} rue de la République, ${pick(CITIES, i)}`,
         totalSpent: round2(300 + ((i * 731) % 4200)),
         status: i % 7 === 6 ? 'inactive' : 'active',
         createdAt: dateAt(i, nClients),
       });
     }),
+    CHUNK,
   );
   mark('clients', clients);
 
@@ -234,6 +299,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         createdAt: dateAt(i, nSuppliers),
       });
     }),
+    CHUNK,
   );
   mark('suppliers', suppliers);
 
@@ -245,12 +311,15 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
   //   dépense <= 17 % de la vente
   const nFlow = count('finance_flow');
   const plan = range(nFlow).map((i) => {
+    const date = dateAt(i, nFlow);
     const product = products[(i * 3) % products.length];
     const price = Number(product.price);
-    const target = 600 + ((i * 337) % 2400); // chiffre d'affaires visé : 600 à 3 000
-    const quantity = Math.min(40, Math.max(1, Math.round(target / price)));
+    const growth = 0.85 + (0.3 * i) / Math.max(1, nFlow - 1); // +35 % entre le premier et le dernier mois
+    const season = SEASONALITY[date.getMonth()];
+    const target = (600 + ((i * 337) % 2400)) * growth * season; // chiffre d'affaires visé : ~400 à ~4 000
+    const quantity = Math.min(50, Math.max(1, Math.round(target / price)));
     const total = round2(quantity * price);
-    return { i, product, price, quantity, total, date: dateAt(i, nFlow) };
+    return { i, product, price, quantity, total, date };
   });
 
   // 5. Ventes
@@ -260,7 +329,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
       manager.create(Sale, {
         userId,
         productId: product.id,
-        clientName: clients[i % clients.length].name,
+        clientName: clients[(i * 7) % clients.length].name,
         productName: product.name,
         quantity,
         unitPrice: price,
@@ -269,6 +338,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         createdAt: date,
       }),
     ),
+    CHUNK,
   );
   mark('sales', sales);
 
@@ -290,6 +360,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         createdAt: date,
       });
     }),
+    CHUNK,
   );
   mark('purchases', purchases);
 
@@ -308,15 +379,18 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         quantity,
         unitPrice,
         total: round2(quantity * unitPrice),
-        status: pick(ORDER_STATUSES, i),
+        // les commandes récentes sont plus souvent en attente / confirmées
+        status: i >= nOrders - 15 ? pick(['pending', 'confirmed', 'shipped'], i) : pick(ORDER_STATUSES, i),
         createdAt: dateAt(i, nOrders),
       });
     }),
+    CHUNK,
   );
   mark('orders', orders);
 
   // 8. Factures (numéros d'opération uniques à l'échelle de la base)
   const nInvoices = count('invoices');
+  const yearCounters: Record<number, number> = {};
   const invoices = await manager.save(
     Invoice,
     range(nInvoices).map((i) => {
@@ -332,11 +406,16 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
       const issued = dateAt(i, nInvoices);
       const due = new Date(issued);
       due.setDate(due.getDate() + 30);
-      const status = pick(['paid', 'paid', 'pending', 'paid', 'overdue'], i);
+      // une facture non réglée dont l'échéance est passée est en retard ; les récentes restent en attente
+      const dueSoon = due.getTime() > Date.now();
+      const status = dueSoon ? pick(['paid', 'pending', 'pending'], i) : pick(['paid', 'paid', 'paid', 'paid', 'overdue'], i);
+      // numérotation FAC-AAAA-NNNN qui repart à 1 chaque année
+      const fy = issued.getFullYear();
+      yearCounters[fy] = (yearCounters[fy] || 0) + 1;
       return manager.create(Invoice, {
         userId,
         operationNumber: `OP-${userId}-${pad(i + 1, 4)}`,
-        reference: `FAC-${issued.getFullYear()}-${pad(i + 1)}`,
+        reference: `FAC-${fy}-${pad(yearCounters[fy], 4)}`,
         type: isDebit ? 'debit' : 'credit',
         clientId: isDebit ? client.id : null,
         supplierId: isDebit ? null : supplier.id,
@@ -360,6 +439,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         createdAt: issued,
       });
     }),
+    CHUNK,
   );
   mark('invoices', invoices);
 
@@ -371,17 +451,21 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
       const name = variantName(DEPARTMENTS, i, cityVariant);
       return manager.create(Department, { userId, name, description: `Service ${name}`, createdAt: dateAt(i, nDepartments) });
     }),
+    CHUNK,
   );
   mark('departments', departments);
 
   const nEmployees = count('employees');
+  const nowIso = new Date().toISOString();
   const employees = await manager.save(
     Employee,
     range(nEmployees).map((i) => {
-      const hired = daysAgo(120 + i * 55);
-      const nowIso = new Date().toISOString();
+      // Embauches étalées sur ~8 ans, dont une partie dans les 13 derniers mois
+      const hired = i % 5 === 0 ? daysAgo(10 + ((i * 37) % (periodDays() - 10))) : daysAgo(400 + ((i * 97) % 2500));
+      // prénom = i mod 20 ; nom décalé à chaque tour (pgcd(21, 20) = 1) → 400 combinaisons uniques
+      const q = Math.floor(i / FIRST_NAMES.length);
       const first = pick(FIRST_NAMES, i);
-      const last = pick(LAST_NAMES, Math.floor(i / 10) + 3 * (i % 10)); // 100 combinaisons prénom / nom sans doublon
+      const last = pick(LAST_NAMES, q * (FIRST_NAMES.length + 1) + (i % FIRST_NAMES.length));
       const level = Math.floor(i / POSITIONS.length);
       return manager.create(Employee, {
         userId,
@@ -397,6 +481,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         updatedAt: nowIso,
       });
     }),
+    CHUNK,
   );
   mark('employees', employees);
 
@@ -423,9 +508,11 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         invoiceNumber: `F-${userId}-${pad(i + 1, 4)}`,
       });
     }),
+    CHUNK,
   );
   mark('expenses', expenses);
 
+  // Budgets : année en cours et année précédente (les 13 mois de données couvrent les deux)
   const year = new Date().getFullYear();
   const nBudgets = count('budgets');
   const budgets = await manager.save(
@@ -435,10 +522,11 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         userId,
         category: EXPENSE_CATEGORIES[i % EXPENSE_CATEGORIES.length],
         amount: 2000 + ((i * 457) % 18000),
-        year: year - (Math.floor(i / departments.length) % 3),
+        year: year - (i % 2),
         department: departments[i % departments.length].name,
       }),
     ),
+    CHUNK,
   );
   mark('budgets', budgets);
 
@@ -456,6 +544,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         iban: `TN59${pad(10 + i, 3)}${pad(userId % 1000)}${pad(i * 7919 % 10000000, 7)}0000${pad(i, 3)}`,
       });
     }),
+    CHUNK,
   );
   mark('bank_accounts', bankAccounts);
 
@@ -467,20 +556,23 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
       const createdAt = dateAt(i, nShipments);
       const eta = new Date(createdAt);
       eta.setDate(eta.getDate() + 3 + (i % 4));
+      // les envois anciens sont livrés ; seuls les plus récents restent en attente / en transit
+      const status = eta.getTime() < Date.now() - 2 * 86_400_000 ? (i % 23 === 11 ? 'in_transit' : 'delivered') : pick(SHIPMENT_STATUSES, i);
       return manager.create(Shipment, {
         clientId: userId,
         transporteurId: null as any,
         trackingNumber: `TRK-${userId}-${pad(i + 1, 4)}`,
         clientName: clients[i % clients.length].name,
-        address: `${20 + i} avenue Habib Bourguiba, ${pick(CITIES, i + 1)}`,
+        address: `${20 + (i % 180)} avenue Habib Bourguiba, ${pick(CITIES, i + 1)}`,
         phone: clients[i % clients.length].phone,
         carrier: pick(CARRIERS, i),
         amount: round2(8 + ((i * 13) % 60)),
-        status: pick(SHIPMENT_STATUSES, i),
+        status,
         estimatedDelivery: eta,
         createdAt,
       });
     }),
+    CHUNK,
   );
   mark('shipments', shipments);
 
@@ -489,6 +581,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
   const objectives = await manager.save(
     Objective,
     buildDemoObjectives(nObjectives, { sales, purchases, clients, orders, invoices, shipments }).map((o) => manager.create(Objective, { userId, ...o })),
+    CHUNK,
   );
   mark('objectives', objectives);
 
@@ -535,6 +628,7 @@ function buildDemoObjectives(
   const month = (offset: number) => periodBounds('month', new Date(Date.UTC(y, m + offset, 15)));
   const quarter = (offset: number) => periodBounds('quarter', new Date(Date.UTC(y, m + offset * 3, 15)));
   const year = periodBounds('year', today);
+  const lastYear = periodBounds('year', new Date(Date.UTC(y - 1, 6, 15)));
 
   const actual = (metric: string, a: string, b: string): number => {
     const sales = data.sales.filter((s) => inRange(s.createdAt, a, b));
@@ -559,7 +653,7 @@ function buildDemoObjectives(
     return Math.max(step, Math.ceil(v / step) * step);
   };
   const monthLabel = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const quarterLabel = (iso: string) => `T${Math.floor(Number(iso.slice(5, 7)) - 1) / 3 + 1 | 0} ${iso.slice(0, 4)}`;
+  const quarterLabel = (iso: string) => `T${Math.floor((Number(iso.slice(5, 7)) - 1) / 3) + 1} ${iso.slice(0, 4)}`;
 
   // Passé : objectifs tantôt atteints, tantôt manqués ; en cours : à suivre ; futur : à venir
   const PAST = [0.82, 1.18, 0.95, 1.3, 0.7, 1.08];
@@ -567,25 +661,35 @@ function buildDemoObjectives(
   const make = (metric: string, period: string, b: { start: string; end: string }, label: string, k: number) => {
     const a = actual(metric, b.start, b.end);
     let t: number;
-    if (b.end < todayIso) t = nice(metric, a * PAST[k % PAST.length] || 3);          // période terminée
+    if (b.end < todayIso) t = nice(metric, a * PAST[((k % PAST.length) + PAST.length) % PAST.length] || 3); // période terminée
     else if (b.start > todayIso) t = nice(metric, (a || actual(metric, year.start, todayIso) / Math.max(1, m + 1)) * 1.1 || 5); // à venir
     else t = nice(metric, Math.max(a * 1.5, a + (MONEY.includes(metric) ? 500 : 3))); // en cours
     auto.push({ title: `${METRIC_TITLES[metric]} — ${label}`, metric, period, startDate: b.start, endDate: b.end, targetValue: t, currentValue: 0, unit: null });
   };
+  const MONTH_METRICS = ['revenue', 'profit', 'sales_count', 'new_clients', 'orders_count'];
+  const QUARTER_METRICS = ['revenue', 'profit', 'sales_count', 'orders_count', 'new_clients', 'invoices_paid_amount'];
 
-  // Objectifs de l'année en tête de liste
+  // Ordre de priorité (si le nombre d'objectifs est limité, on garde d'abord les plus utiles) :
+  // 1. Objectifs de l'année en cours
   ['revenue', 'profit', 'sales_count', 'average_basket', 'new_clients', 'invoices_paid_amount', 'shipments_delivered', 'purchases_count']
     .forEach((metric, k) => {
       const a = actual(metric, year.start, year.end);
       auto.push({ title: `${METRIC_TITLES[metric]} — ${y}`, metric, period: 'year', startDate: year.start, endDate: year.end, targetValue: nice(metric, a * (1.25 - 0.03 * k) || 10), currentValue: 0, unit: null });
     });
-  // Trimestres : précédent, en cours, suivant
-  [-1, 0, 1].forEach((off) => ['revenue', 'profit', 'sales_count', 'orders_count', 'new_clients', 'invoices_paid_amount'].forEach((metric, k) => { const b = quarter(off); make(metric, 'quarter', b, quarterLabel(b.start), k + off + 1); }));
-  // Mois : 6 derniers mois, mois en cours, mois suivant
-  [-6, -5, -4, -3, -2, -1, 0, 1].forEach((off) => ['revenue', 'profit', 'sales_count', 'new_clients', 'orders_count'].forEach((metric, k) => { const b = month(off); make(metric, 'month', b, monthLabel(b.start), k + off + 6); }));
-
-  // Indicateurs moins courants : mois en cours et mois suivant
+  // 2. Trimestre et mois en cours, puis suivants
+  [0, 1].forEach((off) => QUARTER_METRICS.forEach((metric, k) => { const b = quarter(off); make(metric, 'quarter', b, quarterLabel(b.start), k + off + 1); }));
+  [0, 1].forEach((off) => MONTH_METRICS.forEach((metric, k) => { const b = month(off); make(metric, 'month', b, monthLabel(b.start), k + off + 6); }));
   [0, 1].forEach((off) => ['purchases_count', 'shipments_delivered', 'average_basket'].forEach((metric, k) => { const b = month(off); make(metric, 'month', b, monthLabel(b.start), k + off + 2); }));
+  // 3. Historique sur 13 mois : mois passés et trimestres passés, du plus récent au plus ancien
+  for (let off = 1; off <= DEMO_MONTHS - 1; off++) {
+    MONTH_METRICS.forEach((metric, k) => { const b = month(-off); make(metric, 'month', b, monthLabel(b.start), k - off + 6); });
+    if (off % 3 === 1 && off <= DEMO_MONTHS - 1) {
+      const qOff = -Math.ceil(off / 3);
+      QUARTER_METRICS.forEach((metric, k) => { const b = quarter(qOff); make(metric, 'quarter', b, quarterLabel(b.start), k + qOff + 1); });
+    }
+  }
+  // 4. Bilan de l'année précédente (partiellement couverte par les 13 mois)
+  ['revenue', 'profit', 'sales_count', 'new_clients'].forEach((metric, k) => make(metric, 'year', lastYear, String(y - 1), k));
 
   // Objectifs libres : mêmes 15 objectifs sur 3 horizons
   const manual: ObjectiveSeed[] = [];
