@@ -94,23 +94,25 @@ const SEASONALITY = [0.85, 0.8, 0.95, 1.0, 1.05, 1.1, 1.2, 1.15, 0.95, 1.0, 1.1,
 
 // ───────────────────────── Jeux de données ─────────────────────────
 
+// Chaque catégorie correspond au produit de même rang dans PRODUCTS (catégorie i ↔ produit i).
 const CATEGORIES = [
-  'Informatique', 'Téléphonie', 'Électroménager', 'Mobilier de bureau', 'Papeterie',
-  'Alimentation', 'Boissons', 'Hygiène', 'Vêtements', 'Chaussures',
-  'Sport & Loisirs', 'Jouets', 'Bricolage', 'Jardin', 'Automobile',
-  'Santé', 'Beauté', 'Livres', 'Éclairage', 'Emballage',
+  'Téléphonie', 'Casques audio', 'Enceintes', 'Claviers', 'Souris',
+  'Photo & Vidéo', 'Montres', 'Lunettes', 'Bagagerie', 'Maroquinerie',
+  'T-shirts', 'Casquettes', 'Chaussures', 'Parfumerie', 'Soins cheveux',
+  'Soins visage', 'Arts de la table', 'Plantes & déco', 'Sport & gourdes', 'Bain & douche',
 ];
 
 // [nom, prix, stock]  (quelques stocks bas pour alimenter les alertes)
-// Chaque produit a une vraie photo (lien Unsplash) : DEMO_PRODUCT_IMAGES suit le même ordre que cette liste.
+// Chaque produit a une photo catalogue (produit seul sur fond blanc ou uni, lien Unsplash) :
+// DEMO_PRODUCT_IMAGES suit le même ordre que cette liste.
 const PRODUCTS: [string, number, number][] = [
-  ['Ordinateur portable 15"', 1450, 12], ['Smartphone 128 Go', 890, 25], ['Réfrigérateur 300 L', 1190, 6],
-  ['Bureau ajustable', 420, 9], ['Ramette papier A4 (x5)', 24.9, 140], ['Café moulu 1 kg', 18.5, 80],
-  ['Eau minérale (pack 6)', 4.2, 300], ['Gel hydroalcoolique 500 ml', 6.9, 4], ['Chemise coton homme', 39, 55],
-  ['Baskets running', 79, 30], ['Tapis de yoga', 22, 45], ['Puzzle 1000 pièces', 14.5, 3],
-  ['Perceuse sans fil 18V', 119, 18], ['Tondeuse électrique', 249, 7], ['Huile moteur 5L', 46, 60],
-  ['Thermomètre infrarouge', 29, 2], ['Crème hydratante 50 ml', 17.9, 90], ['Roman policier poche', 9.9, 120],
-  ['Lampe LED bureau', 34, 40], ['Carton d\'emballage (x50)', 38, 15],
+  ['Smartphone 128 Go', 890, 25], ['Casque Bluetooth à réduction de bruit', 249, 30], ['Enceinte portable', 129, 18],
+  ['Clavier sans fil', 69, 40], ['Souris sans fil', 29, 4], ['Appareil photo hybride', 1290, 6],
+  ['Montre classique bracelet acier', 189, 12], ['Lunettes de soleil', 79, 35], ['Sac à dos urbain', 59, 22],
+  ['Portefeuille en cuir', 45, 3], ['T-shirt coton blanc', 19.9, 120], ['Casquette', 24, 60],
+  ['Baskets running', 89, 28], ['Eau de parfum 100 ml', 95, 15], ['Shampooing 400 ml', 8.9, 140],
+  ['Sérum visage 30 ml', 34, 2], ['Mug céramique', 12, 90], ['Plante en pot', 22, 45],
+  ['Gourde 750 ml', 16.5, 80], ['Gel douche 250 ml', 6.5, 150],
 ];
 
 const CLIENT_NAMES = [
@@ -235,6 +237,12 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
   mark('categories', categories);
 
   // 2. Produits (liés aux catégories)
+  // Chaque produit va dans une catégorie de même type (même rang dans CATEGORIES), en alternant entre ses variantes
+  const sameType = (i: number) => categories.filter((_, k) => k % CATEGORIES.length === i % PRODUCTS.length);
+  const categoryFor = (i: number) => {
+    const list = sameType(i);
+    return list.length ? list[Math.floor(i / PRODUCTS.length) % list.length] : categories[i % categories.length];
+  };
   const nProducts = count('products');
   const products = await manager.save(
     Product,
@@ -250,7 +258,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
       const quantity = round === 0 ? baseStock : i % 9 === 4 ? i % 5 : Math.max(0, baseStock + ((i * 17) % 45) - 10);
       return manager.create(Product, {
         userId,
-        categoryId: categories[i % categories.length].id,
+        categoryId: categoryFor(i).id,
         name,
         sku: `SKU-${pad(i + 1, 4)}`,
         price,
