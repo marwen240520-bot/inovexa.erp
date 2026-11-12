@@ -882,6 +882,47 @@ export default function DashboardPage() {
     { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
   ];
 
+  // --- Carte « Ventes » : synthèse jour / semaine / mois + dernières ventes ---
+  const salesCard = (() => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfWeek = startOfDay - 6 * 24 * 60 * 60 * 1000;
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    let today = 0, week = 0, month = 0, monthCount = 0, todayCount = 0;
+    rawSales.forEach((s: any) => {
+      if (!s.createdAt) return;
+      const ts = new Date(s.createdAt).getTime();
+      if (isNaN(ts)) return;
+      const amount = parseFloat(s.total) || 0;
+      if (ts >= startOfDay) { today += amount; todayCount++; }
+      if (ts >= startOfWeek) week += amount;
+      if (ts >= startOfMonth) { month += amount; monthCount++; }
+    });
+    const avgBasket = monthCount > 0 ? month / monthCount : 0;
+    const recent = [...rawSales]
+      .filter((s: any) => s.createdAt)
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, isMobile ? 3 : 5);
+    return { today, todayCount, week, month, monthCount, avgBasket, recent, totalCount: rawSales.length };
+  })();
+
+  const salesCardText = {
+    title:     language === 'fr' ? "Ventes" : language === 'es' ? "Ventas" : language === 'ar' ? "المبيعات" : "Sales",
+    today:     language === 'fr' ? "Aujourd'hui" : language === 'es' ? "Hoy" : language === 'ar' ? "اليوم" : "Today",
+    week:      language === 'fr' ? "7 derniers jours" : language === 'es' ? "Últimos 7 días" : language === 'ar' ? "آخر 7 أيام" : "Last 7 days",
+    month:     language === 'fr' ? "Ce mois-ci" : language === 'es' ? "Este mes" : language === 'ar' ? "هذا الشهر" : "This month",
+    avgBasket: language === 'fr' ? "Panier moyen" : language === 'es' ? "Ticket medio" : language === 'ar' ? "متوسط السلة" : "Average basket",
+    count:     language === 'fr' ? "vente(s)" : language === 'es' ? "venta(s)" : language === 'ar' ? "عملية بيع" : "sale(s)",
+    recent:    language === 'fr' ? "Dernières ventes" : language === 'es' ? "Últimas ventas" : language === 'ar' ? "آخر المبيعات" : "Latest sales",
+    seeAll:    language === 'fr' ? "Voir tout" : language === 'es' ? "Ver todo" : language === 'ar' ? "عرض الكل" : "See all",
+    empty:     language === 'fr' ? "Aucune vente enregistrée" : language === 'es' ? "Ninguna venta registrada" : language === 'ar' ? "لا توجد مبيعات" : "No sales recorded",
+    client:    language === 'fr' ? "Client comptoir" : language === 'es' ? "Cliente mostrador" : language === 'ar' ? "حريف" : "Walk-in client",
+  };
+
+  const salesStatusColor = (status: string) =>
+    status === "completed" || status === "paid" || status === "validated" ? "#10b981"
+    : status === "cancelled" ? "#ef4444" : "#f59e0b";
+
   const barLabels = salesData.map(d => d.month);
   const barSales = salesData.map(d => d.sales);
   const barPurchases = salesData.map((d, i) => Math.max(0, d.sales - (profitData[i]?.profit ?? 0)));
@@ -1105,6 +1146,60 @@ export default function DashboardPage() {
                 <div style={{ fontSize: responsive.kpiLabelSize, color: theme.textSecondary, marginTop: "4px", lineHeight: "1.3" }}>{card.label}</div>
               </div>
             ))}
+          </div>
+
+          {/* Carte Ventes */}
+          <div className="card-hover" onClick={() => router.push("/dashboard/sales")} style={{ padding: responsive.cardPadding, marginBottom: responsive.sectionMargin, animation: "fadeInUp 0.5s ease 0.6s", opacity: animateCards ? 1 : 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "6px" }}>
+              <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Icon name="ShoppingCart" size="1em" color={theme.primary} /> {salesCardText.title}
+                <span style={{ background: `${theme.primary}20`, color: theme.primary, borderRadius: "12px", padding: "1px 8px", fontSize: isMobile ? "9px" : "10px", fontWeight: 500 }}>
+                  {salesCard.totalCount} {salesCardText.count}
+                </span>
+              </h3>
+              <span style={{ color: theme.primary, fontSize: isMobile ? "10px" : "11px", display: "flex", alignItems: "center", gap: "4px" }}>
+                {salesCardText.seeAll} <Icon name="ArrowRight" size="0.9em" color={theme.primary} />
+              </span>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "8px" : "12px", marginBottom: "12px" }}>
+              {[
+                { label: salesCardText.today, value: formatCurrency(salesCard.today), sub: `${salesCard.todayCount} ${salesCardText.count}`, color: theme.accent, icon: "DayIcon" as keyof typeof Icons },
+                { label: salesCardText.week, value: formatCurrency(salesCard.week), sub: "", color: theme.primary, icon: "WeekIcon" as keyof typeof Icons },
+                { label: salesCardText.month, value: formatCurrency(salesCard.month), sub: `${salesCard.monthCount} ${salesCardText.count}`, color: "#10b981", icon: "MonthIcon" as keyof typeof Icons },
+                { label: salesCardText.avgBasket, value: formatCurrency(salesCard.avgBasket), sub: salesCardText.month, color: "#f59e0b", icon: "ShoppingBag" as keyof typeof Icons },
+              ].map((m, i) => (
+                <div key={i} style={{ background: theme.surfaceHover, borderRadius: "10px", padding: isMobile ? "8px" : "12px", borderLeft: `3px solid ${m.color}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", color: theme.textSecondary, fontSize: responsive.kpiLabelSize, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    <Icon name={m.icon} size="0.9em" color={m.color} /> {m.label}
+                  </div>
+                  <div style={{ color: m.color, fontWeight: "bold", fontSize: responsive.secondaryCardValueSize, marginTop: "4px", wordBreak: "break-word" }}>{m.value}</div>
+                  {m.sub && <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px", marginTop: "2px" }}>{m.sub}</div>}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ color: theme.textSecondary, fontSize: isMobile ? "10px" : "11px", marginBottom: "6px" }}>{salesCardText.recent}</div>
+            {salesCard.recent.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                {salesCard.recent.map((s: any, idx: number) => (
+                  <div key={s.id ?? idx} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", borderBottom: idx < salesCard.recent.length - 1 ? `1px solid ${theme.border}` : "none" }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: salesStatusColor(s.status), flexShrink: 0 }} title={s.status} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: theme.text, fontSize: isMobile ? "11px" : "12px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {s.productName || `#${s.id}`}{s.quantity > 1 ? ` × ${s.quantity}` : ""}
+                      </div>
+                      <div style={{ color: theme.textSecondary, fontSize: isMobile ? "8px" : "10px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {s.clientName || salesCardText.client} · {formatDateTime(s.createdAt)}
+                      </div>
+                    </div>
+                    <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "11px" : "12px", whiteSpace: "nowrap" }}>{formatCurrency(s.total)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", padding: "16px", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>{salesCardText.empty}</p>
+            )}
           </div>
 
           {/* Sélecteur de période */}

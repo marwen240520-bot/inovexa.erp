@@ -375,8 +375,8 @@ export default function TransporteurShipmentsPage() {
   };
 
   const formatAmount = (amount?: number): string => {
-    if (!amount && amount !== 0) return "0 €";
-    return amount.toLocaleString(locale) + " €";
+    if (!amount && amount !== 0) return "0 DT";
+    return amount.toLocaleString(locale) + " DT";
   };
 
   if (loading) {

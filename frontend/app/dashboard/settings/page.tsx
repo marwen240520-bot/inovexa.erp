@@ -7,6 +7,7 @@ import { LANGUAGE_NAMES, isSupportedLanguage } from "@/lib/i18n";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import Spinner from "@/components/ui/Spinner";
+import { readStoredCurrency, CURRENCY_SYMBOLS } from "@/hooks/useAppSettings";
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -107,7 +108,7 @@ export default function SettingsPage() {
   const [animateCards, setAnimateCards] = useState(false);
   const [settings, setSettings] = useState({
     language: "fr",
-    currency: "eur",
+    currency: "tnd",
     dateFormat: "dd/mm/yyyy"
   });
   const [message, setMessage] = useState("");
@@ -129,7 +130,7 @@ export default function SettingsPage() {
     if (!token) router.push("/auth/login");
 
     const savedLanguage = localStorage.getItem("language") || "fr";
-    const savedCurrency = localStorage.getItem("currency") || "eur";
+    const savedCurrency = readStoredCurrency();
     const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
 
     setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
@@ -165,10 +166,12 @@ export default function SettingsPage() {
   };
 
   const resetSettings = () => {
-    const defaults = { language: "fr", currency: "eur", dateFormat: "dd/mm/yyyy" };
+    const defaults = { language: "fr", currency: "tnd", dateFormat: "dd/mm/yyyy" };
     setSettings(defaults);
     localStorage.setItem("language", "fr");
-    localStorage.setItem("currency", "eur");
+    localStorage.setItem("currency", "tnd");
+    localStorage.setItem("app_currency", "tnd");
+    window.dispatchEvent(new CustomEvent("settingsChanged", { detail: { currency: "tnd", dateFormat: "dd/mm/yyyy" } }));
     localStorage.setItem("dateFormat", "dd/mm/yyyy");
     
     if (language !== "fr") {
@@ -195,8 +198,8 @@ export default function SettingsPage() {
   };
 
   const formatCurrency = (amount) => {
-    const symbols = { eur: "€", usd: "$", gbp: "£", tnd: "DT" };
-    return `${amount.toLocaleString()} ${symbols[settings.currency] || "€"}`;
+    const decimals = settings.currency === "tnd" ? 3 : 2;
+    return `${amount.toLocaleString("fr-FR", { maximumFractionDigits: decimals })} ${CURRENCY_SYMBOLS[settings.currency] || "DT"}`;
   };
 
   const getCurrentLanguageName = () =>
@@ -355,10 +358,10 @@ export default function SettingsPage() {
               onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
               style={{ width: "100%", padding: selectPadding, background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
             >
+              <option value="tnd">Dinar tunisien (DT)</option>
               <option value="eur">Euro (€)</option>
               <option value="usd">Dollar US ($)</option>
               <option value="gbp">Livre sterling (£)</option>
-              <option value="tnd">Dinar tunisien (DT)</option>
             </select>
             <div style={{ marginTop: "12px", padding: "12px", background: theme.surfaceHover, borderRadius: "8px", color: theme.accent, fontSize: isMobile ? "12px" : "14px" }}>
               {t("settings.example")}: <b>{formatCurrency(1000)}</b>

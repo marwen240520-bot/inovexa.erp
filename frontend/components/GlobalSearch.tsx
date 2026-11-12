@@ -91,7 +91,7 @@ const LOCAL_SOURCES: Record<SearchType, {
   /** Lien direct vers la fiche (sinon la page de liste, filtrée sur le terme). */
   href?: (r: any) => string | null;
 }> = (() => {
-  const money = (n: any) => `${Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €`;
+  const money = (n: any) => `${Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 3 })} DT`;
   const join = (...p: any[]) => p.filter((x) => x !== null && x !== undefined && String(x).trim() !== "").join(" · ");
   return {
     clients: { url: "clients", path: "/dashboard/clients", fields: ["name", "email", "phone", "address"], title: (r) => r.name, subtitle: (r) => join(r.email, r.phone) },

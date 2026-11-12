@@ -28,7 +28,7 @@ export interface SearchHit {
 }
 
 const MIN_LENGTH = 2;
-const money = (n: unknown) => `${Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €`;
+const money = (n: unknown) => `${Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT`;
 const join = (...parts: Array<string | number | null | undefined>) =>
   parts.filter((p) => p !== null && p !== undefined && String(p).trim() !== '').join(' · ');
 
