@@ -10,6 +10,7 @@ import GlobalSearch from "@/components/GlobalSearch";
 import NotificationBell from "@/components/erp/NotificationBell";
 import type { TooltipItem } from "chart.js";
 import { Line, Doughnut } from "@/components/charts/LazyCharts";
+import Spinner from "@/components/ui/Spinner";
 import { Caveat } from "next/font/google";
 
 // ✅ Police manuscrite — même police que « Votre ERP, partout avec vous. » sur la home
@@ -630,15 +631,13 @@ export default function DashboardPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) router.push("/auth/login");
-    // Contenu visible dès le premier affichage (sinon le LCP attend la fin des appels API)
-    setAnimateCards(true);
     const initPage = async () => {
       const userData = localStorage.getItem("user");
       if (userData) { try { const u = JSON.parse(userData); setUser(u); const ui = u.avatar || u.profileImage; if (ui) { setProfileImage(ui); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } } catch { /* profil local illisible */ } }
-      loadDashboardCache();
       const [freshUser] = await Promise.all([loadUserFromBackend(), fetchDashboardData()]);
       if (freshUser) { setUser(freshUser); const fi = freshUser.avatar || freshUser.profileImage; if (fi) { setProfileImage(fi); setImageError(false); setImageTimestamp(Number(localStorage.getItem("avatarVersion")) || 0); } }
       setRefreshTime(formatDateTime(new Date()));
+      setTimeout(() => setAnimateCards(true), 100);
     };
     initPage();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -662,41 +661,9 @@ export default function DashboardPage() {
     setProfitData(labels.map((label, i) => ({ month: label, profit: profitValues[i] })));
   };
 
-  // Cache local des données du tableau de bord : affichage instantané aux visites suivantes,
-  // puis rafraîchissement en arrière-plan (stale-while-revalidate). Seuls les champs utilisés sont gardés.
-  const dashboardCacheKey = () => {
-    try { const u = JSON.parse(localStorage.getItem("user") || "{}"); return `dashboardCache:${u?.id ?? "me"}`; } catch { return "dashboardCache:me"; }
-  };
-  const saveDashboardCache = (d: Record<string, any[]>) => {
-    try {
-      const slim = {
-        v: 1, at: Date.now(),
-        sales: d.sales.map((x: any) => ({ id: x.id, total: x.total, createdAt: x.createdAt, productName: x.productName, clientName: x.clientName })),
-        purchases: d.purchases.map((x: any) => ({ total: x.total, createdAt: x.createdAt })),
-        clients: d.clients.map((x: any) => ({ createdAt: x.createdAt })),
-        products: d.products.map((x: any) => ({ quantity: x.quantity })),
-        invoices: d.invoices.map((x: any) => ({ id: x.id, status: x.status, createdAt: x.createdAt })),
-        orders: d.orders.map((x: any) => ({ id: x.id, status: x.status, createdAt: x.createdAt })),
-        employees: d.employees.map((x: any) => ({ status: x.status })),
-      };
-      const json = JSON.stringify(slim);
-      if (json.length < 2_000_000) localStorage.setItem(dashboardCacheKey(), json);
-    } catch { /* stockage plein ou indisponible : on ignore */ }
-  };
-  const loadDashboardCache = (): boolean => {
-    try {
-      const raw = localStorage.getItem(dashboardCacheKey());
-      if (!raw) return false;
-      const c = JSON.parse(raw);
-      if (c?.v !== 1) return false;
-      applyDashboardData(c.sales || [], c.purchases || [], c.clients || [], c.products || [], c.invoices || [], c.orders || [], c.employees || []);
-      setLoading(false);
-      return true;
-    } catch { return false; }
-  };
-
   const fetchDashboardData = async () => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
       const [salesRes, purchasesRes, clientsRes, productsRes, invoicesRes, ordersRes, employeesRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -724,15 +691,6 @@ export default function DashboardPage() {
       orders = Array.isArray(orders) ? orders : [];
       employees = Array.isArray(employees) ? employees : [];
 
-      applyDashboardData(sales, purchases, clients, products, invoices, orders, employees);
-      saveDashboardCache({ sales, purchases, clients, products, invoices, orders, employees });
-    } catch(e) { console.error("Erreur:", e); }
-    setLoading(false);
-  };
-
-  // Calcule tous les indicateurs à partir des listes (données réseau ou cache)
-  const applyDashboardData = (sales: any[], purchases: any[], clients: any[], products: any[], invoices: any[], orders: any[], employees: any[]) => {
-    {
       setRawSales(sales); setRawPurchases(purchases);
 
       const totalSales = sales.reduce((s: number, item: any) => s + (parseFloat(item.total) || 0), 0);
@@ -826,7 +784,9 @@ export default function DashboardPage() {
       invoices.slice(0, 5).forEach((i: any) => recent.push({ type: "invoice", data: i, date: i.createdAt }));
       recent.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setRecentActivities(recent.slice(0, 8));
-    }
+
+    } catch(e) { console.error("Erreur:", e); }
+    setLoading(false);
   };
 
   const profit = stats.totalSales - stats.totalPurchases;
@@ -1020,13 +980,9 @@ export default function DashboardPage() {
                 </div>
   );
 
-  // Emplacement gris animé affiché pendant le premier chargement (sans cache)
-  const skel = (w: string, h: string) => (
-    <span className="skel" style={{ display: "inline-block", width: w, height: h, borderRadius: "6px", background: theme.surfaceHover }} />
-  );
-  const chartPlaceholder = (h: string) => (
-    <div className="skel" style={{ height: h, borderRadius: "10px", background: theme.surfaceHover }} />
-  );
+  if (loading) {
+    return <Spinner fullScreen />;
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", width: "100%", background: theme.background, padding: 0, margin: 0 }}>
@@ -1085,19 +1041,17 @@ export default function DashboardPage() {
               .action-item:hover { transform: translateX(3px); }
             }
             .no-touch-scroll { -webkit-overflow-scrolling: touch; }
-            @keyframes skelPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
-            .skel { animation: skelPulse 1.2s ease-in-out infinite; }
             /* Mobile : toujours 2 cartes par ligne ; si le nombre est impair, la dernière occupe la ligne entière */
             @media (max-width: 767px) {
               .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
               .kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; text-align: center; }
               /* Carte KPI seule sur sa ligne (ex. Produits) : icône en haut, valeur, puis nom en bas */
               .kpi-main > *:last-child:nth-child(odd) { display: flex; flex-direction: column; align-items: center; }
-              .kpi-main > *:last-child:nth-child(odd) > div:first-child { display: contents !important; }
+              .kpi-main > *:last-child:nth-child(odd) > div:first-child { display: contents; }
               .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:last-child { order: 0; margin-bottom: 4px; }
               .kpi-main > *:last-child:nth-child(odd) > div:nth-child(2) { order: 1; }
               .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:first-child { order: 2; margin-top: 4px; }
-              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(3) { order: 3; justify-content: center !important; }
+              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(3) { order: 3; justify-content: center; }
             }
           `}</style>
 
@@ -1166,8 +1120,8 @@ export default function DashboardPage() {
                     <Icon name={card.icon} size={responsive.kpiIconSize} color={card.color} />
                   </span>
                 </div>
-                <div style={{ fontSize: responsive.kpiValueSize, color: card.color, fontWeight: "bold", wordBreak: "break-word" }}>{loading ? skel("70%", "1em") : card.value}</div>
-                {!loading && card.growth !== 0 && (
+                <div style={{ fontSize: responsive.kpiValueSize, color: card.color, fontWeight: "bold", wordBreak: "break-word" }}>{card.value}</div>
+                {card.growth !== 0 && (
                   <div style={{ fontSize: isMobile ? "8px" : responsive.kpiLabelSize, color: card.growth >= 0 ? "#10b981" : "#ef4444", marginTop: "6px", display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
                     <span className={card.trend === "up" ? "trend-up" : card.trend === "down" ? "trend-down" : ""} style={{ display: "flex", alignItems: "center", gap: "2px" }}>
                       <Icon name={card.growth >= 0 ? "TrendingUp" : "TrendingDown"} size="0.9em" /> {Math.abs(card.growth)}%
@@ -1186,7 +1140,7 @@ export default function DashboardPage() {
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
                   <Icon name={card.icon} size={responsive.kpiIconSize} color={card.color} />
                 </div>
-                <div style={{ fontSize: responsive.secondaryCardValueSize, color: card.color, fontWeight: "bold" }}>{loading ? skel("50%", "1em") : card.value}</div>
+                <div style={{ fontSize: responsive.secondaryCardValueSize, color: card.color, fontWeight: "bold" }}>{card.value}</div>
                 <div style={{ fontSize: responsive.kpiLabelSize, color: theme.textSecondary, marginTop: "4px", lineHeight: "1.3" }}>{card.label}</div>
               </div>
             ))}
@@ -1217,7 +1171,7 @@ export default function DashboardPage() {
               </div>
               {salesData.length > 0 && salesData.some(d => d.sales > 0) ? (
                 <div style={{ height: responsive.chartHeight }}><Line data={salesChartData} options={chartOptions} /></div>
-              ) : loading ? chartPlaceholder(responsive.chartHeight) : (
+              ) : (
                 <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
@@ -1233,7 +1187,7 @@ export default function DashboardPage() {
               </div>
               {barSales.length > 0 && barSales.some(v => v > 0) ? (
                 <SalesPurchasesBars labels={barLabels} sales={barSales} purchases={barPurchases} salesColor={theme.primary} purchasesColor="#f59e0b" textColor={theme.textSecondary} gridColor={theme.border} height={responsive.chartHeight} formatValue={formatCurrency} />
-              ) : loading ? chartPlaceholder(responsive.chartHeight) : (
+              ) : (
                 <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
@@ -1252,7 +1206,7 @@ export default function DashboardPage() {
               </div>
               {profitData.length > 0 && profitData.some(d => d.profit !== 0) ? (
                 <div style={{ height: isMobile ? "200px" : "280px" }}><Line data={profitChartData} options={{ ...chartOptions, maintainAspectRatio: false }} /></div>
-              ) : loading ? chartPlaceholder(responsive.chartHeight) : (
+              ) : (
                 <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
