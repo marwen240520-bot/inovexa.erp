@@ -895,11 +895,11 @@ export default function DashboardPage() {
   ];
 
   const secondaryCards = [
-    { icon: "Receipt" as keyof typeof Icons, label: t("dashboard.pendingInvoices"), value: stats.pendingInvoices, color: stats.pendingInvoices > 0 ? "#f59e0b" : theme.accent },
-    { icon: "AlertTriangle" as keyof typeof Icons, label: t("dashboard.lowStock"), value: stats.lowStock, color: stats.lowStock > 0 ? "#f59e0b" : theme.accent },
-    { icon: "UserCheck" as keyof typeof Icons, label: t("dashboard.activeEmployees"), value: stats.activeEmployees, color: theme.textSecondary },
-    { icon: "ClipboardList" as keyof typeof Icons, label: t("dashboard.pendingOrders"), value: stats.pendingOrders, color: stats.pendingOrders > 0 ? "#f59e0b" : theme.accent },
-    { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
+    { icon: "Receipt" as keyof typeof Icons, label: t("dashboard.pendingInvoices"), link: "/dashboard/documents", value: stats.pendingInvoices, color: stats.pendingInvoices > 0 ? "#f59e0b" : theme.accent },
+    { icon: "AlertTriangle" as keyof typeof Icons, label: t("dashboard.lowStock"), link: "/dashboard/stock", value: stats.lowStock, color: stats.lowStock > 0 ? "#f59e0b" : theme.accent },
+    { icon: "UserCheck" as keyof typeof Icons, label: t("dashboard.activeEmployees"), link: "/dashboard/hr", value: stats.activeEmployees, color: theme.textSecondary },
+    { icon: "ClipboardList" as keyof typeof Icons, label: t("dashboard.pendingOrders"), link: "/dashboard/orders", value: stats.pendingOrders, color: stats.pendingOrders > 0 ? "#f59e0b" : theme.accent },
+    { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), link: "/dashboard/purchases", value: formatCurrency(stats.totalPurchases), color: theme.textSecondary }
   ];
 
   const barLabels = salesData.map(d => d.month);
@@ -992,7 +992,9 @@ export default function DashboardPage() {
             /* Mobile : toujours 2 cartes par ligne ; si le nombre est impair, la dernière occupe la ligne entière */
             @media (max-width: 767px) {
               .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-              .kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; }
+              .kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; text-align: center; }
+              /* Carte seule sur sa ligne (ex. Produits) : contenu centré */
+              .kpi-grid > *:last-child:nth-child(odd) > div { justify-content: center !important; gap: 8px; }
             }
           `}</style>
 
@@ -1122,7 +1124,7 @@ export default function DashboardPage() {
           {/* 5 Cartes secondaires */}
           <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "100px" : "140px"}, 1fr))`, gap: isMobile ? "8px" : responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {secondaryCards.map((card, idx) => (
-              <div key={idx} className="card-hover" style={{ padding: responsive.secondaryCardPadding, textAlign: "center", animation: `fadeInUp 0.5s ease ${0.4 + idx * 0.05}s`, opacity: animateCards ? 1 : 0 }}>
+              <div key={idx} className="card-hover" onClick={() => router.push(card.link)} role="link" title={card.label} style={{ padding: responsive.secondaryCardPadding, textAlign: "center", animation: `fadeInUp 0.5s ease ${0.4 + idx * 0.05}s`, opacity: animateCards ? 1 : 0 }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
                   <Icon name={card.icon} size={responsive.kpiIconSize} color={card.color} />
                 </div>
@@ -1146,7 +1148,7 @@ export default function DashboardPage() {
 
           {/* Graphiques */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
-            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+            <div onClick={() => router.push("/dashboard/sales")} role="link" style={{ cursor: "pointer", background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
                 <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                   <Icon name="TrendingUp" size="1em" color={theme.primary} /> {t("dashboard.salesEvolution")}
@@ -1161,7 +1163,7 @@ export default function DashboardPage() {
                 <div style={{ height: responsive.chartHeight, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>Aucune donnée pour cette période</div>
               )}
             </div>
-                        <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+                        <div onClick={() => router.push("/dashboard/purchases")} role="link" style={{ cursor: "pointer", background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
                 <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                   <Icon name="BarChart2" size="1em" color={theme.primary} /> {salesPurchasesTitle}
@@ -1181,7 +1183,7 @@ export default function DashboardPage() {
 
           {/* Évolution du bénéfice — pleine largeur */}
           <div style={{ marginBottom: responsive.sectionMargin }}>
-            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+            <div onClick={() => router.push("/dashboard/finance")} role="link" style={{ cursor: "pointer", background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "6px" }}>
                 <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                   <Icon name="DollarSign" size="1em" color={theme.accent} /> {t("dashboard.profitEvolution") || "évolution du bénéfice"}
@@ -1200,7 +1202,7 @@ export default function DashboardPage() {
 
           {/* Top produits + Top clients */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
-            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+            <div onClick={() => router.push("/dashboard/products")} role="link" style={{ cursor: "pointer", background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Icon name="Trophy" size="1em" color="#f59e0b" /> {t("dashboard.topProducts")}
               </h3>
@@ -1208,7 +1210,7 @@ export default function DashboardPage() {
                 <div style={{ height: isMobile ? "200px" : "220px" }}><Doughnut data={topProductsData} options={doughnutOptions} /></div>
               ) : <p style={{ textAlign: "center", padding: "30px", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px" }}>{t("dashboard.topProductsEmpty")}</p>}
             </div>
-            <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+            <div onClick={() => router.push("/dashboard/clients")} role="link" style={{ cursor: "pointer", background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
               <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Icon name="Star" size="1em" color="#f59e0b" /> {t("dashboard.topClients")}
               </h3>
@@ -1229,7 +1231,7 @@ export default function DashboardPage() {
           </div>
 
           {/* KPIs stratégiques */}
-          <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, marginBottom: responsive.sectionMargin, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+          <div onClick={() => router.push("/dashboard/reports")} role="link" style={{ cursor: "pointer", background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}`, marginBottom: responsive.sectionMargin, transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-3px)"} onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
             <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Icon name="BarChart2" size="1em" color={theme.primary} /> {t("dashboard.strategicKpis")}
             </h3>
@@ -1281,7 +1283,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Activités récentes */}
-          <div style={{ background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
+          <div onClick={() => router.push("/dashboard/documents")} role="link" style={{ cursor: "pointer", background: theme.surface, borderRadius: responsive.cardRadius, padding: responsive.cardPadding, border: `1px solid ${theme.border}` }}>
             <h3 style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Icon name="Activity" size="1em" color={theme.primary} /> {t("dashboard.recentActivities")}
             </h3>
@@ -1294,7 +1296,7 @@ export default function DashboardPage() {
                   const typeIcon: keyof typeof Icons = activity.type === "order" ? "ClipboardList" : "Receipt";
                   const typeColor = activity.type === "order" ? "#f59e0b" : theme.primary;
                   return (
-                    <div key={idx} className="activity-item" style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", padding: isMobile ? "8px" : "10px", background: theme.surfaceHover, borderRadius: "10px", borderLeft: `3px solid ${typeColor}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "all 0.25s ease", WebkitTapHighlightColor: "transparent" }} onMouseEnter={() => setHoveredActivity(idx)} onMouseLeave={() => setHoveredActivity(null)} onClick={() => router.push(activity.type === "order" ? "/dashboard/orders" : "/dashboard/documents")}>
+                    <div key={idx} className="activity-item" style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", padding: isMobile ? "8px" : "10px", background: theme.surfaceHover, borderRadius: "10px", borderLeft: `3px solid ${typeColor}`, animation: `slideIn 0.3s ease ${idx * 0.05}s`, transition: "all 0.25s ease", WebkitTapHighlightColor: "transparent" }} onMouseEnter={() => setHoveredActivity(idx)} onMouseLeave={() => setHoveredActivity(null)} onClick={(e) => { e.stopPropagation(); router.push(activity.type === "order" ? "/dashboard/orders" : "/dashboard/documents"); }}>
                       <div style={{ width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", display: "flex", alignItems: "center", justifyContent: "center", background: `${typeColor}20`, borderRadius: "8px", transition: "transform 0.2s", transform: hoveredActivity === idx ? "scale(1.1)" : "scale(1)" }}>
                         <Icon name={typeIcon} size={isMobile ? "16px" : "18px"} color={typeColor} />
                       </div>
