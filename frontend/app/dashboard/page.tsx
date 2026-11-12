@@ -993,8 +993,13 @@ export default function DashboardPage() {
             @media (max-width: 767px) {
               .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
               .kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; text-align: center; }
-              /* Carte seule sur sa ligne (ex. Produits) : contenu centré */
-              .kpi-grid > *:last-child:nth-child(odd) > div { justify-content: center !important; gap: 8px; }
+              /* Carte KPI seule sur sa ligne (ex. Produits) : icône en haut, valeur, puis nom en bas */
+              .kpi-main > *:last-child:nth-child(odd) { display: flex; flex-direction: column; align-items: center; }
+              .kpi-main > *:last-child:nth-child(odd) > div:first-child { display: contents; }
+              .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:last-child { order: 0; margin-bottom: 4px; }
+              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(2) { order: 1; }
+              .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:first-child { order: 2; margin-top: 4px; }
+              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(3) { order: 3; justify-content: center; }
             }
           `}</style>
 
@@ -1099,7 +1104,7 @@ export default function DashboardPage() {
           </div>
 
           {/* 5 Cartes KPI */}
-          <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
+          <div className="kpi-grid kpi-main" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {kpiCards.map((card, idx) => (
               <div key={idx} className="card-hover" style={{ padding: responsive.cardPadding, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: responsive.cardRadius, animation: `fadeInUp 0.5s ease ${idx * 0.1}s`, opacity: animateCards ? 1 : 0 }} onMouseEnter={() => setHoveredCard(idx)} onMouseLeave={() => setHoveredCard(null)} onClick={() => router.push(card.link)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
