@@ -153,7 +153,8 @@ export class AdminService {
    * (ex. admin / customers / export / search -> users, voir scripts/correction.sql).
    * Pour chaque ligne à supprimer, on supprime d'abord les lignes qui la référencent.
    */
-  private async purgeClientData(manager: EntityManager, userId: number): Promise<void> {
+  private async purgeClientData(manager: EntityManager, userId: number, keepTables: string[] = []): Promise<void> {
+    const keep = new Set(keepTables);
     const qi = (name: string) => `"${String(name).replace(/"/g, '""')}"`;
 
     // 1) Carte des clés étrangères (colonne simple) du schéma courant
@@ -210,7 +211,7 @@ export class AdminService {
       )).map((r: any) => r.table_name),
     );
     for (const { table, col } of roots.values()) {
-      if (!existing.has(table) || table === 'users') continue;
+      if (!existing.has(table) || table === 'users' || keep.has(table)) continue;
       await deleteWhere(table, `${qi(col)} = $1`, []);
     }
   }
@@ -246,7 +247,7 @@ export class AdminService {
 
   /**
    * Remplace TOUTES les données du client par un nouveau jeu de démonstration
-   * (50 à 100 éléments par module, bénéfice positif). Opération destructive : à confirmer côté interface.
+   * (13 mois d'historique, volumes définis dans DEMO_RANGES, bénéfice positif). Opération destructive : à confirmer côté interface.
    */
   async resetDemoData(id: number) {
     const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
@@ -264,6 +265,25 @@ export class AdminService {
       };
     } catch (err: any) {
       throw this.describeDbError(err, 'régénérer les données de ce client');
+    }
+  }
+
+  /**
+   * Supprime les données de démonstration (et toutes les données métier) du client, sans supprimer son compte.
+   * On conserve sa fiche société, son historique d'audit, ses compteurs de numérotation et ses conversations IA.
+   * Opération destructive et irréversible : à confirmer côté interface.
+   */
+  async clearDemoData(id: number) {
+    const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
+    if (!client) throw new NotFoundException('Client non trouvé');
+
+    try {
+      await this.dataSource.transaction((manager) =>
+        this.purgeClientData(manager, id, ['companies', 'audit_logs', 'number_sequences', 'ia_chats']),
+      );
+      return { success: true, message: 'Données de démonstration supprimées' };
+    } catch (err: any) {
+      throw this.describeDbError(err, 'supprimer les données de ce client');
     }
   }
 

@@ -68,6 +68,7 @@ const ACT = {
   extend: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>),
   power: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>),
   refresh: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>),
+  eraser: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L11.4 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>),
   trash: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>),
 };
 
@@ -366,10 +367,10 @@ export default function AdminClientsPage() {
     showMessage("Client supprimé", "success");
   };
 
-  // Remplace TOUTES les données du client par un jeu de démonstration (50 à 100 éléments par module)
+  // Remplace TOUTES les données du client par un jeu de démonstration (13 mois d'historique)
   const resetDemoData = async (client: Client) => {
     const label = client.companyName || client.name;
-    if (!confirm(`Régénérer les données de démonstration de « ${label} » ?\n\nATTENTION : toutes les données actuelles de ce client (produits, ventes, factures, employés...) seront SUPPRIMÉES et remplacées par 50 à 100 éléments de démo par module.`)) return;
+    if (!confirm(`Régénérer les données de démonstration de « ${label} » ?\n\nATTENTION : toutes les données actuelles de ce client (produits, ventes, factures, employés...) seront SUPPRIMÉES et remplacées par 13 mois de données de démo.`)) return;
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${client.id}/reset-demo-data`, {
@@ -378,12 +379,42 @@ export default function AdminClientsPage() {
       });
       const data = await res.json().catch(() => ({} as any));
       if (res.ok && !data?.error) {
-        showMessage(`Données de démo régénérées pour « ${label} » (50 à 100 éléments par module)`, "success");
+        showMessage(`Données de démo régénérées pour « ${label} » (${data?.demoData?.total ?? ""} éléments sur 13 mois)`, "success");
       } else if (res.status >= 500) {
         showMessage("Erreur interne du serveur : opération échouée. Vérifiez que le backend est à jour.", "error");
       } else {
         const msg = Array.isArray(data?.message) ? data.message[0] : data?.message;
         showMessage(msg || data?.error || "Erreur lors de la régénération", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      showMessage("Erreur de connexion au serveur", "error");
+    }
+  };
+
+  // Supprime les données de démo (et toutes les données métier) du client, sans supprimer son compte
+  const clearDemoData = async (client: Client) => {
+    const label = client.companyName || client.name;
+    const answer = prompt(`Supprimer les données de démonstration de « ${label} » ?\n\nATTENTION : toutes les données de ce client (produits, ventes, factures, employés...) seront DÉFINITIVEMENT SUPPRIMÉES, y compris celles qu'il a saisies lui-même. Son compte, sa fiche société et ses modules sont conservés.\n\nTapez SUPPRIMER pour confirmer :`);
+    if (answer === null) return;
+    if (answer.trim().toUpperCase() !== "SUPPRIMER") {
+      showMessage("Suppression annulée : confirmation incorrecte", "error");
+      return;
+    }
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/clients/${client.id}/demo-data`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json().catch(() => ({} as any));
+      if (res.ok && !data?.error) {
+        showMessage(`Données de démo supprimées pour « ${label} »`, "success");
+      } else if (res.status >= 500) {
+        showMessage("Erreur interne du serveur : opération échouée. Vérifiez que le backend est à jour.", "error");
+      } else {
+        const msg = Array.isArray(data?.message) ? data.message[0] : data?.message;
+        showMessage(msg || data?.error || "Erreur lors de la suppression des données", "error");
       }
     } catch (e) {
       console.error(e);
@@ -709,6 +740,7 @@ export default function AdminClientsPage() {
                   { key: "extend", label: "Prolonger", color: "#047857", icon: ACT.extend, run: () => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); } },
                   { key: "power", label: client.isActive ? "Désactiver" : "Activer", color: "#b45309", icon: ACT.power, run: () => toggleStatus(client.id) },
                   { key: "demo", label: "Données démo", color: "#0369a1", icon: ACT.refresh, run: () => resetDemoData(client) },
+                  { key: "clear-demo", label: "Vider démo", color: "#9a3412", icon: ACT.eraser, run: () => clearDemoData(client) },
                   { key: "delete", label: "Supprimer", color: "#b91c1c", icon: ACT.trash, run: () => deleteClient(client.id) },
                 ];
                 return (
@@ -809,6 +841,7 @@ export default function AdminClientsPage() {
                           <button onClick={() => { const days = prompt("Jours à ajouter:", "30"); if (days) extendSubscription(client.id, parseInt(days)); }} style={actionBtn("#10b981")} title="Prolonger">{ACT.extend}</button>
                           <button onClick={() => toggleStatus(client.id)} style={actionBtn("#f59e0b")} title={client.isActive ? "Désactiver" : "Activer"}>{ACT.power}</button>
                           <button onClick={() => resetDemoData(client)} style={actionBtn("#0ea5e9")} title="Régénérer les données de démo">{ACT.refresh}</button>
+                          <button onClick={() => clearDemoData(client)} style={actionBtn("#ea580c")} title="Supprimer les données de démo">{ACT.eraser}</button>
                           <button onClick={() => deleteClient(client.id)} style={actionBtn("#c33")} title="Supprimer">{ACT.trash}</button>
                         </div>
                       </td>
