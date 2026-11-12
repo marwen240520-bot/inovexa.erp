@@ -1047,11 +1047,11 @@ export default function DashboardPage() {
               .kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; text-align: center; }
               /* Carte KPI seule sur sa ligne (ex. Produits) : icône en haut, valeur, puis nom en bas */
               .kpi-main > *:last-child:nth-child(odd) { display: flex; flex-direction: column; align-items: center; }
-              .kpi-main > *:last-child:nth-child(odd) > div:first-child { display: contents; }
+              .kpi-main > *:last-child:nth-child(odd) > div:first-child { display: contents !important; }
               .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:last-child { order: 0; margin-bottom: 4px; }
               .kpi-main > *:last-child:nth-child(odd) > div:nth-child(2) { order: 1; }
               .kpi-main > *:last-child:nth-child(odd) > div:first-child > span:first-child { order: 2; margin-top: 4px; }
-              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(3) { order: 3; justify-content: center; }
+              .kpi-main > *:last-child:nth-child(odd) > div:nth-child(3) { order: 3; justify-content: center !important; }
             }
           `}</style>
 
