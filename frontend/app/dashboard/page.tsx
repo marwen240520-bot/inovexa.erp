@@ -907,7 +907,7 @@ export default function DashboardPage() {
     { icon: "Settings" as keyof typeof Icons, label: getTempTranslation("dashboard.settings"), path: "/dashboard/settings", color: "#ec489a", bgColor: `${theme.accent}15` }
   ];
 
-  // --- Carte KPI « Ventes » : nombre de ventes + évolution mois courant vs mois précédent ---
+  // --- Carte KPI « Ventes » : montant des ventes du mois courant + évolution vs mois précédent ---
   const salesKpi = (() => {
     const now = new Date();
     const cm = now.getMonth(), cy = now.getFullYear();
@@ -916,14 +916,16 @@ export default function DashboardPage() {
     rawSales.forEach((s: any) => {
       if (!s.createdAt) return;
       const d = new Date(s.createdAt);
-      if (d.getMonth() === cm && d.getFullYear() === cy) current++;
-      else if (d.getMonth() === lm && d.getFullYear() === ly) previous++;
+      const amount = parseFloat(s.total) || 0;
+      if (d.getMonth() === cm && d.getFullYear() === cy) current += amount;
+      else if (d.getMonth() === lm && d.getFullYear() === ly) previous += amount;
     });
     const growth = previous > 0
       ? parseFloat((((current - previous) / previous) * 100).toFixed(1))
       : current > 0 ? 100 : 0;
-    return { count: rawSales.length, growth };
+    return { amount: current, growth };
   })();
+
   // Achats : montant du mois courant vs mois précédent
   const purchasesGrowth = (() => {
     const now = new Date();
@@ -941,11 +943,11 @@ export default function DashboardPage() {
       ? parseFloat((((current - previous) / previous) * 100).toFixed(1))
       : current > 0 ? 100 : 0;
   })();
-  const salesKpiLabel = language === 'fr' ? "Ventes" : language === 'es' ? "Ventas" : language === 'ar' ? "المبيعات" : "Sales";
+  const salesKpiLabel = language === 'fr' ? "Ventes du mois" : language === 'es' ? "Ventas del mes" : language === 'ar' ? "مبيعات الشهر" : "Sales this month";
 
   const kpiCards = [
     { icon: "DollarSign" as keyof typeof Icons, label: t("dashboard.revenue"), value: formatCurrency(stats.totalSales), color: theme.accent, growth: stats.salesGrowth, link: "/dashboard/sales", trend: stats.salesGrowth >= 0 ? "up" : "down" },
-    { icon: "ShoppingCart" as keyof typeof Icons, label: salesKpiLabel, value: salesKpi.count.toLocaleString(), color: theme.accent, growth: salesKpi.growth, link: "/dashboard/sales", trend: salesKpi.growth >= 0 ? "up" : "down" },
+    { icon: "ShoppingCart" as keyof typeof Icons, label: salesKpiLabel, value: formatCurrency(salesKpi.amount), color: theme.accent, growth: salesKpi.growth, link: "/dashboard/sales", trend: salesKpi.growth >= 0 ? "up" : "down" },
     { icon: "TrendingUp" as keyof typeof Icons, label: t("dashboard.profit"), value: formatCurrency(profit), color: profit >= 0 ? theme.accent : "#ef4444", growth: stats.profitGrowth, link: "/dashboard/finance", trend: stats.profitGrowth >= 0 ? "up" : "down" },
     { icon: "ShoppingBag" as keyof typeof Icons, label: t("dashboard.purchases"), value: formatCurrency(stats.totalPurchases), color: theme.accent, growth: purchasesGrowth, link: "/dashboard/purchases", trend: purchasesGrowth >= 0 ? "up" : "down" },
     { icon: "Package" as keyof typeof Icons, label: t("dashboard.products"), value: stats.totalProducts.toLocaleString(), color: theme.textSecondary, growth: 0, link: "/dashboard/products", trend: "stable" }
