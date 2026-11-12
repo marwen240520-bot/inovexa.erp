@@ -989,6 +989,11 @@ export default function DashboardPage() {
               .action-item:hover { transform: translateX(3px); }
             }
             .no-touch-scroll { -webkit-overflow-scrolling: touch; }
+            /* Mobile : toujours 2 cartes par ligne ; si le nombre est impair, la dernière occupe la ligne entière */
+            @media (max-width: 767px) {
+              .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+              .kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; }
+            }
           `}</style>
 
           {/* Header — barre de recherche déplacée à droite */}
@@ -1092,7 +1097,7 @@ export default function DashboardPage() {
           </div>
 
           {/* 5 Cartes KPI */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
+          <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "140px" : "200px"}, 1fr))`, gap: responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {kpiCards.map((card, idx) => (
               <div key={idx} className="card-hover" style={{ padding: responsive.cardPadding, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: responsive.cardRadius, animation: `fadeInUp 0.5s ease ${idx * 0.1}s`, opacity: animateCards ? 1 : 0 }} onMouseEnter={() => setHoveredCard(idx)} onMouseLeave={() => setHoveredCard(null)} onClick={() => router.push(card.link)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
@@ -1115,7 +1120,7 @@ export default function DashboardPage() {
           </div>
 
           {/* 5 Cartes secondaires */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "100px" : "140px"}, 1fr))`, gap: isMobile ? "8px" : responsive.gridGap, marginBottom: responsive.sectionMargin }}>
+          <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(auto-fit, minmax(${isMobile ? "100px" : "140px"}, 1fr))`, gap: isMobile ? "8px" : responsive.gridGap, marginBottom: responsive.sectionMargin }}>
             {secondaryCards.map((card, idx) => (
               <div key={idx} className="card-hover" style={{ padding: responsive.secondaryCardPadding, textAlign: "center", animation: `fadeInUp 0.5s ease ${0.4 + idx * 0.05}s`, opacity: animateCards ? 1 : 0 }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
