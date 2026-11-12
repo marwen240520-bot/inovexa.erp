@@ -15,6 +15,7 @@ import { BankAccount } from '../finance/entities/bank-account.entity';
 import { Shipment } from '../logistics/entities/shipment.entity';
 import { Objective } from '../objectives/entities/objective.entity';
 import { periodBounds } from '../objectives/objectives.service';
+import { DEMO_PRODUCT_IMAGES } from './demo-product-images';
 
 export type DemoModuleKey =
   | 'categories' | 'products' | 'clients' | 'suppliers' | 'finance_flow' | 'orders' | 'invoices'
@@ -101,6 +102,7 @@ const CATEGORIES = [
 ];
 
 // [nom, prix, stock]  (quelques stocks bas pour alimenter les alertes)
+// Chaque produit a une vraie photo (lien Unsplash) : DEMO_PRODUCT_IMAGES suit le même ordre que cette liste.
 const PRODUCTS: [string, number, number][] = [
   ['Ordinateur portable 15"', 1450, 12], ['Smartphone 128 Go', 890, 25], ['Réfrigérateur 300 L', 1190, 6],
   ['Bureau ajustable', 420, 9], ['Ramette papier A4 (x5)', 24.9, 140], ['Café moulu 1 kg', 18.5, 80],
@@ -253,6 +255,7 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
         sku: `SKU-${pad(i + 1, 4)}`,
         price,
         quantity,
+        imageUrl: DEMO_PRODUCT_IMAGES[i % DEMO_PRODUCT_IMAGES.length],
         createdAt: dateAt(i, nProducts),
       });
     }),
