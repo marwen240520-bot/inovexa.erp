@@ -14,9 +14,9 @@ const MUTED = '#6b7280';
 const LINE = '#d1d5db';
 const ACCENT = '#1d4ed8';
 /** Cadre maximal du logo dans l'en-tête (le logo garde ses proportions) : agrandir ces valeurs pour un logo plus grand. */
-const LOGO_MAX = { w: 210, h: 125 };
-/** Taille du QR code imprimé au centre de l'en-tête. */
-const QR_SIZE = 88;
+const LOGO_MAX = { w: 150, h: 80 };
+/** Taille du QR code imprimé sous le bloc du document (en-tête, à droite). */
+const QR_SIZE = 62;
 
 /** Les polices PDF standard ne couvrent que le latin : tout autre caractère est remplacé pour éviter un texte illisible. */
 const clean = (s: unknown) =>
@@ -136,14 +136,13 @@ export class DocumentPdfService {
     const isDraft = !doc.lockedAt;
 
     // ── En-tête ──
-    //  - à GAUCHE : logo (agrandi) ;
-    //  - au CENTRE : QR code du document ;
-    //  - à DROITE : type et numéro du document, dates.
+    //  - à GAUCHE : logo ;
+    //  - à DROITE : type et numéro du document, dates, puis le QR code juste en dessous.
     // Puis deux cadres côte à côte : la société (sous le logo) et le client / fournisseur.
     let y = PAGE.margin;
     const gap = 12;
     const boxW = (CONTENT_W - gap) / 2;
-    const titleW = 195;
+    const titleW = 230;
     const rightX = PAGE.w - PAGE.margin - titleW;
 
     // Logo : celui chargé par la société (Paramètres › Société), sinon le logo par défaut de l'application.
@@ -162,30 +161,32 @@ export class DocumentPdfService {
       }
     }
 
-    // QR code au centre de l'en-tête (entre le logo et le bloc du document)
-    if (qr) {
-      const qrX = PAGE.margin + LOGO_MAX.w + (rightX - PAGE.margin - LOGO_MAX.w - QR_SIZE) / 2;
-      try {
-        pdf.image(qr, qrX, y, { width: QR_SIZE, height: QR_SIZE });
-        pdf.font('Helvetica').fontSize(6.5).fillColor(MUTED).text('Scannez pour vérifier', qrX - 10, y + QR_SIZE + 3, { width: QR_SIZE + 20, align: 'center', lineBreak: false });
-        headerBottom = Math.max(headerBottom, y + QR_SIZE + 12);
-      } catch {
-        /* QR illisible : on continue sans */
-      }
-    }
-
-    // Document (droite) — les libellés longs (« FACTURE FOURNISSEUR ») sont imprimés plus petits
+    // Document (droite) — titre en 16 pt, 13 pt pour les libellés longs (« FACTURE FOURNISSEUR »)
     const title = clean(doc.typeLabel).toUpperCase();
-    pdf.fillColor(ACCENT).font('Helvetica-Bold').fontSize(title.length > 12 ? 14 : 20).text(title, rightX, y, { width: titleW, align: 'right' });
-    pdf.fillColor(INK).fontSize(11).text(clean(doc.number || 'BROUILLON'), rightX, pdf.y, { width: titleW, align: 'right' });
+    pdf.fillColor(ACCENT).font('Helvetica-Bold').fontSize(title.length > 12 ? 13 : 16).text(title, rightX, y, { width: titleW, align: 'right' });
+    pdf.fillColor(INK).fontSize(10).text(clean(doc.number || 'BROUILLON'), rightX, pdf.y, { width: titleW, align: 'right' });
     pdf.font('Helvetica').fontSize(8.5).fillColor(MUTED);
     pdf.text(`Date : ${formatDate(doc.issueDate)}`, rightX, pdf.y + 2, { width: titleW, align: 'right' });
     if (doc.type === 'quote' && doc.validUntil) pdf.text(`Valable jusqu'au : ${formatDate(doc.validUntil)}`, rightX, pdf.y, { width: titleW, align: 'right' });
     if (meta.settles && !meta.isCredit && doc.dueDate) pdf.text(`Échéance : ${formatDate(doc.dueDate)}`, rightX, pdf.y, { width: titleW, align: 'right' });
     if (doc.externalRef) pdf.text(`Réf. : ${clean(doc.externalRef)}`, rightX, pdf.y, { width: titleW, align: 'right' });
     if (doc.sources?.length) pdf.text(clean(`${meta.isCredit ? 'Facture' : 'Réf. documents'} : ${doc.sources.map((s: any) => s.number).filter(Boolean).join(', ')}`), rightX, pdf.y, { width: titleW, align: 'right' });
-    headerBottom = Math.max(headerBottom, pdf.y);
-    y = headerBottom + 14;
+    let rightBottom = pdf.y;
+
+    // QR code sous les dates, aligné à droite
+    if (qr) {
+      const qrX = PAGE.w - PAGE.margin - QR_SIZE;
+      const qrY = rightBottom + 6;
+      try {
+        pdf.image(qr, qrX, qrY, { width: QR_SIZE, height: QR_SIZE });
+        pdf.font('Helvetica').fontSize(6).fillColor(MUTED).text('Scannez pour vérifier', qrX - 20, qrY + QR_SIZE + 2, { width: QR_SIZE + 20, align: 'right', lineBreak: false });
+        rightBottom = qrY + QR_SIZE + 10;
+      } catch {
+        /* QR illisible : on continue sans */
+      }
+    }
+    headerBottom = Math.max(headerBottom, rightBottom);
+    y = headerBottom + 12;
 
     // ── Cadres : société (gauche, sous le logo) et client / fournisseur (droite) — même présentation ──
     const companyLines = [
