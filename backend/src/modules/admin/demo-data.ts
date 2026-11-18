@@ -6,7 +6,6 @@ import { Product } from '../products/product.entity';
 import { Sale } from '../sales/entities/sale.entity';
 import { Purchase } from '../purchases/entities/purchase.entity';
 import { Order } from '../orders/entities/order.entity';
-import { Invoice } from '../invoices/entities/invoice.entity';
 import { Employee } from '../employees/entities/employee.entity';
 import { Department } from '../departments/entities/department.entity';
 import { Expense } from '../finance/entities/expense.entity';
@@ -16,9 +15,10 @@ import { Shipment } from '../logistics/entities/shipment.entity';
 import { Objective } from '../objectives/entities/objective.entity';
 import { periodBounds } from '../objectives/objectives.service';
 import { DEMO_PRODUCT_IMAGES } from './demo-product-images';
+import { seedDemoDocuments } from './demo-documents';
 
 export type DemoModuleKey =
-  | 'categories' | 'products' | 'clients' | 'suppliers' | 'finance_flow' | 'orders' | 'invoices'
+  | 'categories' | 'products' | 'clients' | 'suppliers' | 'finance_flow' | 'orders' | 'invoices' | 'documents'
   | 'departments' | 'employees' | 'budgets' | 'bank_accounts' | 'shipments' | 'objectives';
 
 /** Nombre de mois couverts par les données de démonstration (le dernier élément date d'hier). */
@@ -31,7 +31,8 @@ export const DEMO_MONTHS = 13;
 export const DEMO_RANGES: Record<DemoModuleKey, [number, number]> = {
   finance_flow: [390, 520], // ventes, achats et dépenses (même nombre chacun)
   orders: [260, 390],
-  invoices: [260, 390],
+  invoices: [260, 390], // factures clients (≈ 75 %) et fournisseurs (≈ 25 %), avec avoirs et règlements
+  documents: [120, 180], // devis, bons de livraison, bons de commande et bons de réception
   clients: [150, 250],
   products: [150, 250],
   shipments: [150, 250],
@@ -399,60 +400,21 @@ export async function seedDemoData(manager: EntityManager, userId: number, optio
   );
   mark('orders', orders);
 
-  // 8. Factures (numéros d'opération uniques à l'échelle de la base)
-  const nInvoices = count('invoices');
-  const yearCounters: Record<number, number> = {};
-  const invoices = await manager.save(
-    Invoice,
-    range(nInvoices).map((i) => {
-      const isDebit = i % 4 !== 3; // 3 factures sur 4 sont des ventes (débit)
-      const product = products[(i * 5) % products.length];
-      const quantity = 1 + (i % 4);
-      const unitPrice = Number(product.price);
-      const subtotalHT = round2(quantity * unitPrice);
-      const taxRate = 20;
-      const taxAmount = round2((subtotalHT * taxRate) / 100);
-      const client = clients[i % clients.length];
-      const supplier = suppliers[i % suppliers.length];
-      const issued = dateAt(i, nInvoices);
-      const due = new Date(issued);
-      due.setDate(due.getDate() + 30);
-      // une facture non réglée dont l'échéance est passée est en retard ; les récentes restent en attente
-      const dueSoon = due.getTime() > Date.now();
-      const status = dueSoon ? pick(['paid', 'pending', 'pending'], i) : pick(['paid', 'paid', 'paid', 'paid', 'overdue'], i);
-      // numérotation FAC-AAAA-NNNN qui repart à 1 chaque année
-      const fy = issued.getFullYear();
-      yearCounters[fy] = (yearCounters[fy] || 0) + 1;
-      return manager.create(Invoice, {
-        userId,
-        operationNumber: `OP-${userId}-${pad(i + 1, 4)}`,
-        reference: `FAC-${fy}-${pad(yearCounters[fy], 4)}`,
-        type: isDebit ? 'debit' : 'credit',
-        clientId: isDebit ? client.id : null,
-        supplierId: isDebit ? null : supplier.id,
-        clientName: isDebit ? client.name : null,
-        supplierName: isDebit ? null : supplier.name,
-        clientEmail: isDebit ? client.email : null,
-        clientAddress: isDebit ? client.address : null,
-        clientPhone: isDebit ? client.phone : null,
-        description: `${isDebit ? 'Vente' : 'Achat'} de ${product.name}`,
-        // Champs attendus par l'aperçu / l'impression des factures : unitPriceHT, totalHT, totalTTC
-        items: [{ description: product.name, quantity, unitPriceHT: unitPrice, totalHT: subtotalHT, totalTTC: round2(subtotalHT * 1.2) }],
-        subtotalHT,
-        taxRate,
-        taxAmount,
-        amount: round2(subtotalHT + taxAmount),
-        dueDate: due,
-        paymentTerms: '30 jours',
-        notes: null,
-        status,
-        paymentMethod: status === 'paid' ? pick(['transfer', 'card', 'cash', 'check', 'mobile', 'draft'], i) : null,
-        createdAt: issued,
-      });
-    }),
-    CHUNK,
-  );
+  // 8. Factures & devis (moteur de documents) : devis, BL, factures, avoirs, BC, réceptions, factures fournisseurs,
+  //    règlements — avec leur reflet dans l'ancienne table « invoices » (tableau de bord, objectifs).
+  const docs = await seedDemoDocuments(manager, {
+    userId,
+    clients,
+    suppliers,
+    products,
+    invoiceCount: count('invoices'),
+    otherCount: count('documents'),
+    dateAt,
+  });
+  const invoices = docs.invoices;
   mark('invoices', invoices);
+  mark('documents', docs.documents);
+  mark('payments', docs.payments);
 
   // 9. Services (départements) puis employés
   const nDepartments = count('departments');

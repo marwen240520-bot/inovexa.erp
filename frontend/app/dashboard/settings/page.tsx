@@ -8,6 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import Spinner from "@/components/ui/Spinner";
 import { readStoredCurrency, CURRENCY_SYMBOLS } from "@/hooks/useAppSettings";
+import { readAiChatButton, writeAiChatButton } from "@/lib/aiChatButton";
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,20 @@ const IconLoader = ({ size = 40, color = "currentColor" }) => (
   </svg>
 );
 
+const IconChat = ({ size = 20, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    <path d="M12 7l.9 2.1L15 10l-2.1.9L12 13l-.9-2.1L9 10l2.1-.9L12 7z"/>
+  </svg>
+);
+
+// Textes de la section « Chat IA » (FR / EN / ES)
+const AI_CHAT_TEXT: Record<string, { title: string; label: string; help: string; on: string; off: string; shown: string; hidden: string }> = {
+  fr: { title: "Chat IA", label: "Afficher le bouton Chat IA sur toutes les pages", help: "Le bouton flottant en bas de l'écran ouvre l'Assistant IA sans quitter la page en cours. Le réglage s'applique immédiatement sur cet appareil.", on: "Affiché", off: "Masqué", shown: "Bouton Chat IA affiché", hidden: "Bouton Chat IA masqué" },
+  en: { title: "AI chat", label: "Show the AI chat button on every page", help: "The floating button at the bottom of the screen opens the AI Assistant without leaving the current page. Applies immediately on this device.", on: "Shown", off: "Hidden", shown: "AI chat button shown", hidden: "AI chat button hidden" },
+  es: { title: "Chat IA", label: "Mostrar el botón de chat IA en todas las páginas", help: "El botón flotante en la parte inferior abre el Asistente IA sin salir de la página actual. Se aplica de inmediato en este dispositivo.", on: "Visible", off: "Oculto", shown: "Botón de chat IA visible", hidden: "Botón de chat IA oculto" },
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -113,6 +128,8 @@ export default function SettingsPage() {
   });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
+  const [aiChatButton, setAiChatButton] = useState(true);
+  const aiText = AI_CHAT_TEXT[language] || AI_CHAT_TEXT.fr;
 
   const containerPadding = isMobile ? "16px" : "32px";
   const cardPadding = isMobile ? "20px" : "24px";
@@ -134,6 +151,7 @@ export default function SettingsPage() {
     const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
 
     setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
+    setAiChatButton(readAiChatButton());
     setLoading(false);
     setTimeout(() => setAnimateCards(true), 100);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,12 +191,22 @@ export default function SettingsPage() {
     localStorage.setItem("app_currency", "tnd");
     window.dispatchEvent(new CustomEvent("settingsChanged", { detail: { currency: "tnd", dateFormat: "dd/mm/yyyy" } }));
     localStorage.setItem("dateFormat", "dd/mm/yyyy");
+    setAiChatButton(true);
+    writeAiChatButton(true);
     
     if (language !== "fr") {
       changeLanguage("fr");
     }
     
     showMessage(t("settings.settingsReset"), "success");
+  };
+
+  // Bouton Chat IA : appliqué tout de suite (pas besoin d'enregistrer)
+  const toggleAiChatButton = () => {
+    const next = !aiChatButton;
+    setAiChatButton(next);
+    writeAiChatButton(next);
+    showMessage(next ? aiText.shown : aiText.hidden, "success");
   };
 
   const logout = () => {
@@ -395,6 +423,65 @@ export default function SettingsPage() {
               <option value="mm/dd/yyyy">MM/DD/YYYY </option>
               <option value="yyyy-mm-dd">YYYY-MM-DD </option>
             </select>
+          </div>
+
+          {/* SECTION CHAT IA */}
+          <div style={{
+            background: theme.surface,
+            borderRadius: cardRadius,
+            padding: cardPadding,
+            border: `1px solid ${theme.border}`,
+            marginBottom: sectionMargin,
+            opacity: animateCards ? 1 : 0,
+            transition: "transform 0.3s, box-shadow 0.3s",
+            animation: "fadeInUp 0.5s ease 0.35s both"
+          }}
+            onMouseEnter={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(-3px)")}
+            onMouseLeave={(e) => !isMobile && (e.currentTarget.style.transform = "translateY(0)")}
+          >
+            <h3 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "16px" : "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <IconChat size={iconSize} color={theme.primary} />
+              {aiText.title}
+            </h3>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+              <label htmlFor="ai-chat-button" style={{ color: theme.text, fontSize: isMobile ? "13px" : "14px", cursor: "pointer", flex: 1 }}>
+                {aiText.label}
+              </label>
+              <button
+                id="ai-chat-button"
+                type="button"
+                role="switch"
+                aria-checked={aiChatButton}
+                onClick={toggleAiChatButton}
+                style={{
+                  position: "relative",
+                  width: "52px",
+                  height: "30px",
+                  flexShrink: 0,
+                  borderRadius: "999px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: aiChatButton ? theme.primary : theme.border,
+                  transition: "background 0.2s",
+                  WebkitTapHighlightColor: "transparent"
+                }}
+              >
+                <span style={{
+                  position: "absolute",
+                  top: "3px",
+                  insetInlineStart: aiChatButton ? "25px" : "3px",
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "50%",
+                  background: "#fff",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                  transition: "inset-inline-start 0.2s"
+                }} />
+              </button>
+            </div>
+            <div style={{ marginTop: "12px", padding: "10px", background: theme.surfaceHover, borderRadius: "8px", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px", lineHeight: 1.5 }}>
+              {aiText.help} <strong style={{ color: aiChatButton ? "#10b981" : theme.textSecondary }}>{aiChatButton ? aiText.on : aiText.off}</strong>
+            </div>
           </div>
 
           {/* BOUTONS ACTIONS */}
