@@ -210,6 +210,17 @@ export class AdminService {
         `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()`,
       )).map((r: any) => r.table_name),
     );
+    // Lignes et échéances des documents commerciaux : sans colonne "userId" ni clé étrangère,
+    // elles doivent être supprimées AVANT leurs documents pour ne pas rester orphelines.
+    if (existing.has('documents') && !keep.has('documents')) {
+      for (const child of ['document_lines', 'document_installments']) {
+        if (!existing.has(child)) continue;
+        await manager.query(
+          `DELETE FROM ${qi(child)} WHERE "documentId" IN (SELECT "id" FROM "documents" WHERE "userId" = $1)`,
+          [userId],
+        );
+      }
+    }
     for (const { table, col } of roots.values()) {
       if (!existing.has(table) || table === 'users' || keep.has(table)) continue;
       await deleteWhere(table, `${qi(col)} = $1`, []);

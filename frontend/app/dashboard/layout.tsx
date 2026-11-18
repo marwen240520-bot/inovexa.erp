@@ -4,6 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import { useState, useEffect } from "react";
 import { useDeviceHint } from "@/contexts/DeviceContext";
 import { AppShellProvider } from "@/components/ui/PageSkeleton";
+import FloatingAssistant from "@/components/assistant/FloatingAssistant";
 
 export default function DashboardLayout({
   children,
@@ -66,6 +67,9 @@ export default function DashboardLayout({
       >
         <AppShellProvider>{children}</AppShellProvider>
       </main>
+
+      {/* Bouton « Chat IA » sur toutes les pages (masquable dans Paramètres › Préférences) */}
+      <FloatingAssistant />
 
       <style dangerouslySetInnerHTML={{
         __html: `

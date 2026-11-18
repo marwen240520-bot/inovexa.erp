@@ -66,6 +66,10 @@ export interface AssistantChatProps {
   fontFamily?: string;
   /** Question à poser automatiquement à l'ouverture (ex. ?q=… dans l'URL) */
   initialQuestion?: string | null;
+  /** Fenêtre flottante : affiche un bouton « Fermer » dans l'en-tête */
+  onClose?: () => void;
+  /** Affichage compact (fenêtre flottante) : boutons de l'en-tête réduits à leur icône */
+  compact?: boolean;
 }
 
 type L3 = "fr" | "en" | "es";
@@ -79,6 +83,7 @@ const UI: Record<L3, Record<string, any>> = {
     offline: "Mode hors-ligne",
     loadingData: "Chargement des données…",
     newChat: "Nouvelle conversation",
+    close: "Fermer",
     copyAll: "Copier la conversation",
     copied: "Copié",
     copy: "Copier",
@@ -111,6 +116,7 @@ const UI: Record<L3, Record<string, any>> = {
     offline: "Offline mode",
     loadingData: "Loading data…",
     newChat: "New conversation",
+    close: "Close",
     copyAll: "Copy conversation",
     copied: "Copied",
     copy: "Copy",
@@ -143,6 +149,7 @@ const UI: Record<L3, Record<string, any>> = {
     offline: "Modo sin conexión",
     loadingData: "Cargando datos…",
     newChat: "Nueva conversación",
+    close: "Cerrar",
     copyAll: "Copiar conversación",
     copied: "Copiado",
     copy: "Copiar",
@@ -789,14 +796,22 @@ export default function AssistantChat(props: AssistantChatProps) {
               </span>
             </button>
           )}
-          {!isMobile && messages.length > 0 && (
+          {!isMobile && !props.compact && messages.length > 0 && (
             <button type="button" className="ixa-btn" onClick={copyAll} title={T.copyAll} style={btn(copiedId === "__all")}>
               {copiedId === "__all" ? <ICheck size={13} /> : <ICopy size={13} />} {copiedId === "__all" ? T.copied : T.copyAll}
             </button>
           )}
           <button type="button" className="ixa-btn" onClick={newChat} title={T.newChat} aria-label={T.newChat} style={btn()}>
-            <IPlus size={13} /> {!isMobile && T.newChat}
+            <IPlus size={13} /> {!isMobile && !props.compact && T.newChat}
           </button>
+          {props.onClose && (
+            <button type="button" className="ixa-btn" onClick={props.onClose} title={T.close} aria-label={T.close} style={btn()}>
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
       </header>
 
