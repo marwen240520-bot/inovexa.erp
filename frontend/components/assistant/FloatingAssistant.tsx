@@ -57,16 +57,32 @@ async function loadDataset(): Promise<Record<string, any[]>> {
   return Object.fromEntries(entries);
 }
 
-// Icône du bouton : bulle de discussion avec un petit robot (assistant IA)
-const ChatBotIcon = ({ size = 24 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z" />
-    <rect x="8" y="7.5" width="8" height="5.5" rx="1.6" />
-    <line x1="12" y1="5.6" x2="12" y2="7.5" />
-    <circle cx="10.4" cy="10.2" r="0.6" fill="currentColor" stroke="none" />
-    <circle cx="13.6" cy="10.2" r="0.6" fill="currentColor" stroke="none" />
+// Icône du bouton : bulle de discussion « verre » + étoile IA à 4 branches + deux éclats qui scintillent
+const AiChatIcon = ({ size = 28 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    {/* bulle : fond translucide + contour */}
+    <path
+      d="M7.5 5h14A4.5 4.5 0 0 1 26 9.5v8a4.5 4.5 0 0 1-4.5 4.5H14l-5.2 4.3a.8.8 0 0 1-1.3-.6V22A4.5 4.5 0 0 1 3 17.5v-8A4.5 4.5 0 0 1 7.5 5z"
+      fill="rgba(255,255,255,0.18)" stroke="currentColor" strokeWidth={1.7} strokeLinejoin="round"
+    />
+    {/* étoile IA */}
+    <path d="M14.5 8.3c.5 2.6 1.6 3.7 4.2 4.2-2.6.5-3.7 1.6-4.2 4.2-.5-2.6-1.6-3.7-4.2-4.2 2.6-.5 3.7-1.6 4.2-4.2z" fill="currentColor" />
+    {/* éclats */}
+    <path className="ixa-fab-twinkle" d="M27 2.5c.25 1.3.8 1.85 2.1 2.1-1.3.25-1.85.8-2.1 2.1-.25-1.3-.8-1.85-2.1-2.1 1.3-.25 1.85-.8 2.1-2.1z" fill="currentColor" />
+    <circle className="ixa-fab-twinkle ixa-fab-twinkle-2" cx="29" cy="10" r="1" fill="currentColor" />
   </svg>
 );
+
+// Animations du bouton : halo qui « respire » et éclats qui scintillent (désactivées si l'utilisateur réduit les animations)
+const FAB_STYLE = `
+@keyframes ixa-fab-halo { 0% { transform: scale(1); opacity: .55; } 70% { transform: scale(1.55); opacity: 0; } 100% { transform: scale(1.55); opacity: 0; } }
+@keyframes ixa-fab-twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+.ixa-fab-halo { position: absolute; inset: 0; border-radius: 50%; background: inherit; z-index: -1; animation: ixa-fab-halo 2.8s ease-out infinite; pointer-events: none; }
+.ixa-fab-twinkle { transform-box: fill-box; transform-origin: center; animation: ixa-fab-twinkle 2.2s ease-in-out infinite; }
+.ixa-fab-twinkle-2 { animation-delay: 1.1s; }
+@media (prefers-reduced-motion: reduce) { .ixa-fab-halo, .ixa-fab-twinkle { animation: none; } }
+`;
+
 const CloseIcon = ({ size = 22 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
     <line x1="18" y1="6" x2="6" y2="18" />
@@ -230,6 +246,7 @@ export default function FloatingAssistant() {
             cursor: "pointer",
             color: "#fff",
             background: theme.gradient || theme.primary,
+            isolation: "isolate",
             boxShadow: "0 10px 28px rgba(79,70,229,0.38), 0 2px 6px rgba(0,0,0,0.18)",
             display: "flex",
             alignItems: "center",
@@ -240,7 +257,9 @@ export default function FloatingAssistant() {
           onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.06)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
         >
-          {open ? <CloseIcon size={isMobile ? 22 : 24} /> : <ChatBotIcon size={isMobile ? 25 : 28} />}
+          <style>{FAB_STYLE}</style>
+          {!open && <span className="ixa-fab-halo" aria-hidden="true" />}
+          {open ? <CloseIcon size={isMobile ? 22 : 24} /> : <AiChatIcon size={isMobile ? 28 : 31} />}
         </button>
       )}
     </>

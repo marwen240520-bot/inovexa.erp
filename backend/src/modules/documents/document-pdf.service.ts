@@ -15,7 +15,7 @@ const LINE = '#d1d5db';
 const ACCENT = '#1d4ed8';
 /** Cadre maximal du logo dans l'en-tête (le logo garde ses proportions) : agrandir ces valeurs pour un logo plus grand. */
 const LOGO_MAX = { w: 150, h: 80 };
-/** Taille du QR code imprimé sous le bloc du document (en-tête, à droite). */
+/** Taille du QR code imprimé au centre de l'en-tête, entre le logo et le bloc du document. */
 const QR_SIZE = 62;
 
 /** Les polices PDF standard ne couvrent que le latin : tout autre caractère est remplacé pour éviter un texte illisible. */
@@ -137,12 +137,13 @@ export class DocumentPdfService {
 
     // ── En-tête ──
     //  - à GAUCHE : logo ;
-    //  - à DROITE : type et numéro du document, dates, puis le QR code juste en dessous.
+    //  - au CENTRE : QR code (entre le logo et le bloc du document) ;
+    //  - à DROITE : type et numéro du document, dates.
     // Puis deux cadres côte à côte : la société (sous le logo) et le client / fournisseur.
     let y = PAGE.margin;
     const gap = 12;
     const boxW = (CONTENT_W - gap) / 2;
-    const titleW = 230;
+    const titleW = 200;
     const rightX = PAGE.w - PAGE.margin - titleW;
 
     // Logo : celui chargé par la société (Paramètres › Société), sinon le logo par défaut de l'application.
@@ -173,14 +174,13 @@ export class DocumentPdfService {
     if (doc.sources?.length) pdf.text(clean(`${meta.isCredit ? 'Facture' : 'Réf. documents'} : ${doc.sources.map((s: any) => s.number).filter(Boolean).join(', ')}`), rightX, pdf.y, { width: titleW, align: 'right' });
     let rightBottom = pdf.y;
 
-    // QR code sous les dates, aligné à droite
+    // QR code au centre, entre le logo et le bloc du document
     if (qr) {
-      const qrX = PAGE.w - PAGE.margin - QR_SIZE;
-      const qrY = rightBottom + 6;
+      const qrX = PAGE.margin + LOGO_MAX.w + (rightX - PAGE.margin - LOGO_MAX.w - QR_SIZE) / 2;
       try {
-        pdf.image(qr, qrX, qrY, { width: QR_SIZE, height: QR_SIZE });
-        pdf.font('Helvetica').fontSize(6).fillColor(MUTED).text('Scannez pour vérifier', qrX - 20, qrY + QR_SIZE + 2, { width: QR_SIZE + 20, align: 'right', lineBreak: false });
-        rightBottom = qrY + QR_SIZE + 10;
+        pdf.image(qr, qrX, y, { width: QR_SIZE, height: QR_SIZE });
+        pdf.font('Helvetica').fontSize(6).fillColor(MUTED).text('Scannez pour vérifier', qrX - 15, y + QR_SIZE + 2, { width: QR_SIZE + 30, align: 'center', lineBreak: false });
+        rightBottom = Math.max(rightBottom, y + QR_SIZE + 10);
       } catch {
         /* QR illisible : on continue sans */
       }
