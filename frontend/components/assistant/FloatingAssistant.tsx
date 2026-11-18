@@ -57,10 +57,14 @@ async function loadDataset(): Promise<Record<string, any[]>> {
   return Object.fromEntries(entries);
 }
 
-const SparkleIcon = ({ size = 24 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z" />
-    <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z" />
+// Icône du bouton : bulle de discussion avec un petit robot (assistant IA)
+const ChatBotIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z" />
+    <rect x="8" y="7.5" width="8" height="5.5" rx="1.6" />
+    <line x1="12" y1="5.6" x2="12" y2="7.5" />
+    <circle cx="10.4" cy="10.2" r="0.6" fill="currentColor" stroke="none" />
+    <circle cx="13.6" cy="10.2" r="0.6" fill="currentColor" stroke="none" />
   </svg>
 );
 const CloseIcon = ({ size = 22 }: { size?: number }) => (
@@ -236,7 +240,7 @@ export default function FloatingAssistant() {
           onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.06)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
         >
-          {open ? <CloseIcon size={isMobile ? 22 : 24} /> : <SparkleIcon size={isMobile ? 24 : 27} />}
+          {open ? <CloseIcon size={isMobile ? 22 : 24} /> : <ChatBotIcon size={isMobile ? 25 : 28} />}
         </button>
       )}
     </>

@@ -14,7 +14,9 @@ const MUTED = '#6b7280';
 const LINE = '#d1d5db';
 const ACCENT = '#1d4ed8';
 /** Cadre maximal du logo dans l'en-tête (le logo garde ses proportions) : agrandir ces valeurs pour un logo plus grand. */
-const LOGO_MAX = { w: 200, h: 100 };
+const LOGO_MAX = { w: 210, h: 125 };
+/** Taille du QR code imprimé au centre de l'en-tête. */
+const QR_SIZE = 88;
 
 /** Les polices PDF standard ne couvrent que le latin : tout autre caractère est remplacé pour éviter un texte illisible. */
 const clean = (s: unknown) =>
@@ -134,11 +136,15 @@ export class DocumentPdfService {
     const isDraft = !doc.lockedAt;
 
     // ── En-tête ──
-    //  - à GAUCHE : logo, puis la société (nom, adresse, téléphone) ;
-    //  - à DROITE : type et numéro du document, dates, puis le cadre client / fournisseur.
+    //  - à GAUCHE : logo (agrandi) ;
+    //  - au CENTRE : QR code du document ;
+    //  - à DROITE : type et numéro du document, dates.
+    // Puis deux cadres côte à côte : la société (sous le logo) et le client / fournisseur.
     let y = PAGE.margin;
-    const colW = 260;
-    const rightX = PAGE.w - PAGE.margin - colW;
+    const gap = 12;
+    const boxW = (CONTENT_W - gap) / 2;
+    const titleW = 195;
+    const rightX = PAGE.w - PAGE.margin - titleW;
 
     // Logo : celui chargé par la société (Paramètres › Société), sinon le logo par défaut de l'application.
     let logo: Buffer | null = null;
@@ -146,70 +152,79 @@ export class DocumentPdfService {
       try { logo = Buffer.from(company.logoDataUrl.split(',')[1], 'base64'); } catch { logo = null; }
     }
     if (!logo) logo = brandLogo();
-    let leftY = y;
+    let headerBottom = y;
     if (logo) {
       try {
         pdf.image(logo, PAGE.margin, y, { fit: [LOGO_MAX.w, LOGO_MAX.h] });
-        leftY = y + fittedLogoHeight(pdf, logo) + 8;
+        headerBottom = Math.max(headerBottom, y + fittedLogoHeight(pdf, logo));
       } catch {
         /* logo illisible : on continue sans */
       }
     }
 
-    // Société émettrice (gauche, sous le logo)
-    const name = companyName(company);
-    const address = companyAddress(company);
-    if (name) {
-      pdf.fillColor(INK).font('Helvetica-Bold').fontSize(11).text(clean(name), PAGE.margin, leftY, { width: colW });
-      leftY = pdf.y + 1;
-    }
-    pdf.font('Helvetica').fontSize(8.5).fillColor(INK);
-    if (address) {
-      pdf.text(clean(address), PAGE.margin, leftY, { width: colW });
-      leftY = pdf.y;
-    }
-    if (company.phone) {
-      pdf.text(clean(`Tél : ${company.phone}`), PAGE.margin, leftY, { width: colW });
-      leftY = pdf.y;
+    // QR code au centre de l'en-tête (entre le logo et le bloc du document)
+    if (qr) {
+      const qrX = PAGE.margin + LOGO_MAX.w + (rightX - PAGE.margin - LOGO_MAX.w - QR_SIZE) / 2;
+      try {
+        pdf.image(qr, qrX, y, { width: QR_SIZE, height: QR_SIZE });
+        pdf.font('Helvetica').fontSize(6.5).fillColor(MUTED).text('Scannez pour vérifier', qrX - 10, y + QR_SIZE + 3, { width: QR_SIZE + 20, align: 'center', lineBreak: false });
+        headerBottom = Math.max(headerBottom, y + QR_SIZE + 12);
+      } catch {
+        /* QR illisible : on continue sans */
+      }
     }
 
-    // Document (droite)
-    pdf.fillColor(ACCENT).font('Helvetica-Bold').fontSize(20).text(clean(doc.typeLabel).toUpperCase(), rightX, y, { width: colW, align: 'right' });
-    pdf.fillColor(INK).fontSize(11).text(clean(doc.number || 'BROUILLON'), rightX, pdf.y, { width: colW, align: 'right' });
+    // Document (droite) — les libellés longs (« FACTURE FOURNISSEUR ») sont imprimés plus petits
+    const title = clean(doc.typeLabel).toUpperCase();
+    pdf.fillColor(ACCENT).font('Helvetica-Bold').fontSize(title.length > 12 ? 14 : 20).text(title, rightX, y, { width: titleW, align: 'right' });
+    pdf.fillColor(INK).fontSize(11).text(clean(doc.number || 'BROUILLON'), rightX, pdf.y, { width: titleW, align: 'right' });
     pdf.font('Helvetica').fontSize(8.5).fillColor(MUTED);
-    pdf.text(`Date : ${formatDate(doc.issueDate)}`, rightX, pdf.y + 2, { width: colW, align: 'right' });
-    if (doc.type === 'quote' && doc.validUntil) pdf.text(`Valable jusqu'au : ${formatDate(doc.validUntil)}`, rightX, pdf.y, { width: colW, align: 'right' });
-    if (meta.settles && !meta.isCredit && doc.dueDate) pdf.text(`Échéance : ${formatDate(doc.dueDate)}`, rightX, pdf.y, { width: colW, align: 'right' });
-    if (doc.externalRef) pdf.text(`Réf. : ${clean(doc.externalRef)}`, rightX, pdf.y, { width: colW, align: 'right' });
-    if (doc.sources?.length) pdf.text(clean(`${meta.isCredit ? 'Facture' : 'Réf. documents'} : ${doc.sources.map((s: any) => s.number).filter(Boolean).join(', ')}`), rightX, pdf.y, { width: colW, align: 'right' });
-    let rightY = pdf.y + 10;
+    pdf.text(`Date : ${formatDate(doc.issueDate)}`, rightX, pdf.y + 2, { width: titleW, align: 'right' });
+    if (doc.type === 'quote' && doc.validUntil) pdf.text(`Valable jusqu'au : ${formatDate(doc.validUntil)}`, rightX, pdf.y, { width: titleW, align: 'right' });
+    if (meta.settles && !meta.isCredit && doc.dueDate) pdf.text(`Échéance : ${formatDate(doc.dueDate)}`, rightX, pdf.y, { width: titleW, align: 'right' });
+    if (doc.externalRef) pdf.text(`Réf. : ${clean(doc.externalRef)}`, rightX, pdf.y, { width: titleW, align: 'right' });
+    if (doc.sources?.length) pdf.text(clean(`${meta.isCredit ? 'Facture' : 'Réf. documents'} : ${doc.sources.map((s: any) => s.number).filter(Boolean).join(', ')}`), rightX, pdf.y, { width: titleW, align: 'right' });
+    headerBottom = Math.max(headerBottom, pdf.y);
+    y = headerBottom + 14;
 
-    // ── Tiers : cadre client / fournisseur à DROITE, sous le bloc du document ──
-    const partyLabel = meta.party === 'client' ? 'CLIENT' : 'FOURNISSEUR';
+    // ── Cadres : société (gauche, sous le logo) et client / fournisseur (droite) — même présentation ──
+    const companyLines = [
+      companyName(company),
+      company.taxId ? `MF : ${company.taxId}` : '',
+      companyAddress(company),
+      company.phone ? `Tél : ${company.phone}` : '',
+      company.email || '',
+    ].filter(Boolean);
     const partyLines = [
       doc.partyName,
       doc.partyTaxId ? `MF : ${doc.partyTaxId}` : '',
       doc.partyAddress || '',
       doc.partyPhone ? `Tél : ${doc.partyPhone}` : '',
+      doc.partyEmail || '',
     ].filter(Boolean);
-    // hauteur réelle (les adresses longues passent sur plusieurs lignes)
-    pdf.font('Helvetica-Bold').fontSize(10);
-    let boxH = 18 + pdf.heightOfString(clean(partyLines[0] || ''), { width: colW - 20 });
-    pdf.font('Helvetica').fontSize(8.5);
-    for (const l of partyLines.slice(1)) boxH += pdf.heightOfString(clean(l), { width: colW - 20 });
-    boxH += 10;
-    pdf.roundedRect(rightX, rightY, colW, boxH, 4).strokeColor(LINE).lineWidth(0.8).stroke();
-    pdf.fillColor(MUTED).font('Helvetica-Bold').fontSize(7.5).text(partyLabel, rightX + 10, rightY + 7);
-    pdf.fillColor(INK).font('Helvetica-Bold').fontSize(10).text(clean(partyLines[0] || ''), rightX + 10, rightY + 18, { width: colW - 20 });
-    pdf.font('Helvetica').fontSize(8.5).fillColor(INK);
-    let py = pdf.y;
-    for (const l of partyLines.slice(1)) {
-      pdf.text(clean(l), rightX + 10, py, { width: colW - 20 });
-      py = pdf.y;
-    }
-    rightY += boxH;
-
-    y = Math.max(leftY, rightY) + 16;
+    const innerW = boxW - 20;
+    const boxHeight = (lines: string[]) => {
+      pdf.font('Helvetica-Bold').fontSize(10);
+      let h = 18 + pdf.heightOfString(clean(lines[0] || ''), { width: innerW });
+      pdf.font('Helvetica').fontSize(8.5);
+      for (const l of lines.slice(1)) h += pdf.heightOfString(clean(l), { width: innerW });
+      return h + 10;
+    };
+    const boxH = Math.max(boxHeight(companyLines), boxHeight(partyLines));
+    const drawBox = (x: number, label: string, lines: string[]) => {
+      pdf.roundedRect(x, y, boxW, boxH, 4).strokeColor(LINE).lineWidth(0.8).stroke();
+      pdf.fillColor(MUTED).font('Helvetica-Bold').fontSize(7.5).text(label, x + 10, y + 7);
+      pdf.fillColor(INK).font('Helvetica-Bold').fontSize(10).text(clean(lines[0] || ''), x + 10, y + 18, { width: innerW });
+      pdf.font('Helvetica').fontSize(8.5).fillColor(INK);
+      let ly = pdf.y;
+      for (const l of lines.slice(1)) {
+        pdf.text(clean(l), x + 10, ly, { width: innerW });
+        ly = pdf.y;
+      }
+    };
+    drawBox(PAGE.margin, meta.party === 'client' ? 'ÉMETTEUR' : 'SOCIÉTÉ', companyLines);
+    drawBox(PAGE.margin + boxW + gap, meta.party === 'client' ? 'CLIENT' : 'FOURNISSEUR', partyLines);
+    y += boxH + 16;
 
     // ── Tableau des lignes ──
     const cols = [
@@ -265,7 +280,7 @@ export class DocumentPdfService {
     if (doc.withholdingAmount > 0) totalsRows.push([`Retenue à la source (${formatQty(doc.withholdingRate)} %)`, `-${formatAmount(doc.withholdingAmount)}`]);
     const netLabel = meta.settles ? (meta.isCredit ? 'Net à rembourser / imputer' : 'Net à payer') : 'Total TTC';
     const showNet = meta.settles;
-    const blockH = Math.max(totalsRows.length * 15 + (showNet ? 30 : 4) + 10, qr ? 96 : 0);
+    const blockH = totalsRows.length * 15 + (showNet ? 30 : 4) + 10;
     if (y + blockH + 120 > PAGE.h - 60) {
       pdf.addPage();
       y = PAGE.margin;
@@ -287,37 +302,23 @@ export class DocumentPdfService {
       ty += 30;
     }
 
-    // QR code (gauche) puis détail de la TVA par taux (à droite du QR)
+    // Détail de la TVA par taux (à gauche des totaux)
     let vy = y;
-    let vatX = PAGE.margin;
-    if (qr) {
-      const size = 78;
-      try {
-        pdf.image(qr, PAGE.margin, y, { width: size, height: size });
-        pdf.font('Helvetica').fontSize(6.5).fillColor(MUTED).text('Scannez pour vérifier', PAGE.margin - 6, y + size + 3, { width: size + 12, align: 'center', lineBreak: false });
-        vy = y + size + 14;
-        vatX = PAGE.margin + size + 14;
-      } catch {
-        /* QR illisible : on continue sans */
-      }
-    }
     if (doc.vatBreakdown?.length) {
-      let ry = y;
-      pdf.font('Helvetica-Bold').fontSize(8).fillColor(MUTED).text('DÉTAIL TVA', vatX, ry);
-      ry += 12;
+      pdf.font('Helvetica-Bold').fontSize(8).fillColor(MUTED).text('DÉTAIL TVA', PAGE.margin, vy);
+      vy += 12;
       pdf.font('Helvetica-Bold').fontSize(8).fillColor(INK);
-      pdf.text('Taux', vatX, ry, { width: 42 });
-      pdf.text('Base HT', vatX + 42, ry, { width: 66, align: 'right' });
-      pdf.text('TVA', vatX + 108, ry, { width: 60, align: 'right' });
-      ry += 12;
+      pdf.text('Taux', PAGE.margin, vy, { width: 50 });
+      pdf.text('Base HT', PAGE.margin + 50, vy, { width: 70, align: 'right' });
+      pdf.text('TVA', PAGE.margin + 120, vy, { width: 70, align: 'right' });
+      vy += 12;
       pdf.font('Helvetica').fontSize(8.5);
       for (const g of doc.vatBreakdown) {
-        pdf.text(`${formatQty(g.rate)} %`, vatX, ry, { width: 42 });
-        pdf.text(formatAmount(g.baseHT), vatX + 42, ry, { width: 66, align: 'right' });
-        pdf.text(formatAmount(g.vatAmount), vatX + 108, ry, { width: 60, align: 'right' });
-        ry += 12;
+        pdf.text(`${formatQty(g.rate)} %`, PAGE.margin, vy, { width: 50 });
+        pdf.text(formatAmount(g.baseHT), PAGE.margin + 50, vy, { width: 70, align: 'right' });
+        pdf.text(formatAmount(g.vatAmount), PAGE.margin + 120, vy, { width: 70, align: 'right' });
+        vy += 12;
       }
-      vy = Math.max(vy, ry);
     }
 
     y = Math.max(ty, vy) + 8;
