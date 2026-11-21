@@ -1,0 +1,32 @@
+/*
+ * PageReveal — le contenu reste invisible jusqu'à ce que les images du
+ * premier écran soient prêtes (voir PageReveal.tsx).
+ */
+
+.gate {
+  opacity: 0;
+  /* Filet de sécurité : sans JavaScript, la page s'affiche quand même après 6 s. */
+  animation: pageRevealFallback 0.35s ease 6s forwards;
+}
+
+.gate[data-ready='true'] {
+  opacity: 1;
+  animation: none;
+  transition: opacity 0.35s ease;
+}
+
+@keyframes pageRevealFallback {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate {
+    animation-duration: 0.01s;
+  }
+
+  .gate[data-ready='true'] {
+    transition: none;
+  }
+}
