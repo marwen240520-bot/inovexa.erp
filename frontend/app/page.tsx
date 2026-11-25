@@ -1344,6 +1344,8 @@ const STYLES = `
   .hp-nav a { padding: 8px 12px; border-radius: 999px; color: var(--hp-text); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap; }
   .hp-nav a:hover { background: var(--hp-glass); }
   .home-page.is-compact .hp-nav { display: none; }
+  /* Menu et bouton de langue placés en haut de l'en-tête (et non centrés sur le logo) */
+  .hp-nav, .hp-top-controls { align-self: flex-start; }
   .hp-footer-site { display: none; }
   .home-page.is-compact .hp-footer-site { display: inline; }
   .hp-light .hp-footer a { color: #000000; }
