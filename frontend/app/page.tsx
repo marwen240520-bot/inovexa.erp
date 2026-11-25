@@ -115,6 +115,38 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
 ];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
+// Pages publiques de l'application (dossier app/(site)) : liens de l'en-tête et du pied de page.
+const SITE_LINKS: Record<Lang, { href: string; label: string }[]> = {
+  fr: [
+    { href: "/products", label: "Produits" },
+    { href: "/pricing", label: "Tarifs" },
+    { href: "/blog", label: "Blog" },
+    { href: "/about", label: "À propos" },
+    { href: "/contact", label: "Contact" },
+  ],
+  en: [
+    { href: "/products", label: "Products" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/blog", label: "Blog" },
+    { href: "/about", label: "About" },
+    { href: "/contact", label: "Contact" },
+  ],
+  es: [
+    { href: "/products", label: "Productos" },
+    { href: "/pricing", label: "Precios" },
+    { href: "/blog", label: "Blog" },
+    { href: "/about", label: "Nosotros" },
+    { href: "/contact", label: "Contacto" },
+  ],
+  ar: [
+    { href: "/products", label: "المنتجات" },
+    { href: "/pricing", label: "الأسعار" },
+    { href: "/blog", label: "المدونة" },
+    { href: "/about", label: "من نحن" },
+    { href: "/contact", label: "اتصل بنا" },
+  ],
+};
+
 const BG_IMAGE = "/images/3.png";
 
 // ─── Orbite des modules (icônes posées sur l'image, nom au survol) ─────────────
@@ -983,6 +1015,13 @@ export default function HomePage(): React.ReactElement {
       <header className="hp-header">
         <div className="hp-rise">{brand}</div>
 
+        {/* Pages publiques (produits, tarifs, blog…) — masqué sur petit écran, repris dans le pied de page */}
+        <nav className="hp-nav hp-rise" aria-label="Site">
+          {SITE_LINKS[lang].map((item) => (
+            <Link key={item.href} href={item.href}>{item.label}</Link>
+          ))}
+        </nav>
+
         {/* Langue — dans le header, défile avec la page */}
         <div className="hp-top-controls">
           <div ref={langWrapRef} style={{ position: "relative" }}>
@@ -1080,9 +1119,12 @@ export default function HomePage(): React.ReactElement {
 
       <footer className="hp-footer">
         <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa ERP. {text.copyright}</p>
-        <nav aria-label="Legal" style={{ display: "flex", gap: 16 }}>
-          <a href="https://inovexa-erp.com/privacy.html" target="_blank" rel="noopener noreferrer">{text.privacy}</a>
-          <a href="https://inovexa-erp.com/terms.html" target="_blank" rel="noopener noreferrer">{text.terms}</a>
+        <nav aria-label="Legal" style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+          {SITE_LINKS[lang].map((item) => (
+            <Link key={item.href} href={item.href} className="hp-footer-site">{item.label}</Link>
+          ))}
+          <Link href="/privacy">{text.privacy}</Link>
+          <Link href="/terms">{text.terms}</Link>
         </nav>
       </footer>
 
@@ -1296,6 +1338,14 @@ const STYLES = `
   .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: clamp(8px, 1.6vh, 18px) clamp(20px, 4vw, 56px); font-size: 14px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── Liens vers les pages publiques : dans l'en-tête sur grand écran, dans le pied de page sinon ── */
+  .hp-nav { display: flex; align-items: center; gap: clamp(2px, 0.8vw, 12px); margin-inline-start: auto; }
+  .hp-nav a { padding: 8px 12px; border-radius: 999px; color: var(--hp-text); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .hp-nav a:hover { background: var(--hp-glass); }
+  .home-page.is-compact .hp-nav { display: none; }
+  .hp-footer-site { display: none; }
+  .home-page.is-compact .hp-footer-site { display: inline; }
   .hp-light .hp-footer a { color: #000000; }
   /* Sans voile sur le fond : copyright plus foncé pour rester lisible sur la vague colorée */
   .hp-light .hp-footer { color: #1E1035; font-weight: 500; }
