@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import SiteHeader from "@/components/site/SiteHeader";
 import { useResponsive } from "@/hooks/useResponsive";
 import { Poppins, Orbitron } from "next/font/google";
 
@@ -51,9 +52,6 @@ const IconUsers = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
 );
 const IconArrowRight = ({ size = "1.1em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-);
-const IconChevronDown = ({ size = 11, color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.5")}><polyline points="6 9 12 15 18 9" /></svg>
 );
 const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><polyline points="20 6 9 17 4 12" /></svg>
@@ -107,15 +105,9 @@ interface HomeText {
   features: { title: string; desc: string }[];
 }
 
-const LANGS: { code: Lang; label: string; flag: string }[] = [
-  { code: "fr", label: "Français", flag: "fr" },
-  { code: "en", label: "English", flag: "gb" },
-  { code: "es", label: "Español", flag: "es" },
- 
-];
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
-// Pages publiques de l'application (dossier app/(site)) : liens de l'en-tête et du pied de page.
+// Pages publiques de l'application (dossier app/(site)) : liens du menu de l'en-tête.
 const SITE_LINKS: Record<Lang, { href: string; label: string }[]> = {
   fr: [
     { href: "/products", label: "Produits" },
@@ -145,6 +137,14 @@ const SITE_LINKS: Record<Lang, { href: string; label: string }[]> = {
     { href: "/about", label: "من نحن" },
     { href: "/contact", label: "اتصل بنا" },
   ],
+};
+
+// Libellés de l'en-tête commun (components/site/SiteHeader) dans les langues de la page d'accueil.
+const HEADER_TEXT: Record<Lang, { home: string; demo: string }> = {
+  fr: { home: "Accueil", demo: "Réserver une démo" },
+  en: { home: "Home", demo: "Book Demo" },
+  es: { home: "Inicio", demo: "Reservar demo" },
+  ar: { home: "الرئيسية", demo: "احجز عرضًا تجريبيًا" },
 };
 
 const BG_IMAGE = "/images/3.png";
@@ -902,19 +902,15 @@ const HP_LIGHT: Record<string, string> = {
 export default function HomePage(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
-  const { language, changeLanguage } = useLanguage();
+  const { language } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
   const isCompact = isMobile || isTablet;
 
   const lang: Lang = (["fr", "en", "es", "ar"] as const).includes(language as Lang) ? (language as Lang) : "en";
   const text = TRANSLATIONS[lang];
-  const currentLang = LANGS.find((l) => l.code === lang)!;
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const langWrapRef = useRef<HTMLDivElement>(null);
-  const langButtonRef = useRef<HTMLButtonElement>(null);
   const aboutBtnRef = useRef<HTMLButtonElement>(null);
   const aboutCloseRef = useRef<HTMLButtonElement>(null);
 
@@ -925,22 +921,6 @@ export default function HomePage(): React.ReactElement {
     const full = { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1];
     try { router.prefetch(token ? "/dashboard" : "/auth/login", full); } catch { /* ignoré */ }
   }, [pathname, router]);
-
-  useEffect(() => {
-    if (!showLanguageMenu) return;
-    const onPointer = (e: PointerEvent) => {
-      if (langWrapRef.current && !langWrapRef.current.contains(e.target as Node)) setShowLanguageMenu(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setShowLanguageMenu(false); langButtonRef.current?.focus(); }
-    };
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [showLanguageMenu]);
 
   const closeAbout = useCallback(() => {
     setShowAbout(false);
@@ -962,25 +942,8 @@ export default function HomePage(): React.ReactElement {
     };
   }, [showAbout, closeAbout]);
 
-  const handleLanguageChange = useCallback((code: Lang) => {
-    changeLanguage(code);
-    setShowLanguageMenu(false);
-    langButtonRef.current?.focus();
-  }, [changeLanguage]);
-
   const year = new Date().getFullYear();
   const ctaHref = isLoggedIn ? "/dashboard" : "/auth/login";
-
-  const brand = (
-    <Link href="/" aria-label="Inovexa ERP" className="hp-brand">
-      <span className="hp-logo">
-        <img src="/images/logo.png" alt="" width={88} height={88} />
-      </span>
-      <span className="hp-brand-name" lang="en" dir="ltr">
-        <b>INOV</b>EXA <span className="hp-brand-erp">ERP</span>
-      </span>
-    </Link>
-  );
 
   return (
     <div
@@ -1011,53 +974,13 @@ export default function HomePage(): React.ReactElement {
       {/* Icônes des modules posées autour du portable — nom affiché au survol (ordinateur) */}
       <ModuleOrbit lang={lang} />
 
-      {/* En-tête : logo + contrôle de langue */}
-      <header className="hp-header">
-        <div className="hp-rise">{brand}</div>
-
-        {/* Pages publiques (produits, tarifs, blog…) — masqué sur petit écran, repris dans le pied de page */}
-        <nav className="hp-nav hp-rise" aria-label="Site">
-          {SITE_LINKS[lang].map((item) => (
-            <Link key={item.href} href={item.href}>{item.label}</Link>
-          ))}
-        </nav>
-
-        {/* Langue — dans le header, défile avec la page */}
-        <div className="hp-top-controls">
-          <div ref={langWrapRef} style={{ position: "relative" }}>
-            <button
-              ref={langButtonRef}
-              type="button"
-              className="hp-chip-btn"
-              aria-haspopup="listbox"
-              aria-expanded={showLanguageMenu}
-              aria-label={`${text.langLabel} — ${currentLang.label}`}
-              onClick={() => setShowLanguageMenu((v) => !v)}
-            >
-              <img src={`https://flagcdn.com/w20/${currentLang.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
-              <span style={{ fontWeight: 700, letterSpacing: 0.5 }}>{lang.toUpperCase()}</span>
-              <span className={"hp-chevron" + (showLanguageMenu ? " open" : "")}><IconChevronDown color="var(--hp-muted)" /></span>
-            </button>
-
-            {showLanguageMenu && (
-              <ul role="listbox" aria-label={text.langLabel} className="hp-lang-menu">
-                {LANGS.map((l) => {
-                  const active = l.code === lang;
-                  return (
-                    <li key={l.code} role="option" aria-selected={active}>
-                      <button type="button" lang={l.code} className={"hp-lang-item" + (active ? " active" : "")} onClick={() => handleLanguageChange(l.code)}>
-                        <img src={`https://flagcdn.com/w20/${l.flag}.png`} width={16} height={12} alt="" style={{ borderRadius: 2 }} />
-                        <span style={{ flex: 1 }}>{l.label}</span>
-                        {active && <IconCheck color="var(--hp-accent-text)" />}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* En-tête : le même que sur les pages publiques (components/site/SiteHeader) */}
+      <SiteHeader
+        lang={lang}
+        nav={[{ href: "/", label: HEADER_TEXT[lang].home }, ...SITE_LINKS[lang]]}
+        cta={{ href: "/contact#form-section", label: HEADER_TEXT[lang].demo }}
+        labels={{ language: text.langLabel, menu: "Menu" }}
+      />
 
       {/* Contenu principal */}
       <main className="hp-main">
@@ -1120,9 +1043,6 @@ export default function HomePage(): React.ReactElement {
       <footer className="hp-footer">
         <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa ERP. {text.copyright}</p>
         <nav aria-label="Legal" style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-          {SITE_LINKS[lang].map((item) => (
-            <Link key={item.href} href={item.href} className="hp-footer-site">{item.label}</Link>
-          ))}
           <Link href="/privacy">{text.privacy}</Link>
           <Link href="/terms">{text.terms}</Link>
         </nav>
@@ -1198,25 +1118,6 @@ const STYLES = `
   .home-page * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
-
-  /* ── En-tête ── */
-  .hp-header {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: clamp(12px, 2.4vh, 26px) clamp(20px, 4vw, 56px) 0;
-  }
-
-  /* ── Contrôles thème + langue (dans le header) ── */
-  .hp-top-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
 
   /* ── Fond : image plein cadre, ancrée à DROITE (le portable reste toujours visible) ── */
   .hp-bg-img {
@@ -1318,9 +1219,9 @@ const STYLES = `
   .hp-orbit-item.is-end .hp-orbit-tip::after { left: auto; right: calc(24 * var(--u)); transform: none; }
   @keyframes hpOrbitIn { from { opacity: 0; transform: translate(-50%, -50%) scale(.85); } to { opacity: 1; transform: translate(-50%, -50%); } }
 
-  /* Les zones vides du header et du contenu laissent passer la souris jusqu'aux icônes */
-  .hp-header, .hp-main { pointer-events: none; }
-  .hp-header > *, .hp-content > *, .hp-cards, .hp-actions > * { pointer-events: auto; }
+  /* Les zones vides du contenu laissent passer la souris jusqu'aux icônes */
+  .hp-main { pointer-events: none; }
+  .hp-content > *, .hp-cards, .hp-actions > * { pointer-events: auto; }
 
   /* ── Structure ── */
   .hp-main {
@@ -1338,16 +1239,6 @@ const STYLES = `
   .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: clamp(8px, 1.6vh, 18px) clamp(20px, 4vw, 56px); font-size: 14px; color: var(--hp-faint); }
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-  /* ── Liens vers les pages publiques : dans l'en-tête sur grand écran, dans le pied de page sinon ── */
-  .hp-nav { display: flex; align-items: center; gap: clamp(2px, 0.8vw, 12px); margin-inline-start: auto; }
-  .hp-nav a { padding: 8px 12px; border-radius: 999px; color: var(--hp-text); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-  .hp-nav a:hover { background: var(--hp-glass); }
-  .home-page.is-compact .hp-nav { display: none; }
-  /* Menu et bouton de langue placés en haut de l'en-tête (et non centrés sur le logo) */
-  .hp-nav, .hp-top-controls { align-self: flex-start; }
-  .hp-footer-site { display: none; }
-  .home-page.is-compact .hp-footer-site { display: inline; }
   .hp-light .hp-footer a { color: #000000; }
   /* Sans voile sur le fond : copyright plus foncé pour rester lisible sur la vague colorée */
   .hp-light .hp-footer { color: #1E1035; font-weight: 500; }
@@ -1400,14 +1291,6 @@ const STYLES = `
     line-height: 1.2;
     white-space: nowrap;
   }
-
-  /* ── Marque ── */
-  .hp-brand { display: inline-flex; align-items: center; gap: clamp(10px, 1vw, 14px); text-decoration: none; }
-  .hp-logo { width: clamp(52px, 7.8vh, 80px); height: clamp(52px, 7.8vh, 80px); flex-shrink: 0; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .hp-logo img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(138,43,226,0.6)); }
-  .hp-brand-name { font-family: var(--font-orbitron), var(--font-poppins), sans-serif; font-size: clamp(18px, min(1.7vw, 3vh), 28px); letter-spacing: 2px; font-weight: 800; color: var(--hp-text); white-space: nowrap; }
-  .hp-brand-name b { font-weight: 800; }
-  .hp-brand-erp { color: var(--hp-accent-text); font-weight: 800; font-size: 0.72em; letter-spacing: 4px; }
 
   /* ── Textes ── */
   .hp-modules {
@@ -1471,10 +1354,6 @@ const STYLES = `
   /* Paysage (tablette couchée) : portable visible à droite. Portrait : partie gauche épurée, texte lisible. */
   .is-compact .hp-bg-img { object-position: 100% 55%; }
   @media (orientation: portrait) { .is-compact .hp-bg-img { object-position: 0% center; } }
-  .is-mobile .hp-header { padding-top: calc(16px + env(safe-area-inset-top)); padding-left: 18px; padding-right: 18px; }
-  .is-mobile .hp-logo { width: 50px; height: 50px; }
-  .is-mobile .hp-brand-name { font-size: 16px; letter-spacing: 1px; }
-  .is-mobile .hp-brand-erp { letter-spacing: 2px; }
   .is-mobile .hp-title { font-size: clamp(32px, 9vw, 44px); }
   .is-mobile .hp-subtitle { font-size: 17px; }
   .is-mobile .hp-footer { flex-direction: column-reverse; align-items: flex-start; }
@@ -1579,17 +1458,6 @@ const STYLES = `
   }
   @media (max-width: 1199px) { .hp-orbit { display: none; } }
 
-  /* ── Sélecteur de langue ── */
-  .hp-chip-btn { background: var(--hp-chip-bg); backdrop-filter: blur(12px); border: 1px solid var(--hp-chip-border); border-radius: 36px; color: var(--hp-text); height: 40px; padding: 0 14px; cursor: pointer; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
-  .is-mobile .hp-chip-btn { height: 36px; padding: 0 10px; font-size: 12px; }
-  .hp-chevron { display: inline-flex; transition: transform .2s; }
-  .hp-chevron.open { transform: rotate(180deg); }
-  .hp-lang-menu { position: absolute; top: 48px; inset-inline-end: 0; background: var(--hp-menu-bg); backdrop-filter: blur(20px); border: 1px solid var(--hp-chip-border); border-radius: 14px; padding: 6px !important; min-width: 150px; box-shadow: 0 20px 40px var(--hp-shadow); z-index: 201; animation: menuIn .16s ease-out; }
-  .hp-lang-item { width: 100%; background: transparent; border: none; color: var(--hp-menu-text); padding: 11px 12px; min-height: 44px; border-radius: 9px; cursor: pointer; text-align: start; font-size: 14px; font-family: inherit; display: flex; align-items: center; gap: 10px; }
-  .hp-lang-item:hover { background: rgba(167,139,250,0.12); }
-  .hp-lang-item.active { background: rgba(167,139,250,0.2); color: var(--hp-accent-text); font-weight: 700; }
-  @keyframes menuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-
   /* ── Arabe (lecture de droite à gauche) ──
      L'image de fond ne se retourne pas (le portable et ses icônes restent à droite) : sur ordinateur,
      la colonne de texte reste donc dans la moitié gauche ; elle est simplement alignée à droite et
@@ -1616,7 +1484,7 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-slide, .hp-live-dot, .hp-lang-menu, .hp-overlay, .hp-modal, .hp-orbit-item { animation: none !important; }
+    .hp-rise, .hp-slide, .hp-live-dot, .hp-overlay, .hp-modal, .hp-orbit-item { animation: none !important; }
     .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card, .hp-orbit-tile, .hp-orbit-tip { transition: none !important; }
     .hp-orbit-item:hover .hp-orbit-tile { transform: none; }
   }

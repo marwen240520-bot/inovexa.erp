@@ -1,17 +1,17 @@
 // components/site/SiteHeader.tsx
-// En-tête des pages publiques : logo, menu, bouton de langue (le même que sur la page d'accueil), bouton de démo.
+// En-tête commun à la page d'accueil et aux pages publiques : logo, menu, bouton de langue, bouton de démo.
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import "./site-header.css";
 
 interface NavItem {
   href: string;
   label: string;
 }
 
-// Même liste et mêmes drapeaux que le bouton de langue de la page d'accueil (app/page.tsx).
 const LANGS = [
   { code: "fr", label: "Français", flag: "fr" },
   { code: "en", label: "English", flag: "gb" },
@@ -49,9 +49,11 @@ export default function SiteHeader({
   const langWrapRef = useRef<HTMLDivElement>(null);
   const langButtonRef = useRef<HTMLButtonElement>(null);
 
-  const currentLang = LANGS.find((item) => item.code === lang) ?? LANGS[1];
+  // Une langue hors liste (l'arabe, possible sur la page d'accueil) garde son code, sans drapeau.
+  const currentLang = LANGS.find((item) => item.code === lang);
+  const currentLabel = currentLang?.label ?? lang.toUpperCase();
 
-  // Fermeture du menu des langues : clic en dehors ou touche Échap (comme sur la page d'accueil).
+  // Fermeture du menu des langues : clic en dehors ou touche Échap.
   useEffect(() => {
     if (!showLanguageMenu) return;
     const onPointer = (event: PointerEvent) => {
@@ -88,10 +90,10 @@ export default function SiteHeader({
 
   return (
     <header className="st-header">
-      <div className="st-wrap st-header-row">
+      <div className="st-header-row">
         <Link href="/" className="st-brand" aria-label="Inovexa ERP">
           <img src="/images/logo.png" alt="" width={40} height={40} />
-          <span className="st-brand-name" lang="en">
+          <span className="st-brand-name" lang="en" dir="ltr">
             <b>INOV</b>EXA <span>ERP</span>
           </span>
         </Link>
@@ -121,11 +123,11 @@ export default function SiteHeader({
               className="st-chip-btn"
               aria-haspopup="listbox"
               aria-expanded={showLanguageMenu}
-              aria-label={`${labels.language} — ${currentLang.label}`}
+              aria-label={`${labels.language} — ${currentLabel}`}
               onClick={() => setShowLanguageMenu((value) => !value)}
             >
-              <img src={`https://flagcdn.com/w20/${currentLang.flag}.png`} width={16} height={12} alt="" />
-              <span className="st-chip-code">{currentLang.code.toUpperCase()}</span>
+              {currentLang ? <img src={`https://flagcdn.com/w20/${currentLang.flag}.png`} width={16} height={12} alt="" /> : null}
+              <span className="st-chip-code">{lang.toUpperCase()}</span>
               <span className={"st-chevron" + (showLanguageMenu ? " open" : "")}>
                 <IconChevronDown />
               </span>
@@ -134,7 +136,7 @@ export default function SiteHeader({
             {showLanguageMenu && (
               <ul role="listbox" aria-label={labels.language} className="st-lang-menu">
                 {LANGS.map((item) => {
-                  const active = item.code === currentLang.code;
+                  const active = item.code === lang;
                   return (
                     <li key={item.code} role="option" aria-selected={active}>
                       <button
@@ -154,7 +156,7 @@ export default function SiteHeader({
             )}
           </div>
 
-          <Link href={cta.href} className="st-btn st-btn-small">
+          <Link href={cta.href} className="st-header-cta">
             {cta.label}
           </Link>
           <button
