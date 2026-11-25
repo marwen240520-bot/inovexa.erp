@@ -1,7 +1,8 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './entities/project.entity';
+import { stripProtected } from '../saas/admin.guard';
 
 @Injectable()
 export class ProjectsService {
@@ -24,19 +25,19 @@ export class ProjectsService {
   }
 
   async create(userId: number, data: Partial<Project>) {
-    const project = this.projectRepository.create({ ...data, userId });
+    const project = this.projectRepository.create({ ...stripProtected(data as any), userId });
     return this.projectRepository.save(project);
   }
 
   async update(id: number, userId: number, data: Partial<Project>) {
     const project = await this.findOne(id, userId);
-    Object.assign(project, data);
+    Object.assign(project, stripProtected(data as any, ['createdAt', 'updatedAt']));
     return this.projectRepository.save(project);
   }
 
   async delete(id: number, userId: number) {
     const project = await this.findOne(id, userId);
-    await this.projectRepository.delete(id);
+    await this.projectRepository.delete({ id, userId });
     return { success: true };
   }
 }

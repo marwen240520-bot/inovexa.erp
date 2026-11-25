@@ -52,6 +52,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { runPreSyncFixes } from './common/pre-sync-fixes';
 import { PosModule } from './modules/pos/pos.module';
 import { ObjectivesModule } from './modules/objectives/objectives.module';
+import { SaasModule } from './modules/saas/saas.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { ObjectivesModule } from './modules/objectives/objectives.module';
     AuditModule,
     MailModule,
     CompanyModule,
+    SaasModule,
     StockModule,
     FinanceModule,
     ProductionModule,

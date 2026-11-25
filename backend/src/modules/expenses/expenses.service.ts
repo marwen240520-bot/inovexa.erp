@@ -1,7 +1,8 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Expense } from '../finance/entities/expense.entity';
+import { stripProtected } from '../saas/admin.guard';
 
 @Injectable()
 export class ExpensesService {
@@ -15,14 +16,14 @@ export class ExpensesService {
   }
 
   async create(userId: number, data: Partial<Expense>) {
-    const expense = this.expenseRepository.create({ ...data, userId });
+    const expense = this.expenseRepository.create({ ...stripProtected(data as any), userId });
     return this.expenseRepository.save(expense);
   }
 
   async delete(id: number, userId: number) {
     const expense = await this.expenseRepository.findOne({ where: { id, userId } });
     if (!expense) throw new NotFoundException('Dépense non trouvée');
-    await this.expenseRepository.delete(id);
+    await this.expenseRepository.delete({ id, userId });
     return { success: true };
   }
 }

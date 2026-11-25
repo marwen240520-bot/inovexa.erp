@@ -1,6 +1,8 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, Index, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
+// Le numéro de suivi est unique dans une société, pas sur toute la plateforme.
 @Entity('shipments')
+@Index('UQ_shipments_client_tracking', ['clientId', 'trackingNumber'], { unique: true })
 export class Shipment {
   @PrimaryGeneratedColumn()
   id: number;
@@ -11,7 +13,7 @@ export class Shipment {
   @Column({ nullable: true })
   transporteurId: number;
 
-  @Column({ unique: true })
+  @Column()
   trackingNumber: string;
 
   @Column()

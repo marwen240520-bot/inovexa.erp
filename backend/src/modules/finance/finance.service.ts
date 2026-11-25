@@ -5,6 +5,7 @@ import { Expense } from './entities/expense.entity';
 import { Budget } from './entities/budget.entity';
 import { BankAccount } from './entities/bank-account.entity';
 import { AccountingService } from '../accounting/accounting.service';
+import { stripProtected } from '../saas/admin.guard';
 
 @Injectable()
 export class FinanceService {
@@ -91,7 +92,7 @@ export class FinanceService {
   }
 
   async addBankAccount(userId: number, data: Partial<BankAccount>) {
-    const account = this.bankAccountRepository.create({ ...data, userId });
+    const account = this.bankAccountRepository.create({ ...stripProtected(data as any), userId });
     return this.bankAccountRepository.save(account);
   }
 

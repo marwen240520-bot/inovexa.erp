@@ -44,8 +44,6 @@ echo.
 echo ?? Frontend : http://localhost:3000
 echo ?? Backend  : http://localhost:3001
 echo.
-echo ?? ADMIN : marwen2405@gmail.com / 123456
-echo ?? CLIENT : S'inscrire via /auth/register
 echo.
 echo ========================================
 echo.

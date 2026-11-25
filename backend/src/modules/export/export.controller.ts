@@ -1,11 +1,15 @@
-﻿import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ExportModuleService } from './export.service';
 import { CreateExportModuleDto } from './dto/create-export.dto';
 import { UpdateExportModuleDto } from './dto/update-export.dto';
 
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminGuard } from '../saas/admin.guard';
 @ApiTags('Exports')
+// Module d'origine sans données de société : réservé à l'administrateur de la plateforme (il était ouvert sans connexion).
 @Controller('export')
+@UseGuards(JwtAuthGuard, AdminGuard)
 export class ExportModuleController {
   constructor(private readonly exportService: ExportModuleService) {}
 

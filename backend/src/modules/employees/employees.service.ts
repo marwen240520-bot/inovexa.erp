@@ -1,9 +1,10 @@
-﻿import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 
 import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
+import { stripProtected } from '../saas/admin.guard';
 @Injectable()
 export class EmployeesService {
   constructor(
@@ -26,7 +27,7 @@ export class EmployeesService {
 
   async create(userId: number, data: any) {
     const employee = this.employeeRepository.create({
-      ...data,
+      ...stripProtected(data),
       userId,
       hireDate: data.hireDate ? new Date(data.hireDate) : null
     });
@@ -35,8 +36,10 @@ export class EmployeesService {
 
   async update(id: number, userId: number, data: any) {
     const employee = await this.findOne(id, userId);
-    if (data.hireDate) data.hireDate = new Date(data.hireDate);
-    Object.assign(employee, data);
+    // « createdAt » reste modifiable ici : c'est la date d'entrée qui sert au calcul des congés acquis.
+    const input = stripProtected(data);
+    if (input.hireDate) input.hireDate = new Date(input.hireDate);
+    Object.assign(employee, input);
     return this.employeeRepository.save(employee);
   }
 

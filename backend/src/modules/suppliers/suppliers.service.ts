@@ -1,9 +1,10 @@
-﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Supplier } from './supplier.entity';
 
 import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
+import { stripProtected } from '../saas/admin.guard';
 @Injectable()
 export class SuppliersService {
   constructor(
@@ -49,19 +50,19 @@ export class SuppliersService {
   }
 
   async create(userId: number, data: Partial<Supplier>) {
-    const supplier = this.supplierRepository.create({ ...data, userId });
+    const supplier = this.supplierRepository.create({ ...stripProtected(data as any), userId });
     return this.supplierRepository.save(supplier);
   }
 
   async update(id: number, userId: number, data: Partial<Supplier>) {
     const supplier = await this.findOne(id, userId);
-    Object.assign(supplier, data);
+    Object.assign(supplier, stripProtected(data as any, ['createdAt', 'updatedAt']));
     return this.supplierRepository.save(supplier);
   }
 
   async delete(id: number, userId: number) {
     const supplier = await this.findOne(id, userId);
-    await this.supplierRepository.delete(id);
+    await this.supplierRepository.delete({ id, userId });
     return { success: true };
   }
 

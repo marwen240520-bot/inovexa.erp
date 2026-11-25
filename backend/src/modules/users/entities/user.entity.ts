@@ -1,4 +1,4 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, Index, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -66,6 +66,69 @@ export class User {
 
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date | null;
+
+  // ───────────── SaaS : état du compte (valable pour le PROPRIÉTAIRE ; un membre d'équipe suit son propriétaire) ─────────────
+
+  /** TRIAL | ACTIVE | EXPIRED | SUSPENDED | CANCELLED — voir modules/saas/account-access.ts. */
+  @Column({ type: 'varchar', length: 12, default: 'ACTIVE' })
+  accountStatus: string;
+
+  /** Motif du dernier changement d'état (TRIAL_EXPIRED, SUBSCRIPTION_EXPIRED, texte saisi par l'administrateur…). */
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  statusReason: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  statusChangedAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  trialStartedAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  trialEndsAt: Date | null;
+
+  /** false = compte antérieur au SaaS : la date de fin d'abonnement est affichée mais ne bloque pas l'accès. */
+  @Column({ default: true })
+  expiryEnforced: boolean;
+
+  /** Code du secteur d'activité (table sectors). */
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  sector: string | null;
+
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  planCode: string | null;
+
+  /** monthly | annual */
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  billingCycle: string | null;
+
+  /** Nombre maximal d'utilisateurs (propriétaire compris) ; null = pas de limite. */
+  @Column({ type: 'int', nullable: true })
+  userLimit: number | null;
+
+  /** self | google | admin */
+  @Column({ type: 'varchar', length: 12, default: 'admin' })
+  signupSource: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  emailVerifiedAt: Date | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  emailVerifyHash: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  emailVerifyExpires: Date | null;
+
+  /** Identifiant Google (« sub » du jeton d'identité) quand le compte est relié à Google. */
+  @Index('UQ_users_google_sub', { unique: true, where: '"googleSub" IS NOT NULL' })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  googleSub: string | null;
+
+  /** Rappels déjà envoyés (0 = aucun) : évite d'envoyer deux fois le même email. */
+  @Column({ type: 'int', default: 0 })
+  trialReminderStage: number;
+
+  @Column({ type: 'int', default: 0 })
+  renewalReminderStage: number;
 
   @CreateDateColumn()
   createdAt: Date;

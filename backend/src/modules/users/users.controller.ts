@@ -1,7 +1,9 @@
-﻿import { Controller, Get, Patch, Body, Param, UseGuards, Request, Post, Delete, UploadedFile, UseInterceptors, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, UseGuards, Request, Post, Delete, UploadedFile, UseInterceptors, ForbiddenException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { ClientModulesService } from '../client-modules/client-modules.service';
+import { AuthService } from '../auth/auth.service';
+import { isPlatformAdmin } from '../saas/account-access';
 
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('Utilisateurs')
@@ -12,6 +14,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly clientModulesService: ClientModulesService,
+    private readonly authService: AuthService,
   ) {}
 
   @Get('profile')
@@ -26,14 +29,17 @@ export class UsersController {
 
   @Patch('change-password')
   async changePassword(@Request() req: any, @Body() body: { oldPassword: string; newPassword: string }) {
-    return this.usersService.changePassword(req.user.actorId ?? req.user.userId, body.oldPassword, body.newPassword);
+    const actorId = req.user.actorId ?? req.user.userId;
+    const result = await this.usersService.changePassword(actorId, body?.oldPassword, body?.newPassword);
+    // Les autres sessions ouvertes sont fermées ; celle-ci continue avec un nouveau jeton.
+    return { ...result, access_token: await this.authService.rotateSession(actorId) };
   }
 
   // GET /users/:id/modules -> configuration des modules de l'utilisateur
   @Get(':id/modules')
   async getUserModules(@Param('id') id: string, @Request() req: any) {
     const targetId = parseInt(id, 10);
-    if (req.user.role !== 'admin' && Number(req.user.userId) !== targetId && Number(req.user.actorId) !== targetId) {
+    if (!isPlatformAdmin(req.user.role) && Number(req.user.userId) !== targetId && Number(req.user.actorId) !== targetId) {
       throw new ForbiddenException('Acces non autorise');
     }
     return this.usersService.getUserModules(targetId);

@@ -1,9 +1,20 @@
-﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityManager } from 'typeorm';
+import { Repository, DataSource, EntityManager, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
 import { seedDemoData, DEMO_MIN_ITEMS, DEMO_MAX_ITEMS } from './demo-data';
+import { assertStrongPassword } from '../auth/auth.service';
+import { MODULE_KEYS, modulesFromList } from '../saas/account-access';
+import { Sector } from '../saas/entities/sector.entity';
+import { normalizePhone } from '../../common/phone';
+
+/** Colonnes d'un compte renvoyées à l'administrateur (jamais le mot de passe ni les secrets). */
+const CLIENT_COLUMNS = ['id', 'email', 'name', 'companyName', 'phone', 'subscriptionStart', 'subscriptionEnd', 'isActive', 'createdAt', 'modules',
+  'accountStatus', 'trialEndsAt', 'sector', 'planCode', 'signupSource', 'lastLoginAt'] as any;
+/** Données d'abonnement : jamais effacées quand on vide ou régénère les données de démonstration d'un compte. */
+const BILLING_TABLES = ['subscription_payments', 'support_messages'];
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 @Injectable()
 export class AdminService {
@@ -14,16 +25,18 @@ export class AdminService {
   ) {}
 
   async getAllClients() {
+    // Seulement les propriétaires de société : pas leurs membres d'équipe.
     return this.userRepository.find({
-      where: { role: 'client' },
-      select: ['id', 'email', 'name', 'companyName', 'phone', 'subscriptionStart', 'subscriptionEnd', 'isActive', 'createdAt', 'modules']
+      where: { role: 'client', ownerId: IsNull() },
+      select: CLIENT_COLUMNS,
+      order: { createdAt: 'DESC' },
     });
   }
 
   async getClientById(id: number) {
     const client = await this.userRepository.findOne({
       where: { id, role: 'client' },
-      select: ['id', 'email', 'name', 'companyName', 'phone', 'subscriptionStart', 'subscriptionEnd', 'isActive', 'createdAt', 'modules']
+      select: CLIENT_COLUMNS,
     });
     if (!client) throw new NotFoundException('Client non trouvé');
     return client;
@@ -42,7 +55,11 @@ export class AdminService {
     const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
     if (!client) throw new NotFoundException('Client non trouvé');
     
-    client.modules = modules;
+    if (!modules || typeof modules !== 'object' || Array.isArray(modules)) throw new BadRequestException('Modules invalides.');
+    // Seules les clés de modules connues sont enregistrées, en vrai/faux.
+    const clean: Record<string, boolean> = {};
+    for (const key of MODULE_KEYS) if (modules[key] !== undefined) clean[key] = modules[key] === true;
+    client.modules = clean;
     await this.userRepository.save(client);
     
     return { 
@@ -62,23 +79,44 @@ export class AdminService {
     /** Génère 50 à 100 éléments de démo dans chaque module (activé par défaut). */
     seedDemoData?: boolean;
   }) {
+    const email = String(body?.email || '').trim().toLowerCase();
+    if (!EMAIL.test(email)) throw new BadRequestException('Email invalide.');
+    const name = String(body?.name || '').trim();
+    const companyName = String(body?.companyName || '').trim();
+    if (name.length < 2) throw new BadRequestException('Nom requis.');
+    if (companyName.length < 2) throw new BadRequestException('Nom de la société requis.');
+    assertStrongPassword(body?.password);
+    if (await this.userRepository.createQueryBuilder('u').where('LOWER(u.email) = :email', { email }).getOne()) throw new ConflictException('Cet email est déjà utilisé.');
+    const days = Number(body?.subscriptionDuration);
+    if (!Number.isFinite(days) || days < 1 || days > 3650) throw new BadRequestException('Durée d’abonnement invalide (1 à 3 650 jours).');
+    const phone = normalizePhone(body?.phone);
+    let sector: Sector | null = null;
+    if ((body as any)?.sector) {
+      sector = await this.dataSource.getRepository(Sector).findOne({ where: { code: String((body as any).sector) } });
+      if (!sector) throw new BadRequestException('Secteur inconnu.');
+    }
+
     const hashedPassword = await bcrypt.hash(body.password, 10);
-    
+
     const subscriptionEnd = new Date();
-    subscriptionEnd.setDate(subscriptionEnd.getDate() + body.subscriptionDuration);
-    
+    subscriptionEnd.setDate(subscriptionEnd.getDate() + Math.round(days));
+    // Compte créé par l'administrateur : actif tout de suite, jusqu'à la date choisie (pas d'essai).
     const client = this.userRepository.create({
-      email: body.email,
+      email,
       password: hashedPassword,
-      name: body.name,
-      companyName: body.companyName,
-      phone: body.phone,
+      name,
+      companyName,
+      phone: phone.valid && phone.normalized ? phone.normalized : String(body?.phone || '').trim().slice(0, 40),
       role: 'client',
       subscriptionStart: new Date(),
       subscriptionEnd,
       isActive: true,
-      modules: {}
-    });
+      accountStatus: 'ACTIVE',
+      expiryEnforced: true,
+      signupSource: 'admin',
+      sector: sector?.code ?? null,
+      modules: sector?.modules?.length ? modulesFromList(sector.modules) : {},
+    } as Partial<User>) as User;
     
     await this.userRepository.save(client);
 
@@ -120,10 +158,17 @@ export class AdminService {
     const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
     if (!client) throw new NotFoundException('Client non trouvé');
     
-    delete body.modules;
-    delete body.businessCategory;
-    
-    Object.assign(client, body);
+    // Liste fermée : le rôle, le mot de passe ou le rattachement d'un compte ne se modifient pas par cette route.
+    const data = body && typeof body === 'object' ? body : {};
+    if (data.name !== undefined) client.name = String(data.name || '').trim().slice(0, 120) || client.name;
+    if (data.companyName !== undefined) client.companyName = String(data.companyName || '').trim().slice(0, 160);
+    if (data.phone !== undefined) client.phone = String(data.phone || '').trim().slice(0, 40);
+    if (data.isActive !== undefined) client.isActive = data.isActive === true;
+    if (data.subscriptionEnd !== undefined && data.subscriptionEnd !== null && data.subscriptionEnd !== '') {
+      const end = new Date(data.subscriptionEnd);
+      if (Number.isNaN(end.getTime())) throw new BadRequestException('Date de fin d’abonnement invalide.');
+      client.subscriptionEnd = end;
+    }
     await this.userRepository.save(client);
     
     return { success: true, message: 'Client mis à jour' };
@@ -133,9 +178,20 @@ export class AdminService {
     const client = await this.userRepository.findOne({ where: { id, role: 'client' } });
     if (!client) throw new NotFoundException('Client non trouvé');
     
-    const newEnd = new Date(client.subscriptionEnd);
-    newEnd.setDate(newEnd.getDate() + days);
+    const n = Number(days);
+    if (!Number.isFinite(n) || n < 1 || n > 3650) throw new BadRequestException('Nombre de jours invalide (1 à 3 650).');
+    // Abonnement déjà échu (ou sans date) : la prolongation part d'aujourd'hui, pas de l'ancienne date.
+    const current = client.subscriptionEnd ? new Date(client.subscriptionEnd) : null;
+    const newEnd = current && current.getTime() > Date.now() ? current : new Date();
+    newEnd.setDate(newEnd.getDate() + Math.round(n));
     client.subscriptionEnd = newEnd;
+    if (client.accountStatus === 'EXPIRED' || client.accountStatus === 'TRIAL') {
+      client.accountStatus = 'ACTIVE';
+      client.statusReason = null;
+      client.statusChangedAt = new Date();
+      if (!client.subscriptionStart) client.subscriptionStart = new Date();
+    }
+    client.renewalReminderStage = 0;
     await this.userRepository.save(client);
     
     return { 
@@ -247,6 +303,12 @@ export class AdminService {
       // Tout ou rien : si une étape échoue, rien n'est supprimé.
       await this.dataSource.transaction(async (manager) => {
         await this.purgeClientData(manager, id);
+        // Ce que la purge générique ne voit pas : les transporteurs de la société (colonne clientId) et leurs comptes,
+        // les membres de l'équipe (ownerId), l'ancienne table des modules.
+        await manager.query(`DELETE FROM "users" WHERE "role" = 'transporteur' AND "id" IN (SELECT "userId" FROM "transporteurs" WHERE "clientId" = $1 AND "userId" IS NOT NULL)`, [id]);
+        await manager.query(`DELETE FROM "transporteurs" WHERE "clientId" = $1`, [id]);
+        await manager.query(`DELETE FROM "client_modules" WHERE "clientId" = $1`, [id]);
+        await manager.query(`DELETE FROM "users" WHERE "ownerId" = $1`, [id]);
         await manager.query(`DELETE FROM "users" WHERE id = $1`, [id]);
       });
     } catch (err: any) {
@@ -266,7 +328,7 @@ export class AdminService {
 
     try {
       const summary = await this.dataSource.transaction(async (manager) => {
-        await this.purgeClientData(manager, id);
+        await this.purgeClientData(manager, id, BILLING_TABLES);
         return seedDemoData(manager, id);
       });
       return {
@@ -290,7 +352,7 @@ export class AdminService {
 
     try {
       await this.dataSource.transaction((manager) =>
-        this.purgeClientData(manager, id, ['companies', 'audit_logs', 'number_sequences', 'ia_chats']),
+        this.purgeClientData(manager, id, ['companies', 'audit_logs', 'number_sequences', 'ia_chats', ...BILLING_TABLES]),
       );
       return { success: true, message: 'Données de démonstration supprimées' };
     } catch (err: any) {
@@ -303,15 +365,22 @@ export class AdminService {
     if (!client) throw new NotFoundException('Client non trouvé');
     
     client.isActive = !client.isActive;
+    // Désactivation = connexion refusée : les sessions ouvertes sont coupées tout de suite.
+    if (!client.isActive) client.tokenVersion = (client.tokenVersion ?? 0) + 1;
     await this.userRepository.save(client);
     
     return { success: true, isActive: client.isActive };
   }
 
   async getAdminStats() {
-    const totalClients = await this.userRepository.count({ where: { role: 'client' } });
-    const activeClients = await this.userRepository.count({ where: { role: 'client', isActive: true } });
-    
-    return { totalClients, activeClients };
+    const totalClients = await this.userRepository.count({ where: { role: 'client', ownerId: IsNull() } });
+    const activeClients = await this.userRepository.count({ where: { role: 'client', ownerId: IsNull(), isActive: true } });
+    // Abonnements échus et chiffre d'affaires réel (paiements validés) : l'écran affichait des cases vides.
+    const [{ expired }] = await this.dataSource.query(
+      `SELECT COUNT(*)::int AS expired FROM "users" WHERE "role" = 'client' AND "ownerId" IS NULL AND "accountStatus" = 'EXPIRED'`,
+    );
+    const [{ revenue }] = await this.dataSource.query(`SELECT COALESCE(SUM("amountTTC"), 0) AS revenue FROM "subscription_payments" WHERE "status" = 'validated'`);
+
+    return { totalClients, activeClients, expiredClients: expired, totalRevenue: Number(revenue) };
   }
 }

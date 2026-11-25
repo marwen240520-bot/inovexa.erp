@@ -8,6 +8,7 @@ import { Product } from '../products/product.entity';
 import { Supplier } from '../suppliers/supplier.entity';
 
 import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
+import { stripProtected } from '../saas/admin.guard';
 @Injectable()
 export class PurchasesService {
   constructor(
@@ -66,6 +67,8 @@ export class PurchasesService {
     if (!data.productId) {
       throw new BadRequestException('Le produit est requis');
     }
+    if (!(Number(data.quantity || 0) > 0)) throw new BadRequestException('La quantité doit être supérieure à 0');
+    if (Number(data.unitPrice || 0) < 0) throw new BadRequestException('Le prix unitaire ne peut pas être négatif');
 
     // Auto-création du fournisseur si le nom saisi n'existe pas dans le module Fournisseurs
     const supplier = await this.ensureSupplierExists(userId, data.supplierName);
@@ -76,7 +79,7 @@ export class PurchasesService {
         throw new NotFoundException('Produit non trouve');
       }
 
-      const { documentId: _ignored, ...input } = data || {};
+      const { documentId: _ignored, ...input } = stripProtected(data || {});
       const purchase = em.create(Purchase, {
         ...input,
         supplierName: supplier ? supplier.name : (data.supplierName || null),

@@ -5,8 +5,6 @@ echo ========================================
 echo    ?? INOVEXA ERP - D?MARRAGE
 echo ========================================
 echo.
-echo ?? ADMIN: marwen2405@gmail.com / 123456
-echo ?? CLIENT: client1@test.com / client123
 echo.
 echo ?? Nettoyage des ports...
 npx kill-port 3000 >nul 2>&1
@@ -26,8 +24,6 @@ echo.
 echo ========================================
 echo    ? SERVICES D?MARR?S !
 echo ========================================
-echo    ?? ADMIN: marwen2405@gmail.com / 123456
-echo    ?? CLIENT: client1@test.com / client123
 echo ========================================
 echo.
 echo ??  Ne fermez pas les fen?tres !

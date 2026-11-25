@@ -1,14 +1,29 @@
 ﻿import { assertStrongPassword } from '../auth/auth.service';
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
+import { normalizePhone } from '../../common/phone';
 
 const MODULE_KEYS = [
   'dashboard', 'products', 'categories', 'stock', 'sales', 'purchases', 'orders', 'clients',
   'suppliers', 'invoices', 'hr', 'finance', 'logistics', 'production', 'ai', 'reports', 'analytics', 'profile', 'settings',
 ];
+
+/**
+ * Ce qu'une personne peut lire de son propre compte. Les secrets (mot de passe, clé de double authentification,
+ * empreintes des liens envoyés par email, compteur de sessions) ne quittent jamais le serveur.
+ */
+export function publicProfile(user: User) {
+  const {
+    password: _password, twoFactorSecret: _twoFactorSecret, passwordResetHash: _passwordResetHash, passwordResetExpires: _passwordResetExpires,
+    emailVerifyHash: _emailVerifyHash, emailVerifyExpires: _emailVerifyExpires, tokenVersion: _tokenVersion, googleSub,
+    trialReminderStage: _trialReminderStage, renewalReminderStage: _renewalReminderStage,
+    ...profile
+  } = user;
+  return { ...profile, googleLinked: !!googleSub };
+}
 
 @Injectable()
 export class UsersService {
@@ -20,34 +35,58 @@ export class UsersService {
   async getProfile(id: number) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
-    const { password, ...profile } = user;
-    return profile;
+    return publicProfile(user);
   }
 
+  /**
+   * Seuls quatre champs sont modifiables ici : nom, email, téléphone, nom de la société. Le rôle, les modules,
+   * l'abonnement, le rattachement à une société ou le mot de passe ne se changent JAMAIS par cette route.
+   */
   async updateProfile(id: number, body: { name?: string; email?: string; phone?: string; companyName?: string }) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
-    
-    Object.assign(user, body);
+    const data = body && typeof body === 'object' ? body : {};
+
+    if (data.name !== undefined) {
+      const name = String(data.name ?? '').trim();
+      if (name.length < 2 || name.length > 120) throw new BadRequestException('Nom invalide (2 à 120 caractères).');
+      user.name = name;
+    }
+    if (data.email !== undefined) {
+      const email = String(data.email ?? '').trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 190) throw new BadRequestException('Email invalide.');
+      if (email !== user.email.toLowerCase()) {
+        const taken = await this.userRepository.createQueryBuilder('u').where('LOWER(u.email) = :email AND u.id <> :id', { email, id }).getOne();
+        if (taken) throw new ConflictException('Cet email est déjà utilisé.');
+        user.email = email;
+        // Nouvelle adresse : elle devra être confirmée de nouveau.
+        user.emailVerifiedAt = null;
+      }
+    }
+    if (data.phone !== undefined) {
+      const raw = String(data.phone ?? '').trim();
+      const check = normalizePhone(raw);
+      user.phone = check.valid ? check.normalized : raw.slice(0, 40);
+    }
+    if (data.companyName !== undefined) user.companyName = String(data.companyName ?? '').trim().slice(0, 160);
+
     await this.userRepository.save(user);
-    
-    const { password, ...profile } = user;
-    return profile;
+    return publicProfile(user);
   }
 
   async changePassword(id: number, oldPassword: string, newPassword: string) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
-    
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+    const isPasswordValid = await bcrypt.compare(String(oldPassword || ''), user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Ancien mot de passe incorrect');
     }
-    
+
     assertStrongPassword(newPassword);
     user.password = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
-    
+
     return { success: true, message: 'Mot de passe changé avec succès' };
   }
 

@@ -19,7 +19,7 @@ export interface AuditEvent {
   details?: any;
 }
 
-const SECRET_KEY = /pass(word)?|token|secret|otp|authorization|api[-_]?key|data:?url|image(url)?|logo|avatar|cvv|iban|rib/i;
+const SECRET_KEY = /pass(word)?|token|secret|otp|^code$|credential|authorization|api[-_]?key|data:?url|image(url)?|logo|avatar|cvv|iban|rib/i;
 
 /** Retire les secrets et tronque : un journal d'audit ne doit jamais devenir une fuite de données. */
 export function sanitizeForAudit(value: any, depth = 0): any {

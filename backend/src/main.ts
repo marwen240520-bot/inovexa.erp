@@ -49,6 +49,9 @@ async function bootstrap() {
   );
 
   // ✅ زيادة حجم الطلب المسموح به (افتراضياً 100kb فقط)
+  // Routes ouvertes sans connexion (inscription, connexion, site public) : 200 Ko suffisent largement.
+  // La limite de 50 Mo ci-dessous ne sert qu'aux imports et aux photos des utilisateurs connectés.
+  app.use(['/auth', '/public'], json({ limit: '200kb' }));
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
 

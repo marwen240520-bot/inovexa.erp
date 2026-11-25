@@ -1,7 +1,8 @@
-﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
+import { stripProtected } from '../saas/admin.guard';
 
 @Injectable()
 export class CategoriesService {
@@ -36,7 +37,7 @@ export class CategoriesService {
       throw new ConflictException('Une catégorie avec ce nom existe déjà');
     }
     
-    const category = this.categoryRepository.create({ ...data, userId });
+    const category = this.categoryRepository.create({ ...stripProtected(data as any), userId });
     return this.categoryRepository.save(category);
   }
 
@@ -51,7 +52,7 @@ export class CategoriesService {
       }
     }
     
-    Object.assign(category, data);
+    Object.assign(category, stripProtected(data as any, ['createdAt', 'updatedAt']));
     return this.categoryRepository.save(category);
   }
 

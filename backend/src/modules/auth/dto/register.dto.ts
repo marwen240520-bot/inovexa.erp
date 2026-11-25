@@ -1,0 +1,39 @@
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+
+/**
+ * Inscription d'une société. La liste des champs est fermée (ValidationPipe whitelist + forbidNonWhitelisted dans le
+ * contrôleur) : envoyer « role », « modules » ou « subscriptionEnd » est refusé avant même d'atteindre le service.
+ */
+export class RegisterDto {
+  @IsString() @MinLength(2, { message: 'Indiquez votre nom complet.' }) @MaxLength(120) name: string;
+  @IsString() @MinLength(2, { message: 'Indiquez le nom de votre société.' }) @MaxLength(160) companyName: string;
+  @IsEmail({}, { message: 'Email invalide' }) @MaxLength(190) email: string;
+  @IsString() @MinLength(8, { message: 'Numéro de téléphone requis.' }) @MaxLength(30) phone: string;
+  @IsString() @MinLength(8) @MaxLength(128) password: string;
+  /** Code du secteur d'activité (GET /public/sectors). */
+  @IsString() @MinLength(2) @MaxLength(40) sector: string;
+  @IsBoolean({ message: 'Vous devez accepter les conditions d’utilisation.' }) acceptTerms: boolean;
+
+  // Informations facultatives sur la société (complétables ensuite dans Paramètres › Société & fiscalité).
+  @IsOptional() @IsString() @MaxLength(80) city?: string;
+  @IsOptional() @IsString() @MaxLength(300) address?: string;
+  @IsOptional() @IsString() @MaxLength(60) legalForm?: string;
+  @IsOptional() @IsString() @MaxLength(40) taxId?: string;
+}
+
+export class GoogleAuthDto {
+  /** Jeton d'identité remis par Google au navigateur (JWT). */
+  @IsString() @MinLength(20) @MaxLength(4096) credential: string;
+  /** login = se connecter ; register = créer la société si aucun compte n'existe pour cette adresse. */
+  @IsOptional() @IsIn(['login', 'register']) intent?: 'login' | 'register';
+  @IsOptional() @IsString() @MaxLength(160) companyName?: string;
+  @IsOptional() @IsString() @MaxLength(40) sector?: string;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @IsOptional() @IsBoolean() acceptTerms?: boolean;
+  @IsOptional() @IsString() @MaxLength(10) otp?: string;
+}
+
+export class VerifyEmailDto {
+  @IsEmail({}, { message: 'Email invalide' }) email: string;
+  @IsString() @MinLength(20) @MaxLength(200) token: string;
+}

@@ -1,9 +1,10 @@
-﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 
 import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
+import { stripProtected } from '../saas/admin.guard';
 @Injectable()
 export class ClientsService {
   constructor(
@@ -51,14 +52,25 @@ export class ClientsService {
     return client;
   }
 
+  /** Une liste de prix ne peut être rattachée à un client que si elle appartient à la même société. */
+  private async assertOwnPriceList(userId: number, priceListId: unknown) {
+    if (priceListId === undefined || priceListId === null || (priceListId as any) === '') return;
+    const rows = await this.clientRepository.manager.query(`SELECT 1 FROM "price_lists" WHERE "id" = $1 AND "userId" = $2`, [Number(priceListId) || 0, userId]);
+    if (!rows.length) throw new NotFoundException('Liste de prix introuvable');
+  }
+
   async create(userId: number, data: Partial<Client>) {
-    const client = this.clientRepository.create({ ...data, userId });
+    const input = stripProtected(data as any) as Partial<Client>;
+    await this.assertOwnPriceList(userId, (input as any).priceListId);
+    const client = this.clientRepository.create({ ...input, userId });
     return this.clientRepository.save(client);
   }
 
   async update(id: number, userId: number, data: Partial<Client>) {
     const client = await this.findOne(id, userId);
-    Object.assign(client, data);
+    const input = stripProtected(data as any, ['createdAt', 'updatedAt']) as Partial<Client>;
+    await this.assertOwnPriceList(userId, (input as any).priceListId);
+    Object.assign(client, input);
     return this.clientRepository.save(client);
   }
 

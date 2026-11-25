@@ -4,6 +4,7 @@ import { DataSource, Repository, Between } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { DocumentsService, Actor } from '../documents/documents.service';
 import { Product } from '../products/product.entity';
+import { stripProtected } from '../saas/admin.guard';
 
 @Injectable()
 export class OrdersService {
@@ -77,8 +78,8 @@ export class OrdersService {
   }
 
   async create(userId: number, data: Partial<Order>) {
-    const order = this.orderRepository.create({ 
-      ...data, 
+    const order = this.orderRepository.create({
+      ...stripProtected(data as any, ['documentId']),
       userId,
       total: (data.unitPrice || 0) * (data.quantity || 1)
     });
@@ -87,7 +88,8 @@ export class OrdersService {
 
   async update(id: number, userId: number, data: Partial<Order>) {
     const order = await this.findOne(id, userId);
-    Object.assign(order, data);
+    // Le total se recalcule toujours ici ; le lien vers le document commercial n'est posé que par la conversion.
+    Object.assign(order, stripProtected(data as any, ['createdAt', 'updatedAt', 'documentId', 'total']));
     if (data.unitPrice !== undefined || data.quantity !== undefined) {
       order.total = (order.unitPrice || 0) * (order.quantity || 1);
     }

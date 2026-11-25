@@ -1,6 +1,8 @@
-﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, Index, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
+// Le numéro d'opération est unique dans une société : une société ne peut pas bloquer la numérotation d'une autre.
 @Entity('invoices')
+@Index('UQ_invoices_user_operation', ['userId', 'operationNumber'], { unique: true })
 export class Invoice {
   @PrimaryGeneratedColumn()
   id: number;
@@ -8,7 +10,7 @@ export class Invoice {
   @Column()
   userId: number;
 
-  @Column({ unique: true })
+  @Column()
   operationNumber: string;
 
   @Column()

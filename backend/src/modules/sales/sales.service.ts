@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -8,6 +8,7 @@ import { Product } from '../products/product.entity';
 import { Client } from '../clients/entities/client.entity';
 
 import { pick, toText, toNumber, toDate, normalizeStatus, ACTIVE_STATUS, isEmptyRow, buildImportResult, errorMessage, ImportErrorDetail } from '../../common/import-utils';
+import { stripProtected } from '../saas/admin.guard';
 @Injectable()
 export class SalesService {
   constructor(
@@ -62,7 +63,9 @@ export class SalesService {
   }
 
   async create(userId: number, data: any) {
-    const quantity = Number(data.quantity || 0);
+    const quantity = Number(data?.quantity || 0);
+    if (!(quantity > 0)) throw new BadRequestException('La quantité doit être supérieure à 0');
+    if (Number(data?.unitPrice || 0) < 0) throw new BadRequestException('Le prix unitaire ne peut pas être négatif');
     // Auto-création du client si le nom saisi n'existe pas dans le module Clients
     const client = await this.ensureClientExists(userId, data.clientName);
 
@@ -76,7 +79,7 @@ export class SalesService {
         throw new BadRequestException(`Stock insuffisant pour ${product.name}. Disponible: ${product.quantity || 0}, Demandé: ${data.quantity}`);
       }
 
-      const { documentId: _ignored, ...input } = data || {};
+      const { documentId: _ignored, ...input } = stripProtected(data || {});
       const sale = em.create(Sale, {
         ...input,
         clientName: client ? client.name : (data.clientName || null),

@@ -1,11 +1,15 @@
-import { Body, Controller, Get, HttpCode, Post, Req, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, Request, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ForgotPasswordDto, LoginWithOtpDto, ResetPasswordDto, TwoFactorCodeDto, TwoFactorDisableDto } from './dto/auth-security.dto';
+import { GoogleAuthDto, RegisterDto, VerifyEmailDto } from './dto/register.dto';
 
 const actor = (req: any): number => req.user.actorId ?? req.user.userId;
+const ipOf = (req: any): string => (req.ip || '').toString();
+/** Liste de champs fermée : tout champ inconnu (role, modules, subscriptionEnd…) fait échouer la requête. */
+const STRICT = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
 
 @ApiTags('Authentification')
 @Controller('auth')
@@ -18,6 +22,43 @@ export class AuthController {
   @ApiOperation({ summary: 'Connexion (code à 6 chiffres requis si la double authentification est activée)' })
   async login(@Body() body: LoginWithOtpDto, @Req() req: any) {
     return this.authService.login(body.email, body.password, body.otp, (req.ip || '').toString());
+  }
+
+  @Post('register')
+  @HttpCode(201)
+  @Throttle({ default: { limit: 20, ttl: 600_000 } })
+  @UsePipes(STRICT)
+  @ApiOperation({ summary: 'Crée une société et son propriétaire : l’essai gratuit démarre tout de suite' })
+  register(@Body() body: RegisterDto, @Req() req: any) {
+    return this.authService.register(body, ipOf(req));
+  }
+
+  @Post('google')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @UsePipes(STRICT)
+  @ApiOperation({ summary: 'Connexion ou inscription avec Google (jeton d’identité vérifié côté serveur)' })
+  google(@Body() body: GoogleAuthDto, @Req() req: any) {
+    return this.authService.google(body, ipOf(req));
+  }
+
+  @Post('verify-email')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UsePipes(STRICT)
+  @ApiOperation({ summary: 'Confirme l’adresse email avec le lien reçu à l’inscription' })
+  verifyEmail(@Body() body: VerifyEmailDto) {
+    return this.authService.verifyEmail(body.email, body.token);
+  }
+
+  @Post('resend-verification')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 600_000 } })
+  @ApiOperation({ summary: 'Renvoie le lien de confirmation de l’adresse email' })
+  resendVerification(@Request() req: any) {
+    return this.authService.resendVerification(actor(req));
   }
 
   @Post('forgot-password')

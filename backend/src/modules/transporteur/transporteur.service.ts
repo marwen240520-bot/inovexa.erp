@@ -1,9 +1,14 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Shipment } from '../logistics/entities/shipment.entity';
 import { Transporteur } from '../transporteurs/entities/transporteur.entity';
+import { SHIPMENT_STATUSES } from '../logistics/logistics.service';
 
+/**
+ * Espace du transporteur connecté : il ne voit et ne modifie que les expéditions qui lui sont confiées.
+ * `accountId` est son compte de connexion ; la ligne `transporteurs` correspondante se retrouve par `transporteurs.userId`.
+ */
 @Injectable()
 export class TransporteurService {
   constructor(
@@ -13,72 +18,29 @@ export class TransporteurService {
     private transporteurRepository: Repository<Transporteur>,
   ) {}
 
-  async getMyShipments(userId: number) {
-    console.log('=== getMyShipments called ===');
-    console.log('userId received:', userId);
-    
-    // D'abord, trouver le transporteur associé à cet utilisateur
-    const transporteur = await this.transporteurRepository.findOne({
-      where: { userId: userId }
-    });
-    
-    if (!transporteur) {
-      console.log('No transporteur found for userId:', userId);
-      return [];
-    }
-    
-    console.log('Found transporteur:', transporteur.id, transporteur.name);
-    
-    // Ensuite, récupérer les livraisons pour ce transporteur
-    const shipments = await this.shipmentRepository.find({
-      where: { transporteurId: transporteur.id },
-      order: { createdAt: 'DESC' }
-    });
-    
-    console.log('Shipments found:', shipments.length);
-    return shipments;
+  private async ownIds(accountId: number): Promise<number[]> {
+    const rows = await this.transporteurRepository.find({ where: { userId: accountId, isActive: true }, select: ['id'] });
+    return rows.map((t) => t.id);
   }
 
-  async getStats(userId: number) {
-    const transporteur = await this.transporteurRepository.findOne({
-      where: { userId: userId }
-    });
-    
-    if (!transporteur) {
-      return { total: 0, pending: 0, inTransit: 0, delivered: 0, cancelled: 0 };
-    }
-    
-    const shipments = await this.shipmentRepository.find({
-      where: { transporteurId: transporteur.id }
-    });
-    
-    const total = shipments.length;
-    const pending = shipments.filter(s => s.status === 'pending').length;
-    const inTransit = shipments.filter(s => s.status === 'in_transit').length;
-    const delivered = shipments.filter(s => s.status === 'delivered').length;
-    const cancelled = shipments.filter(s => s.status === 'cancelled').length;
-
-    return { total, pending, inTransit, delivered, cancelled };
+  async getMyShipments(accountId: number) {
+    const ids = await this.ownIds(accountId);
+    if (!ids.length) return [];
+    return this.shipmentRepository.find({ where: { transporteurId: In(ids) }, order: { createdAt: 'DESC' } });
   }
 
-  async updateShipmentStatus(id: number, userId: number, status: string) {
-    // Trouver le transporteur
-    const transporteur = await this.transporteurRepository.findOne({
-      where: { userId: userId }
-    });
-    
-    if (!transporteur) {
-      throw new NotFoundException('Transporteur non trouvé');
-    }
-    
-    const shipment = await this.shipmentRepository.findOne({
-      where: { id: id, transporteurId: transporteur.id }
-    });
-    
-    if (!shipment) {
-      throw new NotFoundException('Expédition non trouvée');
-    }
-    
+  async getStats(accountId: number) {
+    const shipments = await this.getMyShipments(accountId);
+    const count = (status: string) => shipments.filter((s) => s.status === status).length;
+    return { total: shipments.length, pending: count('pending'), inTransit: count('in_transit'), delivered: count('delivered'), cancelled: count('cancelled') };
+  }
+
+  async updateShipmentStatus(id: number, accountId: number, status: string) {
+    if (!(SHIPMENT_STATUSES as readonly string[]).includes(String(status))) throw new BadRequestException(`Statut invalide (${SHIPMENT_STATUSES.join(', ')}).`);
+    const ids = await this.ownIds(accountId);
+    if (!ids.length) throw new NotFoundException('Transporteur non trouvé');
+    const shipment = await this.shipmentRepository.findOne({ where: { id, transporteurId: In(ids) } });
+    if (!shipment) throw new NotFoundException('Expédition non trouvée');
     shipment.status = status;
     return this.shipmentRepository.save(shipment);
   }

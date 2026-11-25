@@ -1,9 +1,15 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import * as fs from 'fs';
 import * as path from 'path';
+
+/** Dossier des photos de profil : le même que celui servi sous /uploads (main.ts), relatif au dossier de lancement. */
+export const AVATAR_DIR = path.join(process.cwd(), 'uploads', 'avatars');
+
+/** Nom de fichier produit par l'envoi (voir upload.controller) : tout autre nom est ignoré. */
+const AVATAR_NAME = /^avatar-[A-Za-z0-9-]+\.(jpg|jpeg|png|webp|gif)$/i;
 
 @Injectable()
 export class UploadService {
@@ -12,25 +18,37 @@ export class UploadService {
     private userRepository: Repository<User>,
   ) {}
 
-  async saveAvatar(userId: number, file: Express.Multer.File) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+  /**
+   * Supprime l'ancienne photo. Le nom enregistré n'est jamais utilisé tel quel comme chemin : on ne garde que le nom de
+   * fichier, et seulement s'il a la forme attendue — une valeur comme « ../../main.js » ne peut donc rien effacer.
+   */
+  private removeFile(stored: string | null | undefined) {
+    if (!stored) return;
+    const name = path.basename(String(stored));
+    if (!AVATAR_NAME.test(name)) return;
+    const full = path.join(AVATAR_DIR, name);
+    try {
+      if (fs.existsSync(full)) fs.unlinkSync(full);
+    } catch {
+      /* fichier déjà absent ou disque en lecture seule : sans importance */
+    }
+  }
 
-    if (user.avatar) {
-      const oldPath = path.join(__dirname, '..', '..', 'uploads', 'avatars', user.avatar);
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
+  async saveAvatar(userId: number, file: Express.Multer.File) {
+    if (!file || !file.filename) throw new BadRequestException('Aucun fichier reçu.');
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      this.removeFile(file.filename);
+      throw new NotFoundException('Utilisateur non trouvé');
     }
 
-    const avatarPath = file.filename;
-    user.avatar = avatarPath;
-    await this.userRepository.save(user);
+    this.removeFile(user.avatar);
+    await this.userRepository.update({ id: user.id }, { avatar: file.filename });
 
     return {
       success: true,
-      avatar: avatarPath,
-      url: `/uploads/avatars/${avatarPath}`
+      avatar: file.filename,
+      url: `/uploads/avatars/${file.filename}`,
     };
   }
 
@@ -43,12 +61,8 @@ export class UploadService {
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
     if (user.avatar) {
-      const oldPath = path.join(__dirname, '..', '..', 'uploads', 'avatars', user.avatar);
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
-      user.avatar = null;
-      await this.userRepository.save(user);
+      this.removeFile(user.avatar);
+      await this.userRepository.update({ id: user.id }, { avatar: null as any });
     }
 
     return { success: true };
@@ -62,7 +76,7 @@ export class UploadService {
       return {
         success: true,
         avatar: user.avatar,
-        url: `/uploads/avatars/${user.avatar}`
+        url: `/uploads/avatars/${user.avatar}`,
       };
     }
     return { success: false, avatar: null };

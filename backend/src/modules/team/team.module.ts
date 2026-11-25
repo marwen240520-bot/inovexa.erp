@@ -92,6 +92,13 @@ export class TeamController {
     const password = dto.password || `${randomBytes(6).toString('base64url')}-${Math.floor(10 + Math.random() * 90)}`;
     assertStrongPassword(password);
     const owner = await this.users.findOne({ where: { id: req.user.userId } });
+    // Limite d'utilisateurs de la formule (propriétaire compris) ; null = pas de limite.
+    if (owner?.userLimit) {
+      const members = await this.users.count({ where: { ownerId: req.user.userId, isActive: true } });
+      if (1 + members >= owner.userLimit) {
+        throw new BadRequestException(`Votre formule est limitée à ${owner.userLimit} utilisateur(s). Passez à une formule supérieure pour inviter d’autres collaborateurs.`);
+      }
+    }
     const user = await this.users.save(this.users.create({
       email, name: dto.name.trim(), phone: dto.phone || null, role: dto.role, isActive: true, ownerId: req.user.userId,
       companyName: owner?.companyName || null, password: await bcrypt.hash(password, 10), extraPermissions: this.cleanPermissions(dto.extraPermissions) || null,
@@ -112,6 +119,13 @@ export class TeamController {
     if (dto.name !== undefined) u.name = dto.name.trim();
     if (dto.role !== undefined) u.role = dto.role;
     if (dto.isActive !== undefined) {
+      if (dto.isActive && !u.isActive) {
+        const owner = await this.users.findOne({ where: { id: req.user.userId } });
+        const members = await this.users.count({ where: { ownerId: req.user.userId, isActive: true } });
+        if (owner?.userLimit && 1 + members >= owner.userLimit) {
+          throw new BadRequestException(`Votre formule est limitée à ${owner.userLimit} utilisateur(s).`);
+        }
+      }
       u.isActive = dto.isActive;
       if (!dto.isActive) u.tokenVersion = (u.tokenVersion ?? 0) + 1; // coupe ses sessions immédiatement
     }
