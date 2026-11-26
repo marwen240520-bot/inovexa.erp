@@ -1,5 +1,6 @@
-﻿import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, ParseIntPipe } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsService } from '../auth/permissions.service';
 import { ReportsService } from './reports.service';
 
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -8,7 +9,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 @Controller('reports')
 @UseGuards(JwtAuthGuard)
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(private readonly reportsService: ReportsService, private readonly permissions: PermissionsService) {}
 
   @Get('sales')
   async getSalesReport(@Request() req: any, @Query('start') start?: string, @Query('end') end?: string) {
@@ -27,7 +28,10 @@ export class ReportsController {
 
   @Get('employees')
   async getEmployeesReport(@Request() req: any) {
-    return this.reportsService.getEmployeesReport(req.user.userId);
+    // Le droit « rapports » ne donne pas accès aux salaires : il faut aussi le droit RH (le propriétaire l'a toujours).
+    const { role, permissions, isTeamMember } = req.user;
+    const withSalaries = this.permissions.can(role, permissions, 'hr:view', !!isTeamMember);
+    return this.reportsService.getEmployeesReport(req.user.userId, withSalaries);
   }
 
   @Get('logistics')
@@ -42,11 +46,11 @@ export class ReportsController {
 
   @Post('saved')
   async saveReport(@Request() req: any, @Body() body: { name: string; type: string; data: any }) {
-    return this.reportsService.saveReport(req.user.userId, body.name, body.type, body.data);
+    return this.reportsService.saveReport(req.user.userId, body?.name, body?.type, body?.data);
   }
 
   @Delete('saved/:id')
-  async deleteSavedReport(@Param('id') id: string, @Request() req: any) {
-    return this.reportsService.deleteSavedReport(parseInt(id), req.user.userId);
+  async deleteSavedReport(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.reportsService.deleteSavedReport(id, req.user.userId);
   }
 }

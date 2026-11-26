@@ -471,6 +471,32 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   r = await call('GET', '/auth/me', { token: B.token });
   check('compte désactivé par l’administrateur : session coupée tout de suite', r.status === 401, r);
 
+  // ═════════════════════════ Rapports et indicateurs ═════════════════════════
+  console.log('— Rapports enregistrés et indicateurs sans chiffres inventés');
+  r = await call('POST', '/reports/saved', { token: newToken, body: { name: 'Ventes de novembre', type: 'sales', data: { total: 12.5, rows: [1, 2] } } });
+  check('rapport enregistré en base', (r.status === 200 || r.status === 201) && r.body.report && r.body.report.id, r);
+  const savedReport = r.body.report;
+  r = await call('GET', '/reports/saved', { token: newToken });
+  check('le rapport est retrouvé (il ne dépend plus de la mémoire du serveur)', r.status === 200 && r.body.length === 1 && r.body[0].data.total === 12.5, r);
+  row = await one('SELECT COUNT(*)::int AS n FROM saved_reports WHERE "userId" = $1', [A.id]);
+  check('ligne présente dans la table saved_reports', row.n === 1, row);
+  r = await call('GET', '/reports/saved', { token: C.token });
+  check('une autre société ne voit pas ce rapport', r.status === 200 && r.body.length === 0, r);
+  r = await call('DELETE', `/reports/saved/${savedReport.id}`, { token: C.token });
+  check('ni ne peut le supprimer (404)', r.status === 404, r);
+  r = await call('POST', '/reports/saved', { token: newToken, body: { name: '', type: 'sales' } });
+  check('rapport sans nom refusé', r.status === 400, r);
+  r = await call('GET', '/reports/logistics', { token: C.token });
+  check('rapport logistique réel (il était toujours vide)', r.status === 200 && r.body.total === 2 && r.body.inTransit === 1 && r.body.pending === 1 && r.body.items.length === 2, r);
+  r = await call('GET', '/ia/predictions', { token: newToken });
+  check('prévision : pas de chiffre sans historique, et la raison est donnée', r.status === 200 && r.body.nextMonthSales === null && r.body.confidence === null && !!r.body.reason, r);
+  r = await call('GET', '/ia/forecast', { token: newToken });
+  check('projection : vide sans historique', r.status === 200 && Array.isArray(r.body.forecast) && r.body.forecast.length === 0 && !!r.body.reason, r);
+  r = await call('GET', '/ia/stats/compare', { token: newToken });
+  check('comparaison mensuelle : null quand il n’y a pas de mois précédent (plus de « +5,2 % » fixe)', r.status === 200 && r.body.clientGrowth === null && r.body.salesGrowth === null && r.body.profitGrowth === null, r);
+  r = await call('DELETE', `/reports/saved/${savedReport.id}`, { token: newToken });
+  check('le propriétaire supprime son rapport', r.status === 200 && r.body.success === true, r);
+
   // ═════════════════════════ Suppression d'un compte ═════════════════════════
   console.log('— Suppression d’un compte par l’administrateur');
   r = await call('DELETE', `/admin/clients/${C.id}`, { token: admin });

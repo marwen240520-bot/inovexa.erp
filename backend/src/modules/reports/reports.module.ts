@@ -1,4 +1,4 @@
-﻿import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
@@ -10,9 +10,10 @@ import { Order } from '../orders/entities/order.entity';
 import { Invoice } from '../invoices/entities/invoice.entity';
 import { Employee } from '../employees/entities/employee.entity';
 import { Shipment } from '../logistics/entities/shipment.entity';
+import { SavedReport } from './entities/saved-report.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Sale, Purchase, Product, Client, Order, Invoice, Employee, Shipment])],
+  imports: [TypeOrmModule.forFeature([Sale, Purchase, Product, Client, Order, Invoice, Employee, Shipment, SavedReport])],
   controllers: [ReportsController],
   providers: [ReportsService],
   exports: [ReportsService],

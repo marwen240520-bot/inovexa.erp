@@ -872,24 +872,39 @@ const rateLog = new Map<string, number[]>(); // empreinte du jeton → horodatag
 
 const fingerprint = (authorization: string) => createHash("sha256").update(authorization).digest("hex").slice(0, 32);
 
-async function verifySession(authorization: string | null): Promise<"ok" | "missing" | "invalid"> {
+type SessionCheck = "ok" | "missing" | "invalid" | "blocked" | "module_disabled" | "unavailable";
+
+/**
+ * Vérifie la session auprès de l'API AVANT de dépenser un appel au modèle.
+ * Refus par défaut : si l'API ne répond pas (démarrage à froid, panne), l'assistant en ligne est refusé et l'écran
+ * bascule sur les réponses calculées localement. Laisser passer dans ce cas ouvrait la clé du modèle à n'importe quel
+ * en-tête « Bearer » pendant que l'API dormait.
+ * Un compte bloqué (essai terminé, suspension) ou sans le module « ai » n'a pas accès à l'assistant en ligne.
+ */
+async function verifySession(authorization: string | null): Promise<SessionCheck> {
   if (!REQUIRE_AUTH) return "ok";
   if (!authorization || !/^Bearer\s+\S{10,}/i.test(authorization) || /^Bearer\s+(null|undefined)$/i.test(authorization)) return "missing";
   const key = fingerprint(authorization);
   const exp = authCache.get(key);
   if (exp && exp > Date.now()) return "ok";
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 6000);
+  const timer = setTimeout(() => ctrl.abort(), 12000);
   try {
-    const res = await fetch(`${API_BASE}/users/profile`, { headers: { Authorization: authorization }, cache: "no-store", signal: ctrl.signal });
+    const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: authorization }, cache: "no-store", signal: ctrl.signal });
     if (res.status === 401 || res.status === 403) return "invalid";
-    if (res.ok) {
-      if (authCache.size > 1000) authCache.clear();
-      authCache.set(key, Date.now() + 10 * 60 * 1000);
-    }
-    return "ok"; // 404 / 5xx : le backend reste l'autorité sur les données, on ne bloque pas l'assistant
+    if (res.status === 402) return "blocked";
+    if (!res.ok) return "unavailable";
+    const me: any = await res.json().catch(() => null);
+    if (!me || typeof me !== "object") return "unavailable";
+    if (me.account?.blocked) return "blocked";
+    // Même règle que la barre latérale : compte jamais configuré = tous les modules, sinon « ai » doit être actif.
+    const modules = me.modules && typeof me.modules === "object" ? me.modules : null;
+    if (modules && Object.keys(modules).length > 0 && modules.ai !== true && me.role === "client") return "module_disabled";
+    if (authCache.size > 1000) authCache.clear();
+    authCache.set(key, Date.now() + 2 * 60 * 1000);
+    return "ok";
   } catch {
-    return "ok"; // backend injoignable (démarrage à froid…) : on ne bloque pas
+    return "unavailable";
   } finally {
     clearTimeout(timer);
   }
@@ -918,7 +933,10 @@ export async function POST(req: NextRequest) {
 
   const authorization = req.headers.get("authorization");
   const session = await verifySession(authorization);
-  if (session !== "ok") return NextResponse.json({ error: "unauthorized", reason: session }, { status: 401 });
+  if (session === "missing" || session === "invalid") return NextResponse.json({ error: "unauthorized", reason: session }, { status: 401 });
+  if (session === "blocked") return NextResponse.json({ error: "subscription_required" }, { status: 402 });
+  if (session === "module_disabled") return NextResponse.json({ error: "module_disabled" }, { status: 403 });
+  if (session === "unavailable") return NextResponse.json({ error: "backend_unavailable" }, { status: 503 });
   if (rateLimited(authorization)) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   let body: any;
