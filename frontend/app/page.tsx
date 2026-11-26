@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import SiteHeader from "@/components/site/SiteHeader";
 import { useResponsive } from "@/hooks/useResponsive";
 import { Poppins, Orbitron } from "next/font/google";
 
@@ -58,35 +59,13 @@ const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
 const IconClose = ({ size = 18, color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "2.5")}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 );
-const IconMenu = ({ size = 22, color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.2")}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
-);
-const IconGlobe = ({ size = "1.1em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2")}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-);
+// Étincelles « IA » de la carte mise en avant
 const IconSparkles = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
   <svg {...svgBase(size, color, "1.8")}>
     <path d="M11 4 Q12.5 10.5 19 12 Q12.5 13.5 11 20 Q9.5 13.5 3 12 Q9.5 10.5 11 4 Z" fill={color} />
     <path d="M19 2.5v4M17 4.5h4" />
     <path d="M19.5 17v3M18 18.5h3" />
   </svg>
-);
-
-// ─── Logo ──────────────────────────────────────────────────────────────────────
-const Logo = ({ size = 30 }: { size?: number }) => (
-  <Link href="/" className="site-logo" aria-label="Inovexa ERP — Accueil">
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="logo-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#7B5CFF" />
-          <stop offset="1" stopColor="#4B37E2" />
-        </linearGradient>
-      </defs>
-      <rect x="2" y="2" width="36" height="36" rx="11" fill="url(#logo-grad)" />
-      <path d="M12 27V13h4v14h-4zm8 0V13h4v14h-4z" fill="#fff" />
-    </svg>
-    <span className="site-logo-text">Inovexa</span>
-  </Link>
 );
 
 // ─── Types & constantes ────────────────────────────────────────────────────────
@@ -97,6 +76,7 @@ interface AboutSection {
   body: string;
   items?: string[];
 }
+
 interface AboutContent {
   headline: string;
   intro: string[];
@@ -106,6 +86,7 @@ interface AboutContent {
   emailLabel: string;
   email: string;
 }
+
 interface HomeText {
   title: string;
   modules: string;
@@ -126,6 +107,7 @@ interface HomeText {
 
 const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
 
+// Pages publiques de l'application (dossier app/(site)) : liens du menu de l'en-tête.
 const SITE_LINKS: Record<Lang, { href: string; label: string }[]> = {
   fr: [
     { href: "/products", label: "Produits" },
@@ -157,127 +139,177 @@ const SITE_LINKS: Record<Lang, { href: string; label: string }[]> = {
   ],
 };
 
-const HEADER_TEXT: Record<Lang, { home: string; demo: string; menu: string }> = {
-  fr: { home: "Accueil", demo: "Réserver une démo", menu: "Menu" },
-  en: { home: "Home", demo: "Book Demo", menu: "Menu" },
-  es: { home: "Inicio", demo: "Reservar demo", menu: "Menu" },
-  ar: { home: "الرئيسية", demo: "احجز عرضًا تجريبيًا", menu: "القائمة" },
+// Libellés de l'en-tête commun (components/site/SiteHeader) dans les langues de la page d'accueil.
+const HEADER_TEXT: Record<Lang, { home: string; demo: string }> = {
+  fr: { home: "Accueil", demo: "Réserver une démo" },
+  en: { home: "Home", demo: "Book Demo" },
+  es: { home: "Inicio", demo: "Reservar demo" },
+  ar: { home: "الرئيسية", demo: "احجز عرضًا تجريبيًا" },
 };
 
 const BG_IMAGE = "/images/3.png";
 
-// ─── Header inline ────────────────────────────────────────────────────────────
-function Header({
-  lang,
-  langLabel,
-  onLangChange,
-}: {
-  lang: Lang;
-  langLabel: string;
-  onLangChange: (l: Lang) => void;
-}) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const t = HEADER_TEXT[lang];
-  const nav = [{ href: "/", label: t.home }, ...SITE_LINKS[lang]];
-
-  return (
-    <header className="site-header">
-      <div className="site-header-inner">
-        {/* Logo à gauche */}
-        <Logo size={28} />
-
-        {/* Nav au centre-gauche */}
-        <nav className="site-nav" aria-label="Navigation principale">
-          {nav.map((link) => (
-            <Link key={link.href} href={link.href} className="site-nav-link">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Droite : langue + CTA */}
-        <div className="site-header-right">
-          <label className="site-lang" aria-label={langLabel}>
-            <IconGlobe />
-            <select
-              value={lang}
-              onChange={(e) => onLangChange(e.target.value as Lang)}
-              className="site-lang-select"
-            >
-              <option value="fr">FR</option>
-              <option value="en">EN</option>
-              <option value="es">ES</option>
-              <option value="ar">AR</option>
-            </select>
-          </label>
-          <Link href="/contact#form-section" className="site-cta">
-            {t.demo}
-          </Link>
-          <button
-            type="button"
-            className="site-mobile-toggle"
-            aria-label={t.menu}
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            <IconMenu />
-          </button>
-        </div>
-      </div>
-
-      {mobileOpen && (
-        <div className="site-mobile-menu">
-          {nav.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="site-nav-link"
-              onClick={() => setMobileOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Link href="/contact#form-section" className="site-cta" onClick={() => setMobileOpen(false)}>
-            {t.demo}
-          </Link>
-        </div>
-      )}
-    </header>
-  );
-}
-
-// ─── Orbite des modules (inchangée) ───────────────────────────────────────────
+// ─── Orbite des modules (icônes posées sur l'image, nom au survol) ─────────────
+// Les positions sont exprimées en pixels de l'image de fond (1672 × 941).
+// La couche .hp-orbit-box reproduit le cadrage « object-fit: cover » de .hp-bg-img
+// (object-position: 100% 55%) : les icônes restent collées au portable quelle que soit la taille d'écran.
 type ModuleKey =
   | "dashboard" | "products" | "categories" | "stock" | "pos" | "sales" | "purchases" | "orders" | "invoices"
   | "clients" | "suppliers" | "objectives" | "hr" | "finance" | "production" | "logistics" | "shipments"
   | "reports" | "analytics" | "ai";
 
 const MODULE_ICONS: Record<ModuleKey, React.ReactNode> = {
-  dashboard: (<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>),
-  products: (<><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></>),
-  categories: (<><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><line x1="9" y1="9" x2="15" y2="9" /><line x1="9" y1="13" x2="12" y2="13" /></>),
-  stock: (<><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" /></>),
-  pos: (<><rect x="4" y="2" width="16" height="20" rx="2" /><rect x="8" y="6" width="8" height="4" rx="1" /><line x1="8" y1="14" x2="8.01" y2="14" /><line x1="12" y1="14" x2="12.01" y2="14" /><line x1="16" y1="14" x2="16.01" y2="14" /><line x1="8" y1="18" x2="8.01" y2="18" /><line x1="12" y1="18" x2="16" y2="18" /></>),
-  objectives: (<><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></>),
-  sales: (<><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>),
-  purchases: (<><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></>),
-  orders: (<><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" /></>),
-  clients: (<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
-  suppliers: (<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>),
-  invoices: (<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><line x1="10" y1="9" x2="8" y2="9" /></>),
-  hr: (<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
-  finance: (<><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></>),
-  logistics: (<><rect x="1" y="3" width="15" height="13" rx="1" /><path d="M16 8h4l3 5v3h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></>),
-  production: (<><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" /><line x1="7" y1="18" x2="8" y2="18" /><line x1="12" y1="18" x2="13" y2="18" /><line x1="17" y1="18" x2="18" y2="18" /></>),
-  ai: (<><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" /><circle cx="9" cy="14" r="1" fill="currentColor" stroke="none" /><circle cx="15" cy="14" r="1" fill="currentColor" stroke="none" /></>),
-  reports: (<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="12" y2="17" /></>),
-  analytics: (<><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></>),
-  shipments: (<><rect x="9" y="11" width="14" height="10" rx="1" /><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" /><circle cx="12" cy="21" r="1" /><circle cx="20" cy="21" r="1" /></>),
+  dashboard: (
+    <>
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </>
+  ),
+  products: (
+    <>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </>
+  ),
+  categories: (
+    <>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <line x1="9" y1="9" x2="15" y2="9" /><line x1="9" y1="13" x2="12" y2="13" />
+    </>
+  ),
+  stock: (
+    <>
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+      <line x1="2" y1="20" x2="22" y2="20" />
+    </>
+  ),
+  pos: (
+    <>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <rect x="8" y="6" width="8" height="4" rx="1" />
+      <line x1="8" y1="14" x2="8.01" y2="14" /><line x1="12" y1="14" x2="12.01" y2="14" /><line x1="16" y1="14" x2="16.01" y2="14" />
+      <line x1="8" y1="18" x2="8.01" y2="18" /><line x1="12" y1="18" x2="16" y2="18" />
+    </>
+  ),
+  objectives: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </>
+  ),
+  sales: (
+    <>
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </>
+  ),
+  purchases: (
+    <>
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </>
+  ),
+  orders: (
+    <>
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <line x1="9" y1="12" x2="15" y2="12" />
+      <line x1="9" y1="16" x2="13" y2="16" />
+    </>
+  ),
+  clients: (
+    <>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  suppliers: (
+    <>
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </>
+  ),
+  invoices: (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <line x1="10" y1="9" x2="8" y2="9" />
+    </>
+  ),
+  hr: (
+    <>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  finance: (
+    <>
+      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+      <line x1="1" y1="10" x2="23" y2="10" />
+    </>
+  ),
+  logistics: (
+    <>
+      <rect x="1" y="3" width="15" height="13" rx="1" />
+      <path d="M16 8h4l3 5v3h-7V8z" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </>
+  ),
+  production: (
+    <>
+      <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
+      <line x1="7" y1="18" x2="8" y2="18" />
+      <line x1="12" y1="18" x2="13" y2="18" />
+      <line x1="17" y1="18" x2="18" y2="18" />
+    </>
+  ),
+  ai: (
+    <>
+      <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+      <circle cx="9" cy="14" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="14" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  reports: (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="12" y2="17" />
+    </>
+  ),
+  analytics: (
+    <>
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    </>
+  ),
+  shipments: (
+    <>
+      <rect x="9" y="11" width="14" height="10" rx="1" />
+      <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
+      <circle cx="12" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+    </>
+  ),
 };
 
 const ORBIT_IMG_W = 1672;
 const ORBIT_IMG_H = 941;
 
+// Centre de chaque tuile, en pixels de l'image (arc intérieur puis arc extérieur)
 const ORBIT_ITEMS: { key: ModuleKey; x: number; y: number }[] = [
   { key: "pos", x: 998.1, y: 428.9 },
   { key: "products", x: 1048.2, y: 367.7 },
@@ -302,10 +334,34 @@ const ORBIT_ITEMS: { key: ModuleKey; x: number; y: number }[] = [
 ];
 
 const MODULE_LABELS: Record<Lang, Record<ModuleKey, string>> = {
-  fr: { dashboard: "Tableau de bord", products: "Produits", categories: "Catégories", stock: "Inventaire", pos: "Caisse rapide", sales: "Ventes", purchases: "Achats", orders: "Commandes", invoices: "Factures & devis", clients: "Clients", suppliers: "Fournisseurs", objectives: "Objectifs", hr: "Ressources Humaines", finance: "Finances", production: "Production", logistics: "Logistique", shipments: "Expéditions", reports: "Rapports", analytics: "Analytique", ai: "Assistant IA" },
-  en: { dashboard: "Dashboard", products: "Products", categories: "Categories", stock: "Inventory", pos: "Quick checkout", sales: "Sales", purchases: "Purchases", orders: "Orders", invoices: "Invoices & quotes", clients: "Customers", suppliers: "Suppliers", objectives: "Objectives", hr: "Human Resources", finance: "Finance", production: "Production", logistics: "Logistics", shipments: "Shipments", reports: "Reports", analytics: "Analytics", ai: "AI Assistant" },
-  es: { dashboard: "Panel de control", products: "Productos", categories: "Categorías", stock: "Inventario", pos: "Caja rápida", sales: "Ventas", purchases: "Compras", orders: "Pedidos", invoices: "Facturas y presupuestos", clients: "Clientes", suppliers: "Proveedores", objectives: "Objetivos", hr: "Recursos Humanos", finance: "Finanzas", production: "Producción", logistics: "Logística", shipments: "Envíos", reports: "Informes", analytics: "Analítica", ai: "Asistente IA" },
-  ar: { dashboard: "لوحة القيادة", products: "المنتجات", categories: "الأصناف", stock: "المخزون", pos: "الصندوق السريع", sales: "المبيعات", purchases: "المشتريات", orders: "الطلبيات", invoices: "الفواتير وعروض الأسعار", clients: "العملاء", suppliers: "الموردون", objectives: "الأهداف", hr: "الموارد البشرية", finance: "المالية", production: "الإنتاج", logistics: "اللوجستيك", shipments: "الشحنات", reports: "التقارير", analytics: "التحليلات", ai: "المساعد الذكي" },
+  fr: {
+    dashboard: "Tableau de bord", products: "Produits", categories: "Catégories", stock: "Inventaire",
+    pos: "Caisse rapide", sales: "Ventes", purchases: "Achats", orders: "Commandes", invoices: "Factures & devis",
+    clients: "Clients", suppliers: "Fournisseurs", objectives: "Objectifs", hr: "Ressources Humaines",
+    finance: "Finances", production: "Production", logistics: "Logistique", shipments: "Expéditions",
+    reports: "Rapports", analytics: "Analytique", ai: "Assistant IA",
+  },
+  en: {
+    dashboard: "Dashboard", products: "Products", categories: "Categories", stock: "Inventory",
+    pos: "Quick checkout", sales: "Sales", purchases: "Purchases", orders: "Orders", invoices: "Invoices & quotes",
+    clients: "Customers", suppliers: "Suppliers", objectives: "Objectives", hr: "Human Resources",
+    finance: "Finance", production: "Production", logistics: "Logistics", shipments: "Shipments",
+    reports: "Reports", analytics: "Analytics", ai: "AI Assistant",
+  },
+  es: {
+    dashboard: "Panel de control", products: "Productos", categories: "Categorías", stock: "Inventario",
+    pos: "Caja rápida", sales: "Ventas", purchases: "Compras", orders: "Pedidos", invoices: "Facturas y presupuestos",
+    clients: "Clientes", suppliers: "Proveedores", objectives: "Objetivos", hr: "Recursos Humanos",
+    finance: "Finanzas", production: "Producción", logistics: "Logística", shipments: "Envíos",
+    reports: "Informes", analytics: "Analítica", ai: "Asistente IA",
+  },
+  ar: {
+    dashboard: "لوحة القيادة", products: "المنتجات", categories: "الأصناف", stock: "المخزون",
+    pos: "الصندوق السريع", sales: "المبيعات", purchases: "المشتريات", orders: "الطلبيات", invoices: "الفواتير وعروض الأسعار",
+    clients: "العملاء", suppliers: "الموردون", objectives: "الأهداف", hr: "الموارد البشرية",
+    finance: "المالية", production: "الإنتاج", logistics: "اللوجستيك", shipments: "الشحنات",
+    reports: "التقارير", analytics: "التحليلات", ai: "المساعد الذكي",
+  },
 };
 
 const ORBIT_ARIA: Record<Lang, string> = {
@@ -367,7 +423,6 @@ function ModuleOrbit({ lang }: { lang: Lang }): React.ReactElement {
   );
 }
 
-// ─── Traductions (inchangées) ─────────────────────────────────────────────────
 const TRANSLATIONS: Record<Lang, HomeText> = {
   fr: {
     title: "L'avenir de la gestion d'entreprise commence ici.",
@@ -385,14 +440,75 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
         "Grâce à une plateforme unique accessible via Internet, gérez vos stocks, ventes, achats, facturation, finances, ressources humaines et bien plus encore.",
       ],
       sections: [
-        { title: "Notre mission", body: "Accompagner les entreprises dans la digitalisation de leur gestion en proposant un environnement numérique qui facilite l’organisation des opérations et l’accès aux informations essentielles. Notre démarche vise une gestion plus structurée, favorisant la centralisation des données et la visibilité sur les activités." },
-        { title: "Notre vision", body: "Un environnement professionnel où les entreprises accèdent facilement à leurs données, organisent leurs processus et suivent leurs activités depuis un système de gestion intégré.", items: ["Digitalisation des processus métiers", "Intégration des fonctions de gestion", "Évolution technologique progressive"] },
-        { title: "Une solution ERP reposant sur le modèle SaaS", body: "Inovexa ERP propose un environnement de gestion accessible via Internet depuis des appareils compatibles, selon les conditions d’accès applicables.", items: ["Accessibilité en ligne", "Environnement de gestion centralisé", "Approche modulaire", "Évolution des besoins", "Accès selon les autorisations"] },
-        { title: "Catalogue fonctionnel", body: "Les modules couvrent l’ensemble des besoins opérationnels de l’entreprise :", items: ["Pilotage & tableau de bord", "Produits, catégories et inventaire", "Ventes, achats, commandes, caisse rapide", "Clients, fournisseurs, factures", "Finances et ressources humaines", "Logistique, rapports et analytique", "Assistant IA intégré", "Profil et paramètres"] },
-        { title: "Les principes fondamentaux", body: "Une approche structurée autour de la centralisation, de l’organisation et de la visibilité opérationnelle.", items: ["Centralisation des informations", "Organisation des processus", "Visibilité opérationnelle", "Accessibilité en ligne", "Assistance intelligente (IA)", "Approche évolutive"] },
-        { title: "Secteurs d’activité", body: "Inovexa ERP s’adresse notamment aux :", items: ["Commerces et distributeurs", "Entreprises de services", "Industries", "Acteurs de la logistique", "Entreprises en développement"] },
-        { title: "Sécurité & gestion des données", body: "La protection repose sur la gestion des accès, l’authentification, la sécurisation des échanges et les procédures de maintenance. Les engagements précis sont présentés selon les dispositifs réellement déployés." },
-        { title: "Notre engagement", body: "Une approche orientée besoins, structurée autour de la clarté, l’organisation, l’accessibilité, l’adaptation, l’évolution et la transparence." },
+        {
+          title: "Notre mission",
+          body: "Accompagner les entreprises dans la digitalisation de leur gestion en proposant un environnement numérique qui facilite l’organisation des opérations et l’accès aux informations essentielles. Notre démarche vise une gestion plus structurée, favorisant la centralisation des données et la visibilité sur les activités.",
+        },
+        {
+          title: "Notre vision",
+          body: "Un environnement professionnel où les entreprises accèdent facilement à leurs données, organisent leurs processus et suivent leurs activités depuis un système de gestion intégré.",
+          items: [
+            "Digitalisation des processus métiers",
+            "Intégration des fonctions de gestion",
+            "Évolution technologique progressive",
+          ],
+        },
+        {
+          title: "Une solution ERP reposant sur le modèle SaaS",
+          body: "Inovexa ERP propose un environnement de gestion accessible via Internet depuis des appareils compatibles, selon les conditions d’accès applicables.",
+          items: [
+            "Accessibilité en ligne",
+            "Environnement de gestion centralisé",
+            "Approche modulaire",
+            "Évolution des besoins",
+            "Accès selon les autorisations",
+          ],
+        },
+        {
+          title: "Catalogue fonctionnel",
+          body: "Les modules couvrent l’ensemble des besoins opérationnels de l’entreprise :",
+          items: [
+            "Pilotage & tableau de bord",
+            "Produits, catégories et inventaire",
+            "Ventes, achats, commandes, caisse rapide",
+            "Clients, fournisseurs, factures",
+            "Finances et ressources humaines",
+            "Logistique, rapports et analytique",
+            "Assistant IA intégré",
+            "Profil et paramètres",
+          ],
+        },
+        {
+          title: "Les principes fondamentaux",
+          body: "Une approche structurée autour de la centralisation, de l’organisation et de la visibilité opérationnelle.",
+          items: [
+            "Centralisation des informations",
+            "Organisation des processus",
+            "Visibilité opérationnelle",
+            "Accessibilité en ligne",
+            "Assistance intelligente (IA)",
+            "Approche évolutive",
+          ],
+        },
+        {
+          title: "Secteurs d’activité",
+          body: "Inovexa ERP s’adresse notamment aux :",
+          items: [
+            "Commerces et distributeurs",
+            "Entreprises de services",
+            "Industries",
+            "Acteurs de la logistique",
+            "Entreprises en développement",
+          ],
+        },
+        {
+          title: "Sécurité & gestion des données",
+          body: "La protection repose sur la gestion des accès, l’authentification, la sécurisation des échanges et les procédures de maintenance. Les engagements précis sont présentés selon les dispositifs réellement déployés.",
+        },
+        {
+          title: "Notre engagement",
+          body: "Une approche orientée besoins, structurée autour de la clarté, l’organisation, l’accessibilité, l’adaptation, l’évolution et la transparence.",
+        },
       ],
       ctaLabel: "Découvrir notre solution",
       ctaHref: "https://www.inovexa-erp.com/",
@@ -403,7 +519,11 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Confidentialité",
     terms: "Conditions",
     langLabel: "Choisir la langue",
-    ai: { title: "Système intelligent", badge: "IA intégrée", desc: "Un assistant IA qui répond à vos questions à partir de vos propres données." },
+    ai: {
+      title: "Système intelligent",
+      badge: "IA intégrée",
+      desc: "Un assistant IA qui répond à vos questions à partir de vos propres données.",
+    },
     features: [
       { title: "Gestion centralisée", desc: "Tous vos processus métier réunis sur une seule plateforme." },
       { title: "Pilotage intelligent", desc: "Transformez vos données en décisions stratégiques." },
@@ -427,14 +547,75 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
         "Gracias a una plataforma única accesible a través de Internet, gestione sus existencias, ventas, compras, facturación, finanzas, recursos humanos y mucho más.",
       ],
       sections: [
-        { title: "Nuestra misión", body: "Acompañar a las empresas en la digitalización de su gestión ofreciendo un entorno digital que facilite la organización de las operaciones y el acceso a la información esencial." },
-        { title: "Nuestra visión", body: "Un entorno profesional donde las empresas accedan fácilmente a sus datos, organicen sus procesos y sigan sus actividades desde un sistema de gestión integrado.", items: ["Digitalización de los procesos de negocio", "Integración de las funciones de gestión", "Evolución tecnológica progresiva"] },
-        { title: "Una solución ERP basada en el modelo SaaS", body: "Inovexa ERP ofrece un entorno de gestión accesible a través de Internet desde dispositivos compatibles, según las condiciones de acceso aplicables.", items: ["Accesibilidad en línea", "Entorno de gestión centralizado", "Enfoque modular", "Evolución de las necesidades", "Acceso según los permisos"] },
-        { title: "Catálogo funcional", body: "Los módulos cubren todas las necesidades operativas de la empresa:", items: ["Pilotaje y panel de control", "Productos, categorías e inventario", "Ventas, compras, pedidos, caja rápida", "Clientes, proveedores, facturas", "Finanzas y recursos humanos", "Logística, informes y analítica", "Asistente de IA integrado", "Perfil y parámetros"] },
-        { title: "Los principios fundamentales", body: "Un enfoque estructurado en torno a la centralización, la organización y la visibilidad operativa.", items: ["Centralización de la información", "Organización de los procesos", "Visibilidad operativa", "Accesibilidad en línea", "Asistencia inteligente (IA)", "Enfoque evolutivo"] },
-        { title: "Sectores de actividad", body: "Inovexa ERP está dirigido en particular a:", items: ["Comercios y distribuidores", "Empresas de servicios", "Industrias", "Actores de la logística", "Empresas en desarrollo"] },
-        { title: "Seguridad y gestión de datos", body: "La protección se basa en la gestión de accesos, la autenticación, la seguridad de los intercambios y los procedimientos de mantenimiento. Los compromisos precisos se presentan según los dispositivos realmente implementados." },
-        { title: "Nuestro compromiso", body: "Un enfoque orientado a las necesidades, estructurado en torno a la claridad, la organización, la accesibilidad, la adaptación, la evolución y la transparencia." },
+        {
+          title: "Nuestra misión",
+          body: "Acompañar a las empresas en la digitalización de su gestión ofreciendo un entorno digital que facilite la organización de las operaciones y el acceso a la información esencial.",
+        },
+        {
+          title: "Nuestra visión",
+          body: "Un entorno profesional donde las empresas accedan fácilmente a sus datos, organicen sus procesos y sigan sus actividades desde un sistema de gestión integrado.",
+          items: [
+            "Digitalización de los procesos de negocio",
+            "Integración de las funciones de gestión",
+            "Evolución tecnológica progresiva",
+          ],
+        },
+        {
+          title: "Una solución ERP basada en el modelo SaaS",
+          body: "Inovexa ERP ofrece un entorno de gestión accesible a través de Internet desde dispositivos compatibles, según las condiciones de acceso aplicables.",
+          items: [
+            "Accesibilidad en línea",
+            "Entorno de gestión centralizado",
+            "Enfoque modular",
+            "Evolución de las necesidades",
+            "Acceso según los permisos",
+          ],
+        },
+        {
+          title: "Catálogo funcional",
+          body: "Los módulos cubren todas las necesidades operativas de la empresa:",
+          items: [
+            "Pilotaje y panel de control",
+            "Productos, categorías e inventario",
+            "Ventas, compras, pedidos, caja rápida",
+            "Clientes, proveedores, facturas",
+            "Finanzas y recursos humanos",
+            "Logística, informes y analítica",
+            "Asistente de IA integrado",
+            "Perfil y parámetros",
+          ],
+        },
+        {
+          title: "Los principios fundamentales",
+          body: "Un enfoque estructurado en torno a la centralización, la organización y la visibilidad operativa.",
+          items: [
+            "Centralización de la información",
+            "Organización de los procesos",
+            "Visibilidad operativa",
+            "Accesibilidad en línea",
+            "Asistencia inteligente (IA)",
+            "Enfoque evolutivo",
+          ],
+        },
+        {
+          title: "Sectores de actividad",
+          body: "Inovexa ERP está dirigido en particular a:",
+          items: [
+            "Comercios y distribuidores",
+            "Empresas de servicios",
+            "Industrias",
+            "Actores de la logística",
+            "Empresas en desarrollo",
+          ],
+        },
+        {
+          title: "Seguridad y gestión de datos",
+          body: "La protección se basa en la gestión de accesos, la autenticación, la seguridad de los intercambios y los procedimientos de mantenimiento. Los compromisos precisos se presentan según los dispositivos realmente implementados.",
+        },
+        {
+          title: "Nuestro compromiso",
+          body: "Un enfoque orientado a las necesidades, estructurado en torno a la claridad, la organización, la accesibilidad, la adaptación, la evolución y la transparencia.",
+        },
       ],
       ctaLabel: "Descubra nuestra solución",
       ctaHref: "https://www.inovexa-erp.com/",
@@ -445,7 +626,11 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacidad",
     terms: "Términos",
     langLabel: "Elegir idioma",
-    ai: { title: "Sistema inteligente", badge: "IA integrada", desc: "Un asistente de IA que responde a sus preguntas a partir de sus propios datos." },
+    ai: {
+      title: "Sistema inteligente",
+      badge: "IA integrada",
+      desc: "Un asistente de IA que responde a sus preguntas a partir de sus propios datos.",
+    },
     features: [
       { title: "Gestión centralizada", desc: "Todos sus procesos de negocio reunidos en una sola plataforma." },
       { title: "Pilotaje inteligente", desc: "Transforme sus datos en decisiones estratégicas." },
@@ -469,14 +654,75 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
         "With a single platform accessible over the Internet, manage your stock, sales, purchases, invoicing, finance, human resources and much more.",
       ],
       sections: [
-        { title: "Our mission", body: "Support companies in the digitalization of their management by providing a digital environment that facilitates the organization of operations and access to essential information." },
-        { title: "Our vision", body: "A professional environment where companies can easily access their data, organize their processes and track their activities through an integrated management system.", items: ["Digitalization of business processes", "Integration of management functions", "Progressive technological evolution"] },
-        { title: "An ERP solution based on the SaaS model", body: "Inovexa ERP provides a management environment accessible over the Internet from compatible devices, subject to applicable access conditions.", items: ["Online accessibility", "Centralized management environment", "Modular approach", "Evolving needs", "Access based on permissions"] },
-        { title: "Functional catalog", body: "The modules cover all the operational needs of the company:", items: ["Steering & dashboard", "Products, categories and inventory", "Sales, purchases, orders, quick checkout", "Customers, suppliers, invoices", "Finance and human resources", "Logistics, reports and analytics", "Built-in AI assistant", "Profile and settings"] },
-        { title: "Fundamental principles", body: "A structured approach around centralization, organization and operational visibility.", items: ["Information centralization", "Process organization", "Operational visibility", "Online accessibility", "Intelligent assistance (AI)", "Scalable approach"] },
-        { title: "Industries", body: "Inovexa ERP is particularly aimed at:", items: ["Retail and distribution", "Service companies", "Industry", "Logistics players", "Growing businesses"] },
-        { title: "Security & data management", body: "Protection relies on access management, authentication, secure exchanges and maintenance procedures. Specific commitments are presented according to the measures actually implemented." },
-        { title: "Our commitment", body: "A needs-oriented approach structured around clarity, organization, accessibility, adaptation, evolution and transparency." },
+        {
+          title: "Our mission",
+          body: "Support companies in the digitalization of their management by providing a digital environment that facilitates the organization of operations and access to essential information.",
+        },
+        {
+          title: "Our vision",
+          body: "A professional environment where companies can easily access their data, organize their processes and track their activities through an integrated management system.",
+          items: [
+            "Digitalization of business processes",
+            "Integration of management functions",
+            "Progressive technological evolution",
+          ],
+        },
+        {
+          title: "An ERP solution based on the SaaS model",
+          body: "Inovexa ERP provides a management environment accessible over the Internet from compatible devices, subject to applicable access conditions.",
+          items: [
+            "Online accessibility",
+            "Centralized management environment",
+            "Modular approach",
+            "Evolving needs",
+            "Access based on permissions",
+          ],
+        },
+        {
+          title: "Functional catalog",
+          body: "The modules cover all the operational needs of the company:",
+          items: [
+            "Steering & dashboard",
+            "Products, categories and inventory",
+            "Sales, purchases, orders, quick checkout",
+            "Customers, suppliers, invoices",
+            "Finance and human resources",
+            "Logistics, reports and analytics",
+            "Built-in AI assistant",
+            "Profile and settings",
+          ],
+        },
+        {
+          title: "Fundamental principles",
+          body: "A structured approach around centralization, organization and operational visibility.",
+          items: [
+            "Information centralization",
+            "Process organization",
+            "Operational visibility",
+            "Online accessibility",
+            "Intelligent assistance (AI)",
+            "Scalable approach",
+          ],
+        },
+        {
+          title: "Industries",
+          body: "Inovexa ERP is particularly aimed at:",
+          items: [
+            "Retail and distribution",
+            "Service companies",
+            "Industry",
+            "Logistics players",
+            "Growing businesses",
+          ],
+        },
+        {
+          title: "Security & data management",
+          body: "Protection relies on access management, authentication, secure exchanges and maintenance procedures. Specific commitments are presented according to the measures actually implemented.",
+        },
+        {
+          title: "Our commitment",
+          body: "A needs-oriented approach structured around clarity, organization, accessibility, adaptation, evolution and transparency.",
+        },
       ],
       ctaLabel: "Discover our solution",
       ctaHref: "https://www.inovexa-erp.com/",
@@ -487,7 +733,11 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "Privacy",
     terms: "Terms",
     langLabel: "Choose language",
-    ai: { title: "Intelligent system", badge: "Built-in AI", desc: "An AI assistant that answers your questions using your own data." },
+    ai: {
+      title: "Intelligent system",
+      badge: "Built-in AI",
+      desc: "An AI assistant that answers your questions using your own data.",
+    },
     features: [
       { title: "Centralized management", desc: "All your business processes brought together on a single platform." },
       { title: "Smart insights", desc: "Turn your data into strategic decisions." },
@@ -511,14 +761,75 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
         "بفضل منصة واحدة متاحة عبر الإنترنت، أدِر مخزونك ومبيعاتك ومشترياتك وفواتيرك وماليتك ومواردك البشرية وغير ذلك الكثير.",
       ],
       sections: [
-        { title: "مهمتنا", body: "مرافقة المؤسسات في رقمنة إدارتها عبر توفير بيئة رقمية تسهّل تنظيم العمليات والوصول إلى المعلومات الأساسية. نسعى إلى إدارة أكثر تنظيمًا تدعم تجميع البيانات ووضوح الرؤية على الأنشطة." },
-        { title: "رؤيتنا", body: "بيئة مهنية تصل فيها المؤسسات إلى بياناتها بسهولة، وتنظّم إجراءاتها، وتتابع أنشطتها من نظام إدارة متكامل.", items: ["رقمنة إجراءات العمل", "تكامل وظائف الإدارة", "تطور تكنولوجي تدريجي"] },
-        { title: "حلّ ERP يعتمد نموذج SaaS", body: "يوفّر Inovexa ERP بيئة إدارة متاحة عبر الإنترنت من الأجهزة المتوافقة، وفق شروط الوصول المعمول بها.", items: ["إتاحة عبر الإنترنت", "بيئة إدارة مركزية", "مقاربة قائمة على الوحدات", "مواكبة تطور الحاجات", "وصول حسب الصلاحيات"] },
-        { title: "قائمة الوظائف", body: "تغطي الوحدات مجمل الحاجات التشغيلية للمؤسسة:", items: ["المتابعة ولوحة القيادة", "المنتجات والأصناف والمخزون", "المبيعات والمشتريات والطلبيات والصندوق السريع", "العملاء والموردون والفواتير", "المالية والموارد البشرية", "اللوجستيك والتقارير والتحليلات", "مساعد ذكي مدمج", "الملف الشخصي والإعدادات"] },
-        { title: "المبادئ الأساسية", body: "مقاربة منظَّمة تقوم على تجميع المعلومات والتنظيم ووضوح الرؤية التشغيلية.", items: ["تجميع المعلومات", "تنظيم الإجراءات", "وضوح الرؤية التشغيلية", "إتاحة عبر الإنترنت", "مساعدة ذكية (ذكاء اصطناعي)", "مقاربة قابلة للتطور"] },
-        { title: "قطاعات النشاط", body: "يتوجّه Inovexa ERP خاصةً إلى:", items: ["المتاجر والموزعين", "مؤسسات الخدمات", "المؤسسات الصناعية", "الفاعلين في اللوجستيك", "المؤسسات في طور النمو"] },
-        { title: "الأمان وإدارة البيانات", body: "تقوم الحماية على إدارة صلاحيات الوصول، والتحقق من الهوية، وتأمين تبادل البيانات، وإجراءات الصيانة. وتُعرَض الالتزامات الدقيقة بحسب الآليات المعتمدة فعليًا." },
-        { title: "التزامنا", body: "مقاربة موجَّهة نحو حاجاتكم، تقوم على الوضوح والتنظيم وسهولة الوصول والتكيّف والتطور والشفافية." },
+        {
+          title: "مهمتنا",
+          body: "مرافقة المؤسسات في رقمنة إدارتها عبر توفير بيئة رقمية تسهّل تنظيم العمليات والوصول إلى المعلومات الأساسية. نسعى إلى إدارة أكثر تنظيمًا تدعم تجميع البيانات ووضوح الرؤية على الأنشطة.",
+        },
+        {
+          title: "رؤيتنا",
+          body: "بيئة مهنية تصل فيها المؤسسات إلى بياناتها بسهولة، وتنظّم إجراءاتها، وتتابع أنشطتها من نظام إدارة متكامل.",
+          items: [
+            "رقمنة إجراءات العمل",
+            "تكامل وظائف الإدارة",
+            "تطور تكنولوجي تدريجي",
+          ],
+        },
+        {
+          title: "حلّ ERP يعتمد نموذج SaaS",
+          body: "يوفّر Inovexa ERP بيئة إدارة متاحة عبر الإنترنت من الأجهزة المتوافقة، وفق شروط الوصول المعمول بها.",
+          items: [
+            "إتاحة عبر الإنترنت",
+            "بيئة إدارة مركزية",
+            "مقاربة قائمة على الوحدات",
+            "مواكبة تطور الحاجات",
+            "وصول حسب الصلاحيات",
+          ],
+        },
+        {
+          title: "قائمة الوظائف",
+          body: "تغطي الوحدات مجمل الحاجات التشغيلية للمؤسسة:",
+          items: [
+            "المتابعة ولوحة القيادة",
+            "المنتجات والأصناف والمخزون",
+            "المبيعات والمشتريات والطلبيات والصندوق السريع",
+            "العملاء والموردون والفواتير",
+            "المالية والموارد البشرية",
+            "اللوجستيك والتقارير والتحليلات",
+            "مساعد ذكي مدمج",
+            "الملف الشخصي والإعدادات",
+          ],
+        },
+        {
+          title: "المبادئ الأساسية",
+          body: "مقاربة منظَّمة تقوم على تجميع المعلومات والتنظيم ووضوح الرؤية التشغيلية.",
+          items: [
+            "تجميع المعلومات",
+            "تنظيم الإجراءات",
+            "وضوح الرؤية التشغيلية",
+            "إتاحة عبر الإنترنت",
+            "مساعدة ذكية (ذكاء اصطناعي)",
+            "مقاربة قابلة للتطور",
+          ],
+        },
+        {
+          title: "قطاعات النشاط",
+          body: "يتوجّه Inovexa ERP خاصةً إلى:",
+          items: [
+            "المتاجر والموزعين",
+            "مؤسسات الخدمات",
+            "المؤسسات الصناعية",
+            "الفاعلين في اللوجستيك",
+            "المؤسسات في طور النمو",
+          ],
+        },
+        {
+          title: "الأمان وإدارة البيانات",
+          body: "تقوم الحماية على إدارة صلاحيات الوصول، والتحقق من الهوية، وتأمين تبادل البيانات، وإجراءات الصيانة. وتُعرَض الالتزامات الدقيقة بحسب الآليات المعتمدة فعليًا.",
+        },
+        {
+          title: "التزامنا",
+          body: "مقاربة موجَّهة نحو حاجاتكم، تقوم على الوضوح والتنظيم وسهولة الوصول والتكيّف والتطور والشفافية.",
+        },
       ],
       ctaLabel: "اكتشف حلّنا",
       ctaHref: "https://www.inovexa-erp.com/",
@@ -529,7 +840,11 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
     privacy: "الخصوصية",
     terms: "الشروط",
     langLabel: "اختيار اللغة",
-    ai: { title: "نظام ذكي", badge: "ذكاء اصطناعي مدمج", desc: "مساعد ذكي يجيب عن أسئلتك انطلاقًا من بياناتك الخاصة." },
+    ai: {
+      title: "نظام ذكي",
+      badge: "ذكاء اصطناعي مدمج",
+      desc: "مساعد ذكي يجيب عن أسئلتك انطلاقًا من بياناتك الخاصة.",
+    },
     features: [
       { title: "إدارة مركزية", desc: "كل إجراءات عملك مجتمعة في منصة واحدة." },
       { title: "قيادة ذكية", desc: "حوّل بياناتك إلى قرارات استراتيجية." },
@@ -539,7 +854,7 @@ const TRANSLATIONS: Record<Lang, HomeText> = {
   },
 };
 
-// ─── Couleurs ──────────────────────────────────────────────────────────────────
+// Couleurs de la page
 const HP_LIGHT: Record<string, string> = {
   "--hp-bg": "#f8f7ff",
   "--hp-text": "#1E1035",
@@ -557,6 +872,9 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-cta-shadow": "rgba(109,40,217,0.35)",
   "--hp-ghost-border": "rgba(46,16,101,0.25)",
   "--hp-link": "#6D28D9",
+  "--hp-header-bg": "rgba(245,243,255,0.9)",
+  "--hp-menu-bg": "rgba(255,255,255,0.98)",
+  "--hp-menu-text": "#374151",
   "--hp-shadow": "rgba(17,24,39,0.18)",
   "--hp-modal-bg": "rgba(255,255,255,0.99)",
   "--hp-overlay": "rgba(30,16,53,0.45)",
@@ -580,11 +898,11 @@ const HP_LIGHT: Record<string, string> = {
   "--hp-ai-shadow": "rgba(76,29,149,0.14)",
 };
 
-// ─── Composant principal ──────────────────────────────────────────────────────
+// ─── Composant principal ───────────────────────────────────────────────────────
 export default function HomePage(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
   const { isMobile, isTablet } = useResponsive();
   const isCompact = isMobile || isTablet;
 
@@ -649,14 +967,22 @@ export default function HomePage(): React.ReactElement {
         position: "relative",
       }}
     >
+      {/* Image de fond + dégradé de lisibilité */}
       <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
       <div className="hp-bg-overlay" aria-hidden="true" />
 
+      {/* Icônes des modules posées autour du portable — nom affiché au survol (ordinateur) */}
       <ModuleOrbit lang={lang} />
 
-      {/* Header inline : logo à gauche, nav, FR + CTA à droite, hauteur -20% */}
-      <Header lang={lang} langLabel={text.langLabel} onLangChange={setLanguage} />
+      {/* En-tête : le même que sur les pages publiques (components/site/SiteHeader) */}
+      <SiteHeader
+        lang={lang}
+        nav={[{ href: "/", label: HEADER_TEXT[lang].home }, ...SITE_LINKS[lang]]}
+        cta={{ href: "/contact#form-section", label: HEADER_TEXT[lang].demo }}
+        labels={{ language: text.langLabel, menu: "Menu" }}
+      />
 
+      {/* Contenu principal */}
       <main className="hp-main">
         <div className="hp-content">
           <div className="hp-rise hp-d1 hp-modules">
@@ -664,11 +990,13 @@ export default function HomePage(): React.ReactElement {
             {text.modules}
           </div>
 
+          {/* Espacement renforcé entre badge modules et titre */}
           <h1 className="hp-slide hp-d2 hp-title">{text.title}</h1>
           <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
         </div>
 
         <ul className="hp-cards hp-rise hp-d4">
+          {/* Carte mise en avant : système intelligent à IA intégrée (pleine largeur) */}
           <li className="hp-card hp-card-ai">
             <span className="hp-card-icon hp-ai-icon"><IconSparkles color="var(--hp-icon)" /></span>
             <div className="hp-card-text">
@@ -693,6 +1021,7 @@ export default function HomePage(): React.ReactElement {
           })}
         </ul>
 
+        {/* Actions — désormais SOUS les cards sur tous les écrans */}
         <div className="hp-rise hp-d3 hp-actions hp-actions-below">
           <Link href={ctaHref} prefetch className="hp-cta">
             {isLoggedIn ? text.button : text.login}
@@ -790,147 +1119,21 @@ const STYLES = `
   .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
   .home-page ul { list-style: none; margin: 0; padding: 0; }
 
-  /* ── Header : logo à gauche, nav, FR + CTA à droite, hauteur -20% ── */
-  .site-header {
-    position: relative;
-    z-index: 50;
-    width: 100%;
-    background: rgba(245, 243, 255, 0.9);
-    border-bottom: 1px solid var(--hp-glass-border, rgba(109,40,217,0.14));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    /* hauteur initiale ~ 72px → réduite de 20% ≈ 58px */
-    min-height: 58px;
-    padding: 0 clamp(20px, 4vw, 56px);
-  }
-  .site-header-inner {
-    display: flex;
-    align-items: center;
-    gap: clamp(16px, 2.5vw, 32px);
-    width: 100%;
-    height: 58px;
-    max-width: 1600px;
-    margin: 0 auto;
-  }
-  .site-logo {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    color: var(--hp-text, #1E1035);
-    flex-shrink: 0;
-  }
-  .site-logo-text {
-    font-family: var(--font-orbitron), sans-serif;
-    font-weight: 800;
-    font-size: 16px;
-    letter-spacing: -0.01em;
-  }
-  .site-nav {
-    display: flex;
-    align-items: center;
-    gap: clamp(8px, 1.4vw, 20px);
-    flex: 1;
-    min-width: 0;
-  }
-  .site-nav-link {
-    color: var(--hp-muted, #352C55);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    white-space: nowrap;
-    transition: color .2s, background .2s;
-  }
-  .site-nav-link:hover {
-    color: var(--hp-icon, #6D28D9);
-    background: rgba(109,40,217,0.06);
-  }
-  .site-header-right {
-    display: flex;
-    align-items: center;
-    gap: clamp(8px, 1.2vw, 14px);
-    flex-shrink: 0;
-    margin-inline-start: auto;
-  }
-  .site-lang {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--hp-chip-border, rgba(109,40,217,0.18));
-    background: var(--hp-chip-bg, rgba(255,255,255,0.8));
-    color: var(--hp-text, #1E1035);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .site-lang-select {
-    border: none;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-    outline: none;
-    padding-right: 4px;
-  }
-  .site-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 36px;
-    padding: 0 16px;
-    border-radius: 999px;
-    background: var(--hp-cta-bg, #2E1065);
-    color: #fff !important;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 13px;
-    white-space: nowrap;
-    box-shadow: 0 4px 16px var(--hp-cta-shadow, rgba(109,40,217,0.35));
-    transition: transform .2s, box-shadow .2s;
-  }
-  .site-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 22px var(--hp-cta-shadow, rgba(109,40,217,0.35)); }
-  .site-mobile-toggle {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    border: 1px solid var(--hp-chip-border, rgba(109,40,217,0.18));
-    background: var(--hp-chip-bg, rgba(255,255,255,0.8));
-    color: var(--hp-text, #1E1035);
-    cursor: pointer;
-  }
-  .site-mobile-menu {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px clamp(20px, 4vw, 56px) 16px;
-    border-top: 1px solid var(--hp-glass-border, rgba(109,40,217,0.14));
-    background: rgba(245, 243, 255, 0.98);
-  }
-
-  /* Mobile : menu déroulant */
-  @media (max-width: 900px) {
-    .site-nav { display: none; }
-    .site-mobile-toggle { display: inline-flex; }
-    .site-mobile-menu { display: flex; }
-    .site-header-right { gap: 8px; }
-  }
-
-  /* ── Fond ── */
+  /* ── Fond : image plein cadre, ancrée à DROITE (le portable reste toujours visible) ── */
   .hp-bg-img {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; object-position: 100% 55%;
-    user-select: none; -webkit-user-drag: none; z-index: 0;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 100% 55%;
+    user-select: none;
+    -webkit-user-drag: none;
+    z-index: 0;
   }
   .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
 
-  /* ── Orbite ── */
+  /* ── Orbite des modules : même cadrage que .hp-bg-img (object-fit: cover ; object-position: 100% 55%) ── */
   .hp-orbit { position: absolute; inset: 0; z-index: 2; pointer-events: none; container-type: size; }
   .hp-orbit-box {
     --u: max(calc(100vw / 1672), calc(100vh / 941));
@@ -960,13 +1163,17 @@ const STYLES = `
   }
   .hp-orbit-item:hover { z-index: 3; }
   .hp-orbit-tile {
-    display: flex; align-items: center; justify-content: center;
-    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
     border-radius: calc(13 * var(--u));
     background: var(--hp-orbit-tile);
     border: 1px solid var(--hp-orbit-border);
     box-shadow: var(--hp-orbit-shadow);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--hp-orbit-icon-b);
     transition: transform .22s cubic-bezier(0.22,1,0.36,1), box-shadow .22s, border-color .22s;
   }
@@ -977,33 +1184,54 @@ const STYLES = `
     box-shadow: var(--hp-orbit-shadow-hover);
   }
   .hp-orbit-tip {
-    position: absolute; left: 50%; bottom: calc(100% + 12px);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 12px);
     transform: translate(-50%, 6px);
-    padding: 6px 12px; border-radius: 999px;
-    background: var(--hp-orbit-tip-bg); color: var(--hp-orbit-tip-text);
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--hp-orbit-tip-bg);
+    color: var(--hp-orbit-tip-text);
     border: 1px solid var(--hp-orbit-tip-border);
-    font-size: 13px; font-weight: 600; line-height: 1.2; letter-spacing: 0.1px;
-    white-space: nowrap; box-shadow: 0 10px 24px rgba(17,12,46,0.25);
-    opacity: 0; pointer-events: none;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    box-shadow: 0 10px 24px rgba(17,12,46,0.25);
+    opacity: 0;
+    pointer-events: none;
     transition: opacity .18s ease, transform .18s ease;
   }
   .hp-orbit-tip::after {
-    content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-    border: 6px solid transparent; border-top-color: var(--hp-orbit-tip-bg);
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--hp-orbit-tip-bg);
   }
   .hp-orbit-item:hover .hp-orbit-tip { opacity: 1; transform: translate(-50%, 0); }
+  /* Dernière icône, près du bord droit : bulle alignée à droite pour ne pas être coupée */
   .hp-orbit-item.is-end .hp-orbit-tip { left: auto; right: -6px; transform: translate(0, 6px); }
   .hp-orbit-item.is-end:hover .hp-orbit-tip { transform: translate(0, 0); }
   .hp-orbit-item.is-end .hp-orbit-tip::after { left: auto; right: calc(24 * var(--u)); transform: none; }
   @keyframes hpOrbitIn { from { opacity: 0; transform: translate(-50%, -50%) scale(.85); } to { opacity: 1; transform: translate(-50%, -50%); } }
 
+  /* Les zones vides du contenu laissent passer la souris jusqu'aux icônes */
   .hp-main { pointer-events: none; }
   .hp-content > *, .hp-cards, .hp-actions > * { pointer-events: auto; }
 
   /* ── Structure ── */
   .hp-main {
-    position: relative; z-index: 10; flex: 1;
-    display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
     gap: clamp(14px, 3vh, 32px);
     padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 56px);
   }
@@ -1012,9 +1240,10 @@ const STYLES = `
   .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
   .hp-light .hp-footer a { color: #000000; }
+  /* Sans voile sur le fond : copyright plus foncé pour rester lisible sur la vague colorée */
   .hp-light .hp-footer { color: #1E1035; font-weight: 500; }
 
-  /* ── Cartes ── */
+  /* ── Cartes (format compact) ── */
   .hp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 720px; }
   .hp-card { display: flex; flex-direction: row; align-items: center; gap: 11px; padding: clamp(10px, 1.5vh, 14px) clamp(12px, 1vw, 16px); border-radius: 14px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .2s, border-color .2s; }
   .hp-card:hover { transform: translateY(-3px); border-color: var(--hp-chip-border); }
@@ -1023,37 +1252,62 @@ const STYLES = `
   .hp-card-title { margin: 0 0 2px; font-size: clamp(13.5px, min(1vw, 2vh), 16px); font-weight: 700; color: var(--hp-text); line-height: 1.2; }
   .hp-card-desc { margin: 0; font-size: clamp(12px, min(0.85vw, 1.8vh), 14px); color: var(--hp-muted); line-height: 1.35; }
 
+  /* ── Carte mise en avant : système intelligent · IA intégrée (pleine largeur, en tête des cartes) ── */
   .hp-card.hp-card-ai {
-    grid-column: 1 / -1; position: relative;
+    grid-column: 1 / -1;
+    position: relative;
     border-color: transparent;
     background: var(--hp-ai-bg);
     box-shadow: 0 12px 34px var(--hp-ai-shadow);
     transition: transform .2s, box-shadow .2s;
   }
   .hp-card.hp-card-ai:hover { box-shadow: 0 16px 42px var(--hp-ai-glow); }
+  /* Liseré dégradé : seul le contour est peint, le centre garde l'effet verre */
   .hp-card-ai::before {
-    content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
     background: var(--hp-ai-ring);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
   .hp-ai-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
   .hp-ai-badge {
-    display: inline-flex; align-items: center; padding: 0.28em 0.7em;
-    border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border);
-    color: var(--hp-icon); font-size: max(9.5px, 0.7em); font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.2; white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28em 0.7em;
+    border-radius: 999px;
+    background: var(--hp-chip-bg);
+    border: 1px solid var(--hp-chip-border);
+    color: var(--hp-icon);
+    font-size: max(9.5px, 0.7em);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    white-space: nowrap;
   }
 
   /* ── Textes ── */
   .hp-modules {
-    display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
-    padding: 0.5em 1.05em; border-radius: 999px;
-    background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    padding: 0.5em 1.05em;
+    border-radius: 999px;
+    background: var(--hp-chip-bg);
+    border: 1px solid var(--hp-chip-border);
     color: var(--hp-text);
     font-size: clamp(13px, min(1.1vw, 2.3vh), 18px);
-    font-weight: 600; margin-bottom: clamp(12px, 2.4vh, 26px);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    font-weight: 600;
+    margin-bottom: clamp(12px, 2.4vh, 26px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
   @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
@@ -1095,7 +1349,9 @@ const STYLES = `
 
   /* ── Tablette / mobile ── */
   .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
+  /* Tablette / mobile : le texte occupe toute la largeur, l'orbite est masquée */
   .is-compact .hp-orbit { display: none; }
+  /* Paysage (tablette couchée) : portable visible à droite. Portrait : partie gauche épurée, texte lisible. */
   .is-compact .hp-bg-img { object-position: 100% 55%; }
   @media (orientation: portrait) { .is-compact .hp-bg-img { object-position: 0% center; } }
   .is-mobile .hp-title { font-size: clamp(32px, 9vw, 44px); }
@@ -1104,57 +1360,124 @@ const STYLES = `
   .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
   .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
 
+  /* ── Mobile : textes et cartes compacts ── */
   .is-mobile .hp-main {
-    gap: 18px; padding-top: 14px; padding-bottom: 16px;
-    padding-left: 18px; padding-right: 18px;
+    gap: 18px;
+    padding-top: 14px;
+    padding-bottom: 16px;
+    padding-left: 18px;
+    padding-right: 18px;
   }
-  .is-mobile .hp-modules { font-size: 11px; padding: 0.35em 0.85em; gap: 6px; margin-bottom: 14px; }
+  .is-mobile .hp-modules {
+    font-size: 11px;
+    padding: 0.35em 0.85em;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
   .is-mobile .hp-live-dot { width: 6px; height: 6px; }
-  .is-mobile .hp-title { font-size: clamp(21px, 6.2vw, 27px); line-height: 1.12; margin-bottom: 10px; }
-  .is-mobile .hp-subtitle { font-size: 13px; line-height: 1.45; margin-bottom: 0; }
-  .is-mobile .hp-cards { gap: 8px; margin-top: 0; }
-  .is-mobile .hp-card { padding: 7px 10px; gap: 9px; border-radius: 11px; }
-  .is-mobile .hp-card-icon { width: 27px; height: 27px; border-radius: 8px; }
+  .is-mobile .hp-title {
+    font-size: clamp(21px, 6.2vw, 27px);
+    line-height: 1.12;
+    margin-bottom: 10px;
+  }
+  .is-mobile .hp-subtitle {
+    font-size: 13px;
+    line-height: 1.45;
+    margin-bottom: 0;
+  }
+  .is-mobile .hp-cards {
+    gap: 8px;
+    margin-top: 0;
+  }
+  .is-mobile .hp-card {
+    padding: 7px 10px;
+    gap: 9px;
+    border-radius: 11px;
+  }
+  .is-mobile .hp-card-icon {
+    width: 27px;
+    height: 27px;
+    border-radius: 8px;
+  }
   .is-mobile .hp-card-icon svg { width: 0.9em; height: 0.9em; }
   .is-mobile .hp-card-title { font-size: 12px; margin-bottom: 1px; }
   .is-mobile .hp-card-desc  { font-size: 11px; line-height: 1.3; }
 
-  .is-mobile .hp-actions-below { flex-direction: column; align-items: stretch; margin-top: 4px; gap: 10px; }
+  /* Actions sous les cards — pleine largeur */
+  .is-mobile .hp-actions-below {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 4px;
+    gap: 10px;
+  }
   .is-mobile .hp-actions-below .hp-cta,
-  .is-mobile .hp-actions-below .hp-ghost { height: 42px; font-size: 14px; width: 100%; }
+  .is-mobile .hp-actions-below .hp-ghost {
+    height: 42px;
+    font-size: 14px;
+    width: 100%;
+  }
   .is-mobile .hp-footer { font-size: 12px; }
 
   @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
+
+  /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
   @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
+
+  /* Remonte légèrement tout le bloc sur ordinateur */
   @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
+  /* Ordinateur peu haut : espacements resserrés pour que la carte IA ne repousse pas le pied de page hors de l'écran */
   @media (min-width: 901px) and (max-height: 820px) { .hp-main { gap: clamp(12px, 2.4vh, 24px); padding-bottom: clamp(12px, 3vh, 28px); } }
 
+  /* ── Desktop : texte limité à la moitié gauche (ne recouvre pas le portable) + tailles réduites ── */
   @media (min-width: 901px) {
     .hp-content { max-width: min(920px, 54vw); }
     .hp-cards { max-width: min(700px, 46vw); }
-    .hp-modules { font-size: clamp(12px, min(0.95vw, 2vh), 15px); padding: 0.42em 0.95em; margin-bottom: clamp(14px, 2.6vh, 26px); }
-    .hp-title { font-size: clamp(28px, min(4vw, 6.2vh), 60px); margin-bottom: clamp(8px, 1.5vh, 16px); }
-    .hp-subtitle { font-size: clamp(15px, min(1.25vw, 2.4vh), 19px); max-width: 620px; margin-bottom: clamp(12px, 2.2vh, 24px); }
-    .hp-actions-below { margin-top: 2px; }
+    .hp-modules {
+      font-size: clamp(12px, min(0.95vw, 2vh), 15px);
+      padding: 0.42em 0.95em;
+      margin-bottom: clamp(14px, 2.6vh, 26px);
+    }
+    .hp-title {
+      font-size: clamp(28px, min(4vw, 6.2vh), 60px);
+      margin-bottom: clamp(8px, 1.5vh, 16px);
+    }
+    .hp-subtitle {
+      font-size: clamp(15px, min(1.25vw, 2.4vh), 19px);
+      max-width: 620px;
+      margin-bottom: clamp(12px, 2.2vh, 24px);
+    }
+    .hp-actions-below {
+      margin-top: 2px;
+    }
   }
 
+  /* ── Orbite visible à partir de 1200 px de large : le texte s'arrête avant la première icône ──
+     (bord gauche de l'orbite = 100vw − 768.7 px d'image × échelle du fond) */
   @media (min-width: 1200px) {
     .hp-content { max-width: min(920px, 54vw, calc(100vw - 768.7 * max(100vw / 1672, 100vh / 941) - clamp(20px, 4vw, 56px) - 32px)); }
   }
   @media (max-width: 1199px) { .hp-orbit { display: none; } }
 
+  /* ── Arabe (lecture de droite à gauche) ──
+     L'image de fond ne se retourne pas (le portable et ses icônes restent à droite) : sur ordinateur,
+     la colonne de texte reste donc dans la moitié gauche ; elle est simplement alignée à droite et
+     s'arrête, comme en français, avant le portable (mêmes largeurs que .hp-content ci-dessus). */
   @media (min-width: 901px) {
     [dir="rtl"] .hp-main { padding-inline-start: calc(100% - clamp(20px, 4vw, 56px) - min(920px, 54vw)); }
   }
   @media (min-width: 1200px) {
     [dir="rtl"] .hp-main { padding-inline-start: calc(100% - clamp(20px, 4vw, 56px) - min(920px, 54vw, calc(100vw - 768.7 * max(100vw / 1672, 100vh / 941) - clamp(20px, 4vw, 56px) - 32px))); }
   }
+  /* L'écriture arabe est plus haute que l'écriture latine : interligne des titres relâché */
   [dir="rtl"] .hp-title { line-height: 1.3; }
   [dir="rtl"] .hp-modal-title { line-height: 1.4; }
+  /* Flèche des boutons : pointe vers la gauche, dans le sens de la lecture */
   [dir="rtl"] .hp-cta-arrow svg { transform: scaleX(-1); }
   [dir="rtl"] .hp-cta:hover .hp-cta-arrow { transform: translateX(-3px); }
 
+  /* ── Apparition sans JavaScript ── */
   .hp-rise { animation: hpRise .55s cubic-bezier(0.22,1,0.36,1) both; }
+  /* Titre (élément LCP) : glissement seul, sans opacité 0, pour être peint dès la première image */
   .hp-slide { animation: hpSlide .55s cubic-bezier(0.22,1,0.36,1) both; }
   @keyframes hpSlide { from { transform: translateY(14px); } to { transform: none; } }
   .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; } .hp-d4 { animation-delay: 320ms; }
