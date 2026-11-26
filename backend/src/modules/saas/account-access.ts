@@ -18,7 +18,8 @@ export const isPlatformAdmin = (role: unknown): boolean => (PLATFORM_ROLES as re
 /** Modules de l'ERP qu'un abonnement peut activer (mêmes clés que la barre latérale et users.modules). */
 export const MODULE_KEYS = [
   'dashboard', 'products', 'categories', 'stock', 'sales', 'purchases', 'pos', 'orders', 'clients', 'suppliers',
-  'invoices', 'hr', 'finance', 'logistics', 'production', 'ai', 'reports', 'analytics', 'objectives', 'profile', 'settings',
+  'invoices', 'hr', 'finance', 'logistics', 'production', 'appointments', 'projects', 'ai', 'reports', 'analytics', 'objectives',
+  'profile', 'settings',
 ] as const;
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 /** Toujours actifs, quel que soit l'abonnement. */
@@ -92,8 +93,8 @@ export function resolveAccess(account: AccountLike, now: Date, opts: { requireEm
 }
 
 /**
- * Routes encore accessibles à un compte bloqué : se connecter, consulter son abonnement, déclarer un paiement,
- * écrire à l'administrateur. Tout le reste de l'ERP répond 402.
+ * Routes encore accessibles à un compte bloqué : se connecter, saisir le code reçu par email, consulter son abonnement
+ * et le payer par carte. Tout le reste de l'ERP répond 402.
  */
 export function isAllowedWhenBlocked(method: string, path: string): boolean {
   const segments = String(path || '').split('?')[0].replace(/^\/+/, '').split('/').filter(Boolean);
@@ -108,11 +109,23 @@ export function blockMessage(reason: BlockReason | null): string {
   switch (reason) {
     case 'TRIAL_EXPIRED': return 'Votre essai gratuit est terminé. Choisissez une formule pour continuer : vos données sont conservées.';
     case 'SUBSCRIPTION_EXPIRED': return 'Votre abonnement est arrivé à échéance. Renouvelez-le pour retrouver l’accès : vos données sont conservées.';
-    case 'SUSPENDED': return 'Votre compte est suspendu. Contactez l’administrateur pour le réactiver : vos données sont conservées.';
-    case 'CANCELLED': return 'Votre abonnement est résilié. Contactez l’administrateur pour le réactiver.';
-    case 'EMAIL_NOT_VERIFIED': return 'Confirmez votre adresse email pour accéder à l’ERP (lien envoyé à l’inscription).';
+    case 'SUSPENDED': return 'Votre compte est suspendu. Contactez le support pour le réactiver : vos données sont conservées.';
+    case 'CANCELLED': return 'Votre abonnement est résilié. Choisissez une formule pour le réactiver : vos données sont conservées.';
+    case 'EMAIL_NOT_VERIFIED': return 'Saisissez le code à 6 chiffres reçu par email pour ouvrir votre espace.';
     default: return 'Accès indisponible.';
   }
+}
+
+/**
+ * Un module est-il ouvert pour cette société ? Même règle que la barre latérale : un compte jamais configuré a tout
+ * d'ouvert ; les objectifs sont actifs sauf refus explicite ; la caisse suit les ventes ou les achats si elle n'est
+ * pas précisée.
+ */
+export function isModuleEnabled(modules: Record<string, boolean> | null | undefined, key: string): boolean {
+  if (!modules || Object.keys(modules).length === 0) return true; // compte jamais configuré : tout est ouvert
+  if (key === 'objectives') return modules.objectives !== false;
+  if (key === 'pos' && modules.pos === undefined) return modules.sales === true || modules.purchases === true;
+  return modules[key] === true;
 }
 
 /** Configuration de modules (users.modules) à partir d'une liste de modules activés. Les modules de base restent actifs. */

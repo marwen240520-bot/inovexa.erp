@@ -99,7 +99,7 @@ function annualSaving(monthly: number | null, annual: number | null) {
 
 interface Money { vat: number | null; currency: string }
 const ht = (n: number, m: Money) => `${formatPrice(n, LANG, m.currency)} HT`;
-const ttc = (n: number, m: Money) => (m.vat === null ? null : `${formatPrice(withVat(n, m.vat), LANG, m.currency)} TTC`);
+const ttc = (n: number, m: Money) => (m.vat === null ? null : `${formatPrice(withVat(n, m.vat, m.currency), LANG, m.currency)} TTC`);
 
 const cardStyle: CSSProperties = { background: "var(--theme-surface)", border: "1px solid var(--theme-border)", borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 12, minWidth: 0 };
 const sectionTitle: CSSProperties = { margin: 0, fontSize: 12, fontWeight: 700, color: "var(--theme-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4 };
@@ -109,7 +109,7 @@ export default function AdminPlansPage() {
   const plans = useLoad(() => api<Plan[]>("/admin/plans"), []);
   // Le taux de TVA et la devise viennent des réglages : sans eux, on n'affiche pas d'équivalent TTC plutôt qu'un chiffre inventé.
   const settings = useLoad(() => api<AdminSettings>("/admin/settings"), []);
-  const money: Money = { vat: settings.data ? Number(settings.data.vatRate) : null, currency: settings.data?.currency || "TND" };
+  const money: Money = { vat: settings.data ? Number(settings.data.vatRate) : null, currency: settings.data?.currency || "USD" };
 
   const [editor, setEditor] = useState<{ plan: Plan | null } | null>(null);
   const [publishing, setPublishing] = useState<Plan | null>(null);

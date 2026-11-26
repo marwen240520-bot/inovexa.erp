@@ -49,6 +49,7 @@ import { IaModule } from './modules/ia/ia.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { runPreSyncFixes } from './common/pre-sync-fixes';
 import { PosModule } from './modules/pos/pos.module';
 import { ObjectivesModule } from './modules/objectives/objectives.module';
@@ -113,6 +114,7 @@ import { SaasModule } from './modules/saas/saas.module';
     UploadModule,
     DepartmentsModule,
     ProjectsModule,
+    AppointmentsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -5,7 +5,8 @@ import { useState, useEffect, useRef, CSSProperties } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDeviceHint } from "@/contexts/DeviceContext";
-import { SESSION_CLEARED_EVENT, clearSession, isPlatformAdmin } from "@/lib/session";
+import { MODULES_CHANGED_EVENT, SESSION_CLEARED_EVENT, clearSession, isPlatformAdmin } from "@/lib/session";
+import { moduleLabel } from "@/lib/sectorLabels";
 import { prefetchRouteData } from "@/lib/routeData";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
@@ -23,6 +24,8 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
 const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida", ar: "الصندوق السريع" },
   "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos", ar: "الأهداف" },
+  "common.appointments": { fr: "Rendez-vous", en: "Appointments", es: "Citas", ar: "المواعيد" },
+  "common.projects": { fr: "Projets", en: "Projects", es: "Proyectos", ar: "المشاريع" },
   "common.more": { fr: "Plus", en: "More", es: "Más", ar: "المزيد" },
   "common.menu": { fr: "Menu", en: "Menu", es: "Menú", ar: "القائمة" },
   "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos", ar: "الفواتير وعروض الأسعار" },
@@ -37,7 +40,6 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "admin.payments": { fr: "Paiements", en: "Payments", es: "Pagos", ar: "المدفوعات" },
   "admin.plans": { fr: "Formules et tarifs", en: "Plans and pricing", es: "Planes y precios", ar: "الباقات والأسعار" },
   "admin.sectors": { fr: "Secteurs et suggestions", en: "Sectors and suggestions", es: "Sectores y sugerencias", ar: "القطاعات والاقتراحات" },
-  "admin.messages": { fr: "Messages", en: "Messages", es: "Mensajes", ar: "الرسائل" },
   "admin.platformSettings": { fr: "Réglages de la plateforme", en: "Platform settings", es: "Ajustes de la plataforma", ar: "إعدادات المنصة" },
   "admin.audit": { fr: "Journal d’activité", en: "Activity log", es: "Registro de actividad", ar: "سجلّ النشاط" },
   "admin.legacyClients": { fr: "Création et démonstration", en: "Creation and demo data", es: "Creación y demostración", ar: "الإنشاء والبيانات التجريبية" },
@@ -161,6 +163,21 @@ const ICONS: Record<string, React.ReactElement> = {
       <circle cx="18.5" cy="18.5" r="2.5"/>
     </Icon>
   ),
+  appointments: (
+    <Icon>
+      <rect x="3" y="4.5" width="18" height="17" rx="2"/>
+      <line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+      <polyline points="9 15.5 11.2 17.7 15.2 13.5"/>
+    </Icon>
+  ),
+  projects: (
+    <Icon>
+      <rect x="3" y="4" width="5" height="16" rx="1.2"/>
+      <rect x="9.5" y="4" width="5" height="10.5" rx="1.2"/>
+      <rect x="16" y="4" width="5" height="13.5" rx="1.2"/>
+    </Icon>
+  ),
   production: (
     <Icon>
       <circle cx="12" cy="12" r="3"/>
@@ -253,6 +270,8 @@ interface User {
   companyName?: string;
   phone?: string;
   modules?: Record<string, boolean>;
+  /** Secteur d'activité de la société : il donne leur nom à certains modules (« Réservations », « Chantiers »…). */
+  sector?: string | null;
 }
 
 interface ThemeColors {
@@ -290,11 +309,11 @@ interface NavGroup {
 // Un module qui n'apparaît dans aucune section s'affiche en haut, hors section (ex. le tableau de bord).
 // Une section dont aucun module n'est actif dans l'abonnement n'est pas affichée.
 const NAV_GROUPS: Array<{ id: string; label: string; items: string[] }> = [
-  { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "pos", "pos-sessions"] },
+  { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "appointments", "pos", "pos-sessions"] },
   { id: "procurement", label: "nav.groups.procurement", items: ["purchases", "suppliers"] },
   { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics", "production"] },
   { id: "finance",     label: "nav.groups.finance",     items: ["finance", "accounting", "hr"] },
-  { id: "insights",    label: "nav.groups.insights",    items: ["reports", "business-reports", "analytics", "objectives", "ai"] },
+  { id: "insights",    label: "nav.groups.insights",    items: ["projects", "reports", "business-reports", "analytics", "objectives", "ai"] },
   { id: "account",     label: "nav.groups.account",     items: ["profile", "billing", "settings"] },
 ];
 
@@ -421,6 +440,25 @@ export default function Sidebar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Le client vient de changer son secteur ou ses modules (Abonnement › Mes modules) : le menu suit tout de suite.
+  useEffect(() => {
+    const onChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ modules?: Record<string, boolean>; sector?: string | null }>).detail;
+      if (!detail?.modules) return;
+      sidebarCachedModules = detail.modules;
+      setUserModules(detail.modules);
+      if (detail.sector !== undefined) {
+        setUser((prev) => {
+          const next = prev ? { ...prev, sector: detail.sector } : prev;
+          sidebarCachedUser = next;
+          return next;
+        });
+      }
+    };
+    window.addEventListener(MODULES_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(MODULES_CHANGED_EVENT, onChange);
+  }, []);
+
   const fetchUserModules = async (userId: string, token: string) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/modules`, {
@@ -464,6 +502,8 @@ export default function Sidebar() {
     { id: "accounting", gate: "finance", path: "/dashboard/accounting", label: "nav.accounting", iconKey: "finance" },
     { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" },
     { id: "production", path: "/dashboard/production", label: "common.production", iconKey: "production" },
+    { id: "appointments", path: "/dashboard/appointments", label: "common.appointments", iconKey: "appointments" },
+    { id: "projects",   path: "/dashboard/projects",   label: "common.projects",   iconKey: "projects" },
     { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },
     { id: "reports",    path: "/dashboard/reports",    label: "common.reports",    iconKey: "reports" },
     { id: "business-reports", gate: "reports", path: "/dashboard/reports/business", label: "nav.businessReports", iconKey: "reports" },
@@ -480,12 +520,10 @@ export default function Sidebar() {
     { id: "adminOverview", path: "/admin",          label: "admin.overview",         iconKey: "dashboard" },
     { id: "adminAccounts", path: "/admin/accounts", label: "admin.accounts",         iconKey: "adminClients" },
     { id: "adminPayments", path: "/admin/payments", label: "admin.payments",         iconKey: "finance" },
-    { id: "adminMessages", path: "/admin/messages", label: "admin.messages",         iconKey: "invoices" },
     { id: "adminPlans",    path: "/admin/plans",    label: "admin.plans",            iconKey: "orders" },
     { id: "adminSectors",  path: "/admin/sectors",  label: "admin.sectors",          iconKey: "categories" },
     { id: "adminSettings", path: "/admin/settings", label: "admin.platformSettings", iconKey: "adminModules" },
     { id: "adminAudit",    path: "/admin/audit",    label: "admin.audit",            iconKey: "reports" },
-    { id: "adminClients",  path: "/admin/clients",  label: "admin.legacyClients",    iconKey: "production" },
     { id: "profile",       path: "/dashboard/profile",  label: "common.profile",   iconKey: "profile" },
     { id: "settings",      path: "/dashboard/settings", label: "common.settings",  iconKey: "settings" },
   ];
@@ -575,6 +613,9 @@ export default function Sidebar() {
   };
 
   const getLabel = (key: string) => {
+    // Rendez-vous et Projets portent le nom du métier : « Réservations » au restaurant, « Chantiers » dans le bâtiment…
+    const bySector = key === "common.appointments" ? moduleLabel("appointments", user?.sector, language) : key === "common.projects" ? moduleLabel("projects", user?.sector, language) : null;
+    if (bySector) return bySector;
     if (EXTRA_LABELS[key]) return EXTRA_LABELS[key][language] || EXTRA_LABELS[key].fr;
     try {
       const v = t(key);

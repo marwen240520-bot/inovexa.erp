@@ -6,7 +6,7 @@ import { googleVerifierDeps, resetGoogleKeyCache, verifyGoogleIdToken } from '..
 import { appleVerifierDeps, resetAppleKeyCache, verifyAppleIdToken } from '../../src/modules/auth/apple-verifier';
 import { formatPhone, normalizePhone } from '../../src/common/phone';
 import { stripProtected } from '../../src/modules/saas/admin.guard';
-import { CATALOG_V1, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, PAYMENT_METHODS } from '../../src/modules/saas/saas-defaults';
+import { CATALOG_V1, CATALOG_V2, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, PAYMENT_METHODS } from '../../src/modules/saas/saas-defaults';
 import { MODULE_KEYS } from '../../src/modules/saas/account-access';
 
 const NOW = new Date('2026-11-25T12:00:00Z');
@@ -164,8 +164,8 @@ describe('modules de l’abonnement', () => {
     for (const o of DEFAULT_SERVICE_OFFERS) if (o.sectorCode) expect(codes).toContain(o.sectorCode);
   });
 
-  it('version 1 du catalogue : sert de repère pour la mise à niveau, sans rien perdre', () => {
-    expect(CATALOG_VERSION).toBe(2);
+  it('versions 1 et 2 du catalogue : repères pour la mise à niveau, sans rien perdre', () => {
+    expect(CATALOG_VERSION).toBe(3);
     expect(Object.keys(CATALOG_V1.sectorModules)).toHaveLength(10);
     for (const [code, v1] of Object.entries(CATALOG_V1.sectorModules)) {
       const now = DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
@@ -173,6 +173,35 @@ describe('modules de l’abonnement', () => {
       for (const m of v1) expect(now).toContain(m);
     }
     expect(Object.keys(CATALOG_V1.plans)).toEqual(DEFAULT_PLANS.map((p) => p.code));
+
+    // La version 2 couvre les 15 secteurs ; la version 3 y ajoute des modules sans en retirer.
+    expect(Object.keys(CATALOG_V2.sectorModules).sort()).toEqual(DEFAULT_SECTORS.map((s) => s.code).sort());
+    for (const [code, v2] of Object.entries(CATALOG_V2.sectorModules)) {
+      const now = DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
+      for (const m of v2) expect(now).toContain(m);
+    }
+    expect(Object.keys(CATALOG_V2.plans)).toEqual(DEFAULT_PLANS.map((p) => p.code));
+    expect(CATALOG_V2.currency).toBe('TND');
+  });
+
+  it('modules Rendez-vous et Projets : connus du serveur et proposés aux secteurs qui en ont besoin', () => {
+    expect(MODULE_KEYS).toEqual(expect.arrayContaining(['appointments', 'projects']));
+    const modulesOf = (code: string) => DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
+    for (const code of ['healthcare', 'education', 'restaurant', 'automotive', 'beauty', 'services', 'other']) expect(modulesOf(code)).toContain('appointments');
+    for (const code of ['construction', 'services', 'other']) expect(modulesOf(code)).toContain('projects');
+    // Pas de rendez-vous imposés à un commerce de détail ou à une usine.
+    for (const code of ['commerce', 'manufacturing', 'logistics']) expect(modulesOf(code)).not.toContain('appointments');
+    // Chaque nouveau module se coupe avec la formule comme les autres.
+    expect(missingModuleFor(modulesFromList(['sales']), 'appointments')).toBe('appointments');
+    expect(missingModuleFor(modulesFromList(['appointments']), 'appointments')).toBeNull();
+    expect(missingModuleFor(modulesFromList(['sales']), 'projects')).toBe('projects');
+    expect(missingModuleFor(modulesFromList(['projects', 'finance']), 'projects')).toBeNull();
+  });
+
+  it('prix de départ en dollars : formules publiées par défaut, annuel = dix mensualités, TVA en plus', () => {
+    expect(DEFAULT_PLANS.map((p) => [p.code, p.priceMonthly, p.priceAnnual])).toEqual([['starter', 15, 150], ['business', 29, 290], ['enterprise', 79, 790]]);
+    // Les prestations restent à un tarif en dollars cohérent avec les formules.
+    for (const offer of DEFAULT_SERVICE_OFFERS) if (offer.price !== null) expect(offer.price).toBeLessThan(200);
   });
 });
 

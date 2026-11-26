@@ -1,8 +1,9 @@
 "use client";
 /**
  * Administration › Vue d'ensemble.
- * Indicateurs calculés par le serveur sur les comptes réels et les paiements validés (aucun chiffre saisi à la main),
- * ce qui attend une action (paiements à valider, messages), et ce qu'il reste à régler avant d'ouvrir les inscriptions.
+ * Indicateurs calculés par le serveur sur les comptes réels et les paiements encaissés (aucun chiffre saisi à la main),
+ * et ce qu'il reste à régler avant d'ouvrir les inscriptions. Les clients choisissent et paient seuls par carte :
+ * l'administrateur n'a rien à valider tant que les paiements hors ligne ne sont pas activés.
  */
 import Link from "next/link";
 import React, { useMemo, useState } from "react";
@@ -26,7 +27,6 @@ interface Overview {
   modules: Array<{ key: string; count: number }>;
   sectors: Array<{ code: string; name: string; count: number }>;
   pendingPayments: number;
-  unreadMessages: number;
   note: string;
 }
 
@@ -77,11 +77,13 @@ export default function AdminOverviewPage() {
   const setup = useLoad(() => Promise.all([api<Plan[]>("/admin/plans"), api<AdminSettings>("/admin/settings")]), []);
 
   const o = overview.data;
-  const money = (n: number) => formatMoney(n, LANG, o?.currency || "TND");
   const [plans, settings] = setup.data ?? [null, null];
+  const money = (n: number) => formatMoney(n, LANG, o?.currency || settings?.currency || "USD");
   const published = plans ? plans.filter((p) => p.isPublic && p.isActive).length : 0;
-  const cardNeedsLink = !!settings && (settings.paymentMethods || []).includes("card") && !settings.paymentLink;
-  const required = settings && plans ? [published > 0, !!settings.paymentInstructions, !!(settings.supportEmail || settings.supportPhone || settings.supportWhatsapp), !cardNeedsLink] : [];
+  const online = settings?.onlinePayment;
+  const supportOk = !!settings && !!(settings.supportEmail || settings.supportPhone || settings.supportWhatsapp);
+  // Le client choisit et paie seul : seuls les formules publiées et le paiement en ligne sont indispensables.
+  const required = settings && plans ? [published > 0, !!online?.enabled] : [];
   const missing = required.filter((okay) => !okay).length;
 
   return (
@@ -105,17 +107,20 @@ export default function AdminOverviewPage() {
             <Todo ok={published > 0} href="/admin/plans" action="Publier les formules">
               <strong>Formules publiées</strong> — {published > 0 ? `${plural(published, "formule visible", "formules visibles")} sur le site et proposées au paiement.` : "aucune formule n’est publiée : vos clients ne peuvent pas payer à la fin de l’essai. Relisez les prix proposés puis publiez."}
             </Todo>
-            <Todo ok={!!settings.paymentInstructions} href="/admin/settings" action="Renseigner">
-              <strong>Coordonnées de paiement</strong> — {settings.paymentInstructions ? "affichées à vos clients sur leur page Abonnement." : "RIB, numéro D17 ou Flouci… : sans elles, vos clients ne savent pas où payer."}
+            <Todo ok={!!online?.enabled} href="/admin/settings" action="Activer le paiement">
+              <strong>Paiement en ligne par carte</strong> — {online?.enabled
+                ? `actif (${online.provider === "konnect" ? "Konnect" : online.provider}${online.mode === "sandbox" ? ", mode test : aucun vrai paiement" : ""}) : vos clients paient seuls et leur compte est activé automatiquement, sans aucune validation de votre part.`
+                : online?.reason === "CURRENCY_UNSUPPORTED"
+                  ? "la devise choisie n’est pas acceptée par le prestataire de paiement (USD, EUR ou TND)."
+                  : "non configuré : sans clé Konnect sur le serveur (KONNECT_API_KEY et KONNECT_WALLET_ID), vos clients ne peuvent pas payer à la fin de l’essai."}
             </Todo>
-            <Todo ok={!cardNeedsLink} href="/admin/settings" action="Ajouter le lien">
-              <strong>Paiement par carte</strong> — {cardNeedsLink ? "« Carte bancaire » est proposé mais aucun lien de paiement n’est renseigné." : (settings.paymentMethods || []).includes("card") ? "lien de paiement renseigné." : "non proposé (activez-le dans les réglages quand vous aurez un lien de paiement)."}
-            </Todo>
-            <Todo ok={!!(settings.supportEmail || settings.supportPhone || settings.supportWhatsapp)} href="/admin/settings" action="Renseigner">
-              <strong>Contact de support</strong> — email, téléphone ou WhatsApp affiché aux clients dont l’accès est fermé.
+            <Todo ok={supportOk} optional href="/admin/settings" action="Renseigner">
+              <strong>Contact de support</strong> — facultatif : email, téléphone ou WhatsApp affiché aux clients dont l’accès est fermé, en cas de problème de paiement. Le client choisit et paie seul, sans passer par vous.
             </Todo>
             <Todo ok={!!settings.mailConfigured} optional>
-              <strong>Envoi d’emails</strong> — {settings.mailConfigured ? "configuré : confirmations, rappels de fin d’essai et reçus partent par email." : "non configuré (variables SMTP du serveur) : mot de passe oublié, rappels de fin d’essai et avis de paiement ne partent pas."}
+              <strong>Envoi d’emails</strong> — {settings.mailConfigured
+                ? `configuré : le code de vérification à 6 chiffres${settings.requireEmailVerification ? " est demandé à chaque inscription" : " (désactivé dans les réglages)"}, les rappels de fin d’essai et les reçus partent par email.`
+                : "non configuré (variables SMTP du serveur) : sans envoi d’emails, le code de vérification n’est pas demandé, et le mot de passe oublié, les rappels de fin d’essai et les reçus ne partent pas."}
             </Todo>
             <Todo ok={!!settings.googleConfigured} optional>
               <strong>Connexion avec Google</strong> — {settings.googleConfigured ? "le bouton est affiché." : "bouton masqué tant que GOOGLE_CLIENT_ID n’est pas défini sur le serveur."}
@@ -130,10 +135,9 @@ export default function AdminOverviewPage() {
       {overview.error ? <ErrorBox message={overview.error} onRetry={overview.reload} /> : null}
       {!o ? (overview.loading ? <Loading /> : null) : (
         <>
-          {o.pendingPayments > 0 || o.unreadMessages > 0 ? (
+          {o.pendingPayments > 0 ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
-              {o.pendingPayments > 0 ? <Link href="/admin/payments" style={{ ...linkStyle, padding: "10px 14px", borderRadius: 10, background: "rgba(245,158,11,.14)", border: "1px solid rgba(245,158,11,.5)", color: "#b45309" }}>{plural(o.pendingPayments, "paiement à valider", "paiements à valider")} →</Link> : null}
-              {o.unreadMessages > 0 ? <Link href="/admin/messages" style={{ ...linkStyle, padding: "10px 14px", borderRadius: 10, background: "rgba(59,130,246,.12)", border: "1px solid rgba(59,130,246,.45)", color: "#2563eb" }}>{plural(o.unreadMessages, "message non lu", "messages non lus")} →</Link> : null}
+              <Link href="/admin/payments" style={{ ...linkStyle, padding: "10px 14px", borderRadius: 10, background: "rgba(245,158,11,.14)", border: "1px solid rgba(245,158,11,.5)", color: "#b45309" }}>{plural(o.pendingPayments, "paiement hors ligne à valider", "paiements hors ligne à valider")} →</Link>
             </div>
           ) : null}
 
@@ -142,12 +146,12 @@ export default function AdminOverviewPage() {
             <Stat label="En essai gratuit" value={o.customers.trial} />
             <Stat label="Clients payants" value={o.customers.paying} tone="good" sub={`${o.customers.active} comptes actifs`} />
             <Stat label="Revenu récurrent mensuel" value={money(o.mrr)} sub="hors taxes" />
-            <Stat label="Revenu validé (période)" value={money(o.revenue.ht)} sub={`${money(o.revenue.ttc)} TTC`} />
+            <Stat label="Encaissé (période)" value={money(o.revenue.ht)} sub={`${money(o.revenue.ttc)} TTC`} />
             <Stat label="Essai → payant" value={rate(o.conversion.trialToPaidRate)} sub={`${o.conversion.trialsConverted} sur ${plural(o.conversion.trialsEnded, "essai terminé", "essais terminés")}`} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
-            <Card title="Revenu validé par mois (HT)">
+            <Card title="Encaissements par mois (HT)">
               <Bars rows={o.revenueByMonth.map((r) => ({ label: monthLabel(r.month), value: r.ht, sub: plural(r.payments, "paiement", "paiements") }))} format={money} />
             </Card>
             <Card title="Inscriptions par mois">

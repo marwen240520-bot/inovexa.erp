@@ -65,7 +65,7 @@ export default function LivePlans({ lang, labels }: { lang: string; labels: Live
                   <p className="st-live-sub">
                     {cycle === "annual"
                       ? <>{fill(labels.perMonthEquivalent, { price: price(Math.round((amount / 12) * 1000) / 1000) })}{saving ? <span className="st-save">−{saving} %</span> : null}</>
-                      : <>{formatMoney(withVat(amount, offer.vatRate), lang, offer.currency)} {labels.inclTax}</>}
+                      : <>{formatMoney(withVat(amount, offer.vatRate, offer.currency), lang, offer.currency)} {labels.inclTax}</>}
                   </p>
                 </>
               )}

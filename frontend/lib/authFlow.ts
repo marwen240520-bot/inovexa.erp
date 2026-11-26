@@ -1,6 +1,7 @@
 // lib/authFlow.ts
-// Enchaînements communs des écrans d'accès : reprise d'une session ouverte, fin de connexion, et identité Google ou
-// Apple gardée le temps de compléter l'inscription (nom de la société, secteur).
+// Enchaînements communs des écrans d'accès : reprise d'une session ouverte, fin de connexion (avec, si le serveur le
+// demande, la saisie du code de vérification reçu par email), et identité Google ou Apple gardée le temps de
+// compléter l'inscription (nom de la société, secteur).
 "use client";
 import { API_URL } from "@/lib/saas";
 import { clearSession, getStoredUser, getToken, homeFor, saveSession, type AccountState, type SessionUser } from "@/lib/session";
@@ -11,12 +12,37 @@ export interface SignInResponse {
   account: AccountState | null;
   created?: boolean;
   emailSent?: boolean;
+  /** Code de vérification de l'adresse email : exigé ou non, envoyé ou non (inscription). */
+  verification?: { required: boolean; sent: boolean; expiresInMinutes: number; resendInSeconds: number };
 }
 
-/** Enregistre la session renvoyée par l'API et donne la page d'arrivée (ERP, espace administrateur, abonnement…). */
+const CODE_SENT_KEY = "inovexa_code_sent_at";
+
+/** Un code vient d'être envoyé : l'écran de saisie sait combien de temps attendre avant de proposer « renvoyer ». */
+export function markCodeSent() {
+  try { sessionStorage.setItem(CODE_SENT_KEY, String(Date.now())); } catch { /* stockage indisponible */ }
+}
+
+/** Secondes à attendre avant de pouvoir redemander un code (0 = tout de suite). */
+export function codeResendDelay(resendInSeconds = 60): number {
+  try {
+    const at = Number(sessionStorage.getItem(CODE_SENT_KEY));
+    if (!at) return 0;
+    return Math.max(0, Math.ceil((at + resendInSeconds * 1000 - Date.now()) / 1000));
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Enregistre la session renvoyée par l'API et donne la page d'arrivée : ERP, espace administrateur, abonnement — ou
+ * l'écran de saisie du code quand l'adresse email reste à vérifier (le serveur vient alors d'envoyer un code).
+ */
 export function finishSignIn(data: SignInResponse): string {
   saveSession({ access_token: data.access_token, user: data.user });
-  return homeFor(data.user, data.account);
+  const next = homeFor(data.user, data.account);
+  if (next === "/auth/verify-email") markCodeSent();
+  return next;
 }
 
 /**

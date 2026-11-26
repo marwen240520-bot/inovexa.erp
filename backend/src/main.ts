@@ -13,6 +13,7 @@ import {
 import compression = require('compression');
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { allowedOrigins } from './common/origins';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -62,13 +63,8 @@ async function bootstrap() {
     next();
   });
 
-  const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    'http://localhost:3000',
-    ...(process.env.FRONTEND_URLS || '').split(',').map((s) => s.trim()).filter(Boolean),
-  ];
   app.enableCors({
-    origin: allowedOrigins,
+    origin: allowedOrigins(),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
     // ⚡ Le navigateur garde la réponse de pré-vérification CORS (OPTIONS) pendant 2 h :

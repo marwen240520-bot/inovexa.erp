@@ -118,10 +118,12 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 /** État d'un paiement d'abonnement. */
 export const PAYMENT_STATUS_META: Record<string, { label: string; tone: Tone }> = {
-  pending: { label: "En attente", tone: "amber" },
-  validated: { label: "Validé", tone: "green" },
+  pending: { label: "À valider (hors ligne)", tone: "amber" },
+  validated: { label: "Encaissé", tone: "green" },
   rejected: { label: "Refusé", tone: "red" },
   cancelled: { label: "Annulé", tone: "gray" },
+  initiated: { label: "Paiement en cours", tone: "amber" },
+  expired: { label: "Expiré", tone: "gray" },
 };
 
 /** Synthèse des paiements d'un compte dans la liste (aucun / en attente / payé). */

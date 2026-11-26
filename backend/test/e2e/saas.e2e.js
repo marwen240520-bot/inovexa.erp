@@ -1,8 +1,12 @@
-// Tests de bout en bout de la couche SaaS : inscription, essai de 72 h, expiration, paiement validé par l'administrateur,
-// suspension, isolation entre sociétés, modules par secteur, droits de l'administrateur, logistique et transporteurs.
-// Lancé par run.sh sur une base neuve créée par les migrations (DATABASE_URL, BASE).
+// Tests de bout en bout de la couche SaaS : inscription avec code de vérification reçu par email, essai de 72 h,
+// expiration, paiement PAR CARTE en ligne (faux Konnect) activé sans administrateur, paiements hors ligne facultatifs,
+// suspension, isolation entre sociétés, modules par secteur choisis par le client, agenda et projets, droits de
+// l'administrateur, logistique et transporteurs.
+// Lancé par run.sh sur une base neuve créée par les migrations (DATABASE_URL, BASE). Le serveur de l'ERP est démarré avec
+// SMTP_* et KONNECT_* pointant vers les faux serveurs démarrés ci-dessous (voir fakes.js).
 const { Client } = require('pg');
 const bcrypt = require('bcrypt');
+const { startFakeKonnect, startFakeSmtp } = require('./fakes');
 
 const BASE = process.env.BASE || 'http://127.0.0.1:4101';
 let passes = 0, failures = 0;
@@ -20,6 +24,11 @@ async function call(method, path, opts = {}) {
   let body; try { body = JSON.parse(text); } catch { body = text; }
   return { status: res.status, body };
 }
+/** Appel qui ne suit pas les redirections (retour du prestataire de paiement). */
+async function rawGet(path) {
+  const res = await fetch(BASE + path, { method: 'GET', redirect: 'manual' });
+  return { status: res.status, location: res.headers.get('location') };
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const PASSWORD = 'Essai#2026ok';
 const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société', email: 'x@test.tn', phone: '22 535 181', password: PASSWORD, sector: 'commerce', acceptTerms: true, ...over });
@@ -28,14 +37,34 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   const one = async (sql, params) => (await db.query(sql, params)).rows[0];
+  const smtp = await startFakeSmtp(Number(process.env.FAKE_SMTP_PORT));
+  const konnect = await startFakeKonnect(Number(process.env.FAKE_KONNECT_PORT));
+
+  /** Inscrit une société puis confirme son adresse avec le code reçu par email, comme le ferait le client. */
+  const signUp = async (over) => {
+    const seen = smtp.mails.length;
+    const r = await call('POST', '/auth/register', { body: signup(over) });
+    if (r.status !== 201) return { r };
+    const user = { token: r.body.access_token, id: r.body.user.id, r, account: r.body.account };
+    if (r.body.verification?.required) {
+      const code = await smtp.codeFor(over.email, seen);
+      user.verify = await call('POST', '/auth/verify-email-code', { token: user.token, body: { code } });
+    }
+    return user;
+  };
 
   // ═════════════════════════ Site public ═════════════════════════
   console.log('— Site public');
   let r = await call('GET', '/public/config');
-  check('configuration publique : essai de 72 h, devise TND', r.status === 200 && r.body.trialHours === 72 && r.body.currency === 'TND', r);
+  let row;
+  check('configuration publique : essai de 72 h, prix en dollars', r.status === 200 && r.body.trialHours === 72 && r.body.currency === 'USD', r);
+  check('paiement par carte en ligne proposé, code de vérification par email actif', r.body.onlinePayment === true && r.body.paymentMethods.includes('card') && r.body.requireEmailVerification === true && !r.body.paymentMethods.includes('bank_transfer'), r.body);
+  check('les nouveaux modules Rendez-vous et Projets sont connus', r.body.modules.includes('appointments') && r.body.modules.includes('projects'), r.body.modules);
   check('Google et Apple non configurés : aucun identifiant client exposé', r.body.googleClientId === null && r.body.appleClientId === null, r.body);
   r = await call('GET', '/public/sectors');
   check('15 secteurs proposés, « Autre activité » en dernier', r.status === 200 && r.body.length === 15 && r.body[14].code === 'other' && r.body.every((s) => Array.isArray(s.modules) && s.itemCount > 0), r.body.map((s) => s.code));
+  const bySector = Object.fromEntries(r.body.map((s) => [s.code, s.modules]));
+  check('chaque secteur reçoit les modules qui lui correspondent (agenda, projets, caisse, logistique)', bySector.healthcare.includes('appointments') && bySector.beauty.includes('appointments') && bySector.restaurant.includes('appointments') && bySector.construction.includes('projects') && bySector.services.includes('projects') && bySector.services.includes('appointments') && !bySector.commerce.includes('appointments') && !bySector.logistics.includes('projects'), bySector);
   check('la fabrication n’est proposée qu’aux secteurs qui transforment des matières', r.body.filter((s) => s.modules.includes('production')).map((s) => s.code).sort().join() === 'agrifood,manufacturing,other,textile', r.body.filter((s) => s.modules.includes('production')).map((s) => s.code));
   r = await call('GET', '/public/sectors/automotive');
   check('nouveau secteur (automobile) : pièces et prestations d’atelier suggérées', r.status === 200 && r.body.items.some((i) => i.kind === 'service') && r.body.items.some((i) => i.kind === 'product') && r.body.items.every((i) => i.basis), r.body.items?.length);
@@ -45,9 +74,9 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   r = await call('GET', '/public/sectors/inconnu');
   check('secteur inconnu : 404', r.status === 404, r);
   r = await call('GET', '/public/plans');
-  check('formules en brouillon : rien n’est publié tant que l’administrateur n’a pas validé les prix', r.status === 200 && r.body.plans.length === 0, r.body);
+  check('formules publiées d’emblée, en dollars : 15, 29 et 79 par mois (hors taxes)', r.status === 200 && r.body.currency === 'USD' && r.body.plans.map((p) => p.code).join() === 'starter,business,enterprise' && r.body.plans.map((p) => p.priceMonthly).join() === '15,29,79' && r.body.plans.map((p) => p.priceAnnual).join() === '150,290,790', r.body);
   r = await call('GET', '/public/service-offers');
-  check('prestations en brouillon : non publiées', r.status === 200 && r.body.length === 0, r.body);
+  check('prestations de départ : tarifs en dollars', r.status === 200 && r.body.every((o) => o.price === null || o.price < 200), r.body.length);
 
   // ═════════════════════════ Inscription ═════════════════════════
   console.log('— Inscription');
@@ -67,17 +96,19 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('email invalide refusé', r.status === 400, r);
 
   const before = Date.now();
+  const seenA = smtp.mails.length;
   r = await call('POST', '/auth/register', { body: signup({ email: 'A@Test.tn', companyName: 'Restaurant A', sector: 'restaurant', city: 'Sousse', taxId: '1234567X/A/M/000' }) });
   check('inscription : 201, jeton, rôle client', r.status === 201 && !!r.body.access_token && r.body.user.role === 'client' && r.body.user.email === 'a@test.tn', r);
   const A = { token: r.body.access_token, id: r.body.user.id };
   const acc = r.body.account;
-  check('essai démarré : état TRIAL, non bloqué', acc.status === 'TRIAL' && acc.blocked === false, acc);
+  check('essai démarré : état TRIAL, ouvert dès que le code est saisi', acc.status === 'TRIAL' && acc.blocked === true && acc.reason === 'EMAIL_NOT_VERIFIED', acc);
+  check('un code à 6 chiffres est envoyé par email (valable 15 min, nouveau code possible après 60 s)', r.body.emailSent === true && r.body.verification.required === true && r.body.verification.sent === true && r.body.verification.expiresInMinutes === 15 && r.body.verification.resendInSeconds === 60, r.body.verification);
   const trialMs = new Date(acc.trialEndsAt).getTime() - new Date(acc.trialStartedAt).getTime();
   check('durée de l’essai : exactement 72 heures', trialMs === 72 * 3600 * 1000, trialMs);
   check('temps restant calculé par le serveur (≈ 72 h)', acc.remainingSeconds <= 72 * 3600 && acc.remainingSeconds > 72 * 3600 - 120, acc.remainingSeconds);
   check('heure du serveur fournie', Math.abs(new Date(acc.serverTime).getTime() - before) < 120000, acc.serverTime);
   const mods = r.body.user.modules;
-  check('modules du secteur restaurant : caisse et stock oui, logistique et production non', mods.pos === true && mods.stock === true && mods.hr === true && mods.logistics === false && mods.production === false && mods.dashboard === true, mods);
+  check('modules du secteur restaurant : caisse, stock et agenda oui ; logistique, production et projets non', mods.pos === true && mods.stock === true && mods.hr === true && mods.appointments === true && mods.logistics === false && mods.production === false && mods.projects === false && mods.dashboard === true, mods);
   check('téléphone enregistré au format international', (await one('SELECT phone, sector, "signupSource", "emailVerifiedAt" FROM users WHERE id = $1', [A.id])).phone === '+21622535181');
   const company = await one('SELECT "legalName", city, "taxId" FROM companies WHERE "userId" = $1', [A.id]);
   check('fiche société créée avec les informations facultatives', company && company.legalName === 'Restaurant A' && company.city === 'Sousse' && company.taxId === '1234567X/A/M/000', company);
@@ -85,22 +116,81 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   r = await call('POST', '/auth/register', { body: signup({ email: 'a@test.tn', companyName: 'Doublon' }) });
   check('email déjà utilisé : 409', r.status === 409, r);
 
+  // ═════════════════════════ Code de vérification reçu par email ═════════════════════════
+  console.log('— Vérification de l’email par code à 6 chiffres');
+  r = await call('GET', '/clients', { token: A.token });
+  check('adresse non confirmée : l’ERP reste fermé (402 EMAIL_NOT_VERIFIED)', r.status === 402 && r.body.reason === 'EMAIL_NOT_VERIFIED', r);
+  r = await call('GET', '/auth/me', { token: A.token });
+  check('le profil reste lisible : adresse non confirmée, accès fermé par le code', r.status === 200 && r.body.emailVerified === false && r.body.account.reason === 'EMAIL_NOT_VERIFIED', r.body.account);
+  const codeA = await smtp.codeFor('a@test.tn', seenA);
+  const mailA = smtp.mails.slice(seenA).find((m) => m.to.includes('a@test.tn'));
+  check('l’email contient un code de 6 chiffres', /^\d{6}$/.test(codeA) && /Inovexa/.test(mailA.text), mailA?.text.slice(0, 200));
+  row = await one('SELECT "emailCodeHash", "emailCodeExpires", "emailCodeAttempts" FROM users WHERE id = $1', [A.id]);
+  check('le code n’est pas gardé en clair : seule son empreinte est en base, valable 15 min', /^[0-9a-f]{64}$/.test(row.emailCodeHash) && Math.abs(new Date(row.emailCodeExpires).getTime() - (Date.now() + 15 * 60_000)) < 60_000, row);
+  r = await call('POST', '/auth/verify-email', { body: { email: 'a@test.tn', token: 'x'.repeat(64) } });
+  check('ancien lien de confirmation, jeton invalide : refusé (400)', r.status === 400, r);
+  r = await call('POST', '/auth/verify-email-code', { body: { code: codeA } });
+  check('saisie du code sans être connecté : 401', r.status === 401, r);
+  r = await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: 'abcdef' } });
+  check('code mal formé : refusé (400)', r.status === 400, r);
+  const wrong = codeA === '000000' ? '111111' : '000000';
+  r = await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: wrong } });
+  check('mauvais code : refusé, il reste 4 essais', r.status === 400 && r.body.code === 'CODE_INVALID' && r.body.remainingAttempts === 4, r);
+  for (let i = 0; i < 3; i++) await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: wrong } });
+  r = await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: wrong } });
+  check('5e erreur : le code est verrouillé', r.status === 400 && r.body.code === 'CODE_LOCKED', r);
+  r = await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: codeA } });
+  check('même le bon code est refusé une fois verrouillé (impossible d’essayer les 1 000 000 de codes)', r.status === 400 && r.body.code === 'CODE_LOCKED', r);
+  r = await call('POST', '/auth/resend-verification', { token: A.token });
+  check('nouveau code demandé trop tôt : 429 avec le temps d’attente', r.status === 429 && r.body.code === 'CODE_TOO_SOON' && r.body.retryInSeconds > 0 && r.body.retryInSeconds <= 60, r);
+  await db.query(`UPDATE users SET "emailCodeSentAt" = now() - interval '2 minutes' WHERE id = $1`, [A.id]);
+  const seenResend = smtp.mails.length;
+  r = await call('POST', '/auth/resend-verification', { token: A.token });
+  check('nouveau code demandé après une minute : envoyé', r.status === 200 && r.body.emailSent === true && r.body.expiresInMinutes === 15, r);
+  const codeA2 = await smtp.codeFor('a@test.tn', seenResend);
+  if (codeA2 !== codeA) {
+    r = await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: codeA } });
+    check('l’ancien code ne marche plus', r.status === 400 && r.body.code === 'CODE_INVALID', r);
+  }
+  r = await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: codeA2 } });
+  check('bon code : adresse confirmée, accès ouvert', r.status === 200 && r.body.success === true && r.body.account.blocked === false && r.body.account.status === 'TRIAL', r);
+  r = await call('POST', '/auth/verify-email-code', { token: A.token, body: { code: codeA2 } });
+  check('code ressaisi après confirmation : sans effet', r.status === 200 && r.body.alreadyVerified === true, r);
+  r = await call('GET', '/clients', { token: A.token });
+  check('l’ERP s’ouvre dès que le code est bon', r.status === 200, r);
+  row = await one('SELECT "emailVerifiedAt", "emailCodeHash" FROM users WHERE id = $1', [A.id]);
+  check('adresse confirmée en base, empreinte du code effacée', !!row.emailVerifiedAt && row.emailCodeHash === null, row);
+
+  const seenB = smtp.mails.length;
   r = await call('POST', '/auth/register', { body: signup({ email: 'b@test.tn', companyName: 'Boutique B', sector: 'commerce' }) });
   const B = { token: r.body.access_token, id: r.body.user.id };
-  r = await call('POST', '/auth/register', { body: signup({ email: 'c@test.tn', companyName: 'Transports C', sector: 'logistics' }) });
-  const C = { token: r.body.access_token, id: r.body.user.id };
-  r = await call('POST', '/auth/register', { body: signup({ email: 'd@test.tn', companyName: 'Grossiste D', sector: 'wholesale' }) });
-  const D = { token: r.body.access_token, id: r.body.user.id };
-  check('quatre sociétés distinctes créées', new Set([A.id, B.id, C.id, D.id]).size === 4 && [A, B, C, D].every((x) => x.token));
+  const codeB = await smtp.codeFor('b@test.tn', seenB);
+  await db.query(`UPDATE users SET "emailCodeExpires" = now() - interval '1 minute' WHERE id = $1`, [B.id]);
+  r = await call('POST', '/auth/verify-email-code', { token: B.token, body: { code: codeB } });
+  check('code expiré : refusé même s’il est exact', r.status === 400 && r.body.code === 'CODE_EXPIRED', r);
+  const seenLogin = smtp.mails.length;
+  r = await call('POST', '/auth/login', { body: { email: 'b@test.tn', password: PASSWORD } });
+  check('connexion d’un compte non confirmé : un nouveau code part tout seul', r.status === 200 && r.body.account.reason === 'EMAIL_NOT_VERIFIED', r);
+  const codeB2 = await smtp.codeFor('b@test.tn', seenLogin);
+  if (codeB2 !== codeA2) {
+    r = await call('POST', '/auth/verify-email-code', { token: B.token, body: { code: codeA2 } });
+    check('le code d’une autre société ne sert à rien', r.status === 400 && r.body.code === 'CODE_INVALID', r);
+  }
+  r = await call('POST', '/auth/verify-email-code', { token: B.token, body: { code: codeB2 } });
+  check('B confirme son adresse avec le nouveau code', r.status === 200 && r.body.account.blocked === false, r);
+
+  const C = await signUp({ email: 'c@test.tn', companyName: 'Transports C', sector: 'logistics' });
+  const D = await signUp({ email: 'd@test.tn', companyName: 'Grossiste D', sector: 'wholesale' });
+  check('quatre sociétés distinctes créées et confirmées', new Set([A.id, B.id, C.id, D.id]).size === 4 && [A, B, C, D].every((x) => x.token) && C.verify?.status === 200 && D.verify?.status === 200);
 
   r = await call('POST', '/auth/login', { body: { email: 'a@test.tn', password: PASSWORD } });
-  check('connexion par email : état du compte renvoyé', r.status === 200 && r.body.account.status === 'TRIAL' && r.body.user.sector === 'restaurant', r);
+  check('connexion par email : état du compte renvoyé', r.status === 200 && r.body.account.status === 'TRIAL' && r.body.account.blocked === false && r.body.user.sector === 'restaurant', r);
   r = await call('GET', '/auth/me', { token: A.token });
-  check('profil : essai en cours, adresse non encore confirmée', r.status === 200 && r.body.account.status === 'TRIAL' && r.body.emailVerified === false, r);
+  check('profil : essai en cours, adresse confirmée', r.status === 200 && r.body.account.status === 'TRIAL' && r.body.emailVerified === true, r);
   r = await call('POST', '/auth/verify-email', { body: { email: 'a@test.tn', token: 'x'.repeat(64) } });
-  check('lien de confirmation invalide : refusé', r.status === 400, r);
+  check('ancien lien de confirmation : une adresse déjà confirmée le reste', r.status === 200 && r.body.alreadyVerified === true, r);
   r = await call('POST', '/auth/resend-verification', { token: A.token });
-  check('renvoi du lien : accepté (aucun email envoyé sans SMTP, et c’est dit)', r.status === 200 && r.body.emailSent === false, r);
+  check('nouveau code pour une adresse déjà confirmée : rien à faire', r.status === 200 && r.body.alreadyVerified === true, r);
   r = await call('POST', '/auth/google', { body: { credential: 'x'.repeat(60) } });
   check('Google non configuré : 503, pas de connexion', r.status === 503, r);
   r = await call('POST', '/auth/apple', { body: { identityToken: 'x'.repeat(60) } });
@@ -111,7 +201,8 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   // ═════════════════════════ Abonnement vu par le client ═════════════════════════
   console.log('— Abonnement (client)');
   r = await call('GET', '/billing/subscription', { token: A.token });
-  check('abonnement : essai, 1 utilisateur, aucune formule', r.status === 200 && r.body.account.status === 'TRIAL' && r.body.users.used === 1 && r.body.plan === null && r.body.payment.currency === 'TND' && r.body.payment.onlinePayment === false, r);
+  check('abonnement : essai, 1 utilisateur, aucune formule, prix en dollars', r.status === 200 && r.body.account.status === 'TRIAL' && r.body.users.used === 1 && r.body.plan === null && r.body.payment.currency === 'USD', r);
+  check('paiement par carte disponible (mode test), aucun paiement hors ligne par défaut', r.body.payment.onlinePayment === true && r.body.payment.online.enabled === true && r.body.payment.online.test === true && r.body.payment.online.methods.includes('card') && r.body.payment.manual === false && r.body.payment.methods.length === 0 && r.body.payment.instructions === null && r.body.checkout === null && r.body.pendingPayment === null && r.body.emailEnabled === true, r.body.payment);
   r = await call('GET', '/billing/subscription');
   check('abonnement sans connexion : 401', r.status === 401, r);
 
@@ -155,13 +246,12 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   r = await call('POST', '/suppliers', { token: D.token, body: { id: supplierA.id, userId: A.id, name: 'Pirate', email: 'p@b.tn' } });
   check('création avec l’id d’un fournisseur de A : une NOUVELLE ligne est créée pour D', (r.status === 200 || r.status === 201) && r.body.id !== supplierA.id && r.body.userId === D.id, r);
   const supplierD = r.body;
-  let row = await one('SELECT name, "userId" FROM suppliers WHERE id = $1', [supplierA.id]);
+  row = await one('SELECT name, "userId" FROM suppliers WHERE id = $1', [supplierA.id]);
   check('le fournisseur de A est intact', row.name === 'Fournisseur A' && row.userId === A.id, row);
   for (const [path, body, table, id] of [
     ['/clients', { id: clientA.id, name: 'Pirate', email: 'p@b.tn' }, 'clients', clientA.id],
     ['/categories', { id: categoryA.id, name: 'Pirate' }, 'categories', categoryA.id],
     ['/employees', { id: employeeA.id, name: 'Pirate', email: 'pe@b.tn' }, 'employees', employeeA.id],
-    ['/projects', { id: 1, name: 'Projet D' }, null, null],
     ['/departments', { id: 1, name: 'Dept D' }, null, null],
   ]) {
     r = await call('POST', path, { token: D.token, body });
@@ -188,6 +278,8 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('même refus avec une majuscule dans l’URL', r.status === 403 && r.body.code === 'MODULE_DISABLED', r);
   r = await call('GET', '/logistics/client/shipments', { token: A.token });
   check('les lectures restent ouvertes (tableau de bord, rapports)', r.status === 200 && Array.isArray(r.body), r);
+  r = await call('POST', '/appointments', { token: B.token, body: { title: 'Rendez-vous B', startAt: new Date(Date.now() + 86400000).toISOString() } });
+  check('commerce : le module Rendez-vous n’est pas dans son secteur (403 MODULE_DISABLED)', r.status === 403 && r.body.code === 'MODULE_DISABLED' && r.body.module === 'appointments', r);
 
   // ═════════════════════════ Logistique et transporteurs ═════════════════════════
   console.log('— Logistique : expéditions, transporteurs, cloisonnement');
@@ -277,6 +369,10 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('le membre consulte l’abonnement sans pouvoir le gérer', r.status === 200 && r.body.canManage === false && r.body.users.used === 2, r);
   r = await call('POST', '/billing/payments', { token: viewerToken, body: { planCode: 'starter', billingCycle: 'monthly', method: 'bank_transfer' } });
   check('seul le propriétaire déclare un paiement (403)', r.status === 403, r);
+  r = await call('POST', '/billing/checkout', { token: viewerToken, body: { planCode: 'starter', billingCycle: 'monthly' } });
+  check('seul le propriétaire paie par carte (403)', r.status === 403, r);
+  r = await call('PUT', '/billing/modules', { token: viewerToken, body: { modules: ['sales'] } });
+  check('seul le propriétaire choisit les modules (403)', r.status === 403, r);
 
   // ═════════════════════════ Routes autrefois ouvertes sans connexion ═════════════════════════
   console.log('— Routes autrefois anonymes');
@@ -305,34 +401,74 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   r = await call('GET', '/admin/clients', { token: admin });
   check('ancienne liste des clients : uniquement les propriétaires (pas les membres d’équipe)', r.status === 200 && r.body.length === 5 && r.body.every((c) => !('password' in c)), r.body.length);
 
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('réglages de départ : dollars, code de vérification actif, paiement par carte en ligne (mode test), hors ligne fermé', r.status === 200 && r.body.currency === 'USD' && r.body.requireEmailVerification === true && r.body.emailVerificationActive === true && r.body.manualPayments === false && r.body.onlinePayment.enabled === true && r.body.onlinePayment.provider === 'konnect' && r.body.onlinePayment.mode === 'sandbox' && r.body.onlinePayment.reason === null && r.body.catalogVersion === 3, r.body.onlinePayment);
+  check('la clé Konnect ne sort jamais du serveur', !JSON.stringify(r.body).includes('e2e-konnect-key') && !JSON.stringify(r.body).includes('e2e-wallet'), Object.keys(r.body));
+  r = await call('PUT', '/admin/settings', { token: admin, body: { requireEmailVerification: false } });
+  check('code de vérification désactivé par l’administrateur : accepté', r.status === 200 && r.body.requireEmailVerification === false, r);
+  r = await call('GET', '/public/config');
+  check('le site le sait : plus de code demandé', r.body.requireEmailVerification === false, r.body);
+  {
+    const seen = smtp.mails.length;
+    const off = await call('POST', '/auth/register', { body: signup({ email: 'off@test.tn', companyName: 'Sans code', sector: 'commerce' }) });
+    check('sans code exigé : l’ERP est ouvert tout de suite (le code part quand même par email)', off.status === 201 && off.body.verification.required === false && off.body.account.blocked === false, off.body.verification);
+    const offToken = off.body.access_token;
+    r = await call('GET', '/clients', { token: offToken });
+    check('et il fonctionne sans confirmation', r.status === 200, r);
+    await db.query(`DELETE FROM users WHERE email = 'off@test.tn'`);
+    void seen;
+  }
   r = await call('PUT', '/admin/settings', { token: admin, body: { requireEmailVerification: true } });
-  check('exiger la confirmation d’email sans SMTP : refusé (personne ne recevrait le lien)', r.status === 400, r);
+  check('code de vérification réactivé (le serveur sait envoyer des emails)', r.status === 200 && r.body.requireEmailVerification === true, r);
   r = await call('PUT', '/admin/settings', { token: admin, body: { paymentInstructions: 'Virement : RIB 08 006 0123456789012 34', supportEmail: 'support@test.tn', trialReminderHours: 24 } });
   check('réglages enregistrés', r.status === 200 && r.body.supportEmail === 'support@test.tn', r);
   r = await call('PUT', '/admin/settings', { token: admin, body: { trialHours: 0 } });
   check('durée d’essai invalide refusée', r.status === 400, r);
   r = await call('GET', '/admin/settings', { token: admin });
-  check('réglages : moyens de paiement tunisiens proposés, Apple et Google signalés non configurés', r.status === 200 && ['bank_transfer', 'd17', 'flouci', 'edinar', 'postal', 'cheque', 'cash', 'card'].every((m) => r.body.paymentMethodOptions.includes(m)) && r.body.paymentMethods.join() === 'bank_transfer,d17,flouci,cheque,cash' && r.body.appleConfigured === false && r.body.googleConfigured === false && r.body.mailConfigured === false, r.body);
+  check('réglages : moyens de paiement tunisiens connus, Apple et Google non configurés, emails configurés', r.status === 200 && ['bank_transfer', 'd17', 'flouci', 'edinar', 'postal', 'cheque', 'cash', 'card'].every((m) => r.body.paymentMethodOptions.includes(m)) && r.body.paymentMethods.join() === 'bank_transfer,d17,flouci,cheque,cash' && r.body.appleConfigured === false && r.body.googleConfigured === false && r.body.mailConfigured === true, r.body);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { currency: 'dollars' } });
+  check('devise mal écrite refusée (code ISO à 3 lettres)', r.status === 400, r);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { currency: 'MAD' } });
+  check('devise que le prestataire ne gère pas : acceptée mais le paiement en ligne se signale indisponible', r.status === 200, r);
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('l’administration voit pourquoi (CURRENCY_UNSUPPORTED)', r.body.onlinePayment.enabled === false && r.body.onlinePayment.reason === 'CURRENCY_UNSUPPORTED', r.body.onlinePayment);
+  r = await call('POST', '/billing/checkout', { token: B.token, body: { planCode: 'starter', billingCycle: 'monthly' } });
+  check('le client reçoit « paiement en cours d’activation » (503), sans détail technique', r.status === 503 && r.body.code === 'ONLINE_PAYMENT_UNAVAILABLE' && !/konnect/i.test(JSON.stringify(r.body)), r);
+  check('aucune page de paiement n’a été ouverte chez le prestataire', konnect.initCount() === 0, konnect.initCount());
+  r = await call('PUT', '/admin/settings', { token: admin, body: { currency: 'USD' } });
+  check('retour au dollar', r.status === 200 && r.body.currency === 'USD', r);
   r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: 'javascript:alert(1)' } });
   check('lien de paiement : seul https est accepté', r.status === 400, r);
   r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: 'http://pay.exemple.tn/inovexa' } });
   check('lien de paiement en http : refusé', r.status === 400, r);
   r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: 'https://pay.exemple.tn/inovexa', paymentMethods: ['bank_transfer', 'd17', 'flouci', 'cheque', 'cash', 'card'] } });
-  check('lien de paiement par carte enregistré', r.status === 200 && r.body.paymentLink === 'https://pay.exemple.tn/inovexa' && r.body.paymentMethods.includes('card'), r);
+  check('lien de paiement enregistré', r.status === 200 && r.body.paymentLink === 'https://pay.exemple.tn/inovexa' && r.body.paymentMethods.includes('card'), r);
   r = await call('GET', '/billing/subscription', { token: B.token });
-  check('le client voit le lien de paiement et les moyens proposés', r.status === 200 && r.body.payment.link === 'https://pay.exemple.tn/inovexa' && r.body.payment.methods.includes('card') && r.body.payment.methods.includes('flouci'), r.body.payment);
+  check('paiements hors ligne fermés : le client ne voit ni lien, ni coordonnées bancaires, ni moyens hors ligne', r.status === 200 && r.body.payment.manual === false && r.body.payment.link === null && r.body.payment.instructions === null && r.body.payment.methods.length === 0, r.body.payment);
+  r = await call('POST', '/billing/payments', { token: B.token, body: { planCode: 'starter', billingCycle: 'monthly', method: 'bank_transfer' } });
+  check('déclarer un paiement hors ligne : refusé tant que l’administrateur ne l’a pas ouvert (403 MANUAL_PAYMENTS_DISABLED)', r.status === 403 && r.body.code === 'MANUAL_PAYMENTS_DISABLED', r);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { manualPayments: true } });
+  check('l’administrateur ouvre (facultatif) les paiements hors ligne', r.status === 200 && r.body.manualPayments === true, r);
+  r = await call('GET', '/billing/subscription', { token: B.token });
+  check('le client voit alors le lien de paiement, les coordonnées et les moyens proposés', r.status === 200 && r.body.payment.manual === true && r.body.payment.link === 'https://pay.exemple.tn/inovexa' && /RIB/.test(r.body.payment.instructions) && r.body.payment.methods.includes('card') && r.body.payment.methods.includes('flouci'), r.body.payment);
+  r = await call('GET', '/public/config');
+  check('le site propose alors aussi les moyens hors ligne', r.body.paymentMethods.includes('bank_transfer') && r.body.paymentMethods.includes('card'), r.body.paymentMethods);
   r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: '', paymentMethods: ['bank_transfer', 'd17', 'flouci', 'cheque', 'cash'] } });
   check('lien de paiement retiré', r.status === 200 && r.body.paymentLink === null, r);
 
   const plans = (await call('GET', '/admin/plans', { token: admin })).body;
   const starter = plans.find((p) => p.code === 'starter');
-  check('3 formules proposées en brouillon', plans.length === 3 && plans.every((p) => p.isPublic === false) && starter.priceMonthly === 49, plans.map((p) => p.code));
+  check('3 formules en dollars, déjà publiées : le client peut acheter seul, sans attendre l’administrateur', plans.length === 3 && plans.every((p) => p.isPublic === true && p.isActive === true) && starter.priceMonthly === 15 && starter.modules.includes('appointments'), plans.map((p) => [p.code, p.isPublic]));
+  r = await call('PATCH', `/admin/plans/${starter.id}`, { token: admin, body: { isPublic: false } });
+  check('l’administrateur peut retirer une formule du site', r.status === 200 && r.body.isPublic === false, r);
   r = await call('POST', '/billing/payments', { token: B.token, body: { planCode: 'starter', billingCycle: 'monthly', method: 'bank_transfer' } });
-  check('formule non publiée : le client ne peut pas la souscrire', r.status === 400, r);
+  check('formule retirée : le client ne peut pas la souscrire', r.status === 400, r);
+  r = await call('POST', '/billing/checkout', { token: B.token, body: { planCode: 'starter', billingCycle: 'monthly' } });
+  check('formule retirée : pas de paiement par carte non plus', r.status === 400, r);
   r = await call('PATCH', `/admin/plans/${starter.id}`, { token: admin, body: { isPublic: true } });
-  check('l’administrateur publie la formule Starter', r.status === 200 && r.body.isPublic === true, r);
+  check('l’administrateur republie la formule Starter', r.status === 200 && r.body.isPublic === true, r);
   r = await call('GET', '/public/plans');
-  check('la formule publiée apparaît sur le site', r.body.plans.length === 1 && r.body.plans[0].code === 'starter', r.body);
+  check('les trois formules sont sur le site', r.body.plans.length === 3 && r.body.plans[0].code === 'starter', r.body.plans.map((p) => p.code));
   r = await call('PATCH', `/admin/plans/${starter.id}`, { token: admin, body: { modules: ['astrologie'] } });
   check('module inconnu refusé dans une formule', r.status === 400, r);
 
@@ -363,21 +499,23 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('les autres sociétés ne sont pas affectées', r.status === 200, r);
 
   r = await call('POST', '/billing/contact', { token: A.token, body: { subject: 'Essai terminé', message: 'Bonjour, je souhaite un délai supplémentaire.' } });
-  check('le client bloqué peut écrire à l’administrateur', r.status === 200 && r.body.received === true, r);
-  r = await call('GET', '/admin/messages?unread=1', { token: admin });
-  check('l’administrateur reçoit le message', r.status === 200 && r.body.length === 1 && r.body[0].account.email === 'a@test.tn', r);
-  r = await call('POST', `/admin/messages/${r.body[0].id}/read`, { token: admin });
-  check('message marqué comme lu', r.status === 200, r);
+  check('plus de formulaire « écrire à l’administrateur » : le client choisit et paie seul (404)', r.status === 404, r);
+  r = await call('GET', '/admin/messages', { token: admin });
+  check('plus de boîte de messages côté administrateur (404)', r.status === 404, r);
+  r = await call('GET', '/admin/overview', { token: admin });
+  check('le tableau de bord ne compte plus de messages', !('unreadMessages' in r.body), Object.keys(r.body));
 
   // ═════════════════════════ Paiement et réactivation ═════════════════════════
-  console.log('— Paiement déclaré puis validé par l’administrateur');
+  console.log('— Paiement hors ligne (facultatif) : déclaré puis validé par l’administrateur');
   r = await call('POST', '/billing/payments', { token: A.token, body: { planCode: 'starter', billingCycle: 'monthly', method: 'bank_transfer', reference: 'VIR-2026-001', amountHT: 1, amountTTC: 1 } });
-  check('paiement déclaré : montant pris sur la formule, pas sur la requête', r.status === 201 && r.body.status === 'pending' && r.body.amountHT === 49 && r.body.amountTTC === 58.31 && r.body.vatRate === 19 && r.body.currency === 'TND', r);
+  check('paiement hors ligne déclaré : montant pris sur la formule (15 $ HT, 17,85 $ TTC), pas sur la requête', r.status === 201 && r.body.status === 'pending' && r.body.provider === 'manual' && r.body.amountHT === 15 && r.body.amountTTC === 17.85 && r.body.vatRate === 19 && r.body.currency === 'USD', r);
   const payment = r.body;
   r = await call('POST', '/billing/payments', { token: A.token, body: { planCode: 'starter', billingCycle: 'monthly', method: 'bank_transfer' } });
   check('un seul paiement en attente à la fois (409)', r.status === 409, r);
   r = await call('POST', '/billing/payments', { token: B.token, body: { planCode: 'starter', billingCycle: 'monthly', method: 'card' } });
   check('moyen de paiement non proposé : refusé', r.status === 400, r);
+  r = await call('POST', '/billing/payments', { token: B.token, body: { planCode: 'starter', billingCycle: 'monthly', method: 'inconnu' } });
+  check('moyen de paiement inconnu : refusé', r.status === 400, r);
   r = await call('GET', '/clients', { token: A.token });
   check('déclarer ne suffit pas : toujours bloqué tant que l’administrateur n’a pas validé', r.status === 402, r);
   r = await call('POST', `/admin/payments/${payment.id}/validate`, { token: D.token });
@@ -400,11 +538,15 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('abonnement actif : formule Starter, 3 utilisateurs maximum', r.body.account.status === 'ACTIVE' && r.body.account.blocked === false && r.body.plan.code === 'starter' && r.body.users.limit === 3 && r.body.account.planCode === 'starter', r.body.account);
   check('modules = secteur ∩ formule (RH retiré, caisse gardée)', r.body.modules.pos === true && r.body.modules.hr === false && r.body.modules.finance === false && r.body.modules.logistics === false, r.body.modules);
   r = await call('GET', `/billing/payments/${payment.id}/receipt`, { token: A.token });
-  check('reçu disponible, avec la mention qu’il ne remplace pas la facture légale', r.status === 200 && r.body.amountTTC === 58.31 && r.body.customer.taxId === '1234567X/A/M/000' && /facture légale/.test(r.body.notice), r);
+  check('reçu disponible, avec la mention qu’il ne remplace pas la facture légale', r.status === 200 && r.body.amountTTC === 17.85 && r.body.currency === 'USD' && r.body.customer.taxId === '1234567X/A/M/000' && /facture légale/.test(r.body.notice), r);
   r = await call('GET', `/billing/payments/${payment.id}/receipt`, { token: B.token });
   check('le reçu d’une autre société est introuvable (404)', r.status === 404, r);
   r = await call('POST', '/employees', { token: A.token, body: { name: 'Nouvel employé', email: 'ne@a.tn' } });
   check('module RH hors formule : écriture refusée (403 MODULE_DISABLED)', r.status === 403 && r.body.code === 'MODULE_DISABLED', r);
+  r = await call('POST', '/projects', { token: A.token, body: { name: 'Projet A' } });
+  check('module Projets hors formule (ni projets ni comptabilité) : écriture refusée (403 MODULE_DISABLED)', r.status === 403 && r.body.code === 'MODULE_DISABLED' && r.body.module === 'projects', r);
+  r = await call('POST', '/appointments', { token: A.token, body: { title: 'Table de 4', startAt: new Date(Date.now() + 86400000).toISOString(), partySize: 4 } });
+  check('module Rendez-vous inclus dans la formule Starter : l’agenda du restaurant fonctionne', r.status === 201 && r.body.userId === A.id, r);
   row = await one('SELECT COUNT(*)::int AS n FROM employees WHERE "userId" = $1', [A.id]);
   check('les employés déjà saisis sont conservés', row.n === 1, row);
 
@@ -414,11 +556,11 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('4e utilisateur refusé avec un message qui explique la limite', r.status === 400 && /limitée à 3/.test(String(r.body.message)), r);
 
   r = await call('GET', '/admin/overview', { token: admin });
-  check('tableau de bord : 1 client payant, revenu récurrent 49 TND, revenu réel 49 HT', r.body.customers.paying === 1 && r.body.mrr === 49 && r.body.revenue.ht === 49 && r.body.revenue.ttc === 58.31 && r.body.pendingPayments === 0, { customers: r.body.customers, mrr: r.body.mrr, revenue: r.body.revenue });
+  check('tableau de bord : 1 client payant, revenu récurrent 15 $, revenu réel 15 $ HT (en dollars)', r.body.currency === 'USD' && r.body.customers.paying === 1 && r.body.mrr === 15 && r.body.revenue.ht === 15 && r.body.revenue.ttc === 17.85 && r.body.pendingPayments === 0, { currency: r.body.currency, customers: r.body.customers, mrr: r.body.mrr, revenue: r.body.revenue });
   check('conversions calculées sur les comptes réels', r.body.conversion.signups === 5 && r.body.conversion.signupsPaid === 1 && r.body.conversion.subscriptionRate === 20 && r.body.conversion.trialsEnded === 1 && r.body.conversion.trialToPaidRate === 100, r.body.conversion);
   check('formule la plus utilisée', r.body.plans[0]?.code === 'starter' && r.body.plans[0].count === 1, r.body.plans);
   r = await call('GET', '/admin/stats', { token: admin });
-  check('ancien écran : chiffres réels (plus de case vide)', r.status === 200 && r.body.totalClients === 5 && r.body.totalRevenue === 58.31 && r.body.expiredClients === 0, r);
+  check('ancien écran : chiffres réels (plus de case vide)', r.status === 200 && r.body.totalClients === 5 && r.body.totalRevenue === 17.85 && r.body.expiredClients === 0, r);
   r = await call('GET', `/admin/accounts/${A.id}`, { token: admin });
   check('fiche du compte : société, équipe, paiements, activité, volumes', r.status === 200 && r.body.company.taxId === '1234567X/A/M/000' && r.body.team.length === 2 && r.body.payments.length === 1 && r.body.activity.length > 3 && r.body.usage.clients === 1, { team: r.body.team?.length, usage: r.body.usage });
   r = await call('GET', '/admin/audit', { token: admin });
@@ -470,11 +612,11 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   row = await one('SELECT "accountStatus", "trialReminderStage" FROM users WHERE id = $1', [C.id]);
   check('C passé à EXPIRED par le balayage', row.accountStatus === 'EXPIRED', row);
   r = await call('POST', '/admin/payments', { token: admin, body: { userId: C.id, planCode: 'business', billingCycle: 'annual', method: 'cash', reference: 'Espèces au bureau' } });
-  check('paiement saisi par l’administrateur (formule en brouillon autorisée, espèces) et validé', (r.status === 200 || r.status === 201) && r.body.status === 'validated' && r.body.periodMonths === 12 && r.body.amountHT === 990, r);
+  check('paiement saisi par l’administrateur (espèces, cas exceptionnel) et validé', (r.status === 200 || r.status === 201) && r.body.status === 'validated' && r.body.periodMonths === 12 && r.body.amountHT === 290, r);
   r = await call('GET', '/products', { token: C.token });
   check('C réactivé par le paiement saisi par l’administrateur', r.status === 200, r);
   r = await call('GET', '/admin/overview', { token: admin });
-  check('revenu récurrent : 49 + 990/12 = 131,5', r.body.mrr === 131.5 && r.body.customers.paying === 2 && r.body.customers.cancelled === 1 && r.body.cancellations === 1, { mrr: r.body.mrr, customers: r.body.customers });
+  check('revenu récurrent : 15 + 290/12 ≈ 39,17 $', Math.abs(r.body.mrr - (15 + 290 / 12)) < 0.01 && r.body.customers.paying === 2 && r.body.customers.cancelled === 1 && r.body.cancellations === 1, { mrr: r.body.mrr, customers: r.body.customers });
 
   // ═════════════════════════ Sessions ═════════════════════════
   console.log('— Sessions');
@@ -516,7 +658,7 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('le propriétaire supprime son rapport', r.status === 200 && r.body.success === true, r);
 
   // ═════════════════════════ Mise à niveau du contenu de départ ═════════════════════════
-  console.log('— Mise à niveau du contenu de départ (base installée en version 1)');
+  console.log('— Mise à niveau du contenu de départ (installation en version 1, puis 2)');
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: newToken });
   check('mise à niveau : réservée à l’administrateur (403)', r.status === 403, r);
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
@@ -524,54 +666,130 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   // On remet la base dans l'état d'une installation en version 1.
   const BASE_V1 = ['products', 'categories', 'clients', 'invoices', 'finance', 'reports', 'analytics', 'ai'];
   const V1_MANUFACTURING = [...BASE_V1, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'];
+  const V2_RESTAURANT = [...BASE_V1, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr', 'objectives'];
+  const V2_STARTER = {
+    description: 'Pour démarrer : ventes, caisse, stock et facturation.', priceMonthly: 49, priceAnnual: 490, maxUsers: 3,
+    modules: ['products', 'categories', 'stock', 'sales', 'pos', 'purchases', 'orders', 'clients', 'suppliers', 'invoices', 'reports'],
+    features: ['Jusqu’à 3 utilisateurs', 'Ventes, caisse, achats, commandes et stock', 'Devis, factures, avoirs et règlements', 'Fichier TEIF pour El Fatoora', 'Rapports, exports Excel et PDF', 'Support par email'],
+  };
+  const V2_BUSINESS_FEATURES = ['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, TVA et rapprochement bancaire', 'RH, congés et paie (CNSS, IRPP)', 'Logistique, production et objectifs', 'Analyses et assistant IA', 'Support prioritaire'];
+  const V2_ENTERPRISE = { description: 'Utilisateurs illimités et accompagnement dédié.', priceMonthly: 249, priceAnnual: 2490, features: ['Utilisateurs illimités', 'Tous les modules de votre secteur', 'Mise en service et reprise de données accompagnées', 'Formation de vos équipes', 'Interlocuteur dédié', 'Paramétrage sur mesure (sur devis)'] };
   await db.query(`UPDATE sectors SET modules = $1 WHERE code = 'manufacturing'`, [JSON.stringify(V1_MANUFACTURING)]);
   await db.query(`UPDATE sectors SET modules = $1 WHERE code = 'healthcare'`, [JSON.stringify(['products', 'sales'])]); // personnalisé par l'administrateur
+  await db.query(`UPDATE sectors SET modules = $1 WHERE code = 'restaurant'`, [JSON.stringify(V2_RESTAURANT)]); // sans l'agenda : contenu de la version 2
   const NEW = ['agrifood', 'automotive', 'ecommerce', 'textile', 'beauty'];
   await db.query(`DELETE FROM sector_items WHERE "sectorId" IN (SELECT id FROM sectors WHERE code = ANY($1))`, [NEW]);
   await db.query(`DELETE FROM sector_categories WHERE "sectorId" IN (SELECT id FROM sectors WHERE code = ANY($1))`, [NEW]);
   await db.query(`DELETE FROM service_offers WHERE "sectorCode" = ANY($1)`, [NEW]);
   await db.query(`DELETE FROM sectors WHERE code = ANY($1)`, [NEW]);
-  await db.query(`UPDATE plans SET "priceMonthly" = NULL, "priceAnnual" = NULL, features = $1 WHERE code = 'enterprise'`, [JSON.stringify(['Utilisateurs illimités', 'Paramétrage sur mesure', 'Reprise de données accompagnée', 'Interlocuteur dédié'])]);
-  await db.query(`UPDATE plans SET "priceMonthly" = 120, features = $1 WHERE code = 'business'`, [JSON.stringify(['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, paie et RH', 'Analyses et assistant IA', 'Support prioritaire'])]); // prix changé par l'administrateur
-  await db.query(`UPDATE platform_settings SET "catalogVersion" = 1, "paymentMethods" = $1`, [JSON.stringify(['bank_transfer', 'cash', 'cheque', 'd17'])]);
+  // Formules comme dans une installation en dinars : brouillons, prix de la version 2 ; le Starter a la liste de modules sans l'agenda.
+  await db.query(`UPDATE plans SET "isPublic" = false, description = $1, "priceMonthly" = $2, "priceAnnual" = $3, "maxUsers" = $4, modules = $5, features = $6 WHERE code = 'starter'`, [V2_STARTER.description, V2_STARTER.priceMonthly, V2_STARTER.priceAnnual, V2_STARTER.maxUsers, JSON.stringify(V2_STARTER.modules), JSON.stringify(V2_STARTER.features)]);
+  await db.query(`UPDATE plans SET "isPublic" = false, "priceMonthly" = 120, features = $1 WHERE code = 'business'`, [JSON.stringify(V2_BUSINESS_FEATURES)]); // prix changé par l'administrateur
+  await db.query(`UPDATE plans SET "isPublic" = false, "priceMonthly" = NULL, "priceAnnual" = NULL, features = $1 WHERE code = 'enterprise'`, [JSON.stringify(['Utilisateurs illimités', 'Paramétrage sur mesure', 'Reprise de données accompagnée', 'Interlocuteur dédié'])]); // version 1, jamais modifiée
+  await db.query(`UPDATE service_offers SET price = 300 WHERE name = 'Mise en service standard'`);
+  await db.query(`UPDATE service_offers SET price = 275 WHERE name = 'Formation des utilisateurs'`); // prix changé par l'administrateur
+  await db.query(`UPDATE platform_settings SET "catalogVersion" = 1, currency = 'TND', "requireEmailVerification" = false, "paymentMethods" = $1`, [JSON.stringify(['bank_transfer', 'cash', 'cheque', 'd17'])]);
+  // Le compte A (restaurant, formule Starter) a ses modules sans l'agenda, comme avant la mise à niveau.
+  const aModules = (await one('SELECT modules FROM users WHERE id = $1', [A.id])).modules;
+  await db.query('UPDATE users SET modules = $1 WHERE id = $2', [JSON.stringify({ ...aModules, appointments: false, projects: false }), A.id]);
   // Deux ateliers inscrits avant la mise à niveau : l'un en essai, l'autre sur la formule Starter (qui ne comprend pas la fabrication).
-  r = await call('POST', '/auth/register', { body: signup({ email: 'e@test.tn', companyName: 'Atelier E', sector: 'manufacturing' }) });
-  const E = { token: r.body.access_token, id: r.body.user.id };
-  check('avant la mise à niveau : un atelier n’a pas le module de fabrication', r.status === 201 && r.body.user.modules.production === false, r.body.user?.modules);
+  const E = await signUp({ email: 'e@test.tn', companyName: 'Atelier E', sector: 'manufacturing' });
+  check('avant la mise à niveau : un atelier n’a pas le module de fabrication', E.r.status === 201 && E.r.body.user.modules.production === false, E.r.body.user?.modules);
   await db.query(`INSERT INTO users (email, password, name, "companyName", role, sector, "planCode", "accountStatus", "signupSource", modules) SELECT 'f@test.tn', password, 'F', 'Atelier F', 'client', 'manufacturing', 'starter', 'ACTIVE', 'admin', modules FROM users WHERE id = $1`, [E.id]);
 
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
-  check('mise à niveau exécutée une fois (version 1 → 2)', r.status === 200 && r.body.upgraded === true && r.body.from === 1, r);
+  check('mise à niveau exécutée une fois (version 1 → 3)', r.status === 200 && r.body.upgraded === true && r.body.from === 1, r);
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
   check('second appel : plus rien à faire', r.status === 200 && r.body.upgraded === false, r);
   const sectorsNow = (await call('GET', '/admin/sectors', { token: admin })).body;
   const sectorBy = (code) => sectorsNow.find((s) => s.code === code);
   check('secteur resté d’origine : la fabrication est ajoutée à l’industrie', sectorBy('manufacturing').modules.includes('production') && V1_MANUFACTURING.every((m) => sectorBy('manufacturing').modules.includes(m)), sectorBy('manufacturing').modules);
+  check('secteur resté de la version 2 : l’agenda est ajouté au restaurant', sectorBy('restaurant').modules.includes('appointments') && V2_RESTAURANT.every((m) => sectorBy('restaurant').modules.includes(m)), sectorBy('restaurant').modules);
   check('secteur personnalisé par l’administrateur : laissé tel quel', sectorBy('healthcare').modules.join() === 'products,sales', sectorBy('healthcare').modules);
   check('nouveaux secteurs créés avec leurs suggestions, « Autre activité » reste en dernier', sectorsNow.length === 15 && NEW.every((c) => sectorBy(c) && sectorBy(c).itemCount > 0) && sectorsNow[14].code === 'other', sectorsNow.map((s) => s.code));
-  row = await one(`SELECT COUNT(*)::int AS n, BOOL_OR("isPublic") AS public FROM service_offers WHERE "sectorCode" = ANY($1)`, [NEW]);
-  check('leurs prestations de mise en service sont créées en brouillon', row.n === 5 && row.public === false, row);
+  check('les nouveaux secteurs reçoivent d’emblée l’agenda (beauté) ou les projets', sectorBy('beauty').modules.includes('appointments') && sectorBy('automotive').modules.includes('appointments'), [sectorBy('beauty').modules, sectorBy('automotive').modules]);
+  row = await one(`SELECT COUNT(*)::int AS n, BOOL_OR("isPublic") AS public, MAX(price) AS max FROM service_offers WHERE "sectorCode" = ANY($1)`, [NEW]);
+  check('leurs prestations de mise en service sont créées en brouillon, déjà en dollars', row.n === 5 && row.public === false && Number(row.max) <= 160, row);
   const plansNow = (await call('GET', '/admin/plans', { token: admin })).body;
   const planBy = (code) => plansNow.find((p) => p.code === code);
-  check('formule en brouillon restée d’origine : prix proposé renseigné', planBy('enterprise').priceMonthly === 249 && planBy('enterprise').priceAnnual === 2490 && planBy('enterprise').isPublic === false, planBy('enterprise'));
-  check('formule modifiée par l’administrateur : son prix est conservé', planBy('business').priceMonthly === 120, planBy('business'));
-  check('formule déjà publiée : jamais modifiée', planBy('starter').isPublic === true && planBy('starter').priceMonthly === 49, planBy('starter'));
   r = await call('GET', '/admin/settings', { token: admin });
-  check('moyens de paiement d’origine : complétés (D17, Flouci…)', r.body.paymentMethods.join() === 'bank_transfer,d17,flouci,cheque,cash' && r.body.catalogVersion === 2, r.body.paymentMethods);
+  check('devise : dinars → dollars, parce qu’aucune formule n’était publiée', r.body.currency === 'USD' && r.body.catalogVersion === 3 && r.body.requireEmailVerification === true, { currency: r.body.currency, version: r.body.catalogVersion });
+  check('formule inchangée (Starter) : prix en dollars, publiée, avec l’agenda', planBy('starter').priceMonthly === 15 && planBy('starter').priceAnnual === 150 && planBy('starter').isPublic === true && planBy('starter').modules.includes('appointments') && planBy('starter').features.includes('Agenda : rendez-vous et réservations'), planBy('starter'));
+  check('formule jamais modifiée depuis la version 1 (Enterprise) : prix proposé en dollars et publiée', planBy('enterprise').priceMonthly === 79 && planBy('enterprise').priceAnnual === 790 && planBy('enterprise').isPublic === true, planBy('enterprise'));
+  check('formule modifiée par l’administrateur (Business) : son prix est conservé et elle reste en brouillon', planBy('business').priceMonthly === 120 && planBy('business').isPublic === false, planBy('business'));
+  r = await call('GET', '/admin/service-offers', { token: admin });
+  const offerBy = (name) => r.body.find((o) => o.name === name);
+  check('prestations : tarif non modifié converti en dollars, tarif modifié conservé', Number(offerBy('Mise en service standard').price) === 95 && Number(offerBy('Formation des utilisateurs').price) === 275, [offerBy('Mise en service standard').price, offerBy('Formation des utilisateurs').price]);
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('moyens de paiement d’origine : complétés (D17, Flouci…)', r.body.paymentMethods.join() === 'bank_transfer,d17,flouci,cheque,cash', r.body.paymentMethods);
   r = await call('GET', '/auth/me', { token: E.token });
   check('compte en essai du secteur : reçoit le module ajouté', r.status === 200 && r.body.modules.production === true && r.body.modules.stock === true, r.body.modules);
   row = await one(`SELECT modules FROM users WHERE email = 'f@test.tn'`);
   check('compte sur une formule qui ne le comprend pas : ne le reçoit pas', row.modules.production === false, row.modules);
-  await db.query(`UPDATE plans SET "priceMonthly" = 99 WHERE code = 'business'`);
+  row = await one('SELECT modules FROM users WHERE id = $1', [A.id]);
+  check('compte du restaurant sur la formule Starter : reçoit l’agenda, pas les projets', row.modules.appointments === true && row.modules.projects === false, row.modules);
+
+  // Installation déjà en service, avec des paiements enregistrés en dinars : ni la devise ni les prix ne bougent.
+  await db.query(`UPDATE platform_settings SET "catalogVersion" = 2, currency = 'TND'`);
+  await db.query(`UPDATE plans SET "isPublic" = true, "priceMonthly" = 49, "priceAnnual" = 490 WHERE code = 'starter'`);
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('mise à niveau d’une installation déjà en service (version 2 → 3)', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('formules déjà publiées, paiements enregistrés : la devise et les prix des clients ne changent pas sous leurs pieds', r.body.currency === 'TND' && r.body.catalogVersion === 3, r.body.currency);
+  r = await call('GET', '/admin/plans', { token: admin });
+  check('le Starter publié garde son prix', r.body.find((p) => p.code === 'starter').priceMonthly === 49, r.body.find((p) => p.code === 'starter'));
+
+  // Installation en service SANS paiement (les paiements des essais précédents sont mis de côté le temps de ces deux cas).
+  await db.query('CREATE TABLE tmp_paiements_sauvegarde AS SELECT * FROM subscription_payments');
+  await db.query('DELETE FROM subscription_payments');
+  const publicOffers = (await db.query('SELECT id FROM service_offers WHERE "isPublic"')).rows.map((o) => o.id);
+  await db.query('UPDATE service_offers SET "isPublic" = false');
+  const asV2 = async ({ businessMonthly = 99, enterprisePublic = true } = {}) => {
+    await db.query(`UPDATE platform_settings SET "catalogVersion" = 2, currency = 'TND'`);
+    await db.query(`UPDATE plans SET "isPublic" = true, description = $1, "priceMonthly" = 49, "priceAnnual" = 490, "maxUsers" = 3, modules = $2, features = $3 WHERE code = 'starter'`, [V2_STARTER.description, JSON.stringify(V2_STARTER.modules), JSON.stringify(V2_STARTER.features)]);
+    await db.query(`UPDATE plans SET "isPublic" = true, "priceMonthly" = $1, "priceAnnual" = 990, "maxUsers" = 10, features = $2 WHERE code = 'business'`, [businessMonthly, JSON.stringify(V2_BUSINESS_FEATURES)]);
+    await db.query(`UPDATE plans SET "isPublic" = $1, "priceMonthly" = 249, "priceAnnual" = 2490, "maxUsers" = NULL, features = $2 WHERE code = 'enterprise'`, [enterprisePublic, JSON.stringify(V2_ENTERPRISE.features)]);
+    await db.query(`UPDATE service_offers SET price = 300 WHERE name = 'Mise en service standard'`);
+  };
+  const planRows = async () => (await call('GET', '/admin/plans', { token: admin })).body.map((p) => [p.code, p.priceMonthly, p.priceAnnual, p.isPublic]);
+
+  // (1) Un prix publié a été changé par l'administrateur : on ne touche à rien (sinon 120 dinars deviendraient 120 dollars).
+  await asV2({ businessMonthly: 120 });
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('formules publiées dont une a un prix choisi par l’administrateur : mise à niveau 2 → 3', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('… la devise et tous les prix restent comme avant', r.body.currency === 'TND' && r.body.catalogVersion === 3, r.body.currency);
+  let rows = await planRows();
+  check('… Starter 49, Business 120, Enterprise 249 : inchangés', rows.find((x) => x[0] === 'starter')[1] === 49 && rows.find((x) => x[0] === 'business')[1] === 120 && rows.find((x) => x[0] === 'enterprise')[1] === 249, rows);
+
+  // (2) Formules publiées mais jamais modifiées, aucun paiement : les prix de départ passent en dollars, la publication ne change pas.
+  await asV2({ enterprisePublic: false });
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('formules publiées jamais modifiées, aucun paiement : mise à niveau 2 → 3', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('… la devise passe en dollars', r.body.currency === 'USD' && r.body.catalogVersion === 3, r.body.currency);
+  rows = await planRows();
+  check('… prix de départ en dollars (15 / 29 / 79, annuel 150 / 290 / 790)', rows.find((x) => x[0] === 'starter')[1] === 15 && rows.find((x) => x[0] === 'starter')[2] === 150 && rows.find((x) => x[0] === 'business')[1] === 29 && rows.find((x) => x[0] === 'business')[2] === 290 && rows.find((x) => x[0] === 'enterprise')[1] === 79 && rows.find((x) => x[0] === 'enterprise')[2] === 790, rows);
+  check('… la publication est conservée : Starter et Business publiés, Enterprise toujours en brouillon', rows.find((x) => x[0] === 'starter')[3] === true && rows.find((x) => x[0] === 'business')[3] === true && rows.find((x) => x[0] === 'enterprise')[3] === false, rows);
+  r = await call('GET', '/admin/service-offers', { token: admin });
+  check('… la prestation au tarif de départ passe aussi en dollars', Number(r.body.find((o) => o.name === 'Mise en service standard').price) === 95, r.body.find((o) => o.name === 'Mise en service standard'));
+  await db.query(`UPDATE plans SET "isPublic" = true WHERE code = 'enterprise'`);
+  await db.query('UPDATE service_offers SET "isPublic" = true WHERE id = ANY($1)', [publicOffers]);
+  await db.query('INSERT INTO subscription_payments SELECT * FROM tmp_paiements_sauvegarde');
+  await db.query('DROP TABLE tmp_paiements_sauvegarde');
+  // Retour à l'état de départ pour la suite.
+  await db.query(`UPDATE platform_settings SET currency = 'USD'`);
+  await db.query(`UPDATE plans SET "priceMonthly" = 15, "priceAnnual" = 150 WHERE code = 'starter'`);
+  await db.query(`UPDATE plans SET "priceMonthly" = 29, "isPublic" = true WHERE code = 'business'`);
   await db.query(`DELETE FROM users WHERE email IN ('e@test.tn', 'f@test.tn')`);
 
   // ═════════════════════════ Paiement pendant l'essai gratuit ═════════════════════════
-  console.log('— Paiement pendant l’essai gratuit');
-  r = await call('POST', '/auth/register', { body: signup({ email: 'g@test.tn', companyName: 'Boutique G', sector: 'commerce' }) });
-  const G = { token: r.body.access_token, id: r.body.user.id, trialEndsAt: r.body.account.trialEndsAt };
-  check('compte en essai', r.status === 201 && r.body.account.status === 'TRIAL' && !!G.trialEndsAt, r.body.account);
+  console.log('— Paiement pendant l’essai gratuit (hors ligne)');
+  const G0 = await signUp({ email: 'g@test.tn', companyName: 'Boutique G', sector: 'commerce' });
+  const G = { token: G0.token, id: G0.id, trialEndsAt: G0.account.trialEndsAt };
+  check('compte en essai, adresse confirmée par le code', G0.r.status === 201 && G0.account.status === 'TRIAL' && G0.verify?.status === 200 && !!G.trialEndsAt, G0.account);
   r = await call('POST', '/billing/payments', { token: G.token, body: { planCode: 'starter', billingCycle: 'annual', method: 'flouci', reference: 'FLOUCI-778899' } });
-  check('paiement déclaré pendant l’essai, par Flouci', r.status === 201 && r.body.status === 'pending' && r.body.method === 'flouci' && r.body.amountHT === 490, r);
+  check('paiement hors ligne déclaré pendant l’essai, par Flouci', r.status === 201 && r.body.status === 'pending' && r.body.method === 'flouci' && r.body.amountHT === 150, r);
   const trialPayment = r.body;
   r = await call('GET', '/clients', { token: G.token });
   check('l’essai continue pendant que le paiement attend', r.status === 200, r);

@@ -1,5 +1,6 @@
 // components/account/AccountBar.tsx
-// Bandeau d'état du compte, posé au-dessus des pages de l'ERP : essai en cours, abonnement bientôt échu, adresse email à confirmer.
+// Bandeau d'état du compte, posé au-dessus des pages de l'ERP : essai en cours, abonnement bientôt échu, adresse email à
+// confirmer avec le code reçu par email.
 //
 // Le bandeau ne décide de rien : il affiche ce que répond GET /billing/subscription. Le temps restant part de la valeur
 // calculée par le serveur (remainingSeconds) et avance avec performance.now() — jamais avec l'horloge du poste, qui peut être fausse.
@@ -80,48 +81,17 @@ export function useServerCountdown(account: CountdownSource | null | undefined, 
   return running && endsAt !== null ? left ?? remaining : null;
 }
 
-// ───────────── Renvoi du lien de confirmation ─────────────
+// ───────────── Code de vérification de l'adresse email ─────────────
 
 const linkButton: CSSProperties = {
   background: "transparent", border: "none", padding: 0, font: "inherit", fontWeight: 700, cursor: "pointer",
   color: "var(--theme-primary-text, var(--theme-primary))", textDecoration: "underline", textUnderlineOffset: 3,
 };
 
-/**
- * « Renvoyer le lien » de confirmation de l'adresse email, avec le résultat annoncé aux lecteurs d'écran.
- * `onVerified` est appelé si le serveur répond que l'adresse est déjà confirmée.
- */
-export function ResendVerification({ onVerified, buttonStyle }: { onVerified?: () => void; buttonStyle?: CSSProperties }) {
+/** Lien vers l'écran où l'on saisit le code à 6 chiffres reçu par email (on peut y demander un nouveau code). */
+export function VerifyEmailLink({ style }: { style?: CSSProperties }) {
   const tx = useSaasTexts();
-  const [busy, setBusy] = useState(false);
-  // Le résultat est gardé sous forme de code, pour suivre un changement de langue.
-  const [result, setResult] = useState<{ kind: "sent" | "noMail" } | { kind: "error"; text: string } | null>(null);
-
-  const send = async () => {
-    setBusy(true);
-    setResult(null);
-    try {
-      const res = await api<{ success: boolean; emailSent?: boolean; alreadyVerified?: boolean }>("/auth/resend-verification", { method: "POST" });
-      if (res?.alreadyVerified) onVerified?.();
-      else setResult({ kind: res?.emailSent ? "sent" : "noMail" });
-    } catch (e) {
-      setResult({ kind: "error", text: apiErrorText(e, tx) });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const message = !result ? "" : result.kind === "sent" ? tx.bar.resent : result.kind === "noMail" ? tx.bar.resentNoMail : result.kind === "error" ? result.text : "";
-  return (
-    <>
-      <button type="button" onClick={send} disabled={busy} aria-busy={busy} style={{ ...linkButton, opacity: busy ? 0.6 : 1, cursor: busy ? "wait" : "pointer", ...buttonStyle }}>
-        {tx.bar.resend}
-      </button>
-      <span role="status" aria-live="polite" style={{ fontWeight: 600, color: result && result.kind !== "sent" ? "var(--theme-warning, #b45309)" : "var(--theme-success, #059669)" }}>
-        {message}
-      </span>
-    </>
-  );
+  return <Link href="/auth/verify-email" style={{ ...linkButton, ...style }}>{tx.bar.resend}</Link>;
 }
 
 // ───────────── Bandeau ─────────────
@@ -165,8 +135,9 @@ export default function AccountBar() {
     try {
       const data = await api<SubscriptionView>("/billing/subscription");
       if (!alive.current || !data?.account) return;
-      // Compte bloqué : rechargement complet vers la page Abonnement, pour ne rien garder de l'ERP en mémoire.
-      if (data.account.blocked) { window.location.replace("/subscription"); return; }
+      // Compte bloqué : rechargement complet vers la page Abonnement (ou vers la saisie du code de vérification),
+      // pour ne rien garder de l'ERP en mémoire.
+      if (data.account.blocked) { window.location.replace(data.account.reason === "EMAIL_NOT_VERIFIED" ? "/auth/verify-email" : "/subscription"); return; }
       setView(data);
     } catch {
       // Le bandeau est un complément : en cas d'échec il garde son dernier état connu (ou rien), la page affiche ses propres erreurs.
@@ -218,13 +189,13 @@ export default function AccountBar() {
     );
   }
 
-  // Le lien de confirmation part à l'adresse de la personne connectée : il n'est proposé qu'au propriétaire du compte,
-  // et seulement si le serveur envoie des emails (sinon le rappel resterait affiché sans que personne puisse y répondre).
+  // Le code part à l'adresse de la personne connectée : le rappel n'est affiché qu'au propriétaire du compte, et
+  // seulement si le serveur envoie des emails (sinon il resterait affiché sans que personne puisse y répondre).
   if (!account.emailVerified && view.canManage && view.emailEnabled !== false) {
     rows.push(
       <BarRow key="email" icon={<IconMail />} tone="neutral">
         <span>{tx.bar.verifyEmail}</span>
-        <ResendVerification onVerified={load} />
+        <VerifyEmailLink />
       </BarRow>,
     );
   }

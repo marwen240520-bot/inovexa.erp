@@ -6,7 +6,7 @@
 // dès que la réponse arrive, les prix de l'administrateur les remplacent.
 "use client";
 import { useEffect, useState } from "react";
-import { DEFAULT_TRIAL_HOURS, DEFAULT_VAT_RATE, PLANS, pick } from "@/lib/catalog";
+import { DEFAULT_CURRENCY, DEFAULT_TRIAL_HOURS, DEFAULT_VAT_RATE, PLANS, pick } from "@/lib/catalog";
 import { publicGet, type PlansResponse } from "@/lib/saas";
 
 export interface DisplayPlan {
@@ -40,7 +40,7 @@ export function catalogOffer(lang: string): PublicOffer {
       code: p.code, name: p.name, tagline: pick(p.tagline, lang), priceMonthly: p.priceMonthly, priceAnnual: p.priceAnnual, maxUsers: p.maxUsers,
       modules: p.modules, features: p.features.map((f) => pick(f, lang)), highlight: p.highlight,
     })),
-    currency: "TND", vatRate: DEFAULT_VAT_RATE, trialHours: DEFAULT_TRIAL_HOURS, live: false,
+    currency: DEFAULT_CURRENCY, vatRate: DEFAULT_VAT_RATE, trialHours: DEFAULT_TRIAL_HOURS, live: false,
   };
 }
 

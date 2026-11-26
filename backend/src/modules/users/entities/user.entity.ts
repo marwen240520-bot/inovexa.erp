@@ -118,6 +118,21 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   emailVerifyExpires: Date | null;
 
+  // Code de vérification à 6 chiffres envoyé par email : seule son empreinte (HMAC) est gardée, jamais le code.
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  emailCodeHash: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  emailCodeExpires: Date | null;
+
+  /** Essais faits sur le code en cours (le code est annulé après 5 erreurs). */
+  @Column({ type: 'int', default: 0 })
+  emailCodeAttempts: number;
+
+  /** Dernier envoi d'un code : un nouvel envoi n'est possible qu'après une minute. */
+  @Column({ type: 'timestamptz', nullable: true })
+  emailCodeSentAt: Date | null;
+
   /** Identifiant Google (« sub » du jeton d'identité) quand le compte est relié à Google. */
   @Index('UQ_users_google_sub', { unique: true, where: '"googleSub" IS NOT NULL' })
   @Column({ type: 'varchar', length: 64, nullable: true })

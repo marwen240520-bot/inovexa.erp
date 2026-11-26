@@ -27,7 +27,7 @@ function ForgotForm() {
     if (!isEmail(address)) { setProblem({ kind: "ui", key: "emailInvalid" }); return; }
     setLoading(true);
     setProblem(null);
-    const res = await publicPost("/auth/forgot-password", { email: address });
+    const res = await publicPost("/auth/forgot-password", { email: address }, { safe: true });
     if (res.ok) setDone(true);
     else setProblem(failed(res));
     setLoading(false);

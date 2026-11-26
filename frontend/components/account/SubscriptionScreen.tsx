@@ -1,19 +1,22 @@
 "use client";
 // components/account/SubscriptionScreen.tsx
-// Écran « Abonnement » : état du compte, choix de la formule, moyens de paiement, déclaration du paiement, historique,
-// reçus, message à l'administrateur, résiliation.
+// Écran « Abonnement » : état du compte, choix de la formule, paiement en ligne par carte, secteur et modules,
+// historique, reçus, résiliation. Tout se fait en ligne, par le client lui-même.
 //
 // Il sert deux pages :
-//   • /subscription       — hors de l'ERP, quand l'accès est fermé (essai terminé, abonnement échu, suspension) ;
-//   • /dashboard/billing  — dans l'ERP, pendant l'essai ou l'abonnement (payer en cours d'essai, renouveler, reçus).
+//   • /subscription       — hors de l'ERP, quand l'accès est fermé (essai terminé, abonnement échu, suspension), et au
+//                           retour de la page de paiement ;
+//   • /dashboard/billing  — dans l'ERP, pendant l'essai ou l'abonnement (payer en cours d'essai, renouveler, modules).
 //
-// Le navigateur ne décide de rien : état du compte, prix, TVA et moyens de paiement viennent du serveur, et c'est
-// l'administrateur qui valide chaque paiement. Seules les routes /billing/* sont appelées : elles restent ouvertes
-// à un compte bloqué.
+// Paiement par carte : le client clique « Payer », le serveur ouvre le paiement chez le prestataire (Konnect) et renvoie
+// l'adresse de sa page sécurisée. Au retour, le serveur relit l'état du paiement CHEZ LE PRESTATAIRE et ouvre l'accès
+// tout seul : personne ne valide rien à la main, et le navigateur ne décide de rien (prix, TVA et état viennent du serveur).
+// Si l'administrateur a activé les paiements hors ligne (virement, chèque…), ils sont proposés à part, en second choix.
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError, Modal } from "@/components/erp/kit";
-import { ResendVerification, useServerCountdown } from "@/components/account/AccountBar";
+import { VerifyEmailLink, useServerCountdown } from "@/components/account/AccountBar";
+import ModulesCard from "@/components/account/ModulesCard";
 import { ReceiptPrintRoot, ReceiptSheet, type ReceiptLabels } from "@/components/admin/config/ReceiptSheet";
 import LanguageMenu from "@/components/ui/LanguageMenu";
 import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -21,19 +24,28 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { invalidateApiCache } from "@/lib/apiCache";
 import { readPreferredPlan } from "@/lib/authFlow";
 import { SECTORS, pick } from "@/lib/catalog";
+import { useOnlineTexts } from "@/lib/onlineTexts";
 import { annualSavingPct, offerFromApi, twoMonthsFree, type DisplayPlan } from "@/lib/publicOffer";
-import { formatDateTime, formatMoney, formatPhone, formatPrice, type PlansResponse, type Receipt, type SubscriptionPayment, type SubscriptionView } from "@/lib/saas";
+import {
+  formatDateTime, formatMoney, formatPhone, formatPrice, formatTime, withVat,
+  type CheckoutResult, type CheckoutSession, type PlansResponse, type Receipt, type SubscriptionPayment, type SubscriptionView,
+} from "@/lib/saas";
 import { fill, formatRemaining, useSaasTexts } from "@/lib/saasTexts";
 import { clearSession, getStoredUser, getToken, homeFor, isPlatformAdmin } from "@/lib/session";
 
-/** Moyens pour lesquels une référence permet à l'administrateur de retrouver le paiement. */
+/** Moyens hors ligne pour lesquels une référence permet de retrouver le paiement. */
 const NEEDS_REFERENCE = new Set(["bank_transfer", "d17", "flouci", "edinar", "postal", "cheque", "card"]);
-/** Tant que l'accès est fermé ou qu'un paiement attend, l'état est relu régulièrement : la validation apparaît seule. */
+/** Tant que l'accès est fermé ou qu'un paiement est en cours, l'état est relu régulièrement : l'ouverture apparaît seule. */
 const POLL_MS = 45_000;
+/** Au retour de la page de paiement, la confirmation du prestataire peut arriver quelques secondes après le client. */
+const CONFIRM_EVERY_MS = 4_000;
+const CONFIRM_TRIES = 12;
 
 type Cycle = "monthly" | "annual";
-type Busy = "declare" | "cancelDeclaration" | "contact" | "cancel" | "refresh" | `receipt-${number}` | null;
+type Busy = "pay" | "declare" | "cancelDeclaration" | "cancel" | "refresh" | `receipt-${number}` | null;
 type Flash = { tone: "ok" | "err"; text: string } | null;
+/** Où en est le paiement dont le client revient : en cours de vérification, confirmé, pas (encore) confirmé. */
+type Returned = { state: "checking" } | { state: "paid"; result: CheckoutResult } | { state: "pending" } | { state: "failed" } | null;
 
 const normalize = (s: string) => s.replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
 
@@ -61,6 +73,8 @@ const IconAlert = () => <svg {...ico} width={20} height={20}><path d="M12 3.5l9.
 const IconLock = () => <svg {...ico} width={20} height={20}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>;
 const IconRefresh = () => <svg {...ico} width={15} height={15}><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4v7h-7" /></svg>;
 const IconExternal = () => <svg {...ico} width={15} height={15}><path d="M14 4h6v6M20 4l-9 9" /><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></svg>;
+const IconCard = () => <svg {...ico} width={22} height={22}><rect x="2.5" y="5" width="19" height="14" rx="2.4" /><path d="M2.5 10h19M6.5 15h4" /></svg>;
+const IconShield = () => <svg {...ico} width={16} height={16}><path d="M12 3l8 3v6c0 4.6-3.2 8-8 9-4.800-1-8-4.400-8-9V6z" /><path d="M9 12l2.200 2.200L15.500 10" /></svg>;
 
 const STATUS_TONE: Record<string, string> = { TRIAL: "violet", ACTIVE: "green", EXPIRED: "amber", SUSPENDED: "red", CANCELLED: "gray" };
 const PAY_TONE: Record<string, string> = { pending: "amber", validated: "green", rejected: "red", cancelled: "gray" };
@@ -69,6 +83,7 @@ const PAY_TONE: Record<string, string> = { pending: "amber", validated: "green",
 
 export default function SubscriptionScreen({ standalone = false }: { standalone?: boolean }) {
   const tx = useSaasTexts();
+  const o = useOnlineTexts();
   const b = tx.billing;
   const { language } = useLanguage();
 
@@ -79,6 +94,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<Busy>(null);
   const [flash, setFlash] = useState<Flash>(null);
+  const [returned, setReturned] = useState<Returned>(null);
 
   const [cycle, setCycle] = useState<Cycle>("monthly");
   const [planCode, setPlanCode] = useState<string | null>(null);
@@ -87,8 +103,6 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   const [note, setNote] = useState("");
   const [referenceError, setReferenceError] = useState(false);
 
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
   const [cancelPassword, setCancelPassword] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -97,7 +111,6 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   const wasBlocked = useRef<boolean | null>(null);
   const flashTimer = useRef<number | undefined>(undefined);
   const payRef = useRef<HTMLElement>(null);
-  const contactRef = useRef<HTMLElement>(null);
 
   const notify = useCallback((text: string, tone: "ok" | "err" = "ok") => {
     setFlash({ tone, text });
@@ -107,10 +120,14 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
 
   /** Message d'une erreur d'API dans la langue de l'écran (les messages du serveur sont en français). */
   const errorText = useCallback((error: unknown): string => {
-    if (error instanceof ApiError && (error.status === 0 || error.status >= 500)) return tx.auth.serverError;
     const raw = error instanceof Error ? error.message : "";
-    return b.serverMessages[normalize(raw)] || raw || tx.auth.serverError;
-  }, [b, tx]);
+    const key = normalize(raw);
+    // Message connu du serveur (« paiement indisponible », « prestataire injoignable »…) : affiché dans la langue de l'écran.
+    const known = b.serverMessages[key] || o.messages[key];
+    if (known) return known;
+    if (error instanceof ApiError && (error.status === 0 || error.status >= 500)) return tx.auth.serverError;
+    return raw || tx.auth.serverError;
+  }, [b, o, tx]);
 
   const load = useCallback(async (quiet = false) => {
     if (!getToken()) { window.location.replace("/auth/login"); return; }
@@ -118,7 +135,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     const user = getStoredUser();
     if (user && (isPlatformAdmin(user.role) || user.role === "transporteur")) { window.location.replace(homeFor(user)); return; }
     if (!quiet) setLoading(true);
-    // Les lectures gardées 30 s en mémoire dateraient d'avant un paiement validé : on repart du serveur.
+    // Les lectures gardées 30 s en mémoire dateraient d'avant un paiement confirmé : on repart du serveur.
     invalidateApiCache(false);
     try {
       const [subscription, plans, history] = await Promise.all([
@@ -149,13 +166,48 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ───────────── Retour de la page de paiement (« ?checkout=<numéro> ») ─────────────
+  // Le serveur relit l'état du paiement chez le prestataire. S'il est encaissé, l'accès est déjà ouvert quand la
+  // réponse arrive ; sinon on réessaie quelques fois (la confirmation peut suivre le client de quelques secondes).
+  useEffect(() => {
+    const id = Number(new URLSearchParams(window.location.search).get("checkout"));
+    if (!Number.isInteger(id) || id <= 0 || !getToken()) return;
+    let stopped = false;
+    let timer: number | undefined;
+    setReturned({ state: "checking" });
+    // L'adresse est nettoyée : recharger la page ne relance pas la vérification.
+    try { window.history.replaceState(null, "", window.location.pathname); } catch { /* ignoré */ }
+    const attempt = async (tries: number) => {
+      let result: CheckoutResult | null = null;
+      try {
+        result = await api<CheckoutResult>(`/billing/checkout/${id}/verify`, { method: "POST" });
+      } catch {
+        result = null;
+      }
+      if (stopped) return;
+      if (result?.status === "paid") {
+        setReturned({ state: "paid", result });
+        void load(true);
+        return;
+      }
+      if (result && (result.status === "expired" || result.status === "unknown")) { setReturned({ state: "failed" }); void load(true); return; }
+      if (tries + 1 >= CONFIRM_TRIES) { setReturned({ state: "pending" }); void load(true); return; }
+      timer = window.setTimeout(() => void attempt(tries + 1), CONFIRM_EVERY_MS);
+    };
+    void attempt(0);
+    return () => { stopped = true; window.clearTimeout(timer); };
+    // Une seule fois, à l'arrivée sur la page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const account = view?.account ?? null;
   const pending = view?.pendingPayment ?? null;
+  const checkout: CheckoutSession | null = view?.checkout ?? null;
   const blocked = !!account?.blocked;
   const canManage = !!view?.canManage;
 
-  // Relecture automatique tant que l'accès est fermé ou qu'un paiement attend : la validation s'affiche d'elle-même.
-  const waiting = blocked || !!pending;
+  // Relecture automatique tant que l'accès est fermé ou qu'un paiement est en cours : l'ouverture s'affiche d'elle-même.
+  const waiting = blocked || !!pending || !!checkout;
   useEffect(() => {
     if (!waiting) return;
     const tick = () => { if (document.visibilityState === "visible") void load(true); };
@@ -167,7 +219,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     };
   }, [waiting, load]);
 
-  // L'accès vient d'être rouvert (paiement validé, réactivation) : on le dit.
+  // L'accès vient d'être rouvert (paiement confirmé, réactivation) : on le dit.
   useEffect(() => {
     if (!account) return;
     if (wasBlocked.current === true && !account.blocked) notify(b.activeNow);
@@ -175,9 +227,11 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   }, [account, b.activeNow, notify]);
 
   // Dans l'ERP, un compte qui vient d'être fermé n'a plus rien à y faire : on l'emmène sur la page hors ERP.
+  // Une adresse email pas encore vérifiée mène à l'écran de saisie du code.
   useEffect(() => {
-    if (!standalone && blocked) window.location.replace("/subscription");
-  }, [standalone, blocked]);
+    if (account?.blocked && account.reason === "EMAIL_NOT_VERIFIED") window.location.replace("/auth/verify-email");
+    else if (!standalone && blocked) window.location.replace("/subscription");
+  }, [standalone, blocked, account]);
 
   const left = useServerCountdown(account, useCallback(() => { void load(true); }, [load]));
 
@@ -185,7 +239,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
 
   const offer = useMemo(() => (plansRes && plansRes.plans?.length ? offerFromApi(plansRes, language) : null), [plansRes, language]);
   const plans: DisplayPlan[] = useMemo(() => offer?.plans ?? [], [offer]);
-  const currency = view?.payment.currency || offer?.currency || "TND";
+  const currency = view?.payment.currency || offer?.currency || "USD";
   const vatRate = Number(view?.payment.vatRate ?? offer?.vatRate ?? 0);
   const priceOf = useCallback((plan: DisplayPlan, c: Cycle) => (c === "annual" ? plan.priceAnnual : plan.priceMonthly), []);
 
@@ -198,14 +252,15 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     if (account.billingCycle === "annual") setCycle("annual");
   }, [plans, account, planCode]);
 
-  const methods = useMemo(() => view?.payment.methods?.length ? view.payment.methods : ["bank_transfer"], [view]);
+  const manual = view?.payment.manual === true;
+  const methods = useMemo(() => (manual && view?.payment.methods?.length ? view.payment.methods : []), [manual, view]);
   useEffect(() => {
-    if (!methods.includes(method)) setMethod(methods[0]);
+    if (methods.length && !methods.includes(method)) setMethod(methods[0]);
   }, [methods, method]);
 
   const plan = plans.find((p) => p.code === planCode) ?? null;
   const amountHT = plan ? priceOf(plan, cycle) : null;
-  const amountTTC = amountHT === null ? null : Math.round(amountHT * (1 + vatRate / 100) * 1000) / 1000;
+  const amountTTC = amountHT === null ? null : withVat(amountHT, vatRate, currency);
   const vatAmount = amountHT === null || amountTTC === null ? null : Math.round((amountTTC - amountHT) * 1000) / 1000;
   const annualPerk = twoMonthsFree(plans);
   const money = (n: number | null | undefined) => formatMoney(n, language, currency);
@@ -228,16 +283,25 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     window.location.assign("/auth/login");
   };
 
-  const askQuote = (target: DisplayPlan) => {
-    setSubject(fill(b.quoteSubject, { plan: target.name }));
-    contactRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.setTimeout(() => document.getElementById("sub-message")?.focus(), 350);
-  };
-
   const choosePlan = (target: DisplayPlan) => {
-    if (priceOf(target, cycle) === null) { askQuote(target); return; }
+    if (priceOf(target, cycle) === null) return;
     setPlanCode(target.code);
     payRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  /** « Payer par carte » : le serveur ouvre le paiement chez le prestataire, le navigateur part sur sa page sécurisée. */
+  const payByCard = async () => {
+    if (busy) return;
+    if (!plan || amountHT === null) { notify(b.choosePlanFirst, "err"); return; }
+    setBusy("pay");
+    try {
+      const session = await api<CheckoutSession>("/billing/checkout", { method: "POST", body: { planCode: plan.code, billingCycle: cycle } });
+      // Page externe (prestataire de paiement) : navigation complète voulue. Le bouton reste en attente jusqu'au départ.
+      window.location.assign(session.payUrl);
+    } catch (err) {
+      notify(errorText(err), "err");
+      if (alive.current) setBusy(null);
+    }
   };
 
   const declare = async (e: React.FormEvent) => {
@@ -278,28 +342,11 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     }
   };
 
-  const openReceipt = async (payment: SubscriptionPayment) => {
+  const openReceipt = async (paymentId: number) => {
     if (busy) return;
-    setBusy(`receipt-${payment.id}`);
+    setBusy(`receipt-${paymentId}`);
     try {
-      setReceipt(await api<Receipt>(`/billing/payments/${payment.id}/receipt`));
-    } catch (err) {
-      notify(errorText(err), "err");
-    } finally {
-      if (alive.current) setBusy(null);
-    }
-  };
-
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (busy) return;
-    if (message.trim().length < 5) { notify(b.messageTooShort, "err"); return; }
-    setBusy("contact");
-    try {
-      await api("/billing/contact", { method: "POST", body: { subject: subject.trim(), message: message.trim() } });
-      setSubject("");
-      setMessage("");
-      notify(b.contactSent);
+      setReceipt(await api<Receipt>(`/billing/payments/${paymentId}/receipt`));
     } catch (err) {
       notify(errorText(err), "err");
     } finally {
@@ -368,7 +415,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   );
 
   if (loading && !view) {
-    return shell(<p className="sub-loading" role="status"><span className="sub-spinner" aria-hidden="true" />{b.title}…</p>);
+    return shell(<p className="sub-loading" role="status"><span className="sub-spinner" aria-hidden="true" />{returned?.state === "checking" ? o.pay.verifying : `${b.title}…`}</p>);
   }
   if (!view || !account) {
     return shell(
@@ -390,11 +437,17 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   const endDate = account.endsAt ? formatDateTime(account.endsAt, language) : null;
   const lastPayment = payments[0] ?? null;
   const rejected = !pending && lastPayment?.status === "rejected" ? lastPayment : null;
-  const showVerify = !account.emailVerified && canManage && (view.emailEnabled !== false || account.reason === "EMAIL_NOT_VERIFIED");
+  const showVerify = !account.emailVerified && canManage && view.emailEnabled !== false;
   const support = view.support;
   const whatsappDigits = (support.whatsapp || "").replace(/\D/g, "");
+  const hasSupport = !!(support.email || support.phone || whatsappDigits);
   const canCancel = canManage && (account.status === "ACTIVE" || account.status === "TRIAL");
   const cardLink = method === "card" ? view.payment.link || null : null;
+  const online = view.payment.online ?? { enabled: view.payment.onlinePayment === true, provider: "konnect", test: false, methods: ["card"] };
+  const suspended = account.status === "SUSPENDED";
+  const paid = returned?.state === "paid" ? returned.result.payment : null;
+  // La page de paiement ouverte n'est proposée que si elle correspond encore à ce que le client a sous les yeux.
+  const resumable = checkout && returned?.state !== "paid" && returned?.state !== "checking" ? checkout : null;
 
   return shell(
     <>
@@ -420,15 +473,52 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
         </div>
       </div>
 
+      {/* ───── Retour de la page de paiement ───── */}
+      {returned?.state === "checking" ? (
+        <div className="sub-alert sub-alert-blue" role="status" aria-live="polite">
+          <span className="sub-spinner" aria-hidden="true" />
+          <div><strong>{o.pay.verifying}</strong></div>
+        </div>
+      ) : returned?.state === "paid" ? (
+        <div className="sub-alert sub-alert-green sub-alert-big" role="status" aria-live="polite">
+          <IconCheck />
+          <div>
+            <strong>{o.pay.paidTitle}</strong>
+            {paid ? <p>{fill(o.pay.paidText, { plan: paid.planName, date: formatDateTime(paid.periodEnd, language, false) })}</p> : null}
+            <div className="sub-alert-actions">
+              {paid?.receiptNumber ? (
+                <button type="button" className="sub-btn sub-btn-ghost" onClick={() => void openReceipt(paid.id)} disabled={busy === `receipt-${paid.id}`}>
+                  {fill(o.pay.paidReceipt, { receipt: paid.receiptNumber })}
+                </button>
+              ) : null}
+              {standalone ? <a href="/dashboard" className="sub-btn sub-btn-primary">{b.openErp}</a> : null}
+            </div>
+          </div>
+        </div>
+      ) : returned?.state === "pending" || returned?.state === "failed" ? (
+        <div className={"sub-alert " + (returned.state === "failed" ? "sub-alert-red" : "sub-alert-amber")} role="alert">
+          <IconAlert />
+          <div>
+            <strong>{returned.state === "failed" ? o.pay.failedTitle : o.pay.pendingTitle}</strong>
+            <p>{returned.state === "failed" ? o.pay.failedText : o.pay.pendingText}</p>
+            <div className="sub-alert-actions">
+              {resumable ? <a href={resumable.payUrl} className="sub-btn sub-btn-primary">{o.pay.resume}</a> : (
+                <button type="button" className="sub-btn sub-btn-primary" onClick={() => payRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>{o.pay.retry}</button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {blocked ? (
-        <div className={"sub-alert " + (account.reason === "SUSPENDED" || account.reason === "CANCELLED" ? "sub-alert-red" : "sub-alert-amber")} role="alert">
+        <div className={"sub-alert " + (account.reason === "SUSPENDED" ? "sub-alert-red" : "sub-alert-amber")} role="alert">
           <IconLock />
           <div>
             {/* Le motif dit déjà que les données sont conservées ; la phrase générale ne sert que s'il manque. */}
             <strong>{account.reason ? tx.reason[account.reason] : b.dataSafe}</strong>
           </div>
         </div>
-      ) : standalone ? (
+      ) : standalone && returned?.state !== "paid" ? (
         <div className="sub-alert sub-alert-green" role="status">
           <IconCheck />
           <div><strong>{b.activeNow}</strong></div>
@@ -463,7 +553,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
       {showVerify ? (
         <div className="sub-note">
           <span>{tx.bar.verifyEmail}</span>
-          <ResendVerification onVerified={() => void load(true)} />
+          <VerifyEmailLink />
         </div>
       ) : null}
 
@@ -472,7 +562,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
           <IconClock />
           <div>
             <strong>{b.pendingTitle}</strong>
-            <p>{fill(b.pendingText, { date: formatDateTime(pending.createdAt, language), amount: `${money(pending.amountTTC)} ${b.inclTax}` })}</p>
+            <p>{fill(b.pendingText, { date: formatDateTime(pending.createdAt, language), amount: `${formatMoney(pending.amountTTC, language, pending.currency)} ${b.inclTax}` })}</p>
             <p className="sub-muted">
               {pending.planName} — {cycleName(pending.billingCycle)} · {methodName(pending.method)}
               {pending.reference ? <> · <bdi>{pending.reference}</bdi></> : null}
@@ -492,7 +582,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
           <IconAlert />
           <div>
             <strong>{b.rejected}</strong>
-            <p>{formatDateTime(rejected.createdAt, language)} — {money(rejected.amountTTC)} {b.inclTax} · {methodName(rejected.method)}</p>
+            <p>{formatDateTime(rejected.createdAt, language)} — {formatMoney(rejected.amountTTC, language, rejected.currency)} {b.inclTax} · {methodName(rejected.method)}</p>
             {rejected.rejectReason ? <p>{fill(b.rejectedReason, { reason: rejected.rejectReason })}</p> : null}
           </div>
         </section>
@@ -541,17 +631,17 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                     )}
                   </p>
                   <p className="sub-plan-sub">
-                    {amount === null ? " " : cycle === "annual"
-                      ? <>{fill(b.perMonthEquivalent, { price: price(Math.round((amount / 12) * 1000) / 1000) })}{saving ? <span className="sub-save">{fill(b.savePct, { pct: saving })}</span> : null}</>
-                      : <>{money(Math.round(amount * (1 + vatRate / 100) * 1000) / 1000)} {b.inclTax}</>}
+                    {amount === null ? o.pay.quoteOnly : cycle === "annual"
+                      ? <>{fill(b.perMonthEquivalent, { price: price(Math.round((amount / 12) * 100) / 100) })}{saving ? <span className="sub-save">{fill(b.savePct, { pct: saving })}</span> : null}</>
+                      : <>{money(withVat(amount, vatRate, currency))} {b.inclTax}</>}
                   </p>
                   <ul className="sub-plan-list">
                     <li><IconCheck />{usersLine}</li>
-                    {p.features.filter((feature) => normalize(feature) !== normalize(usersLine) && !isUsersLine(feature)).slice(0, 6).map((feature) => <li key={feature}><IconCheck />{feature}</li>)}
+                    {p.features.filter((feature) => normalize(feature) !== normalize(usersLine) && !isUsersLine(feature)).slice(0, 7).map((feature) => <li key={feature}><IconCheck />{feature}</li>)}
                   </ul>
-                  {canManage ? (
+                  {canManage && amount !== null ? (
                     <button type="button" className={"sub-btn " + (selected ? "sub-btn-selected" : p.highlight ? "sub-btn-primary" : "sub-btn-outline")} onClick={() => choosePlan(p)} aria-pressed={selected}>
-                      {amount === null ? b.askQuote : selected ? <><IconCheck />{b.selected}</> : b.select}
+                      {selected ? <><IconCheck />{b.selected}</> : b.select}
                     </button>
                   ) : null}
                 </article>
@@ -561,69 +651,51 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
         )}
       </section>
 
-      {/* ───── 2. Paiement ───── */}
+      {/* ───── 2. Paiement par carte ───── */}
       {plans.length ? (
         <section className="sub-card" ref={payRef} id="paiement">
           <div className="sub-card-head">
-            <h2>{b.stepPay}</h2>
+            <h2>{o.pay.step}</h2>
+            {online.enabled && online.test ? <span className="sub-pill sub-tone-amber">{o.pay.testMode}</span> : null}
           </div>
           {!canManage ? (
             <p className="sub-empty">{b.ownerOnly}</p>
-          ) : pending ? (
-            <p className="sub-empty">{b.pendingLock}</p>
           ) : (
-            <form className="sub-pay" onSubmit={declare} noValidate>
+            <div className="sub-pay">
               <div className="sub-pay-main">
-                <p className="sub-muted">{b.payIntro}</p>
-                {account.status === "TRIAL" ? <p className="sub-tip">{b.trialKeeps}</p> : null}
-
-                <fieldset className="sub-methods">
-                  <legend>{b.method}</legend>
-                  <div className="sub-method-grid">
-                    {methods.map((code) => (
-                      <label key={code} className={"sub-method" + (method === code ? " is-on" : "")}>
-                        <input type="radio" name="sub-method" value={code} checked={method === code} onChange={() => { setMethod(code); setReferenceError(false); }} />
-                        <span className="sub-method-ico">{METHOD_ICONS[code] || METHOD_ICONS.other}</span>
-                        <span>{methodName(code)}</span>
-                      </label>
-                    ))}
+                <div className="sub-cardpay">
+                  <span className="sub-cardpay-ico"><IconCard /></span>
+                  <div>
+                    <h3>{o.pay.cardTitle}</h3>
+                    <p className="sub-muted">{o.pay.cardIntro}</p>
+                    <p className="sub-cardpay-brands">{o.pay.cards}</p>
                   </div>
-                </fieldset>
+                </div>
 
-                <p className="sub-method-hint">{b.methodHint[method] || b.methodHint.other}</p>
-
-                {cardLink ? (
-                  <div className="sub-online">
-                    <a href={cardLink} target="_blank" rel="noopener noreferrer" className="sub-btn sub-btn-primary"><IconExternal />{b.payOnline}</a>
-                    <p className="sub-muted">{b.payOnlineHint}</p>
+                {suspended ? <p className="sub-tip sub-tip-red">{o.pay.suspended}</p> : !online.enabled ? (
+                  <div className="sub-alert sub-alert-amber" style={{ marginBottom: 0 }}>
+                    <IconClock />
+                    <div><strong>{o.pay.unavailableTitle}</strong><p>{o.pay.unavailableText}</p></div>
                   </div>
                 ) : null}
 
-                <div className="sub-instructions">
-                  <h3>{b.instructions}</h3>
-                  {view.payment.instructions ? <p className="sub-pre" dir="auto">{view.payment.instructions}</p> : <p className="sub-muted">{b.noInstructions}</p>}
-                </div>
+                {resumable && online.enabled && !suspended ? (
+                  <div className="sub-alert sub-alert-blue" style={{ marginBottom: 0 }}>
+                    <IconClock />
+                    <div>
+                      <strong>{o.pay.resumeTitle}</strong>
+                      <p>{fill(o.pay.resumeText, { amount: formatMoney(resumable.amountTTC, language, resumable.currency), time: formatTime(resumable.expiresAt, language) })}</p>
+                      <div className="sub-alert-actions"><a href={resumable.payUrl} className="sub-btn sub-btn-outline">{o.pay.resume}</a></div>
+                    </div>
+                  </div>
+                ) : null}
 
-                <div className="sub-fields">
-                  <div className="sub-field">
-                    <label htmlFor="sub-reference">{NEEDS_REFERENCE.has(method) ? b.reference : b.referenceOptional}</label>
-                    <input
-                      id="sub-reference"
-                      value={reference}
-                      onChange={(e) => { setReference(e.target.value); setReferenceError(false); }}
-                      maxLength={120}
-                      dir="ltr"
-                      autoComplete="off"
-                      aria-invalid={referenceError || undefined}
-                      aria-describedby="sub-reference-hint"
-                    />
-                    <p id="sub-reference-hint" className={referenceError ? "sub-field-error" : "sub-field-hint"}>{referenceError ? b.referenceRequired : b.referenceHint}</p>
-                  </div>
-                  <div className="sub-field">
-                    <label htmlFor="sub-note">{b.note}</label>
-                    <input id="sub-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} autoComplete="off" />
-                  </div>
-                </div>
+                {account.status === "TRIAL" ? <p className="sub-tip">{b.trialKeeps}</p> : null}
+                <ul className="sub-assurances">
+                  <li><IconShield />{o.pay.secure}</li>
+                  <li><IconShield />{o.pay.noAutoRenew}</li>
+                  <li><IconShield />{fill(o.pay.currencyNote, { currency })}</li>
+                </ul>
               </div>
 
               <aside className="sub-summary" aria-label={b.summary}>
@@ -633,7 +705,6 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                     <dl>
                       <div><dt>{b.summaryPlan}</dt><dd>{plan.name} — {cycleName(cycle)}</dd></div>
                       <div><dt>{b.summaryPeriod}</dt><dd>{cycle === "annual" ? b.twelveMonths : b.oneMonth}</dd></div>
-                      <div><dt>{b.method}</dt><dd>{methodName(method)}</dd></div>
                       <div><dt>{b.totalHT}</dt><dd>{money(amountHT)}</dd></div>
                       <div><dt>{fill(b.vat, { rate: vatRate.toLocaleString(language === "fr" ? "fr-FR" : "en-GB", { maximumFractionDigits: 2 }) })}</dt><dd>{money(vatAmount)}</dd></div>
                     </dl>
@@ -642,15 +713,72 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                 ) : (
                   <p className="sub-muted">{b.choosePlanFirst}</p>
                 )}
-                <button type="submit" className="sub-btn sub-btn-primary sub-btn-wide" disabled={!plan || amountHT === null || busy === "declare"} aria-busy={busy === "declare"}>
-                  {b.declare}
+                <button type="button" className="sub-btn sub-btn-primary sub-btn-wide" onClick={() => void payByCard()}
+                  disabled={!plan || amountHT === null || !online.enabled || suspended || busy === "pay"} aria-busy={busy === "pay"}>
+                  {busy === "pay" ? o.pay.redirecting : plan && amountTTC !== null ? fill(account.status === "ACTIVE" && account.planCode === plan.code ? o.pay.renewNow : o.pay.payNow, { amount: money(amountTTC) }) : fill(o.pay.payNow, { amount: "" }).replace(/\s{2,}/g, " ")}
                 </button>
-                <p className="sub-muted sub-small">{b.startsAfter}</p>
+                <p className="sub-muted sub-small">{o.pay.cards}</p>
               </aside>
-            </form>
+            </div>
           )}
+
+          {/* ───── Autres moyens (seulement si l'administrateur les a activés) ───── */}
+          {canManage && manual && methods.length ? (
+            <details className="sub-other">
+              <summary>{o.pay.otherMeans}</summary>
+              <p className="sub-muted" style={{ margin: "10px 0 14px" }}>{o.pay.otherMeansHint}</p>
+              {pending ? <p className="sub-empty">{b.pendingLock}</p> : (
+                <form className="sub-manual" onSubmit={declare} noValidate>
+                  <fieldset className="sub-methods">
+                    <legend>{b.method}</legend>
+                    <div className="sub-method-grid">
+                      {methods.map((code) => (
+                        <label key={code} className={"sub-method" + (method === code ? " is-on" : "")}>
+                          <input type="radio" name="sub-method" value={code} checked={method === code} onChange={() => { setMethod(code); setReferenceError(false); }} />
+                          <span className="sub-method-ico">{METHOD_ICONS[code] || METHOD_ICONS.other}</span>
+                          <span>{methodName(code)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <p className="sub-method-hint">{b.methodHint[method] || b.methodHint.other}</p>
+                  {cardLink ? (
+                    <div className="sub-online">
+                      <a href={cardLink} target="_blank" rel="noopener noreferrer" className="sub-btn sub-btn-outline"><IconExternal />{b.payOnline}</a>
+                      <p className="sub-muted">{b.payOnlineHint}</p>
+                    </div>
+                  ) : null}
+                  <div className="sub-instructions">
+                    <h3>{b.instructions}</h3>
+                    {view.payment.instructions ? <p className="sub-pre" dir="auto">{view.payment.instructions}</p> : <p className="sub-muted">{b.noInstructions}</p>}
+                  </div>
+                  <div className="sub-fields">
+                    <div className="sub-field">
+                      <label htmlFor="sub-reference">{NEEDS_REFERENCE.has(method) ? b.reference : b.referenceOptional}</label>
+                      <input id="sub-reference" value={reference} onChange={(e) => { setReference(e.target.value); setReferenceError(false); }} maxLength={120} dir="ltr" autoComplete="off"
+                        aria-invalid={referenceError || undefined} aria-describedby="sub-reference-hint" />
+                      <p id="sub-reference-hint" className={referenceError ? "sub-field-error" : "sub-field-hint"}>{referenceError ? b.referenceRequired : b.referenceHint}</p>
+                    </div>
+                    <div className="sub-field">
+                      <label htmlFor="sub-note">{b.note}</label>
+                      <input id="sub-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} autoComplete="off" />
+                    </div>
+                  </div>
+                  <div className="sub-alert-actions" style={{ marginTop: 0 }}>
+                    <button type="submit" className="sub-btn sub-btn-outline" disabled={!plan || amountHT === null || busy === "declare"} aria-busy={busy === "declare"}>
+                      {b.declare}{plan && amountTTC !== null ? ` — ${money(amountTTC)}` : ""}
+                    </button>
+                  </div>
+                  <p className="sub-muted sub-small">{b.startsAfter}</p>
+                </form>
+              )}
+            </details>
+          ) : null}
         </section>
       ) : null}
+
+      {/* ───── Secteur et modules : choisis par le client (dans l'ERP seulement) ───── */}
+      {!standalone && !blocked ? <ModulesCard canManage={canManage} notify={notify} errorText={errorText} /> : null}
 
       {/* ───── Historique ───── */}
       <section className="sub-card">
@@ -671,17 +799,17 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
               <tbody>
                 {payments.map((p) => (
                   <tr key={p.id}>
-                    <td>{formatDateTime(p.createdAt, language)}</td>
+                    <td>{formatDateTime(p.validatedAt || p.createdAt, language)}</td>
                     <td>{p.planName} — {cycleName(p.billingCycle)}</td>
                     <td className="sub-num">{formatMoney(p.amountTTC, language, p.currency)}</td>
                     <td>{methodName(p.method)}{p.reference ? <span className="sub-ref"><bdi>{p.reference}</bdi></span> : null}</td>
                     <td>
-                      <span className={"sub-pill sub-tone-" + (PAY_TONE[p.status] || "gray")}>{b.payStatus[p.status] || p.status}</span>
+                      <span className={"sub-pill sub-tone-" + (PAY_TONE[p.status] || "gray")}>{p.status === "validated" && p.provider !== "manual" ? o.pay.paid : b.payStatus[p.status as keyof typeof b.payStatus] || p.status}</span>
                       {p.status === "rejected" && p.rejectReason ? <span className="sub-ref">{p.rejectReason}</span> : null}
                     </td>
                     <td>
                       {p.status === "validated" ? (
-                        <button type="button" className="sub-link" onClick={() => void openReceipt(p)} disabled={busy === `receipt-${p.id}`}>
+                        <button type="button" className="sub-link" onClick={() => void openReceipt(p.id)} disabled={busy === `receipt-${p.id}`}>
                           {p.receiptNumber || b.viewReceipt}
                         </button>
                       ) : "—"}
@@ -694,33 +822,15 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
         )}
       </section>
 
-      {/* ───── Contact ───── */}
-      <section className="sub-card" ref={contactRef}>
-        <div className="sub-card-head"><h2>{b.contactTitle}</h2></div>
-        <div className="sub-contact">
-          <form onSubmit={sendMessage} noValidate>
-            <div className="sub-field">
-              <label htmlFor="sub-subject">{b.contactSubject}</label>
-              <input id="sub-subject" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={160} />
-            </div>
-            <div className="sub-field">
-              <label htmlFor="sub-message">{b.contactMessage}</label>
-              <textarea id="sub-message" value={message} onChange={(e) => setMessage(e.target.value)} rows={4} maxLength={4000} required />
-            </div>
-            <button type="submit" className="sub-btn sub-btn-outline" disabled={busy === "contact"} aria-busy={busy === "contact"}>{b.contactSend}</button>
-          </form>
-          {support.email || support.phone || support.whatsapp ? (
-            <div className="sub-support">
-              <p>{b.contactAlso}</p>
-              <ul>
-                {support.email ? <li><span>{b.emailLabel}</span><a href={`mailto:${support.email}`}><bdi>{support.email}</bdi></a></li> : null}
-                {support.phone ? <li><span>{b.phoneLabel}</span><a href={`tel:${support.phone.replace(/\s/g, "")}`}><bdi dir="ltr">{formatPhone(support.phone)}</bdi></a></li> : null}
-                {whatsappDigits ? <li><span>{b.whatsapp}</span><a href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer"><bdi dir="ltr">{formatPhone(support.whatsapp)}</bdi></a></li> : null}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      </section>
+      {/* ───── Aide ───── */}
+      {hasSupport ? (
+        <section className="sub-help" aria-label={o.pay.helpTitle}>
+          <strong>{o.pay.helpTitle}</strong>
+          {support.email ? <a href={`mailto:${support.email}`}><bdi>{support.email}</bdi></a> : null}
+          {support.phone ? <a href={`tel:${support.phone.replace(/\s/g, "")}`}><bdi dir="ltr">{formatPhone(support.phone)}</bdi></a> : null}
+          {whatsappDigits ? <a href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer">{b.whatsapp} <bdi dir="ltr">{formatPhone(support.whatsapp)}</bdi></a> : null}
+        </section>
+      ) : null}
 
       {/* ───── Résiliation ───── */}
       {canCancel ? (
@@ -906,15 +1016,48 @@ const SUB_CSS = `
 .sub-num { text-align: end !important; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sub-ref { display: block; margin-top: 2px; font-size: 12px; color: var(--theme-text-secondary); overflow-wrap: anywhere; }
 
-.sub-contact { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(16px, 3vw, 32px); align-items: start; }
-.sub-contact form { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-.sub-contact form .sub-field { width: 100%; }
-.sub-support p { margin: 0 0 10px; font-size: 13.5px; color: var(--theme-text-secondary); }
-.sub-support ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.sub-support li { display: flex; flex-direction: column; gap: 1px; font-size: 14px; }
-.sub-support li span { font-size: 12px; font-weight: 700; color: var(--theme-text-secondary); }
-.sub-support a { color: var(--theme-primary, #4f46e5); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
-.sub-support a:hover { text-decoration: underline; }
+.sub-help { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-bottom: 16px; padding: 12px 18px; border-radius: 14px; border: 1px dashed var(--theme-border); background: var(--theme-surface); font-size: 13.5px; }
+.sub-help a { color: var(--theme-primary, #4f46e5); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+.sub-help a:hover { text-decoration: underline; }
+
+.sub-alert-blue { background: rgba(var(--theme-primary-rgb, 79, 70, 229), .07); border-color: rgba(var(--theme-primary-rgb, 79, 70, 229), .35); align-items: center; }
+.sub-alert-blue > svg { color: var(--theme-primary, #4f46e5); }
+.sub-alert-big { padding: 20px 22px; align-items: flex-start; }
+.sub-alert-big strong { font-size: 17px; }
+.sub-alert-big > svg { width: 24px; height: 24px; margin-top: 1px; }
+
+.sub-cardpay { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 14px; border: 1.5px solid rgba(var(--theme-primary-rgb, 79, 70, 229), .4); background: rgba(var(--theme-primary-rgb, 79, 70, 229), .05); }
+.sub-cardpay h3 { margin: 0 0 4px; font-size: 15.5px; font-weight: 800; }
+.sub-cardpay-ico { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: var(--theme-primary, #4f46e5); color: #fff; }
+.sub-cardpay-brands { margin: 8px 0 0; font-size: 13px; font-weight: 700; }
+.sub-tip-red { background: rgba(239, 68, 68, .08); border-color: rgba(239, 68, 68, .4); }
+.sub-assurances { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5; color: var(--theme-text-secondary); }
+.sub-assurances li { display: flex; gap: 8px; align-items: flex-start; }
+.sub-assurances svg { flex-shrink: 0; margin-top: 2px; color: #059669; }
+
+.sub-other { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--theme-border); }
+.sub-other summary { cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--theme-text-secondary); }
+.sub-manual { display: flex; flex-direction: column; gap: 14px; }
+
+.sub-sector { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; margin-bottom: 14px; }
+.sub-sector .sub-field { flex: 1 1 260px; max-width: 420px; }
+.sub-field select { width: 100%; min-height: 42px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--theme-border-hover, var(--theme-border)); background: var(--theme-surface); color: var(--theme-text); font: inherit; font-size: 14px; outline: none; }
+.sub-field select:focus { border-color: var(--theme-primary, #4f46e5); box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb, 79, 70, 229), .16); }
+.sub-sector-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.sub-mod-group { border: none; margin: 0 0 14px; padding: 0; min-width: 0; }
+.sub-mod-group legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: var(--theme-text-secondary); }
+.sub-mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.sub-mod { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 11px; border: 1.5px solid var(--theme-border); background: var(--theme-surface); cursor: pointer; min-width: 0; }
+.sub-mod input { width: 17px; height: 17px; margin-top: 2px; flex-shrink: 0; accent-color: var(--theme-primary, #4f46e5); cursor: pointer; }
+.sub-mod.is-on { border-color: rgba(var(--theme-primary-rgb, 79, 70, 229), .55); background: rgba(var(--theme-primary-rgb, 79, 70, 229), .06); }
+.sub-mod.is-locked { cursor: not-allowed; opacity: .7; }
+.sub-mod.is-locked input { cursor: not-allowed; }
+.sub-mod:has(input:focus-visible) { outline: 2px solid var(--theme-primary, #4f46e5); outline-offset: 2px; }
+.sub-mod-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sub-mod-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
+.sub-mod-desc { font-size: 12.5px; line-height: 1.45; color: var(--theme-text-secondary); }
+.sub-chip-lock { gap: 4px; background: rgba(107, 114, 128, .18); color: var(--theme-text-secondary); }
+.sub-mod-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 4px; }
 
 .sub-danger { margin-bottom: 16px; padding: 12px 18px; border-radius: 14px; border: 1px solid var(--theme-border); background: var(--theme-surface); }
 .sub-danger summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--theme-text-secondary); }
@@ -928,7 +1071,6 @@ const SUB_CSS = `
 @media (max-width: 860px) {
   .sub-pay { grid-template-columns: minmax(0, 1fr); }
   .sub-summary { position: static; }
-  .sub-contact { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
   .sub-top { flex-wrap: wrap; }

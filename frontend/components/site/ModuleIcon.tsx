@@ -6,7 +6,7 @@ import React from "react";
 export type ModuleIconKey =
   | "dashboard" | "products" | "categories" | "stock" | "pos" | "sales" | "purchases" | "orders" | "invoices"
   | "clients" | "suppliers" | "objectives" | "hr" | "finance" | "production" | "logistics" | "shipments"
-  | "reports" | "analytics" | "ai";
+  | "appointments" | "projects" | "reports" | "analytics" | "ai";
 
 export const MODULE_ICON_PATHS: Record<ModuleIconKey, React.ReactNode> = {
   dashboard: (
@@ -128,6 +128,22 @@ export const MODULE_ICON_PATHS: Record<ModuleIconKey, React.ReactNode> = {
       <line x1="7" y1="18" x2="8" y2="18" />
       <line x1="12" y1="18" x2="13" y2="18" />
       <line x1="17" y1="18" x2="18" y2="18" />
+    </>
+  ),
+  appointments: (
+    <>
+      <rect x="3" y="4.5" width="18" height="17" rx="2" />
+      <line x1="16" y1="2.5" x2="16" y2="6.5" />
+      <line x1="8" y1="2.5" x2="8" y2="6.5" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <polyline points="9 15.5 11.2 17.7 15.2 13.5" />
+    </>
+  ),
+  projects: (
+    <>
+      <rect x="3" y="4" width="5" height="16" rx="1.2" />
+      <rect x="9.5" y="4" width="5" height="10.5" rx="1.2" />
+      <rect x="16" y="4" width="5" height="13.5" rx="1.2" />
     </>
   ),
   ai: (

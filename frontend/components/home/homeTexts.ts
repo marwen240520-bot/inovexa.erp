@@ -13,7 +13,7 @@ export interface HomeText {
   dashboardCta: string;
   pricingCta: string;
   trust: string[];
-  header: { home: string; products: string; pricing: string; blog: string; about: string; contact: string; demo: string; login: string; language: string };
+  header: { home: string; products: string; pricing: string; blog: string; about: string; contact: string; trial: string; login: string; language: string };
   why: { eyebrow: string; title: string; lead: string; ai: { title: string; badge: string; desc: string }; features: { title: string; desc: string }[] };
   modules: { eyebrow: string; title: string; lead: string; cta: string };
   sectors: { eyebrow: string; title: string; lead: string; count: string; cta: string };
@@ -38,7 +38,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     dashboardCta: "Accéder à mon espace",
     pricingCta: "Voir les tarifs",
     trust: ["{trial} d’essai, sans carte bancaire", "Rien à installer", "TVA, timbre fiscal et El Fatoora"],
-    header: { home: "Accueil", products: "Produits", pricing: "Tarifs", blog: "Blog", about: "À propos", contact: "Contact", demo: "Réserver une démo", login: "Se connecter", language: "Choisir la langue" },
+    header: { home: "Accueil", products: "Produits", pricing: "Tarifs", blog: "Blog", about: "À propos", contact: "Contact", trial: "Essai gratuit", login: "Se connecter", language: "Choisir la langue" },
     why: {
       eyebrow: "Pourquoi Inovexa ERP",
       title: "Un seul outil pour toute l'entreprise",
@@ -76,7 +76,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     pricing: {
       eyebrow: "Tarifs",
       title: "Des prix clairs, en dinars",
-      lead: "Prix hors taxes par société.", twoMonths: "Deux mois offerts avec l'abonnement annuel.",
+      lead: "Prix en dollars, hors taxes, par société. Paiement en ligne par carte bancaire.", twoMonths: "Deux mois offerts avec l'abonnement annuel.",
       perMonth: "/ mois", exclTax: "HT", users: "Jusqu’à {n} utilisateurs", unlimited: "Utilisateurs illimités", popular: "Recommandée",
       choose: "Commencer l'essai gratuit", annual: "ou {price} HT par an", onQuote: "Sur devis", cta: "Comparer les formules en détail",
     },
@@ -84,7 +84,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
       title: "Prêt à essayer Inovexa ERP ?",
       lead: "Créez votre compte en deux minutes : {trial} d'essai gratuit, sans engagement.",
       primary: "Démarrer l'essai gratuit",
-      secondary: "Réserver une démo",
+      secondary: "Voir les tarifs",
     },
     footer: {
       tagline: "ERP en ligne conçu à Tunis pour les entreprises qui grandissent.",
@@ -103,7 +103,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     dashboardCta: "Open my workspace",
     pricingCta: "View pricing",
     trust: ["{trial} free trial, no bank card", "Nothing to install", "VAT, stamp duty and El Fatoora"],
-    header: { home: "Home", products: "Products", pricing: "Pricing", blog: "Blog", about: "About", contact: "Contact", demo: "Book a demo", login: "Sign in", language: "Choose language" },
+    header: { home: "Home", products: "Products", pricing: "Pricing", blog: "Blog", about: "About", contact: "Contact", trial: "Free trial", login: "Sign in", language: "Choose language" },
     why: {
       eyebrow: "Why Inovexa ERP",
       title: "One tool for the whole business",
@@ -141,7 +141,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     pricing: {
       eyebrow: "Pricing",
       title: "Clear prices, in dinars",
-      lead: "Prices excluding tax, per company.", twoMonths: "Two months free with the yearly plan.",
+      lead: "Prices in US dollars, excluding tax, per company. Pay online by bank card.", twoMonths: "Two months free with the yearly plan.",
       perMonth: "/ month", exclTax: "excl. tax", users: "Up to {n} users", unlimited: "Unlimited users", popular: "Recommended",
       choose: "Start the free trial", annual: "or {price} excl. tax per year", onQuote: "On quote", cta: "Compare plans in detail",
     },
@@ -149,7 +149,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
       title: "Ready to try Inovexa ERP?",
       lead: "Create your account in two minutes: {trial} free trial, no commitment.",
       primary: "Start the free trial",
-      secondary: "Book a demo",
+      secondary: "See pricing",
     },
     footer: {
       tagline: "Online ERP built in Tunis for growing businesses.",
@@ -168,7 +168,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     dashboardCta: "Abrir mi espacio",
     pricingCta: "Ver precios",
     trust: ["{trial} de prueba, sin tarjeta bancaria", "Nada que instalar", "IVA, timbre fiscal y El Fatoora"],
-    header: { home: "Inicio", products: "Productos", pricing: "Precios", blog: "Blog", about: "Nosotros", contact: "Contacto", demo: "Reservar demo", login: "Iniciar sesión", language: "Elegir idioma" },
+    header: { home: "Inicio", products: "Productos", pricing: "Precios", blog: "Blog", about: "Nosotros", contact: "Contacto", trial: "Prueba gratis", login: "Iniciar sesión", language: "Elegir idioma" },
     why: {
       eyebrow: "Por qué Inovexa ERP",
       title: "Una sola herramienta para toda la empresa",
@@ -206,7 +206,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     pricing: {
       eyebrow: "Precios",
       title: "Precios claros, en dinares",
-      lead: "Precios sin impuestos, por empresa.", twoMonths: "Dos meses gratis con el plan anual.",
+      lead: "Precios en dólares, sin impuestos, por empresa. Pago en línea con tarjeta bancaria.", twoMonths: "Dos meses gratis con el plan anual.",
       perMonth: "/ mes", exclTax: "sin IVA", users: "Hasta {n} usuarios", unlimited: "Usuarios ilimitados", popular: "Recomendado",
       choose: "Empezar la prueba gratuita", annual: "o {price} sin IVA al año", onQuote: "A consultar", cta: "Comparar los planes en detalle",
     },
@@ -214,7 +214,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
       title: "¿Listo para probar Inovexa ERP?",
       lead: "Cree su cuenta en dos minutos: {trial} de prueba gratuita, sin compromiso.",
       primary: "Empezar la prueba gratuita",
-      secondary: "Reservar demo",
+      secondary: "Ver precios",
     },
     footer: {
       tagline: "ERP en línea creado en Túnez para las empresas que crecen.",
@@ -233,7 +233,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     dashboardCta: "الدخول إلى فضائي",
     pricingCta: "عرض الأسعار",
     trust: ["تجربة مجانية لمدة {trial} دون بطاقة بنكية", "لا شيء للتثبيت", "الأداء على القيمة المضافة والطابع الجبائي والفوترة الإلكترونية"],
-    header: { home: "الرئيسية", products: "المنتجات", pricing: "الأسعار", blog: "المدونة", about: "من نحن", contact: "اتصل بنا", demo: "احجز عرضًا تجريبيًا", login: "تسجيل الدخول", language: "اختيار اللغة" },
+    header: { home: "الرئيسية", products: "المنتجات", pricing: "الأسعار", blog: "المدونة", about: "من نحن", contact: "اتصل بنا", trial: "تجربة مجانية", login: "تسجيل الدخول", language: "اختيار اللغة" },
     why: {
       eyebrow: "لماذا Inovexa ERP",
       title: "أداة واحدة لكامل المؤسسة",
@@ -271,7 +271,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     pricing: {
       eyebrow: "الأسعار",
       title: "أسعار واضحة بالدينار",
-      lead: "أسعار دون احتساب الأداء، لكل شركة.", twoMonths: "شهران مجانًا مع الاشتراك السنوي.",
+      lead: "الأسعار بالدولار دون احتساب الأداء، لكل شركة. الدفع عبر الإنترنت بالبطاقة البنكية.", twoMonths: "شهران مجانًا مع الاشتراك السنوي.",
       perMonth: "/ شهر", exclTax: "دون احتساب الأداء", users: "حتى {n} مستخدمين", unlimited: "مستخدمون بلا حدّ", popular: "موصى بها",
       choose: "ابدأ التجربة المجانية", annual: "أو {price} دون احتساب الأداء في السنة", onQuote: "حسب الطلب", cta: "قارن الباقات بالتفصيل",
     },
@@ -279,7 +279,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
       title: "مستعد لتجربة Inovexa ERP؟",
       lead: "أنشئ حسابك في دقيقتين: تجربة مجانية لمدة {trial} دون أي التزام.",
       primary: "ابدأ التجربة المجانية",
-      secondary: "احجز عرضًا تجريبيًا",
+      secondary: "عرض الأسعار",
     },
     footer: {
       tagline: "نظام إدارة على الإنترنت صُمِّم في تونس للمؤسسات التي تكبر.",

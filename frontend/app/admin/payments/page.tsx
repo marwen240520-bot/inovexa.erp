@@ -1,9 +1,10 @@
 "use client";
 /**
  * Administration › Paiements d'abonnement.
- * Les clients déclarent leur paiement (virement, D17, Flouci, chèque, espèces, carte) ; l'administrateur le vérifie
- * puis le valide : l'accès du compte est ouvert et le reçu numéroté est créé. Un paiement reçu hors ligne peut aussi
- * être saisi directement ici.
+ * Les clients paient seuls, par carte bancaire, sur la page sécurisée du prestataire : le serveur vérifie l'encaissement
+ * auprès du prestataire, ouvre l'accès et crée le reçu numéroté, sans aucune action de l'administrateur. Cette page sert
+ * à les consulter. Si les paiements hors ligne sont activés dans les réglages, ceux que les clients déclarent arrivent
+ * ici « en attente » ; un paiement reçu hors ligne peut aussi être saisi directement.
  */
 import React, { FormEvent, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -16,7 +17,7 @@ import { PAYMENT_STATUS_META, dateTimeFr, type AccountsResponse } from "@/compon
 import { formatMoney, formatPrice, withVat, type Plan, type Receipt } from "@/lib/saas";
 
 const LIMIT = 25;
-const STATUSES: Array<[string, string]> = [["pending", "En attente"], ["validated", "Validés"], ["rejected", "Refusés"], ["cancelled", "Annulés"], ["", "Tous"]];
+const STATUSES: Array<[string, string]> = [["validated", "Encaissés"], ["pending", "Hors ligne à valider"], ["rejected", "Refusés"], ["cancelled", "Annulés"], ["", "Tous"]];
 
 // ───────────── Saisie d'un paiement reçu hors ligne ─────────────
 
@@ -49,6 +50,7 @@ function RecordPaymentModal({ presetAccount, onClose, onDone }: { presetAccount:
   const plan = usable.find((p) => p.code === planCode) || null;
   const amountHT = plan ? (cycle === "annual" ? plan.priceAnnual : plan.priceMonthly) : null;
   const vatRate = Number(settings?.vatRate ?? 19);
+  const currency = settings?.currency || "USD";
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -109,7 +111,7 @@ function RecordPaymentModal({ presetAccount, onClose, onDone }: { presetAccount:
         <Row>
           <FormField label="Moyen de paiement">
             <select value={method} onChange={(e) => setMethod(e.target.value)} style={inputStyle}>
-              {Object.entries(METHOD_LABELS).map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+              {Object.entries(METHOD_LABELS).filter(([code]) => code !== "card").map(([code, label]) => <option key={code} value={code}>{label}</option>)}
             </select>
           </FormField>
           <FormField label="Référence"><input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} style={inputStyle} dir="ltr" /></FormField>
@@ -117,7 +119,7 @@ function RecordPaymentModal({ presetAccount, onClose, onDone }: { presetAccount:
         <FormField grow={false} label="Remarque (facultatif)"><input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} style={inputStyle} /></FormField>
         <div style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid var(--theme-border)", fontSize: 14 }}>
           {plan && amountHT !== null
-            ? <>Montant : <strong>{formatPrice(amountHT, LANG)} HT</strong> — {formatMoney(withVat(amountHT, vatRate), LANG)} TTC (TVA {vatRate.toLocaleString("fr-FR")} %)</>
+            ? <>Montant : <strong>{formatPrice(amountHT, LANG, currency)} HT</strong> — {formatMoney(withVat(amountHT, vatRate, currency), LANG, currency)} TTC (TVA {vatRate.toLocaleString("fr-FR")} %)</>
             : <span style={mutedStyle}>Le montant est celui de la formule, au tarif en vigueur.</span>}
         </div>
         <Check checked={validate} onChange={setValidate} label="Valider tout de suite" hint="L’accès du compte est ouvert immédiatement et le reçu est créé. Décochez pour le laisser en attente." />
@@ -132,7 +134,7 @@ function RecordPaymentModal({ presetAccount, onClose, onDone }: { presetAccount:
 function PaymentsScreen() {
   const params = useSearchParams();
   const userId = Number(params.get("userId")) || undefined;
-  const [status, setStatus] = useState(userId ? "" : "pending");
+  const [status, setStatus] = useState(userId ? "" : "validated");
   const [offset, setOffset] = useState(0);
   const { data, error, loading, reload } = useLoad(() => api<Paged<AdminPayment>>("/admin/payments", { query: { status: status || undefined, userId, limit: LIMIT, offset } }), [status, offset, userId]);
   const [notice, notify] = useNotice();
@@ -166,8 +168,8 @@ function PaymentsScreen() {
   const presetAccount = userId && data?.items[0]?.account ? { id: userId, label: accountLabel(data.items[0].account) } : null;
 
   return (
-    <Page title="Paiements" subtitle="Validez les paiements déclarés par vos clients : leur accès s’ouvre et leur reçu est créé."
-      actions={<Btn variant="primary" onClick={() => setRecording(true)}>Saisir un paiement reçu</Btn>}>
+    <Page title="Paiements" subtitle="Les paiements par carte sont encaissés et activés automatiquement : cette page sert à les consulter. Rien à valider, sauf un paiement hors ligne déclaré par un client si vous les avez autorisés."
+      actions={<Btn onClick={() => setRecording(true)}>Saisir un paiement hors ligne</Btn>}>
       {notice}
       <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
         {STATUSES.map(([value, label]) => (
@@ -179,12 +181,12 @@ function PaymentsScreen() {
       </div>
       {error ? <ErrorBox message={error} onRetry={reload} /> : null}
       <Card pad={false}>
-        {!data ? (loading ? <Loading /> : null) : data.items.length === 0 ? <Empty>{status === "pending" ? "Aucun paiement en attente." : "Aucun paiement."}</Empty> : (
+        {!data ? (loading ? <Loading /> : null) : data.items.length === 0 ? <Empty>{status === "pending" ? "Aucun paiement hors ligne en attente de validation." : status === "validated" ? "Aucun paiement encaissé pour le moment." : "Aucun paiement."}</Empty> : (
           <>
             <TableWrap min={900}>
               <thead>
                 <tr>
-                  <th style={th}>Déclaré le</th><th style={th}>Compte</th><th style={th}>Formule</th><th style={{ ...th, ...num }}>Montant TTC</th><th style={th}>Moyen et référence</th><th style={th}>État</th><th style={th} />
+                  <th style={th}>Date</th><th style={th}>Compte</th><th style={th}>Formule</th><th style={{ ...th, ...num }}>Montant TTC</th><th style={th}>Moyen et référence</th><th style={th}>État</th><th style={th} />
                 </tr>
               </thead>
               <tbody>
@@ -192,11 +194,11 @@ function PaymentsScreen() {
                   const meta = PAYMENT_STATUS_META[p.status] || { label: p.status, tone: "gray" as const };
                   return (
                     <tr key={p.id}>
-                      <td style={{ ...td, whiteSpace: "nowrap" }}>{dateTimeFr(p.createdAt)}<div style={mutedStyle}>{p.declaredBy === "admin" ? "saisi par l’administrateur" : "déclaré par le client"}</div></td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>{dateTimeFr(p.validatedAt && p.provider !== "manual" ? p.validatedAt : p.createdAt)}<div style={mutedStyle}>{p.provider === "konnect" ? "payé en ligne par le client" : p.declaredBy === "admin" ? "saisi par l’administrateur" : "déclaré par le client"}</div></td>
                       <td style={td}><AccountLink account={p.account} /><div style={mutedStyle}>{p.account.email}</div></td>
                       <td style={td}>{p.planName}<div style={mutedStyle}>{cycleLabel(p.billingCycle)}</div></td>
                       <td style={{ ...td, ...num }}><strong>{formatMoney(p.amountTTC, LANG, p.currency)}</strong><div style={mutedStyle}>{formatMoney(p.amountHT, LANG, p.currency)} HT</div></td>
-                      <td style={td}>{methodLabel(p.method)}{p.reference ? <div style={{ ...mutedStyle, overflowWrap: "anywhere" }}>{p.reference}</div> : null}{p.note ? <div style={{ ...mutedStyle, fontStyle: "italic" }}>{p.note}</div> : null}</td>
+                      <td style={td}>{methodLabel(p.method)}{p.provider === "konnect" ? <div style={mutedStyle}>activation automatique</div> : null}{p.reference ? <div style={{ ...mutedStyle, overflowWrap: "anywhere" }}>{p.reference}</div> : null}{p.note ? <div style={{ ...mutedStyle, fontStyle: "italic" }}>{p.note}</div> : null}</td>
                       <td style={td}><Badge tone={meta.tone}>{meta.label}</Badge>{p.status === "rejected" && p.rejectReason ? <div style={mutedStyle}>{p.rejectReason}</div> : null}{p.status === "validated" && p.periodEnd ? <div style={mutedStyle}>jusqu’au {dateTimeFr(p.periodEnd)}</div> : null}</td>
                       <td style={{ ...td, whiteSpace: "nowrap" }}>
                         {p.status === "pending" ? (

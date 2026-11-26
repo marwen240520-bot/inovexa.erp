@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, HttpException, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsService, RESOURCE_BY_PATH } from './permissions.service';
-import { blockMessage, isAllowedWhenBlocked, isPlatformAdmin } from '../saas/account-access';
+import { blockMessage, isAllowedWhenBlocked, isModuleEnabled, isPlatformAdmin } from '../saas/account-access';
 
 class PassportJwt extends AuthGuard('jwt') {}
 
@@ -30,17 +30,14 @@ export const MODULES_BY_WRITE_PATH: Record<string, string[]> = {
   finance: ['finance'], expenses: ['finance'], accounting: ['finance'],
   logistics: ['logistics'], transporteurs: ['logistics'],
   production: ['production'],
+  appointments: ['appointments'],
+  // La page Finance suit aussi le budget des projets : elle garde le droit d'en créer.
+  projects: ['projects', 'finance'],
   objectives: ['objectives'],
   ia: ['ai'],
 };
 
-/** Même règle que la barre latérale : objectifs actifs sauf refus explicite ; caisse = ventes ou achats si non précisée. */
-export function isModuleEnabled(modules: Record<string, boolean> | null | undefined, key: string): boolean {
-  if (!modules || Object.keys(modules).length === 0) return true; // compte jamais configuré : tout est ouvert
-  if (key === 'objectives') return modules.objectives !== false;
-  if (key === 'pos' && modules.pos === undefined) return modules.sales === true || modules.purchases === true;
-  return modules[key] === true;
-}
+export { isModuleEnabled };
 
 /** Module manquant pour écrire dans `resourcePath`, ou null si l'écriture est permise. */
 export function missingModuleFor(modules: Record<string, boolean> | null | undefined, resourcePath: string): string | null {

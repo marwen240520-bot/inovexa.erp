@@ -87,7 +87,7 @@ export default function AdminAccountPage({ params }: { params: Promise<{ id: str
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {MODULE_KEYS.map((key) => <Badge key={key} tone={isModuleOn(data.modules, key) ? "green" : "gray"}>{MODULE_LABELS[key] || key}</Badge>)}
         </div>
-        <p style={{ ...mutedStyle, margin: "10px 0 0" }}>En vert : ouverts. Ils résultent du secteur et de la formule ; « Formule et modules » permet de les ajuster pour ce compte.</p>
+        <p style={{ ...mutedStyle, margin: "10px 0 0" }}>En vert : ouverts. Ils résultent du secteur, de la formule et des modules choisis par le client lui-même : vous les consultez, vous ne les modifiez pas.</p>
       </Card>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>

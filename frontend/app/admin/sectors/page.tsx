@@ -1,8 +1,9 @@
 "use client";
 /**
  * Administration › Secteurs et suggestions.
- * Pour chaque secteur d'activité proposé à l'inscription : son nom (français, anglais, arabe), les modules activés
- * d'office, les conseils de démarrage, ses catégories et ses suggestions de produits et de prestations (valeurs
+ * Pour chaque secteur d'activité proposé à l'inscription : son nom (français, anglais, arabe), les modules ouverts
+ * d'office aux nouveaux clients (chaque client ouvre et ferme ensuite les siens ; cette page ne modifie jamais les
+ * comptes existants), les conseils de démarrage, ses catégories et ses suggestions de produits et de prestations (valeurs
  * indicatives), et les prestations de mise en service proposées.
  */
 import React, { FormEvent, useEffect, useMemo, useState } from "react";
@@ -32,7 +33,7 @@ function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { secto
   const [form, setForm] = useState<SectorForm>(sectorForm(sector, nextOrder));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<"apply" | "delete" | null>(null);
+  const [confirm, setConfirm] = useState<"delete" | null>(null);
   useEffect(() => { setForm(sectorForm(sector, nextOrder)); setError(null); }, [sector, nextOrder]);
   const set = <K extends keyof SectorForm>(key: K, value: SectorForm[K]) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -63,14 +64,9 @@ function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { secto
     setBusy(true);
     setError(null);
     try {
-      if (confirm === "apply") {
-        const res = await api<{ updated: number }>(`/admin/sectors/${sector.id}/apply-modules`, { method: "POST" });
-        notify(`Modules appliqués à ${plural(res.updated, "compte", "comptes")} de ce secteur.`);
-      } else {
-        await api(`/admin/sectors/${sector.id}`, { method: "DELETE" });
-        notify("Secteur supprimé.");
-        onDeleted();
-      }
+      await api(`/admin/sectors/${sector.id}`, { method: "DELETE" });
+      notify("Secteur supprimé.");
+      onDeleted();
       setConfirm(null);
     } catch (err) {
       setError(errorText(err));
@@ -100,7 +96,7 @@ function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { secto
             <Check key={key} checked={form.modules.includes(key)} onChange={(v) => set("modules", v ? [...form.modules, key] : form.modules.filter((m) => m !== key))} label={MODULE_LABELS[key] || key} />
           ))}
         </div>
-        <p style={{ ...helpStyle, marginTop: 8 }}>Tableau de bord, profil et paramètres sont toujours ouverts. La formule du client peut ensuite restreindre ces modules.</p>
+        <p style={{ ...helpStyle, marginTop: 8 }}>Tableau de bord, profil et paramètres sont toujours ouverts. Ces modules sont ouverts d’office aux nouveaux clients du secteur ; chaque client ouvre ou ferme ensuite les siens lui-même, dans la limite de sa formule. Vos changements ne touchent pas les comptes existants.</p>
       </div>
       <FormField grow={false} label="Conseils de démarrage (un par ligne, 12 au plus)" hint="Affichés au client sur la page « Suggestions secteur ».">
         <textarea value={form.recommendations} onChange={(e) => set("recommendations", e.target.value)} rows={4} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }} />
@@ -109,17 +105,14 @@ function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { secto
       {error ? <InlineError>{error}</InlineError> : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
         <span style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {sector ? <Btn type="button" onClick={() => { setError(null); setConfirm("apply"); }}>Appliquer ces modules aux comptes existants</Btn> : null}
           {sector ? <Btn type="button" variant="danger" onClick={() => { setError(null); setConfirm("delete"); }}>Supprimer</Btn> : null}
         </span>
         <Btn type="submit" variant="primary" busy={busy}>{sector ? "Enregistrer" : "Créer le secteur"}</Btn>
       </div>
       {confirm && sector ? (
-        <ConfirmModal title={confirm === "apply" ? "Appliquer les modules aux comptes de ce secteur ?" : "Supprimer ce secteur ?"} confirmLabel={confirm === "apply" ? "Appliquer" : "Supprimer"} variant={confirm === "apply" ? "primary" : "danger"} busy={busy} error={error} onCancel={() => setConfirm(null)} onConfirm={act}>
+        <ConfirmModal title="Supprimer ce secteur ?" confirmLabel="Supprimer" variant="danger" busy={busy} error={error} onCancel={() => setConfirm(null)} onConfirm={act}>
           <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55 }}>
-            {confirm === "apply"
-              ? `Tous les comptes du secteur « ${sector.name} » reçoivent exactement les modules ENREGISTRÉS de ce secteur (enregistrez d’abord vos changements). Les réglages faits compte par compte sont remplacés.`
-              : `Le secteur « ${sector.name} », ses catégories, ses suggestions et ses prestations sont supprimés. Impossible si des comptes y sont rattachés : désactivez-le plutôt.`}
+            {`Le secteur « ${sector.name} », ses catégories, ses suggestions et ses prestations sont supprimés. Impossible si des comptes y sont rattachés : désactivez-le plutôt.`}
           </p>
         </ConfirmModal>
       ) : null}

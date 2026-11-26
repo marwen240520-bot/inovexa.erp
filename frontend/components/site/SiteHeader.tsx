@@ -1,7 +1,7 @@
 // components/site/SiteHeader.tsx
 // En-tête commun à la page d'accueil et aux pages publiques.
 //   à gauche  : le logo ;
-//   à droite  : le menu, « Connexion », le bouton de langue et « Réserver une démo ».
+//   à droite  : le menu, « Connexion », le bouton de langue et « Essai gratuit » (création du compte en ligne).
 // La barre reste en haut de l'écran pendant le défilement (position: sticky) : elle occupe sa propre hauteur
 // dans la page, elle ne se pose donc jamais sur le contenu.
 "use client";
@@ -43,7 +43,7 @@ export default function SiteHeader({
 }: {
   lang: string;
   nav: NavItem[];
-  /** Bouton principal, à droite (« Réserver une démo »). */
+  /** Bouton principal, à droite (« Essai gratuit » : tout se fait en ligne, sans rendez-vous). */
   cta: NavItem;
   /** Lien « Connexion », affiché avant le bouton de langue (facultatif). */
   login?: NavItem;
@@ -132,7 +132,7 @@ export default function SiteHeader({
           </span>
         </Link>
 
-        {/* Droite : menu, connexion, langue, démo */}
+        {/* Droite : menu, connexion, langue, essai gratuit */}
         <div className="st-header-right">
           <nav id="st-nav" className={"st-nav" + (open ? " is-open" : "")} aria-label="Site">
             {nav.map((item) => {

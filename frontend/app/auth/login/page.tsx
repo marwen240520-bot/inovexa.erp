@@ -3,7 +3,9 @@
 //
 // Trois façons d'entrer : email + mot de passe, « Continuer avec Google », « Continuer avec Apple » (ces deux boutons
 // n'apparaissent que si le serveur est configuré pour eux). La double authentification, quand elle est activée sur le
-// compte, demande le code à 6 chiffres avant d'ouvrir la session.
+// compte, demande le code à 6 chiffres avant d'ouvrir la session. Une adresse email pas encore vérifiée mène à l'écran
+// de saisie du code reçu par email.
+// Si le serveur redémarre, la connexion est retentée toute seule pendant quelques dizaines de secondes.
 // Le navigateur ne décide de rien : c'est la réponse du serveur (rôle, état du compte) qui donne la page d'arrivée.
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -92,7 +94,7 @@ function LoginForm() {
     if (social) {
       setLoading(true);
       setProblem(null);
-      const res = await publicPost(`/auth/${social.provider}`, socialBody(social.provider, social.token, { intent: "login", otp: code }));
+      const res = await publicPost(`/auth/${social.provider}`, socialBody(social.provider, social.token, { intent: "login", otp: code }), { safe: true });
       if (!handle(res, true) && res.status === 401 && !res.data?.requires2fa) {
         // Le jeton d'identité a expiré pendant la saisie du code : il faut repasser par le bouton.
         setSocial(null);
@@ -108,7 +110,7 @@ function LoginForm() {
     if (!password) { setProblem({ kind: "failure", status: 400, message: "Email ou mot de passe incorrect" }); return; }
     setLoading(true);
     setProblem(null);
-    const res = await publicPost("/auth/login", { email: address, password, ...(needsOtp ? { otp: code } : {}) });
+    const res = await publicPost("/auth/login", { email: address, password, ...(needsOtp ? { otp: code } : {}) }, { safe: true });
     if (handle(res, needsOtp)) rememberEmail(address);
     setLoading(false);
   };
@@ -119,7 +121,7 @@ function LoginForm() {
     setProblem(null);
     const extra: Record<string, unknown> = { intent: "login" };
     if (credential.provider === "apple" && credential.name) extra.name = credential.name;
-    const res = await publicPost(`/auth/${credential.provider}`, socialBody(credential.provider, credential.token, extra));
+    const res = await publicPost(`/auth/${credential.provider}`, socialBody(credential.provider, credential.token, extra), { safe: true });
     if (res.status === 404 && res.data?.code === "ACCOUNT_NOT_FOUND") {
       // Aucun compte pour cette identité : on la garde le temps de compléter l'inscription (société, secteur).
       stashPendingSocial({ provider: credential.provider, token: credential.token, email: res.data.email ?? credential.email, name: res.data.name ?? credential.name });

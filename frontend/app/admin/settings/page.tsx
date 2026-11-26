@@ -1,7 +1,11 @@
 "use client";
 /**
- * Administration › Réglages de la plateforme : durée de l'essai gratuit, rappels, TVA, moyens et coordonnées de
- * paiement, contacts de support, état des connexions (Google, Apple, email) et opérations de maintenance.
+ * Administration › Réglages de la plateforme : durée de l'essai gratuit, rappels, devise et TVA, paiement en ligne par
+ * carte (état), paiements hors ligne (facultatifs), contacts de support, état des connexions (Konnect, Google, Apple,
+ * email) et opérations de maintenance.
+ *
+ * Tout le parcours du client est automatique : il s'inscrit, choisit sa formule et paie par carte sans que
+ * l'administrateur intervienne. Cette page ne sert qu'à régler la plateforme.
  */
 import React, { FormEvent, useEffect, useState } from "react";
 import { api, Badge, Btn, Card, ErrorBox, inputStyle, Loading, Notice, Page, Row, useLoad, useNotice } from "@/components/erp/kit";
@@ -10,13 +14,13 @@ import { hoursAsDays } from "@/components/admin/core/shared";
 
 interface Form {
   trialHours: string; trialReminderHours: string; renewalReminderDays: string; requireEmailVerification: boolean; currency: string; vatRate: string;
-  paymentInstructions: string; paymentMethods: string[]; paymentLink: string; supportEmail: string; supportPhone: string; supportWhatsapp: string;
+  manualPayments: boolean; paymentInstructions: string; paymentMethods: string[]; paymentLink: string; supportEmail: string; supportPhone: string; supportWhatsapp: string;
 }
 
 const formOf = (s: AdminSettings): Form => ({
   trialHours: String(s.trialHours), trialReminderHours: String(s.trialReminderHours), renewalReminderDays: String(s.renewalReminderDays),
-  requireEmailVerification: !!s.requireEmailVerification, currency: s.currency || "TND", vatRate: String(s.vatRate).replace(".", ","),
-  paymentInstructions: s.paymentInstructions || "", paymentMethods: s.paymentMethods?.length ? s.paymentMethods : ["bank_transfer"], paymentLink: s.paymentLink || "",
+  requireEmailVerification: !!s.requireEmailVerification, currency: s.currency || "USD", vatRate: String(s.vatRate).replace(".", ","),
+  manualPayments: !!s.manualPayments, paymentInstructions: s.paymentInstructions || "", paymentMethods: s.paymentMethods?.length ? s.paymentMethods : ["bank_transfer"], paymentLink: s.paymentLink || "",
   supportEmail: s.supportEmail || "", supportPhone: s.supportPhone || "", supportWhatsapp: s.supportWhatsapp || "",
 });
 
@@ -48,8 +52,8 @@ export default function AdminSettingsPage() {
     const vatRate = Number(form.vatRate.replace(",", "."));
     if (!Number.isInteger(trialHours) || trialHours < 1) { setFormError("Durée de l’essai : un nombre entier d’heures (72 = 3 jours)."); return; }
     if (!Number.isFinite(vatRate) || vatRate < 0 || vatRate > 100) { setFormError("Taux de TVA invalide."); return; }
-    if (form.paymentMethods.length === 0) { setFormError("Gardez au moins un moyen de paiement."); return; }
-    if (form.paymentMethods.includes("card") && !form.paymentLink.trim()) { setFormError("« Carte bancaire » demande un lien de paiement (adresse https de votre page de paiement)."); return; }
+    if (form.manualPayments && form.paymentMethods.length === 0) { setFormError("Paiements hors ligne : gardez au moins un moyen de paiement, ou désactivez-les."); return; }
+    if (form.manualPayments && form.paymentMethods.includes("card") && !form.paymentLink.trim()) { setFormError("Hors ligne, « Carte bancaire » demande un lien de paiement (adresse https)."); return; }
     setSaving(true);
     setFormError(null);
     try {
@@ -58,7 +62,7 @@ export default function AdminSettingsPage() {
         body: {
           trialHours, trialReminderHours: Number(form.trialReminderHours), renewalReminderDays: Number(form.renewalReminderDays),
           requireEmailVerification: form.requireEmailVerification, currency: form.currency.trim().toUpperCase(), vatRate,
-          paymentInstructions: form.paymentInstructions, paymentMethods: form.paymentMethods, paymentLink: form.paymentLink.trim(),
+          manualPayments: form.manualPayments, paymentInstructions: form.paymentInstructions, paymentMethods: form.paymentMethods, paymentLink: form.paymentLink.trim(),
           supportEmail: form.supportEmail.trim(), supportPhone: form.supportPhone.trim(), supportWhatsapp: form.supportWhatsapp.trim(),
         },
       });
@@ -79,8 +83,8 @@ export default function AdminSettingsPage() {
     setMaintenance(kind);
     try {
       if (kind === "sweep") {
-        const res = await api<{ checked: number; expired: number; reminders: number }>("/admin/maintenance/sweep", { method: "POST" });
-        notify(`${res.checked} comptes vérifiés : ${res.expired} échéance(s) constatée(s), ${res.reminders} rappel(s) envoyé(s).`);
+        const res = await api<{ checked: number; expired: number; reminders: number; checkouts?: { checked: number; paid: number } }>("/admin/maintenance/sweep", { method: "POST" });
+        notify(`${res.checked} comptes vérifiés : ${res.expired} échéance(s) constatée(s), ${res.reminders} rappel(s) envoyé(s)${res.checkouts?.checked ? `, ${res.checkouts.checked} paiement(s) en ligne relu(s) dont ${res.checkouts.paid} encaissé(s)` : ""}.`);
       } else {
         const res = await api<{ upgraded: boolean; from?: number; to?: number }>("/admin/maintenance/upgrade-catalog", { method: "POST" });
         notify(res.upgraded ? `Contenu de départ mis à niveau (version ${res.from} → ${res.to}).` : "Le contenu de départ est déjà à jour.");
@@ -95,9 +99,11 @@ export default function AdminSettingsPage() {
 
   const trialHours = Number(form?.trialHours);
   const options = data?.paymentMethodOptions?.length ? data.paymentMethodOptions : Object.keys(METHOD_LABELS);
+  const online = data?.onlinePayment;
+  const currencyKnown = ["USD", "TND", "EUR"].includes((form?.currency || "").toUpperCase());
 
   return (
-    <Page title="Réglages de la plateforme" subtitle="Essai gratuit, paiements, contacts et connexions.">
+    <Page title="Réglages de la plateforme" subtitle="Essai gratuit, paiement par carte, contacts et connexions.">
       {notice}
       {error ? <ErrorBox message={error} onRetry={reload} /> : null}
       {!form || !data ? (loading ? <Loading /> : null) : (
@@ -118,9 +124,10 @@ export default function AdminSettingsPage() {
               <Check
                 checked={form.requireEmailVerification}
                 onChange={(v) => set("requireEmailVerification", v)}
-                disabled={!data.mailConfigured && !form.requireEmailVerification}
-                label="Exiger la confirmation de l’adresse email avant d’ouvrir l’ERP"
-                hint={data.mailConfigured ? "Les comptes créés par email doivent cliquer sur le lien reçu. Les comptes Google et Apple sont déjà vérifiés." : "Indisponible : l’envoi d’emails n’est pas configuré sur le serveur (personne ne recevrait le lien)."}
+                label="Demander le code de vérification reçu par email avant d’ouvrir l’ERP"
+                hint={data.mailConfigured
+                  ? "À l’inscription par email, un code à 6 chiffres est envoyé : l’ERP s’ouvre une fois le code saisi (5 essais, valable 15 minutes). Les comptes Google et Apple sont déjà vérifiés."
+                  : "Sans effet pour l’instant : l’envoi d’emails n’est pas configuré sur le serveur (variables SMTP). Dès qu’il le sera, le code sera demandé — aucun compte n’est bloqué d’ici là."}
               />
             </div>
           </Card>
@@ -130,14 +137,56 @@ export default function AdminSettingsPage() {
               <FormField label="Taux de TVA appliqué aux abonnements (%)" hint="Les prix des formules sont saisis hors taxes ; le montant TTC est calculé avec ce taux.">
                 <input inputMode="decimal" value={form.vatRate} onChange={(e) => set("vatRate", e.target.value)} style={inputStyle} />
               </FormField>
-              <FormField label="Devise (code à 3 lettres)">
-                <input value={form.currency} maxLength={3} onChange={(e) => set("currency", e.target.value.toUpperCase())} style={inputStyle} />
+              <FormField label="Devise des formules" hint={currencyKnown ? "Le paiement en ligne accepte USD, TND et EUR. En USD ou en EUR, Konnect convertit et vous verse en dinars." : "Cette devise n’est pas acceptée par le paiement en ligne (USD, TND ou EUR)."}>
+                <select value={currencyKnown ? form.currency : "other"} onChange={(e) => { if (e.target.value !== "other") set("currency", e.target.value); }} style={inputStyle}>
+                  <option value="USD">USD — dollar ($)</option>
+                  <option value="TND">TND — dinar tunisien</option>
+                  <option value="EUR">EUR — euro (€)</option>
+                  {currencyKnown ? null : <option value="other">{form.currency}</option>}
+                </select>
               </FormField>
             </Row>
+            <p style={{ ...helpStyle, marginTop: 22 }}>Changer de devise ne convertit pas les prix : après un changement, relisez les montants dans « Formules et tarifs ».</p>
           </Card>
 
-          <Card title="Moyens de paiement proposés aux clients">
-            <p style={{ ...helpStyle, marginBottom: 12 }}>Le client règle par l’un de ces moyens, pendant ou après l’essai, puis déclare son paiement. Vous le validez dans « Paiements » : son accès est ouvert et son reçu est créé.</p>
+          <Card title="Paiement en ligne par carte (automatique)">
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", marginBottom: 10 }}>
+              <Badge tone={online?.enabled ? (online.mode === "sandbox" ? "amber" : "green") : "red"}>
+                {online?.enabled ? (online.mode === "sandbox" ? "Actif — mode test" : "Actif") : "À activer"}
+              </Badge>
+              <strong>Konnect</strong>
+              <span style={{ color: "var(--theme-text-secondary)", fontSize: 13 }}>carte bancaire (Visa, Mastercard, cartes tunisiennes) et carte e-Dinar</span>
+            </div>
+            {online?.enabled ? (
+              <p style={helpStyle}>
+                Le client choisit sa formule, paie sur la page sécurisée de Konnect, et son accès s’ouvre tout seul dès que Konnect confirme l’encaissement : vous n’avez rien à valider. Les paiements apparaissent dans « Paiements » avec leur reçu.
+                {online.mode === "sandbox" ? " Mode test : aucun débit réel n’est fait — passez KONNECT_ENV à « production » (avec les clés de production) avant d’ouvrir aux clients." : ""}
+              </p>
+            ) : (
+              <>
+                <Notice>
+                  {online?.reason === "CURRENCY_UNSUPPORTED"
+                    ? `La devise ${data.currency} n’est pas acceptée par Konnect : choisissez USD, TND ou EUR ci-dessus.`
+                    : "Tant que le paiement en ligne n’est pas activé, vos clients ne peuvent pas payer : à la fin de l’essai, leur accès reste fermé."}
+                </Notice>
+                <ol style={{ ...helpStyle, margin: 0, paddingInlineStart: 20, lineHeight: 1.7 }}>
+                  <li>Ouvrez un compte marchand sur <a href="https://konnect.network" target="_blank" rel="noopener noreferrer" style={{ color: "var(--theme-primary, #4f46e5)", fontWeight: 700 }}>konnect.network</a> et récupérez, dans son tableau de bord, votre <strong>clé d’API</strong> et l’<strong>identifiant de votre portefeuille</strong>.</li>
+                  <li>Sur le serveur de l’API (Render › Environment), ajoutez <code>KONNECT_API_KEY</code> et <code>KONNECT_WALLET_ID</code>. Pour essayer sans débit réel : <code>KONNECT_ENV=sandbox</code> avec les clés du bac à sable.</li>
+                  <li>Redémarrez le service : cette carte passe à « Actif », et le bouton « Payer par carte » s’ouvre pour vos clients.</li>
+                </ol>
+              </>
+            )}
+          </Card>
+
+          <Card title="Paiements hors ligne (facultatif)">
+            <Check
+              checked={form.manualPayments}
+              onChange={(v) => set("manualPayments", v)}
+              label="Accepter aussi les paiements hors ligne (virement, chèque, espèces…)"
+              hint="Désactivé par défaut : tout se paie par carte et rien n’attend votre validation. Activé, le client peut déclarer un paiement hors ligne ; vous le validez alors dans « Paiements » pour ouvrir son accès."
+            />
+            {form.manualPayments ? (
+            <div style={{ marginTop: 30 }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 10 }}>
               {options.map((code) => (
                 <Check
@@ -150,7 +199,7 @@ export default function AdminSettingsPage() {
             </div>
             <div style={{ marginTop: 18 }}>
               <Row>
-                <FormField label="Lien de paiement par carte (https://…)" hint="Adresse de votre page de paiement chez votre prestataire (lien de paiement). Elle est proposée au client quand il choisit « Carte bancaire » ; le paiement reste à valider ici.">
+                <FormField label="Lien de paiement externe (https://…)" hint="Facultatif : adresse d’une page de paiement à part. Elle n’est proposée que si « Carte bancaire » est coché ci-dessus ; ce paiement-là reste à valider ici.">
                   <input type="url" value={form.paymentLink} onChange={(e) => set("paymentLink", e.target.value)} placeholder="https://" style={inputStyle} dir="ltr" />
                 </FormField>
               </Row>
@@ -160,6 +209,8 @@ export default function AdminSettingsPage() {
                 <textarea value={form.paymentInstructions} onChange={(e) => set("paymentInstructions", e.target.value)} rows={6} maxLength={4000} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }} />
               </FormField>
             </div>
+            </div>
+            ) : null}
           </Card>
 
           <Card title="Contacts de support">
@@ -168,7 +219,7 @@ export default function AdminSettingsPage() {
               <FormField label="Téléphone"><input type="tel" value={form.supportPhone} onChange={(e) => set("supportPhone", e.target.value)} style={inputStyle} dir="ltr" /></FormField>
               <FormField label="WhatsApp"><input type="tel" value={form.supportWhatsapp} onChange={(e) => set("supportWhatsapp", e.target.value)} style={inputStyle} dir="ltr" /></FormField>
             </Row>
-            <p style={{ ...helpStyle, marginTop: 14 }}>Affichés sur la page Abonnement des clients. Les paiements déclarés et les messages vous sont aussi envoyés à cet email.</p>
+            <p style={{ ...helpStyle, marginTop: 14 }}>Affichés sur la page Abonnement des clients (« Besoin d’aide ? »). Les nouvelles inscriptions vous sont aussi signalées à cet email.</p>
           </Card>
 
           {formError ? <div style={{ marginBottom: 16 }}><InlineError>{formError}</InlineError></div> : null}
@@ -179,9 +230,10 @@ export default function AdminSettingsPage() {
 
           <Card title="Connexions du serveur">
             <div style={{ marginTop: -9 }}>
+              <State ok={!!online?.enabled} name="Paiement par carte (Konnect)" on={online?.mode === "sandbox" ? "Mode test (bac à sable) : aucun débit réel." : "Les clients paient en ligne et leur accès s’ouvre automatiquement."} off="Définissez KONNECT_API_KEY et KONNECT_WALLET_ID sur le serveur de l’API (voir « Paiement en ligne par carte » plus haut)." />
               <State ok={!!data.googleConfigured} name="Continuer avec Google" on="Le bouton est affiché sur les pages de connexion et d’inscription." off="Définissez GOOGLE_CLIENT_ID sur le serveur de l’API (identifiant client OAuth « Application Web » de Google Cloud)." />
               <State ok={!!data.appleConfigured} name="Continuer avec Apple" on="Le bouton est affiché sur les pages de connexion et d’inscription." off="Définissez APPLE_CLIENT_ID sur le serveur de l’API (identifiant de service « Sign in with Apple », compte Apple Developer requis)." />
-              <State ok={!!data.mailConfigured} name="Envoi d’emails" on="Confirmations, mot de passe oublié, rappels et avis de paiement partent par email." off="Définissez SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS et SMTP_FROM sur le serveur de l’API." />
+              <State ok={!!data.mailConfigured} name="Envoi d’emails" on="Code de vérification, mot de passe oublié, rappels et reçus de paiement partent par email." off="Définissez SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS et SMTP_FROM sur le serveur de l’API : sans cela, le code de vérification n’est pas envoyé." />
             </div>
           </Card>
 
@@ -191,7 +243,7 @@ export default function AdminSettingsPage() {
               <Btn type="button" onClick={() => run("sweep")} busy={maintenance === "sweep"}>Vérifier les échéances maintenant</Btn>
               <Btn type="button" onClick={() => run("catalog")} busy={maintenance === "catalog"}>Mettre à niveau le contenu de départ</Btn>
             </div>
-            <p style={{ ...helpStyle, marginTop: 12 }}>Contenu de départ installé : version {data.catalogVersion ?? 1}. La mise à niveau ajoute les nouveaux secteurs et complète les modules et les formules restés d’origine ; ce que vous avez modifié n’est jamais écrasé.</p>
+            <p style={{ ...helpStyle, marginTop: 12 }}>Contenu de départ installé : version {data.catalogVersion ?? 1}. La mise à niveau ajoute les nouveaux secteurs et modules et complète les formules restées d’origine ; ce que vous avez modifié n’est jamais écrasé.</p>
           </Card>
         </form>
       )}

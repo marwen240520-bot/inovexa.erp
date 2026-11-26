@@ -188,16 +188,6 @@ export class SectorsService {
     return { success: true };
   }
 
-  /** Applique les modules du secteur à tous les comptes qui y sont rattachés (à la demande de l'administrateur). */
-  async applyModulesToAccounts(id: number) {
-    const sector = await this.sectorById(id);
-    const enabled = new Set(sector.modules || []);
-    const modules: Record<string, boolean> = {};
-    for (const key of MODULE_KEYS) modules[key] = ['dashboard', 'profile', 'settings'].includes(key) || enabled.has(key);
-    const res = await this.ds.getRepository(User).update({ sector: sector.code, role: 'client' }, { modules });
-    return { updated: res.affected || 0, modules };
-  }
-
   async saveCategory(sectorId: number, id: number | null, dto: Record<string, any>) {
     await this.sectorById(sectorId);
     const repo = this.ds.getRepository(SectorCategory);

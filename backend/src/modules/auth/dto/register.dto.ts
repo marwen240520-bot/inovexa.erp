@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 /**
  * Inscription d'une société. La liste des champs est fermée (ValidationPipe whitelist + forbidNonWhitelisted dans le
@@ -50,4 +50,9 @@ export class AppleAuthDto {
 export class VerifyEmailDto {
   @IsEmail({}, { message: 'Email invalide' }) email: string;
   @IsString() @MinLength(20) @MaxLength(200) token: string;
+}
+
+export class VerifyEmailCodeDto {
+  /** Code à 6 chiffres reçu par email. */
+  @IsString() @Matches(/^\d{6}$/, { message: 'Le code comporte 6 chiffres.' }) code: string;
 }

@@ -10,6 +10,8 @@ export const USER_KEY = "user";
 const MODULES_KEY = "sidebar_modules";
 /** Événement émis à la déconnexion : la barre latérale vide ses caches en mémoire (modules du compte précédent). */
 export const SESSION_CLEARED_EVENT = "inovexa:session-cleared";
+/** Événement émis quand le client change lui-même son secteur ou ses modules : la barre latérale se met à jour aussitôt. */
+export const MODULES_CHANGED_EVENT = "inovexa:modules-changed";
 
 /** État d'un compte tel que le serveur le renvoie (auth/me, auth/login, billing/subscription). */
 export interface AccountState {
@@ -89,11 +91,30 @@ export function clearSession() {
   try { window.dispatchEvent(new Event(SESSION_CLEARED_EVENT)); } catch { /* ignoré */ }
 }
 
+/**
+ * Le client vient de changer son secteur ou ses modules : le profil gardé par le navigateur est mis à jour et la barre
+ * latérale prévenue. (Simple affichage : c'est le serveur qui ouvre ou ferme réellement chaque module.)
+ */
+export function applyModulesChange(modules: Record<string, boolean>, sector?: string | null) {
+  try {
+    const user = getStoredUser();
+    if (user) {
+      const next = { ...user, modules, ...(sector !== undefined ? { sector } : {}) };
+      localStorage.setItem(USER_KEY, JSON.stringify(next));
+      localStorage.setItem(MODULES_KEY, JSON.stringify({ userId: user.id, modules }));
+    }
+  } catch { /* stockage indisponible */ }
+  clearApiCache();
+  try { window.dispatchEvent(new CustomEvent(MODULES_CHANGED_EVENT, { detail: { modules, sector } })); } catch { /* ignoré */ }
+}
+
 /** Page d'arrivée après connexion, selon le rôle et l'état du compte. */
-export function homeFor(user: { role?: string } | null | undefined, account?: { blocked?: boolean } | null): string {
+export function homeFor(user: { role?: string } | null | undefined, account?: { blocked?: boolean; reason?: string | null } | null): string {
   if (!user) return "/auth/login";
   if (user.role === "admin" || user.role === "super_admin") return "/admin";
   if (user.role === "transporteur") return "/transporteur/shipments";
+  // Adresse email pas encore vérifiée : il reste à saisir le code reçu par email.
+  if (account?.blocked && account.reason === "EMAIL_NOT_VERIFIED") return "/auth/verify-email";
   if (account?.blocked) return "/subscription";
   return "/dashboard";
 }

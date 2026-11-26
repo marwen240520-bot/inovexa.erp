@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'crypto';
 import * as QRCode from 'qrcode';
 import { User } from '../users/entities/user.entity';
 import { MailService } from '../../common/mail/mail.service';
@@ -20,6 +20,8 @@ import { normalizePhone } from '../../common/phone';
 import { verifyGoogleIdToken } from './google-verifier';
 import { verifyAppleIdToken } from './apple-verifier';
 import type { AppleAuthDto, GoogleAuthDto, RegisterDto } from './dto/register.dto';
+import { JWT_SECRET } from './jwt.strategy';
+import { frontendUrl } from '../../common/origins';
 
 /** 8 caractères minimum, au moins une lettre et un chiffre. */
 export function assertStrongPassword(password: string) {
@@ -29,6 +31,19 @@ export function assertStrongPassword(password: string) {
 }
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
+
+// ───────────── Code de vérification de l'adresse email ─────────────
+/** Durée de validité d'un code. */
+export const EMAIL_CODE_MINUTES = 15;
+/** Essais permis sur un même code : au-delà, il faut en demander un nouveau. */
+export const EMAIL_CODE_MAX_ATTEMPTS = 5;
+/** Délai entre deux envois. */
+export const EMAIL_CODE_RESEND_SECONDS = 60;
+/**
+ * Empreinte du code gardée en base. Un code n'a que 6 chiffres : elle est calculée avec la clé du serveur (HMAC),
+ * pour qu'une copie de la base ne permette pas de retrouver les codes en les essayant tous.
+ */
+const emailCodeHash = (userId: number, code: string) => createHmac('sha256', JWT_SECRET).update(`email-code:${userId}:${code}`).digest('hex');
 
 @Injectable()
 export class AuthService {
@@ -55,7 +70,7 @@ export class AuthService {
   ) {}
 
   private frontendUrl() {
-    return (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+    return frontendUrl();
   }
 
   private findByEmail(email: string) {
@@ -172,6 +187,13 @@ export class AuthService {
     await this.userRepository.update({ id: user.id }, { lastLoginAt: new Date() });
     void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'login', entity: 'auth', ip: ip || null, status: 200 });
 
+    // Adresse pas encore vérifiée et code exigé : un code part tout de suite (sauf s'il en reste un valable),
+    // l'écran de saisie s'ouvre juste après la connexion.
+    if (!owner && !user.emailVerifiedAt && user.signupSource === 'self' && this.settings.verificationRequired(await this.settings.get())) {
+      const active = !!user.emailCodeHash && !!user.emailCodeExpires && new Date(user.emailCodeExpires).getTime() > Date.now() + 60_000 && (user.emailCodeAttempts ?? 0) < EMAIL_CODE_MAX_ATTEMPTS;
+      if (!active) await this.issueEmailCode(user, false).catch(() => undefined);
+    }
+
     return this.session(user, owner);
   }
 
@@ -256,17 +278,37 @@ export class AuthService {
     }
   }
 
-  private async sendVerificationEmail(user: User, token: string, welcome: boolean): Promise<boolean> {
-    const link = `${this.frontendUrl()}/auth/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
-    const intro = welcome ? `Bienvenue sur Inovexa ERP. Votre essai gratuit est ouvert.` : `Voici votre nouveau lien de confirmation.`;
+  /**
+   * Tire un nouveau code à 6 chiffres, n'en garde que l'empreinte, et l'envoie par email.
+   * Renvoie false si l'email n'a pas pu partir (serveur d'envoi non configuré ou en panne).
+   */
+  private async issueEmailCode(user: User, welcome: boolean): Promise<boolean> {
+    const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
+    const now = new Date();
+    user.emailCodeHash = emailCodeHash(user.id, code);
+    user.emailCodeExpires = new Date(now.getTime() + EMAIL_CODE_MINUTES * 60_000);
+    user.emailCodeAttempts = 0;
+    user.emailCodeSentAt = now;
+    await this.userRepository.update({ id: user.id }, { emailCodeHash: user.emailCodeHash, emailCodeExpires: user.emailCodeExpires, emailCodeAttempts: 0, emailCodeSentAt: now });
+    const page = `${this.frontendUrl()}/auth/verify-email`;
+    const intro = welcome ? 'Bienvenue sur Inovexa ERP. Votre essai gratuit est ouvert.' : 'Voici votre code de vérification.';
     const sent = await this.mail.trySend({
       to: user.email,
-      subject: welcome ? 'Bienvenue sur Inovexa ERP — confirmez votre adresse email' : 'Confirmez votre adresse email — Inovexa ERP',
-      text: `Bonjour ${user.name},\n\n${intro}\nConfirmez votre adresse email en ouvrant ce lien (valable 48 heures) :\n${link}\n\nL’équipe Inovexa ERP`,
-      html: `<p>Bonjour ${escapeHtml(user.name)},</p><p>${escapeHtml(intro)}</p><p><a href="${link}">Confirmer mon adresse email</a> (lien valable 48 heures)</p><p>L’équipe Inovexa ERP</p>`,
+      subject: `${code} — votre code de vérification Inovexa ERP`,
+      text: `Bonjour ${user.name},\n\n${intro}\nSaisissez ce code pour confirmer votre adresse email :\n\n    ${code}\n\nIl est valable ${EMAIL_CODE_MINUTES} minutes. Page de saisie : ${page}\n\nSi vous n’êtes pas à l’origine de cette inscription, ignorez ce message.\n\nL’équipe Inovexa ERP`,
+      html: `<p>Bonjour ${escapeHtml(user.name)},</p><p>${escapeHtml(intro)}</p><p>Saisissez ce code pour confirmer votre adresse email :</p>`
+        + `<p style="font-size:30px;font-weight:700;letter-spacing:8px;font-family:Consolas,Menlo,monospace;margin:18px 0">${code}</p>`
+        + `<p>Il est valable ${EMAIL_CODE_MINUTES} minutes. <a href="${page}">Ouvrir la page de saisie</a></p>`
+        + `<p style="color:#667085">Si vous n’êtes pas à l’origine de cette inscription, ignorez ce message.</p><p>L’équipe Inovexa ERP</p>`,
     });
-    if (!sent && process.env.NODE_ENV !== 'production') console.warn(`[auth] SMTP non configuré : lien de confirmation pour ${user.email} -> ${link}`);
+    // Le code n'apparaît dans les journaux qu'en développement, quand aucun serveur d'envoi n'est configuré.
+    if (!sent && process.env.NODE_ENV !== 'production') console.warn(`[auth] SMTP non configuré : code de vérification pour ${user.email} -> ${code}`);
     return sent;
+  }
+
+  /** Ce que l'écran de saisie du code doit savoir. */
+  private verificationInfo(required: boolean, sent: boolean) {
+    return { required, sent, expiresInMinutes: EMAIL_CODE_MINUTES, resendInSeconds: EMAIL_CODE_RESEND_SECONDS };
   }
 
   async register(dto: RegisterDto, ip?: string) {
@@ -276,16 +318,18 @@ export class AuthService {
     const checked = await this.checkSignup(dto.sector, dto.phone, dto.taxId);
     if (await this.findByEmail(email)) throw new ConflictException('Un compte existe déjà avec cet email. Connectez-vous, ou réinitialisez votre mot de passe.');
 
-    const token = randomBytes(32).toString('hex');
     const user = await this.createOwner({
       email, name: dto.name.trim(), companyName: dto.companyName.trim(), phone: checked.phone, passwordHash: await bcrypt.hash(dto.password, 10),
-      sectorCode: checked.sector.code, source: 'self', emailVerified: false, verifyHash: sha256(token),
+      sectorCode: checked.sector.code, source: 'self', emailVerified: false,
     });
     await this.afterSignup(user, { city: dto.city, address: dto.address, legalForm: dto.legalForm, taxId: checked.taxId }, ip);
-    const emailSent = await this.sendVerificationEmail(user, token, true);
-    return { ...(await this.session(user, null)), emailSent };
+    // Le code part dès que le serveur sait envoyer des emails ; il n'est EXIGÉ que si le réglage est actif.
+    const emailSent = this.mail.isConfigured() || process.env.NODE_ENV !== 'production' ? await this.issueEmailCode(user, true) : false;
+    const required = this.settings.verificationRequired(await this.settings.get());
+    return { ...(await this.session(user, null)), emailSent, verification: this.verificationInfo(required, emailSent) };
   }
 
+  /** Ancien lien de confirmation (envoyé avant l'arrivée du code) : il reste valable jusqu'à son expiration. */
   async verifyEmail(email: string, token: string) {
     const normalized = (email || '').trim().toLowerCase();
     this.guardRateLimit(`verify:${normalized}`);
@@ -294,28 +338,71 @@ export class AuthService {
     const ok = !!user && !!user.emailVerifyHash && !!user.emailVerifyExpires && user.emailVerifyExpires.getTime() > Date.now() && user.emailVerifyHash === sha256(String(token || ''));
     if (!ok) {
       this.registerFailure(`verify:${normalized}`);
-      throw new BadRequestException('Lien invalide ou expiré. Demandez un nouveau lien depuis votre espace.');
+      throw new BadRequestException('Lien invalide ou expiré. Connectez-vous pour recevoir un code de vérification.');
     }
-    user!.emailVerifiedAt = new Date();
-    user!.emailVerifyHash = null;
-    user!.emailVerifyExpires = null;
-    await this.userRepository.save(user!);
-    void this.audit.record({ userId: user!.ownerId ?? user!.id, actorId: user!.id, actorEmail: user!.email, action: 'email_verified', entity: 'auth' });
+    await this.markEmailVerified(user!);
     return { success: true, message: 'Adresse email confirmée.' };
   }
 
+  private async markEmailVerified(user: User) {
+    const patch = { emailVerifiedAt: new Date(), emailVerifyHash: null, emailVerifyExpires: null, emailCodeHash: null, emailCodeExpires: null, emailCodeAttempts: 0 };
+    await this.userRepository.update({ id: user.id }, patch);
+    Object.assign(user, patch);
+    void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'email_verified', entity: 'auth' });
+  }
+
+  /**
+   * Vérifie le code à 6 chiffres saisi par la personne connectée. Cinq erreurs annulent le code : il faut alors en
+   * demander un nouveau (un envoi par minute), ce qui rend l'essai systématique des 1 000 000 de codes impraticable.
+   */
+  async verifyEmailCode(actorId: number, code: string) {
+    const user = await this.userRepository.findOne({ where: { id: actorId } });
+    if (!user) throw new UnauthorizedException();
+    const owner = user.ownerId ? await this.userRepository.findOne({ where: { id: user.ownerId } }) : null;
+    const done = async (extra: Record<string, unknown>) => ({
+      success: true, ...extra,
+      account: !isPlatformAdmin(user.role) && (owner ?? user).role === 'client' ? this.subscriptions.view(owner ?? user, await this.settings.get()) : null,
+    });
+    if (user.emailVerifiedAt) return done({ alreadyVerified: true, message: 'Adresse email déjà confirmée.' });
+
+    const fail = (reason: 'CODE_EXPIRED' | 'CODE_LOCKED' | 'CODE_INVALID', message: string, remaining?: number) =>
+      new BadRequestException({ statusCode: 400, error: 'Bad Request', code: reason, message, ...(remaining !== undefined ? { remainingAttempts: remaining } : {}) });
+    if (!user.emailCodeHash || !user.emailCodeExpires || new Date(user.emailCodeExpires).getTime() <= Date.now()) {
+      throw fail('CODE_EXPIRED', 'Ce code a expiré. Demandez-en un nouveau.');
+    }
+    if ((user.emailCodeAttempts ?? 0) >= EMAIL_CODE_MAX_ATTEMPTS) throw fail('CODE_LOCKED', 'Trop d’essais sur ce code. Demandez-en un nouveau.');
+
+    const given = Buffer.from(emailCodeHash(user.id, String(code || '')), 'hex');
+    const expected = Buffer.from(user.emailCodeHash, 'hex');
+    if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
+      // Compteur incrémenté en base (et non en mémoire) : il tient même avec plusieurs serveurs ou après un redémarrage.
+      await this.userRepository.increment({ id: user.id }, 'emailCodeAttempts', 1);
+      const remaining = Math.max(0, EMAIL_CODE_MAX_ATTEMPTS - ((user.emailCodeAttempts ?? 0) + 1));
+      void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'email_code_failed', entity: 'auth', status: 400 });
+      throw remaining > 0
+        ? fail('CODE_INVALID', `Code incorrect. Il vous reste ${remaining} essai${remaining > 1 ? 's' : ''}.`, remaining)
+        : fail('CODE_LOCKED', 'Trop d’essais sur ce code. Demandez-en un nouveau.', 0);
+    }
+    await this.markEmailVerified(user);
+    return done({ message: 'Adresse email confirmée.' });
+  }
+
+  /** Envoie un nouveau code (un par minute, cinq par quart d'heure). */
   async resendVerification(actorId: number) {
     const user = await this.userRepository.findOne({ where: { id: actorId } });
     if (!user) throw new UnauthorizedException();
     if (user.emailVerifiedAt) return { success: true, alreadyVerified: true };
+    const wait = user.emailCodeSentAt ? Math.ceil((new Date(user.emailCodeSentAt).getTime() + EMAIL_CODE_RESEND_SECONDS * 1000 - Date.now()) / 1000) : 0;
+    if (wait > 0) {
+      throw new HttpException({ statusCode: 429, error: 'Too Many Requests', code: 'CODE_TOO_SOON', retryInSeconds: wait, message: `Un code vient de vous être envoyé. Vous pourrez en demander un autre dans ${wait} s.` }, HttpStatus.TOO_MANY_REQUESTS);
+    }
     this.guardRateLimit(`resend:${user.id}`);
     this.registerFailure(`resend:${user.id}`); // 5 envois / 15 min
-    const token = randomBytes(32).toString('hex');
-    user.emailVerifyHash = sha256(token);
-    user.emailVerifyExpires = new Date(Date.now() + 48 * 3600_000);
-    await this.userRepository.save(user);
-    const emailSent = await this.sendVerificationEmail(user, token, false);
-    return { success: true, emailSent, message: emailSent ? 'Un nouveau lien vient de vous être envoyé.' : 'L’envoi d’emails n’est pas configuré : contactez l’administrateur.' };
+    const emailSent = await this.issueEmailCode(user, false);
+    return {
+      success: true, emailSent, ...this.verificationInfo(this.settings.verificationRequired(await this.settings.get()), emailSent),
+      message: emailSent ? 'Un nouveau code vient de vous être envoyé.' : 'L’envoi d’emails n’est pas disponible pour le moment. Réessayez plus tard.',
+    };
   }
 
   // ───────────── Connexion et inscription avec Google ou Apple ─────────────

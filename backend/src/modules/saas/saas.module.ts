@@ -9,10 +9,11 @@ import { SaasSettingsService } from './saas-settings.service';
 import { SubscriptionService } from './subscription.service';
 import { SectorsService } from './sectors.service';
 import { AdminGuard } from './admin.guard';
+import { PaymentGatewayService } from './payment-gateway.service';
 import { AdminSaasController, BillingController, PublicController, SuggestionsController } from './saas.controllers';
 
 /**
- * Couche SaaS : essai gratuit, abonnements, paiements, secteurs d'activité, administration de la plateforme.
+ * Couche SaaS : essai gratuit, abonnements, paiement en ligne par carte, secteurs d'activité, administration de la plateforme.
  * Global : l'authentification (JwtStrategy, AccessGuard) lit l'état du compte à chaque requête.
  */
 @Global()
@@ -22,7 +23,7 @@ import { AdminSaasController, BillingController, PublicController, SuggestionsCo
     ProductsModule,
   ],
   controllers: [PublicController, BillingController, SuggestionsController, AdminSaasController],
-  providers: [SaasSettingsService, SubscriptionService, SectorsService, AdminGuard],
-  exports: [SaasSettingsService, SubscriptionService, SectorsService, AdminGuard],
+  providers: [SaasSettingsService, SubscriptionService, SectorsService, AdminGuard, PaymentGatewayService],
+  exports: [SaasSettingsService, SubscriptionService, SectorsService, AdminGuard, PaymentGatewayService],
 })
 export class SaasModule {}

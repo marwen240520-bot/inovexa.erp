@@ -14,7 +14,7 @@ import AuthShell, {
 } from "@/components/auth/AuthShell";
 import SocialSignIn, { PROVIDER_NAMES, type SocialCredential } from "@/components/auth/SocialSignIn";
 import {
-  clearPendingSocial, finishSignIn, readPendingSocial, rememberPreferredPlan, resumeSession, socialBody, type PendingSocial, type SignInResponse,
+  clearPendingSocial, finishSignIn, markCodeSent, readPendingSocial, rememberPreferredPlan, resumeSession, socialBody, type PendingSocial, type SignInResponse,
 } from "@/lib/authFlow";
 import { MODULE_INFO, PLANS, SECTORS, pick, trialLabel, type CatalogModule } from "@/lib/catalog";
 import { usePublicConfig } from "@/lib/publicConfig";
@@ -181,6 +181,8 @@ function RegisterForm() {
     for (const key of ["city", "address", "legalForm", "taxId"] as const) if (form[key].trim()) body[key] = form[key].trim();
     const res = await publicPost("/auth/register", body);
     if (res.ok && res.data?.access_token) {
+      // Un code de vérification vient de partir par email : s'il est exigé, finishSignIn mène à l'écran de saisie.
+      if ((res.data as SignInResponse).verification?.sent) markCodeSent();
       router.push(finishSignIn(res.data as SignInResponse));
       return;
     }

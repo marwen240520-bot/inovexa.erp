@@ -1,20 +1,31 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
+import {
+  BadGatewayException, BadRequestException, ConflictException, ForbiddenException, HttpException, Injectable, Logger, NotFoundException,
+  OnApplicationBootstrap, OnModuleDestroy, ServiceUnavailableException,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, IsNull } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { MailService } from '../../common/mail/mail.service';
 import { AuditService } from '../../common/audit/audit.service';
-import { Plan, PlatformSettings, SubscriptionPayment, SupportMessage } from './entities/saas.entity';
+import { frontendUrl } from '../../common/origins';
+import { Plan, PlatformSettings, SubscriptionPayment } from './entities/saas.entity';
 import { Sector } from './entities/sector.entity';
 import { SaasSettingsService } from './saas-settings.service';
-import { AccountAccess, MODULE_KEYS, blockMessage, modulesFromList, resolveAccess } from './account-access';
+import { AccountAccess, CORE_MODULES, MODULE_KEYS, blockMessage, isModuleEnabled, modulesFromList, resolveAccess } from './account-access';
 import { PAYMENT_METHODS } from './saas-defaults';
+import { PaymentGatewayService, toMinorUnits } from './payment-gateway.service';
 
 const SWEEP_EVERY_MS = 10 * 60_000;
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
-const frontend = () => (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+const frontend = () => frontendUrl();
+/** Durée de validité d'une page de paiement en ligne. */
+const CHECKOUT_MINUTES = 30;
+/** Pages de paiement qu'un compte peut ouvrir par heure (un clic malheureux ne doit pas bloquer, un robot si). */
+const CHECKOUTS_PER_HOUR = 12;
+/** États d'un paiement en ligne qui n'a pas (encore) abouti : ils ne figurent ni dans l'historique ni dans les compteurs. */
+export const OPEN_ONLINE_STATUSES = ['initiated', 'expired'];
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
 /** Ajoute des mois calendaires (31 janvier + 1 mois = dernier jour de février). */
@@ -50,6 +61,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     private readonly settings: SaasSettingsService,
     private readonly mail: MailService,
     private readonly audit: AuditService,
+    private readonly gateway: PaymentGatewayService,
   ) {}
 
   onApplicationBootstrap() {
@@ -76,7 +88,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
   // ───────────── État du compte ─────────────
 
   access(owner: User, settings: PlatformSettings, now = new Date()): AccountAccess {
-    return resolveAccess(owner, now, { requireEmailVerification: settings.requireEmailVerification });
+    return resolveAccess(owner, now, { requireEmailVerification: this.settings.verificationRequired(settings) });
   }
 
   view(owner: User, settings: PlatformSettings, now = new Date()): AccountView {
@@ -134,13 +146,13 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     owner.planCode = plan.code;
     owner.userLimit = plan.maxUsers ?? null;
     if (billingCycle) owner.billingCycle = billingCycle === 'annual' ? 'annual' : 'monthly';
-    // Changement de formule : modules = ceux du secteur, limités à ceux de la formule. L'administrateur peut ensuite ajuster.
-    if (changed && plan.modules?.length) {
+    // Changement de formule : le client garde les modules qu'il avait choisis et retrouve ceux de son secteur, dans la
+    // limite de ce que la nouvelle formule inclut. Il les ajuste ensuite lui-même (Abonnement › Mes modules).
+    if (changed) {
       const sectorMods = await this.sectorModules(owner.sector, em);
-      const allowed = new Set(plan.modules);
-      owner.modules = modulesFromList(MODULE_KEYS.filter((k) => sectorMods[k] && allowed.has(k)));
-    } else if (changed) {
-      owner.modules = await this.sectorModules(owner.sector, em);
+      const allowed = plan.modules?.length ? new Set(plan.modules) : null;
+      const configured = !!owner.modules && Object.keys(owner.modules).length > 0;
+      owner.modules = modulesFromList(MODULE_KEYS.filter((k) => (sectorMods[k] || (configured && owner.modules[k] === true)) && (!allowed || allowed.has(k))));
     }
     return plan;
   }
@@ -281,6 +293,71 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     });
   }
 
+  // ───────────── Secteur et modules : choisis par le client lui-même ─────────────
+
+  /** Modules que la formule du compte inclut (null = tous). Sans formule — pendant l'essai — tout est ouvert. */
+  private async planModules(owner: User, em?: EntityManager): Promise<Set<string> | null> {
+    if (!owner.planCode) return null;
+    const plan = await (em || this.ds.manager).getRepository(Plan).findOne({ where: { code: owner.planCode } });
+    return plan?.modules?.length ? new Set(plan.modules) : null;
+  }
+
+  /** Ce que la page « Mes modules » affiche : secteur, modules ouverts, modules inclus dans la formule, conseillés. */
+  async modulesView(ownerId: number) {
+    const owner = await this.owner(ownerId);
+    const allowed = await this.planModules(owner);
+    const sectorMods = await this.sectorModules(owner.sector);
+    const sectors = await this.ds.getRepository(Sector).find({ where: { isActive: true }, order: { sortOrder: 'ASC', id: 'ASC' } });
+    const plan = owner.planCode ? await this.ds.getRepository(Plan).findOne({ where: { code: owner.planCode } }) : null;
+    return {
+      sector: owner.sector ?? null,
+      plan: plan ? { code: plan.code, name: plan.name, allModules: !plan.modules?.length } : null,
+      // Pendant l'essai, aucune formule ne limite les modules : le client essaie ce qu'il veut.
+      trial: owner.accountStatus === 'TRIAL',
+      modules: MODULE_KEYS.filter((k) => !CORE_MODULES.includes(k)).map((key) => ({
+        key,
+        enabled: isModuleEnabled(owner.modules, key) && (!allowed || allowed.has(key)),
+        included: !allowed || allowed.has(key),
+        recommended: sectorMods[key] === true,
+      })),
+      sectors: sectors.map((s) => ({ code: s.code, name: s.name, nameEn: s.nameEn, nameAr: s.nameAr, modules: s.modules || [] })),
+    };
+  }
+
+  /** Le propriétaire ouvre ou ferme lui-même ses modules, dans la limite de ce que sa formule inclut. */
+  async setModules(ownerId: number, list: unknown, actorId: number) {
+    if (!Array.isArray(list)) throw new BadRequestException('Liste de modules attendue.');
+    const wanted = Array.from(new Set(list.map(String)));
+    const unknown = wanted.filter((m) => !(MODULE_KEYS as readonly string[]).includes(m));
+    if (unknown.length) throw new BadRequestException(`Module inconnu : ${unknown.join(', ')}.`);
+    const owner = await this.owner(ownerId);
+    const allowed = await this.planModules(owner);
+    const refused = wanted.filter((m) => !CORE_MODULES.includes(m) && allowed && !allowed.has(m));
+    if (refused.length) {
+      throw new ForbiddenException({ statusCode: 403, error: 'Forbidden', code: 'MODULE_NOT_IN_PLAN', modules: refused, message: `Votre formule n’inclut pas ce module (${refused.join(', ')}). Passez à une formule supérieure pour l’ouvrir.` });
+    }
+    owner.modules = modulesFromList(wanted);
+    await this.users().save(owner);
+    await this.audit.record({ userId: owner.id, actorId, action: 'modules_changed', entity: 'account', entityId: owner.id, details: { modules: wanted.filter((m) => !CORE_MODULES.includes(m)) } });
+    return this.modulesView(owner.id);
+  }
+
+  /** Le propriétaire change lui-même de secteur ; avec applyModules, il reçoit les modules conseillés pour ce secteur. */
+  async setSector(ownerId: number, code: unknown, applyModules: boolean, actorId: number) {
+    const sector = await this.ds.getRepository(Sector).findOne({ where: { code: String(code || '').toLowerCase(), isActive: true } });
+    if (!sector) throw new BadRequestException('Choisissez votre secteur d’activité dans la liste.');
+    const owner = await this.owner(ownerId);
+    owner.sector = sector.code;
+    if (applyModules) {
+      const allowed = await this.planModules(owner);
+      const sectorMods = await this.sectorModules(sector.code);
+      owner.modules = modulesFromList(MODULE_KEYS.filter((k) => sectorMods[k] && (!allowed || allowed.has(k))));
+    }
+    await this.users().save(owner);
+    await this.audit.record({ userId: owner.id, actorId, action: 'sector_changed', entity: 'account', entityId: owner.id, details: { sector: sector.code, applyModules } });
+    return this.modulesView(owner.id);
+  }
+
   // ───────────── Formules ─────────────
 
   async plans(scope: 'public' | 'all') {
@@ -372,12 +449,17 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     by: { role: 'client' | 'admin'; actorId: number },
   ) {
     const settings = await this.settings.get();
+    // Par défaut tout se paie en ligne par carte : la déclaration hors ligne n'existe pour le client que si
+    // l'administrateur l'a activée (Réglages › Paiements hors ligne).
+    if (by.role === 'client' && !settings.manualPayments) {
+      throw new ForbiddenException({ statusCode: 403, error: 'Forbidden', code: 'MANUAL_PAYMENTS_DISABLED', message: 'Le paiement se fait en ligne, par carte bancaire.' });
+    }
     const owner = await this.owner(ownerId);
     const plan = await this.ds.getRepository(Plan).findOne({ where: { code: String(dto.planCode || '') } });
     if (!plan || !plan.isActive || (by.role === 'client' && !plan.isPublic)) throw new BadRequestException('Formule indisponible.');
     const cycle = dto.billingCycle === 'annual' ? 'annual' : 'monthly';
     const amountHT = cycle === 'annual' ? plan.priceAnnual : plan.priceMonthly;
-    if (amountHT === null || amountHT === undefined) throw new BadRequestException('Cette formule est sur devis : contactez-nous pour la souscrire.');
+    if (amountHT === null || amountHT === undefined) throw new BadRequestException('Cette formule est sur devis : elle ne peut pas être souscrite en ligne.');
     const allowed = by.role === 'admin' ? (PAYMENT_METHODS as readonly string[]) : settings.paymentMethods?.length ? settings.paymentMethods : ['bank_transfer'];
     if (!allowed.includes(dto.method)) throw new BadRequestException('Moyen de paiement indisponible.');
 
@@ -388,7 +470,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     const vatRate = Number(settings.vatRate) || 0;
     const payment = await repo.save(repo.create({
       userId: owner.id, planCode: plan.code, planName: plan.name, billingCycle: cycle, periodMonths: cycle === 'annual' ? 12 : 1,
-      amountHT: round3(amountHT), vatRate, amountTTC: round3(amountHT * (1 + vatRate / 100)), currency: settings.currency || 'TND',
+      amountHT: round3(amountHT), vatRate, amountTTC: round3(amountHT * (1 + vatRate / 100)), currency: settings.currency || 'USD',
       method: dto.method, provider: 'manual', reference: (dto.reference || '').trim().slice(0, 120) || null,
       note: (dto.note || '').trim().slice(0, 500) || null, status: 'pending', declaredBy: by.role,
     }));
@@ -403,52 +485,252 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     return payment;
   }
 
-  /** Valide un paiement : ouvre (ou prolonge) la période d'abonnement et rend l'accès. */
+  /**
+   * Cœur commun à la validation par l'administrateur et à l'encaissement en ligne : ouvre (ou prolonge) la période
+   * d'abonnement, applique la formule, rend l'accès et attribue le numéro de reçu. À appeler dans une transaction,
+   * la ligne du paiement étant verrouillée.
+   */
+  private async applyValidated(em: EntityManager, payment: SubscriptionPayment, validatedBy: number | null, now: Date) {
+    const owner = await this.owner(payment.userId, em);
+    const currentEnd = owner.subscriptionEnd ? new Date(owner.subscriptionEnd) : null;
+    const suspended = owner.accountStatus === 'SUSPENDED';
+    // Renouvellement avant l'échéance : la nouvelle période s'ajoute à la suite, aucun jour payé n'est perdu.
+    // Paiement pendant l'essai gratuit : la période payée commence à la fin de l'essai, aucun jour gratuit n'est perdu.
+    const trialEnd = owner.trialEndsAt ? new Date(owner.trialEndsAt) : null;
+    const start =
+      (owner.accountStatus === 'ACTIVE' || (suspended && !!owner.subscriptionStart)) && owner.expiryEnforced !== false && currentEnd && currentEnd.getTime() > now.getTime() ? currentEnd
+      : owner.accountStatus === 'TRIAL' && trialEnd && trialEnd.getTime() > now.getTime() ? trialEnd
+      : now;
+    const end = addMonths(start, payment.periodMonths);
+
+    await this.applyPlan(owner, payment.planCode, payment.billingCycle, em);
+    if (!owner.subscriptionStart || owner.accountStatus !== 'ACTIVE') owner.subscriptionStart = now;
+    owner.subscriptionEnd = end;
+    owner.expiryEnforced = true;
+    // Une suspension décidée par l'administrateur n'est pas levée par un paiement en ligne : la période payée est
+    // enregistrée, et l'accès revient dès que l'administrateur réactive le compte.
+    if (!(suspended && validatedBy === null)) {
+      owner.accountStatus = 'ACTIVE';
+      owner.isActive = true;
+      owner.statusReason = null;
+      owner.statusChangedAt = now;
+    }
+    owner.renewalReminderStage = 0;
+    await em.save(User, owner);
+
+    payment.status = 'validated';
+    payment.validatedAt = now;
+    payment.validatedBy = validatedBy;
+    payment.periodStart = start;
+    payment.periodEnd = end;
+    payment.checkoutUrl = null;
+    payment.receiptNumber = `REC-${now.getUTCFullYear()}-${String(payment.id).padStart(5, '0')}`;
+    await em.getRepository(SubscriptionPayment).save(payment);
+    return { payment, owner };
+  }
+
+  private receiptMail(owner: User, payment: SubscriptionPayment, online: boolean) {
+    const paid = `${payment.amountTTC} ${payment.currency} TTC`;
+    void this.mail.trySend({
+      to: owner.email, subject: `${online ? 'Paiement reçu' : 'Paiement validé'} — reçu ${payment.receiptNumber}`,
+      text: `Bonjour ${owner.name},\n\n${online ? `Nous avons bien reçu votre paiement par carte de ${paid}.` : `Votre paiement de ${paid} est validé.`} Formule ${payment.planName}, accès jusqu’au ${fmtDate(payment.periodEnd)}.\nReçu : ${payment.receiptNumber}\n\n${frontend()}/dashboard/billing\n\nMerci,\nL’équipe Inovexa ERP`,
+    });
+  }
+
+  /** L'administrateur valide un paiement hors ligne : ouvre (ou prolonge) la période d'abonnement et rend l'accès. */
   async validatePayment(paymentId: number, adminId: number) {
     const result = await this.ds.transaction(async (em) => {
       const repo = em.getRepository(SubscriptionPayment);
       const payment = await repo.findOne({ where: { id: paymentId }, lock: { mode: 'pessimistic_write' } });
       if (!payment) throw new NotFoundException('Paiement introuvable');
       if (payment.status !== 'pending') throw new ConflictException('Ce paiement a déjà été traité.');
-      const owner = await this.owner(payment.userId, em);
-      const now = new Date();
-      const currentEnd = owner.subscriptionEnd ? new Date(owner.subscriptionEnd) : null;
-      // Renouvellement avant l'échéance : la nouvelle période s'ajoute à la suite, aucun jour payé n'est perdu.
-      // Paiement pendant l'essai gratuit : la période payée commence à la fin de l'essai, aucun jour gratuit n'est perdu.
-      const trialEnd = owner.trialEndsAt ? new Date(owner.trialEndsAt) : null;
-      const start =
-        owner.accountStatus === 'ACTIVE' && owner.expiryEnforced !== false && currentEnd && currentEnd.getTime() > now.getTime() ? currentEnd
-        : owner.accountStatus === 'TRIAL' && trialEnd && trialEnd.getTime() > now.getTime() ? trialEnd
-        : now;
-      const end = addMonths(start, payment.periodMonths);
-
-      await this.applyPlan(owner, payment.planCode, payment.billingCycle, em);
-      if (!owner.subscriptionStart || owner.accountStatus !== 'ACTIVE') owner.subscriptionStart = now;
-      owner.subscriptionEnd = end;
-      owner.expiryEnforced = true;
-      owner.accountStatus = 'ACTIVE';
-      owner.isActive = true;
-      owner.statusReason = null;
-      owner.statusChangedAt = now;
-      owner.renewalReminderStage = 0;
-      await em.save(User, owner);
-
-      payment.status = 'validated';
-      payment.validatedAt = now;
-      payment.validatedBy = adminId;
-      payment.periodStart = start;
-      payment.periodEnd = end;
-      payment.receiptNumber = `REC-${now.getUTCFullYear()}-${String(payment.id).padStart(5, '0')}`;
-      await repo.save(payment);
-      return { payment, owner };
+      return this.applyValidated(em, payment, adminId, new Date());
     });
     const { payment, owner } = result;
     await this.audit.record({ userId: owner.id, actorId: adminId, action: 'payment_validated', entity: 'subscription_payment', entityId: payment.id, details: { receipt: payment.receiptNumber, periodEnd: payment.periodEnd } });
-    void this.mail.trySend({
-      to: owner.email, subject: `Paiement validé — reçu ${payment.receiptNumber}`,
-      text: `Bonjour ${owner.name},\n\nVotre paiement de ${payment.amountTTC} ${payment.currency} TTC est validé. Formule ${payment.planName}, accès jusqu’au ${fmtDate(payment.periodEnd)}.\nReçu : ${payment.receiptNumber}\n\n${frontend()}/dashboard/billing\n\nMerci,\nL’équipe Inovexa ERP`,
-    });
+    this.receiptMail(owner, payment, false);
     return payment;
+  }
+
+  // ───────────── Paiement en ligne par carte (Konnect) : aucune intervention de l'administrateur ─────────────
+
+  /** Ce que la page Abonnement (et l'administration) doivent savoir du paiement en ligne. */
+  onlinePayment(settings: PlatformSettings) {
+    const g = this.gateway.info();
+    const currencyOk = this.gateway.supports(settings.currency);
+    return {
+      enabled: g.configured && currencyOk,
+      provider: g.provider,
+      mode: g.mode,
+      methods: g.methods,
+      // Pourquoi le bouton « Payer par carte » n'est pas disponible (affiché à l'administrateur, pas au client).
+      reason: !g.configured ? 'NOT_CONFIGURED' : !currencyOk ? 'CURRENCY_UNSUPPORTED' : null,
+    };
+  }
+
+  /** Page de paiement encore ouverte pour ce compte (pour la reprendre au lieu d'en créer une autre). */
+  async openCheckout(ownerId: number, now = new Date()) {
+    const row = await this.ds.getRepository(SubscriptionPayment).findOne({ where: { userId: ownerId, status: 'initiated', provider: 'konnect' }, order: { id: 'DESC' } });
+    if (!row || !row.checkoutUrl || !row.expiresAt || new Date(row.expiresAt).getTime() <= now.getTime()) return null;
+    return { id: row.id, payUrl: row.checkoutUrl, expiresAt: row.expiresAt, planCode: row.planCode, billingCycle: row.billingCycle, amountTTC: row.amountTTC, currency: row.currency };
+  }
+
+  /**
+   * Le client choisit sa formule et clique « Payer par carte » : le montant est calculé ICI (formule, TVA, devise des
+   * réglages), le paiement est ouvert chez le prestataire, et le navigateur reçoit l'adresse de la page de paiement.
+   */
+  async startCheckout(
+    ownerId: number,
+    dto: { planCode?: string; billingCycle?: string },
+    ctx: { actorId: number; returnBase: string; apiBase: string },
+  ) {
+    const settings = await this.settings.get();
+    const owner = await this.owner(ownerId);
+    if (owner.accountStatus === 'SUSPENDED' || owner.isActive === false) throw new ForbiddenException('Votre compte est suspendu : contactez le support.');
+    const plan = await this.ds.getRepository(Plan).findOne({ where: { code: String(dto.planCode || '') } });
+    if (!plan || !plan.isActive || !plan.isPublic) throw new BadRequestException('Formule indisponible.');
+    const cycle = dto.billingCycle === 'annual' ? 'annual' : 'monthly';
+    const amountHT = cycle === 'annual' ? plan.priceAnnual : plan.priceMonthly;
+    if (amountHT === null || amountHT === undefined) throw new BadRequestException('Cette formule est sur devis : elle ne peut pas être souscrite en ligne.');
+    const online = this.onlinePayment(settings);
+    if (!online.enabled) {
+      throw new ServiceUnavailableException({ statusCode: 503, error: 'Service Unavailable', code: 'ONLINE_PAYMENT_UNAVAILABLE', message: 'Le paiement par carte est en cours d’activation. Réessayez un peu plus tard.' });
+    }
+    const currency = settings.currency;
+    const vatRate = Number(settings.vatRate) || 0;
+    const ht = round3(amountHT);
+    // Le prestataire encaisse au centime (au millime pour le dinar) : le montant TTC est arrondi à cette unité.
+    const digits = currency === 'TND' ? 3 : 2;
+    const ttc = Math.round(ht * (1 + vatRate / 100) * 10 ** digits) / 10 ** digits;
+    if (!(ttc > 0)) throw new BadRequestException('Cette formule est gratuite : il n’y a rien à payer.');
+
+    const repo = this.ds.getRepository(SubscriptionPayment);
+    const now = new Date();
+    const recent = await repo.createQueryBuilder('p').where(`p.userId = :ownerId AND p.provider = 'konnect' AND p.createdAt > :since`, { ownerId: owner.id, since: new Date(now.getTime() - HOUR) }).getCount();
+    if (recent >= CHECKOUTS_PER_HOUR) throw new HttpException('Trop de tentatives de paiement. Réessayez dans une heure.', 429);
+
+    // Une seule page de paiement ouverte à la fois : on reprend celle qui correspond, les autres sont refermées.
+    // (Si le client paie quand même une page refermée, l'encaissement est reconnu : voir confirmCheckout.)
+    const opened = await repo.find({ where: { userId: owner.id, status: 'initiated', provider: 'konnect' } });
+    for (const row of opened) {
+      const usable = row.checkoutUrl && row.expiresAt && new Date(row.expiresAt).getTime() > now.getTime() + 2 * 60_000;
+      if (usable && row.planCode === plan.code && row.billingCycle === cycle && row.amountTTC === ttc && row.currency === currency && row.returnBase === ctx.returnBase) {
+        return { id: row.id, payUrl: row.checkoutUrl!, expiresAt: row.expiresAt, amountTTC: row.amountTTC, currency: row.currency, resumed: true };
+      }
+      await repo.update({ id: row.id, status: 'initiated' }, { status: 'expired', checkoutUrl: null });
+    }
+
+    const payment = await repo.save(repo.create({
+      userId: owner.id, planCode: plan.code, planName: plan.name, billingCycle: cycle, periodMonths: cycle === 'annual' ? 12 : 1,
+      amountHT: ht, vatRate, amountTTC: ttc, currency, method: 'card', provider: 'konnect', status: 'initiated', declaredBy: 'client',
+      expiresAt: new Date(now.getTime() + CHECKOUT_MINUTES * 60_000), returnBase: ctx.returnBase,
+    }));
+    const [firstName, ...rest] = String(owner.name || '').trim().split(/\s+/);
+    try {
+      const session = await this.gateway.createCheckout({
+        orderId: String(payment.id), amount: ttc, currency,
+        description: `Inovexa ERP — formule ${plan.name} (${cycle === 'annual' ? '12 mois' : '1 mois'}) — ${owner.companyName || owner.name}`,
+        firstName: firstName || null, lastName: rest.join(' ') || null, email: owner.email, phone: owner.phone || null,
+        webhookUrl: `${ctx.apiBase}/public/payments/konnect/return`,
+        successUrl: `${ctx.returnBase}/subscription?checkout=${payment.id}`,
+        failUrl: `${ctx.returnBase}/subscription?checkout=${payment.id}`,
+        lifespanMinutes: CHECKOUT_MINUTES,
+      });
+      payment.providerRef = session.providerRef;
+      payment.checkoutUrl = session.payUrl;
+      await repo.save(payment);
+    } catch (e: any) {
+      await repo.update({ id: payment.id }, { status: 'expired', note: `Ouverture du paiement refusée : ${String(e?.message || e).slice(0, 400)}` });
+      this.logger.error(`Paiement en ligne non ouvert (compte ${owner.id}) : ${e?.message || e}`);
+      throw new BadGatewayException({ statusCode: 502, error: 'Bad Gateway', code: 'PAYMENT_PROVIDER_ERROR', message: 'Le prestataire de paiement ne répond pas. Réessayez dans un instant.' });
+    }
+    await this.audit.record({ userId: owner.id, actorId: ctx.actorId, action: 'checkout_started', entity: 'subscription_payment', entityId: payment.id, details: { planCode: plan.code, cycle, amountTTC: ttc, currency } });
+    return { id: payment.id, payUrl: payment.checkoutUrl!, expiresAt: payment.expiresAt, amountTTC: ttc, currency, resumed: false };
+  }
+
+  /**
+   * Demande au prestataire où en est un paiement en ligne et, s'il est encaissé, ouvre l'abonnement — tout de suite et
+   * sans administrateur. Appelé au retour du client, par la notification du prestataire et par le balayage périodique :
+   * les trois peuvent arriver en même temps, un seul ouvre la période (ligne verrouillée).
+   */
+  async confirmCheckout(where: { id?: number; providerRef?: string; ownerId?: number }, now = new Date()): Promise<{ status: 'paid' | 'pending' | 'expired' | 'unknown'; payment: SubscriptionPayment | null }> {
+    const repo = this.ds.getRepository(SubscriptionPayment);
+    const criteria: Record<string, any> = { provider: 'konnect' };
+    if (where.id) criteria.id = where.id;
+    else if (where.providerRef) criteria.providerRef = where.providerRef;
+    else return { status: 'unknown', payment: null };
+    if (where.ownerId) criteria.userId = where.ownerId;
+    const row = await repo.findOne({ where: criteria });
+    if (!row) return { status: 'unknown', payment: null };
+    if (row.status === 'validated') return { status: 'paid', payment: row };
+    if (!OPEN_ONLINE_STATUSES.includes(row.status) || !row.providerRef) return { status: 'expired', payment: row };
+
+    let remote;
+    try {
+      remote = await this.gateway.fetchPayment(row.providerRef);
+    } catch (e: any) {
+      this.logger.warn(`État du paiement ${row.id} illisible chez le prestataire : ${e?.message || e}`);
+      return { status: row.status === 'expired' ? 'expired' : 'pending', payment: row };
+    }
+    if (remote.paid) {
+      // Le paiement confirmé doit être CELUI que nous avons ouvert : même commande et même montant. Seul notre serveur
+      // ouvre les paiements (clé secrète), le client ne peut donc pas en modifier le montant : ces contrôles sont une
+      // double sécurité. Si le prestataire annonce une autre devise que la nôtre (montant converti en dinars de son côté),
+      // le montant n'est pas comparable : on garde le contrôle de la commande et on le note dans le journal.
+      const expected = toMinorUnits(row.amountTTC, row.currency);
+      const sameCurrency = remote.currency === null || remote.currency === row.currency;
+      if (!sameCurrency) this.logger.warn(`Paiement ${row.id} : le prestataire annonce ${remote.currency} (attendu ${row.currency}) ; montant non comparé.`);
+      const mismatch =
+        (remote.orderId !== null && remote.orderId !== String(row.id)) ||
+        (sameCurrency && remote.amountMinor !== null && Math.abs(remote.amountMinor - expected) > 1);
+      if (mismatch) {
+        this.logger.error(`Paiement ${row.id} : la confirmation du prestataire ne correspond pas (commande ${remote.orderId}, ${remote.amountMinor} ${remote.currency} ; attendu ${expected} ${row.currency}). Abonnement NON ouvert.`);
+        await this.audit.record({ userId: row.userId, actorId: null, action: 'payment_mismatch', entity: 'subscription_payment', entityId: row.id, details: { orderId: remote.orderId, amountMinor: remote.amountMinor, currency: remote.currency, expected } });
+        return { status: 'pending', payment: row };
+      }
+      return { status: 'paid', payment: await this.settleOnline(row.id, remote.method) };
+    }
+    // Pas (encore) payé. Dix minutes après la fin de validité de la page, on n'attend plus.
+    if (row.status === 'initiated' && row.expiresAt && new Date(row.expiresAt).getTime() + 10 * 60_000 < now.getTime()) {
+      await repo.update({ id: row.id, status: 'initiated' }, { status: 'expired', checkoutUrl: null });
+      row.status = 'expired';
+    }
+    return { status: row.status === 'expired' ? 'expired' : 'pending', payment: row };
+  }
+
+  /** Enregistre un paiement en ligne encaissé : une seule fois, même si la confirmation arrive par plusieurs chemins. */
+  private async settleOnline(paymentId: number, method: string | null): Promise<SubscriptionPayment> {
+    const result = await this.ds.transaction(async (em) => {
+      const payment = await em.getRepository(SubscriptionPayment).findOne({ where: { id: paymentId }, lock: { mode: 'pessimistic_write' } });
+      if (!payment) throw new NotFoundException('Paiement introuvable');
+      if (payment.status === 'validated') return { payment, owner: null as User | null };
+      if (!OPEN_ONLINE_STATUSES.includes(payment.status)) throw new ConflictException('Ce paiement a déjà été traité.');
+      if (method === 'edinar' || method === 'card') payment.method = method;
+      payment.reference = payment.providerRef;
+      return this.applyValidated(em, payment, null, new Date());
+    });
+    if (result.owner) {
+      await this.audit.record({ userId: result.owner.id, actorId: null, action: 'payment_received', entity: 'subscription_payment', entityId: result.payment.id, details: { provider: 'konnect', receipt: result.payment.receiptNumber, amountTTC: result.payment.amountTTC, currency: result.payment.currency, periodEnd: result.payment.periodEnd } });
+      this.receiptMail(result.owner, result.payment, true);
+    }
+    return result.payment;
+  }
+
+  /**
+   * Filet de sécurité : relit chez le prestataire les paiements ouverts récemment (client qui a payé puis fermé
+   * l'onglet avant de revenir sur le site). Lancé par le balayage périodique.
+   */
+  async reconcileCheckouts(now = new Date()): Promise<{ checked: number; paid: number }> {
+    if (!this.gateway.isConfigured()) return { checked: 0, paid: 0 };
+    const rows = await this.ds.getRepository(SubscriptionPayment).createQueryBuilder('p')
+      .where(`p.provider = 'konnect' AND p.providerRef IS NOT NULL AND p.status IN (:...open) AND p.createdAt > :since`, { open: OPEN_ONLINE_STATUSES, since: new Date(now.getTime() - 6 * HOUR) })
+      .orderBy('p.id', 'DESC').take(100).getMany();
+    let paid = 0;
+    for (const row of rows) {
+      const out = await this.confirmCheckout({ id: row.id }, now).catch(() => null);
+      if (out?.status === 'paid') paid++;
+    }
+    return { checked: rows.length, paid };
   }
 
   async rejectPayment(paymentId: number, reason: string | undefined, adminId: number) {
@@ -466,7 +748,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     if (owner) {
       void this.mail.trySend({
         to: owner.email, subject: 'Votre paiement n’a pas pu être validé',
-        text: `Bonjour ${owner.name},\n\nVotre déclaration de paiement (${payment.amountTTC} ${payment.currency}) n’a pas pu être validée.${payment.rejectReason ? `\nMotif : ${payment.rejectReason}` : ''}\n\nVous pouvez en déclarer une nouvelle : ${frontend()}/subscription`,
+        text: `Bonjour ${owner.name},\n\nVotre déclaration de paiement (${payment.amountTTC} ${payment.currency}) n’a pas pu être validée.${payment.rejectReason ? `\nMotif : ${payment.rejectReason}` : ''}\n\nVous pouvez payer en ligne par carte : ${frontend()}/subscription`,
       });
     }
     return payment;
@@ -482,8 +764,11 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     return repo.save(payment);
   }
 
+  /** Historique affiché au client : paiements réels (les pages de paiement abandonnées n'y figurent pas). */
   async paymentsOf(ownerId: number) {
-    return this.ds.getRepository(SubscriptionPayment).find({ where: { userId: ownerId }, order: { createdAt: 'DESC' }, take: 200 });
+    return this.ds.getRepository(SubscriptionPayment).createQueryBuilder('p')
+      .where('p.userId = :ownerId AND p.status NOT IN (:...open)', { ownerId, open: OPEN_ONLINE_STATUSES })
+      .orderBy('p.createdAt', 'DESC').addOrderBy('p.id', 'DESC').take(200).getMany();
   }
 
   async receipt(ownerId: number | null, paymentId: number) {
@@ -508,6 +793,8 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     const params: any[] = [];
     const cond: string[] = [];
     if (f.status) { params.push(String(f.status)); cond.push(`"status" = $${params.length}`); }
+    // Sans filtre d'état : les pages de paiement en ligne non abouties ne sont pas des paiements.
+    else cond.push(`"status" NOT IN ('initiated', 'expired')`);
     if (f.userId) { params.push(Number(f.userId)); cond.push(`"userId" = $${params.length}`); }
     const where = cond.length ? `WHERE ${cond.join(' AND ')}` : '';
     const [{ total }] = await this.ds.query(`SELECT COUNT(*)::int AS total FROM "subscription_payments" ${where}`, params);
@@ -528,49 +815,6 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     return { total, limit, offset, items };
   }
 
-  // ───────────── Messages à l'administrateur ─────────────
-
-  async contactAdmin(ownerId: number, actorId: number, subject: string, message: string) {
-    const s = String(subject || '').trim().slice(0, 160) || 'Demande';
-    const m = String(message || '').trim();
-    if (m.length < 5 || m.length > 4000) throw new BadRequestException('Votre message doit contenir entre 5 et 4 000 caractères.');
-    const repo = this.ds.getRepository(SupportMessage);
-    const recent = await repo.createQueryBuilder('m').where('m.userId = :ownerId AND m.createdAt > :since', { ownerId, since: new Date(Date.now() - HOUR) }).getCount();
-    if (recent >= 5) throw new BadRequestException('Vous avez déjà envoyé plusieurs messages : nous vous répondons au plus vite.');
-    const saved = await repo.save(repo.create({ userId: ownerId, actorId, subject: s, message: m }));
-    const settings = await this.settings.get();
-    const owner = await this.users().findOne({ where: { id: ownerId } });
-    let emailed = false;
-    if (settings.supportEmail && owner) {
-      emailed = await this.mail.trySend({
-        to: settings.supportEmail, replyTo: owner.email, subject: `[Inovexa ERP] ${s} — ${owner.companyName || owner.name}`,
-        text: `De : ${owner.name} <${owner.email}> — ${owner.companyName || ''}\nTéléphone : ${owner.phone || '—'}\nÉtat du compte : ${owner.accountStatus}\n\n${m}`,
-      });
-    }
-    return { id: saved.id, received: true, emailed };
-  }
-
-  async adminMessages(f: { unread?: boolean; limit?: number }) {
-    const messages = await this.ds.getRepository(SupportMessage).find({
-      where: f.unread ? { readAt: IsNull() } : {},
-      order: { createdAt: 'DESC', id: 'DESC' },
-      take: Math.min(Math.max(Number(f.limit) || 100, 1), 300),
-    });
-    const ownerIds = Array.from(new Set(messages.map((m) => m.userId)));
-    const owners = ownerIds.length ? await this.users().find({ where: { id: In(ownerIds) }, select: ['id', 'email', 'name', 'companyName', 'phone'] }) : [];
-    const ownerBy = new Map(owners.map((o) => [o.id, o]));
-    return messages.map((m) => {
-      const o = ownerBy.get(m.userId);
-      return { ...m, account: { id: m.userId, email: o?.email ?? null, name: o?.name ?? null, companyName: o?.companyName ?? null, phone: o?.phone ?? null } };
-    });
-  }
-
-  async markMessageRead(id: number) {
-    const res = await this.ds.getRepository(SupportMessage).update({ id }, { readAt: new Date() });
-    if (!res.affected) throw new NotFoundException('Message introuvable');
-    return { read: true };
-  }
-
   // ───────────── Balayage périodique : expirations et rappels ─────────────
 
   /**
@@ -579,6 +823,9 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
    */
   async sweep(now = new Date()) {
     const settings = await this.settings.get();
+    // Les paiements en ligne d'abord : un client qui a payé puis fermé l'onglet est activé AVANT que le balayage ne
+    // juge son essai terminé (sinon il pourrait être refermé juste après avoir payé).
+    const checkouts = await this.reconcileCheckouts(now).catch((e) => { this.logger.warn(`Paiements en ligne non relus : ${e?.message || e}`); return { checked: 0, paid: 0 }; });
     const owners = await this.users().createQueryBuilder('u')
       .where(`u.role = 'client' AND u.ownerId IS NULL AND u.isActive = true AND u.accountStatus IN ('TRIAL','ACTIVE')`)
       .getMany();
@@ -615,7 +862,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
         }
       }
     }
-    return { checked: owners.length, expired, reminders };
+    return { checked: owners.length, expired, reminders, checkouts };
   }
 
   // ───────────── Tableau de bord administrateur ─────────────
@@ -638,7 +885,6 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     });
     const payments = await this.ds.getRepository(SubscriptionPayment).find({ where: { status: 'validated' } });
     const pendingPayments = await this.ds.getRepository(SubscriptionPayment).count({ where: { status: 'pending' } });
-    const unreadMessages = await this.ds.getRepository(SupportMessage).count({ where: { readAt: IsNull() } });
     const sectors = await this.ds.getRepository(Sector).find({ select: ['code', 'name'] });
     const plans = await this.ds.getRepository(Plan).find({ select: ['code', 'name'] });
 
@@ -717,7 +963,6 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       modules: Array.from(byModule.entries()).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count),
       sectors: named(bySector, new Map(sectors.map((s) => [s.code, s.name])), 'Non renseigné'),
       pendingPayments,
-      unreadMessages,
       note: 'Revenu récurrent mensuel (MRR) = abonnements payés en cours ou payés d’avance (paiements validés), ramenés au mois, hors taxes.',
     };
   }

@@ -1,6 +1,7 @@
 import {
-  BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query, Request, UseGuards,
+  BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query, Request, Res, UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,6 +17,7 @@ import { SubscriptionService } from './subscription.service';
 import { SectorsService } from './sectors.service';
 import { MODULE_KEYS } from './account-access';
 import { PAYMENT_METHODS } from './saas-defaults';
+import { apiPublicUrl, frontendUrl, returnBaseFor } from '../../common/origins';
 
 const actorId = (req: any): number => req.user.actorId ?? req.user.userId;
 
@@ -36,13 +38,44 @@ export class PublicController {
   @ApiOperation({ summary: 'Durée de l’essai, devise, contacts, identifiants Google et Apple (s’ils sont configurés)' })
   async config() {
     const s = await this.settings.get();
+    const online = this.subscriptions.onlinePayment(s);
+    // Le paiement se fait en ligne par carte (et carte e-Dinar) ; les moyens hors ligne ne s'ajoutent que si l'administrateur les a activés.
+    const cardMethods = online.methods.filter((m) => m === 'card' || m === 'edinar');
+    const offline = s.manualPayments ? (s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer']) : [];
     return {
-      trialHours: s.trialHours, currency: s.currency, vatRate: s.vatRate, requireEmailVerification: s.requireEmailVerification,
+      trialHours: s.trialHours, currency: s.currency, vatRate: s.vatRate,
+      // true = un code à 6 chiffres est envoyé par email à l'inscription, et demandé avant d'ouvrir l'ERP.
+      requireEmailVerification: this.settings.verificationRequired(s),
       supportEmail: s.supportEmail, supportPhone: s.supportPhone, supportWhatsapp: s.supportWhatsapp,
       googleClientId: this.settings.googleClientId(), appleClientId: this.settings.appleClientId(), modules: MODULE_KEYS,
-      // Moyens de paiement proposés aux clients (page Tarifs du site). Les coordonnées de paiement, elles, ne sont pas publiques.
-      paymentMethods: s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer'],
+      paymentMethods: Array.from(new Set([...(cardMethods.length ? cardMethods : ['card']), ...offline])),
+      onlinePayment: online.enabled,
     };
+  }
+
+  /**
+   * Retour du prestataire de paiement (Konnect) : il appelle cette adresse en GET avec ?payment_ref=… quand un paiement
+   * est traité — par son serveur, ou en y renvoyant le navigateur du client. La référence n'est jamais crue sur parole :
+   * l'état du paiement est relu chez Konnect avec la clé du serveur, puis le client est ramené sur le site.
+   */
+  @Get('payments/konnect/return')
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Notification / retour de paiement Konnect (?payment_ref=)' })
+  async konnectReturn(@Query('payment_ref') ref: string, @Res() res: Response) {
+    const providerRef = String(ref || '').slice(0, 80);
+    const out = providerRef ? await this.subscriptions.confirmCheckout({ providerRef }).catch(() => null) : null;
+    // L'adresse de retour a été enregistrée à l'ouverture du paiement, parmi les adresses autorisées du site.
+    const base = out?.payment?.returnBase || frontendUrl();
+    res.redirect(302, `${base}/subscription${out?.payment ? `?checkout=${out.payment.id}` : ''}`);
+  }
+
+  @Post('payments/konnect/return')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  async konnectNotify(@Query('payment_ref') ref: string, @Body() body: any) {
+    const providerRef = String(ref || body?.payment_ref || '').slice(0, 80);
+    if (providerRef) await this.subscriptions.confirmCheckout({ providerRef }).catch(() => null);
+    return { received: true };
   }
 
   @Get('plans')
@@ -91,13 +124,17 @@ export class BillingController {
   }
 
   @Get('subscription')
-  @ApiOperation({ summary: 'État du compte, temps d’essai restant (horloge du serveur), formule, instructions de paiement' })
+  @ApiOperation({ summary: 'État du compte, temps d’essai restant (horloge du serveur), formule, paiement en ligne' })
   async subscription(@Request() req: any) {
     const s = await this.settings.get();
+    // Un paiement par carte fait dans un autre onglet (ou juste avant de fermer la page) est reconnu ici.
+    const opened = await this.subscriptions.openCheckout(req.user.userId);
+    if (opened) await this.subscriptions.confirmCheckout({ id: opened.id, ownerId: req.user.userId }).catch(() => null);
     const owner = await this.subscriptions.owner(req.user.userId);
     const payments = await this.subscriptions.paymentsOf(owner.id);
     const teamCount = await this.users.count({ where: { ownerId: owner.id, isActive: true } });
     const plans = await this.subscriptions.plans('public');
+    const online = this.subscriptions.onlinePayment(s);
     return {
       account: this.subscriptions.view(owner, s),
       company: { name: owner.companyName, email: owner.email },
@@ -105,16 +142,73 @@ export class BillingController {
       users: { used: 1 + teamCount, limit: owner.userLimit ?? null },
       modules: owner.modules || {},
       pendingPayment: payments.find((p) => p.status === 'pending') || null,
+      // Page de paiement par carte encore ouverte (à reprendre plutôt que d'en ouvrir une autre).
+      checkout: await this.subscriptions.openCheckout(owner.id),
       payment: {
-        currency: s.currency, vatRate: s.vatRate, instructions: s.paymentInstructions, methods: s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer'],
-        // Lien de la page de paiement par carte (prestataire choisi par l'éditeur). La validation reste faite par l'administrateur.
-        link: s.paymentLink || null, onlinePayment: false,
+        currency: s.currency, vatRate: s.vatRate,
+        // Paiement en ligne par carte : l'accès s'ouvre tout seul dès que le prestataire confirme l'encaissement.
+        online: { enabled: online.enabled, provider: online.provider, test: online.mode === 'sandbox', methods: online.methods },
+        onlinePayment: online.enabled,
+        // Paiement hors ligne (virement, chèque…) : seulement si l'administrateur l'a activé ; il le valide alors lui-même.
+        manual: s.manualPayments === true,
+        instructions: s.manualPayments ? s.paymentInstructions : null,
+        methods: s.manualPayments ? (s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer']) : [],
+        link: s.manualPayments ? s.paymentLink || null : null,
       },
       support: { email: s.supportEmail, phone: s.supportPhone, whatsapp: s.supportWhatsapp },
       canManage: !req.user.isTeamMember,
-      // Sans serveur d'envoi, proposer « renvoyer le lien de confirmation » ne mènerait nulle part.
+      // Sans serveur d'envoi, proposer « renvoyer le code » ne mènerait nulle part.
       emailEnabled: this.mail.isConfigured(),
     };
+  }
+
+  @Post('checkout')
+  @Throttle({ default: { limit: 20, ttl: 3_600_000 } })
+  @ApiOperation({ summary: 'Ouvre un paiement par carte pour une formule : renvoie l’adresse de la page de paiement' })
+  checkout(@Request() req: any, @Body() body: any) {
+    this.assertOwner(req);
+    if (!body?.planCode) throw new BadRequestException('Formule requise.');
+    return this.subscriptions.startCheckout(
+      req.user.userId,
+      { planCode: body.planCode, billingCycle: body.billingCycle },
+      { actorId: actorId(req), returnBase: returnBaseFor(req.headers?.origin), apiBase: apiPublicUrl(req) },
+    );
+  }
+
+  @Post('checkout/:id/verify')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 120, ttl: 3_600_000 } })
+  @ApiOperation({ summary: 'Au retour de la page de paiement : relit l’état chez le prestataire et ouvre l’abonnement s’il est payé' })
+  async verifyCheckout(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    const out = await this.subscriptions.confirmCheckout({ id, ownerId: req.user.userId });
+    const p = out.payment;
+    return {
+      status: out.status,
+      payment: p ? { id: p.id, status: p.status, planName: p.planName, billingCycle: p.billingCycle, amountTTC: p.amountTTC, currency: p.currency, receiptNumber: p.receiptNumber, periodEnd: p.periodEnd } : null,
+      account: this.subscriptions.view(await this.subscriptions.owner(req.user.userId), await this.settings.get()),
+    };
+  }
+
+  // ── Secteur et modules : le client choisit lui-même ──
+
+  @Get('modules')
+  @ApiOperation({ summary: 'Secteur, modules ouverts, modules inclus dans la formule et modules conseillés pour le secteur' })
+  modules(@Request() req: any) {
+    return this.subscriptions.modulesView(req.user.userId);
+  }
+
+  @Put('modules')
+  @ApiOperation({ summary: 'Le propriétaire ouvre ou ferme ses modules (dans la limite de sa formule)' })
+  setModules(@Request() req: any, @Body() body: any) {
+    this.assertOwner(req);
+    return this.subscriptions.setModules(req.user.userId, body?.modules, actorId(req));
+  }
+
+  @Put('sector')
+  @ApiOperation({ summary: 'Le propriétaire change de secteur d’activité (applyModules = true : reprend les modules conseillés)' })
+  setSector(@Request() req: any, @Body() body: any) {
+    this.assertOwner(req);
+    return this.subscriptions.setSector(req.user.userId, body?.sector, body?.applyModules === true, actorId(req));
   }
 
   @Get('plans')
@@ -130,7 +224,7 @@ export class BillingController {
 
   @Post('payments')
   @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
-  @ApiOperation({ summary: 'Déclare un paiement (virement, espèces, chèque…) à faire valider par l’administrateur' })
+  @ApiOperation({ summary: 'Déclare un paiement hors ligne à faire valider par l’administrateur (403 si les paiements hors ligne ne sont pas activés)' })
   declare(@Request() req: any, @Body() body: any) {
     this.assertOwner(req);
     if (!body?.planCode || !(PAYMENT_METHODS as readonly string[]).includes(body?.method)) throw new BadRequestException('Formule et moyen de paiement requis.');
@@ -146,13 +240,6 @@ export class BillingController {
   @Get('payments/:id/receipt')
   receipt(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
     return this.subscriptions.receipt(req.user.userId, id);
-  }
-
-  @Post('contact')
-  @HttpCode(200)
-  @ApiOperation({ summary: 'Écrit à l’administrateur de la plateforme' })
-  contact(@Request() req: any, @Body() body: any) {
-    return this.subscriptions.contactAdmin(req.user.userId, actorId(req), body?.subject, body?.message);
   }
 
   @Post('cancel')
@@ -263,9 +350,14 @@ export class AdminSaasController {
   // ── Réglages ──
   @Get('settings')
   async getSettings() {
+    const s = await this.settings.get(true);
     return {
-      ...(await this.settings.get(true)), googleConfigured: !!this.settings.googleClientId(), appleConfigured: !!this.settings.appleClientId(),
+      ...s, googleConfigured: !!this.settings.googleClientId(), appleConfigured: !!this.settings.appleClientId(),
       mailConfigured: this.mail.isConfigured(), paymentMethodOptions: PAYMENT_METHODS, moduleKeys: MODULE_KEYS,
+      // Paiement en ligne (Konnect) : configuré par les variables d'environnement du serveur, jamais depuis cette page.
+      onlinePayment: this.subscriptions.onlinePayment(s),
+      // Le code de vérification n'est réellement demandé que si l'envoi d'emails fonctionne.
+      emailVerificationActive: this.settings.verificationRequired(s),
     };
   }
 
@@ -281,7 +373,7 @@ export class AdminSaasController {
   }
 
   @Post('payments')
-  @ApiOperation({ summary: 'Saisit un paiement reçu hors ligne pour un compte ; validé tout de suite si validate = true' })
+  @ApiOperation({ summary: 'Saisit un paiement reçu hors ligne pour un compte (cas exceptionnel) ; validé tout de suite sauf validate = false' })
   async recordPayment(@Request() req: any, @Body() body: any) {
     const ownerId = Number(body?.userId);
     if (!Number.isInteger(ownerId)) throw new BadRequestException('Compte requis.');
@@ -304,20 +396,12 @@ export class AdminSaasController {
     return this.subscriptions.receipt(null, id);
   }
 
-  // ── Messages des clients ──
-  @Get('messages') messages(@Query('unread') unread?: string) { return this.subscriptions.adminMessages({ unread: unread === '1' || unread === 'true' }); }
-  @Post('messages/:id/read') @HttpCode(200) readMessage(@Param('id', ParseIntPipe) id: number) { return this.subscriptions.markMessageRead(id); }
-
   // ── Secteurs, suggestions, prestations ──
   @Get('sectors') sectorsList() { return this.sectors.list('all'); }
   @Get('sectors/:code/detail') sectorDetail(@Param('code') code: string) { return this.sectors.detail(code, 'all'); }
   @Post('sectors') createSector(@Body() body: any) { return this.sectors.createSector(body || {}); }
   @Patch('sectors/:id') updateSector(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.sectors.updateSector(id, body || {}); }
   @Delete('sectors/:id') deleteSector(@Param('id', ParseIntPipe) id: number) { return this.sectors.deleteSector(id); }
-
-  @Post('sectors/:id/apply-modules') @HttpCode(200)
-  @ApiOperation({ summary: 'Applique les modules du secteur à tous les comptes de ce secteur' })
-  applyModules(@Param('id', ParseIntPipe) id: number) { return this.sectors.applyModulesToAccounts(id); }
 
   @Post('sectors/:id/categories') createCategory(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.sectors.saveCategory(id, null, body || {}); }
   @Patch('sectors/:id/categories/:catId')
@@ -356,7 +440,7 @@ export class AdminSaasController {
 
   // ── Maintenance ──
   @Post('maintenance/sweep') @HttpCode(200)
-  @ApiOperation({ summary: 'Lance tout de suite le balayage des expirations et des rappels' })
+  @ApiOperation({ summary: 'Lance tout de suite le balayage : expirations, rappels, relecture des paiements en ligne ouverts' })
   sweep() { return this.subscriptions.sweep(); }
 
   @Post('maintenance/upgrade-catalog') @HttpCode(200)

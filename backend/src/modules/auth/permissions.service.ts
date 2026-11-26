@@ -50,17 +50,20 @@ export const RESOURCE_BY_PATH: Record<string, string> = {
   // d'écriture sur la logistique des sociétés.
   transporteur: 'carrier_portal',
   production: 'production',
+  appointments: 'appointments',
   projects: 'projects', objectives: 'projects',
 };
 
 const VIEW_ALL = ['products:view', 'sales:view', 'pos:view', 'clients:view', 'suppliers:view', 'purchases:view', 'orders:view', 'documents:view', 'stock:view',
-  'logistics:view', 'production:view', 'projects:view', 'reports:view'];
+  'logistics:view', 'production:view', 'projects:view', 'appointments:view', 'reports:view'];
 
 const ROLE_GRANTS: Record<string, string[]> = {
   [ROLES.MANAGER]: ['*', '-team:*', '-audit:*', '-company:edit', '-company:create', '-company:delete'],
   [ROLES.SALES]: [
     'products:view', 'clients:*', 'sales:*', 'pos:*', 'orders:*', 'documents:view', 'documents:create', 'documents:edit', 'documents:validate', 'documents:send',
     'stock:view', 'reports:view', 'projects:view', 'logistics:view',
+    // Le commercial tient l'agenda : il prend, déplace et annule les rendez-vous.
+    'appointments:*',
   ],
   [ROLES.ACCOUNTANT]: [
     'documents:*', 'accounting:*', 'finance:*', 'reports:*', 'payroll:*', 'hr:view', 'clients:view', 'suppliers:view', 'purchases:view', 'sales:view',

@@ -1,7 +1,7 @@
 /* components/site/site-header.css — en-tête commun à la page d'accueil et aux pages publiques.
    Importé par SiteHeader.tsx. Il se suffit à lui-même : la page d'accueil ne charge pas app/(site)/site.css.
 
-   Disposition : logo à gauche ; menu, connexion, langue et bouton de démo à droite, sur toute la largeur de l'écran
+   Disposition : logo à gauche ; menu, connexion, langue et bouton « Essai gratuit » à droite, sur toute la largeur de l'écran
    (mêmes marges latérales que le contenu de la page d'accueil). La barre est « sticky » : elle garde sa place dans
    la page, donc elle ne recouvre pas le contenu au chargement, et reste visible pendant le défilement. */
 
@@ -85,7 +85,7 @@ html { --st-font-text: var(--font-poppins); --st-font-brand: var(--font-orbitron
 .st-lang-item.active { background: rgba(124, 92, 255, 0.16); color: #4f3fd8; font-weight: 700; }
 @keyframes st-menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
-/* Bouton de démo */
+/* Bouton principal (« Essai gratuit ») */
 .st-header .st-header-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 6px 18px; border-radius: 999px; background: var(--st-btn); color: #fff; font-size: 14px; font-weight: 700; line-height: 1.25; text-align: center; text-decoration: none; white-space: nowrap; box-shadow: 0 8px 20px rgba(90, 69, 224, 0.28); transition: transform 0.2s, box-shadow 0.2s; }
 .st-header .st-header-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(90, 69, 224, 0.36); }
 
@@ -104,7 +104,7 @@ html { --st-font-text: var(--font-poppins); --st-font-brand: var(--font-orbitron
   .st-header .st-header-cta { padding: 6px 14px; }
 }
 @media (max-width: 1200px) {
-  /* « Connexion » passe dans le menu : la barre garde le logo, le menu, la langue et la démo */
+  /* « Connexion » passe dans le menu : la barre garde le logo, le menu, la langue et le bouton principal */
   .st-header .st-header-login { display: none; }
 }
 
@@ -121,7 +121,7 @@ html { --st-font-text: var(--font-poppins); --st-font-brand: var(--font-orbitron
   .st-header .st-nav a.st-nav-cta:hover { background: var(--st-btn); color: #fff; }
 }
 @media (max-width: 600px) {
-  /* Le bouton de démo quitte la barre (il reste dans le menu) : logo, langue et menu tiennent sur 320 px */
+  /* Le bouton principal quitte la barre (il reste dans le menu) : logo, langue et menu tiennent sur 320 px */
   .st-header .st-header-cta { display: none; }
   .st-brand img { width: 36px; height: 36px; }
   .st-brand-name { font-size: 15px; letter-spacing: 1.2px; }

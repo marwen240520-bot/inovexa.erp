@@ -163,8 +163,8 @@ export default function HomePage(): React.ReactElement {
       <SiteHeader
         lang={lang}
         nav={nav}
-        login={workspace ? { href: workspace, label: text.dashboardCta } : { href: "/auth/login", label: text.header.login }}
-        cta={{ href: "/contact#form-section", label: text.header.demo }}
+        login={workspace ? undefined : { href: "/auth/login", label: text.header.login }}
+        cta={workspace ? { href: workspace, label: text.dashboardCta } : { href: "/auth/register", label: text.header.trial }}
         labels={{ language: text.header.language, menu: "Menu" }}
         languages={HOME_LANGS}
       />
@@ -366,8 +366,8 @@ export default function HomePage(): React.ReactElement {
                       </li>
                     ))}
                   </ul>
-                  <Link href={plan.priceMonthly === null ? "/contact#form-section" : `/auth/register?plan=${encodeURIComponent(plan.code)}`} className={plan.highlight ? "hp-cta" : "hp-ghost"}>
-                    {plan.priceMonthly === null ? text.header.demo : text.pricing.choose}
+                  <Link href={plan.priceMonthly === null ? "/contact" : `/auth/register?plan=${encodeURIComponent(plan.code)}`} className={plan.highlight ? "hp-cta" : "hp-ghost"}>
+                    {plan.priceMonthly === null ? text.header.contact : text.pricing.choose}
                   </Link>
                 </article>
               ))}
@@ -386,7 +386,7 @@ export default function HomePage(): React.ReactElement {
                 {workspace ? text.dashboardCta : text.final.primary}
                 <span className="hp-cta-arrow"><IconArrow /></span>
               </Link>
-              <Link href="/contact#form-section" className="hp-ghost hp-ghost-light">{text.final.secondary}</Link>
+              <Link href="/pricing" className="hp-ghost hp-ghost-light">{text.final.secondary}</Link>
             </div>
           </div>
         </section>
@@ -414,7 +414,6 @@ export default function HomePage(): React.ReactElement {
             <ul>
               <li><Link href="/about">{text.header.about}</Link></li>
               <li><Link href="/contact">{text.header.contact}</Link></li>
-              <li><Link href="/contact#form-section">{text.header.demo}</Link></li>
             </ul>
           </nav>
           <nav aria-label={text.footer.account}>

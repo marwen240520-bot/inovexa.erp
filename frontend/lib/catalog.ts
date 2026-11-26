@@ -3,9 +3,9 @@
 // espagnol et arabe. Utilisé par la page d'accueil, les pages Produits et Tarifs, et l'écran d'inscription.
 //
 // ⚠️  Ce fichier est le pendant, côté site, de backend/src/modules/saas/saas-defaults.ts (contenu de départ de la
-//     plateforme) : codes des secteurs, modules par secteur, formules et prix PROPOSÉS. Les deux se modifient ensemble.
-//     Dès que l'administrateur publie ses formules (Administration › Formules et tarifs), le site affiche les prix
-//     renvoyés par l'API (GET /public/plans) ; les valeurs ci-dessous ne servent alors plus que de secours.
+//     plateforme) : codes des secteurs, modules par secteur, formules et prix en dollars. Les deux se modifient ensemble.
+//     Le site affiche les prix renvoyés par l'API (GET /public/plans) ; les valeurs ci-dessous servent de secours
+//     quand l'API ne répond pas encore.
 // Pas de "use client" : lisible par les composants serveur comme par le navigateur.
 
 export type CatalogLang = "fr" | "en" | "es" | "ar";
@@ -17,7 +17,7 @@ export const pick = (text: Localized, lang: string): string => text[(lang as Cat
 
 export type CatalogModule =
   | "dashboard" | "products" | "categories" | "stock" | "sales" | "purchases" | "pos" | "orders" | "clients" | "suppliers"
-  | "invoices" | "hr" | "finance" | "logistics" | "production" | "ai" | "reports" | "analytics" | "objectives";
+  | "invoices" | "hr" | "finance" | "logistics" | "production" | "appointments" | "projects" | "ai" | "reports" | "analytics" | "objectives";
 
 export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Localized }> = {
   dashboard: {
@@ -137,6 +137,24 @@ export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Locali
       ar: "أوامر التصنيع وقوائم المكوّنات: خروج المواد ودخول المنتجات الجاهزة إلى المخزون.",
     },
   },
+  appointments: {
+    label: { fr: "Rendez-vous et réservations", en: "Appointments and bookings", es: "Citas y reservas", ar: "المواعيد والحجوزات" },
+    desc: {
+      fr: "Agenda par praticien, salle, table ou pont d’atelier : un créneau ne se réserve qu’une fois.",
+      en: "Calendar per practitioner, room, table or workshop bay: a slot can only be booked once.",
+      es: "Agenda por profesional, sala, mesa o puesto de taller: cada franja se reserva una sola vez.",
+      ar: "رزنامة حسب المختصّ أو القاعة أو الطاولة أو موقع الورشة: كل موعد يُحجز مرة واحدة.",
+    },
+  },
+  projects: {
+    label: { fr: "Projets et chantiers", en: "Projects and job sites", es: "Proyectos y obras", ar: "المشاريع والحضائر" },
+    desc: {
+      fr: "Budget, coût réel, tâches, échéances et avancement de chaque chantier ou mission.",
+      en: "Budget, actual cost, tasks, deadlines and progress of each job site or assignment.",
+      es: "Presupuesto, coste real, tareas, plazos y avance de cada obra o misión.",
+      ar: "الميزانية والتكلفة الفعلية والمهامّ والآجال ونسبة التقدّم لكل حضيرة أو مهمّة.",
+    },
+  },
   finance: {
     label: { fr: "Finance et comptabilité", en: "Finance and accounting", es: "Finanzas y contabilidad", ar: "المالية والمحاسبة" },
     desc: {
@@ -200,7 +218,7 @@ export const MODULE_GROUPS: Array<{ id: string; label: Localized; modules: Catal
   {
     id: "commercial",
     label: { fr: "Vente et relation client", en: "Sales and customers", es: "Ventas y clientes", ar: "البيع والحرفاء" },
-    modules: ["sales", "orders", "invoices", "clients", "pos"],
+    modules: ["sales", "orders", "invoices", "clients", "pos", "appointments"],
   },
   {
     id: "supply",
@@ -209,8 +227,8 @@ export const MODULE_GROUPS: Array<{ id: string; label: Localized; modules: Catal
   },
   {
     id: "finance",
-    label: { fr: "Finance et ressources humaines", en: "Finance and people", es: "Finanzas y personas", ar: "المالية والموارد البشرية" },
-    modules: ["finance", "hr"],
+    label: { fr: "Finance, équipes et projets", en: "Finance, people and projects", es: "Finanzas, equipos y proyectos", ar: "المالية والفرق والمشاريع" },
+    modules: ["finance", "hr", "projects"],
   },
   {
     id: "insights",
@@ -263,7 +281,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Farmacias, consultas y proveedores médicos: lotes y fechas de caducidad.",
       ar: "الصيدليات والعيادات ومزوّدو المستلزمات الطبية: الدفعات وتواريخ الصلوحية.",
     },
-    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "appointments", "objectives"],
   },
   {
     code: "construction",
@@ -274,7 +292,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Constructoras y venta de materiales: presupuestos, materiales, mano de obra.",
       ar: "مقاولات البناء وتجارة مواد البناء: عروض الأسعار والمواد واليد العاملة.",
     },
-    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "hr", "projects", "objectives"],
   },
   {
     code: "education",
@@ -285,7 +303,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Colegios privados y centros de formación: matrículas, mensualidades, formadores.",
       ar: "المدارس الخاصة ومراكز التكوين: التسجيل والأقساط الشهرية والمكوّنون.",
     },
-    modules: [...BASE, "sales", "hr", "objectives"],
+    modules: [...BASE, "sales", "hr", "appointments", "objectives"],
   },
   {
     code: "restaurant",
@@ -296,7 +314,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Restaurantes, cafeterías, pastelerías y comida rápida: carta, ingredientes, caja.",
       ar: "المطاعم والمقاهي ومحلات الحلويات والأكلات السريعة: القائمة والمكوّنات والصندوق.",
     },
-    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "appointments", "objectives"],
   },
   {
     code: "logistics",
@@ -329,7 +347,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Despachos, agencias y autónomos: honorarios, contratos, recordatorios.",
       ar: "المكاتب والوكالات والمستقلّون: الأتعاب والعقود والتذكير بالخلاص.",
     },
-    modules: [...BASE, "sales", "hr", "objectives"],
+    modules: [...BASE, "sales", "hr", "appointments", "projects", "objectives"],
   },
   {
     code: "agrifood",
@@ -351,7 +369,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Tiendas de recambios y talleres: referencias, stock, presupuestos de reparación, mano de obra.",
       ar: "محلات قطع الغيار والمرائب والورشات: المراجع والمخزون وعروض الإصلاح واليد العاملة.",
     },
-    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "hr", "appointments", "objectives"],
   },
   {
     code: "ecommerce",
@@ -384,7 +402,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Peluquerías, centros de estética, spas y perfumerías: servicios, productos y caja.",
       ar: "قاعات الحلاقة ومراكز التجميل والحمّامات ومحلات العطور: الخدمات والمنتجات والصندوق.",
     },
-    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "appointments", "objectives"],
   },
   {
     code: "other",
@@ -395,7 +413,7 @@ export const SECTORS: CatalogSector[] = [
       es: "Se ofrecen todos los módulos: conserve los que necesite.",
       ar: "كل الوحدات متاحة: احتفظ بما يفيدك.",
     },
-    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "logistics", "production", "hr", "appointments", "projects", "objectives"],
   },
 ];
 
@@ -404,7 +422,7 @@ export const SECTORS: CatalogSector[] = [
 export interface CatalogPlan {
   code: string;
   name: string;
-  /** Prix PROPOSÉS, hors taxes, en dinars. */
+  /** Prix hors taxes, en dollars (USD). */
   priceMonthly: number;
   priceAnnual: number;
   /** null = illimité. */
@@ -417,28 +435,29 @@ export interface CatalogPlan {
 }
 
 /** Modules de la formule d'entrée (les modules de base — tableau de bord, profil, paramètres — sont toujours actifs). */
-const STARTER_MODULES: CatalogModule[] = ["dashboard", "products", "categories", "stock", "sales", "pos", "purchases", "orders", "clients", "suppliers", "invoices", "reports"];
+const STARTER_MODULES: CatalogModule[] = ["dashboard", "products", "categories", "stock", "sales", "pos", "purchases", "orders", "clients", "suppliers", "invoices", "appointments", "reports"];
 
 export const PLANS: CatalogPlan[] = [
   {
-    code: "starter", name: "Starter", priceMonthly: 49, priceAnnual: 490, maxUsers: 3, modules: STARTER_MODULES, highlight: false,
+    code: "starter", name: "Starter", priceMonthly: 15, priceAnnual: 150, maxUsers: 3, modules: STARTER_MODULES, highlight: false,
     tagline: {
-      fr: "Pour démarrer : ventes, caisse, stock et facturation.",
-      en: "To get started: sales, checkout, stock and invoicing.",
-      es: "Para empezar: ventas, caja, stock y facturación.",
-      ar: "للانطلاق: المبيعات والصندوق والمخزون والفوترة.",
+      fr: "Pour démarrer : ventes, caisse, stock, agenda et facturation.",
+      en: "To get started: sales, checkout, stock, calendar and invoicing.",
+      es: "Para empezar: ventas, caja, stock, agenda y facturación.",
+      ar: "للانطلاق: المبيعات والصندوق والمخزون والرزنامة والفوترة.",
     },
     features: [
       { fr: "Jusqu’à 3 utilisateurs", en: "Up to 3 users", es: "Hasta 3 usuarios", ar: "حتى 3 مستخدمين" },
       { fr: "Ventes, caisse, achats, commandes et stock", en: "Sales, checkout, purchases, orders and stock", es: "Ventas, caja, compras, pedidos y stock", ar: "المبيعات والصندوق والمشتريات والطلبيات والمخزون" },
       { fr: "Devis, factures, avoirs et règlements", en: "Quotes, invoices, credit notes and payments", es: "Presupuestos, facturas, abonos y cobros", ar: "عروض الأسعار والفواتير وفواتير الإرجاع والخلاص" },
+      { fr: "Agenda : rendez-vous et réservations", en: "Calendar: appointments and bookings", es: "Agenda: citas y reservas", ar: "الرزنامة: المواعيد والحجوزات" },
       { fr: "Fichier TEIF pour El Fatoora", en: "TEIF file for El Fatoora e-invoicing", es: "Archivo TEIF para El Fatoora", ar: "ملف TEIF للفوترة الإلكترونية" },
       { fr: "Rapports, exports Excel et PDF", en: "Reports, Excel and PDF exports", es: "Informes, exportación a Excel y PDF", ar: "التقارير والتصدير إلى Excel و PDF" },
       { fr: "Support par email", en: "Email support", es: "Soporte por correo", ar: "دعم عبر البريد الإلكتروني" },
     ],
   },
   {
-    code: "business", name: "Business", priceMonthly: 99, priceAnnual: 990, maxUsers: 10, modules: null, highlight: true,
+    code: "business", name: "Business", priceMonthly: 29, priceAnnual: 290, maxUsers: 10, modules: null, highlight: true,
     tagline: {
       fr: "Tous les modules de votre secteur pour une PME qui grandit.",
       en: "Every module of your sector for a growing business.",
@@ -450,13 +469,13 @@ export const PLANS: CatalogPlan[] = [
       { fr: "Tous les modules de votre secteur", en: "Every module of your sector", es: "Todos los módulos de su sector", ar: "كل وحدات قطاعك" },
       { fr: "Comptabilité, TVA et rapprochement bancaire", en: "Accounting, VAT and bank reconciliation", es: "Contabilidad, IVA y conciliación bancaria", ar: "المحاسبة والأداء على القيمة المضافة والمقاربة البنكية" },
       { fr: "RH, congés et paie (CNSS, IRPP)", en: "HR, leave and payroll (CNSS, IRPP)", es: "RR. HH., permisos y nóminas (CNSS, IRPP)", ar: "الموارد البشرية والعطل والأجور" },
-      { fr: "Logistique, production et objectifs", en: "Logistics, production and objectives", es: "Logística, producción y objetivos", ar: "اللوجستيك والإنتاج والأهداف" },
+      { fr: "Logistique, production, projets et objectifs", en: "Logistics, production, projects and objectives", es: "Logística, producción, proyectos y objetivos", ar: "اللوجستيك والإنتاج والمشاريع والأهداف" },
       { fr: "Analyses et assistant IA", en: "Analytics and AI assistant", es: "Analítica y asistente IA", ar: "التحليلات والمساعد الذكي" },
       { fr: "Support prioritaire", en: "Priority support", es: "Soporte prioritario", ar: "دعم ذو أولوية" },
     ],
   },
   {
-    code: "enterprise", name: "Enterprise", priceMonthly: 249, priceAnnual: 2490, maxUsers: null, modules: null, highlight: false,
+    code: "enterprise", name: "Enterprise", priceMonthly: 79, priceAnnual: 790, maxUsers: null, modules: null, highlight: false,
     tagline: {
       fr: "Utilisateurs illimités et accompagnement dédié.",
       en: "Unlimited users and dedicated support.",
@@ -485,6 +504,8 @@ export const modulesFor = (sector: CatalogSector, plan: Pick<CatalogPlan, "modul
 /** Durée de l'essai gratuit par défaut (réglable par l'administrateur : GET /public/config › trialHours). */
 export const DEFAULT_TRIAL_HOURS = 72;
 export const DEFAULT_VAT_RATE = 19;
+/** Devise des formules (réglable par l'administrateur : GET /public/config › currency). */
+export const DEFAULT_CURRENCY = "USD";
 
 export const PAYMENT_METHOD_LABELS: Record<string, Localized> = {
   bank_transfer: { fr: "Virement bancaire", en: "Bank transfer", es: "Transferencia bancaria", ar: "تحويل بنكي" },
@@ -498,7 +519,10 @@ export const PAYMENT_METHOD_LABELS: Record<string, Localized> = {
   other: { fr: "Autre", en: "Other", es: "Otro", ar: "أخرى" },
 };
 
-/** Moyens proposés par défaut (comme DEFAULT_PAYMENT_METHODS côté serveur). */
+/** L'abonnement se paie en ligne : carte bancaire (Visa, Mastercard, cartes tunisiennes) ou carte e-Dinar. */
+export const ONLINE_PAYMENT_METHODS = ["card", "edinar"];
+
+/** Moyens HORS LIGNE que l'administrateur peut activer en plus (comme DEFAULT_PAYMENT_METHODS côté serveur). */
 export const DEFAULT_PAYMENT_METHODS = ["bank_transfer", "d17", "flouci", "cheque", "cash"];
 
 /** « 3 jours », « 36 heures »… à partir de la durée d'essai en heures. */

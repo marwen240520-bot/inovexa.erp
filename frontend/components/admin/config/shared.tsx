@@ -1,7 +1,7 @@
 "use client";
 /**
  * Briques communes des écrans de configuration de l'administrateur de la plateforme
- * (formules, paiements, messages, réglages, journal). Ces écrans sont en français uniquement.
+ * (formules, paiements, réglages, journal). Ces écrans sont en français uniquement.
  */
 import React, { CSSProperties, ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
@@ -23,6 +23,12 @@ export interface AdminSettings {
   /** Version du contenu de départ (secteurs, formules proposées) installée dans cette base. */
   catalogVersion?: number;
   appleConfigured?: boolean; mailConfigured?: boolean;
+  /** true : en plus de la carte, les clients peuvent déclarer un paiement hors ligne que l'administrateur valide. */
+  manualPayments?: boolean;
+  /** Paiement en ligne par carte (Konnect), configuré par les variables d'environnement du serveur. */
+  onlinePayment?: { enabled: boolean; provider: string; mode: "production" | "sandbox"; methods: string[]; reason: "NOT_CONFIGURED" | "CURRENCY_UNSUPPORTED" | null };
+  /** Le code de vérification par email est réellement demandé (réglage actif ET envoi d'emails configuré). */
+  emailVerificationActive?: boolean;
   /** Calculés par le serveur, en lecture seule (absents de la réponse de PUT /admin/settings). */
   googleConfigured: boolean; paymentMethodOptions: string[]; moduleKeys: string[];
 }

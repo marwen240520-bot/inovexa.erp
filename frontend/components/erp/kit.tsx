@@ -5,6 +5,7 @@
  */
 import React, { CSSProperties, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { fetchWithRetry } from "@/lib/saas";
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/+$/, "");
 
@@ -32,16 +33,15 @@ const toQuery = (q?: Query) => {
 /** Appel JSON authentifié. Lève ApiError avec le message du serveur (tableaux de validation aplatis). */
 export async function api<T = any>(path: string, opts: { method?: string; body?: unknown; query?: Query } = {}): Promise<T> {
   const token = readToken();
-  let res: Response;
-  try {
-    res = await fetch(`${API_URL}${path}${toQuery(opts.query)}`, {
-      method: opts.method || "GET",
-      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
-    });
-  } catch {
-    throw new ApiError("Impossible de joindre le serveur.", 0);
-  }
+  const method = opts.method || "GET";
+  // Serveur qui redémarre (502/503/504) : la requête est rejouée après quelques secondes ; une lecture l'est aussi
+  // après une coupure réseau. Une écriture interrompue n'est jamais rejouée (elle a peut-être été traitée).
+  const res = await fetchWithRetry(`${API_URL}${path}${toQuery(opts.query)}`, {
+    method,
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+  }, method === "GET");
+  if (!res) throw new ApiError("Impossible de joindre le serveur.", 0);
   if (res.status === 401 && typeof window !== "undefined") {
     window.location.href = "/auth/login";
     throw new ApiError("Session expirée : reconnectez-vous.", 401);

@@ -71,7 +71,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
     const accountRow = owner ?? user;
     const settings = await this.settings.get();
-    const access = resolveAccess(accountRow, new Date(), { requireEmailVerification: settings.requireEmailVerification });
+    const access = resolveAccess(accountRow, new Date(), { requireEmailVerification: this.settings.verificationRequired(settings) });
     if (access.persistExpired) {
       // L'essai (ou l'abonnement) vient de se terminer : on l'enregistre une fois, sans faire attendre la requête.
       void this.subscriptions.persistExpired(accountRow, access.reason === 'SUBSCRIPTION_EXPIRED' ? 'SUBSCRIPTION_EXPIRED' : 'TRIAL_EXPIRED').catch(() => undefined);

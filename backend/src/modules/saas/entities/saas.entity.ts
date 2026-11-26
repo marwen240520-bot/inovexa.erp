@@ -13,18 +13,30 @@ export class PlatformSettings {
   @Column({ type: 'int', default: 72 })
   trialHours: number;
 
-  /** true = l'ERP reste fermé tant que l'adresse email n'est pas confirmée (nécessite un SMTP configuré). */
-  @Column({ default: false })
+  /**
+   * true = à l'inscription par email, l'ERP reste fermé tant que le code à 6 chiffres reçu par email n'est pas saisi.
+   * La règle ne s'applique que si le serveur sait envoyer des emails (SMTP configuré) : sans cela, personne ne recevrait
+   * son code — voir SaasSettingsService.verificationRequired().
+   */
+  @Column({ default: true })
   requireEmailVerification: boolean;
 
-  @Column({ type: 'varchar', length: 3, default: 'TND' })
+  /** Devise des formules et des paiements d'abonnement (USD par défaut ; TND et EUR sont aussi acceptées par Konnect). */
+  @Column({ type: 'varchar', length: 3, default: 'USD' })
   currency: string;
 
   /** TVA appliquée aux prix des formules affichés (les prix saisis sont hors taxes). */
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 19, transformer: numericTransformer })
   vatRate: number;
 
-  /** Instructions de paiement affichées au client (RIB, D17, espèces…) : saisies par l'administrateur. */
+  /**
+   * false (par défaut) = le client paie uniquement en ligne par carte, et son accès s'ouvre tout seul.
+   * true = le client peut aussi déclarer un paiement hors ligne (virement, chèque…), que l'administrateur valide.
+   */
+  @Column({ default: false })
+  manualPayments: boolean;
+
+  /** Instructions de paiement hors ligne affichées au client (RIB, D17, espèces…) : saisies par l'administrateur. */
   @Column({ type: 'text', nullable: true })
   paymentInstructions: string | null;
 
@@ -122,7 +134,13 @@ export class Plan {
   updatedAt: Date;
 }
 
-/** Paiement d'abonnement : déclaré par le client ou saisi par l'administrateur, puis validé (ou refusé) par l'administrateur. */
+/**
+ * Paiement d'abonnement.
+ *  - En ligne par carte (provider = konnect) : créé à l'ouverture de la page de paiement (status = initiated), validé
+ *    AUTOMATIQUEMENT dès que le prestataire confirme l'encaissement ; « expired » si la page de paiement est abandonnée.
+ *  - Hors ligne (provider = manual) : déclaré par le client ou saisi par l'administrateur (pending), puis validé ou
+ *    refusé par l'administrateur.
+ */
 @Entity('subscription_payments')
 @Index('IDX_subscription_payments_user', ['userId', 'createdAt'])
 @Index('IDX_subscription_payments_status', ['status'])
@@ -164,9 +182,26 @@ export class SubscriptionPayment {
   @Column({ type: 'varchar', length: 20 })
   method: string;
 
-  /** manual = validation par l'administrateur ; sinon le nom du prestataire de paiement en ligne. */
+  /** manual = validation par l'administrateur ; sinon le nom du prestataire de paiement en ligne (konnect). */
   @Column({ type: 'varchar', length: 30, default: 'manual' })
   provider: string;
+
+  /** Référence du paiement chez le prestataire (Konnect : paymentRef). */
+  @Index('IDX_subscription_payments_provider_ref', { where: '"providerRef" IS NOT NULL' })
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  providerRef: string | null;
+
+  /** Adresse de la page de paiement du prestataire, tant que le paiement est ouvert. */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  checkoutUrl: string | null;
+
+  /** Fin de validité de la page de paiement. */
+  @Column({ type: 'timestamptz', nullable: true })
+  expiresAt: Date | null;
+
+  /** Adresse du site où ramener le client après le paiement (celle d'où il est parti). */
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  returnBase: string | null;
 
   /** Référence communiquée par le client (numéro de virement, de chèque…). */
   @Column({ type: 'varchar', length: 120, nullable: true })
@@ -175,7 +210,7 @@ export class SubscriptionPayment {
   @Column({ type: 'varchar', length: 500, nullable: true })
   note: string | null;
 
-  /** pending | validated | rejected | cancelled */
+  /** initiated | expired (paiement en ligne non abouti) | pending | validated | rejected | cancelled */
   @Column({ type: 'varchar', length: 12, default: 'pending' })
   status: string;
 
@@ -189,7 +224,7 @@ export class SubscriptionPayment {
   @Column({ type: 'timestamptz', nullable: true })
   validatedAt: Date | null;
 
-  /** Administrateur qui a validé ou refusé. */
+  /** Administrateur qui a validé ou refusé ; null pour un paiement en ligne (validation automatique). */
   @Column({ type: 'int', nullable: true })
   validatedBy: number | null;
 
@@ -212,7 +247,10 @@ export class SubscriptionPayment {
   updatedAt: Date;
 }
 
-/** Message d'un client à l'administrateur de la plateforme (page Abonnement), consultable même sans SMTP. */
+/**
+ * Anciens messages des clients à l'administrateur. Le formulaire « Écrire à l'administrateur » a été retiré (tout se fait
+ * en ligne) : cette table n'est plus alimentée, elle est conservée pour ne perdre aucun message déjà reçu.
+ */
 @Entity('support_messages')
 @Index('IDX_support_messages_user', ['userId', 'createdAt'])
 export class SupportMessage {

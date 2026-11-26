@@ -1,6 +1,7 @@
 // components/site/ContactForm.tsx
-// Formulaire de demande de démo. Il n'y a pas (encore) de point d'API pour recevoir ces demandes :
-// à l'envoi, le formulaire ouvre l'application e-mail du visiteur avec la demande pré-remplie
+// Formulaire « Écrivez-nous » de la page Contact (question d'un visiteur avant ou après l'inscription ; il ne sert plus
+// à demander une démonstration : l'essai et le paiement se font en ligne). Il n'y a pas de point d'API pour recevoir
+// ces messages : à l'envoi, le formulaire ouvre l'application e-mail du visiteur avec le message pré-rempli
 // (contact@inovexa-erp.com). Pour un envoi direct, brancher ici un appel à l'API.
 "use client";
 import React, { useState } from "react";

@@ -75,6 +75,9 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 | Rapports de gestion | `/dashboard/reports/business` | Ventes, marges, valorisation du stock, exports Excel |
 | Sessions de caisse | `/dashboard/pos/sessions` | Ouverture / clôture, rapport Z, recherche de ticket |
 | Alertes | cloche dans l’en-tête du tableau de bord | Stock bas, retards, devis qui expirent ; « tout lire », récapitulatif par email |
+| Agenda | `/dashboard/appointments` | Rendez-vous, réservations de tables, séances : vue du jour et de la semaine, ressources (praticien, salle, table, pont d’atelier), refus des doubles réservations |
+| Projets | `/dashboard/projects` | Projets, chantiers et missions : client, budget, dates, tâches avec échéances, avancement calculé, tâches en retard |
+| Abonnement, modules et secteur | `/dashboard/billing` (et `/subscription` quand l’accès est fermé) | Formule, paiement par carte, reçus, et choix par le client de son secteur et de ses modules (dans la limite de sa formule) |
 
 Ces écrans suivent les modules activés du compte (entrées du menu rattachées à `invoices`, `finance`, `hr`, `reports`, `clients`, `pos`, `settings`) et partagent
 un petit kit de composants (`frontend/components/erp/kit.tsx`). La barre de recherche du tableau de bord accepte la **voix** (bouton micro, navigateurs Chrome / Edge / Safari).
@@ -96,6 +99,24 @@ un petit kit de composants (`frontend/components/erp/kit.tsx`). La barre de rech
 
 Droits par ressource et par action (propriétaire / équipe), journal d'audit des opérations, limitation de débit, en-têtes de sécurité (helmet),
 double authentification, validation stricte des entrées.
+
+## 11. Agenda (`/appointments`)
+
+Module `appointments`, proposé d'office aux secteurs qui travaillent sur rendez-vous (santé, beauté, automobile, restauration, services, formation…) et ouvrable
+par tout client depuis Abonnement › Mes modules. Un rendez-vous a un objet, un créneau, un client (fiche existante ou saisie libre), une prestation, une **ressource**,
+un nombre de personnes (réservation de table, séance), un montant indicatif et un état (prévu, confirmé, terminé, annulé, absent).
+
+- **Pas de double réservation** : deux rendez-vous ne peuvent pas occuper la même ressource sur des créneaux qui se chevauchent (409 `SLOT_TAKEN`), sauf choix explicite
+  (`allowOverlap`). Un rendez-vous annulé ou manqué libère la ressource ; le rouvrir exige que le créneau soit encore libre.
+- **Pas de lien comptable** : le montant est indicatif, la facturation se fait dans Documents ou Caisse.
+- Les dates sont enregistrées en UTC et affichées à l'heure de Tunis ; le « jour » du résumé est celui de Tunis.
+
+## 12. Projets (`/projects`)
+
+Module `projects` (les comptes qui avaient déjà « Finances » gardent l'écriture, pour ne rien casser). Un projet porte un client, un responsable, des dates, un
+budget, un coût engagé, une priorité et des **tâches** (à faire, en cours, terminée, avec responsable et échéance). Dès qu'il a des tâches, l'avancement est
+calculé (terminées / total) ; les tâches non terminées dont l'échéance est passée sont comptées « en retard » et remontées sur le tableau de bord des projets.
+Le budget et le coût sont indicatifs : ils ne génèrent pas d'écriture comptable.
 
 ---
 

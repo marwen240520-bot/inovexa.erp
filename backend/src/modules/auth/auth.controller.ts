@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ForgotPasswordDto, LoginWithOtpDto, ResetPasswordDto, TwoFactorCodeDto, TwoFactorDisableDto } from './dto/auth-security.dto';
-import { AppleAuthDto, GoogleAuthDto, RegisterDto, VerifyEmailDto } from './dto/register.dto';
+import { AppleAuthDto, GoogleAuthDto, RegisterDto, VerifyEmailCodeDto, VerifyEmailDto } from './dto/register.dto';
 
 const actor = (req: any): number => req.user.actorId ?? req.user.userId;
 const ipOf = (req: any): string => (req.ip || '').toString();
@@ -28,7 +28,7 @@ export class AuthController {
   @HttpCode(201)
   @Throttle({ default: { limit: 20, ttl: 600_000 } })
   @UsePipes(STRICT)
-  @ApiOperation({ summary: 'Crée une société et son propriétaire : l’essai gratuit démarre tout de suite' })
+  @ApiOperation({ summary: 'Crée une société et son propriétaire : l’essai gratuit démarre, un code de vérification part par email' })
   register(@Body() body: RegisterDto, @Req() req: any) {
     return this.authService.register(body, ipOf(req));
   }
@@ -55,9 +55,20 @@ export class AuthController {
   @HttpCode(200)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UsePipes(STRICT)
-  @ApiOperation({ summary: 'Confirme l’adresse email avec le lien reçu à l’inscription' })
+  @ApiOperation({ summary: 'Confirme l’adresse email avec un ancien lien de confirmation (les nouveaux comptes reçoivent un code)' })
   verifyEmail(@Body() body: VerifyEmailDto) {
     return this.authService.verifyEmail(body.email, body.token);
+  }
+
+  @Post('verify-email-code')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 20, ttl: 600_000 } })
+  @UsePipes(STRICT)
+  @ApiOperation({ summary: 'Confirme l’adresse email avec le code à 6 chiffres reçu par email (5 essais par code)' })
+  verifyEmailCode(@Request() req: any, @Body() body: VerifyEmailCodeDto) {
+    return this.authService.verifyEmailCode(actor(req), body.code);
   }
 
   @Post('resend-verification')
@@ -65,7 +76,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 5, ttl: 600_000 } })
-  @ApiOperation({ summary: 'Renvoie le lien de confirmation de l’adresse email' })
+  @ApiOperation({ summary: 'Envoie un nouveau code de vérification (un envoi par minute)' })
   resendVerification(@Request() req: any) {
     return this.authService.resendVerification(actor(req));
   }

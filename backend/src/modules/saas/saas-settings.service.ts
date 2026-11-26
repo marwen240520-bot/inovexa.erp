@@ -1,14 +1,14 @@
 import { BadRequestException, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
-import { Plan, PlatformSettings } from './entities/saas.entity';
+import { Plan, PlatformSettings, SubscriptionPayment } from './entities/saas.entity';
 import { Sector, SectorCategory, SectorItem, ServiceOffer } from './entities/sector.entity';
 import { MailService } from '../../common/mail/mail.service';
 import { User } from '../users/entities/user.entity';
 import { CORE_MODULES } from './account-access';
 import {
-  CATALOG_V1, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, DefaultCategory, DefaultSector,
-  PAYMENT_METHODS, basisFor, newSectorOffersV2,
+  CATALOG_V1, CATALOG_V2, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, DefaultCategory,
+  DefaultSector, PAYMENT_METHODS, basisFor, newSectorOffersV2,
 } from './saas-defaults';
 
 const CACHE_MS = 30_000;
@@ -46,6 +46,15 @@ export class SaasSettingsService implements OnApplicationBootstrap {
     }
     this.cache = { at: Date.now(), value: row };
     return row;
+  }
+
+  /**
+   * Le code de vérification par email est-il exigé à l'inscription ? Oui si le réglage est actif ET si le serveur sait
+   * envoyer des emails : sans serveur d'envoi, personne ne recevrait son code et tous les nouveaux comptes resteraient
+   * fermés. Dès que le SMTP est configuré, la règle s'applique d'elle-même.
+   */
+  verificationRequired(settings: Pick<PlatformSettings, 'requireEmailVerification'>): boolean {
+    return settings.requireEmailVerification === true && this.mail.isConfigured();
   }
 
   /** Identifiant client Google (public par nature) ; null = connexion Google non configurée. */
@@ -97,9 +106,9 @@ export class SaasSettingsService implements OnApplicationBootstrap {
       next.paymentLink = url.toString();
     }
     if (next.supportEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(next.supportEmail)) throw new BadRequestException('Email de support invalide.');
+    // Sans serveur d'envoi la règle reste simplement sans effet (voir verificationRequired) : aucun compte n'est bloqué.
     if (patch.requireEmailVerification !== undefined) next.requireEmailVerification = patch.requireEmailVerification === true;
-    // Sans serveur d'envoi, personne ne recevrait le lien de confirmation : tous les nouveaux comptes resteraient bloqués.
-    if (next.requireEmailVerification && !this.mail.isConfigured()) throw new BadRequestException('Configurez d’abord l’envoi d’emails (variables SMTP) avant d’exiger la confirmation de l’adresse.');
+    if (patch.manualPayments !== undefined) next.manualPayments = patch.manualPayments === true;
     if (patch.currency !== undefined) {
       if (!/^[A-Z]{3}$/.test(String(patch.currency))) throw new BadRequestException('Devise invalide (code ISO à 3 lettres).');
       next.currency = String(patch.currency);
@@ -130,7 +139,8 @@ export class SaasSettingsService implements OnApplicationBootstrap {
 
       for (const p of DEFAULT_PLANS) {
         if (await em.findOne(Plan, { where: { code: p.code } })) continue;
-        await em.save(Plan, em.create(Plan, { ...p, isPublic: false, isActive: true } as any));
+        // Publiées d'office : le client choisit sa formule et la paie en ligne sans attendre l'administrateur.
+        await em.save(Plan, em.create(Plan, { ...p, isPublic: true, isActive: true } as any));
       }
       for (let i = 0; i < DEFAULT_SECTORS.length; i++) {
         const s = DEFAULT_SECTORS[i];
@@ -147,7 +157,7 @@ export class SaasSettingsService implements OnApplicationBootstrap {
       // Une base neuve reçoit directement le contenu courant : rien à mettre à niveau ensuite.
       await em.update(PlatformSettings, { id: 1 }, { defaultsSeeded: true, catalogVersion: CATALOG_VERSION, paymentMethods: DEFAULT_PAYMENT_METHODS });
       this.cache = null;
-      this.logger.log('Contenu de départ créé : formules (brouillon), secteurs, suggestions, prestations (brouillon).');
+      this.logger.log('Contenu de départ créé : formules (publiées, en dollars), secteurs, suggestions, prestations (brouillon).');
       return { seeded: true };
     });
   }
@@ -172,83 +182,192 @@ export class SaasSettingsService implements OnApplicationBootstrap {
    *    et leur prestation de mise en service (en brouillon), placés avant « Autre activité » ;
    *  - formules restées en BROUILLON et inchangées : prix proposés, description et arguments mis à jour ;
    *  - moyens de paiement : complétés si la liste est restée celle de la version 1.
+   *
+   * Version 3 (tout en ligne, sans intervention de l'administrateur) :
+   *  - nouveaux modules « Rendez-vous » et « Projets » : ajoutés aux secteurs restés à la liste de la version 2, et aux
+   *    comptes de ces secteurs ; la formule Starter reçoit l'agenda si sa liste de modules n'a pas été modifiée ;
+   *  - tarifs en dollars : si aucune formule n'était encore publiée (personne n'a vu de prix en dinars), la devise
+   *    passe en USD, les formules inchangées reçoivent leur prix en dollars et sont PUBLIÉES, les prestations restées
+   *    en brouillon au prix de départ sont converties. Si des formules étaient déjà publiées, rien de cela ne change ;
+   *  - code de vérification par email à l'inscription : activé (sans effet tant que l'envoi d'emails n'est pas configuré).
    */
   async upgradeDefaults(): Promise<{ upgraded: boolean; from?: number }> {
     await this.get(true);
     return this.ds.transaction(async (em) => {
-      const [row] = await em.query(`SELECT "defaultsSeeded", "catalogVersion", "paymentMethods" FROM "platform_settings" WHERE "id" = 1 FOR UPDATE`);
+      const [row] = await em.query(`SELECT "defaultsSeeded", "catalogVersion", "paymentMethods", "currency" FROM "platform_settings" WHERE "id" = 1 FOR UPDATE`);
       const from = Number(row?.catalogVersion) || 1;
       if (!row || !row.defaultsSeeded || from >= CATALOG_VERSION) return { upgraded: false };
-      const sameSet = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x) => b.includes(String(x)));
-      const sameList = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
-      const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
-
-      // ── Modules par secteur ──
-      const plans = await em.find(Plan);
-      const planModules = new Map(plans.map((p) => [p.code, p.modules?.length ? new Set(p.modules) : null]));
-      for (const def of DEFAULT_SECTORS) {
-        const v1 = CATALOG_V1.sectorModules[def.code];
-        if (!v1) continue;
-        const sector = await em.findOne(Sector, { where: { code: def.code } });
-        if (!sector || !sameSet(sector.modules, v1)) continue; // absent, ou personnalisé par l'administrateur
-        const added = def.modules.filter((m) => !v1.includes(m));
-        if (!added.length) continue;
-        await em.update(Sector, { id: sector.id }, { modules: def.modules, recommendations: def.recommendations });
-        const owners = await em.find(User, { where: { sector: def.code, role: 'client' }, select: ['id', 'modules', 'planCode', 'ownerId'] });
-        for (const owner of owners) {
-          // Compte jamais configuré (aucune clé) : tout est déjà ouvert pour lui, rien à ajouter.
-          if (owner.ownerId || !owner.modules || !Object.keys(owner.modules).length) continue;
-          const allowed = owner.planCode ? planModules.get(owner.planCode) ?? null : null;
-          const next = { ...owner.modules };
-          let changed = false;
-          for (const key of added) {
-            if (next[key] === true || CORE_MODULES.includes(key) || (allowed && !allowed.has(key))) continue;
-            next[key] = true;
-            changed = true;
-          }
-          if (changed) await em.update(User, { id: owner.id }, { modules: next });
-        }
-      }
-
-      // ── Nouveaux secteurs ──
-      const other = await em.findOne(Sector, { where: { code: 'other' } });
-      const [{ max }] = await em.query(`SELECT COALESCE(MAX("sortOrder"), 0)::int AS max FROM "sectors" WHERE "code" <> 'other'`);
-      let order = Number(max) || 0;
-      const created: string[] = [];
-      for (const def of DEFAULT_SECTORS) {
-        if (CATALOG_V1.sectorModules[def.code] || (await em.findOne(Sector, { where: { code: def.code } }))) continue;
-        await this.insertSector(em, def, ++order);
-        created.push(def.code);
-      }
-      if (created.length && other) await em.update(Sector, { id: other.id }, { sortOrder: order + 1 });
-      const [{ maxOffer }] = await em.query(`SELECT COALESCE(MAX("sortOrder"), 0)::int AS "maxOffer" FROM "service_offers"`);
-      let offerOrder = Number(maxOffer) || 0;
-      for (const o of newSectorOffersV2()) {
-        if (!o.sectorCode || !created.includes(o.sectorCode)) continue;
-        await em.save(ServiceOffer, em.create(ServiceOffer, { ...o, isPublic: false, isActive: true, sortOrder: ++offerOrder, basis: 'Proposition de tarif à valider par l’administrateur.' } as any));
-      }
-
-      // ── Formules restées en brouillon et inchangées ──
-      for (const def of DEFAULT_PLANS) {
-        const v1 = CATALOG_V1.plans[def.code];
-        const plan = plans.find((p) => p.code === def.code);
-        if (!v1 || !plan || plan.isPublic) continue;
-        const untouched = num(plan.priceMonthly) === v1.priceMonthly && num(plan.priceAnnual) === v1.priceAnnual && (plan.maxUsers ?? null) === v1.maxUsers && sameList(plan.features, v1.features);
-        if (!untouched) continue;
-        await em.update(Plan, { id: plan.id }, {
-          description: def.description, priceMonthly: def.priceMonthly, priceAnnual: def.priceAnnual, maxUsers: def.maxUsers,
-          modules: def.modules as any, features: def.features,
-        });
-      }
-
-      // ── Moyens de paiement ──
-      const patch: Partial<PlatformSettings> = { catalogVersion: CATALOG_VERSION };
-      if (sameSet(row.paymentMethods, CATALOG_V1.paymentMethods)) patch.paymentMethods = DEFAULT_PAYMENT_METHODS;
-      await em.update(PlatformSettings, { id: 1 }, patch);
+      const notes: string[] = [];
+      if (from < 2) notes.push(...(await this.upgradeToV2(em, row)));
+      if (from < 3) notes.push(...(await this.upgradeToV3(em, row)));
+      await em.update(PlatformSettings, { id: 1 }, { catalogVersion: CATALOG_VERSION });
       this.cache = null;
-      this.logger.log(`Contenu de départ mis à niveau (version ${from} → ${CATALOG_VERSION})${created.length ? ` : nouveaux secteurs ${created.join(', ')}` : ''}.`);
+      this.logger.log(`Contenu de départ mis à niveau (version ${from} → ${CATALOG_VERSION})${notes.length ? ` : ${notes.join(' ; ')}` : ''}.`);
       return { upgraded: true, from };
     });
+  }
+
+  /**
+   * Remplace la liste de modules d'un secteur quand elle est restée celle de la version précédente, et donne aux
+   * comptes de ce secteur les modules ajoutés (jamais retirés), dans la limite de leur formule.
+   */
+  private async upgradeSectorModules(em: EntityManager, previous: Record<string, string[]>, target: (code: string) => { modules: string[]; recommendations?: string[] } | null): Promise<string[]> {
+    const sameSet = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x) => b.includes(String(x)));
+    const plans = await em.find(Plan);
+    const planModules = new Map(plans.map((p) => [p.code, p.modules?.length ? new Set(p.modules) : null]));
+    const touched: string[] = [];
+    for (const [code, before] of Object.entries(previous)) {
+      const next = target(code);
+      if (!next) continue;
+      const sector = await em.findOne(Sector, { where: { code } });
+      if (!sector || !sameSet(sector.modules, before)) continue; // absent, ou personnalisé par l'administrateur
+      const added = next.modules.filter((m) => !before.includes(m));
+      if (!added.length) continue;
+      await em.update(Sector, { id: sector.id }, { modules: next.modules, ...(next.recommendations ? { recommendations: next.recommendations } : {}) });
+      touched.push(code);
+      const owners = await em.find(User, { where: { sector: code, role: 'client' }, select: ['id', 'modules', 'planCode', 'ownerId'] });
+      for (const owner of owners) {
+        // Compte jamais configuré (aucune clé) : tout est déjà ouvert pour lui, rien à ajouter.
+        if (owner.ownerId || !owner.modules || !Object.keys(owner.modules).length) continue;
+        const allowed = owner.planCode ? planModules.get(owner.planCode) ?? null : null;
+        const modules = { ...owner.modules };
+        let changed = false;
+        for (const key of added) {
+          if (modules[key] === true || CORE_MODULES.includes(key) || (allowed && !allowed.has(key))) continue;
+          modules[key] = true;
+          changed = true;
+        }
+        if (changed) await em.update(User, { id: owner.id }, { modules });
+      }
+    }
+    return touched;
+  }
+
+  private async upgradeToV2(em: EntityManager, row: any): Promise<string[]> {
+    const sameSet = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x) => b.includes(String(x)));
+    const sameList = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
+    const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+    const notes: string[] = [];
+
+    // ── Modules par secteur (cible : la liste de la version 2 ; la version 3 s'applique ensuite) ──
+    const recommendations = new Map(DEFAULT_SECTORS.map((d) => [d.code, d.recommendations]));
+    await this.upgradeSectorModules(em, CATALOG_V1.sectorModules, (code) =>
+      CATALOG_V2.sectorModules[code] ? { modules: CATALOG_V2.sectorModules[code], recommendations: recommendations.get(code) } : null);
+
+    // ── Nouveaux secteurs ──
+    const other = await em.findOne(Sector, { where: { code: 'other' } });
+    const [{ max }] = await em.query(`SELECT COALESCE(MAX("sortOrder"), 0)::int AS max FROM "sectors" WHERE "code" <> 'other'`);
+    let order = Number(max) || 0;
+    const created: string[] = [];
+    for (const def of DEFAULT_SECTORS) {
+      if (CATALOG_V1.sectorModules[def.code] || (await em.findOne(Sector, { where: { code: def.code } }))) continue;
+      await this.insertSector(em, def, ++order);
+      created.push(def.code);
+    }
+    if (created.length && other) await em.update(Sector, { id: other.id }, { sortOrder: order + 1 });
+    if (created.length) notes.push(`nouveaux secteurs ${created.join(', ')}`);
+    const [{ maxOffer }] = await em.query(`SELECT COALESCE(MAX("sortOrder"), 0)::int AS "maxOffer" FROM "service_offers"`);
+    let offerOrder = Number(maxOffer) || 0;
+    for (const o of newSectorOffersV2()) {
+      if (!o.sectorCode || !created.includes(o.sectorCode)) continue;
+      // Créées au prix de la version 2 (dinars) : la version 3 les convertit avec les autres.
+      const price = CATALOG_V2.offerPrices[o.name] ?? o.price;
+      await em.save(ServiceOffer, em.create(ServiceOffer, { ...o, price, isPublic: false, isActive: true, sortOrder: ++offerOrder, basis: 'Proposition de tarif à valider par l’administrateur.' } as any));
+    }
+
+    // ── Formules restées en brouillon et inchangées ──
+    const plans = await em.find(Plan);
+    for (const [code, v2] of Object.entries(CATALOG_V2.plans)) {
+      const v1 = CATALOG_V1.plans[code];
+      const plan = plans.find((p) => p.code === code);
+      if (!v1 || !plan || plan.isPublic) continue;
+      const untouched = num(plan.priceMonthly) === v1.priceMonthly && num(plan.priceAnnual) === v1.priceAnnual && (plan.maxUsers ?? null) === v1.maxUsers && sameList(plan.features, v1.features);
+      if (!untouched) continue;
+      await em.update(Plan, { id: plan.id }, {
+        description: v2.description, priceMonthly: v2.priceMonthly, priceAnnual: v2.priceAnnual, maxUsers: v2.maxUsers,
+        modules: v2.modules as any, features: v2.features,
+      });
+    }
+
+    // ── Moyens de paiement ──
+    if (sameSet(row.paymentMethods, CATALOG_V1.paymentMethods)) await em.update(PlatformSettings, { id: 1 }, { paymentMethods: DEFAULT_PAYMENT_METHODS });
+    return notes;
+  }
+
+  private async upgradeToV3(em: EntityManager, row: any): Promise<string[]> {
+    const sameSet = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x) => b.includes(String(x)));
+    const sameList = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
+    const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+    const notes: string[] = [];
+
+    // ── Formules : dollars (et publication si rien n'était publié) ──
+    // (avant les secteurs : un compte ne reçoit un nouveau module que si sa formule l'inclut, formule déjà mise à jour)
+    // Les prix de départ en dinars passent en dollars quand la devise est encore celle de la version 2 et que :
+    //  - aucune formule n'était publiée (personne n'a vu de prix en dinars) ; ou
+    //  - des formules étaient publiées mais toutes restées celles de départ, sans aucun paiement enregistré : un prix choisi
+    //    par l'administrateur, ou déjà payé en dinars, changerait de sens, donc dans ce cas rien ne bouge.
+    const plans = await em.find(Plan);
+    const offers = await em.find(ServiceOffer);
+    const payments = await em.count(SubscriptionPayment);
+    const planIsDefault = (p: Plan) => {
+      const v2 = CATALOG_V2.plans[p.code];
+      return !!v2 && num(p.priceMonthly) === v2.priceMonthly && num(p.priceAnnual) === v2.priceAnnual && (p.maxUsers ?? null) === v2.maxUsers && sameList(p.features, v2.features);
+    };
+    const offerIsDefault = (o: ServiceOffer) => CATALOG_V2.offerPrices[o.name] !== undefined && num(o.price) === CATALOG_V2.offerPrices[o.name];
+    const nobodyPublished = !plans.some((p) => p.isPublic);
+    const publishedAreDefault = plans.every((p) => !p.isPublic || planIsDefault(p)) && offers.every((o) => !o.isPublic || offerIsDefault(o));
+    const convert = String(row.currency || 'TND') === CATALOG_V2.currency && (nobodyPublished || (payments === 0 && publishedAreDefault));
+    let published = 0;
+    for (const def of DEFAULT_PLANS) {
+      const v2 = CATALOG_V2.plans[def.code];
+      const plan = plans.find((p) => p.code === def.code);
+      if (!v2 || !plan) continue;
+      const untouched = planIsDefault(plan);
+      const patch: Partial<Plan> = {};
+      // L'agenda entre dans la formule si sa liste de modules est restée celle de départ.
+      if (def.modules && v2.modules && sameSet(plan.modules, v2.modules)) patch.modules = def.modules;
+      if (untouched) {
+        patch.description = def.description;
+        patch.features = def.features;
+        if (convert) {
+          patch.priceMonthly = def.priceMonthly;
+          patch.priceAnnual = def.priceAnnual;
+          if (nobodyPublished) {
+            patch.isPublic = true;
+            published++;
+          }
+        }
+      }
+      if (Object.keys(patch).length) await em.update(Plan, { id: plan.id }, patch as any);
+    }
+    if (convert) {
+      await em.update(PlatformSettings, { id: 1 }, { currency: 'USD' });
+      const usd = new Map(DEFAULT_SERVICE_OFFERS.map((o) => [o.name, o.price]));
+      for (const offer of offers) {
+        const after = usd.get(offer.name);
+        if (!offerIsDefault(offer) || after === undefined || after === null) continue;
+        await em.update(ServiceOffer, { id: offer.id }, { price: after });
+      }
+      const kept = plans.filter((p) => DEFAULT_PLANS.some((d) => d.code === p.code) && !(CATALOG_V2.plans[p.code] && num(p.priceMonthly) === CATALOG_V2.plans[p.code].priceMonthly && num(p.priceAnnual) === CATALOG_V2.plans[p.code].priceAnnual)).map((p) => `${p.code} (${p.priceMonthly ?? '—'}/${p.priceAnnual ?? '—'})`);
+      notes.push(`tarifs en dollars, ${published} formule(s) publiée(s)${kept.length ? `, prix modifiés par l’administrateur conservés tels quels (à vérifier, désormais en dollars) : ${kept.join(', ')}` : ''}`);
+    } else {
+      const why = String(row.currency || 'TND') !== CATALOG_V2.currency
+        ? 'devise déjà choisie'
+        : payments ? `${payments} paiement(s) enregistré(s)` : 'formules ou prestations publiées avec des prix modifiés';
+      notes.push(`devise ${row.currency} et prix conservés (${why}) : modifiables dans Administration › Réglages et Formules`);
+    }
+
+    // ── Rendez-vous et Projets, par secteur (secteurs restés au contenu de la version 2 ; comptes concernés compris) ──
+    const defaults = new Map(DEFAULT_SECTORS.map((d) => [d.code, d]));
+    const touched = await this.upgradeSectorModules(em, CATALOG_V2.sectorModules, (code) => {
+      const def = defaults.get(code);
+      return def ? { modules: def.modules, recommendations: def.recommendations } : null;
+    });
+    if (touched.length) notes.push(`Rendez-vous / Projets ajoutés aux secteurs ${touched.join(', ')}`);
+
+    // ── Code de vérification par email : activé (sans effet tant que le SMTP n'est pas configuré) ──
+    await em.update(PlatformSettings, { id: 1 }, { requireEmailVerification: true });
+    return notes;
   }
 
   private async seedCategories(em: EntityManager, sectorId: number, categories: DefaultCategory[], parentId: number | null) {

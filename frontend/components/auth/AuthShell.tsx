@@ -3,13 +3,15 @@
 // Cadre commun des écrans d'accès construits après la page de connexion (inscription, mot de passe oublié, nouveau
 // mot de passe, confirmation de l'email) : même fond « horizon », même barre du haut, même carte, mêmes champs.
 // On y trouve aussi ce que ces pages partagent : icônes, champs, messages, textes et contrôles de saisie.
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageMenu from "@/components/ui/LanguageMenu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme, isLightTheme } from "@/contexts/ThemeContext";
 import { fill, useSaasTexts, type SaasTexts } from "@/lib/saasTexts";
+import { onServerWaking } from "@/lib/saas";
+import { useOnlineTexts } from "@/lib/onlineTexts";
 import { AUTH_STYLES, buildLgVars } from "./authStyles";
 
 // ─── Textes propres à ces écrans (le reste vient de lib/saasTexts.ts) ──────────
@@ -44,7 +46,7 @@ const UI_FR = {
   googleTwoFactor: "Ce compte existe déjà et il est protégé par la double authentification. Connectez-vous pour continuer.",
   otherMethod: "Utiliser une autre méthode",
   alreadyVerified: "Cette adresse email est déjà confirmée.",
-  verifyHelp: "Connectez-vous pour demander un nouveau lien de confirmation.",
+  verifyHelp: "Connectez-vous : un code de vérification vous sera envoyé par email.",
   accountLabel: "Compte :",
   appleUnavailable: "La connexion avec Apple n’est pas disponible pour le moment.",
   socialReady: "Compte {provider} reconnu : {email}. Complétez les informations de votre société pour démarrer l’essai gratuit.",
@@ -94,7 +96,7 @@ const UI_EN: AuthUi = {
   googleTwoFactor: "This account already exists and is protected by two-factor authentication. Sign in to continue.",
   otherMethod: "Use another method",
   alreadyVerified: "This email address is already confirmed.",
-  verifyHelp: "Sign in to request a new confirmation link.",
+  verifyHelp: "Sign in: a verification code will be sent to you by email.",
   accountLabel: "Account:",
   appleUnavailable: "Apple sign-in is not available right now.",
   socialReady: "{provider} account recognised: {email}. Complete your company details to start the free trial.",
@@ -142,7 +144,7 @@ const UI_ES: AuthUi = {
   googleTwoFactor: "Esta cuenta ya existe y está protegida con la autenticación en dos pasos. Inicie sesión para continuar.",
   otherMethod: "Usar otro método",
   alreadyVerified: "Este correo electrónico ya está confirmado.",
-  verifyHelp: "Inicie sesión para solicitar un nuevo enlace de confirmación.",
+  verifyHelp: "Inicie sesión: le enviaremos un código de verificación por correo.",
   accountLabel: "Cuenta:",
   appleUnavailable: "El acceso con Apple no está disponible por el momento.",
   socialReady: "Cuenta de {provider} reconocida: {email}. Complete los datos de su empresa para empezar la prueba gratuita.",
@@ -190,7 +192,7 @@ const UI_AR: AuthUi = {
   googleTwoFactor: "هذا الحساب موجود ومحمي بالمصادقة الثنائية. سجّل دخولك للمتابعة.",
   otherMethod: "استخدام طريقة أخرى",
   alreadyVerified: "هذا البريد الإلكتروني مؤكَّد من قبل.",
-  verifyHelp: "سجّل دخولك لطلب رابط تأكيد جديد.",
+  verifyHelp: "سجّل دخولك: سنرسل إليك رمز تحقق عبر البريد الإلكتروني.",
   accountLabel: "الحساب:",
   appleUnavailable: "تسجيل الدخول بحساب Apple غير متاح حاليًا.",
   socialReady: "تم التعرّف على حساب {provider}: {email}. أكمل معلومات شركتك لبدء التجربة المجانية.",
@@ -421,6 +423,10 @@ export default function AuthShell({ title, subtitle, wide = false, children }: A
   const isLight = isLightTheme(theme);
   const themeVars = useMemo(() => buildLgVars(themeId, theme) as React.CSSProperties, [themeId, theme]);
   const year = new Date().getFullYear();
+  // Le serveur redémarre (hébergeur) : la demande est retentée toute seule ; on le dit plutôt que d'afficher une erreur.
+  const online = useOnlineTexts();
+  const [waking, setWaking] = useState(false);
+  useEffect(() => onServerWaking(setWaking), []);
 
   return (
     <div className={"lg-root lg-shell " + (isLight ? "lg-light" : "lg-dark")} style={themeVars}>
@@ -450,6 +456,7 @@ export default function AuthShell({ title, subtitle, wide = false, children }: A
           </Link>
           <h1 className="lg-title">{title}</h1>
           {subtitle ? <p className="lg-welcome">{subtitle}</p> : null}
+          {waking ? <p className="lg-status" role="status"><span className="lg-spinner" aria-hidden="true" />{online.server.waking}</p> : null}
           {children}
         </div>
       </main>
