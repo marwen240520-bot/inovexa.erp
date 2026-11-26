@@ -34,7 +34,6 @@ export class ClientModulesService {
       hr: true,
       finance: true,
       logistics: true,
-      production: true,
       ai: true,
       reports: true,
       analytics: true,
@@ -53,7 +52,7 @@ export class ClientModulesService {
     const allowedFields = [
       'dashboard', 'products', 'categories', 'stock', 'sales', 'purchases',
       'orders', 'clients', 'suppliers', 'invoices', 'hr', 'finance',
-      'logistics', 'production', 'ai', 'reports', 'analytics', 'profile', 'settings'
+      'logistics', 'ai', 'reports', 'analytics', 'profile', 'settings'
     ];
     
     for (const field of allowedFields) {

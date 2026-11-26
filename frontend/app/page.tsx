@@ -78,7 +78,6 @@ const ORBIT_ITEMS: { key: ModuleIconKey; x: number; y: number }[] = [
   { key: "shipments", x: 1412.4, y: 184.1 },
   { key: "reports", x: 1486.5, y: 210.0 },
   { key: "analytics", x: 1555.1, y: 248.2 },
-  { key: "production", x: 1616.1, y: 297.7 },
 ];
 
 function ModuleOrbit({ lang, label, shipments }: { lang: HomeLang; label: string; shipments: string }) {

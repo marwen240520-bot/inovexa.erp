@@ -10,7 +10,6 @@ import { MailModule } from './common/mail/mail.service';
 import { CompanyModule } from './modules/company/company.module';
 import { StockModule } from './modules/stock/stock.module';
 import { FinanceModule } from './modules/finance/finance.module';
-import { ProductionModule } from './modules/production/production.module';
 import { TeamModule } from './modules/team/team.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
@@ -79,7 +78,6 @@ import { SaasModule } from './modules/saas/saas.module';
     SaasModule,
     StockModule,
     FinanceModule,
-    ProductionModule,
     TeamModule,
     DocumentsModule,
     AccountingModule,

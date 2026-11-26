@@ -19,7 +19,7 @@ import { AdminGuard } from './admin.guard';
 import { SaasSettingsService } from './saas-settings.service';
 import { SubscriptionService } from './subscription.service';
 import { SectorsService } from './sectors.service';
-import { MODULE_KEYS } from './account-access';
+import { MODULE_KEYS, effectiveModules } from './account-access';
 import { PAYMENT_METHODS } from './saas-defaults';
 import { apiPublicUrl, frontendUrl, returnBaseFor } from '../../common/origins';
 import { securityChecks, securitySummary } from '../../common/security/security-report';
@@ -146,7 +146,7 @@ export class BillingController {
       company: { name: owner.companyName, email: owner.email },
       plan: plans.find((p) => p.code === owner.planCode) || null,
       users: { used: 1 + teamCount, limit: owner.userLimit ?? null },
-      modules: owner.modules || {},
+      modules: effectiveModules(owner.modules, await this.subscriptions.allowedModules(owner.planCode)),
       pendingPayment: payments.find((p) => p.status === 'pending') || null,
       // Page de paiement par carte encore ouverte (à reprendre plutôt que d'en ouvrir une autre).
       checkout: await this.subscriptions.openCheckout(owner.id),

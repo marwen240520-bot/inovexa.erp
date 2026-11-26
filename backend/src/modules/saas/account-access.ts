@@ -18,7 +18,7 @@ export const isPlatformAdmin = (role: unknown): boolean => (PLATFORM_ROLES as re
 /** Modules de l'ERP qu'un abonnement peut activer (mêmes clés que la barre latérale et users.modules). */
 export const MODULE_KEYS = [
   'dashboard', 'products', 'categories', 'stock', 'sales', 'purchases', 'pos', 'orders', 'clients', 'suppliers',
-  'invoices', 'hr', 'finance', 'logistics', 'production', 'appointments', 'projects', 'ai', 'reports', 'analytics', 'objectives',
+  'invoices', 'hr', 'finance', 'logistics', 'appointments', 'projects', 'ai', 'reports', 'analytics', 'objectives',
   'profile', 'settings',
 ] as const;
 export type ModuleKey = (typeof MODULE_KEYS)[number];
@@ -133,5 +133,24 @@ export function modulesFromList(enabled: readonly string[]): Record<string, bool
   const set = new Set(enabled);
   const out: Record<string, boolean> = {};
   for (const key of MODULE_KEYS) out[key] = CORE_MODULES.includes(key) || set.has(key);
+  return out;
+}
+
+/**
+ * Modules réellement utilisables par une société = ce que le client a ACTIVÉ ∩ ce que sa formule met à DISPOSITION.
+ *
+ * Trois notions, qui ne se mélangent jamais :
+ *  - disponibles : ce que la formule autorise (plans.modules ; null = tous) ;
+ *  - par défaut  : ce que le secteur ouvre au départ (sectors.modules) — une aide au démarrage, jamais un droit ;
+ *  - activés     : ce que le client a ouvert lui-même (users.modules) — un choix, qui reste enregistré même si la formule change.
+ * L'accès (garde du serveur, barre latérale) suit toujours l'intersection : une formule modifiée ou une rétrogradation
+ * ferme aussitôt les modules qu'elle ne comprend plus, sans effacer le choix du client.
+ *
+ * Formule sans limite (essai, « tous les modules ») : la configuration du client est rendue telle quelle.
+ */
+export function effectiveModules(activated: Record<string, boolean> | null | undefined, available: ReadonlySet<string> | null): Record<string, boolean> {
+  if (!available) return activated || {};
+  const out: Record<string, boolean> = {};
+  for (const key of MODULE_KEYS) out[key] = CORE_MODULES.includes(key) || (available.has(key) && isModuleEnabled(activated, key));
   return out;
 }

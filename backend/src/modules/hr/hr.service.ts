@@ -21,11 +21,11 @@ const lastDay = (year: number, month: number) => new Date(Date.UTC(year, month, 
 export class HrService {
   constructor(@InjectDataSource() private readonly ds: DataSource, private readonly company: CompanyService, private readonly accounting: AccountingService) {}
 
-  /** La paie automatique (CNSS, IRPP, CSS) n'existe que pour la Tunisie : ailleurs, les barèmes seraient faux. */
+  /** La paie automatique suit les lois du pays de la société (PAYROLL_PACKS) : sans pack, les barèmes seraient faux. */
   private async assertPayrollCountry(userId: number) {
     const company = await this.company.getOrCreate(userId);
     if (!localFeatures(company.countryCode).payroll) {
-      throw new BadRequestException('La paie automatique (CNSS, IRPP, CSS) n’est disponible que pour les sociétés tunisiennes. Les congés et les fiches employés restent disponibles.');
+      throw new BadRequestException('La paie automatique n’est pas encore disponible pour le pays de cette société (aujourd’hui : Tunisie — CNSS, IRPP, CSS). Les congés et les fiches employés restent disponibles.');
     }
   }
 

@@ -25,7 +25,7 @@ function PayrollContent() {
   useRequireAuth();
   const params = useSearchParams();
   const raw = params.get("tab");
-  // La paie (CNSS, IRPP, CSS) est tunisienne : ailleurs, seuls les congés restent ici.
+  // La paie suit les lois de chaque pays (pack de paie, aujourd'hui la Tunisie : CNSS, IRPP, CSS) : sans pack, seuls les congés restent ici.
   const canPay = useCompanyProfile().features.payroll;
   const tab: Tab = !canPay ? "leaves" : raw === "leaves" || raw === "settings" ? raw : "payroll";
   const [notice, notify] = useNotice();
@@ -33,7 +33,7 @@ function PayrollContent() {
     <Page title="Ressources humaines" subtitle={SUBTITLE[tab]}>
       <ModuleNav tabs={HR_TABS} label="Ressources humaines" />
       {notice}
-      {!canPay && (raw === "payroll" || raw === "settings") && <Notice>Les bulletins de paie (CNSS, IRPP) ne sont disponibles que pour les sociétés tunisiennes. Les congés restent gérés ici.</Notice>}
+      {!canPay && (raw === "payroll" || raw === "settings") && <Notice>La paie suit les lois de chaque pays et n’est pas encore disponible pour le pays de votre société (aujourd’hui : Tunisie, avec CNSS et IRPP). Les employés et les congés restent gérés ici.</Notice>}
       {tab === "payroll" && <Payslips notify={notify} />}
       {tab === "leaves" && <Leaves notify={notify} />}
       {tab === "settings" && <Settings notify={notify} />}

@@ -8,7 +8,7 @@ import { validateTaxId } from '../../common/fiscal';
 import { User } from '../users/entities/user.entity';
 import { CORE_MODULES } from './account-access';
 import {
-  CATALOG_V1, CATALOG_V2, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, DefaultCategory,
+  CATALOG_V1, CATALOG_V2, CATALOG_V3, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, DefaultCategory,
   DefaultSector, PAYMENT_METHODS, basisFor, newSectorOffersV2,
 } from './saas-defaults';
 
@@ -210,6 +210,7 @@ export class SaasSettingsService implements OnApplicationBootstrap {
       const notes: string[] = [];
       if (from < 2) notes.push(...(await this.upgradeToV2(em, row)));
       if (from < 3) notes.push(...(await this.upgradeToV3(em, row)));
+      if (from < 4) notes.push(...(await this.upgradeToV4(em)));
       await em.update(PlatformSettings, { id: 1 }, { catalogVersion: CATALOG_VERSION });
       this.cache = null;
       this.logger.log(`Contenu de départ mis à niveau (version ${from} → ${CATALOG_VERSION})${notes.length ? ` : ${notes.join(' ; ')}` : ''}.`);
@@ -304,6 +305,82 @@ export class SaasSettingsService implements OnApplicationBootstrap {
     return notes;
   }
 
+  /**
+   * Version 4 : le module Production est retiré de l'ERP.
+   *  - il disparaît de TOUS les secteurs et de TOUTES les formules, même modifiés par l'administrateur (un module qui
+   *    n'existe plus ne peut pas rester dans une liste : l'enregistrement d'un secteur serait refusé) ;
+   *  - il disparaît des modules activés des comptes (la table production_orders n'est pas touchée : aucune donnée perdue) ;
+   *  - les textes de départ qui le citaient sont remplacés quand l'administrateur ne les a pas modifiés.
+   */
+  private async upgradeToV4(em: EntityManager): Promise<string[]> {
+    const sameList = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
+    const notes: string[] = [];
+    const defaults = new Map(DEFAULT_SECTORS.map((d) => [d.code, d]));
+
+    // ── Secteurs ──
+    let sectors = 0;
+    for (const sector of await em.find(Sector)) {
+      const patch: Partial<Sector> = {};
+      if (Array.isArray(sector.modules) && sector.modules.includes('production')) {
+        const next = sector.modules.filter((m) => m !== 'production');
+        if (next.length) patch.modules = next; // une liste vide voudrait dire « tous les modules » : on ne la crée jamais
+      }
+      const before = CATALOG_V3.sectors[sector.code];
+      const def = defaults.get(sector.code);
+      if (before && def) {
+        if (sector.description === before.description) patch.description = def.description;
+        if (sameList(sector.recommendations, before.recommendations)) patch.recommendations = def.recommendations;
+      }
+      if (Object.keys(patch).length) {
+        await em.update(Sector, { id: sector.id }, patch as any);
+        sectors++;
+      }
+    }
+    if (sectors) notes.push(`${sectors} secteur(s) sans le module Production`);
+
+    // ── Formules ──
+    let plans = 0;
+    for (const plan of await em.find(Plan)) {
+      const patch: Partial<Plan> = {};
+      if (Array.isArray(plan.modules) && plan.modules.includes('production')) {
+        const next = plan.modules.filter((m) => m !== 'production');
+        if (next.length) patch.modules = next; // jamais une liste vide : elle ouvrirait tous les modules
+      }
+      const before = CATALOG_V3.plans[plan.code];
+      const def = DEFAULT_PLANS.find((d) => d.code === plan.code);
+      if (before && def && sameList(plan.features, before.features)) {
+        patch.features = def.features;
+        if (plan.description === before.description) patch.description = def.description;
+      } else if (Array.isArray(plan.features) && plan.features.some((f) => CATALOG_V3.featureRenames[f])) {
+        patch.features = plan.features.map((f) => CATALOG_V3.featureRenames[f] ?? f);
+      }
+      if (Object.keys(patch).length) {
+        await em.update(Plan, { id: plan.id }, patch as any);
+        plans++;
+      }
+    }
+    if (plans) notes.push(`${plans} formule(s) mise(s) à jour`);
+
+    // ── Prestations de mise en service qui citaient les ordres de fabrication ──
+    const offers = await em.find(ServiceOffer);
+    for (const old of CATALOG_V3.offers) {
+      const row = offers.find((o) => o.name === old.name);
+      const now = DEFAULT_SERVICE_OFFERS.find((o) => o.sectorCode === old.sectorCode && o.category === 'setup' && o.name !== old.name);
+      if (!row || !now) continue;
+      await em.update(ServiceOffer, { id: row.id }, { name: now.name, ...(row.description === old.description ? { description: now.description } : {}) } as any);
+    }
+
+    // ── Comptes : la clé « production » n'a plus de sens dans les modules activés ──
+    const rows: Array<{ id: number; modules: Record<string, boolean> | string | null }> = await em.query(`SELECT "id", "modules" FROM "users" WHERE "modules"::text LIKE '%"production"%'`);
+    for (const r of rows) {
+      const modules = typeof r.modules === 'string' ? JSON.parse(r.modules) : { ...(r.modules || {}) };
+      delete modules.production;
+      await em.update(User, { id: r.id }, { modules });
+    }
+    if (rows.length) notes.push(`${rows.length} compte(s) nettoyé(s)`);
+    return notes;
+  }
+
   private async upgradeToV3(em: EntityManager, row: any): Promise<string[]> {
     const sameSet = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x) => b.includes(String(x)));
     const sameList = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
@@ -352,7 +429,8 @@ export class SaasSettingsService implements OnApplicationBootstrap {
     }
     if (convert) {
       await em.update(PlatformSettings, { id: 1 }, { currency: 'USD' });
-      const usd = new Map(DEFAULT_SERVICE_OFFERS.map((o) => [o.name, o.price]));
+      // Les deux prestations renommées à la version 4 portent encore leur ancien nom à ce stade : on les connaît par CATALOG_V3.
+      const usd = new Map<string, number | null>([...DEFAULT_SERVICE_OFFERS, ...CATALOG_V3.offers].map((o) => [o.name, o.price]));
       for (const offer of offers) {
         const after = usd.get(offer.name);
         if (!offerIsDefault(offer) || after === undefined || after === null) continue;

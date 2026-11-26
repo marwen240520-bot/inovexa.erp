@@ -8,12 +8,11 @@
 5. Gestion des produits
 6. Gestion des employés
 7. Gestion des clients
-8. Production
-9. Logistique
-10. Assistant IA
-11. Rapports
-12. Paramètres
-13. FAQ
+8. Logistique
+9. Assistant IA
+10. Rapports
+11. Paramètres
+12. FAQ
 
 ## 1. Introduction
 Inovexa-AI est un ERP nouvelle génération avec intelligence artificielle intégrée.
@@ -53,34 +52,29 @@ Le dashboard affiche les indicateurs clés :
 - Limite de crédit : définissez un montant
 - Historique : consultez les commandes
 
-## 8. Production
-- Créer une nomenclature (BOM)
-- Lancer un ordre de fabrication
-- Contrôle qualité
-
-## 9. Logistique
+## 8. Logistique
 - Créer une expédition
 - Suivre les livraisons
 - Gérer les transporteurs
 
-## 10. Assistant IA
+## 9. Assistant IA
 - Posez vos questions
 - Obtenez des recommandations
 - Prédictions de ventes
 
-## 11. Rapports
+## 10. Rapports
 - Rapports financiers
 - Rapports de stock
 - Rapports RH
 - Rapports ventes
 
-## 12. Paramètres
+## 11. Paramètres
 - Profil utilisateur
 - Changer mot de passe
 - 2FA (double authentification)
 - Notifications
 
-## 13. FAQ
+## 12. FAQ
 **Q: Comment réinitialiser mon mot de passe ?**
 R: Cliquez sur "Mot de passe oublié" sur la page de connexion.
 

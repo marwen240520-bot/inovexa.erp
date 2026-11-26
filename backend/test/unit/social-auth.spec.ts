@@ -53,6 +53,7 @@ function build(env: { apple?: boolean; google?: boolean } = { apple: true, googl
       view: (owner: any) => ({ status: owner.accountStatus, blocked: false }),
       trialDates: async (at = new Date()) => ({ trialStartedAt: at, trialEndsAt: new Date(at.getTime() + 72 * 3_600_000), trialHours: 72 }),
       sectorModules: async () => ({ dashboard: true, sales: true }),
+      allowedModules: async () => null, // aucune formule : tous les modules sont disponibles
     } as any,
     { getOrCreate: async () => ({}), update: async () => ({}) } as any,
   );

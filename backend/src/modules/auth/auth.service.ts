@@ -13,7 +13,7 @@ import { generateSecret, otpauthUrl, verifyTotp } from '../../common/totp';
 import { PermissionsService } from './permissions.service';
 import { SaasSettingsService } from '../saas/saas-settings.service';
 import { SubscriptionService } from '../saas/subscription.service';
-import { isPlatformAdmin } from '../saas/account-access';
+import { effectiveModules, isPlatformAdmin } from '../saas/account-access';
 import { Sector } from '../saas/entities/sector.entity';
 import { CompanyService } from '../company/company.service';
 import { validateTaxId } from '../../common/fiscal';
@@ -103,8 +103,8 @@ export class AuthService {
         name: user.name,
         role: user.role,
         companyName: owner ? owner.companyName : user.companyName,
-        // Un membre d'équipe voit les modules activés pour sa société
-        modules: owner ? owner.modules : user.modules,
+        // Un membre d'équipe voit les modules de sa société : activés par elle ET disponibles dans sa formule
+        modules: effectiveModules(accountRow.modules, await this.subscriptions.allowedModules(accountRow.planCode)),
         isTeamMember: !!user.ownerId,
         ownerId: user.ownerId ?? null,
         twoFactorEnabled: !!user.twoFactorEnabled,
@@ -230,7 +230,8 @@ export class AuthService {
     const owner = user.ownerId ? await this.userRepository.findOne({ where: { id: user.ownerId } }) : null;
     return {
       id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone,
-      companyName: owner ? owner.companyName : user.companyName, modules: owner ? owner.modules : user.modules,
+      companyName: owner ? owner.companyName : user.companyName,
+      modules: effectiveModules((owner ?? user).modules, await this.subscriptions.allowedModules((owner ?? user).planCode)),
       isTeamMember: !!user.ownerId, twoFactorEnabled: !!user.twoFactorEnabled, lastLoginAt: user.lastLoginAt,
       permissions: user.ownerId ? this.permissions.effectivePermissions(user.role, user.extraPermissions) : ['*'],
       sector: (owner ?? user).sector ?? null, googleLinked: !!user.googleSub, appleLinked: !!user.appleSub,

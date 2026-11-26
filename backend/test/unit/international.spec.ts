@@ -1,6 +1,6 @@
 import {
   COUNTRY_CODES, CURRENCY_BY_COUNTRY, countryName, currencyDecimals, defaultCurrencyFor, isCountryCode, isCurrencyCode, isTunisia,
-  localFeatures, taxIdLabel, taxIdShortLabel,
+  PAYROLL_PACKS, hasPayrollPack, localFeatures, taxIdLabel, taxIdShortLabel,
 } from '../../src/common/countries';
 import { amountInWordsFor, amountToFrenchWords } from '../../src/common/number-words';
 import { normalizePhone } from '../../src/common/phone';
@@ -69,6 +69,11 @@ describe('pays et devises', () => {
     expect(localFeatures('TN')).toEqual({ stampDuty: true, withholding: true, teif: true, payroll: true });
     expect(localFeatures(undefined)).toEqual({ stampDuty: true, withholding: true, teif: true, payroll: true });
     for (const c of ['FR', 'MA', 'US', 'DZ', 'SA']) expect(localFeatures(c)).toEqual({ stampDuty: false, withholding: false, teif: false, payroll: false });
+    // La paie suit un pack par pays (lois locales) ; sans pack, RH (employés, congés) reste disponible mais pas la paie.
+    expect(Object.keys(PAYROLL_PACKS)).toEqual(['TN']);
+    expect(hasPayrollPack('tn')).toBe(true);
+    expect(hasPayrollPack('FR')).toBe(false);
+    expect(localFeatures('FR').payroll).toBe(hasPayrollPack('FR'));
     expect(isTunisia('tn')).toBe(true);
     expect(isTunisia('FR')).toBe(false);
   });

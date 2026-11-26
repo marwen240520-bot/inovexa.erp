@@ -12,13 +12,13 @@
  * Ce contenu n'est inséré qu'une fois (platform_settings.defaultsSeeded) ; ensuite tout se gère depuis l'administration.
  * Quand ce fichier évolue (nouveaux secteurs, modules d'un secteur, prix), CATALOG_VERSION augmente et
  * SaasSettingsService.upgradeDefaults() reporte les nouveautés dans les bases déjà installées, SANS toucher à ce que
- * l'administrateur a modifié (voir CATALOG_V1 et CATALOG_V2 plus bas).
+ * l'administrateur a modifié (voir CATALOG_V1, CATALOG_V2 et CATALOG_V3 plus bas).
  *
  * ⚠️  Le site public affiche le même catalogue : frontend/lib/catalog.ts. Les deux fichiers se modifient ensemble.
  */
 
 /** Version du contenu de départ ci-dessous (platform_settings.catalogVersion). */
-export const CATALOG_VERSION = 3;
+export const CATALOG_VERSION = 4;
 
 /** Modules utiles à toute société, quel que soit son secteur. */
 const BASE = ['products', 'categories', 'clients', 'invoices', 'finance', 'reports', 'analytics', 'ai'];
@@ -196,9 +196,8 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   {
     code: 'manufacturing', name: 'Industrie et fabrication', nameEn: 'Manufacturing and industry',
     description: 'Ateliers et usines : matières premières, produits finis, achats et expéditions.',
-    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
+    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
     recommendations: [
-      'Créez un ordre de fabrication par série : la nomenclature (composants par unité) sort du stock à chaque avancement, le produit fini y entre.',
       'Séparez matières premières et produits finis en catégories : la valeur du stock se lit par catégorie.',
       'Le coût moyen pondéré se met à jour à chaque réception d’achat.',
       'Les inventaires tournants corrigent le stock sans arrêter l’activité.',
@@ -239,11 +238,10 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   },
   {
     code: 'agrifood', name: 'Agriculture et agroalimentaire', nameEn: 'Agriculture and agri-food',
-    description: 'Exploitations, huileries, conditionnement et transformation : récoltes, lots, fabrication et export.',
-    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
+    description: 'Exploitations, huileries, conditionnement et transformation : récoltes, lots, stock et export.',
+    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
     recommendations: [
-      'Activez le suivi par lot : chaque récolte ou chaque fabrication garde sa traçabilité et sa date limite.',
-      'Créez un ordre de fabrication par transformation (olives → huile, lait → fromage) : les matières sortent du stock, le produit fini y entre.',
+      'Activez le suivi par lot : chaque récolte ou chaque lot produit garde sa traçabilité et sa date limite.',
       'Enregistrez intrants et emballages comme achats : le coût moyen se met à jour à chaque réception.',
     ],
     categories: [
@@ -312,10 +310,9 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   },
   {
     code: 'textile', name: 'Textile et habillement', nameEn: 'Textile and clothing',
-    description: 'Ateliers de confection, façonniers et marques : tissus, fournitures, ordres de fabrication et livraisons.',
-    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
+    description: 'Ateliers de confection, façonniers et marques : tissus, fournitures, commandes et livraisons.',
+    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
     recommendations: [
-      'Créez un ordre de fabrication par modèle : la nomenclature (tissu, fil, boutons par pièce) sort du stock à chaque avancement.',
       'Séparez tissus, fournitures et produits finis en catégories pour lire la valeur du stock par famille.',
       'Facturez le travail à façon comme une prestation à la pièce.',
     ],
@@ -362,7 +359,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   {
     code: 'other', name: 'Autre activité', nameEn: 'Other businesses',
     description: 'Tous les modules sont proposés : gardez ceux qui vous servent.',
-    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'appointments', 'projects', 'objectives'],
+    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'appointments', 'projects', 'objectives'],
     recommendations: [
       'Commencez par la fiche société (Paramètres › Société & fiscalité) : elle alimente vos factures.',
       'Importez vos produits et clients depuis un fichier Excel ou CSV pour démarrer vite.',
@@ -395,15 +392,15 @@ export const DEFAULT_PLANS = [
   },
   {
     code: 'business', name: 'Business', sortOrder: 2, highlight: true, maxUsers: 10, priceMonthly: 29, priceAnnual: 290,
-    description: 'Tous les modules de votre secteur pour une PME qui grandit.',
+    description: 'Tous les modules, ouverts selon votre secteur, pour une PME qui grandit.',
     modules: null,
-    features: ['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, TVA et rapprochement bancaire', 'RH, congés et paie (CNSS, IRPP)', 'Logistique, production, projets et objectifs', 'Analyses et assistant IA', 'Support prioritaire'],
+    features: ['Jusqu’à 10 utilisateurs', 'Tous les modules disponibles, ouverts selon votre secteur', 'Comptabilité, TVA et rapprochement bancaire', 'RH et congés ; paie selon le pays (Tunisie : CNSS, IRPP)', 'Logistique, projets et objectifs', 'Analyses et assistant IA', 'Support par email'],
   },
   {
     code: 'enterprise', name: 'Enterprise', sortOrder: 3, highlight: false, maxUsers: null, priceMonthly: 79, priceAnnual: 790,
     description: 'Utilisateurs illimités et accompagnement dédié.',
     modules: null,
-    features: ['Utilisateurs illimités', 'Tous les modules de votre secteur', 'Mise en service et reprise de données accompagnées', 'Formation de vos équipes', 'Interlocuteur dédié', 'Paramétrage sur mesure (sur devis)'],
+    features: ['Utilisateurs illimités', 'Tous les modules disponibles, ouverts selon votre secteur', 'Support prioritaire et interlocuteur dédié', 'Mise en service et reprise de données accompagnées', 'Formation de vos équipes', 'Paramétrage sur mesure (sur devis)'],
   },
 ];
 
@@ -427,10 +424,10 @@ export const DEFAULT_SERVICE_OFFERS = [
 /** Prestations des secteurs ajoutés à la version 2 du catalogue (aussi utilisées par la mise à niveau des bases existantes). */
 export function newSectorOffersV2() {
   return [
-    { sectorCode: 'agrifood', category: 'setup', name: 'Agroalimentaire : lots, fabrication et traçabilité', description: 'Suivi par lot, nomenclatures de transformation, inventaire initial.', price: 160, priceUnit: 'one_time' },
+    { sectorCode: 'agrifood', category: 'setup', name: 'Agroalimentaire : lots et traçabilité', description: 'Suivi par lot, dates limites, inventaire initial.', price: 160, priceUnit: 'one_time' },
     { sectorCode: 'automotive', category: 'setup', name: 'Automobile : références, stock et atelier', description: 'Reprise des références, seuils d’alerte, prestations d’atelier, caisse.', price: 130, priceUnit: 'one_time' },
     { sectorCode: 'ecommerce', category: 'setup', name: 'Vente en ligne : commandes, colis et retours', description: 'Circuit commande → livraison → facture, transporteurs, frais de livraison.', price: 110, priceUnit: 'one_time' },
-    { sectorCode: 'textile', category: 'setup', name: 'Textile : nomenclatures et ordres de fabrication', description: 'Tissus et fournitures, nomenclature par modèle, travail à façon.', price: 160, priceUnit: 'one_time' },
+    { sectorCode: 'textile', category: 'setup', name: 'Textile : tissus, fournitures et façon', description: 'Tissus et fournitures, catégories de stock, travail à façon.', price: 160, priceUnit: 'one_time' },
     { sectorCode: 'beauty', category: 'setup', name: 'Beauté : prestations, produits et caisse', description: 'Carte des prestations, produits en vente, sessions de caisse.', price: 95, priceUnit: 'one_time' },
   ] as Array<{ sectorCode: string | null; category: string; name: string; description: string; price: number | null; priceUnit: string }>;
 }
@@ -531,4 +528,58 @@ export const CATALOG_V2 = {
     'Beauté : prestations, produits et caisse': 300,
   } as Record<string, number>,
   currency: 'TND',
+};
+
+/**
+ * Contenu de départ de la VERSION 3 (même rôle que CATALOG_V1 et CATALOG_V2, pour le passage à la version 4 : le module
+ * Production est retiré de l'ERP). Une valeur encore identique à celle-ci est mise à niveau ; toute autre est conservée.
+ */
+export const CATALOG_V3 = {
+  sectors: {
+    manufacturing: {
+      description: 'Ateliers et usines : matières premières, produits finis, achats et expéditions.',
+      recommendations: [
+        'Créez un ordre de fabrication par série : la nomenclature (composants par unité) sort du stock à chaque avancement, le produit fini y entre.',
+        'Séparez matières premières et produits finis en catégories : la valeur du stock se lit par catégorie.',
+        'Le coût moyen pondéré se met à jour à chaque réception d’achat.',
+        'Les inventaires tournants corrigent le stock sans arrêter l’activité.',
+      ],
+    },
+    agrifood: {
+      description: 'Exploitations, huileries, conditionnement et transformation : récoltes, lots, fabrication et export.',
+      recommendations: [
+        'Activez le suivi par lot : chaque récolte ou chaque fabrication garde sa traçabilité et sa date limite.',
+        'Créez un ordre de fabrication par transformation (olives → huile, lait → fromage) : les matières sortent du stock, le produit fini y entre.',
+        'Enregistrez intrants et emballages comme achats : le coût moyen se met à jour à chaque réception.',
+      ],
+    },
+    textile: {
+      description: 'Ateliers de confection, façonniers et marques : tissus, fournitures, ordres de fabrication et livraisons.',
+      recommendations: [
+        'Créez un ordre de fabrication par modèle : la nomenclature (tissu, fil, boutons par pièce) sort du stock à chaque avancement.',
+        'Séparez tissus, fournitures et produits finis en catégories pour lire la valeur du stock par famille.',
+        'Facturez le travail à façon comme une prestation à la pièce.',
+      ],
+    },
+  } as Record<string, { description: string; recommendations: string[] }>,
+  plans: {
+    business: {
+      description: 'Tous les modules de votre secteur pour une PME qui grandit.',
+      features: ['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, TVA et rapprochement bancaire', 'RH, congés et paie (CNSS, IRPP)', 'Logistique, production, projets et objectifs', 'Analyses et assistant IA', 'Support prioritaire'],
+    },
+    enterprise: {
+      description: 'Utilisateurs illimités et accompagnement dédié.',
+      features: ['Utilisateurs illimités', 'Tous les modules de votre secteur', 'Mise en service et reprise de données accompagnées', 'Formation de vos équipes', 'Interlocuteur dédié', 'Paramétrage sur mesure (sur devis)'],
+    },
+  } as Record<string, { description: string; features: string[] }>,
+  /** Lignes d'arguments qui citaient la production : remplacées même dans une formule modifiée par l'administrateur. */
+  featureRenames: {
+    'Logistique, production, projets et objectifs': 'Logistique, projets et objectifs',
+    'Logistique, production et objectifs': 'Logistique et objectifs',
+  } as Record<string, string>,
+  /** Prestations de mise en service qui citaient les ordres de fabrication (renommées si elles n'ont pas été modifiées). */
+  offers: [
+    { sectorCode: 'agrifood', name: 'Agroalimentaire : lots, fabrication et traçabilité', description: 'Suivi par lot, nomenclatures de transformation, inventaire initial.', price: 160 },
+    { sectorCode: 'textile', name: 'Textile : nomenclatures et ordres de fabrication', description: 'Tissus et fournitures, nomenclature par modèle, travail à façon.', price: 160 },
+  ],
 };

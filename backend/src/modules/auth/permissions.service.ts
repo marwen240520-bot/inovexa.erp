@@ -49,13 +49,12 @@ export const RESOURCE_BY_PATH: Record<string, string> = {
   // Espace du transporteur connecté : ressource à part, pour qu'il puisse mettre à jour SES livraisons sans recevoir de droit
   // d'écriture sur la logistique des sociétés.
   transporteur: 'carrier_portal',
-  production: 'production',
   appointments: 'appointments',
   projects: 'projects', objectives: 'projects',
 };
 
 const VIEW_ALL = ['products:view', 'sales:view', 'pos:view', 'clients:view', 'suppliers:view', 'purchases:view', 'orders:view', 'documents:view', 'stock:view',
-  'logistics:view', 'production:view', 'projects:view', 'appointments:view', 'reports:view'];
+  'logistics:view', 'projects:view', 'appointments:view', 'reports:view'];
 
 const ROLE_GRANTS: Record<string, string[]> = {
   [ROLES.MANAGER]: ['*', '-team:*', '-audit:*', '-company:edit', '-company:create', '-company:delete'],

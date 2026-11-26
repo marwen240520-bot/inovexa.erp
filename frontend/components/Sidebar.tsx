@@ -178,13 +178,6 @@ const ICONS: Record<string, React.ReactElement> = {
       <rect x="16" y="4" width="5" height="13.5" rx="1.2"/>
     </Icon>
   ),
-  production: (
-    <Icon>
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M2 12h2M20 12h2M17.66 17.66l1.41 1.41M5.34 6.34L3.93 4.93"/>
-      <path d="M12 2v2M12 20v2"/>
-    </Icon>
-  ),
   ai: (
     <Icon>
       <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
@@ -311,7 +304,7 @@ interface NavGroup {
 const NAV_GROUPS: Array<{ id: string; label: string; items: string[] }> = [
   { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "appointments", "pos", "pos-sessions"] },
   { id: "procurement", label: "nav.groups.procurement", items: ["purchases", "suppliers"] },
-  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics", "production"] },
+  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics"] },
   { id: "finance",     label: "nav.groups.finance",     items: ["finance", "accounting", "hr"] },
   { id: "insights",    label: "nav.groups.insights",    items: ["projects", "reports", "business-reports", "analytics", "objectives", "ai"] },
   { id: "account",     label: "nav.groups.account",     items: ["profile", "billing", "settings"] },
@@ -501,7 +494,6 @@ export default function Sidebar() {
     { id: "finance",    path: "/dashboard/finance",    label: "common.finance",    iconKey: "finance" },
     { id: "accounting", gate: "finance", path: "/dashboard/accounting", label: "nav.accounting", iconKey: "finance" },
     { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" },
-    { id: "production", path: "/dashboard/production", label: "common.production", iconKey: "production" },
     { id: "appointments", path: "/dashboard/appointments", label: "common.appointments", iconKey: "appointments" },
     { id: "projects",   path: "/dashboard/projects",   label: "common.projects",   iconKey: "projects" },
     { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },

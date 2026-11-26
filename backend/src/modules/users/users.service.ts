@@ -8,7 +8,7 @@ import { normalizePhone } from '../../common/phone';
 
 const MODULE_KEYS = [
   'dashboard', 'products', 'categories', 'stock', 'sales', 'purchases', 'orders', 'clients',
-  'suppliers', 'invoices', 'hr', 'finance', 'logistics', 'production', 'ai', 'reports', 'analytics', 'profile', 'settings',
+  'suppliers', 'invoices', 'hr', 'finance', 'logistics', 'ai', 'reports', 'analytics', 'profile', 'settings',
 ];
 
 /**

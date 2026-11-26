@@ -185,7 +185,7 @@ async function pdfText(docId) {
   r = await api('POST', `/documents/${r.body.id}/validate`);
   check('… et validée', r.status === 201 && r.body.number === `FA-${new Date().getFullYear()}-00002`, r.body);
   r = await api('POST', '/hr/payroll/generate', { year: 2026, month: 3 });
-  check('paie automatique refusée (barèmes tunisiens)', r.status === 400 && /paie automatique/.test(JSON.stringify(r.body)) && /tunisiennes/.test(JSON.stringify(r.body)), r);
+  check('paie automatique refusée : pas de pack de paie pour ce pays (RH reste ouvert)', r.status === 400 && /paie automatique/.test(JSON.stringify(r.body)) && /pas encore disponible pour le pays de cette société/.test(JSON.stringify(r.body)) && /congés et les fiches employés restent disponibles/.test(JSON.stringify(r.body)), r);
   r = await api('PUT', '/hr/payroll/settings', { cnssEmployeeRate: 5 });
   check('réglages de paie tunisiens refusés', r.status === 400, r);
   r = await api('POST', '/employees', { name: 'Julie Petit', email: 'julie@test.fr', position: 'Comptable', salary: 2500, status: 'active', createdAt: '2026-01-01' });

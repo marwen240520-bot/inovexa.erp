@@ -17,7 +17,7 @@ export const pick = (text: Localized, lang: string): string => text[(lang as Cat
 
 export type CatalogModule =
   | "dashboard" | "products" | "categories" | "stock" | "sales" | "purchases" | "pos" | "orders" | "clients" | "suppliers"
-  | "invoices" | "hr" | "finance" | "logistics" | "production" | "appointments" | "projects" | "ai" | "reports" | "analytics" | "objectives";
+  | "invoices" | "hr" | "finance" | "logistics" | "appointments" | "projects" | "ai" | "reports" | "analytics" | "objectives";
 
 export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Localized }> = {
   dashboard: {
@@ -116,14 +116,6 @@ export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Locali
       es: "Envíos, transportistas con su propio espacio, seguimiento y tasa de entrega.",
     },
   },
-  production: {
-    label: { fr: "Production", en: "Production", es: "Producción" },
-    desc: {
-      fr: "Ordres de fabrication et nomenclatures : matières sorties, produits finis entrés en stock.",
-      en: "Production orders and bills of materials: components out, finished goods into stock.",
-      es: "Órdenes de fabricación y listas de materiales: salen componentes, entran productos terminados.",
-    },
-  },
   appointments: {
     label: { fr: "Rendez-vous et réservations", en: "Appointments and bookings", es: "Citas y reservas" },
     desc: {
@@ -149,11 +141,11 @@ export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Locali
     },
   },
   hr: {
-    label: { fr: "RH et paie", en: "HR and payroll", es: "RR. HH. y nóminas" },
+    label: { fr: "Ressources humaines", en: "Human resources", es: "Recursos humanos" },
     desc: {
-      fr: "Employés et congés ; bulletins de paie avec CNSS et IRPP pour les sociétés tunisiennes.",
-      en: "Employees and leave; payslips with CNSS and IRPP for Tunisian companies.",
-      es: "Empleados y permisos; nóminas con CNSS e IRPP para las empresas tunecinas.",
+      fr: "Employés et congés. La paie s’active selon le pays de la société (aujourd’hui la Tunisie, avec CNSS et IRPP).",
+      en: "Employees and leave. Payroll switches on according to the company’s country (today Tunisia, with CNSS and IRPP).",
+      es: "Empleados y permisos. La nómina se activa según el país de la empresa (hoy Túnez, con CNSS e IRPP).",
     },
   },
   reports: {
@@ -202,7 +194,7 @@ export const MODULE_GROUPS: Array<{ id: string; label: Localized; modules: Catal
   {
     id: "supply",
     label: { fr: "Achats, stock et logistique", en: "Purchasing, stock and logistics", es: "Compras, stock y logística" },
-    modules: ["purchases", "suppliers", "products", "categories", "stock", "logistics", "production"],
+    modules: ["purchases", "suppliers", "products", "categories", "stock", "logistics"],
   },
   {
     id: "finance",
@@ -303,11 +295,11 @@ export const SECTORS: CatalogSector[] = [
     code: "manufacturing",
     name: { fr: "Industrie et fabrication", en: "Manufacturing and industry", es: "Industria y fabricación" },
     desc: {
-      fr: "Ateliers et usines : matières premières, ordres de fabrication, produits finis, expéditions.",
-      en: "Workshops and factories: raw materials, production orders, finished goods, shipments.",
-      es: "Talleres y fábricas: materias primas, órdenes de fabricación, productos terminados, envíos.",
+      fr: "Ateliers et usines : matières premières, produits finis, achats et expéditions.",
+      en: "Workshops and factories: raw materials, finished goods, purchasing and shipments.",
+      es: "Talleres y fábricas: materias primas, productos terminados, compras y envíos.",
     },
-    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "hr", "objectives"],
   },
   {
     code: "services",
@@ -323,11 +315,11 @@ export const SECTORS: CatalogSector[] = [
     code: "agrifood",
     name: { fr: "Agriculture et agroalimentaire", en: "Agriculture and agri-food", es: "Agricultura y agroalimentación" },
     desc: {
-      fr: "Exploitations, huileries, conditionnement et transformation : récoltes, lots, fabrication, export.",
-      en: "Farms, oil mills, packing and processing: harvests, batches, production, export.",
-      es: "Explotaciones, almazaras, envasado y transformación: cosechas, lotes, fabricación, exportación.",
+      fr: "Exploitations, huileries, conditionnement et transformation : récoltes, lots, stock et export.",
+      en: "Farms, oil mills, packing and processing: harvests, batches, stock and export.",
+      es: "Explotaciones, almazaras, envasado y transformación: cosechas, lotes, stock y exportación.",
     },
-    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "hr", "objectives"],
   },
   {
     code: "automotive",
@@ -353,11 +345,11 @@ export const SECTORS: CatalogSector[] = [
     code: "textile",
     name: { fr: "Textile et habillement", en: "Textile and clothing", es: "Textil y confección" },
     desc: {
-      fr: "Ateliers de confection, façonniers et marques : tissus, fournitures, ordres de fabrication.",
-      en: "Garment workshops, subcontractors and brands: fabrics, trims, production orders.",
-      es: "Talleres de confección, maquila y marcas: tejidos, fornituras, órdenes de fabricación.",
+      fr: "Ateliers de confection, façonniers et marques : tissus, fournitures, commandes et livraisons.",
+      en: "Garment workshops, subcontractors and brands: fabrics, trims, orders and deliveries.",
+      es: "Talleres de confección, maquila y marcas: tejidos, fornituras, pedidos y entregas.",
     },
-    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "hr", "objectives"],
   },
   {
     code: "beauty",
@@ -377,7 +369,7 @@ export const SECTORS: CatalogSector[] = [
       en: "Every module is offered: keep the ones you need.",
       es: "Se ofrecen todos los módulos: conserve los que necesite.",
     },
-    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "logistics", "production", "hr", "appointments", "projects", "objectives"],
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "logistics", "hr", "appointments", "projects", "objectives"],
   },
 ];
 
@@ -422,18 +414,18 @@ export const PLANS: CatalogPlan[] = [
   {
     code: "business", name: "Business", priceMonthly: 29, priceAnnual: 290, maxUsers: 10, modules: null, highlight: true,
     tagline: {
-      fr: "Tous les modules de votre secteur pour une PME qui grandit.",
-      en: "Every module of your sector for a growing business.",
-      es: "Todos los módulos de su sector para una pyme en crecimiento.",
+      fr: "Tous les modules, ouverts selon votre secteur, pour une PME qui grandit.",
+      en: "Every module, opened according to your sector, for a growing business.",
+      es: "Todos los módulos, abiertos según su sector, para una pyme en crecimiento.",
     },
     features: [
       { fr: "Jusqu’à 10 utilisateurs", en: "Up to 10 users", es: "Hasta 10 usuarios" },
-      { fr: "Tous les modules de votre secteur", en: "Every module of your sector", es: "Todos los módulos de su sector" },
+      { fr: "Tous les modules disponibles, ouverts selon votre secteur", en: "Every available module, opened according to your sector", es: "Todos los módulos disponibles, abiertos según su sector" },
       { fr: "Comptabilité, TVA et rapprochement bancaire", en: "Accounting, VAT and bank reconciliation", es: "Contabilidad, IVA y conciliación bancaria" },
-      { fr: "RH, congés et paie (CNSS, IRPP)", en: "HR, leave and payroll (CNSS, IRPP)", es: "RR. HH., permisos y nóminas (CNSS, IRPP)" },
-      { fr: "Logistique, production, projets et objectifs", en: "Logistics, production, projects and objectives", es: "Logística, producción, proyectos y objetivos" },
+      { fr: "RH et congés ; paie selon le pays (Tunisie : CNSS, IRPP)", en: "HR and leave; payroll by country (Tunisia: CNSS, IRPP)", es: "RR. HH. y permisos; nómina según el país (Túnez: CNSS, IRPP)" },
+      { fr: "Logistique, projets et objectifs", en: "Logistics, projects and objectives", es: "Logística, proyectos y objetivos" },
       { fr: "Analyses et assistant IA", en: "Analytics and AI assistant", es: "Analítica y asistente IA" },
-      { fr: "Support prioritaire", en: "Priority support", es: "Soporte prioritario" },
+      { fr: "Support par email", en: "Email support", es: "Soporte por correo" },
     ],
   },
   {
@@ -445,10 +437,10 @@ export const PLANS: CatalogPlan[] = [
     },
     features: [
       { fr: "Utilisateurs illimités", en: "Unlimited users", es: "Usuarios ilimitados" },
-      { fr: "Tous les modules de votre secteur", en: "Every module of your sector", es: "Todos los módulos de su sector" },
+      { fr: "Tous les modules disponibles, ouverts selon votre secteur", en: "Every available module, opened according to your sector", es: "Todos los módulos disponibles, abiertos según su sector" },
+      { fr: "Support prioritaire et interlocuteur dédié", en: "Priority support and a dedicated contact", es: "Soporte prioritario e interlocutor dedicado" },
       { fr: "Mise en service et reprise de données accompagnées", en: "Guided set-up and data migration", es: "Puesta en marcha y migración de datos acompañadas" },
       { fr: "Formation de vos équipes", en: "Training for your teams", es: "Formación de sus equipos" },
-      { fr: "Interlocuteur dédié", en: "Dedicated contact", es: "Interlocutor dedicado" },
       { fr: "Paramétrage sur mesure (sur devis)", en: "Custom configuration (on quote)", es: "Configuración a medida (a consultar)" },
     ],
   },

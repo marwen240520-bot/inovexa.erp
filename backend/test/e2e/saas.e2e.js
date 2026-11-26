@@ -65,7 +65,7 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('15 secteurs proposés, « Autre activité » en dernier', r.status === 200 && r.body.length === 15 && r.body[14].code === 'other' && r.body.every((s) => Array.isArray(s.modules) && s.itemCount > 0), r.body.map((s) => s.code));
   const bySector = Object.fromEntries(r.body.map((s) => [s.code, s.modules]));
   check('chaque secteur reçoit les modules qui lui correspondent (agenda, projets, caisse, logistique)', bySector.healthcare.includes('appointments') && bySector.beauty.includes('appointments') && bySector.restaurant.includes('appointments') && bySector.construction.includes('projects') && bySector.services.includes('projects') && bySector.services.includes('appointments') && !bySector.commerce.includes('appointments') && !bySector.logistics.includes('projects'), bySector);
-  check('la fabrication n’est proposée qu’aux secteurs qui transforment des matières', r.body.filter((s) => s.modules.includes('production')).map((s) => s.code).sort().join() === 'agrifood,manufacturing,other,textile', r.body.filter((s) => s.modules.includes('production')).map((s) => s.code));
+  check('le module Production n’existe plus : aucun secteur ne le propose', r.body.every((s) => !s.modules.includes('production')), r.body.filter((s) => s.modules.includes('production')).map((s) => s.code));
   r = await call('GET', '/public/sectors/automotive');
   check('nouveau secteur (automobile) : pièces et prestations d’atelier suggérées', r.status === 200 && r.body.items.some((i) => i.kind === 'service') && r.body.items.some((i) => i.kind === 'product') && r.body.items.every((i) => i.basis), r.body.items?.length);
   r = await call('GET', '/public/sectors/logistics');
@@ -108,7 +108,7 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('temps restant calculé par le serveur (≈ 72 h)', acc.remainingSeconds <= 72 * 3600 && acc.remainingSeconds > 72 * 3600 - 120, acc.remainingSeconds);
   check('heure du serveur fournie', Math.abs(new Date(acc.serverTime).getTime() - before) < 120000, acc.serverTime);
   const mods = r.body.user.modules;
-  check('modules du secteur restaurant : caisse, stock et agenda oui ; logistique, production et projets non', mods.pos === true && mods.stock === true && mods.hr === true && mods.appointments === true && mods.logistics === false && mods.production === false && mods.projects === false && mods.dashboard === true, mods);
+  check('modules du secteur restaurant : caisse, stock et agenda oui ; logistique et projets non ; aucune clé « production »', mods.pos === true && mods.stock === true && mods.hr === true && mods.appointments === true && mods.logistics === false && !('production' in mods) && mods.projects === false && mods.dashboard === true, mods);
   check('téléphone enregistré au format international', (await one('SELECT phone, sector, "signupSource", "emailVerifiedAt" FROM users WHERE id = $1', [A.id])).phone === '+21622535181');
   const company = await one('SELECT "legalName", city, "taxId" FROM companies WHERE "userId" = $1', [A.id]);
   check('fiche société créée avec les informations facultatives', company && company.legalName === 'Restaurant A' && company.city === 'Sousse' && company.taxId === '1234567X/A/M/000', company);
@@ -402,7 +402,7 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('ancienne liste des clients : uniquement les propriétaires (pas les membres d’équipe)', r.status === 200 && r.body.length === 5 && r.body.every((c) => !('password' in c)), r.body.length);
 
   r = await call('GET', '/admin/settings', { token: admin });
-  check('réglages de départ : dollars, code de vérification actif, paiement par carte en ligne (mode test), hors ligne fermé', r.status === 200 && r.body.currency === 'USD' && r.body.requireEmailVerification === true && r.body.emailVerificationActive === true && r.body.manualPayments === false && r.body.onlinePayment.enabled === true && r.body.onlinePayment.provider === 'konnect' && r.body.onlinePayment.mode === 'sandbox' && r.body.onlinePayment.reason === null && r.body.catalogVersion === 3, r.body.onlinePayment);
+  check('réglages de départ : dollars, code de vérification actif, paiement par carte en ligne (mode test), hors ligne fermé', r.status === 200 && r.body.currency === 'USD' && r.body.requireEmailVerification === true && r.body.emailVerificationActive === true && r.body.manualPayments === false && r.body.onlinePayment.enabled === true && r.body.onlinePayment.provider === 'konnect' && r.body.onlinePayment.mode === 'sandbox' && r.body.onlinePayment.reason === null && r.body.catalogVersion === 4, r.body.onlinePayment);
   check('la clé Konnect ne sort jamais du serveur', !JSON.stringify(r.body).includes('e2e-konnect-key') && !JSON.stringify(r.body).includes('e2e-wallet'), Object.keys(r.body));
   r = await call('PUT', '/admin/settings', { token: admin, body: { requireEmailVerification: false } });
   check('code de vérification désactivé par l’administrateur : accepté', r.status === 200 && r.body.requireEmailVerification === false, r);
@@ -547,6 +547,30 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('module Projets hors formule (ni projets ni comptabilité) : écriture refusée (403 MODULE_DISABLED)', r.status === 403 && r.body.code === 'MODULE_DISABLED' && r.body.module === 'projects', r);
   r = await call('POST', '/appointments', { token: A.token, body: { title: 'Table de 4', startAt: new Date(Date.now() + 86400000).toISOString(), partySize: 4 } });
   check('module Rendez-vous inclus dans la formule Starter : l’agenda du restaurant fonctionne', r.status === 201 && r.body.userId === A.id, r);
+
+  // ── Trois notions séparées : disponibles (formule) / par défaut (secteur) / activés (client). L'administrateur retire un module de
+  //    la formule APRÈS l'abonnement : il se ferme aussitôt pour le client, son choix reste enregistré, et reprend effet si la formule le remet.
+  const STARTER_MODULES = ['products', 'categories', 'stock', 'sales', 'pos', 'purchases', 'orders', 'clients', 'suppliers', 'invoices', 'appointments', 'reports'];
+  r = await call('POST', '/suppliers', { token: A.token, body: {} });
+  check('avant la modification de la formule : écrire chez les fournisseurs n’est pas bloqué par les modules', r.status !== 403, r);
+  r = await call('PATCH', `/admin/plans/${starter.id}`, { token: admin, body: { modules: STARTER_MODULES.filter((m) => m !== 'suppliers') } });
+  check('l’administrateur retire « Fournisseurs » de la formule Starter', r.status === 200 && !r.body.modules.includes('suppliers'), r);
+  r = await call('POST', '/suppliers', { token: A.token, body: {} });
+  check('formule modifiée : l’écriture est refusée aussitôt (403 MODULE_DISABLED), sans reconnexion', r.status === 403 && r.body.code === 'MODULE_DISABLED' && r.body.module === 'suppliers', r);
+  r = await call('GET', '/auth/me', { token: A.token });
+  check('… la barre latérale (GET /auth/me) ne propose plus le module', r.status === 200 && r.body.modules.suppliers === false && r.body.modules.sales === true, r.body.modules);
+  r = await call('GET', '/billing/modules', { token: A.token });
+  const supView = r.body.modules.find((m) => m.key === 'suppliers');
+  check('… « Mes modules » distingue : activé par le client, mais non disponible dans sa formule, donc non utilisable', supView.activated === true && supView.included === false && supView.enabled === false && supView.recommended === true, supView);
+  row = await one('SELECT modules FROM users WHERE id = $1', [A.id]);
+  check('… le choix du client reste enregistré (rien n’est effacé)', row.modules.suppliers === true, row.modules);
+  r = await call('PATCH', `/admin/plans/${starter.id}`, { token: admin, body: { modules: STARTER_MODULES } });
+  check('l’administrateur remet « Fournisseurs » dans la formule', r.status === 200 && r.body.modules.includes('suppliers'), r);
+  r = await call('POST', '/suppliers', { token: A.token, body: {} });
+  check('… le module reprend effet aussitôt, avec le choix d’origine du client', r.status !== 403, r);
+  r = await call('GET', '/billing/modules', { token: A.token });
+  check('… disponible, par défaut du secteur, activé et utilisable', r.body.modules.find((m) => m.key === 'suppliers').enabled === true && r.body.modules.find((m) => m.key === 'suppliers').included === true, r.body.modules.find((m) => m.key === 'suppliers'));
+
   row = await one('SELECT COUNT(*)::int AS n FROM employees WHERE "userId" = $1', [A.id]);
   check('les employés déjà saisis sont conservés', row.n === 1, row);
 
@@ -694,16 +718,16 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   await db.query('UPDATE users SET modules = $1 WHERE id = $2', [JSON.stringify({ ...aModules, appointments: false, projects: false }), A.id]);
   // Deux ateliers inscrits avant la mise à niveau : l'un en essai, l'autre sur la formule Starter (qui ne comprend pas la fabrication).
   const E = await signUp({ email: 'e@test.tn', companyName: 'Atelier E', sector: 'manufacturing' });
-  check('avant la mise à niveau : un atelier n’a pas le module de fabrication', E.r.status === 201 && E.r.body.user.modules.production === false, E.r.body.user?.modules);
+  check('avant la mise à niveau : un atelier s’inscrit avec les modules de la version 1', E.r.status === 201 && E.r.body.user.modules.stock === true && E.r.body.user.modules.hr === true, E.r.body.user?.modules);
   await db.query(`INSERT INTO users (email, password, name, "companyName", role, sector, "planCode", "accountStatus", "signupSource", modules) SELECT 'f@test.tn', password, 'F', 'Atelier F', 'client', 'manufacturing', 'starter', 'ACTIVE', 'admin', modules FROM users WHERE id = $1`, [E.id]);
 
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
-  check('mise à niveau exécutée une fois (version 1 → 3)', r.status === 200 && r.body.upgraded === true && r.body.from === 1, r);
+  check('mise à niveau exécutée une fois (version 1 → 4)', r.status === 200 && r.body.upgraded === true && r.body.from === 1, r);
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
   check('second appel : plus rien à faire', r.status === 200 && r.body.upgraded === false, r);
   const sectorsNow = (await call('GET', '/admin/sectors', { token: admin })).body;
   const sectorBy = (code) => sectorsNow.find((s) => s.code === code);
-  check('secteur resté d’origine : la fabrication est ajoutée à l’industrie', sectorBy('manufacturing').modules.includes('production') && V1_MANUFACTURING.every((m) => sectorBy('manufacturing').modules.includes(m)), sectorBy('manufacturing').modules);
+  check('secteur resté d’origine (industrie) : ses modules sont gardés, sans Production', !sectorBy('manufacturing').modules.includes('production') && V1_MANUFACTURING.every((m) => sectorBy('manufacturing').modules.includes(m)), sectorBy('manufacturing').modules);
   check('secteur resté de la version 2 : l’agenda est ajouté au restaurant', sectorBy('restaurant').modules.includes('appointments') && V2_RESTAURANT.every((m) => sectorBy('restaurant').modules.includes(m)), sectorBy('restaurant').modules);
   check('secteur personnalisé par l’administrateur : laissé tel quel', sectorBy('healthcare').modules.join() === 'products,sales', sectorBy('healthcare').modules);
   check('nouveaux secteurs créés avec leurs suggestions, « Autre activité » reste en dernier', sectorsNow.length === 15 && NEW.every((c) => sectorBy(c) && sectorBy(c).itemCount > 0) && sectorsNow[14].code === 'other', sectorsNow.map((s) => s.code));
@@ -713,7 +737,7 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   const plansNow = (await call('GET', '/admin/plans', { token: admin })).body;
   const planBy = (code) => plansNow.find((p) => p.code === code);
   r = await call('GET', '/admin/settings', { token: admin });
-  check('devise : dinars → dollars, parce qu’aucune formule n’était publiée', r.body.currency === 'USD' && r.body.catalogVersion === 3 && r.body.requireEmailVerification === true, { currency: r.body.currency, version: r.body.catalogVersion });
+  check('devise : dinars → dollars, parce qu’aucune formule n’était publiée', r.body.currency === 'USD' && r.body.catalogVersion === 4 && r.body.requireEmailVerification === true, { currency: r.body.currency, version: r.body.catalogVersion });
   check('formule inchangée (Starter) : prix en dollars, publiée, avec l’agenda', planBy('starter').priceMonthly === 15 && planBy('starter').priceAnnual === 150 && planBy('starter').isPublic === true && planBy('starter').modules.includes('appointments') && planBy('starter').features.includes('Agenda : rendez-vous et réservations'), planBy('starter'));
   check('formule jamais modifiée depuis la version 1 (Enterprise) : prix proposé en dollars et publiée', planBy('enterprise').priceMonthly === 79 && planBy('enterprise').priceAnnual === 790 && planBy('enterprise').isPublic === true, planBy('enterprise'));
   check('formule modifiée par l’administrateur (Business) : son prix est conservé et elle reste en brouillon', planBy('business').priceMonthly === 120 && planBy('business').isPublic === false, planBy('business'));
@@ -723,9 +747,11 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   r = await call('GET', '/admin/settings', { token: admin });
   check('moyens de paiement d’origine : complétés (D17, Flouci…)', r.body.paymentMethods.join() === 'bank_transfer,d17,flouci,cheque,cash', r.body.paymentMethods);
   r = await call('GET', '/auth/me', { token: E.token });
-  check('compte en essai du secteur : reçoit le module ajouté', r.status === 200 && r.body.modules.production === true && r.body.modules.stock === true, r.body.modules);
+  check('compte en essai du secteur : plus aucune trace de Production, ses autres modules sont intacts', r.status === 200 && !('production' in r.body.modules) && r.body.modules.stock === true, r.body.modules);
   row = await one(`SELECT modules FROM users WHERE email = 'f@test.tn'`);
-  check('compte sur une formule qui ne le comprend pas : ne le reçoit pas', row.modules.production === false, row.modules);
+  check('compte sur la formule Starter : aucune trace de Production non plus', !('production' in row.modules) && row.modules.stock === true, row.modules);
+  row = await one(`SELECT (SELECT COUNT(*) FROM sectors WHERE modules::text LIKE '%production%')::int AS sectors, (SELECT COUNT(*) FROM plans WHERE modules::text LIKE '%production%')::int AS plans, (SELECT COUNT(*) FROM users WHERE modules::text LIKE '%"production"%')::int AS users`);
+  check('après la mise à niveau : plus aucun secteur, aucune formule ni aucun compte ne cite le module Production', row.sectors === 0 && row.plans === 0 && row.users === 0, row);
   row = await one('SELECT modules FROM users WHERE id = $1', [A.id]);
   check('compte du restaurant sur la formule Starter : reçoit l’agenda, pas les projets', row.modules.appointments === true && row.modules.projects === false, row.modules);
 
@@ -733,9 +759,9 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   await db.query(`UPDATE platform_settings SET "catalogVersion" = 2, currency = 'TND'`);
   await db.query(`UPDATE plans SET "isPublic" = true, "priceMonthly" = 49, "priceAnnual" = 490 WHERE code = 'starter'`);
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
-  check('mise à niveau d’une installation déjà en service (version 2 → 3)', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
+  check('mise à niveau d’une installation déjà en service (version 2 → 4)', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
   r = await call('GET', '/admin/settings', { token: admin });
-  check('formules déjà publiées, paiements enregistrés : la devise et les prix des clients ne changent pas sous leurs pieds', r.body.currency === 'TND' && r.body.catalogVersion === 3, r.body.currency);
+  check('formules déjà publiées, paiements enregistrés : la devise et les prix des clients ne changent pas sous leurs pieds', r.body.currency === 'TND' && r.body.catalogVersion === 4, r.body.currency);
   r = await call('GET', '/admin/plans', { token: admin });
   check('le Starter publié garde son prix', r.body.find((p) => p.code === 'starter').priceMonthly === 49, r.body.find((p) => p.code === 'starter'));
 
@@ -756,18 +782,18 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   // (1) Un prix publié a été changé par l'administrateur : on ne touche à rien (sinon 120 dinars deviendraient 120 dollars).
   await asV2({ businessMonthly: 120 });
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
-  check('formules publiées dont une a un prix choisi par l’administrateur : mise à niveau 2 → 3', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
+  check('formules publiées dont une a un prix choisi par l’administrateur : mise à niveau 2 → 4', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
   r = await call('GET', '/admin/settings', { token: admin });
-  check('… la devise et tous les prix restent comme avant', r.body.currency === 'TND' && r.body.catalogVersion === 3, r.body.currency);
+  check('… la devise et tous les prix restent comme avant', r.body.currency === 'TND' && r.body.catalogVersion === 4, r.body.currency);
   let rows = await planRows();
   check('… Starter 49, Business 120, Enterprise 249 : inchangés', rows.find((x) => x[0] === 'starter')[1] === 49 && rows.find((x) => x[0] === 'business')[1] === 120 && rows.find((x) => x[0] === 'enterprise')[1] === 249, rows);
 
   // (2) Formules publiées mais jamais modifiées, aucun paiement : les prix de départ passent en dollars, la publication ne change pas.
   await asV2({ enterprisePublic: false });
   r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
-  check('formules publiées jamais modifiées, aucun paiement : mise à niveau 2 → 3', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
+  check('formules publiées jamais modifiées, aucun paiement : mise à niveau 2 → 4', r.status === 200 && r.body.upgraded === true && r.body.from === 2, r);
   r = await call('GET', '/admin/settings', { token: admin });
-  check('… la devise passe en dollars', r.body.currency === 'USD' && r.body.catalogVersion === 3, r.body.currency);
+  check('… la devise passe en dollars', r.body.currency === 'USD' && r.body.catalogVersion === 4, r.body.currency);
   rows = await planRows();
   check('… prix de départ en dollars (15 / 29 / 79, annuel 150 / 290 / 790)', rows.find((x) => x[0] === 'starter')[1] === 15 && rows.find((x) => x[0] === 'starter')[2] === 150 && rows.find((x) => x[0] === 'business')[1] === 29 && rows.find((x) => x[0] === 'business')[2] === 290 && rows.find((x) => x[0] === 'enterprise')[1] === 79 && rows.find((x) => x[0] === 'enterprise')[2] === 790, rows);
   check('… la publication est conservée : Starter et Business publiés, Enterprise toujours en brouillon', rows.find((x) => x[0] === 'starter')[3] === true && rows.find((x) => x[0] === 'business')[3] === true && rows.find((x) => x[0] === 'enterprise')[3] === false, rows);
@@ -782,6 +808,41 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   await db.query(`UPDATE plans SET "priceMonthly" = 15, "priceAnnual" = 150 WHERE code = 'starter'`);
   await db.query(`UPDATE plans SET "priceMonthly" = 29, "isPublic" = true WHERE code = 'business'`);
   await db.query(`DELETE FROM users WHERE email IN ('e@test.tn', 'f@test.tn')`);
+
+  // ── Version 3 → 4 : le module Production est retiré d'une installation qui le proposait encore ──
+  console.log('— Mise à niveau 3 → 4 : retrait du module Production');
+  const V3_BUSINESS = ['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, TVA et rapprochement bancaire', 'RH, congés et paie (CNSS, IRPP)', 'Logistique, production, projets et objectifs', 'Analyses et assistant IA', 'Support prioritaire'];
+  const V3_TEXTILE_RECO = ['Créez un ordre de fabrication par modèle : la nomenclature (tissu, fil, boutons par pièce) sort du stock à chaque avancement.', 'Séparez tissus, fournitures et produits finis en catégories pour lire la valeur du stock par famille.', 'Facturez le travail à façon comme une prestation à la pièce.'];
+  await db.query(`UPDATE sectors SET modules = modules || '["production"]'::jsonb WHERE code IN ('manufacturing', 'textile')`);
+  await db.query(`UPDATE sectors SET modules = '["products","sales","production"]'::jsonb WHERE code = 'healthcare'`); // personnalisé par l'administrateur
+  await db.query(`UPDATE sectors SET recommendations = $1::jsonb, description = $2 WHERE code = 'textile'`, [JSON.stringify(V3_TEXTILE_RECO), 'Ateliers de confection, façonniers et marques : tissus, fournitures, ordres de fabrication et livraisons.']);
+  await db.query(`UPDATE plans SET features = $1::jsonb, description = $2 WHERE code = 'business'`, [JSON.stringify(V3_BUSINESS), 'Tous les modules de votre secteur pour une PME qui grandit.']);
+  await db.query(`UPDATE plans SET modules = '["sales","production"]'::jsonb WHERE code = 'enterprise'`);
+  await db.query(`INSERT INTO users (email, password, name, "companyName", role, sector, "planCode", "accountStatus", "signupSource", modules) SELECT 'h@test.tn', password, 'H', 'Atelier H', 'client', 'manufacturing', 'enterprise', 'ACTIVE', 'admin', '{"dashboard":true,"stock":true,"sales":true,"production":true}'::json FROM users WHERE id = $1`, [A.id]);
+  await db.query(`UPDATE service_offers SET name = 'Agroalimentaire : lots, fabrication et traçabilité', description = 'Suivi par lot, nomenclatures de transformation, inventaire initial.' WHERE "sectorCode" = 'agrifood' AND category = 'setup'`);
+  await db.query(`UPDATE service_offers SET name = 'Textile : nomenclatures et ordres de fabrication', description = 'Description personnalisée par l’administrateur.' WHERE "sectorCode" = 'textile' AND category = 'setup'`);
+  await db.query(`UPDATE platform_settings SET "catalogVersion" = 3`);
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('mise à niveau 3 → 4 exécutée une fois', r.status === 200 && r.body.upgraded === true && r.body.from === 3, r);
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('second appel : plus rien à faire', r.status === 200 && r.body.upgraded === false, r);
+  const s4 = (await call('GET', '/admin/sectors', { token: admin })).body;
+  const sec4 = (code) => s4.find((s) => s.code === code);
+  check('aucun secteur ne cite plus Production, même celui modifié par l’administrateur (qui garde ses autres modules)', s4.every((s) => !s.modules.includes('production')) && sec4('healthcare').modules.join() === 'products,sales' && sec4('manufacturing').modules.includes('stock') && sec4('textile').modules.includes('stock'), s4.map((s) => [s.code, s.modules.includes('production')]));
+  check('textes de départ qui citaient les ordres de fabrication : remplacés dans le secteur resté d’origine', !/fabrication/i.test(sec4('textile').description) && sec4('textile').recommendations.length === 2 && sec4('textile').recommendations.every((t) => !/ordre de fabrication|nomenclature/i.test(t)), [sec4('textile').description, sec4('textile').recommendations]);
+  const p4 = (await call('GET', '/admin/plans', { token: admin })).body;
+  const plan4 = (code) => p4.find((p) => p.code === code);
+  check('formule Business restée d’origine : arguments mis à jour (formule, RH par pays, support), sans « production »', plan4('business').features.includes('Tous les modules disponibles, ouverts selon votre secteur') && plan4('business').features.includes('Logistique, projets et objectifs') && plan4('business').features.includes('Support par email') && !plan4('business').features.some((f) => /production|prioritaire/i.test(f)), plan4('business').features);
+  check('formule dont la liste citait Production : la liste est nettoyée sans jamais devenir « tous les modules »', plan4('enterprise').modules.join() === 'sales', plan4('enterprise').modules);
+  row = await one(`SELECT modules FROM users WHERE email = 'h@test.tn'`);
+  check('compte qui avait activé Production : la clé disparaît, ses autres modules restent', !('production' in row.modules) && row.modules.stock === true && row.modules.sales === true, row.modules);
+  r = await call('GET', '/admin/service-offers', { token: admin });
+  const agro = r.body.find((o) => o.sectorCode === 'agrifood' && o.category === 'setup');
+  const tex = r.body.find((o) => o.sectorCode === 'textile' && o.category === 'setup');
+  check('prestation inchangée : renommée et décrite sans fabrication', agro.name === 'Agroalimentaire : lots et traçabilité' && !/fabrication|nomenclature/i.test(agro.description), agro);
+  check('prestation à description personnalisée : renommée, description conservée', tex.name === 'Textile : tissus, fournitures et façon' && tex.description === 'Description personnalisée par l’administrateur.', tex);
+  await db.query(`UPDATE plans SET modules = NULL WHERE code = 'enterprise'`);
+  await db.query(`DELETE FROM users WHERE email = 'h@test.tn'`);
 
   // ═════════════════════════ Paiement pendant l'essai gratuit ═════════════════════════
   console.log('— Paiement pendant l’essai gratuit (hors ligne)');

@@ -1,12 +1,12 @@
 import { generateKeyPairSync, createSign, KeyObject } from 'crypto';
-import { blockMessage, isAllowedWhenBlocked, modulesFromList, resolveAccess } from '../../src/modules/saas/account-access';
+import { blockMessage, effectiveModules, isAllowedWhenBlocked, modulesFromList, resolveAccess } from '../../src/modules/saas/account-access';
 import { addMonths } from '../../src/modules/saas/subscription.service';
 import { isModuleEnabled, missingModuleFor } from '../../src/modules/auth/access.guard';
 import { googleVerifierDeps, resetGoogleKeyCache, verifyGoogleIdToken } from '../../src/modules/auth/google-verifier';
 import { appleVerifierDeps, resetAppleKeyCache, verifyAppleIdToken } from '../../src/modules/auth/apple-verifier';
 import { formatPhone, normalizePhone } from '../../src/common/phone';
 import { stripProtected } from '../../src/modules/saas/admin.guard';
-import { CATALOG_V1, CATALOG_V2, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, PAYMENT_METHODS } from '../../src/modules/saas/saas-defaults';
+import { CATALOG_V1, CATALOG_V2, CATALOG_V3, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, PAYMENT_METHODS } from '../../src/modules/saas/saas-defaults';
 import { MODULE_KEYS } from '../../src/modules/saas/account-access';
 
 const NOW = new Date('2026-11-25T12:00:00Z');
@@ -95,8 +95,71 @@ describe('isAllowedWhenBlocked — ce qu’un compte bloqué peut encore faire',
 describe('modules de l’abonnement', () => {
   it('modulesFromList : les modules de base sont toujours actifs', () => {
     const m = modulesFromList(['sales', 'pos']);
-    expect(m).toMatchObject({ dashboard: true, profile: true, settings: true, sales: true, pos: true, logistics: false, production: false });
+    expect(m).toMatchObject({ dashboard: true, profile: true, settings: true, sales: true, pos: true, logistics: false });
     expect(Object.keys(m).sort()).toEqual([...MODULE_KEYS].sort());
+  });
+
+  it('le module Production n’existe plus : ni clé, ni secteur, ni formule', () => {
+    expect(MODULE_KEYS as readonly string[]).not.toContain('production');
+    expect(Object.keys(modulesFromList(['sales']))).not.toContain('production');
+    for (const s of DEFAULT_SECTORS) expect(s.modules).not.toContain('production');
+    for (const p of DEFAULT_PLANS) expect(p.modules || []).not.toContain('production');
+    // Aucun texte de départ ne promet encore des ordres de fabrication ou une nomenclature.
+    const texts = [
+      ...DEFAULT_SECTORS.flatMap((s) => [s.description, ...s.recommendations]),
+      ...DEFAULT_PLANS.flatMap((p) => [p.description, ...p.features]),
+      ...DEFAULT_SERVICE_OFFERS.flatMap((o) => [o.name, o.description]),
+    ];
+    for (const t of texts) expect(t).not.toMatch(/ordres? de fabrication|nomenclature|production/i);
+  });
+
+  describe('trois notions séparées : disponibles (formule), par défaut (secteur), activés (client)', () => {
+    const starter = new Set(DEFAULT_PLANS[0].modules as string[]);
+
+    it('sans limite de formule (essai, tous les modules) : la configuration du client est rendue telle quelle', () => {
+      const chosen = { sales: true, finance: true, hr: false };
+      expect(effectiveModules(chosen, null)).toBe(chosen);
+      expect(effectiveModules(undefined, null)).toEqual({});
+    });
+
+    it('formule limitée : activés ∩ disponibles, modules de base toujours ouverts', () => {
+      const m = effectiveModules(modulesFromList(['sales', 'finance', 'hr']), starter);
+      expect(m).toMatchObject({ dashboard: true, profile: true, settings: true, sales: true, finance: false, hr: false, stock: false });
+      expect(Object.keys(m).sort()).toEqual([...MODULE_KEYS].sort());
+    });
+
+    it('un module activé mais retiré de la formule se ferme, sans effacer le choix du client', () => {
+      const chosen = modulesFromList(['sales', 'stock']);
+      const afterEdit = new Set(['sales']); // l’administrateur retire le stock de la formule
+      expect(effectiveModules(chosen, afterEdit).stock).toBe(false);
+      expect(chosen.stock).toBe(true); // son choix est conservé…
+      expect(effectiveModules(chosen, new Set(['sales', 'stock'])).stock).toBe(true); // …et reprend effet si la formule le remet
+    });
+
+    it('un module disponible mais non activé reste fermé : disponible n’est pas activé', () => {
+      expect(effectiveModules(modulesFromList(['sales']), starter).stock).toBe(false);
+    });
+
+    it('compte jamais configuré sur une formule limitée : seules les modules de la formule sont ouverts', () => {
+      const m = effectiveModules({}, starter);
+      expect(m.stock).toBe(true);
+      expect(m.finance).toBe(false);
+      expect(m.ai).toBe(false);
+    });
+
+    it('le garde d’écriture suit l’intersection : écriture refusée sur un module retiré de la formule', () => {
+      const m = effectiveModules(modulesFromList(['sales', 'stock', 'products']), new Set(['sales']));
+      expect(missingModuleFor(m, 'stock')).toBe('stock');
+      expect(missingModuleFor(m, 'sales')).toBeNull();
+    });
+
+    it('la formule d’entrée met 12 modules à disposition ; Business et Enterprise les mettent tous à disposition', () => {
+      expect(DEFAULT_PLANS[0].modules).toHaveLength(12);
+      expect(DEFAULT_PLANS[1].modules).toBeNull();
+      expect(DEFAULT_PLANS[2].modules).toBeNull();
+      // Tous les modules sélectionnables : 19 une fois Production retiré (20 clés moins le tableau de bord, le profil et les paramètres + 2 modules de base…).
+      expect(MODULE_KEYS.filter((k) => !['dashboard', 'profile', 'settings'].includes(k))).toHaveLength(19);
+    });
   });
 
   it('isModuleEnabled suit les mêmes règles que la barre latérale', () => {
@@ -135,9 +198,7 @@ describe('modules de l’abonnement', () => {
     const modulesOf = (code: string) => DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
     expect(modulesOf('logistics')).toEqual(expect.arrayContaining(['logistics', 'stock']));
     expect(modulesOf('restaurant')).toContain('pos');
-    expect(modulesOf('restaurant')).not.toContain('production');
-    // La fabrication n'est proposée qu'aux secteurs qui transforment des matières.
-    expect(DEFAULT_SECTORS.filter((s) => s.modules.includes('production')).map((s) => s.code).sort()).toEqual(['agrifood', 'manufacturing', 'other', 'textile']);
+    expect(modulesOf('restaurant')).not.toContain('logistics');
     // Secteurs sans marchandise : pas de stock imposé.
     for (const code of ['education', 'services']) expect(modulesOf(code)).not.toContain('stock');
   });
@@ -154,7 +215,7 @@ describe('modules de l’abonnement', () => {
     }
     expect(DEFAULT_PLANS.filter((p) => p.highlight).map((p) => p.code)).toEqual(['business']);
     // La formule d'entrée ne comprend ni la comptabilité, ni la paie, ni l'assistant.
-    for (const m of ['finance', 'hr', 'ai', 'production']) expect(DEFAULT_PLANS[0].modules).not.toContain(m);
+    for (const m of ['finance', 'hr', 'ai']) expect(DEFAULT_PLANS[0].modules).not.toContain(m);
   });
 
   it('moyens de paiement et prestations : valeurs connues, un secteur existant par prestation', () => {
@@ -164,8 +225,8 @@ describe('modules de l’abonnement', () => {
     for (const o of DEFAULT_SERVICE_OFFERS) if (o.sectorCode) expect(codes).toContain(o.sectorCode);
   });
 
-  it('versions 1 et 2 du catalogue : repères pour la mise à niveau, sans rien perdre', () => {
-    expect(CATALOG_VERSION).toBe(3);
+  it('versions 1, 2 et 3 du catalogue : repères pour la mise à niveau, sans rien perdre (sauf Production, retiré en version 4)', () => {
+    expect(CATALOG_VERSION).toBe(4);
     expect(Object.keys(CATALOG_V1.sectorModules)).toHaveLength(10);
     for (const [code, v1] of Object.entries(CATALOG_V1.sectorModules)) {
       const now = DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
@@ -174,11 +235,25 @@ describe('modules de l’abonnement', () => {
     }
     expect(Object.keys(CATALOG_V1.plans)).toEqual(DEFAULT_PLANS.map((p) => p.code));
 
-    // La version 2 couvre les 15 secteurs ; la version 3 y ajoute des modules sans en retirer.
+    // La version 2 couvre les 15 secteurs ; les versions suivantes y ajoutent des modules sans en retirer, sauf Production.
     expect(Object.keys(CATALOG_V2.sectorModules).sort()).toEqual(DEFAULT_SECTORS.map((s) => s.code).sort());
     for (const [code, v2] of Object.entries(CATALOG_V2.sectorModules)) {
       const now = DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
-      for (const m of v2) expect(now).toContain(m);
+      for (const m of v2.filter((k) => k !== 'production')) expect(now).toContain(m);
+    }
+    // Version 3 : repères des textes qui citaient la production, remplacés à la version 4 s'ils n'ont pas été modifiés.
+    for (const [code, v3] of Object.entries(CATALOG_V3.sectors)) {
+      const now = DEFAULT_SECTORS.find((s) => s.code === code)!;
+      expect(now.recommendations).not.toEqual(v3.recommendations);
+      expect(now.recommendations.length).toBeGreaterThan(0);
+    }
+    for (const [code, v3] of Object.entries(CATALOG_V3.plans)) {
+      const now = DEFAULT_PLANS.find((p) => p.code === code)!;
+      expect(now.features).not.toEqual(v3.features);
+    }
+    for (const offer of CATALOG_V3.offers) {
+      expect(DEFAULT_SERVICE_OFFERS.some((o) => o.name === offer.name)).toBe(false); // renommée
+      expect(DEFAULT_SERVICE_OFFERS.some((o) => o.sectorCode === offer.sectorCode && o.category === 'setup')).toBe(true);
     }
     expect(Object.keys(CATALOG_V2.plans)).toEqual(DEFAULT_PLANS.map((p) => p.code));
     expect(CATALOG_V2.currency).toBe('TND');

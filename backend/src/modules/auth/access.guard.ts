@@ -29,7 +29,6 @@ export const MODULES_BY_WRITE_PATH: Record<string, string[]> = {
   hr: ['hr'], employees: ['hr'], departments: ['hr'],
   finance: ['finance'], expenses: ['finance'], accounting: ['finance'],
   logistics: ['logistics'], transporteurs: ['logistics'],
-  production: ['production'],
   appointments: ['appointments'],
   // La page Finance suit aussi le budget des projets : elle garde le droit d'en créer.
   projects: ['projects', 'finance'],

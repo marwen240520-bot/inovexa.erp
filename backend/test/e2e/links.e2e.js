@@ -1,4 +1,4 @@
-// Liens entre modules : caisse → comptabilité, Finances → comptabilité, commandes → documents, production → stock.
+// Liens entre modules : caisse → comptabilité, Finances → comptabilité, commandes → documents ; le module Production est retiré.
 // Lancé par run.sh sur une base neuve.
 const { api, check, setToken, summary } = require('./lib');
 const near = (a, b, eps = 0.0006) => Math.abs(Number(a) - Number(b)) <= eps;
@@ -87,27 +87,14 @@ const monthStart = today.slice(0, 8) + '01';
   r = await api('GET', `/products/${tv.id}`);
   check('stock TV : 10 − 2 (caisse) − 2 (facture) = 6', near(r.body.quantity, 6), r.body.quantity);
 
-  // ═════════════════════ 4. Production → stock ═════════════════════
-  console.log('— Production → stock');
-  r = await api('POST', '/production/orders', { productName: 'Table', quantity: 5, productId: table.id, components: [{ productId: planche.id, quantity: 4 }, { productId: vis.id, quantity: 20 }], priority: 'normal' });
-  check('ordre de production avec nomenclature', r.status === 201 && r.body.productId === table.id && r.body.components.length === 2, r.body);
-  const po = r.body;
-  r = await api('PATCH', `/production/orders/${po.id}/progress`, { progress: 40 });
-  check('avancement 40 % : 2 tables produites', r.status === 200 && r.body.completedQuantity === 2 && near(r.body.stockedQuantity, 2), r.body);
-  let tbl = (await api('GET', `/products/${table.id}`)).body, pl = (await api('GET', `/products/${planche.id}`)).body, vs = (await api('GET', `/products/${vis.id}`)).body;
-  check('stock : +2 tables, −8 planches, −40 vis', near(tbl.quantity, 2) && near(pl.quantity, 110 - 8) && near(vs.quantity, 1000 - 40), [tbl.quantity, pl.quantity, vs.quantity]);
-  r = await api('PATCH', `/production/orders/${po.id}/status`, { status: 'completed' });
-  check('terminé : 5 tables au total', r.status === 200 && r.body.completedQuantity === 5 && near(r.body.stockedQuantity, 5), r.body);
-  tbl = (await api('GET', `/products/${table.id}`)).body; pl = (await api('GET', `/products/${planche.id}`)).body; vs = (await api('GET', `/products/${vis.id}`)).body;
-  check('stock final : 5 tables, 90 planches, 900 vis (pas de double comptage)', near(tbl.quantity, 5) && near(pl.quantity, 90) && near(vs.quantity, 900), [tbl.quantity, pl.quantity, vs.quantity]);
-  r = await api('PATCH', `/production/orders/${po.id}/status`, { status: 'completed' });
-  check('re-clôture sans nouveau mouvement', r.status === 200 && near((await api('GET', `/products/${table.id}`)).body.quantity, 5), r.body);
-  r = await api('POST', '/production/orders', { productName: 'Chaise', quantity: 1000, productId: table.id, components: [{ productId: planche.id, quantity: 4 }] });
-  r = await api('PATCH', `/production/orders/${r.body.id}/status`, { status: 'completed' });
-  check('composants insuffisants : refus explicite', r.status === 400 && /insuffisant/i.test(r.body.message || ''), r.body);
-  r = await api('GET', `/stock/movements?productId=${table.id}`);
-  const prodMoves = (r.body.items || r.body).filter((m) => m.refType === 'production_order');
-  check('mouvements de production tracés', prodMoves.length === 2 && prodMoves.every((m) => m.reason === 'production'), prodMoves);
+  // ═════════════════════ 4. Le module Production n'existe plus ═════════════════════
+  console.log('— Module Production retiré');
+  r = await api('GET', '/production/orders');
+  check('plus de route de production (lecture) : 404', r.status === 404, r.status);
+  r = await api('POST', '/production/orders', { productName: 'Table', quantity: 5, productId: table.id, components: [{ productId: planche.id, quantity: 4 }] });
+  check('plus de création d’ordre de fabrication : 404', r.status === 404, r.status);
+  r = await api('GET', `/products/${table.id}`);
+  check('le stock n’a pas bougé : la table n’a jamais été fabriquée', near(r.body.quantity, 0), r.body.quantity);
 
   summary();
 })().catch((e) => { console.error(e); process.exit(2); });

@@ -8,7 +8,7 @@ export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:300
 
 export const MODULE_KEYS = [
   "dashboard", "products", "categories", "stock", "sales", "purchases", "pos", "orders", "clients", "suppliers",
-  "invoices", "hr", "finance", "logistics", "production", "appointments", "projects", "ai", "reports", "analytics", "objectives",
+  "invoices", "hr", "finance", "logistics", "appointments", "projects", "ai", "reports", "analytics", "objectives",
   "profile", "settings",
 ] as const;
 export type ModuleKey = (typeof MODULE_KEYS)[number];
@@ -20,8 +20,8 @@ export const SELECTABLE_MODULES: ModuleKey[] = MODULE_KEYS.filter((k) => !CORE_M
 /** Nom français de chaque module (écrans de l'administrateur). */
 export const MODULE_LABELS: Record<string, string> = {
   dashboard: "Tableau de bord", products: "Produits", categories: "Catégories", stock: "Stock", sales: "Ventes", purchases: "Achats",
-  pos: "Caisse", orders: "Commandes", clients: "Clients", suppliers: "Fournisseurs", invoices: "Factures & devis", hr: "RH & paie",
-  finance: "Finance & comptabilité", logistics: "Logistique", production: "Production", appointments: "Rendez-vous", projects: "Projets",
+  pos: "Caisse", orders: "Commandes", clients: "Clients", suppliers: "Fournisseurs", invoices: "Factures & devis", hr: "RH (paie selon le pays)",
+  finance: "Finance & comptabilité", logistics: "Logistique", appointments: "Rendez-vous", projects: "Projets",
   ai: "Assistant IA", reports: "Rapports",
   analytics: "Analyses", objectives: "Objectifs", profile: "Profil", settings: "Paramètres",
 };
@@ -122,12 +122,16 @@ export interface CheckoutResult {
   account: AccountState;
 }
 
-/** GET /billing/modules : secteur et modules de la société, choisis par le client lui-même. */
+/**
+ * GET /billing/modules : secteur et modules de la société, choisis par le client lui-même. Trois notions séparées :
+ * included = DISPONIBLE (la formule le met à disposition), recommended = PAR DÉFAUT (le secteur l'ouvre au départ),
+ * activated = ACTIVÉ (le client l'a ouvert) ; enabled = réellement utilisable (activé ET disponible).
+ */
 export interface ModulesView {
   sector: string | null;
   plan: { code: string; name: string; allModules: boolean } | null;
   trial: boolean;
-  modules: Array<{ key: string; enabled: boolean; included: boolean; recommended: boolean }>;
+  modules: Array<{ key: string; enabled: boolean; activated?: boolean; included: boolean; recommended: boolean }>;
   sectors: Array<{ code: string; name: string; nameEn: string | null; modules: string[] }>;
 }
 

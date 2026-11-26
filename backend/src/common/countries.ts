@@ -100,7 +100,19 @@ export function currencyDecimals(code: string | null | undefined): number {
 
 export const isTunisia = (code: string | null | undefined): boolean => String(code || DEFAULT_COUNTRY).toUpperCase() === 'TN';
 
-/** Fonctions qui n'existent qu'en Tunisie : réservées aux sociétés tunisiennes. */
+/**
+ * Paie par pays. Chaque pays a ses cotisations sociales et son impôt sur le salaire : un « pack de paie » n'existe que lorsque
+ * ses barèmes légaux sont réellement implémentés (ailleurs, des barèmes approximatifs donneraient des bulletins faux).
+ * RH (fiches employés, congés) reste disponible pour toutes les sociétés, quel que soit le pays.
+ * Ajouter un pays = ajouter son pack ici, puis son calcul dans le module RH.
+ */
+export const PAYROLL_PACKS: Record<string, { socialSecurity: string; incomeTax: string }> = {
+  TN: { socialSecurity: 'CNSS', incomeTax: 'IRPP' },
+};
+
+export const hasPayrollPack = (code: string | null | undefined): boolean => !!PAYROLL_PACKS[String(code || DEFAULT_COUNTRY).toUpperCase()];
+
+/** Fonctions propres à un pays : timbre, retenue à la source et TEIF (Tunisie), paie (pays disposant d'un pack de paie). */
 export interface LocalFeatures {
   /** Droit de timbre sur les factures. */
   stampDuty: boolean;
@@ -108,13 +120,13 @@ export interface LocalFeatures {
   withholding: boolean;
   /** Facture électronique TEIF (El Fatoora / TTN). */
   teif: boolean;
-  /** Paie : CNSS, IRPP, CSS. */
+  /** Paie : disponible pour les pays qui ont un pack de paie (aujourd'hui la Tunisie : CNSS, IRPP, CSS). */
   payroll: boolean;
 }
 
 export function localFeatures(code: string | null | undefined): LocalFeatures {
   const tn = isTunisia(code);
-  return { stampDuty: tn, withholding: tn, teif: tn, payroll: tn };
+  return { stampDuty: tn, withholding: tn, teif: tn, payroll: hasPayrollPack(code) };
 }
 
 /** Nom de l'identifiant fiscal de la société dans son pays. */

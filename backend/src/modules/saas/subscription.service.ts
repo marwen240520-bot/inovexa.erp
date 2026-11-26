@@ -128,10 +128,10 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     return { trialStartedAt: now, trialEndsAt: new Date(now.getTime() + trialHours * HOUR), trialHours };
   }
 
-  /** Modules d'un secteur (tous sauf la production si le secteur est inconnu). */
+  /** Modules PAR DÉFAUT d'un secteur (tous les modules si le secteur est inconnu). Une aide au démarrage, pas un droit. */
   async sectorModules(code: string | null | undefined, em?: EntityManager): Promise<Record<string, boolean>> {
     const sector = code ? await (em || this.ds.manager).getRepository(Sector).findOne({ where: { code } }) : null;
-    const list = sector?.modules?.length ? sector.modules : MODULE_KEYS.filter((k) => k !== 'production');
+    const list = sector?.modules?.length ? sector.modules : MODULE_KEYS;
     return modulesFromList(list);
   }
 
@@ -294,14 +294,27 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
 
   // ───────────── Secteur et modules : choisis par le client lui-même ─────────────
 
-  /** Modules que la formule du compte inclut (null = tous). Sans formule — pendant l'essai — tout est ouvert. */
-  private async planModules(owner: User, em?: EntityManager): Promise<Set<string> | null> {
-    if (!owner.planCode) return null;
-    const plan = await (em || this.ds.manager).getRepository(Plan).findOne({ where: { code: owner.planCode } });
+  /**
+   * Modules DISPONIBLES : ce que la formule met à disposition (null = tous). Sans formule — pendant l'essai — tout est
+   * disponible. Lu à chaque requête (garde du serveur, session) : une modification de la formule s'applique aussitôt.
+   */
+  async allowedModules(planCode: string | null | undefined, em?: EntityManager): Promise<Set<string> | null> {
+    if (!planCode) return null;
+    const plan = await (em || this.ds.manager).getRepository(Plan).findOne({ where: { code: planCode }, select: ['id', 'code', 'modules'] });
     return plan?.modules?.length ? new Set(plan.modules) : null;
   }
 
-  /** Ce que la page « Mes modules » affiche : secteur, modules ouverts, modules inclus dans la formule, conseillés. */
+  private planModules(owner: User, em?: EntityManager): Promise<Set<string> | null> {
+    return this.allowedModules(owner.planCode, em);
+  }
+
+  /**
+   * Ce que la page « Mes modules » affiche, avec les trois notions séparées :
+   *  - included    = DISPONIBLE : la formule le met à disposition ;
+   *  - recommended = PAR DÉFAUT : le secteur l'ouvre au départ ;
+   *  - activated   = ACTIVÉ : le client l'a ouvert (son choix, même si la formule ne le comprend plus) ;
+   *  - enabled     = réellement utilisable = activé ET disponible (c'est ce que le serveur applique).
+   */
   async modulesView(ownerId: number) {
     const owner = await this.owner(ownerId);
     const allowed = await this.planModules(owner);
@@ -316,6 +329,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       modules: MODULE_KEYS.filter((k) => !CORE_MODULES.includes(k)).map((key) => ({
         key,
         enabled: isModuleEnabled(owner.modules, key) && (!allowed || allowed.has(key)),
+        activated: isModuleEnabled(owner.modules, key),
         included: !allowed || allowed.has(key),
         recommended: sectorMods[key] === true,
       })),

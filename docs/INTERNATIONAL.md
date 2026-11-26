@@ -1,6 +1,6 @@
 # Inovexa ERP hors de Tunisie (phase 1)
 
-Une société de n'importe quel pays peut ouvrir un compte et facturer dans **sa devise**, avec **ses taux de TVA** et **son identifiant fiscal**. Ce qui n'existe qu'en Tunisie (timbre, retenue à la source, facture électronique TEIF / El Fatoora, paie CNSS et IRPP) reste réservé aux sociétés tunisiennes. Les sociétés tunisiennes existantes ne changent pas : leur pays vaut `TN`, leur devise `TND`.
+Une société de n'importe quel pays peut ouvrir un compte et facturer dans **sa devise**, avec **ses taux de TVA** et **son identifiant fiscal**. Ce qui n'existe qu'en Tunisie (timbre, retenue à la source, facture électronique TEIF / El Fatoora) reste réservé aux sociétés tunisiennes. **La paie suit les lois de chaque pays** : elle n'est activée que pour les pays qui ont un *pack de paie* (aujourd'hui la Tunisie : CNSS, IRPP, CSS) ; RH (employés, congés) reste disponible partout. Les sociétés tunisiennes existantes ne changent pas : leur pays vaut `TN`, leur devise `TND`.
 
 ## 1. Ce que chaque société règle
 
@@ -35,7 +35,7 @@ Les règlements sont arrondis de la même façon : un solde ne dérive jamais d'
 | Droit de timbre sur les factures | jamais appliqué ; champ masqué |
 | Retenue à la source (taux client, seuil) | jamais appliquée ; champs masqués |
 | Facture électronique TEIF / El Fatoora | refusée par l'API (400, message explicite) ; carte et badges masqués |
-| Paie (CNSS, IRPP, CSS) et n° CNSS employeur | génération des bulletins et réglages de paie refusés par l'API (400, message explicite) ; onglets « Bulletins de paie » et « Paramètres de paie » masqués ; fiches employés et **congés** restent disponibles |
+| Paie (pack Tunisie : CNSS, IRPP, CSS) et n° CNSS employeur | pays sans pack de paie : génération des bulletins et réglages de paie refusés par l'API (400, « pas encore disponible pour le pays de cette société ») ; onglets « Bulletins de paie » et « Paramètres de paie » masqués ; fiches employés et **congés** restent disponibles |
 
 ## 4. API
 
@@ -54,10 +54,11 @@ Migration : `1795720187386-CompanyCountry` (colonnes `companies.countryCode` —
 - **Aucune règle fiscale locale** au-delà de la TVA en liste libre : pas de TVA intracommunautaire (autoliquidation), pas de taxe de vente par État, pas de facturation électronique étrangère (Factur-X, XRechnung, SDI, FatturaPA…).
 - **L'abonnement à Inovexa** reste facturé en dollars avec un seul taux de TVA global (19 %), payé par carte via Konnect : ce taux n'est pas encore adapté au pays du client.
 - **Suggestions de produits par secteur** : leurs prix de départ sont en dinars ; une société étrangère les corrige à la main.
-- **Paie, TEIF, timbre, retenue** : Tunisie uniquement, voir § 3.
+- **TEIF, timbre, retenue** : Tunisie uniquement, voir § 3.
+- **Paie** : un pack par pays dans `PAYROLL_PACKS` (`backend/src/common/countries.ts`) ; `localFeatures(pays).payroll` vaut `hasPayrollPack(pays)`. Ajouter un pays = ajouter son pack (cotisations sociales et impôt sur le salaire **vérifiés auprès des textes du pays**, jamais approximés : un bulletin faux est pire qu'un bulletin absent), puis son calcul dans le module RH. Aujourd'hui seul `TN` existe.
 
 ## 6. Suite possible
 
-1. **Packs pays** : taux de TVA usuels, format de l'identifiant fiscal, plan comptable et mentions légales de quelques pays (France, Maroc, Algérie, Espagne…).
+1. **Packs pays** : taux de TVA usuels, format de l'identifiant fiscal, plan comptable, mentions légales et **pack de paie** (cotisations sociales, impôt sur le salaire) de quelques pays (France, Maroc, Algérie, Espagne…).
 2. **Devises multiples et taux de change** (factures en devise étrangère, écarts de change), puis facturation électronique étrangère.
 3. **Paiements internationaux** de l'abonnement (carte internationale, TVA du pays du client) en plus de Konnect.

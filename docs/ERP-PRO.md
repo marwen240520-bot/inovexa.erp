@@ -92,7 +92,6 @@ un petit kit de composants (`frontend/components/erp/kit.tsx`). La barre de rech
 | Finances (dépenses) → comptabilité | chaque dépense génère son écriture (charge HT, TVA déductible, règlement caisse ou banque) ; sa suppression la contre-passe. Compte par catégorie : clé `expense:<catégorie>` dans la correspondance des comptes |
 | Finances ← documents et caisse | synthèse réelle : CA facturé, achats fournisseurs, encours clients, dettes fournisseurs, ventes caisse clôturées |
 | Commandes → documents | « Créer… » sur une commande : devis, bon de livraison ou facture (brouillon) avec la ligne de la commande ; une commande ne donne qu'un document, qui suit ensuite le circuit normal |
-| Production → stock | ordre de production avec produit fini et nomenclature (composants par unité) : à chaque avancement, le produit fini entre en stock et les composants sortent (refus si composants insuffisants). Écran : `/dashboard/production` (ordres, nomenclature, avancement) ; API `/production/orders` |
 | Documents → anciennes tables | les factures validées se reflètent dans `invoices`, `sales` et `purchases` (tableau de bord, analyses, assistant) |
 
 ## 10. Sécurité et traçabilité
