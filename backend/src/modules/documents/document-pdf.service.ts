@@ -4,6 +4,7 @@ import * as path from 'path';
 import PDFDocument = require('pdfkit');
 import * as QRCode from 'qrcode';
 import { Company } from '../company/company.entity';
+import { currencyDecimals, taxIdShortLabel } from '../../common/countries';
 import { DOC_META } from './documents.types';
 import { DocumentType } from './entities/document.entity';
 
@@ -114,17 +115,19 @@ export class DocumentPdfService {
    */
   qrPayload(company: Company, doc: any): string {
     const meta = DOC_META[doc.type as DocumentType];
+    const fa = (n: number | null | undefined) => formatAmount(n, currencyDecimals(doc.currency));
+    const idLabel = taxIdShortLabel(company.countryCode);
     const lines = [
       companyName(company),
-      company.taxId ? `MF: ${company.taxId}` : '',
+      company.taxId ? `${idLabel}: ${company.taxId}` : '',
       `${doc.typeLabel || meta?.label || 'Document'}: ${doc.number || 'BROUILLON'}`,
       `Date: ${formatDate(doc.issueDate)}`,
       `${meta?.party === 'supplier' ? 'Fournisseur' : 'Client'}: ${doc.partyName || ''}`,
-      doc.partyTaxId ? `MF client: ${doc.partyTaxId}` : '',
-      `Total HT: ${formatAmount(doc.totalHT)} ${doc.currency || 'TND'}`,
-      `TVA: ${formatAmount(doc.totalVat)} ${doc.currency || 'TND'}`,
-      `Total TTC: ${formatAmount(doc.totalTTC)} ${doc.currency || 'TND'}`,
-      meta?.settles ? `Net a payer: ${formatAmount(doc.netToPay)} ${doc.currency || 'TND'}` : '',
+      doc.partyTaxId ? `${idLabel} ${meta?.party === 'supplier' ? 'fournisseur' : 'client'}: ${doc.partyTaxId}` : '',
+      `Total HT: ${fa(doc.totalHT)} ${doc.currency || 'TND'}`,
+      `TVA: ${fa(doc.totalVat)} ${doc.currency || 'TND'}`,
+      `Total TTC: ${fa(doc.totalTTC)} ${doc.currency || 'TND'}`,
+      meta?.settles ? `Net a payer: ${fa(doc.netToPay)} ${doc.currency || 'TND'}` : '',
       doc.ttnReference ? `Ref. TTN: ${doc.ttnReference}` : '',
     ];
     return lines.filter(Boolean).join('\n');
@@ -134,6 +137,9 @@ export class DocumentPdfService {
     const type = doc.type as DocumentType;
     const meta = DOC_META[type];
     const isDraft = !doc.lockedAt;
+    // Les montants s'impriment avec les décimales de la devise de la pièce (dinar : 3, euro et dollar : 2, yen : 0).
+    const fa = (n: number | null | undefined) => formatAmount(n, currencyDecimals(doc.currency));
+    const idLabel = taxIdShortLabel(company.countryCode);
 
     // ── En-tête ──
     //  - à GAUCHE : logo ;
@@ -191,14 +197,14 @@ export class DocumentPdfService {
     // ── Cadres : société (gauche, sous le logo) et client / fournisseur (droite) — même présentation ──
     const companyLines = [
       companyName(company),
-      company.taxId ? `MF : ${company.taxId}` : '',
+      company.taxId ? `${idLabel} : ${company.taxId}` : '',
       companyAddress(company),
       company.phone ? `Tél : ${company.phone}` : '',
       company.email || '',
     ].filter(Boolean);
     const partyLines = [
       doc.partyName,
-      doc.partyTaxId ? `MF : ${doc.partyTaxId}` : '',
+      doc.partyTaxId ? `${idLabel} : ${doc.partyTaxId}` : '',
       doc.partyAddress || '',
       doc.partyPhone ? `Tél : ${doc.partyPhone}` : '',
       doc.partyEmail || '',
@@ -259,7 +265,7 @@ export class DocumentPdfService {
       }
       let x = PAGE.margin;
       pdf.fillColor(INK);
-      const cells = [descr, `${formatQty(l.quantity)}${l.unit ? ' ' + clean(l.unit) : ''}`, formatAmount(l.unitPriceHT), l.discountPct ? formatQty(l.discountPct) : '', formatQty(l.vatRate), formatAmount(l.netHT)];
+      const cells = [descr, `${formatQty(l.quantity)}${l.unit ? ' ' + clean(l.unit) : ''}`, fa(l.unitPriceHT), l.discountPct ? formatQty(l.discountPct) : '', formatQty(l.vatRate), fa(l.netHT)];
       cols.forEach((c, i) => {
         pdf.text(cells[i], x + 4, y + 4, { width: c.w - 8, align: c.align });
         x += c.w;
@@ -271,14 +277,14 @@ export class DocumentPdfService {
     // ── Totaux (bloc à droite) + TVA par taux (à gauche) ──
     const totalsRows: Array<[string, string, boolean?]> = [];
     if (doc.discountTotal > 0) {
-      totalsRows.push(['Total brut HT', formatAmount(doc.subtotalHT)]);
-      totalsRows.push(['Remises', `-${formatAmount(doc.discountTotal)}`]);
+      totalsRows.push(['Total brut HT', fa(doc.subtotalHT)]);
+      totalsRows.push(['Remises', `-${fa(doc.discountTotal)}`]);
     }
-    totalsRows.push(['Total HT', formatAmount(doc.totalHT)]);
-    totalsRows.push(['Total TVA', formatAmount(doc.totalVat)]);
-    totalsRows.push(['Total TTC', formatAmount(doc.totalTTC), true]);
-    if (doc.stampDuty > 0) totalsRows.push(['Droit de timbre', formatAmount(doc.stampDuty)]);
-    if (doc.withholdingAmount > 0) totalsRows.push([`Retenue à la source (${formatQty(doc.withholdingRate)} %)`, `-${formatAmount(doc.withholdingAmount)}`]);
+    totalsRows.push(['Total HT', fa(doc.totalHT)]);
+    totalsRows.push(['Total TVA', fa(doc.totalVat)]);
+    totalsRows.push(['Total TTC', fa(doc.totalTTC), true]);
+    if (doc.stampDuty > 0) totalsRows.push(['Droit de timbre', fa(doc.stampDuty)]);
+    if (doc.withholdingAmount > 0) totalsRows.push([`Retenue à la source (${formatQty(doc.withholdingRate)} %)`, `-${fa(doc.withholdingAmount)}`]);
     const netLabel = meta.settles ? (meta.isCredit ? 'Net à rembourser / imputer' : 'Net à payer') : 'Total TTC';
     const showNet = meta.settles;
     const blockH = totalsRows.length * 15 + (showNet ? 30 : 4) + 10;
@@ -299,7 +305,7 @@ export class DocumentPdfService {
       pdf.rect(totalsX - 6, ty + 2, 236, 24).fill(ACCENT);
       pdf.fillColor('#ffffff').font('Helvetica-Bold').fontSize(10);
       pdf.text(netLabel, totalsX, ty + 9, { width: 140 });
-      pdf.text(`${formatAmount(doc.netToPay)} ${doc.currency}`, totalsX + 100, ty + 9, { width: 130, align: 'right' });
+      pdf.text(`${fa(doc.netToPay)} ${doc.currency}`, totalsX + 100, ty + 9, { width: 130, align: 'right' });
       ty += 30;
     }
 
@@ -316,25 +322,27 @@ export class DocumentPdfService {
       pdf.font('Helvetica').fontSize(8.5);
       for (const g of doc.vatBreakdown) {
         pdf.text(`${formatQty(g.rate)} %`, PAGE.margin, vy, { width: 50 });
-        pdf.text(formatAmount(g.baseHT), PAGE.margin + 50, vy, { width: 70, align: 'right' });
-        pdf.text(formatAmount(g.vatAmount), PAGE.margin + 120, vy, { width: 70, align: 'right' });
+        pdf.text(fa(g.baseHT), PAGE.margin + 50, vy, { width: 70, align: 'right' });
+        pdf.text(fa(g.vatAmount), PAGE.margin + 120, vy, { width: 70, align: 'right' });
         vy += 12;
       }
     }
 
     y = Math.max(ty, vy) + 8;
-    // Montant en lettres
+    // Montant en lettres (absent si le nom de la devise n'est pas connu)
     pdf.font('Helvetica').fontSize(8.5).fillColor(INK);
-    const noun = meta.label.toLowerCase();
-    const inWords = `${noun.startsWith('facture') ? 'Arrêtée la présente' : 'Arrêté le présent'} ${noun} à la somme de : ${doc.amountInWords}`;
-    pdf.text(clean(inWords), PAGE.margin, y, { width: CONTENT_W });
-    y = pdf.y + 8;
+    if (doc.amountInWords) {
+      const noun = meta.label.toLowerCase();
+      const inWords = `${noun.startsWith('facture') ? 'Arrêtée la présente' : 'Arrêté le présent'} ${noun} à la somme de : ${doc.amountInWords}`;
+      pdf.text(clean(inWords), PAGE.margin, y, { width: CONTENT_W });
+      y = pdf.y + 8;
+    }
 
     // Conditions
     // (Les conditions de règlement ne sont plus imprimées : l'échéance figure dans l'en-tête.)
     const conditions: string[] = [];
     if (meta.settles && !meta.isCredit && doc.installments?.length) {
-      conditions.push('Échéancier : ' + doc.installments.map((i: any) => `${formatDate(i.dueDate)} : ${formatAmount(i.amount)}`).join('  |  '));
+      conditions.push('Échéancier : ' + doc.installments.map((i: any) => `${formatDate(i.dueDate)} : ${fa(i.amount)}`).join('  |  '));
     }
     if (meta.settles && !meta.isCredit && company.bankAccount) conditions.push(`Coordonnées bancaires${company.bankName ? ' (' + company.bankName + ')' : ''} : ${company.bankAccount}`);
     if (doc.notes) conditions.push(String(doc.notes));

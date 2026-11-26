@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, addDaysISO, Btn, Card, Field, Row, inputStyle, money, moneyDT, num, td, th, TableWrap, todayISO, useLoad, Notice } from "./kit";
+import { useCompanyProfile } from "@/lib/company-profile";
 
 export interface DocMetaType {
   type: string;
@@ -28,14 +29,16 @@ const numOrUndef = (s: string) => (s.trim() === "" || Number.isNaN(Number(s)) ? 
 
 /**
  * Éditeur de brouillon (création ou modification) pour les 8 types de documents.
- * Les montants affichés sont indicatifs : le calcul définitif (arrondis, timbre, retenue) est fait par le serveur à l'enregistrement.
+ * Les montants affichés sont indicatifs : le calcul définitif (arrondis, et en Tunisie timbre et retenue) est fait par le serveur à l'enregistrement.
  */
 export default function DocumentEditor({ type, initial, onNotify }: { type: string; initial?: any; onNotify: (msg: string, tone?: "ok" | "err") => void }) {
   const router = useRouter();
+  // Taux de TVA, taux par défaut et droit de timbre dépendent du pays de la société.
+  const profile = useCompanyProfile();
   const meta = useLoad(() => api<{ types: DocMetaType[]; vatRates: number[] }>("/documents/meta"), []);
   const docMeta = meta.data?.types.find((t) => t.type === type);
   const partyKind = docMeta?.party || (["purchase_order", "goods_receipt", "supplier_invoice", "supplier_credit_note"].includes(type) ? "supplier" : "client");
-  const vatRates = meta.data?.vatRates || [0, 7, 13, 19];
+  const vatRates = meta.data?.vatRates || profile.vatRates;
 
   const parties = useLoad(() => api<any[]>(partyKind === "client" ? "/clients" : "/suppliers"), [partyKind]);
   const products = useLoad(() => api<any[]>("/products"), []);
@@ -76,14 +79,14 @@ export default function DocumentEditor({ type, initial, onNotify }: { type: stri
       const price = Number(l.unitPriceHT) || 0;
       const d = Number(l.discountPct) || 0;
       const net = q * price * (1 - d / 100) * (1 - g / 100);
-      const rate = l.vatRate === "" ? 19 : Number(l.vatRate);
+      const rate = l.vatRate === "" ? profile.defaultVatRate : Number(l.vatRate);
       ht += net;
       byRate.set(rate, (byRate.get(rate) || 0) + net);
     }
     let vat = 0;
     byRate.forEach((base, rate) => { vat += (base * rate) / 100; });
     return { ht, vat, ttc: ht + vat };
-  }, [lines, globalDiscountPct]);
+  }, [lines, globalDiscountPct, profile.defaultVatRate]);
 
   const save = async () => {
     const body: any = {
@@ -180,7 +183,7 @@ export default function DocumentEditor({ type, initial, onNotify }: { type: stri
         <Row gap={24}>
           <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: 12 }}>
             <Field label="Remise globale %"><input inputMode="decimal" style={{ ...inputStyle, maxWidth: 140 }} value={globalDiscountPct} onChange={(e) => setGlobalDiscountPct(e.target.value)} /></Field>
-            {docMeta?.stamp && (
+            {docMeta?.stamp && profile.features.stampDuty && (
               <Field label="Droit de timbre">
                 <select style={{ ...inputStyle, maxWidth: 260 }} value={applyStamp} onChange={(e) => setApplyStamp(e.target.value as any)}>
                   <option value="auto">Selon les réglages de la société</option><option value="yes">Appliquer</option><option value="no">Ne pas appliquer</option>
@@ -193,7 +196,7 @@ export default function DocumentEditor({ type, initial, onNotify }: { type: stri
             <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>Total HT</span><strong>{money(preview.ht)}</strong></div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>TVA</span><strong>{money(preview.vat)}</strong></div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid var(--theme-border)", fontSize: 18 }}><span>Total TTC</span><strong>{moneyDT(preview.ttc)}</strong></div>
-            <Notice tone="blue">Montants indicatifs. Timbre, retenue à la source et arrondis sont calculés par le serveur à l’enregistrement.</Notice>
+            <Notice tone="blue">{profile.features.stampDuty ? "Montants indicatifs. Timbre, retenue à la source et arrondis sont calculés par le serveur à l’enregistrement." : "Montants indicatifs. Les arrondis sont calculés par le serveur à l’enregistrement."}</Notice>
           </div>
         </Row>
       </Card>

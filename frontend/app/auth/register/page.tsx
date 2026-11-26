@@ -20,20 +20,23 @@ import { MODULE_INFO, PLANS, SECTORS, pick, trialLabel, type CatalogModule } fro
 import { usePublicConfig } from "@/lib/publicConfig";
 import { publicGet, publicPost, sectorName, type Sector } from "@/lib/saas";
 import { fill } from "@/lib/saasTexts";
+import { countryOptions, currencyOptions, defaultCurrencyFor } from "@/lib/countries";
 
 interface SectorOption { code: string; label: string; modules: string[] }
 
 interface Form {
   name: string; companyName: string; email: string; phone: string; password: string; sector: string; acceptTerms: boolean;
   city: string; address: string; legalForm: string; taxId: string;
+  /** Pays de la société (ISO). Tunisie par défaut ; la devise n'est demandée que pour les autres pays. */
+  countryCode: string; currency: string;
 }
-type FieldKey = "name" | "companyName" | "email" | "phone" | "password" | "sector" | "acceptTerms" | "taxId";
+type FieldKey = "name" | "companyName" | "email" | "phone" | "password" | "sector" | "acceptTerms" | "taxId" | "currency";
 type FieldErrors = Partial<Record<FieldKey, keyof AuthUi>>;
 
-const EMPTY: Form = { name: "", companyName: "", email: "", phone: "", password: "", sector: "", acceptTerms: false, city: "", address: "", legalForm: "", taxId: "" };
+const EMPTY: Form = { name: "", companyName: "", email: "", phone: "", password: "", sector: "", acceptTerms: false, city: "", address: "", legalForm: "", taxId: "", countryCode: "TN", currency: "" };
 const LEGAL_FORMS = ["SARL", "SUARL", "SA", "SAS", "Personne physique", "Association", "Autre"];
 /** Ordre des champs : le premier en erreur reçoit le curseur. */
-const FIELD_ORDER: FieldKey[] = ["name", "companyName", "email", "phone", "password", "sector", "taxId", "acceptTerms"];
+const FIELD_ORDER: FieldKey[] = ["name", "companyName", "email", "phone", "password", "sector", "currency", "taxId", "acceptTerms"];
 
 function RegisterForm() {
   const router = useRouter();
@@ -114,6 +117,18 @@ function RegisterForm() {
   const trial = trialLabel(config?.trialHours ?? 72, language);
   const providerName = pending ? PROVIDER_NAMES[pending.provider] : "";
 
+  // Pays et devise : une société tunisienne tient ses comptes en dinars (rien à choisir) ; ailleurs, la devise du pays est proposée.
+  const abroad = form.countryCode !== "TN";
+  const countries = useMemo(() => countryOptions(language), [language]);
+  const currencies = useMemo(() => currencyOptions(language), [language]);
+  const onCountry = (code: string) => {
+    setForm((prev) => ({ ...prev, countryCode: code, currency: code === "TN" ? "" : defaultCurrencyFor(code) || "" }));
+    setErrors((prev) => ({ ...prev, currency: undefined, phone: undefined, taxId: undefined }));
+  };
+  /** Hors Tunisie, le numéro s'écrit avec son indicatif : 8 chiffres ne se lisent plus comme un numéro tunisien. */
+  const phoneOk = (value: string) => isValidPhone(value) && (!abroad || /^(\+|00)/.test(value.trim()));
+  const phoneError: keyof AuthUi = abroad ? "phoneInvalidAbroad" : "phoneInvalid";
+
   const validate = (): FieldErrors => {
     const found: FieldErrors = {};
     if (form.companyName.trim().length < 2) found.companyName = "companyRequired";
@@ -121,14 +136,16 @@ function RegisterForm() {
     if (!form.acceptTerms) found.acceptTerms = "termsRequired";
     if (pending) {
       // Avec Google ou Apple, le téléphone est facultatif ; s'il est saisi, il doit être valable.
-      if (form.phone.trim() && !isValidPhone(form.phone)) found.phone = "phoneInvalid";
+      if (form.phone.trim() && !phoneOk(form.phone)) found.phone = phoneError;
+      if (abroad && !form.currency) found.currency = "currencyRequired";
       return found;
     }
     if (form.name.trim().length < 2) found.name = "nameRequired";
     if (!isEmail(form.email.trim())) found.email = "emailInvalid";
-    if (!isValidPhone(form.phone)) found.phone = "phoneInvalid";
+    if (!phoneOk(form.phone)) found.phone = phoneError;
     if (!passwordChecks(form.password).ok) found.password = "passwordWeak";
-    if (!isValidTaxId(form.taxId)) found.taxId = "taxIdInvalid";
+    if (abroad && !form.currency) found.currency = "currencyRequired";
+    if (!isValidTaxId(form.taxId, form.countryCode)) found.taxId = abroad ? "taxIdInvalidAbroad" : "taxIdInvalid";
     return found;
   };
 
@@ -155,7 +172,8 @@ function RegisterForm() {
     setProblem(null);
 
     if (pending) {
-      const extra: Record<string, unknown> = { intent: "register", companyName: form.companyName.trim(), sector: form.sector, acceptTerms: true, language };
+      const extra: Record<string, unknown> = { intent: "register", companyName: form.companyName.trim(), sector: form.sector, acceptTerms: true, language, countryCode: form.countryCode };
+      if (abroad) extra.currency = form.currency;
       if (form.phone.trim()) extra.phone = form.phone.trim();
       if (pending.provider === "apple" && form.name.trim().length >= 2) extra.name = form.name.trim();
       const res = await publicPost(`/auth/${pending.provider}`, socialBody(pending.provider, pending.token, extra));
@@ -176,8 +194,9 @@ function RegisterForm() {
 
     const body: Record<string, unknown> = {
       name: form.name.trim(), companyName: form.companyName.trim(), email: form.email.trim().toLowerCase(), phone: form.phone.trim(),
-      password: form.password, sector: form.sector, acceptTerms: true, language,
+      password: form.password, sector: form.sector, acceptTerms: true, language, countryCode: form.countryCode,
     };
+    if (abroad) body.currency = form.currency;
     for (const key of ["city", "address", "legalForm", "taxId"] as const) if (form[key].trim()) body[key] = form[key].trim();
     const res = await publicPost("/auth/register", body);
     if (res.ok && res.data?.access_token) {
@@ -266,7 +285,45 @@ function RegisterForm() {
           {pending ? null : (
             <AuthField id="rg-email" label={tx.email} icon={<IconMail />} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" autoCapitalize="none" inputMode="email" spellCheck={false} maxLength={190} error={errorText("email")} required />
           )}
-          <AuthField id="rg-phone" label={pending ? `${tx.phone} ${ui.optionalMark}` : tx.phone} icon={<IconPhone />} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel" inputMode="tel" maxLength={30} hint={tx.phoneHint} error={errorText("phone")} required={!pending} />
+          <AuthField id="rg-phone" label={pending ? `${tx.phone} ${ui.optionalMark}` : tx.phone} icon={<IconPhone />} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel" inputMode="tel" maxLength={30} hint={abroad ? tx.phoneHintAbroad : tx.phoneHint} error={errorText("phone")} required={!pending} />
+        </div>
+
+        <div className="lg-cols">
+          <div className="lg-field" style={abroad ? undefined : { gridColumn: "1 / -1" }}>
+            <label htmlFor="rg-country" className="lg-label">{tx.country}</label>
+            <div className="lg-input-wrap">
+              <span className="lg-input-icon"><IconPin /></span>
+              <select id="rg-country" className="lg-input lg-select" value={form.countryCode} onChange={(e) => onCountry(e.target.value)} autoComplete="country" disabled={loading}>
+                {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
+              <span className="lg-select-arrow"><IconChevronDown /></span>
+            </div>
+          </div>
+          {abroad ? (
+            <div className="lg-field">
+              <label htmlFor="rg-currency" className="lg-label">{tx.currency}</label>
+              <div className="lg-input-wrap">
+                <span className="lg-input-icon"><IconHash /></span>
+                <select
+                  id="rg-currency"
+                  className="lg-input lg-select"
+                  value={form.currency}
+                  data-empty={form.currency === ""}
+                  onChange={(e) => set("currency", e.target.value)}
+                  aria-invalid={errors.currency ? true : undefined}
+                  aria-describedby="rg-currency-hint"
+                  disabled={loading}
+                  required
+                >
+                  <option value="" disabled>{tx.chooseCurrency}</option>
+                  {currencies.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+                </select>
+                <span className="lg-select-arrow"><IconChevronDown /></span>
+              </div>
+              {errors.currency ? <p className="lg-field-error">{errorText("currency")}</p> : null}
+              <p id="rg-currency-hint" className="lg-hint">{tx.currencyHint}</p>
+            </div>
+          ) : null}
         </div>
 
         {pending ? null : (
@@ -320,7 +377,7 @@ function RegisterForm() {
                 </div>
               </div>
               <AuthField id="rg-address" label={tx.address} icon={<IconHome />} value={form.address} onChange={(e) => set("address", e.target.value)} autoComplete="street-address" maxLength={300} />
-              <AuthField id="rg-taxId" label={tx.taxId} icon={<IconHash />} value={form.taxId} onChange={(e) => set("taxId", e.target.value)} maxLength={40} placeholder="1234567X/A/M/000" error={errorText("taxId")} />
+              <AuthField id="rg-taxId" label={abroad ? tx.taxIdAbroad : tx.taxId} icon={<IconHash />} value={form.taxId} onChange={(e) => set("taxId", e.target.value)} maxLength={40} placeholder={abroad ? "" : "1234567X/A/M/000"} error={errorText("taxId")} />
             </div>
           </details>
         )}

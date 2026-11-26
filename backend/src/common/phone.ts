@@ -13,7 +13,12 @@ export interface PhoneCheck {
 
 const TN_PREFIX = '216';
 
-export function normalizePhone(value: string | null | undefined): PhoneCheck {
+export interface PhoneOptions {
+  /** Vrai : le numéro doit porter son indicatif (« +33… » ou « 0033… ») ; un numéro à 8 chiffres ne passe plus pour un numéro tunisien. */
+  international?: boolean;
+}
+
+export function normalizePhone(value: string | null | undefined, opts: PhoneOptions = {}): PhoneCheck {
   const raw = String(value ?? '').trim();
   if (!raw) return { valid: true, normalized: '' };
   if (!/^[+\d][\d\s().-]*$/.test(raw)) return { valid: false, normalized: '', message: 'Numéro de téléphone invalide.' };
@@ -21,6 +26,9 @@ export function normalizePhone(value: string | null | undefined): PhoneCheck {
   const international = raw.startsWith('+') || digits.startsWith('00');
   if (digits.startsWith('00')) digits = digits.slice(2);
 
+  if (!international && opts.international) {
+    return { valid: false, normalized: '', message: 'Saisissez le numéro avec l’indicatif du pays (ex. +33 6 12 34 56 78).' };
+  }
   if (!international) {
     // Numéro local tunisien : 8 chiffres, premier chiffre 2 à 9.
     if (/^[2-9]\d{7}$/.test(digits)) return { valid: true, normalized: `+${TN_PREFIX}${digits}` };

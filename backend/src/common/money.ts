@@ -2,10 +2,11 @@
  * Calculs monétaires des documents commerciaux (devis, bons de livraison, factures, avoirs…).
  *
  * Règles :
- *  - le dinar tunisien a 3 décimales (millimes) : tous les calculs se font en MILLIMES ENTIERS,
- *    jamais en virgule flottante, pour qu'un total ne soit jamais faux d'un millime ;
+ *  - les calculs se font en UNITÉS MINEURES ENTIÈRES de la devise (millimes pour le dinar tunisien, qui a 3 décimales ;
+ *    centimes pour l'euro ou le dollar, 2 décimales ; yen : 0), jamais en virgule flottante, pour qu'un total ne soit
+ *    jamais faux d'une unité mineure. La précision est celle de la devise de la pièce (option `decimals`, 3 par défaut) ;
  *  - la TVA est calculée par taux sur la base HT cumulée (et non ligne par ligne), comme sur une
- *    déclaration de TVA : la somme des lignes peut donc différer d'un millime de la TVA du document,
+ *    déclaration de TVA : la somme des lignes peut donc différer d'une unité mineure de la TVA du document,
  *    c'est la TVA du document qui fait foi ;
  *  - retenue à la source : calculée sur le TTC (hors timbre), uniquement si le TTC dépasse le seuil.
  */
@@ -23,15 +24,20 @@ export function round(value: number, decimals = 3): number {
 
 export const r3 = (n: number) => round(n, 3);
 
-/** Montant (en dinars) -> millimes entiers. */
-export const toMillimes = (n: number): number => Math.round(round(n, 3) * 1000);
-/** Millimes entiers -> montant en dinars. */
-export const fromMillimes = (m: number): number => m / 1000;
+/** Montant -> unités mineures entières (millimes : 3 décimales ; centimes : 2 ; yen : 0). */
+export const toMinor = (n: number, decimals = 3): number => Math.round(round(n, decimals) * 10 ** decimals);
+/** Unités mineures entières -> montant. */
+export const fromMinor = (m: number, decimals = 3): number => m / 10 ** decimals;
 
-/** Pourcentage de millimes, arrondi à l'entier le plus proche (symétrique). */
-function pctOf(millimes: number, pct: number): number {
-  const sign = millimes < 0 ? -1 : 1;
-  return sign * Math.round((Math.abs(millimes) * pct) / 100 + 1e-9);
+/** Montant (en dinars) -> millimes entiers. */
+export const toMillimes = (n: number): number => toMinor(n, 3);
+/** Millimes entiers -> montant en dinars. */
+export const fromMillimes = (m: number): number => fromMinor(m, 3);
+
+/** Pourcentage d'unités mineures, arrondi à l'entier le plus proche (symétrique). */
+function pctOf(minor: number, pct: number): number {
+  const sign = minor < 0 ? -1 : 1;
+  return sign * Math.round((Math.abs(minor) * pct) / 100 + 1e-9);
 }
 
 export interface LineInput {
@@ -57,13 +63,15 @@ export interface VatBreakdown {
 }
 
 export interface TotalsOptions {
+  /** Décimales de la devise de la pièce (3 : dinar, 2 : euro et dollar, 0 : yen). Défaut : 3. */
+  decimals?: number;
   /** Remise globale en % appliquée sur chaque ligne après sa propre remise. */
   globalDiscountPct?: number;
-  /** Droit de timbre en dinars (0 = aucun). */
+  /** Droit de timbre, dans la devise de la pièce (0 = aucun). */
   stampDuty?: number;
   /** Taux de retenue à la source en % (0 = aucune). */
   withholdingRate?: number;
-  /** Seuil TTC en dessous duquel la retenue ne s'applique pas (défaut 1 000 DT ; 0 = toujours). */
+  /** Seuil TTC en dessous duquel la retenue ne s'applique pas (défaut 1 000 ; 0 = toujours). */
   withholdingThreshold?: number;
 }
 
@@ -88,9 +96,12 @@ const clampPct = (n: number | undefined) => {
 };
 
 export function computeTotals(lines: LineInput[], options: TotalsOptions = {}): DocumentTotals {
+  const D = Number.isInteger(options.decimals) && (options.decimals as number) >= 0 && (options.decimals as number) <= 4 ? (options.decimals as number) : 3;
+  const toM = (n: number) => toMinor(n, D);
+  const fromM = (m: number) => fromMinor(m, D);
   const globalPct = clampPct(options.globalDiscountPct);
   const lineTotals: LineTotals[] = [];
-  const groups = new Map<number, number>(); // taux de TVA -> base HT en millimes
+  const groups = new Map<number, number>(); // taux de TVA -> base HT en unités mineures
   let grossSum = 0;
   let netSum = 0;
 
@@ -99,7 +110,7 @@ export function computeTotals(lines: LineInput[], options: TotalsOptions = {}): 
     const price = Number(l.unitPriceHT) || 0;
     const vatRate = Number.isFinite(Number(l.vatRate)) ? Number(l.vatRate) : 0;
 
-    const grossM = toMillimes(qty * price);
+    const grossM = toM(qty * price);
     const lineDiscM = pctOf(grossM, clampPct(l.discountPct));
     const afterLineM = grossM - lineDiscM;
     const globalDiscM = pctOf(afterLineM, globalPct);
@@ -107,12 +118,12 @@ export function computeTotals(lines: LineInput[], options: TotalsOptions = {}): 
 
     const vatM = pctOf(netM, vatRate);
     lineTotals.push({
-      grossHT: fromMillimes(grossM),
-      discountAmount: fromMillimes(lineDiscM + globalDiscM),
-      netHT: fromMillimes(netM),
+      grossHT: fromM(grossM),
+      discountAmount: fromM(lineDiscM + globalDiscM),
+      netHT: fromM(netM),
       vatRate,
-      vatAmount: fromMillimes(vatM),
-      totalTTC: fromMillimes(netM + vatM),
+      vatAmount: fromM(vatM),
+      totalTTC: fromM(netM + vatM),
     });
 
     grossSum += grossM;
@@ -122,28 +133,28 @@ export function computeTotals(lines: LineInput[], options: TotalsOptions = {}): 
 
   const vatBreakdown: VatBreakdown[] = Array.from(groups.entries())
     .sort((a, b) => a[0] - b[0])
-    .map(([rate, baseM]) => ({ rate, baseHT: fromMillimes(baseM), vatAmount: fromMillimes(pctOf(baseM, rate)) }));
-  const totalVatM = vatBreakdown.reduce((s, g) => s + toMillimes(g.vatAmount), 0);
+    .map(([rate, baseM]) => ({ rate, baseHT: fromM(baseM), vatAmount: fromM(pctOf(baseM, rate)) }));
+  const totalVatM = vatBreakdown.reduce((s, g) => s + toM(g.vatAmount), 0);
   const totalTtcM = netSum + totalVatM;
 
-  const stampM = toMillimes(Math.max(0, Number(options.stampDuty) || 0));
+  const stampM = toM(Math.max(0, Number(options.stampDuty) || 0));
   const wRate = clampPct(options.withholdingRate);
   const threshold = options.withholdingThreshold === undefined ? 1000 : Math.max(0, Number(options.withholdingThreshold) || 0);
-  const withholdingApplies = wRate > 0 && totalTtcM > 0 && totalTtcM >= toMillimes(threshold);
+  const withholdingApplies = wRate > 0 && totalTtcM > 0 && totalTtcM >= toM(threshold);
   const withholdingM = withholdingApplies ? pctOf(totalTtcM, wRate) : 0;
 
   return {
     lines: lineTotals,
-    subtotalHT: fromMillimes(grossSum),
-    discountTotal: fromMillimes(grossSum - netSum),
-    totalHT: fromMillimes(netSum),
+    subtotalHT: fromM(grossSum),
+    discountTotal: fromM(grossSum - netSum),
+    totalHT: fromM(netSum),
     vatBreakdown,
-    totalVat: fromMillimes(totalVatM),
-    totalTTC: fromMillimes(totalTtcM),
-    stampDuty: fromMillimes(stampM),
+    totalVat: fromM(totalVatM),
+    totalTTC: fromM(totalTtcM),
+    stampDuty: fromM(stampM),
     withholdingRate: withholdingApplies ? wRate : 0,
-    withholdingAmount: fromMillimes(withholdingM),
-    netToPay: fromMillimes(totalTtcM + stampM - withholdingM),
+    withholdingAmount: fromM(withholdingM),
+    netToPay: fromM(totalTtcM + stampM - withholdingM),
   };
 }
 

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getCachedModules } from "@/components/Sidebar";
+import { formatMoney } from "@/lib/company-profile";
 
 type SearchType =
   | "clients" | "suppliers" | "products" | "categories" | "invoices"
@@ -77,7 +78,8 @@ const LOCAL_SOURCES: Record<SearchType, {
   /** Lien direct vers la fiche (sinon la page de liste, filtrée sur le terme). */
   href?: (r: any) => string | null;
 }> = (() => {
-  const money = (n: any) => `${Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 3 })} DT`;
+  // Montant dans la devise de la société (dinar, euro, dollar…), lue au moment de l'affichage.
+  const money = (n: any) => formatMoney(n);
   const join = (...p: any[]) => p.filter((x) => x !== null && x !== undefined && String(x).trim() !== "").join(" · ");
   return {
     clients: { url: "clients", path: "/dashboard/clients", fields: ["name", "email", "phone", "address"], title: (r) => r.name, subtitle: (r) => join(r.email, r.phone) },

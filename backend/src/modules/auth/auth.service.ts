@@ -17,6 +17,7 @@ import { isPlatformAdmin } from '../saas/account-access';
 import { Sector } from '../saas/entities/sector.entity';
 import { CompanyService } from '../company/company.service';
 import { validateTaxId } from '../../common/fiscal';
+import { defaultCurrencyFor, isCountryCode, isCurrencyCode } from '../../common/countries';
 import { normalizePhone } from '../../common/phone';
 import { verifyGoogleIdToken } from './google-verifier';
 import { verifyAppleIdToken } from './apple-verifier';
@@ -242,14 +243,23 @@ export class AuthService {
   // ───────────── Inscription d'une société (essai gratuit) ─────────────
 
   /** Vérifie les champs facultatifs AVANT de créer le compte : une inscription ne doit pas rester à moitié faite. */
-  private async checkSignup(sectorCode: string, phone?: string, taxId?: string) {
+  private async checkSignup(sectorCode: string, phone?: string, taxId?: string, countryInput?: string, currencyInput?: string) {
     const sector = await this.userRepository.manager.getRepository(Sector).findOne({ where: { code: String(sectorCode || '').toLowerCase(), isActive: true } });
     if (!sector) throw new BadRequestException('Choisissez votre secteur d’activité dans la liste.');
-    const phoneCheck = normalizePhone(phone);
+    const countryCode = String(countryInput || 'TN').trim().toUpperCase();
+    if (!isCountryCode(countryCode)) throw new BadRequestException('Choisissez le pays de votre société dans la liste.');
+    // Hors Tunisie, un numéro s'écrit avec son indicatif : 8 chiffres ne se lisent plus comme un numéro tunisien.
+    const phoneCheck = normalizePhone(phone, { international: countryCode !== 'TN' });
     if (!phoneCheck.valid) throw new BadRequestException(phoneCheck.message);
-    const tax = validateTaxId(taxId);
+    const tax = validateTaxId(taxId, { country: countryCode });
     if (!tax.valid) throw new BadRequestException(tax.message);
-    return { sector, phone: phoneCheck.normalized || null, taxId: tax.normalized || null };
+    // Une société tunisienne tient ses comptes en dinars ; ailleurs, la devise est celle du pays, modifiable à l'inscription.
+    let currency = 'TND';
+    if (countryCode !== 'TN') {
+      currency = String(currencyInput || defaultCurrencyFor(countryCode) || '').trim().toUpperCase();
+      if (!isCurrencyCode(currency)) throw new BadRequestException('Choisissez la devise de vos comptes (ex. EUR, USD, MAD).');
+    }
+    return { sector, phone: phoneCheck.normalized || null, taxId: tax.normalized || null, countryCode, currency };
   }
 
   /**
@@ -280,7 +290,7 @@ export class AuthService {
     }
   }
 
-  private async afterSignup(user: User, extra: { city?: string; address?: string; legalForm?: string; taxId?: string | null }, ip?: string) {
+  private async afterSignup(user: User, extra: { city?: string; address?: string; legalForm?: string; taxId?: string | null; countryCode?: string; currency?: string }, ip?: string) {
     // Fiche société créée tout de suite avec ce que la personne a bien voulu indiquer.
     try {
       await this.company.getOrCreate(user.id);
@@ -289,11 +299,15 @@ export class AuthService {
       if (extra.address) patch.address = extra.address;
       if (extra.legalForm) patch.legalForm = extra.legalForm;
       if (extra.taxId) patch.taxId = extra.taxId;
+      if (extra.countryCode && extra.countryCode !== 'TN') {
+        // Société étrangère : ni timbre ni TVA tunisienne par défaut ; elle règle ses taux dans Paramètres > Société.
+        Object.assign(patch, { countryCode: extra.countryCode, currency: extra.currency, stampDutyEnabled: false, defaultVatRate: 0 });
+      }
       if (Object.keys(patch).length) await this.company.update(user.id, patch);
     } catch (e: any) {
       console.warn(`[auth] Fiche société incomplète pour le compte ${user.id} : ${e?.message || e}`);
     }
-    void this.audit.record({ userId: user.id, actorId: user.id, actorEmail: user.email, action: 'account_registered', entity: 'account', entityId: user.id, ip: ip || null, status: 201, details: { sector: user.sector, source: user.signupSource, trialEndsAt: user.trialEndsAt } });
+    void this.audit.record({ userId: user.id, actorId: user.id, actorEmail: user.email, action: 'account_registered', entity: 'account', entityId: user.id, ip: ip || null, status: 201, details: { sector: user.sector, source: user.signupSource, trialEndsAt: user.trialEndsAt, country: extra.countryCode || 'TN' } });
     const settings = await this.settings.get();
     if (settings.supportEmail) {
       void this.mail.trySend({
@@ -332,14 +346,14 @@ export class AuthService {
     if (dto.acceptTerms !== true) throw new BadRequestException('Vous devez accepter les conditions d’utilisation.');
     assertStrongPassword(dto.password, dto.email);
     const email = dto.email.trim().toLowerCase();
-    const checked = await this.checkSignup(dto.sector, dto.phone, dto.taxId);
+    const checked = await this.checkSignup(dto.sector, dto.phone, dto.taxId, dto.countryCode, dto.currency);
     if (await this.findByEmail(email)) throw new ConflictException('Un compte existe déjà avec cet email. Connectez-vous, ou réinitialisez votre mot de passe.');
 
     const user = await this.createOwner({
       email, name: dto.name.trim(), companyName: dto.companyName.trim(), phone: checked.phone, passwordHash: await bcrypt.hash(dto.password, 10),
       sectorCode: checked.sector.code, source: 'self', emailVerified: false, language: dto.language,
     });
-    await this.afterSignup(user, { city: dto.city, address: dto.address, legalForm: dto.legalForm, taxId: checked.taxId }, ip);
+    await this.afterSignup(user, { city: dto.city, address: dto.address, legalForm: dto.legalForm, taxId: checked.taxId, countryCode: checked.countryCode, currency: checked.currency }, ip);
     // Le code part dès que le serveur sait envoyer des emails ; il n'est EXIGÉ que si le réglage est actif.
     const emailSent = this.mail.isConfigured() || process.env.NODE_ENV !== 'production' ? await this.issueEmailCode(user, true, dto.language) : false;
     const required = this.settings.verificationRequired(await this.settings.get());
@@ -523,7 +537,7 @@ export class AuthService {
   private async socialSignIn(
     provider: 'google' | 'apple',
     identity: { sub: string; email: string | null; name: string },
-    dto: { intent?: 'login' | 'register'; companyName?: string; sector?: string; phone?: string; acceptTerms?: boolean; otp?: string; language?: string },
+    dto: { intent?: 'login' | 'register'; companyName?: string; sector?: string; phone?: string; countryCode?: string; currency?: string; acceptTerms?: boolean; otp?: string; language?: string },
     ip?: string,
   ) {
     const p = AuthService.SOCIAL[provider];
@@ -560,14 +574,14 @@ export class AuthService {
     if (dto.acceptTerms !== true) throw new BadRequestException('Vous devez accepter les conditions d’utilisation.');
     const companyName = String(dto.companyName || '').trim();
     if (companyName.length < 2) throw new BadRequestException('Indiquez le nom de votre société.');
-    const checked = await this.checkSignup(String(dto.sector || ''), dto.phone, undefined);
+    const checked = await this.checkSignup(String(dto.sector || ''), dto.phone, undefined, dto.countryCode, dto.currency);
     user = await this.createOwner({
       email: identity.email, name: identity.name, companyName, phone: checked.phone,
       // Mot de passe aléatoire inutilisable : la personne peut en définir un avec « mot de passe oublié ».
       passwordHash: await bcrypt.hash(randomBytes(32).toString('hex'), 10),
       sectorCode: checked.sector.code, source: provider, [p.column]: identity.sub, emailVerified: true, language: dto.language,
     });
-    await this.afterSignup(user, {}, ip);
+    await this.afterSignup(user, { countryCode: checked.countryCode, currency: checked.currency }, ip);
     return { ...(await this.session(user, null)), created: true };
   }
 

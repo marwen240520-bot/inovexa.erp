@@ -6,7 +6,7 @@
  * (« Chantiers » dans le bâtiment) — voir lib/sectorLabels.ts.
  */
 import React, { FormEvent, useEffect, useState } from "react";
-import { api, Badge, Btn, Card, Empty, ErrorBox, fmtDate, inputStyle, Loading, Modal, moneyDT, Page, Row, Stat, TableWrap, num, td, th, todayISO, useLoad, useNotice, useRequireAuth } from "@/components/erp/kit";
+import { api, Badge, Btn, Card, currencyUnit, Empty, ErrorBox, fmtDate, inputStyle, Loading, Modal, moneyDT, Page, Row, Stat, TableWrap, num, td, th, todayISO, useLoad, useNotice, useRequireAuth } from "@/components/erp/kit";
 import { projectWords } from "@/lib/sectorLabels";
 import { MODULES_CHANGED_EVENT, getStoredUser } from "@/lib/session";
 
@@ -113,8 +113,8 @@ function ProjectModal({ project, clients, sector, onClose, onDone }: { project: 
           <label style={field("1 1 120px")}><span style={label}>Priorité</span><select value={form.priority} onChange={(e) => set("priority", e.target.value)} style={inputStyle}>{Object.entries(PRIORITY).map(([code, text]) => <option key={code} value={code}>{text}</option>)}</select></label>
         </Row>
         <Row>
-          <label style={field("1 1 160px")}><span style={label}>Budget (DT)</span><input inputMode="decimal" value={form.budget} onChange={(e) => set("budget", e.target.value)} style={inputStyle} /></label>
-          <label style={field("1 1 160px")}><span style={label}>Coût réel à ce jour (DT)</span><input inputMode="decimal" value={form.cost} onChange={(e) => set("cost", e.target.value)} style={inputStyle} /></label>
+          <label style={field("1 1 160px")}><span style={label}>{`Budget (${currencyUnit()})`}</span><input inputMode="decimal" value={form.budget} onChange={(e) => set("budget", e.target.value)} style={inputStyle} /></label>
+          <label style={field("1 1 160px")}><span style={label}>{`Coût réel à ce jour (${currencyUnit()})`}</span><input inputMode="decimal" value={form.cost} onChange={(e) => set("cost", e.target.value)} style={inputStyle} /></label>
           <label style={field("1 1 140px")}>
             <span style={label}>Avancement (%)</span>
             <input type="number" min={0} max={100} step={5} value={hasTasks ? String(project!.progress) : form.progress} onChange={(e) => set("progress", e.target.value)} style={inputStyle} disabled={hasTasks} />

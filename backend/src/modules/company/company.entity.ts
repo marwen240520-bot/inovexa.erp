@@ -49,6 +49,10 @@ export class Company {
   @Column({ type: 'varchar', length: 80, default: 'Tunisie' })
   country: string;
 
+  /** Code pays ISO 3166-1 alpha-2. Il décide des fonctions locales : timbre, retenue, TEIF et paie n'existent qu'en Tunisie (TN). */
+  @Column({ type: 'varchar', length: 2, default: 'TN' })
+  countryCode: string;
+
   @Column({ type: 'varchar', length: 40, nullable: true })
   phone: string | null;
 
@@ -74,6 +78,10 @@ export class Company {
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 19, transformer: numericTransformer })
   defaultVatRate: number;
+
+  /** Taux de TVA utilisables (liste libre). Absent : ceux du pays (Tunisie : 0, 7, 13, 19 ; ailleurs : 0 et le taux par défaut). */
+  @Column({ type: 'jsonb', nullable: true })
+  vatRates: number[] | null;
 
   @Column({ default: true })
   stampDutyEnabled: boolean;

@@ -10,7 +10,9 @@ import { LegacyImportService } from './legacy-import.service';
 import { DOC_META } from './documents.types';
 import { PAYMENT_METHODS } from './entities/payment.entity';
 import { DOCUMENT_TYPES } from './entities/document.entity';
-import { VAT_RATES, WITHHOLDING_PRESETS } from '../../common/fiscal';
+import { WITHHOLDING_PRESETS, vatRatesFor } from '../../common/fiscal';
+import { localFeatures } from '../../common/countries';
+import { CompanyService } from '../company/company.service';
 import {
   ApplyCreditDto, CancelDto, ConvertDto, CreateDocumentDto, InstallmentsDto, PaymentDto, RemindDto, SendDto, UpdateDocumentDto, VoidPaymentDto,
 } from './documents.dto';
@@ -36,18 +38,21 @@ const int = (v: any) => (v === undefined || v === '' ? undefined : Number.isFini
 @UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class DocumentsController {
-  constructor(private readonly docs: DocumentsService, private readonly payments: PaymentsService, private readonly legacyImport: LegacyImportService) {}
+  constructor(private readonly docs: DocumentsService, private readonly payments: PaymentsService, private readonly legacyImport: LegacyImportService, private readonly company: CompanyService) {}
 
   // ── Routes statiques d'abord (avant « :id ») ──
 
   @Get('meta')
   @ApiOperation({ summary: 'Types de documents, moyens de paiement, taux de TVA et de retenue' })
-  meta() {
+  async meta(@Request() req: any) {
+    const company = await this.company.getOrCreate(req.user.userId);
+    const features = localFeatures(company.countryCode);
     return {
       types: DOCUMENT_TYPES.map((t) => ({ type: t, ...DOC_META[t] })),
       paymentMethods: PAYMENT_METHODS,
-      vatRates: VAT_RATES,
-      withholdingPresets: WITHHOLDING_PRESETS,
+      vatRates: vatRatesFor(company),
+      withholdingPresets: features.withholding ? WITHHOLDING_PRESETS : [],
+      features,
     };
   }
 

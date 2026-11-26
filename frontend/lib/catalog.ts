@@ -47,9 +47,9 @@ export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Locali
   invoices: {
     label: { fr: "Factures et devis", en: "Invoices and quotes", es: "Facturas y presupuestos" },
     desc: {
-      fr: "Devis → bon de livraison → facture → avoir, règlements, PDF et fichier TEIF pour El Fatoora.",
-      en: "Quote → delivery note → invoice → credit note, payments, PDF and TEIF file for El Fatoora.",
-      es: "Presupuesto → albarán → factura → abono, cobros, PDF y archivo TEIF para El Fatoora.",
+      fr: "Devis → bon de livraison → facture → avoir, règlements, PDF ; fichier TEIF pour El Fatoora (Tunisie).",
+      en: "Quote → delivery note → invoice → credit note, payments, PDF; TEIF file for El Fatoora (Tunisia).",
+      es: "Presupuesto → albarán → factura → abono, cobros, PDF; archivo TEIF para El Fatoora (Túnez).",
     },
   },
   clients: {
@@ -151,9 +151,9 @@ export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Locali
   hr: {
     label: { fr: "RH et paie", en: "HR and payroll", es: "RR. HH. y nóminas" },
     desc: {
-      fr: "Employés, congés, bulletins de paie avec CNSS et IRPP.",
-      en: "Employees, leave, payslips with CNSS and IRPP (Tunisian payroll).",
-      es: "Empleados, permisos, nóminas con CNSS e IRPP (nómina tunecina).",
+      fr: "Employés et congés ; bulletins de paie avec CNSS et IRPP pour les sociétés tunisiennes.",
+      en: "Employees and leave; payslips with CNSS and IRPP for Tunisian companies.",
+      es: "Empleados y permisos; nóminas con CNSS e IRPP para las empresas tunecinas.",
     },
   },
   reports: {

@@ -48,5 +48,6 @@ des images Docker et une vérification que **les migrations reflètent exactemen
 ## Documentation
 
 - [`docs/ERP-PRO.md`](docs/ERP-PRO.md) — fonctionnalités, règles fiscales et comptables, **points à faire valider par votre expert-comptable**
+- [`docs/INTERNATIONAL.md`](docs/INTERNATIONAL.md) — utiliser l'ERP dans n'importe quel pays : pays, devise, TVA, identifiant fiscal ; ce qui reste propre à la Tunisie
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — déploiement, migrations, sauvegardes et restauration, rotation des secrets
 - [`docs/developer-guide.md`](docs/developer-guide.md), [`docs/user-guide.md`](docs/user-guide.md)

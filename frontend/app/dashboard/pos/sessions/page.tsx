@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  api, Badge, Btn, Card, Empty, ErrorBox, Field, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, td, th,
+  api, Badge, Btn, Card, currencyUnit, Empty, ErrorBox, Field, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, td, th,
   useLoad, useNotice, useRequireAuth, qty,
 } from "@/components/erp/kit";
 
@@ -18,7 +18,7 @@ function ZReport({ session }: { session: any }) {
         <Stat label="Ventes" value={moneyDT(r.salesTotal)} sub={`${r.salesTickets ?? 0} ticket(s)`} />
         <Stat label="Achats payés en caisse" value={moneyDT(r.purchasesTotal)} />
         <Stat label="Espèces attendues" value={moneyDT(session.expectedCash ?? r.expectedCash)} sub={`Fond de caisse ${money(session.openingFloat)}`} />
-        {session.status === "closed" && <Stat label="Écart" value={`${variance > 0 ? "+" : ""}${money(variance)} DT`} tone={variance === 0 ? "good" : "bad"} sub={`Compté ${money(session.countedCash)}`} />}
+        {session.status === "closed" && <Stat label="Écart" value={`${variance > 0 ? "+" : ""}${money(variance)} ${currencyUnit()}`} tone={variance === 0 ? "good" : "bad"} sub={`Compté ${money(session.countedCash)}`} />}
       </div>
       <h4 style={{ margin: "8px 0" }}>Ventes par moyen de paiement</h4>
       {!r.sales?.length ? <Empty>Aucune vente sur cette session.</Empty> : (
@@ -107,7 +107,7 @@ export default function PosSessionsPage() {
         <Card title="Ouvrir la caisse">
           <Notice tone="blue">Aucune session ouverte. Les ventes faites en caisse sans session ne sont pas rattachées à un rapport Z.</Notice>
           <Row>
-            <Field label="Fond de caisse (DT)"><input style={inputStyle} inputMode="decimal" value={openFloat} onChange={(e) => setOpenFloat(e.target.value)} /></Field>
+            <Field label={`Fond de caisse (${currencyUnit()})`}><input style={inputStyle} inputMode="decimal" value={openFloat} onChange={(e) => setOpenFloat(e.target.value)} /></Field>
             <Field label="Note (facultatif)" grow><input style={inputStyle} maxLength={300} value={openNote} onChange={(e) => setOpenNote(e.target.value)} /></Field>
             <Btn variant="primary" busy={busy} onClick={openSession}>Ouvrir la caisse</Btn>
           </Row>
@@ -142,10 +142,10 @@ export default function PosSessionsPage() {
       {closing && (
         <Modal title="Clôturer la caisse" onClose={() => setClosing(false)} footer={<><Btn onClick={() => setClosing(false)}>Annuler</Btn><Btn variant="primary" busy={busy} onClick={closeSession}>Clôturer et figer le rapport Z</Btn></>}>
           <p style={{ margin: 0, fontSize: 14 }}>Espèces attendues en caisse : <b>{moneyDT(expectedLive)}</b></p>
-          <Field label="Espèces comptées (DT)"><input autoFocus style={inputStyle} inputMode="decimal" value={counted} onChange={(e) => setCounted(e.target.value)} /></Field>
+          <Field label={`Espèces comptées (${currencyUnit()})`}><input autoFocus style={inputStyle} inputMode="decimal" value={counted} onChange={(e) => setCounted(e.target.value)} /></Field>
           {counted.trim() !== "" && Number.isFinite(countedNum) && (
             <p style={{ margin: 0, fontSize: 14, color: Math.abs(countedNum - expectedLive) < 0.0005 ? "var(--theme-success, #10b981)" : "var(--theme-danger, #ef4444)" }}>
-              Écart : {countedNum - expectedLive > 0 ? "+" : ""}{money(countedNum - expectedLive)} DT
+              Écart : {countedNum - expectedLive > 0 ? "+" : ""}{money(countedNum - expectedLive)} {currencyUnit()}
             </p>
           )}
           <Field label="Note (facultatif)"><input style={inputStyle} maxLength={300} value={closeNote} onChange={(e) => setCloseNote(e.target.value)} /></Field>

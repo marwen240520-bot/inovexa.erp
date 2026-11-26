@@ -5,7 +5,8 @@ import { Category } from '../categories/entities/category.entity';
 import { Product } from '../products/product.entity';
 import { ProductsService } from '../products/products.service';
 import { User } from '../users/entities/user.entity';
-import { VAT_RATES } from '../../common/fiscal';
+import { VAT_RATES, vatRatesFor } from '../../common/fiscal';
+import { CompanyService } from '../company/company.service';
 import { Sector, SectorCategory, SectorItem, ServiceOffer } from './entities/sector.entity';
 import { MODULE_KEYS } from './account-access';
 
@@ -30,7 +31,7 @@ const money = (v: any, label: string): number | null => {
 /** Secteurs d'activité : modules par défaut, catalogue de suggestions, prestations de l'éditeur. */
 @Injectable()
 export class SectorsService {
-  constructor(@InjectDataSource() private readonly ds: DataSource, private readonly products: ProductsService) {}
+  constructor(@InjectDataSource() private readonly ds: DataSource, private readonly products: ProductsService, private readonly company: CompanyService) {}
 
   // ───────────── Lecture (site public et ERP) ─────────────
 
@@ -89,6 +90,8 @@ export class SectorsService {
     const catByName = new Map(existingCats.map((c) => [c.name.trim().toLowerCase(), c.id]));
     const existingProducts = await this.ds.getRepository(Product).find({ where: { userId }, select: ['id', 'name'] });
     const known = new Set(existingProducts.map((p) => p.name.trim().toLowerCase()));
+    // Les taux de TVA suggérés ne sont repris que s'ils font partie de ceux de la société (sinon, son taux par défaut s'applique).
+    const allowedVat = vatRatesFor(await this.company.getOrCreate(userId));
 
     const created: Array<{ id: number; name: string }> = [];
     const skipped: Array<{ name: string; reason: string }> = [];
@@ -111,7 +114,7 @@ export class SectorsService {
         name: item.name, sku: `SUG-${item.id}`, price, quantity: 0, categoryId, unit: item.unit,
         isStockable: item.kind !== 'service', trackLots: item.kind !== 'service' && item.trackLots,
       };
-      if (item.vatRate !== null && (VAT_RATES as readonly number[]).includes(Number(item.vatRate))) data.vatRate = Number(item.vatRate);
+      if (item.vatRate !== null && allowedVat.includes(Number(item.vatRate))) data.vatRate = Number(item.vatRate);
       const product = await this.products.create(userId, data);
       // Coût d'achat indicatif repris comme coût de départ : il sera remplacé par le coût réel à la première entrée en stock.
       if (item.purchasePrice !== null && item.kind !== 'service') {

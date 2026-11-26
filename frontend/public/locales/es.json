@@ -858,6 +858,8 @@
     "currentLanguage": "Idioma actual",
     "currency": "Moneda",
     "example": "Ejemplo",
+    "currencyFromCompany": "La moneda es la de su empresa: se aplica a todos los importes.",
+    "changeInCompany": "Cambiar en Ajustes › Empresa",
     "dateFormat": "Formato de fecha",
     "settingsSaved": "Configuración guardada con éxito",
     "settingsReset": "Configuración restablecida a los valores predeterminados",

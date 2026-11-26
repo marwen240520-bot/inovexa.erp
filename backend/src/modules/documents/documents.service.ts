@@ -24,8 +24,9 @@ import { Supplier } from '../suppliers/supplier.entity';
 import { PriceListItem } from '../crm/entities/price-list.entity';
 import { Warehouse } from '../stock/entities/warehouse.entity';
 import { computeTotals, round } from '../../common/money';
-import { VAT_RATES, stampDutyFor, validateTaxId } from '../../common/fiscal';
-import { amountToFrenchWords } from '../../common/number-words';
+import { stampDutyFor, validateTaxId, vatRatesFor } from '../../common/fiscal';
+import { currencyDecimals, localFeatures } from '../../common/countries';
+import { amountInWordsFor } from '../../common/number-words';
 
 const EPS = 0.0005;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -156,7 +157,7 @@ export class DocumentsService {
       ...doc,
       typeLabel: meta.label,
       overdue: this.isOverdue(doc),
-      amountInWords: amountToFrenchWords(meta.settles ? doc.netToPay : doc.totalTTC),
+      amountInWords: amountInWordsFor(meta.settles ? doc.netToPay : doc.totalTTC, doc.currency),
       lines,
       payments,
       installments,
@@ -199,7 +200,7 @@ export class DocumentsService {
       credited = await this.loadCreditable(em, actor.userId, type, dto.creditedDocumentId);
     }
 
-    const party = await this.resolveParty(em, actor.userId, meta.party, dto, credited || extra.copyParty || undefined);
+    const party = await this.resolveParty(em, actor.userId, meta.party, dto, credited || extra.copyParty || undefined, company.countryCode);
     if (dto.warehouseId) await this.assertWarehouse(em, actor.userId, dto.warehouseId);
     const issueDate = dto.issueDate || today();
     const inputs: InputLine[] = extra.lines || dto.lines;
@@ -251,7 +252,7 @@ export class DocumentsService {
       let party: PartyInfo;
       if (partyChanged) {
         if (doc.creditedDocumentId && dto.partyId !== undefined && dto.partyId !== doc.partyId) throw new BadRequestException('Le tiers d’un avoir est celui de la facture d’origine.');
-        party = await this.resolveParty(em, actor.userId, meta.party, { partyId: dto.partyId ?? undefined, ...dto } as any, doc);
+        party = await this.resolveParty(em, actor.userId, meta.party, { partyId: dto.partyId ?? undefined, ...dto } as any, doc, company.countryCode);
         doc.partyId = party.id;
         doc.partyName = party.name;
         doc.partyTaxId = party.taxId;
@@ -284,7 +285,7 @@ export class DocumentsService {
         withholdingRate: dto.withholdingRate ?? doc.withholdingRate ?? party.withholdingRate,
         applyStamp: dto.applyStamp ?? (meta.stamp ? doc.stampDuty > 0 : undefined),
       };
-      const priced = await this.price(em, actor.userId, doc.type, header, inputs, party, company, creditedWithholding);
+      const priced = await this.price(em, actor.userId, doc.type, header, inputs, party, company, creditedWithholding, doc.currency);
       Object.assign(doc, priced.fields);
       await em.getRepository(Document).save(doc);
       if (dto.lines || existing.length === 0) {
@@ -357,7 +358,7 @@ export class DocumentsService {
       if (!lines.length) throw new BadRequestException('Le document ne contient aucune ligne.');
       if (meta.settles && !(doc.netToPay > EPS) && !meta.isCredit) throw new BadRequestException('Le montant à payer doit être supérieur à zéro.');
       if (doc.partyTaxId) {
-        const check = validateTaxId(doc.partyTaxId);
+        const check = validateTaxId(doc.partyTaxId, { country: company.countryCode, party: true });
         if (!check.valid) throw new BadRequestException(check.message);
       }
 
@@ -701,6 +702,7 @@ export class DocumentsService {
   async renderTeif(userId: number, id: number) {
     const doc = await this.get(userId, id);
     const company = await this.company.getOrCreate(userId);
+    if (!localFeatures(company.countryCode).teif) throw new BadRequestException('Le format TEIF (El Fatoora, Tunisie) n’est disponible que pour les sociétés tunisiennes. Utilisez l’export de données structurées (JSON).');
     let credited: { number: string | null; issueDate: string | null } | null = null;
     if (doc.creditedDocumentId) {
       const src = await this.ds.getRepository(Document).findOne({ where: { id: doc.creditedDocumentId, userId } });
@@ -726,7 +728,7 @@ export class DocumentsService {
     const company = await this.company.getOrCreate(actor.userId);
     const { buffer, filename } = await this.renderPdf(actor.userId, id);
     const label = DOC_META[doc.type as DocumentType].label;
-    const amount = (DOC_META[doc.type as DocumentType].settles ? doc.netToPay : doc.totalTTC).toFixed(3);
+    const amount = (DOC_META[doc.type as DocumentType].settles ? doc.netToPay : doc.totalTTC).toFixed(currencyDecimals(doc.currency));
     const subject = dto.subject || `${label} ${doc.number} — ${company.legalName || ''}`.trim();
     const text =
       dto.message ||
@@ -744,7 +746,9 @@ export class DocumentsService {
     if (!doc.lockedAt) throw new BadRequestException('Seul un document validé peut être exporté.');
     const company = await this.company.getOrCreate(userId);
     return {
-      notice: 'Jeu de données structuré pour la facturation électronique. Il ne remplace pas la transmission certifiée via la plateforme officielle (TTN / El Fatoora).',
+      notice: localFeatures(company.countryCode).teif
+        ? 'Jeu de données structuré pour la facturation électronique. Il ne remplace pas la transmission certifiée via la plateforme officielle (TTN / El Fatoora).'
+        : 'Jeu de données structuré pour la facturation électronique. Il ne remplace pas la transmission via la plateforme officielle de votre pays, si elle est exigée.',
       format: 'inovexa-einvoice/1',
       document: { type: doc.type, number: doc.number, issueDate: doc.issueDate, dueDate: doc.dueDate, currency: doc.currency, externalRef: doc.externalRef, creditedDocumentId: doc.creditedDocumentId },
       seller: { name: company.legalName, taxId: company.taxId, tradeRegister: company.tradeRegister, address: [company.address, company.postalCode, company.city, company.country].filter(Boolean).join(', '), email: company.email, phone: company.phone, bankAccount: company.bankAccount },
@@ -838,6 +842,7 @@ export class DocumentsService {
     type: 'client' | 'supplier',
     dto: { partyId?: number; partyName?: string; partyTaxId?: string; partyAddress?: string; partyEmail?: string; partyPhone?: string },
     fallback?: Document,
+    companyCountry?: string,
   ): Promise<PartyInfo> {
     let party: PartyInfo | null = null;
     const partyId = dto.partyId ?? fallback?.partyId ?? undefined;
@@ -859,7 +864,7 @@ export class DocumentsService {
     party.email = pick('email', dto.partyEmail, fb?.partyEmail);
     party.phone = pick('phone', dto.partyPhone, fb?.partyPhone);
     if (party.taxId) {
-      const check = validateTaxId(party.taxId);
+      const check = validateTaxId(party.taxId, { country: companyCountry, party: true });
       if (!check.valid) throw new BadRequestException(check.message);
       party.taxId = check.normalized || null;
     }
@@ -880,9 +885,13 @@ export class DocumentsService {
     party: PartyInfo,
     company: Company,
     forceWithholding = false,
+    currency?: string,
   ) {
     const meta = DOC_META[type];
     if (!inputs.length) throw new BadRequestException('Ajoutez au moins une ligne.');
+    const allowedVat = vatRatesFor(company);
+    const decimals = currencyDecimals(currency || company.currency);
+    const features = localFeatures(company.countryCode);
     const ids = [...new Set(inputs.map((l) => l.productId).filter((v): v is number => !!v))];
     const products = ids.length ? await em.getRepository(Product).find({ where: { userId, id: In(ids) } }) : [];
     const byId = new Map(products.map((p) => [p.id, p]));
@@ -904,7 +913,7 @@ export class DocumentsService {
       }
       if (unitPriceHT === undefined || unitPriceHT === null || !Number.isFinite(Number(unitPriceHT))) throw new BadRequestException(`Ligne ${i + 1} : prix unitaire requis.`);
       const vatRate = Number(l.vatRate ?? p?.vatRate ?? company.defaultVatRate);
-      if (!(VAT_RATES as readonly number[]).includes(vatRate)) throw new BadRequestException(`Ligne ${i + 1} : taux de TVA ${vatRate} % non reconnu (taux admis : ${VAT_RATES.join(', ')} %).`);
+      if (!allowedVat.includes(vatRate)) throw new BadRequestException(`Ligne ${i + 1} : taux de TVA ${vatRate} % non reconnu (taux admis : ${allowedVat.join(', ')} %). Les taux se règlent dans Paramètres > Société.`);
       const discountPct = Number(l.discountPct ?? (meta.party === 'client' && !meta.isCredit ? party.discountPct : 0)) || 0;
       return {
         productId: p?.id ?? null, sku: p?.sku ?? null, description, quantity: Number(l.quantity), unit: l.unit ?? p?.unit ?? null,
@@ -915,12 +924,12 @@ export class DocumentsService {
     });
 
     const globalDiscountPct = header.globalDiscountPct ?? 0;
-    const base = computeTotals(resolved, { globalDiscountPct });
-    const wantStamp = meta.stamp && (header.applyStamp ?? company.stampDutyEnabled) && base.totalTTC > 0;
+    const base = computeTotals(resolved, { globalDiscountPct, decimals });
+    const wantStamp = features.stampDuty && meta.stamp && (header.applyStamp ?? company.stampDutyEnabled) && base.totalTTC > 0;
     const stamp = wantStamp ? stampDutyFor(base.totalTTC, company.stampScale as any, company.stampDutyAmount) : 0;
-    const withholdingRate = meta.settles ? header.withholdingRate ?? 0 : 0;
+    const withholdingRate = meta.settles && features.withholding ? header.withholdingRate ?? 0 : 0;
     const t = computeTotals(resolved, {
-      globalDiscountPct, stampDuty: stamp, withholdingRate,
+      decimals, globalDiscountPct, stampDuty: stamp, withholdingRate,
       // un avoir d'une facture avec retenue reprend la retenue sans seuil
       withholdingThreshold: forceWithholding ? 0 : company.withholdingThreshold,
     });

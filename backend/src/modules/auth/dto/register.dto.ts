@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from 'class-validator';
 
 /**
  * Inscription d'une société. La liste des champs est fermée (ValidationPipe whitelist + forbidNonWhitelisted dans le
@@ -19,6 +19,10 @@ export class RegisterDto {
   @IsOptional() @IsString() @MaxLength(300) address?: string;
   @IsOptional() @IsString() @MaxLength(60) legalForm?: string;
   @IsOptional() @IsString() @MaxLength(40) taxId?: string;
+  /** Pays de la société (code ISO 3166-1 alpha-2 : FR, MA, TN…). Défaut : TN. */
+  @IsOptional() @IsString() @Length(2, 2) countryCode?: string;
+  /** Devise des comptes (code ISO 4217 : EUR, USD, MAD…). Défaut : celle du pays ; toujours TND pour une société tunisienne. */
+  @IsOptional() @IsString() @Length(3, 3) currency?: string;
   /** Langue de l'écran d'inscription : celle des emails du compte (code de vérification, mot de passe oublié…). */
   @IsOptional() @IsString() @MaxLength(10) language?: string;
 }
@@ -31,6 +35,8 @@ export class GoogleAuthDto {
   @IsOptional() @IsString() @MaxLength(160) companyName?: string;
   @IsOptional() @IsString() @MaxLength(40) sector?: string;
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @IsOptional() @IsString() @Length(2, 2) countryCode?: string;
+  @IsOptional() @IsString() @Length(3, 3) currency?: string;
   @IsOptional() @IsBoolean() acceptTerms?: boolean;
   @IsOptional() @IsString() @MaxLength(10) otp?: string;
   @IsOptional() @IsString() @MaxLength(10) language?: string;
@@ -46,6 +52,8 @@ export class AppleAuthDto {
   @IsOptional() @IsString() @MaxLength(160) companyName?: string;
   @IsOptional() @IsString() @MaxLength(40) sector?: string;
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @IsOptional() @IsString() @Length(2, 2) countryCode?: string;
+  @IsOptional() @IsString() @Length(3, 3) currency?: string;
   @IsOptional() @IsBoolean() acceptTerms?: boolean;
   @IsOptional() @IsString() @MaxLength(10) otp?: string;
   @IsOptional() @IsString() @MaxLength(10) language?: string;

@@ -9,6 +9,7 @@ import { CompanyService } from '../company/company.service';
 import { AccountingService } from '../accounting/accounting.service';
 import { computePayslip, mergePayrollSettings, workingDaysBetween, PayrollSettings } from './payroll';
 import { round } from '../../common/money';
+import { localFeatures } from '../../common/countries';
 
 const EPS = 0.0005;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -20,12 +21,21 @@ const lastDay = (year: number, month: number) => new Date(Date.UTC(year, month, 
 export class HrService {
   constructor(@InjectDataSource() private readonly ds: DataSource, private readonly company: CompanyService, private readonly accounting: AccountingService) {}
 
+  /** La paie automatique (CNSS, IRPP, CSS) n'existe que pour la Tunisie : ailleurs, les barèmes seraient faux. */
+  private async assertPayrollCountry(userId: number) {
+    const company = await this.company.getOrCreate(userId);
+    if (!localFeatures(company.countryCode).payroll) {
+      throw new BadRequestException('La paie automatique (CNSS, IRPP, CSS) n’est disponible que pour les sociétés tunisiennes. Les congés et les fiches employés restent disponibles.');
+    }
+  }
+
   async settings(userId: number): Promise<PayrollSettings> {
     const c = await this.company.getOrCreate(userId);
     return mergePayrollSettings(c.payrollSettings);
   }
 
   async updateSettings(userId: number, patch: Partial<PayrollSettings>) {
+    await this.assertPayrollCountry(userId);
     const current = await this.settings(userId);
     const next: any = { ...current };
     const rates = ['cnssEmployeeRate', 'cnssEmployerRate', 'workAccidentRate', 'professionalExpensesRate', 'solidarityRate'];
@@ -171,6 +181,7 @@ export class HrService {
   }
 
   async generate(userId: number, year: number, month: number) {
+    await this.assertPayrollCountry(userId);
     this.monthRange(year, month);
     const s = await this.settings(userId);
     const employees = await this.ds.getRepository(Employee).find({ where: { userId, status: 'active' } });

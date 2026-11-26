@@ -6,6 +6,7 @@
 import React, { CSSProperties, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchWithRetry } from "@/lib/saas";
+import { currencyLabel, formatAmount, formatMoney, getCompanyProfile } from "@/lib/company-profile";
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/+$/, "");
 
@@ -84,9 +85,14 @@ export async function fetchFile(path: string, opts: { query?: Query; filename?: 
 
 // ───────────── Formats ─────────────
 
-const moneyFmt = new Intl.NumberFormat("fr-TN", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-export const money = (n: unknown) => moneyFmt.format(Number(n) || 0);
-export const moneyDT = (n: unknown) => `${money(n)} DT`;
+/** Montant sans unité, avec les décimales de la devise de la société (dinar : 3, euro et dollar : 2, yen : 0). */
+export const money = (n: unknown) => formatAmount(n);
+/** Montant avec l'unité de la devise de la société : « 120,000 DT », « 71,96 € ». Le nom historique est conservé. */
+export const moneyDT = (n: unknown) => formatMoney(n);
+/** Montant dans la devise d'une pièce (une pièce garde la devise dans laquelle elle a été émise). */
+export const moneyIn = (n: unknown, currency?: string | null) => formatMoney(n, currency);
+/** Unité de la devise de la société (« DT », « € »…), pour les libellés de champs : « Capital (DT) ». */
+export const currencyUnit = () => currencyLabel(getCompanyProfile().currency);
 export const pct = (n: unknown) => (n === null || n === undefined ? "—" : `${Number(n).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %`);
 export const qty = (n: unknown) => Number(n || 0).toLocaleString("fr-FR", { maximumFractionDigits: 3 });
 export const fmtDate = (d?: string | null) => (d ? String(d).slice(0, 10).split("-").reverse().join("/") : "—");

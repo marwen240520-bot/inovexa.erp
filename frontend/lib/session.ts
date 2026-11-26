@@ -4,6 +4,7 @@
 // Le navigateur ne décide JAMAIS de l'accès : l'état du compte (essai, abonnement, suspension) vient du serveur
 // à chaque requête. Ce qui est gardé ici ne sert qu'à afficher vite la bonne page.
 import { clearApiCache } from "@/lib/apiCache";
+import { refreshCompanyProfile, resetCompanyProfile } from "@/lib/company-profile";
 
 export const TOKEN_KEY = "token";
 export const USER_KEY = "user";
@@ -67,6 +68,9 @@ export function saveSession(data: { access_token: string; user: SessionUser }) {
     localStorage.removeItem(MODULES_KEY);
   } catch { /* stockage indisponible */ }
   clearApiCache();
+  // Le profil (pays, devise, TVA) est celui de la société qui se connecte : on lit le sien, jamais celui du compte précédent.
+  resetCompanyProfile();
+  if (!isPlatformAdmin(data.user?.role) && data.user?.role !== "transporteur") void refreshCompanyProfile();
   try { window.dispatchEvent(new Event(SESSION_CLEARED_EVENT)); } catch { /* ignoré */ }
 }
 
@@ -104,6 +108,7 @@ export function clearSession() {
     localStorage.removeItem(MODULES_KEY);
   } catch { /* ignoré */ }
   clearApiCache();
+  resetCompanyProfile();
   try { window.dispatchEvent(new Event(SESSION_CLEARED_EVENT)); } catch { /* ignoré */ }
 }
 

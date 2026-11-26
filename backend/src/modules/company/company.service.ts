@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Company } from './company.entity';
 import { User } from '../users/entities/user.entity';
-import { validateTaxId } from '../../common/fiscal';
+import { parseVatRates, validateTaxId, vatRatesFor } from '../../common/fiscal';
+import { countryName, currencyDecimals, isCountryCode, isCurrencyCode, localFeatures, taxIdLabel } from '../../common/countries';
 
 export const DEFAULT_NUMBERING: Record<string, string> = {
   quote: 'DV',
@@ -22,8 +23,8 @@ export const DEFAULT_NUMBERING: Record<string, string> = {
 
 const EDITABLE: Array<keyof Company> = [
   'legalName', 'tradeName', 'legalForm', 'taxId', 'tradeRegister', 'cnssNumber', 'shareCapital', 'address', 'city',
-  'postalCode', 'country', 'phone', 'email', 'website', 'logoDataUrl', 'bankName', 'bankAccount', 'currency',
-  'defaultVatRate', 'stampDutyEnabled', 'stampDutyAmount', 'stampScale', 'withholdingThreshold',
+  'postalCode', 'country', 'countryCode', 'phone', 'email', 'website', 'logoDataUrl', 'bankName', 'bankAccount', 'currency',
+  'defaultVatRate', 'vatRates', 'stampDutyEnabled', 'stampDutyAmount', 'stampScale', 'withholdingThreshold',
   'defaultPaymentTermsDays', 'quoteValidityDays', 'numbering', 'accountMap', 'payrollSettings', 'invoiceFooter', 'defaultNotes',
 ];
 
@@ -68,10 +69,23 @@ export class CompanyService {
     const patch: Record<string, any> = {};
     for (const key of EDITABLE) if (data && (data as any)[key] !== undefined) patch[key] = (data as any)[key];
 
+    if (patch.countryCode !== undefined) {
+      const code = String(patch.countryCode || '').trim().toUpperCase();
+      if (!isCountryCode(code)) throw new BadRequestException('Pays invalide (code ISO à 2 lettres, ex. TN, FR, MA).');
+      patch.countryCode = code;
+      // Le nom du pays suit le code, sauf s'il a été saisi en même temps.
+      if (patch.country === undefined) patch.country = countryName(code, 'fr');
+    }
+    const countryCode = String(patch.countryCode ?? company.countryCode ?? 'TN');
     if (patch.taxId !== undefined) {
-      const check = validateTaxId(patch.taxId);
+      const check = validateTaxId(patch.taxId, { country: countryCode });
       if (!check.valid) throw new BadRequestException(check.message);
       patch.taxId = check.normalized || null;
+    }
+    if (patch.vatRates !== undefined && patch.vatRates !== null) {
+      const parsed = parseVatRates(patch.vatRates);
+      if (parsed.error) throw new BadRequestException(parsed.error);
+      patch.vatRates = parsed.rates;
     }
     if (patch.logoDataUrl === '') patch.logoDataUrl = null; // « Retirer le logo » → logo par défaut
     if (patch.logoDataUrl) {
@@ -80,10 +94,28 @@ export class CompanyService {
       }
       if (patch.logoDataUrl.length > MAX_LOGO) throw new BadRequestException('Logo trop volumineux (réduisez-le avant l’envoi).');
     }
-    if (patch.currency !== undefined && !/^[A-Z]{3}$/.test(String(patch.currency))) throw new BadRequestException('Devise invalide (code ISO à 3 lettres).');
+    if (patch.currency !== undefined) {
+      const currency = String(patch.currency || '').trim().toUpperCase();
+      if (!isCurrencyCode(currency)) throw new BadRequestException('Devise invalide (code ISO à 3 lettres, ex. TND, EUR, USD).');
+      patch.currency = currency;
+      if (currency !== company.currency) {
+        // Une comptabilité se tient dans une seule devise : on ne la change plus dès qu'une pièce numérotée existe.
+        const [used] = await this.repo.manager.query(`SELECT 1 AS n FROM "documents" WHERE "userId" = $1 AND "number" IS NOT NULL LIMIT 1`, [userId]);
+        if (used) throw new BadRequestException('La devise ne peut plus être modifiée : des pièces numérotées existent déjà dans la devise actuelle.');
+      }
+    }
+    // Une société tunisienne tient ses comptes en dinars (timbre, TEIF, paie et plan comptable sont en dinars).
+    if ((patch.countryCode !== undefined || patch.currency !== undefined) && countryCode === 'TN' && String(patch.currency ?? company.currency ?? 'TND') !== 'TND') {
+      throw new BadRequestException('Une société tunisienne tient ses comptes en dinars tunisiens (TND).');
+    }
+    // Changer de pays sans toucher à l'identifiant fiscal : celui qui est déjà enregistré doit rester valable dans le nouveau pays.
+    if (patch.countryCode !== undefined && patch.countryCode !== company.countryCode && patch.taxId === undefined && company.taxId?.trim()) {
+      const recheck = validateTaxId(company.taxId, { country: countryCode });
+      if (!recheck.valid) throw new BadRequestException(`Corrigez l’identifiant fiscal en même temps que le pays. ${recheck.message}`);
+    }
     if (patch.stampScale !== undefined && !['flat', 'large_store'].includes(patch.stampScale)) throw new BadRequestException('Barème de timbre invalide.');
     for (const k of ['defaultVatRate', 'stampDutyAmount', 'withholdingThreshold']) {
-      if (patch[k] !== undefined && (!Number.isFinite(Number(patch[k])) || Number(patch[k]) < 0)) throw new BadRequestException(`Valeur invalide : ${k}`);
+      if (patch[k] !== undefined && (!Number.isFinite(Number(patch[k])) || Number(patch[k]) < 0 || (k === 'defaultVatRate' && Number(patch[k]) > 100))) throw new BadRequestException(`Valeur invalide : ${k}`);
     }
     if (patch.numbering) {
       const clean: Record<string, string> = {};
@@ -99,11 +131,27 @@ export class CompanyService {
     return this.repo.save(company);
   }
 
+  /** Ce que l'interface doit savoir pour s'adapter à la société : pays, devise et précision, taux de TVA, fonctions locales. */
+  profile(company: Company) {
+    const countryCode = company.countryCode || 'TN';
+    const currency = company.currency || 'TND';
+    return {
+      countryCode,
+      countryName: countryName(countryCode, 'fr'),
+      currency,
+      currencyDecimals: currencyDecimals(currency),
+      defaultVatRate: Number(company.defaultVatRate),
+      vatRates: vatRatesFor(company),
+      taxIdLabel: taxIdLabel(countryCode),
+      features: localFeatures(countryCode),
+    };
+  }
+
   /** Vérifie que la société a les mentions légales indispensables pour émettre une facture. */
   legalGaps(company: Company): string[] {
     const gaps: string[] = [];
     if (!company.legalName?.trim()) gaps.push('raison sociale');
-    if (!company.taxId?.trim()) gaps.push('matricule fiscal');
+    if (!company.taxId?.trim()) gaps.push(taxIdLabel(company.countryCode).toLowerCase());
     if (!company.address?.trim()) gaps.push('adresse');
     return gaps;
   }

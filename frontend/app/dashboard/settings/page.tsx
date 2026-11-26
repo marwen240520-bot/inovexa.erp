@@ -7,7 +7,8 @@ import { LANGUAGE_NAMES, isSupportedLanguage } from "@/lib/i18n";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import Spinner from "@/components/ui/Spinner";
-import { readStoredCurrency, CURRENCY_SYMBOLS } from "@/hooks/useAppSettings";
+import Link from "next/link";
+import { currencyLabel, useCompanyProfile } from "@/lib/company-profile";
 import { readAiChatButton, writeAiChatButton } from "@/lib/aiChatButton";
 import { clearSession } from "@/lib/session";
 
@@ -122,9 +123,10 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [animateCards, setAnimateCards] = useState(false);
+  // La devise est celle de la société (Paramètres › Société) : ici on ne règle que la langue et le format de date.
+  const profile = useCompanyProfile();
   const [settings, setSettings] = useState({
     language: "fr",
-    currency: "tnd",
     dateFormat: "dd/mm/yyyy"
   });
   const [message, setMessage] = useState("");
@@ -150,10 +152,9 @@ export default function SettingsPage() {
     const storedLanguage = localStorage.getItem("language");
     // Une langue qui n'existe plus (ancien choix « ar ») retombe sur le français.
     const savedLanguage = isSupportedLanguage(storedLanguage) ? storedLanguage : "fr";
-    const savedCurrency = readStoredCurrency();
     const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
 
-    setSettings({ language: savedLanguage, currency: savedCurrency, dateFormat: savedDateFormat });
+    setSettings({ language: savedLanguage, dateFormat: savedDateFormat });
     setAiChatButton(readAiChatButton());
     setLoading(false);
     setTimeout(() => setAnimateCards(true), 100);
@@ -161,13 +162,11 @@ export default function SettingsPage() {
   }, []);
 
   const saveSettings = async () => {
-    localStorage.setItem("currency", settings.currency);
     localStorage.setItem("dateFormat", settings.dateFormat);
-    localStorage.setItem("app_currency", settings.currency);
     localStorage.setItem("app_dateFormat", settings.dateFormat);
 
     const event = new CustomEvent("settingsChanged", {
-      detail: { currency: settings.currency, dateFormat: settings.dateFormat }
+      detail: { dateFormat: settings.dateFormat }
     });
     window.dispatchEvent(event);
 
@@ -187,12 +186,10 @@ export default function SettingsPage() {
   };
 
   const resetSettings = () => {
-    const defaults = { language: "fr", currency: "tnd", dateFormat: "dd/mm/yyyy" };
+    const defaults = { language: "fr", dateFormat: "dd/mm/yyyy" };
     setSettings(defaults);
     localStorage.setItem("language", "fr");
-    localStorage.setItem("currency", "tnd");
-    localStorage.setItem("app_currency", "tnd");
-    window.dispatchEvent(new CustomEvent("settingsChanged", { detail: { currency: "tnd", dateFormat: "dd/mm/yyyy" } }));
+    window.dispatchEvent(new CustomEvent("settingsChanged", { detail: { dateFormat: "dd/mm/yyyy" } }));
     localStorage.setItem("dateFormat", "dd/mm/yyyy");
     setAiChatButton(true);
     writeAiChatButton(true);
@@ -229,10 +226,8 @@ export default function SettingsPage() {
     return `${day}/${month}/${year}`;
   };
 
-  const formatCurrency = (amount) => {
-    const decimals = settings.currency === "tnd" ? 3 : 2;
-    return `${amount.toLocaleString("fr-FR", { maximumFractionDigits: decimals })} ${CURRENCY_SYMBOLS[settings.currency] || "DT"}`;
-  };
+  const formatCurrency = (amount) =>
+    `${amount.toLocaleString("fr-FR", { maximumFractionDigits: profile.currencyDecimals })} ${currencyLabel(profile.currency)}`;
 
   const getCurrentLanguageName = () =>
     isSupportedLanguage(settings.language) ? LANGUAGE_NAMES[settings.language] : LANGUAGE_NAMES.fr;
@@ -384,16 +379,13 @@ export default function SettingsPage() {
               <IconCurrency size={iconSize} color={theme.primary} />
               {t("settings.currency")}
             </h3>
-            <select
-              value={settings.currency}
-              onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
-              style={{ width: "100%", padding: selectPadding, background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
-            >
-              <option value="tnd">Dinar tunisien (DT)</option>
-              <option value="eur">Euro (€)</option>
-              <option value="usd">Dollar US ($)</option>
-              <option value="gbp">Livre sterling (£)</option>
-            </select>
+            <div style={{ width: "100%", padding: selectPadding, background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, fontSize: isMobile ? "13px" : "14px", fontWeight: 600 }}>
+              {profile.currency} ({currencyLabel(profile.currency)}) · {profile.countryName}
+            </div>
+            <div style={{ marginTop: "8px", color: theme.textSecondary, fontSize: isMobile ? "12px" : "13px" }}>
+              {t("settings.currencyFromCompany")}{" "}
+              <Link href="/dashboard/company" style={{ color: theme.primary, fontWeight: 600 }}>{t("settings.changeInCompany")}</Link>
+            </div>
             <div style={{ marginTop: "12px", padding: "12px", background: theme.surfaceHover, borderRadius: "8px", color: theme.accent, fontSize: isMobile ? "12px" : "14px" }}>
               {t("settings.example")}: <b>{formatCurrency(1000)}</b>
             </div>

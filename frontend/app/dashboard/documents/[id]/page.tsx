@@ -6,6 +6,7 @@ import {
   api, Badge, Btn, Card, ErrorBox, fetchFile, Field, fmtDate, inputStyle, Loading, Modal, money, moneyDT, num, Page, qty, Row, StatusBadge, TableWrap, td, th,
   todayISO, useLoad, useNotice, useRequireAuth, Notice,
 } from "@/components/erp/kit";
+import { useCompanyProfile } from "@/lib/company-profile";
 
 const METHODS: Record<string, string> = { cash: "Espèces", card: "Carte", transfer: "Virement", check: "Chèque", draft: "Traite", mobile: "Mobile", credit_note: "Avoir", other: "Autre" };
 const TYPE_LABEL: Record<string, string> = {
@@ -24,6 +25,9 @@ export default function DocumentDetail() {
   const [modal, setModal] = useState<ModalKind>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const d = doc.data;
+  // Pays de la société : libellé de l'identifiant fiscal, facture électronique TEIF (Tunisie uniquement).
+  const profile = useCompanyProfile();
+  const teif = profile.features.teif;
 
   // Formulaires des fenêtres
   const [pay, setPay] = useState({ amount: "", method: "transfer", date: todayISO(), reference: "" });
@@ -78,7 +82,7 @@ export default function DocumentDetail() {
   return (
     <Page
       title={title}
-      subtitle={`${d.partyName}${d.partyTaxId ? ` · MF ${d.partyTaxId}` : ""}`}
+      subtitle={`${d.partyName}${d.partyTaxId ? ` · ${profile.countryCode === "TN" ? "MF" : "ID fiscal"} ${d.partyTaxId}` : ""}`}
       actions={
         <>
           <Btn onClick={() => router.push("/dashboard/documents")}>← Liste</Btn>
@@ -109,14 +113,14 @@ export default function DocumentDetail() {
         {d.lockedAt && settles && <StatusBadge status={d.paymentStatus} />}
         {d.overdue && <Badge tone="red">En retard</Badge>}
         {d.lockedAt && <Badge tone="violet">Figé — non modifiable</Badge>}
-        {d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
+        {teif && d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
           d.ttnReference
             ? <Badge tone="green">Certifiée El Fatoora — réf. TTN {d.ttnReference}{d.ttnValidatedAt ? ` (${fmtDate(d.ttnValidatedAt)})` : ""}</Badge>
             : <Badge tone="amber">Non certifiée El Fatoora</Badge>
         )}
       </div>
 
-      {d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
+      {teif && d.lockedAt && d.status !== "cancelled" && (d.type === "invoice" || d.type === "credit_note") && (
         <Card title="Facture électronique (El Fatoora / TTN)">
           <p style={{ margin: "0 0 10px", fontSize: 14, color: "var(--theme-text-secondary)" }}>
             {d.ttnReference
@@ -193,7 +197,7 @@ export default function DocumentDetail() {
           )}
         </div>
 
-        <Card title="Totaux" style={{ flex: "0 1 380px", minWidth: 290 }}>
+        <Card title={d.currency ? `Totaux (${d.currency})` : "Totaux"} style={{ flex: "0 1 380px", minWidth: 290 }}>
           <div style={{ fontVariantNumeric: "tabular-nums", fontSize: 14 }}>
             <Total k="Total HT" v={d.totalHT} />
             {Number(d.discountTotal) > 0 && <Total k="Remises" v={-d.discountTotal} muted />}
@@ -204,7 +208,7 @@ export default function DocumentDetail() {
             {settles && <Total k={isCredit ? "Avoir net" : "Net à payer"} v={d.netToPay} strong />}
             {settles && d.lockedAt && <Total k="Déjà réglé" v={d.paidAmount} muted />}
             {settles && d.lockedAt && <Total k="Reste dû" v={d.balanceDue} strong tone={Number(d.balanceDue) > 0 ? "bad" : "good"} />}
-            <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--theme-text-secondary)", fontStyle: "italic" }}>{d.amountInWords}</p>
+            {d.amountInWords ? <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--theme-text-secondary)", fontStyle: "italic" }}>{d.amountInWords}</p> : null}
           </div>
         </Card>
       </div>

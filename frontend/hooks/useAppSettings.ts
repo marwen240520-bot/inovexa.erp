@@ -1,37 +1,13 @@
 import { useState, useEffect } from 'react';
+import { currencyLabel, useCompanyProfile } from '@/lib/company-profile';
 
-// Devise par défaut de l'application : Dinar tunisien (DT)
-export const DEFAULT_CURRENCY = 'tnd';
-
-export const CURRENCY_SYMBOLS: Record<string, string> = {
-  tnd: 'DT',
-  eur: '€',
-  usd: '$',
-  gbp: '£'
-};
-
-// Migration unique : les anciens navigateurs avaient « eur » enregistré par défaut.
-// On bascule une seule fois vers DT ; l'utilisateur peut toujours rechoisir l'euro dans Paramètres.
-const MIGRATION_KEY = 'currencyDefaultTndMigrated';
-
-export const readStoredCurrency = (): string => {
-  if (typeof window === 'undefined') return DEFAULT_CURRENCY;
-  try {
-    if (!localStorage.getItem(MIGRATION_KEY)) {
-      if (localStorage.getItem('currency') === 'eur') {
-        localStorage.setItem('currency', DEFAULT_CURRENCY);
-        localStorage.setItem('app_currency', DEFAULT_CURRENCY);
-      }
-      localStorage.setItem(MIGRATION_KEY, '1');
-    }
-    return localStorage.getItem('currency') || DEFAULT_CURRENCY;
-  } catch {
-    return DEFAULT_CURRENCY;
-  }
-};
+// La devise de l'application est celle de la société (Paramètres › Société) : dinar tunisien pour une société tunisienne,
+// euro, dollar, dirham… ailleurs. Elle ne se choisit plus ici (un simple affichage ne doit pas contredire les comptes).
+// Le format de date, lui, reste un réglage de l'appareil.
 
 export const useAppSettings = () => {
-  const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
+  const profile = useCompanyProfile();
+  const currency = profile.currency.toLowerCase();
   const [dateFormat, setDateFormat] = useState('dd/mm/yyyy');
   const [loading, setLoading] = useState(true);
 
@@ -41,18 +17,12 @@ export const useAppSettings = () => {
 
     // Écouter les changements de paramètres
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'currency') {
-        setCurrency(e.newValue || DEFAULT_CURRENCY);
-      }
       if (e.key === 'dateFormat') {
         setDateFormat(e.newValue || 'dd/mm/yyyy');
       }
     };
 
     const handleSettingsChange = (event: CustomEvent) => {
-      if (event.detail?.currency) {
-        setCurrency(event.detail.currency);
-      }
       if (event.detail?.dateFormat) {
         setDateFormat(event.detail.dateFormat);
       }
@@ -68,9 +38,7 @@ export const useAppSettings = () => {
   }, []);
 
   const loadSettings = () => {
-    const savedCurrency = readStoredCurrency();
     const savedDateFormat = localStorage.getItem('dateFormat') || 'dd/mm/yyyy';
-    setCurrency(savedCurrency);
     setDateFormat(savedDateFormat);
     setLoading(false);
   };
@@ -82,16 +50,13 @@ export const useAppSettings = () => {
     return isNaN(num) ? 0 : num;
   };
 
-  // Obtenir le symbole de la devise
-  const getCurrencySymbol = (): string => {
-    return CURRENCY_SYMBOLS[currency] || CURRENCY_SYMBOLS[DEFAULT_CURRENCY];
-  };
+  // Obtenir le symbole de la devise de la société
+  const getCurrencySymbol = (): string => currencyLabel(profile.currency);
 
-  // Formater un nombre avec la devise (le dinar se compte en millimes : 3 décimales max)
+  // Formater un nombre avec la devise de la société, aux décimales de cette devise (dinar : 3, euro et dollar : 2, yen : 0)
   const formatCurrency = (amount: number | string | undefined | null): string => {
     const validAmount = toValidNumber(amount);
-    const maxDecimals = currency === 'tnd' ? 3 : 2;
-    return `${validAmount.toLocaleString('fr-FR', { maximumFractionDigits: maxDecimals })} ${getCurrencySymbol()}`;
+    return `${validAmount.toLocaleString('fr-FR', { maximumFractionDigits: profile.currencyDecimals })} ${getCurrencySymbol()}`;
   };
 
   // Formater une date selon le format choisi

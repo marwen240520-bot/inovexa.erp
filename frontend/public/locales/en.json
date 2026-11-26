@@ -716,6 +716,8 @@
     "currentLanguage": "Current language",
     "currency": "Currency",
     "example": "Example",
+    "currencyFromCompany": "The currency is your company’s: it applies to every amount.",
+    "changeInCompany": "Change in Settings › Company",
     "dateFormat": "Date format",
     "settingsSaved": "Settings saved successfully",
     "settingsReset": "Settings reset to defaults",

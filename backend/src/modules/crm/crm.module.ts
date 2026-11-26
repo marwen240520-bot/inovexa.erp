@@ -119,7 +119,9 @@ export class CrmService {
     const party: any = await (repo as any).findOne({ where: { id, userId } });
     if (!party) throw new NotFoundException(partyType === 'client' ? 'Client introuvable' : 'Fournisseur introuvable');
     if (dto.taxId !== undefined) {
-      const check = validateTaxId(dto.taxId);
+      // Règle selon le pays de la société ; un tiers étranger d'une société tunisienne s'écrit avec son code pays (FR123…).
+      const [co] = await this.ds.query(`SELECT "countryCode" FROM "companies" WHERE "userId" = $1`, [userId]);
+      const check = validateTaxId(dto.taxId, { country: co?.countryCode, party: true });
       if (!check.valid) throw new BadRequestException(check.message);
       party.taxId = check.normalized || null;
     }

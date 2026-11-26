@@ -16,6 +16,7 @@ import { Interaction } from '../crm/entities/interaction.entity';
 import { BankAccount } from '../finance/entities/bank-account.entity';
 import { BankStatementLine } from '../accounting/entities/bank-statement-line.entity';
 import { round } from '../../common/money';
+import { currencyDecimals } from '../../common/countries';
 
 const EPS = 0.0005;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -41,7 +42,7 @@ export class PaymentsService {
       if (!doc) throw new NotFoundException('Document introuvable');
       const meta = DOC_META[doc.type];
       if (!meta.settles || !doc.lockedAt || doc.status === 'cancelled') throw new BadRequestException('Seule une facture ou un avoir validé peut recevoir un règlement.');
-      const amount = round(dto.amount, 3);
+      const amount = round(dto.amount, currencyDecimals(doc.currency));
       if (amount - doc.balanceDue > EPS) throw new BadRequestException(`Le règlement (${amount}) dépasse le solde restant dû (${doc.balanceDue}).`);
       const date = (dto.date || today()).slice(0, 10);
       if (date > today()) throw new BadRequestException('La date d’un règlement ne peut pas être dans le futur.');
@@ -107,7 +108,7 @@ export class PaymentsService {
         throw new BadRequestException('L’avoir et la facture doivent concerner le même tiers.');
       }
       const max = Math.min(credit.balanceDue, invoice.balanceDue);
-      const amount = round(dto.amount ?? max, 3);
+      const amount = round(dto.amount ?? max, currencyDecimals(invoice.currency));
       if (amount <= EPS) throw new BadRequestException('Rien à imputer : l’avoir est épuisé ou la facture soldée.');
       if (amount - max > EPS) throw new BadRequestException(`Montant maximal imputable : ${round(max, 3)}.`);
       const company = await this.company.getOrCreate(actor.userId, em);
@@ -265,7 +266,7 @@ export class PaymentsService {
       : 0;
     const level = dto.level || Math.min(previous + 1, 3);
     const late = doc.dueDate ? Math.max(0, dayDiff(today(), String(doc.dueDate).slice(0, 10))) : 0;
-    const amount = `${doc.balanceDue.toFixed(3)} ${doc.currency}`;
+    const amount = `${doc.balanceDue.toFixed(currencyDecimals(doc.currency))} ${doc.currency}`;
     const due = doc.dueDate ? String(doc.dueDate).slice(0, 10).split('-').reverse().join('/') : '';
     const intro = {
       1: `Sauf erreur ou omission de notre part, la facture ${doc.number}${due ? ` échue le ${due}` : ''} reste impayée pour un solde de ${amount}.\nNous vous remercions de bien vouloir procéder à son règlement dans les meilleurs délais. Si ce paiement a été effectué entre-temps, merci de ne pas tenir compte de ce message.`,

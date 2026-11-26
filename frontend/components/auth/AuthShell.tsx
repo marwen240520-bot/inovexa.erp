@@ -32,6 +32,9 @@ const UI_FR = {
   sectorRequired: "Choisissez votre secteur d’activité.",
   termsRequired: "Vous devez accepter les conditions d’utilisation.",
   taxIdInvalid: "Matricule fiscal invalide : 7 chiffres + 1 lettre (ex. 1234567X ou 1234567X/A/M/000).",
+  taxIdInvalidAbroad: "Identifiant fiscal invalide : 3 à 40 caractères (lettres, chiffres, espace, point, tiret ou barre oblique).",
+  phoneInvalidAbroad: "Numéro invalide : saisissez-le avec l’indicatif du pays (ex. +33 6 12 34 56 78).",
+  currencyRequired: "Choisissez la devise de vos comptes.",
   otpFormat: "Saisissez le code à 6 chiffres.",
   tooMany: "Trop de tentatives. Réessayez plus tard.",
   tooManyMinutes: "Trop de tentatives. Réessayez dans {minutes} min.",
@@ -82,6 +85,9 @@ const UI_EN: AuthUi = {
   sectorRequired: "Choose your business sector.",
   termsRequired: "You must accept the terms of service.",
   taxIdInvalid: "Invalid tax ID: 7 digits + 1 letter (e.g. 1234567X or 1234567X/A/M/000).",
+  taxIdInvalidAbroad: "Invalid tax ID: 3 to 40 characters (letters, digits, space, dot, hyphen or slash).",
+  phoneInvalidAbroad: "Invalid number: enter it with the country code (e.g. +33 6 12 34 56 78).",
+  currencyRequired: "Choose the currency of your accounts.",
   otpFormat: "Enter the 6-digit code.",
   tooMany: "Too many attempts. Please try again later.",
   tooManyMinutes: "Too many attempts. Try again in {minutes} min.",
@@ -130,6 +136,9 @@ const UI_ES: AuthUi = {
   sectorRequired: "Elija su sector de actividad.",
   termsRequired: "Debe aceptar las condiciones de uso.",
   taxIdInvalid: "Identificación fiscal no válida: 7 cifras + 1 letra (p. ej. 1234567X o 1234567X/A/M/000).",
+  taxIdInvalidAbroad: "Identificación fiscal no válida: de 3 a 40 caracteres (letras, cifras, espacio, punto, guion o barra).",
+  phoneInvalidAbroad: "Número no válido: introdúzcalo con el prefijo del país (p. ej. +33 6 12 34 56 78).",
+  currencyRequired: "Elija la moneda de su contabilidad.",
   otpFormat: "Introduzca el código de 6 cifras.",
   tooMany: "Demasiados intentos. Inténtelo más tarde.",
   tooManyMinutes: "Demasiados intentos. Inténtelo de nuevo en {minutes} min.",
@@ -349,8 +358,15 @@ export function isValidPhone(value: string): boolean {
   return digits.length >= 8 && digits.length <= 15;
 }
 
-/** Matricule fiscal tunisien, ou numéro de CIN à 8 chiffres (backend/src/common/fiscal.ts). Vide = accepté. */
-export function isValidTaxId(value: string): boolean {
+/**
+ * Identifiant fiscal : matricule fiscal tunisien (ou CIN à 8 chiffres) pour la Tunisie, format libre ailleurs (n° de TVA, SIREN, ICE, NIF, EIN…),
+ * comme le serveur (backend/src/common/fiscal.ts). Vide = accepté.
+ */
+export function isValidTaxId(value: string, country = "TN"): boolean {
+  if (country !== "TN") {
+    const free = value.trim().toUpperCase().replace(/\s+/g, " ");
+    return !free || (free.length >= 3 && free.length <= 40 && /^[A-Z0-9][A-Z0-9 ./-]*$/.test(free));
+  }
   const compact = value.trim().toUpperCase().replace(/[\s/\\.-]/g, "");
   if (!compact) return true;
   return /^\d{8}$/.test(compact) || /^\d{7}[A-Z](?:[ABDNP](?:[MNPCE](?:\d{3})?)?)?$/.test(compact);

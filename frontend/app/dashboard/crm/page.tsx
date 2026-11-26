@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import ModuleNav, { CLIENT_TABS } from "@/components/erp/ModuleNav";
 import {
-  api, Badge, Btn, Card, Empty, ErrorBox, Field, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, StatusBadge, TableWrap, td, th,
+  api, Badge, Btn, Card, currencyUnit, Empty, ErrorBox, Field, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, StatusBadge, TableWrap, td, th,
   useLoad, useNotice, useRequireAuth,
 } from "@/components/erp/kit";
+import { useCompanyProfile } from "@/lib/company-profile";
 
 type Tab = "overview" | "followups" | "prices";
 type PartyType = "client" | "supplier";
@@ -44,6 +45,8 @@ function CrmContent() {
 
 // ───────────────────────── Fiche 360° ─────────────────────────
 function Overview({ notify }: { notify: (m: string, t?: "ok" | "err") => void }) {
+  // La retenue à la source est tunisienne ; l'identifiant fiscal et la devise suivent le pays de la société.
+  const profile = useCompanyProfile();
   const [type, setType] = useState<PartyType>("client");
   const [partyId, setPartyId] = useState<number | "">("");
   const parties = useLoad(() => api<any[]>(type === "client" ? "/clients" : "/suppliers"), [type]);
@@ -114,8 +117,8 @@ function Overview({ notify }: { notify: (m: string, t?: "ok" | "err") => void })
               {type === "client" && <div><small>Plafond d’encours</small><br /><b>{p.creditLimit != null ? moneyDT(p.creditLimit) : "—"}</b></div>}
               {type === "client" && <div><small>Remise habituelle</small><br /><b>{Number(p.discountPct || 0)} %</b></div>}
               {type === "client" && <div><small>Liste de prix</small><br /><b>{(lists.data || []).find((l: any) => l.id === p.priceListId)?.name || "Prix catalogue"}</b></div>}
-              <div><small>Retenue à la source</small><br /><b>{Number(p.withholdingRate || 0)} %</b></div>
-              <div><small>Matricule fiscal</small><br /><b>{p.taxId || "—"}</b></div>
+              {profile.features.withholding && <div><small>Retenue à la source</small><br /><b>{Number(p.withholdingRate || 0)} %</b></div>}
+              <div><small>{profile.taxIdLabel}</small><br /><b>{p.taxId || "—"}</b></div>
             </div>
             {p.notes && <p style={{ margin: "12px 0 0", fontSize: 14, whiteSpace: "pre-wrap" }}>{p.notes}</p>}
           </Card>
@@ -169,18 +172,18 @@ function Overview({ notify }: { notify: (m: string, t?: "ok" | "err") => void })
         <Modal title="Conditions commerciales" onClose={() => setEdit(null)} footer={<><Btn onClick={() => setEdit(null)}>Annuler</Btn><Btn variant="primary" busy={busy} onClick={saveConditions}>Enregistrer</Btn></>}>
           <Row>
             <Field label="Délai de paiement (jours)"><input style={inputStyle} inputMode="numeric" value={edit.paymentTermsDays} onChange={(e) => setEdit({ ...edit, paymentTermsDays: e.target.value })} placeholder="par défaut" /></Field>
-            <Field label="Retenue à la source (%)"><input style={inputStyle} inputMode="decimal" value={edit.withholdingRate} onChange={(e) => setEdit({ ...edit, withholdingRate: e.target.value })} /></Field>
+            {profile.features.withholding && <Field label="Retenue à la source (%)"><input style={inputStyle} inputMode="decimal" value={edit.withholdingRate} onChange={(e) => setEdit({ ...edit, withholdingRate: e.target.value })} /></Field>}
           </Row>
           {type === "client" && (
             <Row>
-              <Field label="Plafond d’encours (DT)" hint="Vide = illimité"><input style={inputStyle} inputMode="decimal" value={edit.creditLimit} onChange={(e) => setEdit({ ...edit, creditLimit: e.target.value })} /></Field>
+              <Field label={`Plafond d’encours (${currencyUnit()})`} hint="Vide = illimité"><input style={inputStyle} inputMode="decimal" value={edit.creditLimit} onChange={(e) => setEdit({ ...edit, creditLimit: e.target.value })} /></Field>
               <Field label="Remise habituelle (%)"><input style={inputStyle} inputMode="decimal" value={edit.discountPct} onChange={(e) => setEdit({ ...edit, discountPct: e.target.value })} /></Field>
             </Row>
           )}
           {type === "client" && (
             <Field label="Liste de prix"><select style={inputStyle} value={edit.priceListId} onChange={(e) => setEdit({ ...edit, priceListId: e.target.value })}><option value="">Prix catalogue</option>{(lists.data || []).filter((l: any) => l.active).map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></Field>
           )}
-          <Field label="Matricule fiscal" hint="Format 1234567/A/M/000 — contrôlé à l’enregistrement"><input style={inputStyle} value={edit.taxId} onChange={(e) => setEdit({ ...edit, taxId: e.target.value })} /></Field>
+          <Field label={profile.taxIdLabel} hint={profile.countryCode === "TN" ? "Format 1234567/A/M/000 — contrôlé à l’enregistrement" : "N° de TVA ou identifiant fiscal du tiers"}><input style={inputStyle} value={edit.taxId} onChange={(e) => setEdit({ ...edit, taxId: e.target.value })} /></Field>
           <div style={{ height: 8 }} />
           <Field label="Notes internes"><textarea style={{ ...inputStyle, minHeight: 70 }} value={edit.notes} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></Field>
         </Modal>

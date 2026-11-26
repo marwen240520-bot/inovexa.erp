@@ -66,3 +66,61 @@ export function amountToFrenchWords(amount: number, unit = 'dinar', subUnit = 'm
   const millimesText = `${integerToFrench(millimes)} ${subUnit}${millimes > 1 ? 's' : ''}`;
   return `${dinarsText} et ${millimesText}`;
 }
+
+// ───────────── Montant en lettres dans une autre devise ─────────────
+
+interface UnitWords { one: string; many: string; feminine?: boolean }
+interface CurrencyWords extends UnitWords { sub?: UnitWords & { digits: number } }
+
+const cents = (digits = 2): CurrencyWords['sub'] => ({ one: 'centime', many: 'centimes', digits });
+const cent = (): CurrencyWords['sub'] => ({ one: 'cent', many: 'cents', digits: 2 });
+
+/** Noms français des principales devises et de leur subdivision. Une devise absente de cette table n'a pas de montant en lettres. */
+const CURRENCY_WORDS: Record<string, CurrencyWords> = {
+  EUR: { one: 'euro', many: 'euros', sub: cents() },
+  USD: { one: 'dollar', many: 'dollars', sub: cent() },
+  CAD: { one: 'dollar canadien', many: 'dollars canadiens', sub: cent() },
+  AUD: { one: 'dollar australien', many: 'dollars australiens', sub: cent() },
+  GBP: { one: 'livre sterling', many: 'livres sterling', feminine: true, sub: { one: 'penny', many: 'pence', digits: 2 } },
+  CHF: { one: 'franc suisse', many: 'francs suisses', sub: cents() },
+  MAD: { one: 'dirham', many: 'dirhams', sub: cents() },
+  DZD: { one: 'dinar algérien', many: 'dinars algériens', sub: cents() },
+  LYD: { one: 'dinar libyen', many: 'dinars libyens', sub: { one: 'dirham', many: 'dirhams', digits: 3 } },
+  EGP: { one: 'livre égyptienne', many: 'livres égyptiennes', feminine: true, sub: { one: 'piastre', many: 'piastres', feminine: true, digits: 2 } },
+  SAR: { one: 'riyal saoudien', many: 'riyals saoudiens', sub: { one: 'halala', many: 'halalas', feminine: true, digits: 2 } },
+  AED: { one: 'dirham des Émirats arabes unis', many: 'dirhams des Émirats arabes unis', sub: { one: 'fils', many: 'fils', digits: 2 } },
+  QAR: { one: 'riyal qatari', many: 'riyals qataris', sub: { one: 'dirham', many: 'dirhams', digits: 2 } },
+  KWD: { one: 'dinar koweïtien', many: 'dinars koweïtiens', sub: { one: 'fils', many: 'fils', digits: 3 } },
+  JPY: { one: 'yen', many: 'yens' },
+  CNY: { one: 'yuan', many: 'yuans', sub: { one: 'fen', many: 'fens', digits: 2 } },
+  TRY: { one: 'livre turque', many: 'livres turques', feminine: true, sub: { one: 'kuruş', many: 'kuruş', digits: 2 } },
+  XOF: { one: 'franc CFA', many: 'francs CFA' },
+  XAF: { one: 'franc CFA', many: 'francs CFA' },
+};
+
+/** « un million » + « euros » -> « un million d'euros » ; « vingt et un » + « livre » (féminin) -> « vingt et une livre ». */
+function amountPart(n: number, unit: UnitWords): string {
+  let num = integerToFrench(n);
+  if (unit.feminine && n > 0) num = num.replace(/\bun$/, 'une');
+  const word = n > 1 ? unit.many : unit.one;
+  if (/(million|millions|milliard|milliards)$/.test(num)) return `${num} ${/^[aeiouàâéèêëîïôû]/i.test(word) ? "d'" : 'de '}${word}`;
+  return `${num} ${word}`;
+}
+
+/**
+ * Montant en lettres dans la devise de la pièce. Le dinar tunisien garde sa formulation d'origine (dinars et millimes) ;
+ * une devise dont le nom n'est pas connu donne `null` : la mention n'est alors pas imprimée (elle n'est obligatoire que dans certains pays).
+ */
+export function amountInWordsFor(amount: number, currency: string | null | undefined): string | null {
+  const code = String(currency || 'TND').toUpperCase();
+  if (code === 'TND') return amountToFrenchWords(amount);
+  const w = CURRENCY_WORDS[code];
+  if (!w) return null;
+  const digits = w.sub?.digits ?? 0;
+  const factor = 10 ** digits;
+  const total = Math.round(Math.abs(Number(amount) || 0) * factor + 1e-6);
+  const whole = Math.floor(total / factor);
+  const fraction = total % factor;
+  const main = amountPart(whole, w);
+  return w.sub && fraction > 0 ? `${main} et ${amountPart(fraction, w.sub)}` : main;
+}

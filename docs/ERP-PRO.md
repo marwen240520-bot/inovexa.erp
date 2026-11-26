@@ -68,7 +68,7 @@ Sessions de caisse (fond initial, rapport en direct, **clôture avec rapport Z n
 | ----- | ------- | ------- |
 | Factures & devis (documents commerciaux) | `/dashboard/documents` (+ `/new`, `/[id]`, `/[id]/edit`) — `/dashboard/invoices` y redirige | Liste par type et statut, import d’un historique Excel, éditeur de brouillon, fiche (validation, encaissement, conversion, avoir, envoi, PDF) |
 | Règlements et créances | `/dashboard/documents/payments` | Journal des règlements, balance âgée clients / fournisseurs |
-| Paramètres › Société & fiscalité | `/dashboard/company` (sous-onglet de Paramètres) | Identité, fiscalité (TVA, timbre, retenue), conditions par défaut, numérotation |
+| Paramètres › Société & fiscalité | `/dashboard/company` (sous-onglet de Paramètres) | Pays et devise, identité, fiscalité (taux de TVA ; timbre et retenue : Tunisie), conditions par défaut, numérotation |
 | Comptabilité | `/dashboard/accounting` | Journal, balance, résultat, TVA, rapprochement bancaire, écritures manuelles, export |
 | Ressources humaines | `/dashboard/hr` (employés) et `/dashboard/hr/payroll?tab=payroll|leaves|settings` | Un seul module avec sous-onglets : employés, bulletins (génération, validation, paiement, PDF), congés et soldes, paramètres de paie |
 | Clients › Fiche 360° / À relancer / Listes de prix | `/dashboard/crm?tab=overview|followups|prices` (sous-onglets de Clients) | Fiche 360°, conditions, échanges, relances, listes de prix |

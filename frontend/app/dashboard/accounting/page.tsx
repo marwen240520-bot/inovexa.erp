@@ -4,12 +4,14 @@ import {
   api, Badge, Btn, Card, Empty, ErrorBox, Field, fetchFile, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, Tabs, td, th,
   todayISO, useLoad, useNotice, useRequireAuth,
 } from "@/components/erp/kit";
+import { useCompanyProfile } from "@/lib/company-profile";
 
 type Tab = "journal" | "balance" | "result" | "vat" | "bank";
 const yearStart = () => `${new Date().getFullYear()}-01-01`;
 
 export default function AccountingPage() {
   useRequireAuth();
+  const profile = useCompanyProfile();
   const [tab, setTab] = useState<Tab>("journal");
   const [from, setFrom] = useState(yearStart());
   const [to, setTo] = useState(todayISO());
@@ -21,7 +23,7 @@ export default function AccountingPage() {
   return (
     <Page
       title="Comptabilité"
-      subtitle="Écritures générées automatiquement par les ventes, achats, règlements et la paie — plan comptable indicatif à valider avec votre comptable"
+      subtitle={`Écritures générées automatiquement par les ventes, achats, règlements${profile.features.payroll ? " et la paie" : ""} — plan comptable indicatif à valider avec votre comptable`}
       actions={
         <>
           {exportKind[tab] && <Btn onClick={() => fetchFile(`/accounting/export/${exportKind[tab]}`, { query: { from, to } }).catch((e) => notify(e.message, "err"))}>Exporter en Excel</Btn>}
@@ -137,6 +139,8 @@ function Result({ from, to }: { from: string; to: string }) {
 }
 
 function Vat({ from, to }: { from: string; to: string }) {
+  // Timbre et retenues à la source : propres à la Tunisie.
+  const { features } = useCompanyProfile();
   const data = useLoad(() => api<any>("/accounting/vat", { query: { from, to } }), [from, to]);
   const d = data.data;
   const side = (title: string, s: any) => (
@@ -158,7 +162,8 @@ function Vat({ from, to }: { from: string; to: string }) {
         <>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
             <Stat label="TVA à payer" value={moneyDT(d.vatPayable)} tone={d.vatPayable > 0 ? "bad" : undefined} /><Stat label="Crédit de TVA" value={moneyDT(d.vatCredit)} tone={d.vatCredit > 0 ? "good" : undefined} />
-            <Stat label="Timbre facturé" value={moneyDT(d.stampDutyCollected)} /><Stat label="Retenues subies" value={moneyDT(d.withholdingSuffered)} /><Stat label="Retenues opérées" value={moneyDT(d.withholdingOperated)} />
+            {features.stampDuty && <Stat label="Timbre facturé" value={moneyDT(d.stampDutyCollected)} />}
+            {features.withholding && <><Stat label="Retenues subies" value={moneyDT(d.withholdingSuffered)} /><Stat label="Retenues opérées" value={moneyDT(d.withholdingOperated)} /></>}
           </div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>{side("TVA collectée (ventes)", d.collected)}{side("TVA déductible (achats)", d.deductible)}</div>
         </>

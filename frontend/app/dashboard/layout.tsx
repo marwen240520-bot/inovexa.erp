@@ -1,9 +1,10 @@
 "use client";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { useDeviceHint } from "@/contexts/DeviceContext";
-import { AppShellProvider } from "@/components/ui/PageSkeleton";
+import PageSkeleton, { AppShellProvider } from "@/components/ui/PageSkeleton";
+import { initCompanyProfile, refreshCompanyProfile, useCompanyProfile } from "@/lib/company-profile";
 import FloatingAssistant from "@/components/assistant/FloatingAssistant";
 import AccountBar from "@/components/account/AccountBar";
 
@@ -18,6 +19,17 @@ export default function DashboardLayout({
   const isMobileHint = useDeviceHint();
   const [isMobile, setIsMobile] = useState(isMobileHint);
   const [mounted, setMounted] = useState(false);
+  // Profil de la société (pays, devise, taux de TVA, fonctions locales) : tout le contenu s'affiche avec SES montants.
+  const profile = useCompanyProfile();
+  const [profileReady, setProfileReady] = useState(false);
+
+  useEffect(() => {
+    // La copie du navigateur s'applique tout de suite (jamais pendant l'hydratation : le serveur ne connaît que les valeurs
+    // par défaut), puis la valeur du serveur la remplace si elle a changé.
+    initCompanyProfile();
+    setProfileReady(true);
+    void refreshCompanyProfile();
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -68,7 +80,8 @@ export default function DashboardLayout({
       >
         {/* État du compte : temps d'essai restant, abonnement bientôt échu. Rien n'est affiché quand tout est en ordre. */}
         <AccountBar />
-        <AppShellProvider>{children}</AppShellProvider>
+        {/* Le contenu attend le profil de la société ; si sa devise change (Paramètres › Société), il se reconstruit avec la nouvelle. */}
+        <AppShellProvider>{profileReady ? <Fragment key={`${profile.currency}:${profile.countryCode}`}>{children}</Fragment> : <PageSkeleton />}</AppShellProvider>
       </main>
 
       {/* Bouton « Chat IA » sur toutes les pages (masquable dans Paramètres › Préférences) */}

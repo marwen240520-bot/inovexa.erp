@@ -30,14 +30,14 @@ export interface HomeText {
 
 export const HOME_TEXTS: Record<HomeLang, HomeText> = {
   fr: {
-    badge: "ERP tunisien · 100 % en ligne · IA intégrée",
+    badge: "ERP international · 100 % en ligne · IA intégrée",
     title: "L'avenir de la gestion d'entreprise commence ici.",
     subtitle: "Ventes, stock, factures, comptabilité, paie et caisse dans une seule application. Inovexa ERP s'adapte à votre secteur dès l'inscription.",
     trialCta: "Essayer gratuitement {trial}",
     loginCta: "Se connecter",
     dashboardCta: "Accéder à mon espace",
     pricingCta: "Voir les tarifs",
-    trust: ["{trial} d’essai, sans carte bancaire", "Rien à installer", "TVA, timbre fiscal et El Fatoora"],
+    trust: ["{trial} d’essai, sans carte bancaire", "Rien à installer", "Votre devise, votre TVA, votre pays"],
     header: { home: "Accueil", products: "Produits", pricing: "Tarifs", blog: "Blog", about: "À propos", contact: "Contact", trial: "Essai gratuit", login: "Se connecter", language: "Choisir la langue" },
     why: {
       eyebrow: "Pourquoi Inovexa ERP",
@@ -48,7 +48,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
         { title: "Gestion centralisée", desc: "Tous vos processus métier réunis sur une seule plateforme." },
         { title: "Pilotage en temps réel", desc: "Tableaux de bord, rapports et alertes pour décider avec des chiffres à jour." },
         { title: "Sécurité et travail en équipe", desc: "Droits par rôle, double authentification et journal d'activité." },
-        { title: "Pensé pour la Tunisie", desc: "TVA par taux, timbre fiscal, retenue à la source, paie CNSS et IRPP, fichier TEIF." },
+        { title: "Adapté à votre pays", desc: "Devise, taux de TVA et identifiant fiscal propres à votre société. En Tunisie : timbre fiscal, retenue à la source, paie CNSS et IRPP, fichier TEIF." },
       ],
     },
     modules: {
@@ -75,7 +75,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     },
     pricing: {
       eyebrow: "Tarifs",
-      title: "Des prix clairs, en dinars",
+      title: "Des prix clairs, en dollars",
       lead: "Prix en dollars, hors taxes, par société. Paiement en ligne par carte bancaire.", twoMonths: "Deux mois offerts avec l'abonnement annuel.",
       perMonth: "/ mois", exclTax: "HT", users: "Jusqu’à {n} utilisateurs", unlimited: "Utilisateurs illimités", popular: "Recommandée",
       choose: "Commencer l'essai gratuit", annual: "ou {price} HT par an", onQuote: "Sur devis", cta: "Comparer les formules en détail",
@@ -95,14 +95,14 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     shipments: "Expéditions",
   },
   en: {
-    badge: "Tunisian ERP · 100% online · built-in AI",
+    badge: "International ERP · 100% online · built-in AI",
     title: "The future of business management starts here.",
     subtitle: "Sales, stock, invoices, accounting, payroll and checkout in one application. Inovexa ERP adapts to your sector from sign-up.",
     trialCta: "Try it free for {trial}",
     loginCta: "Sign in",
     dashboardCta: "Open my workspace",
     pricingCta: "View pricing",
-    trust: ["{trial} free trial, no bank card", "Nothing to install", "VAT, stamp duty and El Fatoora"],
+    trust: ["{trial} free trial, no bank card", "Nothing to install", "Your currency, your VAT, your country"],
     header: { home: "Home", products: "Products", pricing: "Pricing", blog: "Blog", about: "About", contact: "Contact", trial: "Free trial", login: "Sign in", language: "Choose language" },
     why: {
       eyebrow: "Why Inovexa ERP",
@@ -113,7 +113,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
         { title: "Centralized management", desc: "All your business processes on a single platform." },
         { title: "Real-time steering", desc: "Dashboards, reports and alerts to decide with up-to-date figures." },
         { title: "Security and teamwork", desc: "Role-based rights, two-factor authentication and activity log." },
-        { title: "Built for Tunisia", desc: "VAT by rate, stamp duty, withholding tax, CNSS and IRPP payroll, TEIF file." },
+        { title: "Adapted to your country", desc: "Currency, VAT rates and tax ID set for your own company. In Tunisia: stamp duty, withholding tax, CNSS and IRPP payroll, TEIF file." },
       ],
     },
     modules: {
@@ -140,7 +140,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     },
     pricing: {
       eyebrow: "Pricing",
-      title: "Clear prices, in dinars",
+      title: "Clear prices, in US dollars",
       lead: "Prices in US dollars, excluding tax, per company. Pay online by bank card.", twoMonths: "Two months free with the yearly plan.",
       perMonth: "/ month", exclTax: "excl. tax", users: "Up to {n} users", unlimited: "Unlimited users", popular: "Recommended",
       choose: "Start the free trial", annual: "or {price} excl. tax per year", onQuote: "On quote", cta: "Compare plans in detail",
@@ -160,14 +160,14 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     shipments: "Shipments",
   },
   es: {
-    badge: "ERP tunecino · 100 % en línea · IA integrada",
+    badge: "ERP internacional · 100 % en línea · IA integrada",
     title: "El futuro de la gestión empresarial comienza aquí.",
     subtitle: "Ventas, stock, facturas, contabilidad, nóminas y caja en una sola aplicación. Inovexa ERP se adapta a su sector desde el registro.",
     trialCta: "Probar gratis {trial}",
     loginCta: "Iniciar sesión",
     dashboardCta: "Abrir mi espacio",
     pricingCta: "Ver precios",
-    trust: ["{trial} de prueba, sin tarjeta bancaria", "Nada que instalar", "IVA, timbre fiscal y El Fatoora"],
+    trust: ["{trial} de prueba, sin tarjeta bancaria", "Nada que instalar", "Su moneda, su IVA, su país"],
     header: { home: "Inicio", products: "Productos", pricing: "Precios", blog: "Blog", about: "Nosotros", contact: "Contacto", trial: "Prueba gratis", login: "Iniciar sesión", language: "Elegir idioma" },
     why: {
       eyebrow: "Por qué Inovexa ERP",
@@ -178,7 +178,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
         { title: "Gestión centralizada", desc: "Todos sus procesos de negocio en una sola plataforma." },
         { title: "Dirección en tiempo real", desc: "Paneles, informes y alertas para decidir con cifras al día." },
         { title: "Seguridad y trabajo en equipo", desc: "Permisos por rol, autenticación en dos pasos y registro de actividad." },
-        { title: "Pensado para Túnez", desc: "IVA por tipo, timbre fiscal, retención en la fuente, nóminas CNSS e IRPP, archivo TEIF." },
+        { title: "Adaptado a su país", desc: "Moneda, tipos de IVA e identificación fiscal propios de su empresa. En Túnez: timbre fiscal, retención en la fuente, nóminas CNSS e IRPP, archivo TEIF." },
       ],
     },
     modules: {
@@ -205,7 +205,7 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     },
     pricing: {
       eyebrow: "Precios",
-      title: "Precios claros, en dinares",
+      title: "Precios claros, en dólares",
       lead: "Precios en dólares, sin impuestos, por empresa. Pago en línea con tarjeta bancaria.", twoMonths: "Dos meses gratis con el plan anual.",
       perMonth: "/ mes", exclTax: "sin IVA", users: "Hasta {n} usuarios", unlimited: "Usuarios ilimitados", popular: "Recomendado",
       choose: "Empezar la prueba gratuita", annual: "o {price} sin IVA al año", onQuote: "A consultar", cta: "Comparar los planes en detalle",

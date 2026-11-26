@@ -6,7 +6,7 @@
  * société (« Réservations » au restaurant, « Séances » en formation) — voir lib/sectorLabels.ts.
  */
 import React, { FormEvent, useEffect, useMemo, useState } from "react";
-import { api, ApiError, Badge, Btn, Card, Empty, ErrorBox, inputStyle, Loading, Modal, moneyDT, Notice, Page, Row, Stat, useLoad, useNotice, useRequireAuth } from "@/components/erp/kit";
+import { api, ApiError, Badge, Btn, Card, currencyUnit, Empty, ErrorBox, inputStyle, Loading, Modal, moneyDT, Notice, Page, Row, Stat, useLoad, useNotice, useRequireAuth } from "@/components/erp/kit";
 import { appointmentWords } from "@/lib/sectorLabels";
 import { MODULES_CHANGED_EVENT, getStoredUser } from "@/lib/session";
 
@@ -154,7 +154,7 @@ function AppointmentModal({ item, day, clients, summary, sector, onClose, onDone
         <Row>
           <label style={field("2 1 240px")}><span style={label}>Intitulé affiché dans l’agenda (facultatif)</span><input value={form.title} onChange={(e) => set("title", e.target.value)} maxLength={160} style={inputStyle} placeholder={form.service || form.clientName || ""} /></label>
           {words.party ? <label style={field("1 1 110px")}><span style={label}>{words.party.fr}</span><input type="number" min={1} step={1} value={form.partySize} onChange={(e) => set("partySize", e.target.value)} style={inputStyle} /></label> : null}
-          <label style={field("1 1 130px")}><span style={label}>Montant prévu (DT)</span><input inputMode="decimal" value={form.price} onChange={(e) => set("price", e.target.value)} style={inputStyle} /></label>
+          <label style={field("1 1 130px")}><span style={label}>{`Montant prévu (${currencyUnit()})`}</span><input inputMode="decimal" value={form.price} onChange={(e) => set("price", e.target.value)} style={inputStyle} /></label>
         </Row>
         <label style={field("1 1 auto")}><span style={label}>Notes</span><textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} maxLength={2000} style={{ ...inputStyle, resize: "vertical" }} /></label>
         <p style={{ margin: 0, fontSize: 12.5, color: "var(--theme-text-secondary)", lineHeight: 1.5 }}>

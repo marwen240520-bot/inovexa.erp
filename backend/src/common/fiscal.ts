@@ -1,5 +1,7 @@
 /**
- * Règles fiscales tunisiennes utilisées par les documents commerciaux.
+ * Règles fiscales par défaut (Tunisie) des documents commerciaux. Pour une société d'un autre pays, les taux de TVA se
+ * règlent dans sa fiche (voir vatRatesFor) ; le droit de timbre, la retenue à la source tunisienne et le TEIF ne
+ * s'appliquent qu'aux sociétés tunisiennes (voir localFeatures dans countries.ts).
  *
  * Sources vérifiées (PwC Tax Summaries – Tunisia, loi de finances 2026) :
  *  - TVA : 19 % (taux normal), 13 % et 7 % (taux réduits), 0 % (exonéré / export) ;
@@ -53,8 +55,29 @@ export function stampDutyFor(totalTTC: number, scale: StampScale = 'flat', flatA
 export interface TaxIdCheck {
   valid: boolean;
   normalized: string;
-  kind: 'mf' | 'cin' | 'empty' | 'invalid';
+  kind: 'mf' | 'cin' | 'other' | 'empty' | 'invalid';
   message?: string;
+}
+
+export interface TaxIdOptions {
+  /** Pays de la société (ISO) : la règle stricte du matricule fiscal ne vaut que pour la Tunisie (défaut). */
+  country?: string | null;
+  /** Vrai pour un client ou un fournisseur : un identifiant étranger précédé du code pays (FR12345678901) est accepté. */
+  party?: boolean;
+}
+
+/** Identifiant fiscal étranger (n° de TVA, SIREN, ICE, NIF, EIN…) : format libre, seuls les caractères usuels sont contrôlés. */
+function foreignTaxId(raw: string): TaxIdCheck {
+  const v = raw.trim().toUpperCase().replace(/\s+/g, ' ');
+  if (v.length < 3 || v.length > 40 || !/^[A-Z0-9][A-Z0-9 ./-]*$/.test(v)) {
+    return {
+      valid: false,
+      normalized: v,
+      kind: 'invalid',
+      message: 'Identifiant fiscal invalide : 3 à 40 caractères (lettres, chiffres, espace, point, tiret ou barre oblique).',
+    };
+  }
+  return { valid: true, normalized: v, kind: 'other' };
 }
 
 /**
@@ -62,10 +85,14 @@ export interface TaxIdCheck {
  * code établissement (M, N, P, C, E) et numéro d'établissement à 3 chiffres.
  * Exemple : 1234567X/A/M/000 ou, sans le détail, 1234567X. Un numéro de CIN (8 chiffres) est accepté pour un particulier.
  */
-export function validateTaxId(value: string | null | undefined): TaxIdCheck {
+export function validateTaxId(value: string | null | undefined, opts: TaxIdOptions = {}): TaxIdCheck {
   const raw = String(value ?? '').trim();
   if (!raw) return { valid: true, normalized: '', kind: 'empty' };
+  // Hors Tunisie : format libre (n° de TVA, SIREN, ICE, NIF, EIN…).
+  if (String(opts.country || 'TN').toUpperCase() !== 'TN') return foreignTaxId(raw);
   const compact = raw.toUpperCase().replace(/[\s/\\.-]/g, '');
+  // Tiers étranger d'une société tunisienne : « FR12345678901 », « MA001234567890123 » (un matricule tunisien commence par un chiffre).
+  if (opts.party && /^[A-Z]{2}[A-Z0-9]{3,}$/.test(compact)) return foreignTaxId(raw);
   if (/^\d{8}$/.test(compact)) return { valid: true, normalized: compact, kind: 'cin' };
   const m = /^(\d{7})([A-Z])(?:([ABDNP])(?:([MNPCE])(\d{3})?)?)?$/.exec(compact);
   if (!m) {
@@ -73,7 +100,9 @@ export function validateTaxId(value: string | null | undefined): TaxIdCheck {
       valid: false,
       normalized: compact,
       kind: 'invalid',
-      message: 'Matricule fiscal invalide : 7 chiffres + 1 lettre (ex. 1234567X ou 1234567X/A/M/000).',
+      message:
+        'Matricule fiscal invalide : 7 chiffres + 1 lettre (ex. 1234567X ou 1234567X/A/M/000).' +
+        (opts.party ? ' Pour un tiers étranger, faites précéder son identifiant du code pays (ex. FR12345678901).' : ''),
     };
   }
   const [, digits, key, category, establishment, number] = m;
@@ -82,4 +111,41 @@ export function validateTaxId(value: string | null | undefined): TaxIdCheck {
   if (establishment) parts.push(establishment);
   if (number) parts.push(number);
   return { valid: true, normalized: parts.join('/'), kind: 'mf' };
+}
+
+// ───────────── Taux de TVA par société ─────────────
+
+/** Liste de taux saisie : nombres de 0 à 100 (deux décimales au plus), sans doublon, triés. */
+export function parseVatRates(input: unknown): { rates: number[]; error?: string } {
+  if (!Array.isArray(input)) return { rates: [], error: 'Les taux de TVA doivent former une liste de nombres.' };
+  const out = new Set<number>();
+  for (const item of input) {
+    const n = Number(typeof item === 'string' ? item.replace(',', '.') : item);
+    if (item === null || item === '' || !Number.isFinite(n) || n < 0 || n > 100 || Math.round(n * 100) / 100 !== n) {
+      return { rates: [], error: `Taux de TVA invalide : « ${item} » (nombre de 0 à 100, deux décimales au plus).` };
+    }
+    out.add(n);
+  }
+  if (out.size === 0) return { rates: [], error: 'Indiquez au moins un taux de TVA (0 si vous n’en facturez pas).' };
+  if (out.size > 20) return { rates: [], error: 'Vingt taux de TVA au maximum.' };
+  return { rates: [...out].sort((a, b) => a - b) };
+}
+
+export interface VatSource {
+  countryCode?: string | null;
+  vatRates?: unknown;
+  defaultVatRate?: unknown;
+}
+
+/**
+ * Taux de TVA que la société peut utiliser : sa liste, sinon celle de son pays (Tunisie : 0, 7, 13, 19 ; ailleurs : 0).
+ * Son taux par défaut en fait toujours partie, pour qu'une pièce créée sans taux précis reste valide.
+ */
+export function vatRatesFor(company: VatSource): number[] {
+  const configured = Array.isArray(company.vatRates) && company.vatRates.length ? parseVatRates(company.vatRates).rates : [];
+  const base = configured.length ? configured : String(company.countryCode || 'TN').toUpperCase() === 'TN' ? [...VAT_RATES] : [0];
+  const set = new Set<number>(base);
+  const def = Number(company.defaultVatRate);
+  if (Number.isFinite(def) && def >= 0 && def <= 100) set.add(Math.round(def * 100) / 100);
+  return [...set].sort((a, b) => a - b);
 }

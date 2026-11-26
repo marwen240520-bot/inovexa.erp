@@ -858,6 +858,8 @@
     "currentLanguage": "Langue actuelle",
     "currency": "Devise",
     "example": "Exemple",
+    "currencyFromCompany": "La devise est celle de votre société : elle s’applique à tous les montants.",
+    "changeInCompany": "Modifier dans Paramètres › Société",
     "dateFormat": "Format de date",
     "settingsSaved": "Paramètres enregistrés avec succès",
     "settingsReset": "Paramètres réinitialisés aux valeurs par défaut",

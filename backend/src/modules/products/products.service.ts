@@ -1,5 +1,6 @@
 ﻿// products.service.ts
-import { VAT_RATES } from '../../common/fiscal';
+import { vatRatesFor } from '../../common/fiscal';
+import { CompanyService } from '../company/company.service';
 import {
   Injectable,
   NotFoundException,
@@ -20,6 +21,7 @@ export class ProductsService {
     @InjectDataSource()
     private dataSource: DataSource,
     private stock: StockService,
+    private company: CompanyService,
   ) {}
 
   /** Crée le produit ; son stock de départ entre dans le journal des mouvements (type « opening »). */
@@ -60,19 +62,21 @@ export class ProductsService {
       quantity: this.parseNumber(data.quantity),
       categoryId: this.parseCategoryId(data.categoryId),
       imageUrl: this.cleanImage(data.imageUrl),
-      ...this.erpFields(data),
+      ...(await this.erpFields(userId, data)),
       userId: userId,
     };
     return this.createWithOpeningStock(userId, productData, this.optionalCost(data));
   }
 
   /** Champs ERP d'un produit (TVA, unité, seuil d'alerte, code-barres, service/stockable, lots), validés. */
-  private erpFields(data: any): Record<string, any> {
+  private async erpFields(userId: number, data: any): Promise<Record<string, any>> {
     const out: Record<string, any> = {};
     if (!data || typeof data !== 'object') return out;
     if (data.vatRate !== undefined && data.vatRate !== null && data.vatRate !== '') {
       const v = Number(data.vatRate);
-      if (!(VAT_RATES as readonly number[]).includes(v)) throw new BadRequestException(`Taux de TVA invalide (${VAT_RATES.join(', ')} %).`);
+      // Les taux admis sont ceux de la société (Paramètres > Société) : 0, 7, 13 et 19 % pour une société tunisienne.
+      const allowed = vatRatesFor(await this.company.getOrCreate(userId));
+      if (!allowed.includes(v)) throw new BadRequestException(`Taux de TVA invalide (${allowed.join(', ')} %).`);
       out.vatRate = v;
     }
     if (data.minStock !== undefined && data.minStock !== null && data.minStock !== '') {
@@ -159,7 +163,7 @@ export class ProductsService {
     // Le coût moyen (avgCost) est calculé par le module Stock : il ne se modifie pas ici.
     const { quantity, avgCost: _avg, id: _id, userId: _userId, user: _user, category: _category, createdAt: _c, updatedAt: _u, vatRate: _v, minStock: _m, unit: _un, barcode: _b, isStockable: _s, trackLots: _t, ...updateData } = data || {};
     if ('imageUrl' in updateData) updateData.imageUrl = this.cleanImage(updateData.imageUrl);
-    Object.assign(product, updateData, this.erpFields(data));
+    Object.assign(product, updateData, await this.erpFields(userId, data));
     return this.productRepository.save(product);
   }
 

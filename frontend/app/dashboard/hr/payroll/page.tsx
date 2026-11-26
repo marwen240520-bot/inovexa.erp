@@ -6,6 +6,7 @@ import {
   api, Badge, Btn, Card, Empty, ErrorBox, Field, fetchFile, fmtDate, inputStyle, Loading, Modal, money, moneyDT, Notice, num, Page, Row, Stat, TableWrap, td, th,
   todayISO, useLoad, useNotice, useRequireAuth,
 } from "@/components/erp/kit";
+import { useCompanyProfile } from "@/lib/company-profile";
 
 type Tab = "payroll" | "leaves" | "settings";
 const KINDS: Record<string, string> = { paid: "Congé payé", sick: "Maladie", unpaid: "Sans solde", maternity: "Maternité / paternité", other: "Autre" };
@@ -24,12 +25,15 @@ function PayrollContent() {
   useRequireAuth();
   const params = useSearchParams();
   const raw = params.get("tab");
-  const tab: Tab = raw === "leaves" || raw === "settings" ? raw : "payroll";
+  // La paie (CNSS, IRPP, CSS) est tunisienne : ailleurs, seuls les congés restent ici.
+  const canPay = useCompanyProfile().features.payroll;
+  const tab: Tab = !canPay ? "leaves" : raw === "leaves" || raw === "settings" ? raw : "payroll";
   const [notice, notify] = useNotice();
   return (
     <Page title="Ressources humaines" subtitle={SUBTITLE[tab]}>
       <ModuleNav tabs={HR_TABS} label="Ressources humaines" />
       {notice}
+      {!canPay && (raw === "payroll" || raw === "settings") && <Notice>Les bulletins de paie (CNSS, IRPP) ne sont disponibles que pour les sociétés tunisiennes. Les congés restent gérés ici.</Notice>}
       {tab === "payroll" && <Payslips notify={notify} />}
       {tab === "leaves" && <Leaves notify={notify} />}
       {tab === "settings" && <Settings notify={notify} />}
