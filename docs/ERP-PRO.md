@@ -129,7 +129,7 @@ Le budget et le coût sont indicatifs : ils ne génèrent pas d'écriture compta
 | **Facture électronique** | L'ERP produit le fichier **TEIF 1.8.8** attendu par El Fatoora (validé contre le schéma XSD de TTN). La signature et la transmission se font sur la plateforme avec le certificat de la société : voir `docs/EL-FATOORA.md`. |
 | **Retenue à la source / timbre** | Taux et seuil paramétrables ; vérifier qu'ils correspondent à la loi de finances en vigueur et à vos clients. |
 | **TVA** | La déclaration est calculée sur la **date de facture** (régime des débits), pas sur l'encaissement. |
-| **PDF** | Texte latin uniquement (polices standard) : pas d'arabe dans les documents imprimés. |
+| **PDF** | Texte latin uniquement (polices standard). |
 | **Clôture d'exercice** | Pas de verrouillage de période comptable ni de report à nouveau automatique. |
 | **Multi-société** | Une société par compte ; les membres d'équipe partagent les données du propriétaire. |
 | **Caisse** | Pas de mode hors ligne ; pas d'intégration d'imprimante fiscale. |

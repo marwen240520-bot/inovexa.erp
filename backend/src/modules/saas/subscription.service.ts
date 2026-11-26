@@ -6,8 +6,11 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, IsNull } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { MailService } from '../../common/mail/mail.service';
+import { pickMailLang } from '../../common/mail/auth-mails';
+import { expiredMail, paymentRejectedMail, receiptMail, refundMail, renewalReminderMail, suspendedMail, trialReminderMail } from '../../common/mail/billing-mails';
+import { SequenceService } from '../../common/sequences/sequence.service';
 import { AuditService } from '../../common/audit/audit.service';
-import { frontendUrl } from '../../common/origins';
+import { allowedOrigins, apiPublicUrl, frontendUrl } from '../../common/origins';
 import { Plan, PlatformSettings, SubscriptionPayment } from './entities/saas.entity';
 import { Sector } from './entities/sector.entity';
 import { SaasSettingsService } from './saas-settings.service';
@@ -20,6 +23,8 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 const frontend = () => frontendUrl();
+/** Les reçus de la plateforme ont leur propre compteur (userId 0 : aucune société). */
+const PLATFORM_SEQUENCE_OWNER = 0;
 /** Durée de validité d'une page de paiement en ligne. */
 const CHECKOUT_MINUTES = 30;
 /** Pages de paiement qu'un compte peut ouvrir par heure (un clic malheureux ne doit pas bloquer, un robot si). */
@@ -55,6 +60,8 @@ export interface AccountView {
 export class SubscriptionService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger('Subscription');
   private timer: NodeJS.Timeout | null = null;
+  /** Compteurs de numérotation légale (sans état : le compteur est en base). */
+  private readonly sequences = new SequenceService();
 
   constructor(
     @InjectDataSource() private readonly ds: DataSource,
@@ -112,12 +119,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     );
     if (!res.affected) return; // déjà fait par une autre requête
     void this.audit.record({ userId: owner.id, actorId: null, action: 'account_expired', entity: 'account', entityId: owner.id, details: { reason } });
-    void this.mail.trySend({
-      to: owner.email,
-      subject: reason === 'TRIAL_EXPIRED' ? 'Votre essai gratuit Inovexa ERP est terminé' : 'Votre abonnement Inovexa ERP est arrivé à échéance',
-      text: `Bonjour ${owner.name},\n\n${blockMessage(reason)}\n\nChoisir une formule : ${frontend()}/subscription\n\nL’équipe Inovexa ERP`,
-      html: `<p>Bonjour ${esc(owner.name)},</p><p>${esc(blockMessage(reason))}</p><p><a href="${frontend()}/subscription">Choisir une formule</a></p><p>L’équipe Inovexa ERP</p>`,
-    });
+    void this.mail.trySend({ to: owner.email, ...expiredMail({ lang: pickMailLang(owner.language), name: owner.name, reason, url: `${frontend()}/subscription` }) });
   }
 
   /** Démarre l'essai gratuit d'un compte qui vient d'être créé. La durée vient des réglages de la plateforme. */
@@ -200,10 +202,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     owner.statusChangedAt = new Date();
     await this.users().save(owner);
     await this.log(adminId, owner.id, 'account_suspended', { reason: owner.statusReason });
-    void this.mail.trySend({
-      to: owner.email, subject: 'Votre compte Inovexa ERP est suspendu',
-      text: `Bonjour ${owner.name},\n\n${blockMessage('SUSPENDED')}${owner.statusReason ? `\nMotif : ${owner.statusReason}` : ''}\n\n${frontend()}/subscription`,
-    });
+    void this.mail.trySend({ to: owner.email, ...suspendedMail({ lang: pickMailLang(owner.language), name: owner.name, reason: owner.statusReason, url: `${frontend()}/subscription` }) });
     return this.view(owner, await this.settings.get());
   }
 
@@ -320,7 +319,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
         included: !allowed || allowed.has(key),
         recommended: sectorMods[key] === true,
       })),
-      sectors: sectors.map((s) => ({ code: s.code, name: s.name, nameEn: s.nameEn, nameAr: s.nameAr, modules: s.modules || [] })),
+      sectors: sectors.map((s) => ({ code: s.code, name: s.name, nameEn: s.nameEn, modules: s.modules || [] })),
     };
   }
 
@@ -524,16 +523,21 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     payment.periodStart = start;
     payment.periodEnd = end;
     payment.checkoutUrl = null;
-    payment.receiptNumber = `REC-${now.getUTCFullYear()}-${String(payment.id).padStart(5, '0')}`;
+    // Numéro de reçu attribué dans la MÊME transaction que la validation : la suite est continue, sans trou (un paiement
+    // abandonné ou refusé ne consomme aucun numéro).
+    const year = now.getUTCFullYear();
+    payment.receiptNumber = this.sequences.format('REC', year, await this.sequences.next(em, PLATFORM_SEQUENCE_OWNER, 'platform_receipt', year));
     await em.getRepository(SubscriptionPayment).save(payment);
     return { payment, owner };
   }
 
   private receiptMail(owner: User, payment: SubscriptionPayment, online: boolean) {
-    const paid = `${payment.amountTTC} ${payment.currency} TTC`;
     void this.mail.trySend({
-      to: owner.email, subject: `${online ? 'Paiement reçu' : 'Paiement validé'} — reçu ${payment.receiptNumber}`,
-      text: `Bonjour ${owner.name},\n\n${online ? `Nous avons bien reçu votre paiement par carte de ${paid}.` : `Votre paiement de ${paid} est validé.`} Formule ${payment.planName}, accès jusqu’au ${fmtDate(payment.periodEnd)}.\nReçu : ${payment.receiptNumber}\n\n${frontend()}/dashboard/billing\n\nMerci,\nL’équipe Inovexa ERP`,
+      to: owner.email,
+      ...receiptMail({
+        lang: pickMailLang(owner.language), name: owner.name, online, amount: payment.amountTTC, currency: payment.currency, planName: payment.planName,
+        periodEnd: payment.periodEnd, receiptNumber: String(payment.receiptNumber || ''), url: `${frontend()}/dashboard/billing`,
+      }),
     });
   }
 
@@ -733,6 +737,121 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     return { checked: rows.length, paid };
   }
 
+  /**
+   * Support : « j'ai payé mais mon accès n'est pas ouvert ». Relit tout de suite chez Konnect l'état du paiement et, s'il
+   * est encaissé, ouvre l'abonnement. Fonctionne aussi pour une page de paiement que le client a payée après son expiration.
+   */
+  async recheckPayment(paymentId: number, adminId: number) {
+    const row = await this.ds.getRepository(SubscriptionPayment).findOne({ where: { id: paymentId } });
+    if (!row || row.provider !== 'konnect') throw new NotFoundException('Paiement en ligne introuvable.');
+    if (!row.providerRef) throw new ConflictException('Ce paiement n’a jamais été ouvert chez le prestataire : il n’y a rien à relire.');
+    const out = await this.confirmCheckout({ id: paymentId });
+    await this.audit.record({ userId: row.userId, actorId: adminId, action: 'payment_rechecked', entity: 'subscription_payment', entityId: row.id, details: { before: row.status, result: out.status } });
+    return { status: out.status, payment: out.payment };
+  }
+
+  /**
+   * Remboursement d'un paiement validé, décidé par l'administrateur. Konnect n'a pas d'API de remboursement : le virement
+   * se fait depuis le tableau de bord Konnect ; ici l'abonnement est remis en accord et la trace est gardée.
+   * Seul le DERNIER paiement validé d'un compte peut être remboursé : la période qu'il avait ouverte est alors retirée
+   * (l'abonnement revient à sa date d'avant, ou à l'essai s'il court encore). Le numéro de reçu reste attaché au paiement.
+   */
+  async refundPayment(paymentId: number, reason: string | undefined, adminId: number) {
+    const why = (reason || '').trim().slice(0, 300) || null;
+    const { payment, owner } = await this.ds.transaction(async (em) => {
+      const repo = em.getRepository(SubscriptionPayment);
+      const payment = await repo.findOne({ where: { id: paymentId }, lock: { mode: 'pessimistic_write' } });
+      if (!payment) throw new NotFoundException('Paiement introuvable');
+      if (payment.status !== 'validated') throw new ConflictException('Seul un paiement validé peut être remboursé.');
+      const owner = await this.owner(payment.userId, em);
+      const validated = await repo.find({ where: { userId: payment.userId, status: 'validated' }, order: { id: 'DESC' } });
+      const newer = validated.find((p) => p.id > payment.id);
+      if (newer) throw new ConflictException(`Remboursez d’abord le paiement le plus récent (${newer.receiptNumber}) : l’abonnement se retire période après période.`);
+      const previous = validated.find((p) => p.id < payment.id) || null;
+
+      const now = new Date();
+      const periodStart = payment.periodStart ? new Date(payment.periodStart) : now;
+      owner.renewalReminderStage = 0;
+      owner.statusChangedAt = now;
+      if (previous) {
+        // Un paiement plus ancien subsiste : l'abonnement revient à sa formule et à son échéance.
+        await this.applyPlan(owner, previous.planCode, previous.billingCycle, em);
+        owner.subscriptionEnd = periodStart;
+      } else {
+        owner.subscriptionEnd = null;
+        owner.subscriptionStart = null;
+      }
+      const trialEnd = owner.trialEndsAt ? new Date(owner.trialEndsAt) : null;
+      if (!previous && trialEnd && trialEnd.getTime() > now.getTime()) {
+        // Remboursé pendant l'essai : l'essai reprend où il en était, aucun jour gratuit n'est perdu.
+        owner.accountStatus = 'TRIAL';
+        owner.statusReason = null;
+      } else if (previous && periodStart.getTime() > now.getTime()) {
+        owner.accountStatus = 'ACTIVE';
+        owner.statusReason = null;
+      } else if (owner.accountStatus !== 'SUSPENDED' && owner.accountStatus !== 'CANCELLED') {
+        // Plus aucune période payée en cours : l'accès se referme, les données restent.
+        owner.accountStatus = 'EXPIRED';
+        owner.statusReason = 'SUBSCRIPTION_EXPIRED';
+        if (!previous) owner.subscriptionEnd = periodStart;
+      }
+      await em.save(User, owner);
+
+      payment.status = 'refunded';
+      payment.rejectReason = why;
+      await repo.save(payment);
+      return { payment, owner };
+    });
+    await this.audit.record({ userId: owner.id, actorId: adminId, action: 'payment_refunded', entity: 'subscription_payment', entityId: payment.id, details: { receipt: payment.receiptNumber, amountTTC: payment.amountTTC, currency: payment.currency, reason: why } });
+    void this.mail.trySend({
+      to: owner.email,
+      ...refundMail({ lang: pickMailLang(owner.language), name: owner.name, amount: payment.amountTTC, currency: payment.currency, receiptNumber: payment.receiptNumber, reason: why, url: `${frontend()}/subscription` }),
+    });
+    return { payment, account: this.view(owner, await this.settings.get()) };
+  }
+
+  /**
+   * Liste de contrôle « mise en production » du paiement en ligne : ce qui empêche d'encaisser de vrais clients, et ce qu'il
+   * vaut mieux régler avant. Calculée sans appeler Konnect (voir PaymentGatewayService.probe pour le test de connexion).
+   */
+  async onlineReadiness(settings: PlatformSettings) {
+    const online = this.onlinePayment(settings);
+    const api = apiPublicUrl();
+    const sites = allowedOrigins();
+    const publicHttps = (url: string) => {
+      try {
+        const u = new URL(url);
+        return u.protocol === 'https:' && !['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(u.hostname);
+      } catch { return false; }
+    };
+    const plans = await this.plans('public');
+    const priced = plans.filter((p) => Number(p.priceMonthly) > 0 || Number(p.priceAnnual) > 0);
+    const production = process.env.NODE_ENV === 'production';
+    type Level = 'error' | 'warn';
+    const checks: Array<{ key: string; ok: boolean; level: Level; message: string }> = [];
+    const add = (key: string, ok: boolean, level: Level, good: string, bad: string) => checks.push({ key, ok, level, message: ok ? good : bad });
+
+    add('credentials', this.gateway.isConfigured(), 'error', 'Clé d’API et portefeuille Konnect définis sur le serveur.', 'Définissez KONNECT_API_KEY et KONNECT_WALLET_ID sur le serveur de l’API (tableau de bord Konnect › Mon compte › Clés API).');
+    add('currency', this.gateway.supports(settings.currency), 'error', `Devise ${settings.currency} acceptée par Konnect.`, `La devise ${settings.currency} n’est pas acceptée par Konnect (TND, EUR ou USD) : changez-la dans les réglages.`);
+    add('plans', priced.length > 0, 'error', `${priced.length} formule(s) publiée(s) avec un prix.`, 'Aucune formule publiée avec un prix : publiez-en au moins une dans « Formules et tarifs ».');
+    add('mode', online.mode === 'production', production ? 'warn' : 'warn', 'Mode production : les paiements sont réels.', 'Mode test (bac à sable) : aucun débit réel. Pour encaisser de vrais clients, définissez KONNECT_ENV=production avec la clé de production.');
+    add('apiUrl', publicHttps(api), production ? 'error' : 'warn', `Konnect appellera ${api}/public/payments/konnect/return.`, `L’adresse publique de l’API (${api}) n’est pas une adresse https accessible depuis Internet : Konnect ne pourrait pas confirmer les paiements. Définissez API_PUBLIC_URL (ex. https://api.votre-domaine.tn).`);
+    add('siteUrl', sites.some(publicHttps), production ? 'error' : 'warn', `Retour des clients sur ${sites.filter(publicHttps)[0] || sites[0]}.`, 'FRONTEND_URL n’est pas une adresse https publique : les liens des emails et le retour de paiement pointeraient vers un site inaccessible.');
+    add('mail', this.mail.isConfigured(), 'warn', 'Envoi d’emails configuré : reçus, rappels et code de vérification partent.', 'Envoi d’emails non configuré : aucun reçu ni rappel ne sera envoyé (variables SMTP_*).');
+    add('issuer', !!(settings.issuerName && settings.issuerTaxId), 'warn', 'Identité légale de l’éditeur renseignée : elle figure sur les reçus.', 'Renseignez la raison sociale et le matricule fiscal de l’éditeur : ils figureront sur les reçus remis aux clients.');
+
+    const blocking = checks.filter((c) => !c.ok && c.level === 'error');
+    return {
+      enabled: online.enabled, mode: online.mode, provider: online.provider,
+      webhookUrl: `${api}/public/payments/konnect/return`,
+      siteUrls: sites.filter((s) => s !== 'http://localhost:3000' || sites.length === 1),
+      // « prêt » : un client peut payer ; « live » : de vrais paiements, et rien d'important à corriger.
+      ready: online.enabled && blocking.length === 0,
+      live: online.enabled && online.mode === 'production' && checks.every((c) => c.ok),
+      checks,
+    };
+  }
+
   async rejectPayment(paymentId: number, reason: string | undefined, adminId: number) {
     const repo = this.ds.getRepository(SubscriptionPayment);
     const payment = await repo.findOne({ where: { id: paymentId } });
@@ -746,10 +865,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     await this.audit.record({ userId: payment.userId, actorId: adminId, action: 'payment_rejected', entity: 'subscription_payment', entityId: payment.id, details: { reason: payment.rejectReason } });
     const owner = await this.users().findOne({ where: { id: payment.userId } });
     if (owner) {
-      void this.mail.trySend({
-        to: owner.email, subject: 'Votre paiement n’a pas pu être validé',
-        text: `Bonjour ${owner.name},\n\nVotre déclaration de paiement (${payment.amountTTC} ${payment.currency}) n’a pas pu être validée.${payment.rejectReason ? `\nMotif : ${payment.rejectReason}` : ''}\n\nVous pouvez payer en ligne par carte : ${frontend()}/subscription`,
-      });
+      void this.mail.trySend({ to: owner.email, ...paymentRejectedMail({ lang: pickMailLang(owner.language), name: owner.name, amount: payment.amountTTC, currency: payment.currency, reason: payment.rejectReason, url: `${frontend()}/subscription` }) });
     }
     return payment;
   }
@@ -776,11 +892,15 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     if (!payment || payment.status !== 'validated') throw new NotFoundException('Reçu introuvable');
     const owner = await this.users().findOne({ where: { id: payment.userId } });
     const [company] = await this.ds.query(`SELECT "legalName", "taxId", "address", "city", "postalCode" FROM "companies" WHERE "userId" = $1`, [payment.userId]).catch(() => []);
+    const s = await this.settings.get();
+    // Identité de l'éditeur (réglages de la plateforme) : sans raison sociale, le reçu garde son en-tête « Inovexa ERP ».
+    const issuer = s.issuerName ? { name: s.issuerName, taxId: s.issuerTaxId, address: s.issuerAddress, registry: s.issuerRegistry, email: s.supportEmail, phone: s.supportPhone } : null;
     return {
       receiptNumber: payment.receiptNumber, issuedAt: payment.validatedAt, planName: payment.planName, billingCycle: payment.billingCycle,
       periodStart: payment.periodStart, periodEnd: payment.periodEnd, amountHT: payment.amountHT, vatRate: payment.vatRate,
       vatAmount: round3(payment.amountTTC - payment.amountHT), amountTTC: payment.amountTTC, currency: payment.currency,
       method: payment.method, reference: payment.reference,
+      issuer,
       customer: { name: company?.legalName || owner?.companyName || owner?.name || '', taxId: company?.taxId || null, address: [company?.address, company?.postalCode, company?.city].filter(Boolean).join(' ') || null, email: owner?.email || null },
       notice: 'Reçu de paiement d’abonnement. Il ne remplace pas la facture légale émise par l’éditeur.',
     };
@@ -844,21 +964,14 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
         const claim = await this.users().update({ id: owner.id, trialReminderStage: owner.trialReminderStage }, { trialReminderStage: 1 });
         if (!claim.affected) continue;
         reminders++;
-        void this.mail.trySend({
-          to: owner.email, subject: 'Votre essai gratuit Inovexa ERP se termine bientôt',
-          text: `Bonjour ${owner.name},\n\nVotre essai gratuit se termine le ${fmtDate(access.endsAt)}. Pour continuer sans interruption, choisissez une formule : ${frontend()}/dashboard/billing\n\nVos données sont conservées dans tous les cas.\n\nL’équipe Inovexa ERP`,
-          html: `<p>Bonjour ${esc(owner.name)},</p><p>Votre essai gratuit se termine le <b>${esc(fmtDate(access.endsAt))}</b>.</p><p><a href="${frontend()}/dashboard/billing">Choisir une formule</a> pour continuer sans interruption. Vos données sont conservées dans tous les cas.</p><p>L’équipe Inovexa ERP</p>`,
-        });
+        void this.mail.trySend({ to: owner.email, ...trialReminderMail({ lang: pickMailLang(owner.language), name: owner.name, endsAt: access.endsAt, url: `${frontend()}/dashboard/billing` }) });
       } else if (owner.accountStatus === 'ACTIVE') {
         const stage = left <= DAY ? 2 : left <= settings.renewalReminderDays * DAY ? 1 : 0;
         if (stage > owner.renewalReminderStage) {
           const claim = await this.users().update({ id: owner.id, renewalReminderStage: owner.renewalReminderStage }, { renewalReminderStage: stage });
           if (!claim.affected) continue;
           reminders++;
-          void this.mail.trySend({
-            to: owner.email, subject: 'Votre abonnement Inovexa ERP arrive à échéance',
-            text: `Bonjour ${owner.name},\n\nVotre abonnement arrive à échéance le ${fmtDate(access.endsAt)}. Renouvelez-le ici : ${frontend()}/dashboard/billing\n\nL’équipe Inovexa ERP`,
-          });
+          void this.mail.trySend({ to: owner.email, ...renewalReminderMail({ lang: pickMailLang(owner.language), name: owner.name, endsAt: access.endsAt, url: `${frontend()}/dashboard/billing` }) });
         }
       }
     }

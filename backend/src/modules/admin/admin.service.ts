@@ -85,7 +85,7 @@ export class AdminService {
     const companyName = String(body?.companyName || '').trim();
     if (name.length < 2) throw new BadRequestException('Nom requis.');
     if (companyName.length < 2) throw new BadRequestException('Nom de la société requis.');
-    assertStrongPassword(body?.password);
+    assertStrongPassword(body?.password, email);
     if (await this.userRepository.createQueryBuilder('u').where('LOWER(u.email) = :email', { email }).getOne()) throw new ConflictException('Cet email est déjà utilisé.');
     const days = Number(body?.subscriptionDuration);
     if (!Number.isFinite(days) || days < 1 || days > 3650) throw new BadRequestException('Durée d’abonnement invalide (1 à 3 650 jours).');

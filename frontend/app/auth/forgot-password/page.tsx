@@ -9,7 +9,7 @@ import { publicPost } from "@/lib/saas";
 
 function ForgotForm() {
   const params = useSearchParams();
-  const { tx, ui, explain } = useAuthTexts();
+  const { tx, ui, explain, language } = useAuthTexts();
   const [email, setEmail] = useState("");
   const [problem, setProblem] = useState<AuthProblem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ function ForgotForm() {
     if (!isEmail(address)) { setProblem({ kind: "ui", key: "emailInvalid" }); return; }
     setLoading(true);
     setProblem(null);
-    const res = await publicPost("/auth/forgot-password", { email: address }, { safe: true });
+    const res = await publicPost("/auth/forgot-password", { email: address, language }, { safe: true });
     if (res.ok) setDone(true);
     else setProblem(failed(res));
     setLoading(false);
@@ -58,7 +58,6 @@ function ForgotForm() {
               spellCheck={false}
               maxLength={190}
               autoFocus
-              ltr
               required
             />
             <SubmitButton label={tx.sendLink} loadingLabel={ui.sending} loading={loading} />

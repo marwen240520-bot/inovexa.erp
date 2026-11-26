@@ -28,18 +28,6 @@ export function Flag({ code, width = 20 }: { code: LangCode; width?: number }) {
       </svg>
     );
   }
-  if (code === "ar") {
-    // Arabe : drapeau tunisien (disque blanc, croissant et étoile rouges)
-    return (
-      <svg {...common}>
-        <rect width="30" height="20" fill="#E70013" />
-        <circle cx="15" cy="10" r="5" fill="#FFFFFF" />
-        <circle cx="15" cy="10" r="3.75" fill="#E70013" />
-        <circle cx="16" cy="10" r="3" fill="#FFFFFF" />
-        <polygon fill="#E70013" points="14.3,10 15.89,9.48 15.89,7.81 16.87,9.16 18.46,8.65 17.48,10 18.46,11.35 16.87,10.84 15.89,12.19 15.89,10.52" />
-      </svg>
-    );
-  }
   return (
     <svg {...common}>
       <clipPath id="uk-clip"><rect width="30" height="20" /></clipPath>
@@ -54,7 +42,7 @@ export function Flag({ code, width = 20 }: { code: LangCode; width?: number }) {
   );
 }
 
-/** Menu de langues avec drapeaux (FR / EN / ES / AR), même présentation que sur la page d'accueil. */
+/** Menu de langues avec drapeaux (FR / EN / ES), même présentation que sur la page d'accueil. */
 export default function LanguageMenu() {
   const { language, changeLanguage } = useLanguage();
   const [open, setOpen] = useState(false);

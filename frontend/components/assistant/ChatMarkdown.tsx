@@ -4,7 +4,7 @@
 //  Rendu Markdown SÛR (sans dangerouslySetInnerHTML) des réponses
 //  de l'Assistant IA : titres, gras/italique, listes, tableaux,
 //  citations, blocs de code, liens internes (navigation dans l'app)
-//  et lignes d'action « → … » mises en valeur. RTL automatique.
+//  et lignes d'action « → … » mises en valeur.
 // ============================================================
 
 import React from "react";

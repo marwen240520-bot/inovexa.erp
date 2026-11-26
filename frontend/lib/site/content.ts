@@ -47,7 +47,7 @@ export interface Post extends PostHead {
 const DICTS: Record<SiteLang, any> = { en, fr, es };
 const POSTS = postsIndex as unknown as PostHead[];
 
-/** Langue des pages publiques : celle de l'application (cookie « lang ») ; anglais si elle n'a pas de contenu (arabe). */
+/** Langue des pages publiques : celle de l'application (cookie « lang »), français / anglais / espagnol. */
 export async function getSiteLang(): Promise<SiteLang> {
   const jar = await cookies();
   const h = await headers();

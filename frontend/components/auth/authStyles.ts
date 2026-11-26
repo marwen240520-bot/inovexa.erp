@@ -153,9 +153,6 @@ export const AUTH_BASE_STYLES = `
     .lg-input { font-size: 16px; }
   }
 
-  /* Arabe : les flèches (retour, valider) suivent le sens de la lecture */
-  [dir="rtl"] .lg-back svg, [dir="rtl"] .lg-btn svg { transform: scaleX(-1); }
-
   @keyframes lgFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
   @keyframes lgShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
   @keyframes lgSpin { to { transform: rotate(360deg); } }
@@ -273,10 +270,6 @@ export const AUTH_EXTRA_STYLES = `
   .lg-otp { letter-spacing: 0.3em; font-variant-numeric: tabular-nums; }
 
   .lg-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-
-  /* Arabe : un numéro de téléphone, un code ou un matricule se lisent de gauche à droite (le « + » reste devant) */
-  [dir="rtl"] .lg-input-ltr { direction: ltr; text-align: right; padding-inline: 16px 46px; }
-  [dir="rtl"] .lg-input-ltr.lg-input-plain { padding-inline: 16px; }
 
   @media (prefers-reduced-motion: reduce) {
     .lg-more > summary svg, .lg-btn-ghost { transition: none !important; }

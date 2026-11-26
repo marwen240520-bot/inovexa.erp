@@ -167,7 +167,6 @@ function LoginForm() {
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={9}
-              ltr
               required
             />
             <SubmitButton label={tx.signIn} loadingLabel={ui.loggingIn} loading={loading} />
@@ -191,7 +190,6 @@ function LoginForm() {
               spellCheck={false}
               maxLength={190}
               autoFocus
-              ltr
               required
             />
             <PasswordField id="lg-password" label={tx.password} value={password} onChange={setPassword} autoComplete="current-password" disabled={loading} />

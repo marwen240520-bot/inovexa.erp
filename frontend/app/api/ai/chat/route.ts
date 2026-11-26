@@ -91,12 +91,11 @@ const SUGG_MARK = "⟦SUGG⟧";
 type Block = { type: string; [k: string]: any };
 type ApiMessage = { role: "user" | "assistant"; content: string | Block[] };
 
-const LANG_LABEL: Record<ReplyLang, string> = { fr: "français", en: "English", es: "español", ar: "العربية" };
+const LANG_LABEL: Record<ReplyLang, string> = { fr: "français", en: "English", es: "español" };
 const WEEKDAYS: Record<ReplyLang, string[]> = {
   fr: ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
   en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
   es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"],
-  ar: ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -107,7 +106,7 @@ const INSTRUCTIONS = [
   `Tu réponds comme un contrôleur de gestion / analyste senior à TOUTE question de l'utilisateur sur SES données : ventes et chiffre d'affaires, clients, produits et stock, catégories, commandes, factures et créances, achats et fournisseurs, dépenses, marges et résultat, TVA, employés et masse salariale, projets, livraisons, prévisions.`,
   ``,
   `COMPRENDRE LA QUESTION`,
-  `- L'utilisateur écrit vite : fautes, abréviations (CA, qté, fact, cmd, fourn, HT/TTC, TVA), mélange français / anglais / espagnol / arabe / derja tunisienne (ex. « 9adech bi3t fi mai ? », « chnowa a7sen produit ? », « chkoun ma khallasch ? »). Interprète l'intention la plus probable.`,
+  `- L'utilisateur écrit vite : fautes, abréviations (CA, qté, fact, cmd, fourn, HT/TTC, TVA), mélange français / anglais / espagnol / derja tunisienne écrite en lettres latines (ex. « 9adech bi3t fi mai ? », « chnowa a7sen produit ? », « chkoun ma khallasch ? »). Interprète l'intention la plus probable.`,
   `- Ne pose une question de clarification QUE si deux lectures donnent des réponses très différentes et qu'aucune n'est plus probable. Sinon réponds directement en indiquant l'hypothèse en quelques mots (« sur l'année en cours »).`,
   `- Sans période précisée : CA / bénéfice → mois en cours ET année en cours ; classements → année en cours ; fiche client / produit / fournisseur → tout l'historique.`,
   `- Questions de suivi (« et en avril ? », « et lui ? », « détaille », « pourquoi ? », « en graphique ») : reprends le sujet, les filtres et la période de l'échange précédent.`,
@@ -126,7 +125,7 @@ const INSTRUCTIONS = [
   `- Tu peux RÉDIGER à partir des données : email ou message WhatsApp de relance d'un impayé, résumé pour un associé ou un banquier, commentaire de tableau de bord… Utilise uniquement les chiffres obtenus par les outils.`,
   ``,
   `RÉDACTION — style analyste professionnel`,
-  `- Langue : réponds dans la langue de la DERNIÈRE question de l'utilisateur (LANGUE_REPONSE est un indice). Derja tunisienne → réponds en derja simple (même alphabet que l'utilisateur) ou en français si c'est plus clair. Arabe → arabe standard simple.`,
+  `- Langue : réponds dans la langue de la DERNIÈRE question de l'utilisateur (LANGUE_REPONSE est un indice). Derja tunisienne (lettres latines) ou texte en alphabet arabe → comprends la question, mais réponds en français, en anglais ou en espagnol (LANGUE_REPONSE).`,
   `- Structure : (1) la réponse directe en une phrase, chiffre clé en **gras** ; (2) 2 à 6 puces utiles (évolution vs période précédente, nombre de ventes, panier moyen, principaux contributeurs, alertes) ; (3) si pertinent, UNE recommandation concrète commençant par « → ».`,
   `- Pour comparer ≥ 3 éléments sur ≥ 2 colonnes, utilise un petit tableau Markdown (8 lignes et 4 colonnes au plus).`,
   `- Indique toujours la période exacte couverte. Période en cours → précise « à date » ; la comparaison se fait à jours écoulés égaux (déjà calculé par l'outil).`,
@@ -484,42 +483,42 @@ async function runTool(name: string, input: any, loader: ReturnType<typeof creat
 //  LIBELLÉS (étapes, graphiques, suggestions de repli)
 // ═══════════════════════════════════════════════════════════
 const TOOL_LABELS: Record<string, Record<ReplyLang, string>> = {
-  get_business_overview: { fr: "Synthèse de l'activité", en: "Business overview", es: "Resumen de actividad", ar: "ملخص النشاط" },
-  get_revenue: { fr: "Chiffre d'affaires", en: "Revenue", es: "Facturación", ar: "رقم المعاملات" },
-  get_monthly_revenue: { fr: "CA mensuel", en: "Monthly revenue", es: "Facturación mensual", ar: "المبيعات الشهرية" },
-  get_top_products: { fr: "Classement produits", en: "Product ranking", es: "Ranking de productos", ar: "ترتيب المنتجات" },
-  get_top_clients: { fr: "Classement clients", en: "Customer ranking", es: "Ranking de clientes", ar: "ترتيب العملاء" },
-  get_client: { fr: "Fiche client", en: "Customer profile", es: "Ficha del cliente", ar: "ملف العميل" },
-  get_client_segments: { fr: "Segmentation clients", en: "Customer segments", es: "Segmentación de clientes", ar: "تصنيف العملاء" },
-  get_product: { fr: "Fiche produit", en: "Product profile", es: "Ficha del producto", ar: "ملف المنتج" },
-  get_product_margins: { fr: "Marges produits", en: "Product margins", es: "Márgenes por producto", ar: "هوامش المنتجات" },
-  get_stock_status: { fr: "État du stock", en: "Stock status", es: "Estado del stock", ar: "حالة المخزون" },
-  get_restock_plan: { fr: "Plan de réappro", en: "Restock plan", es: "Plan de reposición", ar: "خطة التزويد" },
-  get_receivables: { fr: "Créances clients", en: "Receivables", es: "Cuentas por cobrar", ar: "المستحقات" },
-  get_profit_and_loss: { fr: "Compte de résultat", en: "Profit & loss", es: "Cuenta de resultados", ar: "الأرباح والخسائر" },
-  get_purchases: { fr: "Achats", en: "Purchases", es: "Compras", ar: "المشتريات" },
-  get_supplier: { fr: "Fiche fournisseur", en: "Supplier profile", es: "Ficha del proveedor", ar: "ملف المورد" },
-  get_orders: { fr: "Commandes", en: "Orders", es: "Pedidos", ar: "الطلبيات" },
-  get_employees: { fr: "Ressources humaines", en: "Human resources", es: "Recursos humanos", ar: "الموارد البشرية" },
-  get_forecast: { fr: "Prévisions", en: "Forecast", es: "Previsión", ar: "التوقعات" },
-  query_data: { fr: "Analyse des données", en: "Data analysis", es: "Análisis de datos", ar: "تحليل البيانات" },
-  describe_data: { fr: "Lecture du profil des données", en: "Reading data profile", es: "Perfil de datos", ar: "قراءة البيانات" },
-  search_records: { fr: "Recherche", en: "Search", es: "Búsqueda", ar: "بحث" },
-  calculate: { fr: "Calcul", en: "Calculation", es: "Cálculo", ar: "حساب" },
+  get_business_overview: { fr: "Synthèse de l'activité", en: "Business overview", es: "Resumen de actividad" },
+  get_revenue: { fr: "Chiffre d'affaires", en: "Revenue", es: "Facturación" },
+  get_monthly_revenue: { fr: "CA mensuel", en: "Monthly revenue", es: "Facturación mensual" },
+  get_top_products: { fr: "Classement produits", en: "Product ranking", es: "Ranking de productos" },
+  get_top_clients: { fr: "Classement clients", en: "Customer ranking", es: "Ranking de clientes" },
+  get_client: { fr: "Fiche client", en: "Customer profile", es: "Ficha del cliente" },
+  get_client_segments: { fr: "Segmentation clients", en: "Customer segments", es: "Segmentación de clientes" },
+  get_product: { fr: "Fiche produit", en: "Product profile", es: "Ficha del producto" },
+  get_product_margins: { fr: "Marges produits", en: "Product margins", es: "Márgenes por producto" },
+  get_stock_status: { fr: "État du stock", en: "Stock status", es: "Estado del stock" },
+  get_restock_plan: { fr: "Plan de réappro", en: "Restock plan", es: "Plan de reposición" },
+  get_receivables: { fr: "Créances clients", en: "Receivables", es: "Cuentas por cobrar" },
+  get_profit_and_loss: { fr: "Compte de résultat", en: "Profit & loss", es: "Cuenta de resultados" },
+  get_purchases: { fr: "Achats", en: "Purchases", es: "Compras" },
+  get_supplier: { fr: "Fiche fournisseur", en: "Supplier profile", es: "Ficha del proveedor" },
+  get_orders: { fr: "Commandes", en: "Orders", es: "Pedidos" },
+  get_employees: { fr: "Ressources humaines", en: "Human resources", es: "Recursos humanos" },
+  get_forecast: { fr: "Prévisions", en: "Forecast", es: "Previsión" },
+  query_data: { fr: "Analyse des données", en: "Data analysis", es: "Análisis de datos" },
+  describe_data: { fr: "Lecture du profil des données", en: "Reading data profile", es: "Perfil de datos" },
+  search_records: { fr: "Recherche", en: "Search", es: "Búsqueda" },
+  calculate: { fr: "Calcul", en: "Calculation", es: "Cálculo" },
 };
 const MODULE_LABELS: Record<ModuleName, Record<ReplyLang, string>> = {
-  sales: { fr: "ventes", en: "sales", es: "ventas", ar: "المبيعات" },
-  purchases: { fr: "achats", en: "purchases", es: "compras", ar: "المشتريات" },
-  products: { fr: "produits", en: "products", es: "productos", ar: "المنتجات" },
-  categories: { fr: "catégories", en: "categories", es: "categorías", ar: "الأصناف" },
-  clients: { fr: "clients", en: "customers", es: "clientes", ar: "العملاء" },
-  orders: { fr: "commandes", en: "orders", es: "pedidos", ar: "الطلبيات" },
-  invoices: { fr: "factures", en: "invoices", es: "facturas", ar: "الفواتير" },
-  employees: { fr: "employés", en: "employees", es: "empleados", ar: "الموظفون" },
-  suppliers: { fr: "fournisseurs", en: "suppliers", es: "proveedores", ar: "الموردون" },
-  expenses: { fr: "dépenses", en: "expenses", es: "gastos", ar: "المصاريف" },
-  projects: { fr: "projets", en: "projects", es: "proyectos", ar: "المشاريع" },
-  shipments: { fr: "livraisons", en: "shipments", es: "envíos", ar: "الشحنات" },
+  sales: { fr: "ventes", en: "sales", es: "ventas" },
+  purchases: { fr: "achats", en: "purchases", es: "compras" },
+  products: { fr: "produits", en: "products", es: "productos" },
+  categories: { fr: "catégories", en: "categories", es: "categorías" },
+  clients: { fr: "clients", en: "customers", es: "clientes" },
+  orders: { fr: "commandes", en: "orders", es: "pedidos" },
+  invoices: { fr: "factures", en: "invoices", es: "facturas" },
+  employees: { fr: "employés", en: "employees", es: "empleados" },
+  suppliers: { fr: "fournisseurs", en: "suppliers", es: "proveedores" },
+  expenses: { fr: "dépenses", en: "expenses", es: "gastos" },
+  projects: { fr: "projets", en: "projects", es: "proyectos" },
+  shipments: { fr: "livraisons", en: "shipments", es: "envíos" },
 };
 
 function toolLabel(name: string, input: any, lang: ReplyLang): string {
@@ -532,44 +531,44 @@ function toolLabel(name: string, input: any, lang: ReplyLang): string {
 }
 
 const CHART_T: Record<string, Record<ReplyLang, string>> = {
-  revenueByMonth: { fr: "CA par mois", en: "Revenue by month", es: "Facturación por mes", ar: "رقم المعاملات حسب الشهر" },
-  comparison: { fr: "Comparaison des périodes", en: "Period comparison", es: "Comparación de períodos", ar: "مقارنة الفترات" },
-  topProducts: { fr: "Top produits", en: "Top products", es: "Productos top", ar: "أفضل المنتجات" },
-  topClients: { fr: "Top clients", en: "Top customers", es: "Clientes top", ar: "أفضل العملاء" },
-  forecast: { fr: "Historique et prévision", en: "History and forecast", es: "Histórico y previsión", ar: "السجل والتوقعات" },
-  history: { fr: "Réel", en: "Actual", es: "Real", ar: "فعلي" },
-  forecastS: { fr: "Prévision", en: "Forecast", es: "Previsión", ar: "توقع" },
-  pnl: { fr: "Compte de résultat", en: "Profit & loss", es: "Cuenta de resultados", ar: "الأرباح والخسائر" },
-  revenue: { fr: "CA", en: "Revenue", es: "Ventas", ar: "المبيعات" },
-  purchases: { fr: "Achats", en: "Purchases", es: "Compras", ar: "المشتريات" },
-  expenses: { fr: "Dépenses", en: "Expenses", es: "Gastos", ar: "المصاريف" },
-  payroll: { fr: "Salaires", en: "Payroll", es: "Salarios", ar: "الأجور" },
-  net: { fr: "Résultat", en: "Net result", es: "Resultado", ar: "النتيجة" },
-  margins: { fr: "Marge par produit", en: "Margin by product", es: "Margen por producto", ar: "الهامش حسب المنتج" },
-  segments: { fr: "Clients par segment", en: "Customers by segment", es: "Clientes por segmento", ar: "العملاء حسب الفئة" },
+  revenueByMonth: { fr: "CA par mois", en: "Revenue by month", es: "Facturación por mes" },
+  comparison: { fr: "Comparaison des périodes", en: "Period comparison", es: "Comparación de períodos" },
+  topProducts: { fr: "Top produits", en: "Top products", es: "Productos top" },
+  topClients: { fr: "Top clients", en: "Top customers", es: "Clientes top" },
+  forecast: { fr: "Historique et prévision", en: "History and forecast", es: "Histórico y previsión" },
+  history: { fr: "Réel", en: "Actual", es: "Real" },
+  forecastS: { fr: "Prévision", en: "Forecast", es: "Previsión" },
+  pnl: { fr: "Compte de résultat", en: "Profit & loss", es: "Cuenta de resultados" },
+  revenue: { fr: "CA", en: "Revenue", es: "Ventas" },
+  purchases: { fr: "Achats", en: "Purchases", es: "Compras" },
+  expenses: { fr: "Dépenses", en: "Expenses", es: "Gastos" },
+  payroll: { fr: "Salaires", en: "Payroll", es: "Salarios" },
+  net: { fr: "Résultat", en: "Net result", es: "Resultado" },
+  margins: { fr: "Marge par produit", en: "Margin by product", es: "Margen por producto" },
+  segments: { fr: "Clients par segment", en: "Customers by segment", es: "Clientes por segmento" },
 };
 
 const FIELD_LABELS: Record<string, Record<ReplyLang, string>> = {
-  paymentMethod: { fr: "moyen de paiement", en: "payment method", es: "método de pago", ar: "طريقة الدفع" },
-  category: { fr: "catégorie", en: "category", es: "categoría", ar: "الصنف" },
-  status: { fr: "statut", en: "status", es: "estado", ar: "الحالة" },
-  clientName: { fr: "client", en: "customer", es: "cliente", ar: "العميل" },
-  productName: { fr: "produit", en: "product", es: "producto", ar: "المنتج" },
-  supplierName: { fr: "fournisseur", en: "supplier", es: "proveedor", ar: "المورد" },
-  department: { fr: "département", en: "department", es: "departamento", ar: "القسم" },
-  position: { fr: "poste", en: "position", es: "puesto", ar: "الوظيفة" },
-  carrier: { fr: "transporteur", en: "carrier", es: "transportista", ar: "الناقل" },
-  type: { fr: "type", en: "type", es: "tipo", ar: "النوع" },
-  stockStatus: { fr: "état du stock", en: "stock status", es: "estado del stock", ar: "حالة المخزون" },
-  day: { fr: "jour", en: "day", es: "día", ar: "اليوم" },
-  week: { fr: "semaine", en: "week", es: "semana", ar: "الأسبوع" },
-  month: { fr: "mois", en: "month", es: "mes", ar: "الشهر" },
-  quarter: { fr: "trimestre", en: "quarter", es: "trimestre", ar: "الربع" },
-  year: { fr: "année", en: "year", es: "año", ar: "السنة" },
-  weekday: { fr: "jour de la semaine", en: "day of week", es: "día de la semana", ar: "يوم الأسبوع" },
-  hour: { fr: "heure", en: "hour", es: "hora", ar: "الساعة" },
+  paymentMethod: { fr: "moyen de paiement", en: "payment method", es: "método de pago" },
+  category: { fr: "catégorie", en: "category", es: "categoría" },
+  status: { fr: "statut", en: "status", es: "estado" },
+  clientName: { fr: "client", en: "customer", es: "cliente" },
+  productName: { fr: "produit", en: "product", es: "producto" },
+  supplierName: { fr: "fournisseur", en: "supplier", es: "proveedor" },
+  department: { fr: "département", en: "department", es: "departamento" },
+  position: { fr: "poste", en: "position", es: "puesto" },
+  carrier: { fr: "transporteur", en: "carrier", es: "transportista" },
+  type: { fr: "type", en: "type", es: "tipo" },
+  stockStatus: { fr: "état du stock", en: "stock status", es: "estado del stock" },
+  day: { fr: "jour", en: "day", es: "día" },
+  week: { fr: "semaine", en: "week", es: "semana" },
+  month: { fr: "mois", en: "month", es: "mes" },
+  quarter: { fr: "trimestre", en: "quarter", es: "trimestre" },
+  year: { fr: "année", en: "year", es: "año" },
+  weekday: { fr: "jour de la semaine", en: "day of week", es: "día de la semana" },
+  hour: { fr: "heure", en: "hour", es: "hora" },
 };
-const BY: Record<ReplyLang, string> = { fr: "par", en: "by", es: "por", ar: "حسب" };
+const BY: Record<ReplyLang, string> = { fr: "par", en: "by", es: "por" };
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 type Chart = { type: "bar" | "line"; title: string; labels: string[]; series: Array<{ name: string; values: Array<number | null> }>; unit: "currency" | "count" | "percent"; horizontal?: boolean };
@@ -669,31 +668,26 @@ const FALLBACK_SUGG: Record<string, Record<ReplyLang, string[]>> = {
     fr: ["Comparer avec l'an dernier", "Top produits de cette période", "CA par moyen de paiement"],
     en: ["Compare with last year", "Top products in this period", "Revenue by payment method"],
     es: ["Comparar con el año pasado", "Productos top del período", "Ventas por método de pago"],
-    ar: ["مقارنة بالسنة الماضية", "أفضل المنتجات في هذه الفترة", "المبيعات حسب طريقة الدفع"],
   },
   client: {
     fr: ["Ses factures impayées", "Évolution de ses achats par mois", "Clients à relancer"],
     en: ["Their unpaid invoices", "Their purchases by month", "Customers to follow up"],
     es: ["Sus facturas impagadas", "Sus compras por mes", "Clientes a contactar"],
-    ar: ["فواتيره غير المدفوعة", "تطور مشترياته شهريا", "العملاء الذين يجب متابعتهم"],
   },
   stock: {
     fr: ["Que dois-je réapprovisionner ?", "Stock dormant", "Valeur du stock par catégorie"],
     en: ["What should I restock?", "Dead stock", "Stock value by category"],
     es: ["¿Qué debo reponer?", "Stock inmovilizado", "Valor del stock por categoría"],
-    ar: ["ماذا يجب أن أزود؟", "المخزون الراكد", "قيمة المخزون حسب الصنف"],
   },
   finance: {
     fr: ["Résultat du mois dernier", "Dépenses par catégorie", "Prévisions des 3 prochains mois"],
     en: ["Last month's result", "Expenses by category", "Forecast for the next 3 months"],
     es: ["Resultado del mes pasado", "Gastos por categoría", "Previsión de los próximos 3 meses"],
-    ar: ["نتيجة الشهر الماضي", "المصاريف حسب الصنف", "توقعات الأشهر الثلاثة القادمة"],
   },
   general: {
     fr: ["Résumé de mon activité", "Factures en retard", "Top 5 clients de l'année"],
     en: ["Summary of my business", "Overdue invoices", "Top 5 customers this year"],
     es: ["Resumen de mi actividad", "Facturas vencidas", "Top 5 clientes del año"],
-    ar: ["ملخص نشاطي", "الفواتير المتأخرة", "أفضل 5 عملاء هذه السنة"],
   },
 };
 function fallbackSuggestions(tools: string[], lang: ReplyLang): string[] {
@@ -861,7 +855,6 @@ const ERR_TEXT: Record<ReplyLang, string> = {
   fr: "Le service IA a rencontré une erreur. Réessayez dans un instant.",
   en: "The AI service ran into an error. Please try again in a moment.",
   es: "El servicio de IA tuvo un error. Inténtelo de nuevo en un momento.",
-  ar: "حدث خطأ في خدمة الذكاء الاصطناعي. أعد المحاولة بعد لحظات.",
 };
 
 // ═══════════════════════════════════════════════════════════

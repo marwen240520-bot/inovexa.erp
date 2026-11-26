@@ -79,6 +79,9 @@ describe('PaymentGatewayService — configuration', () => {
     expect(gateway.info().methods).toEqual(['card']);
     process.env.KONNECT_PAYMENT_METHODS = 'inconnu';
     expect(gateway.info().methods).toEqual(['card', 'edinar']);
+    // Seules les valeurs documentées par Konnect (bank_card, e-DINAR, wallet) sont transmises : « flouci » n’en fait pas partie.
+    process.env.KONNECT_PAYMENT_METHODS = 'bank_card,e-DINAR,wallet,flouci';
+    expect(gateway.info().methods).toEqual(['card', 'edinar', 'wallet']);
     expect(gateway.supports('USD')).toBe(true);
     expect(gateway.supports('MAD')).toBe(false);
   });
@@ -168,7 +171,7 @@ describe('PaymentGatewayService.fetchPayment — seule source de vérité', () =
     configure();
     gatewayDeps.fetch = reply(200, payment());
     const p = await gateway.fetchPayment('abc123');
-    expect(p).toEqual({ paid: true, status: 'completed', amountMinor: 3451, currency: 'USD', orderId: '42', method: 'card' });
+    expect(p).toEqual({ paid: true, status: 'completed', amountMinor: 3451, reachedMinor: null, currency: 'USD', orderId: '42', method: 'card' });
     expect(calls[0].url).toBe('https://api.konnect.network/api/v2/payments/abc123');
     expect(calls[0].init.method).toBe('GET');
     expect((calls[0].init.headers as Record<string, string>)['x-api-key']).toBe('cle-secrete-123');
@@ -200,6 +203,16 @@ describe('PaymentGatewayService.fetchPayment — seule source de vérité', () =
     }
   });
 
+  it('paiement réglé en partie seulement (reachedAmount < amount) : PAS encaissé ; réglé en entier : encaissé', async () => {
+    configure();
+    gatewayDeps.fetch = reply(200, payment({ amount: 3451, reachedAmount: 1000 }));
+    const partial = await gateway.fetchPayment('abc123');
+    expect(partial.paid).toBe(false);
+    expect(partial.reachedMinor).toBe(1000);
+    gatewayDeps.fetch = reply(200, payment({ amount: 3451, reachedAmount: 3451 }));
+    expect((await gateway.fetchPayment('abc123')).paid).toBe(true);
+  });
+
   it('état renvoyé en majuscules : reconnu', async () => {
     configure();
     gatewayDeps.fetch = reply(200, payment({ status: 'Completed' }));
@@ -209,7 +222,7 @@ describe('PaymentGatewayService.fetchPayment — seule source de vérité', () =
   it('champs absents : null plutôt qu’une valeur inventée', async () => {
     configure();
     gatewayDeps.fetch = reply(200, { payment: { status: 'pending' } });
-    expect(await gateway.fetchPayment('abc123')).toEqual({ paid: false, status: 'pending', amountMinor: null, currency: null, orderId: null, method: null });
+    expect(await gateway.fetchPayment('abc123')).toEqual({ paid: false, status: 'pending', amountMinor: null, reachedMinor: null, currency: null, orderId: null, method: null });
   });
 
   it('référence invalide : aucun appel (pas d’injection dans l’adresse)', async () => {
@@ -225,5 +238,77 @@ describe('PaymentGatewayService.fetchPayment — seule source de vérité', () =
     const err = await gateway.fetchPayment('abc123').catch((e) => e);
     expect(err).toBeInstanceOf(GatewayError);
     expect(err.status).toBe(404);
+  });
+});
+
+describe('PaymentGatewayService.probe — test de connexion avant la mise en production', () => {
+  const gateway = new PaymentGatewayService();
+  /** Faux Konnect qui répond selon la route : lecture d'un paiement inexistant, ouverture d'un paiement. */
+  const konnect = (opts: { key?: 'ok' | 'refused' | 'down' | 'error'; wallet?: 'ok' | 'unknown' } = {}) => async (url: string, init: RequestInit) => {
+    calls.push({ url, init });
+    const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+    if (opts.key === 'down') throw new Error('ECONNREFUSED');
+    if (opts.key === 'refused') return json(401, { errors: [{ message: 'Invalid API key' }] });
+    if (opts.key === 'error') return json(503, { message: 'maintenance' });
+    if (init.method === 'GET') return json(404, { message: 'Payment not found' });
+    if (opts.wallet === 'unknown') return json(400, { errors: [{ message: 'Unknown wallet' }] });
+    return json(200, { payUrl: 'https://gateway.konnect.network/pay?payment_ref=probe123', paymentRef: 'probe123' });
+  };
+
+  it('sans configuration : rien n’est appelé, le message dit quoi définir', async () => {
+    gatewayDeps.fetch = konnect();
+    const r = await gateway.probe({ wallet: true });
+    expect(r).toMatchObject({ configured: false, reachable: null, keyAccepted: null, walletAccepted: null });
+    expect(r.message).toMatch(/KONNECT_API_KEY/);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('clé acceptée (404 sur le paiement de test) : un seul appel, aucun paiement ouvert', async () => {
+    configure();
+    gatewayDeps.fetch = konnect();
+    const r = await gateway.probe();
+    expect(r).toMatchObject({ configured: true, reachable: true, keyAccepted: true, walletAccepted: null, mode: 'production' });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].init.method).toBe('GET');
+  });
+
+  it('clé refusée (401) : le message cite l’environnement et ne contient jamais la clé', async () => {
+    configure({ KONNECT_ENV: 'sandbox' });
+    gatewayDeps.fetch = konnect({ key: 'refused' });
+    const r = await gateway.probe({ wallet: true });
+    expect(r).toMatchObject({ reachable: true, keyAccepted: false, walletAccepted: null, mode: 'sandbox' });
+    expect(r.message).toMatch(/sandbox/);
+    expect(JSON.stringify(r)).not.toContain('cle-secrete-123');
+    expect(calls).toHaveLength(1); // la clé est refusée : on n'essaie pas d'ouvrir un paiement
+  });
+
+  it('Konnect injoignable ou en panne : résultat « inconnu », pas de faux verdict', async () => {
+    configure();
+    gatewayDeps.fetch = konnect({ key: 'down' });
+    expect(await gateway.probe()).toMatchObject({ reachable: false, keyAccepted: null });
+    gatewayDeps.fetch = konnect({ key: 'error' });
+    expect(await gateway.probe()).toMatchObject({ reachable: true, keyAccepted: null });
+  });
+
+  it('avec le portefeuille : paiement de test de 1 TND (jamais encaissé), adresse de retour transmise', async () => {
+    configure();
+    gatewayDeps.fetch = konnect();
+    const r = await gateway.probe({ wallet: true, webhookUrl: 'https://api.exemple.tn/public/payments/konnect/return' });
+    expect(r).toMatchObject({ keyAccepted: true, walletAccepted: true });
+    expect(calls).toHaveLength(2);
+    const body = JSON.parse(String(calls[1].init.body));
+    expect(body).toMatchObject({ token: 'TND', amount: 1000, lifespan: 5, receiverWalletId: 'wallet-abc', webhook: 'https://api.exemple.tn/public/payments/konnect/return' });
+    expect(String(body.orderId)).toMatch(/^connection-test-/);
+    expect(String(body.description)).toMatch(/ne pas payer/i);
+  });
+
+  it('portefeuille inconnu : clé acceptée mais portefeuille refusé, avec le détail de Konnect', async () => {
+    configure();
+    gatewayDeps.fetch = konnect({ wallet: 'unknown' });
+    const r = await gateway.probe({ wallet: true });
+    expect(r).toMatchObject({ keyAccepted: true, walletAccepted: false });
+    expect(r.message).toMatch(/KONNECT_WALLET_ID/);
+    expect(r.message).toMatch(/Unknown wallet/);
+    expect(JSON.stringify(r)).not.toContain('wallet-abc');
   });
 });

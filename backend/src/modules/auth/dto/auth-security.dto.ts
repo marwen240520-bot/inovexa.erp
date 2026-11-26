@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, Length, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString, Length, MaxLength, MinLength } from 'class-validator';
 
 export class LoginWithOtpDto {
   @IsEmail({}, { message: 'Email invalide' }) email: string;
@@ -9,6 +9,8 @@ export class LoginWithOtpDto {
 
 export class ForgotPasswordDto {
   @IsEmail({}, { message: 'Email invalide' }) email: string;
+  /** Langue de l'écran : celle de l'email envoyé. */
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
 }
 
 export class ResetPasswordDto {

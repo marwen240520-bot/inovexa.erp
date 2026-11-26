@@ -1,6 +1,6 @@
 // components/logistics/styles.ts
 // Styles communs des pages Logistique. Les couleurs viennent des variables du thème (clair et sombre),
-// les espacements sont écrits en propriétés logiques pour rester justes en arabe (droite → gauche).
+// les espacements sont écrits en propriétés logiques (début / fin).
 import type { CSSProperties } from "react";
 
 /**

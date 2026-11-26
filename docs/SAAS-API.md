@@ -51,6 +51,7 @@ Renvoyé par `/auth/login`, `/auth/register`, `/auth/google`, `/auth/me`, `/auth
 | POST | `/auth/login` | `email`, `password`, `otp?` | 200 `{ access_token, user, account }`. Double authentification active et pas de code : 401 `{ requires2fa: true }`. Un compte dont l'adresse n'est pas confirmée reçoit un nouveau code |
 | POST 🔒 | `/auth/verify-email-code` | `code` (6 chiffres) | 200 `{ success, account, alreadyVerified? }` : l'accès s'ouvre. 400 `CODE_INVALID` (avec `remainingAttempts`), `CODE_EXPIRED` ou `CODE_LOCKED` (5 essais par code) |
 | POST 🔒 | `/auth/resend-verification` | — | 200 `{ success, emailSent, required, sent, expiresInMinutes, resendInSeconds, message }`, ou `{ success, alreadyVerified: true }`. Un envoi par minute : 429 `CODE_TOO_SOON` `{ retryInSeconds }` |
+| POST 🔒 | `/auth/change-email` | `email` (nouvelle adresse), `password` (mot de passe actuel), `language?` | 200 `{ success, changed, email, reverify, emailSent, verification }`. Corrige une faute de frappe faite à l'inscription, ou change d'adresse : le mot de passe est exigé (401 s'il est faux), 409 si l'adresse est déjà prise, 429 au-delà de 5 essais par 10 minutes. Un compte inscrit en libre-service reçoit un nouveau code à la nouvelle adresse et son accès se referme jusqu'à sa saisie (`reverify: true`) ; l'ancienne adresse reçoit un avis de changement |
 | POST | `/auth/verify-email` | `email`, `token` | **Ancien lien de confirmation**, conservé pour les emails déjà envoyés. 200 `{ success, message, alreadyVerified? }` |
 | POST | `/auth/google` | `credential` (jeton d'identité Google), `intent?: "login" \| "register"`, et pour une inscription `companyName`, `sector`, `phone?`, `acceptTerms: true`, `otp?` | 200 `{ access_token, user, account, created }`. Aucun compte et `intent` ≠ `register` : 404 `{ code: "ACCOUNT_NOT_FOUND", email, name }`. Google non configuré : 503 |
 | POST | `/auth/apple` | `identityToken` (jeton d'identité « Sign in with Apple »), `intent?: "login" \| "register"`, `name?` (Apple ne le donne qu'à la première autorisation) et, pour une inscription, `companyName`, `sector`, `phone?`, `acceptTerms: true`, `otp?` | Mêmes réponses que `/auth/google`. 503 si `APPLE_CLIENT_ID` n'est pas défini. Le jeton est vérifié avec les clés publiques d'Apple (signature RS256, `iss`, `aud`, expiration) ; une adresse non vérifiée ne sert jamais à retrouver un compte |
@@ -58,10 +59,58 @@ Renvoyé par `/auth/login`, `/auth/register`, `/auth/google`, `/auth/me`, `/auth
 | POST | `/auth/reset-password` | `email`, `token`, `newPassword` | 200 `{ success, message }` |
 | GET 🔒 | `/auth/me` | — | profil + `account`, `sector`, `emailVerified`, `googleLinked`, `appleLinked`, `permissions` |
 | POST 🔒 | `/auth/logout-all` | — | ferme toutes les sessions |
+| POST 🔒 | `/auth/2fa/setup` | — | 200 `{ secret, otpauthUrl, qrCodeDataUrl }` : nouvelle clé TOTP (RFC 6238, 6 chiffres, 30 s) à scanner ; 400 si la double authentification est déjà activée. 10 appels par 10 minutes |
+| POST 🔒 | `/auth/2fa/enable` | `code` (6 à 8 chiffres) | 200 `{ success, twoFactorEnabled: true }` : confirme la clé avec un code de l'application ; 400 `Code invalide…` sinon. Le titulaire est prévenu par email. 10 appels par 10 minutes |
+| POST 🔒 | `/auth/2fa/disable` | `password`, `code` | 200 `{ success, twoFactorEnabled: false }` ; 401 `Mot de passe incorrect`, 400 `Code invalide.`. Le titulaire est prévenu par email. 10 appels par 10 minutes |
 | PATCH 🔒 | `/users/change-password` | `oldPassword`, `newPassword` | `{ success, message, access_token }` — **remplacer le jeton enregistré** par `access_token` |
 
 `user` : `{ id, email, name, role, companyName, modules, isTeamMember, ownerId, twoFactorEnabled, permissions, sector }`.
-Mot de passe : 8 caractères au moins, avec une lettre et un chiffre.
+Mot de passe : voir « Sécurité » ci-dessous.
+
+## Sécurité
+
+**Mots de passe.** 8 à 128 caractères, avec au moins une lettre et un chiffre. Sont aussi refusés (400, message en français : `trop faible`,
+`trop courant ou trop prévisible`, `ne doit pas contenir votre adresse email`) : les mots de passe parmi les plus répandus (`Password1`,
+`Azerty123`, `Inovexa2026`… même avec une autre casse ou de la ponctuation), ceux qui ne répètent que quelques caractères (`aaaa1111`) et
+ceux qui contiennent la partie de l'adresse email avant `@` (4 caractères au moins). La règle s'applique à l'inscription, à la
+réinitialisation, au changement depuis le profil, aux comptes créés par l'administrateur et aux comptes transporteurs ; elle ne
+refuse jamais un mot de passe déjà enregistré. Les mots de passe sont hachés avec bcrypt (coût 10).
+
+**Blocage des tentatives de connexion.** Cinq échecs en 15 minutes pour un même couple *adresse + machine* : 429 `Trop de tentatives.
+Réessayez dans N min.` pendant 15 minutes, même avec le bon mot de passe. Un compte visé depuis de nombreuses machines (30 échecs en
+15 minutes) est bloqué pour tout le monde : c'est le prix à payer contre une attaque répartie. Les erreurs de code de double
+authentification comptent comme des échecs ; une connexion réussie remet les compteurs à zéro. L'adresse de la machine vient de
+`X-Forwarded-For` : un seul relais est supposé (Render, Railway…), réglable avec `TRUST_PROXY` (voir ci-dessous). S'y ajoutent les
+limites par route (inscription, mot de passe oublié, codes de vérification) et la limite générale (120 requêtes par minute et par
+adresse sans session, 900 avec session).
+
+**Taille des requêtes.** Corps limité à 200 ko sur `/auth`, `/public` et pour toute requête sans session valide (413 au-delà) ;
+50 Mo seulement avec une session valide (import de fichiers, pièces jointes).
+
+**Fichiers envoyés.** La photo de profil est relue octet par octet : le contenu doit être un vrai JPEG, PNG, WebP ou GIF qui correspond
+à l'extension ; sinon 400 `Ce fichier n’est pas une image valide` et le fichier est supprimé.
+
+**Sessions.** Jeton de 12 h (`JWT_EXPIRES_IN`) ; le rôle est relu en base à chaque requête (un jeton falsifié ou périmé ne donne
+aucun droit) ; changement de mot de passe, réinitialisation et « se déconnecter de tous les appareils » ferment toutes les autres sessions.
+
+**Double authentification (TOTP).** Activable par chaque utilisateur depuis Profil › Sécurité (et par l'administrateur depuis
+Réglages › Sécurité). Une fois active, `/auth/login` répond 401 `{ requires2fa: true }` tant que `otp` manque ou est faux. Il n'y a
+pas de codes de secours : un client qui perd son téléphone demande au support, qui utilise `POST /admin/accounts/:id/reset-2fa`
+(sessions fermées, client prévenu par email, action journalisée `two_factor_reset_by_admin`). Pour un compte administrateur,
+la route répond 403 : la réinitialisation se fait depuis le serveur (`ADMIN_RESET_2FA=true`, voir `docs/OPERATIONS.md`).
+
+**Alertes par email** (dans la langue du compte, jamais bloquantes) : mot de passe changé, double authentification activée,
+désactivée ou réinitialisée, adresse email remplacée (envoyée à l'ancienne adresse).
+
+**Contrôle de la configuration.** `GET /admin/security` (administrateur) renvoie `{ ok, errors, warnings, production, checks: [{ key,
+ok, level, message }] }` : clé de session assez longue, HTTPS public, schéma géré par les migrations, documentation Swagger fermée,
+emails, paiement, double authentification des administrateurs, sauvegardes. Jamais de valeur secrète dans la réponse. Le même
+rapport est écrit dans les journaux au démarrage ; en production, une clé de session faible, des adresses locales (http) ou une base en
+`synchronize` sont des erreurs (niveau `error`) à corriger. Le rapport informe : il n'empêche pas le serveur de démarrer.
+
+**Langue des emails** : `language` (`fr`, `en` ou `es`) peut accompagner `/auth/register`, `/auth/forgot-password`, `/auth/change-email` et `PATCH /users/profile` ; elle est enregistrée sur le compte (`users.language`) et sert à tous les emails suivants (code, reçus, rappels, remboursement). Une valeur inconnue — l'arabe a été retiré — donne le français. L'espace d'administration reste en français.
+
+`PATCH /users/profile` : changer d'adresse exige `currentPassword` (401 s'il est faux, 409 si l'adresse est prise) et répond `emailChange: { codeSent, verificationRequired }` ; le nom, le téléphone et la société se modifient sans mot de passe.
 
 **Code de vérification** : 6 chiffres envoyés par email à l'inscription ; seule son empreinte (HMAC-SHA256 avec `JWT_SECRET`) est gardée en base.
 Valable 15 minutes, 5 essais, un nouveau code par minute au plus. Le code n'est réellement exigé que si l'administrateur ne l'a pas
@@ -90,7 +139,7 @@ Une sous-catégorie est une `SectorCategory` dont `parentId` désigne sa catégo
 | GET | `/billing/subscription` | — | `SubscriptionView` : `{ account, company, plan, users: { used, limit }, modules, pendingPayment, checkout, payment: { currency, vatRate, online: { enabled, provider, test, methods }, onlinePayment, manual, instructions, methods, link }, support, canManage, emailEnabled }`. `checkout` = page de paiement par carte encore ouverte (à reprendre). Un paiement par carte fait dans un autre onglet est reconnu ici |
 | POST | `/billing/checkout` | `planCode`, `billingCycle: "monthly" \| "annual"` | 201 `{ id, payUrl, expiresAt, amountTTC, currency, resumed }` : rediriger le navigateur vers `payUrl`. **Le montant TTC est calculé par le serveur** (formule + TVA + devise des réglages) ; tout montant envoyé par le navigateur est ignoré. Même choix déjà ouvert : la même page est reprise (`resumed: true`). Formule sur devis ou gratuite : 400 ; compte suspendu : 403 ; 12 ouvertures par heure et par compte : 429 ; Konnect en panne : 502 ; paiement non configuré : 503. Propriétaire seulement |
 | POST | `/billing/checkout/:id/verify` | — | 200 `{ status: "paid" \| "pending" \| "expired" \| "unknown", payment, account }`. Au retour de la page de paiement : relit l'état chez Konnect et, si c'est encaissé, **ouvre l'abonnement tout de suite**, sans administrateur. `unknown` = ce paiement n'appartient pas à cette société |
-| GET | `/billing/modules` | — | `{ sector, plan: { code, name, allModules } \| null, trial, modules: [{ key, enabled, included, recommended }], sectors: [{ code, name, nameEn, nameAr, modules }] }` — `included` : compris dans la formule ; `recommended` : conseillé pour le secteur ; pendant l'essai aucune formule ne limite les modules |
+| GET | `/billing/modules` | — | `{ sector, plan: { code, name, allModules } \| null, trial, modules: [{ key, enabled, included, recommended }], sectors: [{ code, name, nameEn, modules }] }` — `included` : compris dans la formule ; `recommended` : conseillé pour le secteur ; pendant l'essai aucune formule ne limite les modules |
 | PUT | `/billing/modules` | `{ modules: string[] }` | Le propriétaire ouvre ou ferme ses modules (tableau de bord, profil et réglages restent toujours ouverts). Module hors formule : 403 `MODULE_NOT_IN_PLAN` `{ modules }`. Renvoie la même vue que `GET /billing/modules` |
 | PUT | `/billing/sector` | `{ sector, applyModules?: boolean }` | Le propriétaire change de secteur ; `applyModules: true` reprend les modules conseillés (dans la limite de la formule) |
 | GET | `/billing/plans` | — | `{ currency, vatRate, plans }` |
@@ -99,14 +148,15 @@ Une sous-catégorie est une `SectorCategory` dont `parentId` désigne sa catégo
 | DELETE | `/billing/payments/:id` | — | annule sa déclaration en attente |
 | GET | `/billing/payments/:id/receipt` | — | `Receipt` (paiement validé seulement) |
 | POST | `/billing/cancel` | `password`, `reason?` | résilie (propriétaire seulement) |
-| GET | `/billing/suggestions?sector=` | — | `{ sectors: [{ code, name, nameEn, nameAr, itemCount }], current, sector, categories, items, serviceOffers, disclaimer }` |
+| GET | `/billing/suggestions?sector=` | — | `{ sectors: [{ code, name, nameEn, itemCount }], current, sector, categories, items, serviceOffers, disclaimer }` |
 | POST | `/products/suggestions/import` | `itemIds: number[]`, `overrides?: { [itemId]: { price } }` | `{ created, skipped, products: [{ id, name }], details: [{ name, reason }], disclaimer }` |
 
 Le formulaire « écrire à l'administrateur » (`POST /billing/contact`, `/admin/messages`) a été **retiré** : tout se fait en ligne, sans
 intervention de l'administrateur. Ces routes répondent 404. La table `support_messages` est conservée pour ne perdre aucun ancien message.
 
 Moyens de paiement : `card` et `edinar` (en ligne, par Konnect) ; hors ligne, seulement si l'administrateur les ouvre : `bank_transfer`,
-`cash`, `cheque`, `d17`, `flouci`, `postal`, `other`.
+`cash`, `cheque`, `d17`, `flouci`, `postal`, `other`. Côté Konnect, les moyens connus sont `bank_card` (`card`), `e-DINAR` (`edinar`) et `wallet`
+(portefeuille Konnect) : `KONNECT_PAYMENT_METHODS` n'en accepte pas d'autres, toute valeur inconnue est ignorée.
 
 ### Paiement par carte (Konnect) : comment l'abonnement s'ouvre sans administrateur
 
@@ -126,7 +176,21 @@ Moyens de paiement : `card` et `edinar` (en ligne, par Konnect) ; hors ligne, se
    l'administrateur** reste suspendu (la période payée est conservée, l'accès revient à la réactivation).
 
 Statuts d'un paiement : `initiated` (page ouverte), `expired` (abandonnée ou refusée par Konnect), `pending` (déclaration hors ligne),
-`validated`, `rejected`, `cancelled`. Une page refermée mais payée quand même est reconnue.
+`validated`, `rejected`, `cancelled`, `refunded` (remboursé par l'administrateur). Une page refermée mais payée quand même est reconnue.
+
+**Paiement partiel** : si Konnect indique qu'une partie seulement du montant est réglée (`reachedAmount` inférieur à `amount`), le paiement n'est
+pas pris en compte (un avertissement est écrit dans les journaux du serveur) ; l'administrateur peut le relire plus tard.
+
+**Reçus sans trou** : le numéro `REC-AAAA-NNNNN` est attribué à l'encaissement, depuis un compteur de la plateforme (table `number_sequences`,
+clé `platform_receipt`, par année), dans la même transaction que l'ouverture de l'abonnement. La suite est donc continue, même quand des pages de
+paiement ont été abandonnées. Le numéro reste attaché à un paiement remboursé (son reçu n'est plus téléchargeable). `Receipt.issuer` porte l'identité
+légale de l'éditeur (`issuerName`, `issuerTaxId`, `issuerAddress`, `issuerRegistry` des réglages, plus l'email et le téléphone de support) ; il vaut
+`null` tant que la raison sociale n'est pas renseignée. **Un reçu n'est pas une facture légale** : la facture de l'abonnement reste à émettre par l'éditeur.
+
+**Remboursement** : Konnect n'a pas d'API de remboursement — l'argent se rend depuis le tableau de bord Konnect. `POST /admin/payments/:id/refund`
+remet ensuite l'abonnement en accord : seul le paiement validé **le plus récent** d'un compte peut être remboursé (409 sinon, avec le numéro du reçu à
+rembourser d'abord) ; la période qu'il avait ouverte est retirée (retour à l'échéance et à la formule d'avant ; l'essai reprend là où il en était s'il
+court encore, sinon l'accès se ferme — les données sont conservées) et le client reçoit un email dans sa langue.
 
 ## Agenda 🔒 (module `appointments`)
 
@@ -217,6 +281,9 @@ pas de base de calcul. `pendingPayments` ne compte que les déclarations hors li
 | POST | `/admin/accounts/:id/reactivate` | — |
 | POST | `/admin/accounts/:id/cancel` | `{ reason? }` |
 | POST | `/admin/accounts/:id/extend-trial` | `{ hours }` |
+| POST | `/admin/accounts/:id/verify-email` | — : confirme l'adresse à la place du client (journalisé : `email_verified_by_admin`) |
+| POST | `/admin/accounts/:id/reset-2fa` | — : réinitialise la double authentification d'un client qui a perdu son téléphone (200 `{ success, alreadyDisabled }`) ; 403 pour un compte administrateur ; 404 si le compte n'existe pas. Sessions fermées, client prévenu, journal `two_factor_reset_by_admin` |
+| POST | `/admin/accounts/:id/resend-verification` | `{ language? }` : renvoie un code à l'adresse du compte, sans le délai d'attente du client (`email_code_sent_by_admin`) ; 503 si l'envoi d'emails n'est pas configuré |
 | PATCH | `/admin/accounts/:id/subscription` | `planCode?` (`null` = aucune), `billingCycle?`, `subscriptionEnd?`, `userLimit?`, `expiryEnforced?`, `sector?`, `applySectorModules?` |
 | PATCH | `/admin/clients/:id/modules` | `{ modules: { [clé]: boolean } }` |
 
@@ -243,13 +310,18 @@ Routes d'origine conservées : `GET/POST /admin/clients`,
 | POST | `/admin/payments/:id/validate` | valide une déclaration hors ligne |
 | POST | `/admin/payments/:id/reject` | `{ reason? }` |
 | GET | `/admin/payments/:id/receipt` | `Receipt` |
+| POST | `/admin/payments/:id/recheck` | — : « j'ai payé mais rien ne s'ouvre » — relit le paiement par carte chez Konnect et, s'il est encaissé, ouvre l'abonnement (même une page expirée). 200 `{ status: "paid" \| "pending" \| "expired" \| "unknown", payment }` ; 404 si ce n'est pas un paiement en ligne, 409 s'il n'a jamais été ouvert chez Konnect. Journal : `payment_rechecked` |
+| POST | `/admin/payments/:id/refund` | `{ reason? }` : voir « Remboursement » ci-dessus. 200 `{ payment, account }` ; 409 si le paiement n'est pas validé, déjà remboursé, ou si un paiement plus récent est encore validé. Journal : `payment_refunded` |
+| GET | `/admin/online-payment` | liste de contrôle « mise en production » du paiement par carte, **sans appeler Konnect** : `{ enabled, mode, provider, webhookUrl, siteUrls, ready, live, checks: [{ key, ok, level: "error" \| "warn", message }] }`. Contrôles : `credentials`, `currency`, `plans`, `mode`, `apiUrl` (https public, appelée par Konnect), `siteUrl`, `mail`, `issuer`. `ready` : un client peut payer ; `live` : paiements réels et rien à corriger. Ni la clé ni le portefeuille n'y figurent |
+| POST | `/admin/online-payment/test` | `{ wallet?: boolean }` : teste la connexion à Konnect. Sans `wallet`, relit un paiement inexistant (404 ou 400 = clé acceptée, 401/403 = clé refusée, 5xx ou réseau = non vérifié) : **aucun paiement n'est ouvert**. Avec `wallet: true`, ouvre un paiement de test de 1 TND qui expire au bout de 5 minutes (jamais encaissé) pour vérifier le portefeuille. 200 `{ provider, mode, configured, reachable, keyAccepted, walletAccepted, message }` (`null` = non vérifié). 6 appels par minute au plus. Journal : `konnect_test` |
+| PUT | `/admin/settings` (identité de l'éditeur) | `issuerName` (160), `issuerTaxId` (matricule fiscal tunisien, validé et normalisé : `1234567X/A/M/000`), `issuerAddress`, `issuerRegistry` : imprimés en tête des reçus. Chaîne vide = effacer |
 
 ### Secteurs, suggestions, prestations
 | Méthode | Route | Corps |
 | --- | --- | --- |
 | GET | `/admin/sectors` | `Sector[]` (tous, actifs ou non) |
 | GET | `/admin/sectors/:code/detail` | `{ sector, categories, items, serviceOffers, disclaimer }` (tout, actif ou non) |
-| POST | `/admin/sectors` | `code`, `name`, `nameEn?`, `nameAr?`, `description?`, `modules?: string[]`, `recommendations?: string[]`, `isActive?`, `sortOrder?` |
+| POST | `/admin/sectors` | `code`, `name`, `nameEn?`, `description?`, `modules?: string[]`, `recommendations?: string[]`, `isActive?`, `sortOrder?` |
 | PATCH/DELETE | `/admin/sectors/:id` | suppression refusée (409) si des comptes y sont rattachés |
 | POST | `/admin/sectors/:id/categories` | `name`, `description?`, `parentId?`, `isActive?`, `sortOrder?` |
 | PATCH/DELETE | `/admin/sectors/:id/categories/:catId` | la suppression emporte ses sous-catégories et leurs suggestions |
@@ -261,7 +333,10 @@ Routes d'origine conservées : `GET/POST /admin/clients`,
 ### Journal et maintenance
 | Méthode | Route | Notes |
 | --- | --- | --- |
-| GET | `/admin/audit` | `action`, `userId`, `from`, `to`, `limit`, `offset` → `{ total, limit, offset, items: [{ id, userId, actorId, actorEmail, action, entity, entityId, method, path, status, ip, createdAt, details }] }`. Actions de compte et de paiement : `account_registered`, `account_expired`, `checkout_started`, `payment_received` (carte, sans administrateur), `payment_mismatch` (Konnect annonce autre chose que ce qui a été demandé), `payment_validated`, `payment_rejected`, `modules_changed`, `sector_changed`… |
+| GET | `/admin/audit` | `action`, `userId`, `from`, `to`, `limit`, `offset` → `{ total, limit, offset, items: [{ id, userId, actorId, actorEmail, action, entity, entityId, method, path, status, ip, createdAt, details }] }`. Actions de compte et de paiement : `account_registered`, `account_expired`, `checkout_started`, `payment_received` (carte, sans administrateur), `payment_mismatch` (Konnect annonce autre chose que ce qui a été demandé), `payment_validated`, `payment_rejected`, `payment_rechecked`, `payment_refunded`, `konnect_test`, `mail_test_sent`, `mail_test_failed`, `email_verified`, `email_verified_by_admin`, `email_code_sent_by_admin`, `email_changed`, `email_change_failed`, `email_code_failed`, `modules_changed`, `sector_changed`… |
+| GET | `/admin/security` | contrôles de sécurité de la configuration du serveur (voir « Sécurité ») |
+| GET | `/admin/maintenance/mail` | état de l'envoi d'emails : configuration (jamais le mot de passe) et réponse du serveur SMTP, avec délais maximum |
+| POST | `/admin/maintenance/test-email` | `{ to? }` (l'administrateur par défaut) : envoie un email de test ; 502 avec le motif si le serveur refuse. 5 par minute au plus. Journal : `mail_test_sent` / `mail_test_failed` |
 | POST | `/admin/maintenance/sweep` | lance tout de suite le balayage : relecture des paiements par carte ouverts, puis expirations et rappels → `{ checked, expired, reminders, checkouts: { checked, paid } }` |
 | POST | `/admin/maintenance/upgrade-catalog` | reporte les nouveautés du contenu de départ (nouveaux secteurs, modules ajoutés aux secteurs restés d'origine, prix des formules de départ, moyens de paiement) sans toucher à ce que l'administrateur a modifié → `{ upgraded, from?, to? }`. Fait aussi tout seul au démarrage, une fois par version (version 3 : prix en dollars, Rendez-vous et Projets, code de vérification). Passage en dollars : si la devise est encore le dinar et qu'aucune formule n'était publiée, ou que les formules publiées sont toutes restées celles de départ sans aucun paiement enregistré, les prix de départ deviennent 15 / 29 / 79 $ par mois (150 / 290 / 790 $ par an) ; sinon la devise et les prix ne bougent pas (le journal d'activité l'indique) |
 

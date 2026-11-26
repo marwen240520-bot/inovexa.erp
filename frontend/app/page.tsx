@@ -4,7 +4,7 @@
 // Une page qui défile : premier écran (image, titre, essai gratuit), puis pourquoi Inovexa ERP, les modules, les
 // secteurs, le démarrage en trois étapes, les formules et un dernier appel à l'essai.
 // L'en-tête est celui des pages publiques (components/site/SiteHeader) : il garde sa place en haut de l'écran et
-// ne recouvre pas le contenu. Textes en français, anglais, espagnol et arabe (components/home/homeTexts.ts) ;
+// ne recouvre pas le contenu. Textes en français, anglais et espagnol (components/home/homeTexts.ts) ;
 // modules, secteurs et formules viennent du catalogue commun (lib/catalog.ts).
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -18,7 +18,7 @@ import { usePublicOffer, twoMonthsFree } from "@/lib/publicOffer";
 import { formatPrice } from "@/lib/saas";
 import { getStoredUser, getToken, homeFor } from "@/lib/session";
 
-const HOME_LANGS: HomeLang[] = ["fr", "en", "es", "ar"];
+const HOME_LANGS: HomeLang[] = ["fr", "en", "es"];
 /** Répartition des groupes de modules (lib/catalog.ts › MODULE_GROUPS) sur deux colonnes. */
 const GROUP_COLUMNS: string[][] = [["commercial", "insights"], ["supply", "finance"]];
 const BG_IMAGE = "/images/3.png";
@@ -490,7 +490,6 @@ const STYLES = `
   .hp-bg-img { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; object-position: 100% 55%; user-select: none; -webkit-user-drag: none; }
   /* Voile clair sous le texte : le titre reste lisible sur la partie gauche de l'image */
   .hp-bg-veil { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, rgba(248, 247, 255, 0.72) 0%, rgba(248, 247, 255, 0.38) 34%, rgba(248, 247, 255, 0) 58%); }
-  [dir="rtl"] .hp-bg-veil { background: linear-gradient(90deg, rgba(248, 247, 255, 0.72) 0%, rgba(248, 247, 255, 0.38) 34%, rgba(248, 247, 255, 0) 58%); }
 
   .hp-hero-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; width: 100%; max-width: min(720px, 52vw); }
   .hp-badge { display: inline-flex; align-items: center; gap: 9px; padding: 7px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.86); border: 1px solid rgba(109, 40, 217, 0.18); box-shadow: 0 6px 18px rgba(76, 29, 149, 0.08); color: var(--hp-text); font-size: clamp(12.5px, 0.95vw, 14.5px); font-weight: 600; line-height: 1.35; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
@@ -552,17 +551,12 @@ const STYLES = `
   @media (min-width: 1200px) {
     .hp-hero-content { max-width: min(720px, 52vw, calc(100vw - 768.7 * max(100vw / 1672, (100vh - var(--hp-header)) / 941) - var(--hp-pad) - 32px)); }
   }
-  /* Arabe : l'image ne se retourne pas (le portable reste à droite) ; le texte reste donc dans la moitié gauche */
-  [dir="rtl"] .hp-hero-content { margin-inline-start: auto; }
-  [dir="rtl"] .hp-title { line-height: 1.3; }
-  [dir="rtl"] .hp-cta-arrow svg, [dir="rtl"] .hp-link svg { transform: scaleX(-1); }
-  [dir="rtl"] .hp-cta:hover .hp-cta-arrow { transform: translateX(-3px); }
 
   /* Tablette et téléphone : le texte occupe la largeur, l'orbite est masquée, le voile couvre toute l'image */
   @media (max-width: 1199px) {
     .hp-orbit { display: none; }
     .hp-hero-content { max-width: 680px; }
-    .hp-bg-veil, [dir="rtl"] .hp-bg-veil { background: linear-gradient(180deg, rgba(248, 247, 255, 0.82) 0%, rgba(248, 247, 255, 0.62) 55%, rgba(248, 247, 255, 0.3) 100%); }
+    .hp-bg-veil { background: linear-gradient(180deg, rgba(248, 247, 255, 0.82) 0%, rgba(248, 247, 255, 0.62) 55%, rgba(248, 247, 255, 0.3) 100%); }
   }
   @media (max-width: 1199px) and (orientation: portrait) { .hp-bg-img { object-position: 0% center; } }
   @media (max-width: 640px) {

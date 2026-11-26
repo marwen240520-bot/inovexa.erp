@@ -9,12 +9,14 @@
  */
 import React, { FormEvent, useEffect, useState } from "react";
 import { api, Badge, Btn, Card, ErrorBox, inputStyle, Loading, Notice, Page, Row, useLoad, useNotice } from "@/components/erp/kit";
-import { AdminSettings, Check, FormField, InlineError, METHOD_LABELS, errorText, helpStyle } from "@/components/admin/config/shared";
+import { AdminSettings, Check, ConnectionTest, FormField, InlineError, METHOD_LABELS, OnlineReadiness, SecurityReport, errorText, helpStyle } from "@/components/admin/config/shared";
+import TwoFactorCard from "@/components/account/TwoFactorCard";
 import { hoursAsDays } from "@/components/admin/core/shared";
 
 interface Form {
   trialHours: string; trialReminderHours: string; renewalReminderDays: string; requireEmailVerification: boolean; currency: string; vatRate: string;
   manualPayments: boolean; paymentInstructions: string; paymentMethods: string[]; paymentLink: string; supportEmail: string; supportPhone: string; supportWhatsapp: string;
+  issuerName: string; issuerTaxId: string; issuerAddress: string; issuerRegistry: string;
 }
 
 const formOf = (s: AdminSettings): Form => ({
@@ -22,7 +24,65 @@ const formOf = (s: AdminSettings): Form => ({
   requireEmailVerification: !!s.requireEmailVerification, currency: s.currency || "USD", vatRate: String(s.vatRate).replace(".", ","),
   manualPayments: !!s.manualPayments, paymentInstructions: s.paymentInstructions || "", paymentMethods: s.paymentMethods?.length ? s.paymentMethods : ["bank_transfer"], paymentLink: s.paymentLink || "",
   supportEmail: s.supportEmail || "", supportPhone: s.supportPhone || "", supportWhatsapp: s.supportWhatsapp || "",
+  issuerName: s.issuerName || "", issuerTaxId: s.issuerTaxId || "", issuerAddress: s.issuerAddress || "", issuerRegistry: s.issuerRegistry || "",
 });
+
+/** Lignes d'une liste de contrôle : pastille (en règle / à vérifier / à corriger) et explication. */
+function CheckRows({ checks }: { checks: Array<{ key: string; ok: boolean; level: "error" | "warn"; message: string }> }) {
+  return (
+    <>
+      {checks.map((c) => (
+        <div key={c.key} style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 10px", padding: "7px 0", borderTop: "1px solid var(--theme-border)", fontSize: 13.5 }}>
+          <Badge tone={c.ok ? "green" : c.level === "error" ? "red" : "amber"}>{c.ok ? "En règle" : c.level === "error" ? "À corriger" : "À vérifier"}</Badge>
+          <span style={{ flex: "1 1 280px", minWidth: 0, overflowWrap: "anywhere" }}>{c.message}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Contrôles de sécurité de la configuration du serveur (clé de session, HTTPS, emails, double authentification des administrateurs…). */
+function ServerSecurity({ report }: { report: ReturnType<typeof useLoad<SecurityReport>> }) {
+  const { data, error, loading, reload } = report;
+  if (error && !data) return <ErrorBox message={error} onRetry={reload} />;
+  if (!data) return loading ? <Loading /> : null;
+  const headline = data.errors > 0
+    ? { tone: "red" as const, text: `${data.errors} point${data.errors > 1 ? "s" : ""} à corriger` }
+    : data.warnings > 0
+      ? { tone: "amber" as const, text: `${data.warnings} point${data.warnings > 1 ? "s" : ""} à vérifier` }
+      : { tone: "green" as const, text: "Configuration sûre" };
+  return (
+    <div>
+      <div style={{ marginBottom: 6, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+        <Badge tone={headline.tone}>{headline.text}</Badge>
+        <Btn type="button" onClick={reload} busy={loading} style={{ padding: "4px 10px", fontSize: 12 }}>Revérifier</Btn>
+      </div>
+      <CheckRows checks={data.checks} />
+      {!data.production && (
+        <p style={{ ...helpStyle, marginTop: 10 }}>Ce serveur ne tourne pas en mode production : une clé de session faible ou une adresse locale n’est alors qu’un avertissement. En production, ce sont des erreurs à corriger.</p>
+      )}
+      <p style={{ ...helpStyle, marginTop: 10 }}>Ces contrôles lisent la configuration du serveur de l’API sans jamais afficher un secret. Le même rapport est écrit dans les journaux au démarrage.</p>
+    </div>
+  );
+}
+
+/** Liste de contrôle « mise en production » : ce qui bloque, ce qu'il vaut mieux régler, ce qui est en règle. */
+function ReadinessList({ data }: { data: OnlineReadiness }) {
+  const headline = data.live
+    ? { tone: "green" as const, text: "Prêt pour de vrais paiements" }
+    : data.ready
+      ? { tone: "amber" as const, text: data.mode === "sandbox" ? "Les clients peuvent payer — en mode test" : "Les clients peuvent payer — quelques points à régler" }
+      : { tone: "red" as const, text: "Pas encore prêt : les clients ne peuvent pas payer" };
+  return (
+    <div>
+      <div style={{ marginBottom: 6 }}><Badge tone={headline.tone}>{headline.text}</Badge></div>
+      <CheckRows checks={data.checks} />
+      <p style={{ ...helpStyle, marginTop: 10 }}>
+        Adresse que Konnect appelle après chaque paiement : <code style={{ overflowWrap: "anywhere" }}>{data.webhookUrl}</code>. Elle est transmise à Konnect à chaque paiement : il n’y a rien à saisir dans son tableau de bord.
+      </p>
+    </div>
+  );
+}
 
 function State({ ok, name, on, off }: { ok: boolean; name: string; on: string; off: string }) {
   return (
@@ -39,8 +99,12 @@ export default function AdminSettingsPage() {
   const [form, setForm] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [maintenance, setMaintenance] = useState<"sweep" | "catalog" | null>(null);
+  const [maintenance, setMaintenance] = useState<"sweep" | "catalog" | "mail-check" | "mail-test" | null>(null);
   const [notice, notify] = useNotice();
+  const readiness = useLoad(() => api<OnlineReadiness>("/admin/online-payment"), []);
+  const security = useLoad(() => api<SecurityReport>("/admin/security"), []);
+  const [probing, setProbing] = useState<"key" | "wallet" | null>(null);
+  const [probeResult, setProbeResult] = useState<ConnectionTest | null>(null);
 
   useEffect(() => { if (data && !form) setForm(formOf(data)); }, [data, form]);
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -54,6 +118,7 @@ export default function AdminSettingsPage() {
     if (!Number.isFinite(vatRate) || vatRate < 0 || vatRate > 100) { setFormError("Taux de TVA invalide."); return; }
     if (form.manualPayments && form.paymentMethods.length === 0) { setFormError("Paiements hors ligne : gardez au moins un moyen de paiement, ou désactivez-les."); return; }
     if (form.manualPayments && form.paymentMethods.includes("card") && !form.paymentLink.trim()) { setFormError("Hors ligne, « Carte bancaire » demande un lien de paiement (adresse https)."); return; }
+    if ((form.issuerTaxId.trim() || form.issuerAddress.trim() || form.issuerRegistry.trim()) && !form.issuerName.trim()) { setFormError("Identité de l’éditeur : renseignez la raison sociale (le matricule, l’adresse et le registre sont imprimés avec elle)."); return; }
     setSaving(true);
     setFormError(null);
     try {
@@ -64,6 +129,7 @@ export default function AdminSettingsPage() {
           requireEmailVerification: form.requireEmailVerification, currency: form.currency.trim().toUpperCase(), vatRate,
           manualPayments: form.manualPayments, paymentInstructions: form.paymentInstructions, paymentMethods: form.paymentMethods, paymentLink: form.paymentLink.trim(),
           supportEmail: form.supportEmail.trim(), supportPhone: form.supportPhone.trim(), supportWhatsapp: form.supportWhatsapp.trim(),
+          issuerName: form.issuerName.trim(), issuerTaxId: form.issuerTaxId.trim(), issuerAddress: form.issuerAddress.trim(), issuerRegistry: form.issuerRegistry.trim(),
         },
       });
       // La réponse de l'enregistrement ne porte pas les champs calculés (connexions) : on garde ceux déjà lus.
@@ -71,6 +137,7 @@ export default function AdminSettingsPage() {
       setData(merged);
       setForm(formOf(merged));
       notify("Réglages enregistrés.");
+      readiness.reload();
     } catch (err) {
       setFormError(errorText(err));
     } finally {
@@ -78,13 +145,35 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const run = async (kind: "sweep" | "catalog") => {
+  /** Test de connexion à Konnect : la clé seule (aucun paiement ouvert), ou la clé et le portefeuille (paiement de test de 1 TND). */
+  const testKonnect = async (wallet: boolean) => {
+    if (probing) return;
+    setProbing(wallet ? "wallet" : "key");
+    setProbeResult(null);
+    try {
+      setProbeResult(await api<ConnectionTest>("/admin/online-payment/test", { method: "POST", body: { wallet } }));
+    } catch (err) {
+      notify(errorText(err), "err");
+    } finally {
+      setProbing(null);
+    }
+  };
+
+  const run = async (kind: "sweep" | "catalog" | "mail-check" | "mail-test") => {
     if (maintenance) return;
     setMaintenance(kind);
     try {
       if (kind === "sweep") {
         const res = await api<{ checked: number; expired: number; reminders: number; checkouts?: { checked: number; paid: number } }>("/admin/maintenance/sweep", { method: "POST" });
         notify(`${res.checked} comptes vérifiés : ${res.expired} échéance(s) constatée(s), ${res.reminders} rappel(s) envoyé(s)${res.checkouts?.checked ? `, ${res.checkouts.checked} paiement(s) en ligne relu(s) dont ${res.checkouts.paid} encaissé(s)` : ""}.`);
+      } else if (kind === "mail-check") {
+        const res = await api<{ configured: boolean; host: string | null; port: number | null; from: string | null; reachable: boolean | null; error: string | null }>("/admin/maintenance/mail");
+        if (!res.configured) notify("L’envoi d’emails n’est pas configuré : définissez SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS et SMTP_FROM sur le serveur de l’API.", "err");
+        else if (res.reachable) notify(`Serveur d’envoi joignable (${res.host}:${res.port}) — expéditeur : ${res.from}.`);
+        else notify(`Le serveur d’envoi (${res.host}:${res.port}) ne répond pas correctement : ${res.error || "erreur inconnue"}`, "err");
+      } else if (kind === "mail-test") {
+        const res = await api<{ to: string }>("/admin/maintenance/test-email", { method: "POST", body: {} });
+        notify(`Email de test envoyé à ${res.to}. Vérifiez votre boîte de réception (et les courriers indésirables).`);
       } else {
         const res = await api<{ upgraded: boolean; from?: number; to?: number }>("/admin/maintenance/upgrade-catalog", { method: "POST" });
         notify(res.upgraded ? `Contenu de départ mis à niveau (version ${res.from} → ${res.to}).` : "Le contenu de départ est déjà à jour.");
@@ -176,6 +265,43 @@ export default function AdminSettingsPage() {
                 </ol>
               </>
             )}
+            <div style={{ marginTop: 18, borderTop: "1px solid var(--theme-border)", paddingTop: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Avant d’encaisser de vrais clients</div>
+              {readiness.error ? <InlineError>{readiness.error}</InlineError> : readiness.data ? <ReadinessList data={readiness.data} /> : <Loading />}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+                <Btn type="button" onClick={() => testKonnect(false)} busy={probing === "key"} disabled={!online?.enabled || probing !== null}>Tester la connexion à Konnect</Btn>
+                <Btn type="button" onClick={() => testKonnect(true)} busy={probing === "wallet"} disabled={!online?.enabled || probing !== null}>Tester aussi le portefeuille</Btn>
+              </div>
+              <p style={{ ...helpStyle, marginTop: 8 }}>
+                « Tester la connexion » vérifie seulement votre clé d’API : aucun paiement n’est ouvert. « Tester aussi le portefeuille » ouvre chez Konnect un paiement de test de 1 TND qui expire tout seul au bout de 5 minutes : ne le payez pas.
+              </p>
+              {probeResult ? (
+                <div role="status" style={{ marginTop: 10, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 10px", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--theme-border)", fontSize: 13.5 }}>
+                  <Badge tone={probeResult.keyAccepted === true && probeResult.walletAccepted !== false ? "green" : probeResult.reachable === false || probeResult.keyAccepted === null ? "amber" : "red"}>
+                    {probeResult.keyAccepted === true && probeResult.walletAccepted !== false ? "Connexion réussie" : probeResult.reachable === false ? "Konnect injoignable" : probeResult.keyAccepted === null ? "Non vérifié" : "Refusé par Konnect"}
+                  </Badge>
+                  <span style={{ flex: "1 1 280px", minWidth: 0, overflowWrap: "anywhere" }}>{probeResult.message}</span>
+                </div>
+              ) : null}
+            </div>
+          </Card>
+
+          <Card title="Identité de l’éditeur (reçus de paiement)">
+            <Row>
+              <FormField label="Raison sociale" hint="Nom légal de votre société, imprimé en tête des reçus de paiement.">
+                <input value={form.issuerName} onChange={(e) => set("issuerName", e.target.value)} maxLength={160} style={inputStyle} />
+              </FormField>
+              <FormField label="Matricule fiscal" hint="Format tunisien : 7 chiffres, une lettre, puis /A/M/000.">
+                <input value={form.issuerTaxId} onChange={(e) => set("issuerTaxId", e.target.value)} maxLength={40} style={inputStyle} dir="ltr" />
+              </FormField>
+            </Row>
+            <div style={{ marginTop: 18 }}>
+              <Row>
+                <FormField label="Adresse"><input value={form.issuerAddress} onChange={(e) => set("issuerAddress", e.target.value)} maxLength={300} style={inputStyle} /></FormField>
+                <FormField label="Registre du commerce (facultatif)"><input value={form.issuerRegistry} onChange={(e) => set("issuerRegistry", e.target.value)} maxLength={60} style={inputStyle} dir="ltr" /></FormField>
+              </Row>
+            </div>
+            <p style={{ ...helpStyle, marginTop: 14 }}>L’email et le téléphone imprimés sont ceux de « Contacts de support » ci-dessous. Un reçu de paiement n’est pas une facture légale : la facture de l’abonnement reste à émettre par l’éditeur.</p>
           </Card>
 
           <Card title="Paiements hors ligne (facultatif)">
@@ -242,10 +368,23 @@ export default function AdminSettingsPage() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               <Btn type="button" onClick={() => run("sweep")} busy={maintenance === "sweep"}>Vérifier les échéances maintenant</Btn>
               <Btn type="button" onClick={() => run("catalog")} busy={maintenance === "catalog"}>Mettre à niveau le contenu de départ</Btn>
+              <Btn type="button" onClick={() => run("mail-check")} busy={maintenance === "mail-check"}>Vérifier le serveur d’emails</Btn>
+              <Btn type="button" onClick={() => run("mail-test")} busy={maintenance === "mail-test"} disabled={!data.mailConfigured}>M’envoyer un email de test</Btn>
             </div>
             <p style={{ ...helpStyle, marginTop: 12 }}>Contenu de départ installé : version {data.catalogVersion ?? 1}. La mise à niveau ajoute les nouveaux secteurs et modules et complète les formules restées d’origine ; ce que vous avez modifié n’est jamais écrasé.</p>
           </Card>
         </form>
+      )}
+
+      {form && data && (
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <TwoFactorCard language="fr" tone="page" recommended onChange={() => security.reload()} />
+          </div>
+          <Card title="Sécurité du serveur">
+            <ServerSecurity report={security} />
+          </Card>
+        </>
       )}
     </Page>
   );

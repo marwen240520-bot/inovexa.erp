@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import * as fs from 'fs';
 import * as path from 'path';
+import { sniffImage } from '../../common/security/images';
 
 /** Dossier des photos de profil : le même que celui servi sous /uploads (main.ts), relatif au dossier de lancement. */
 export const AVATAR_DIR = path.join(process.cwd(), 'uploads', 'avatars');
@@ -34,8 +35,35 @@ export class UploadService {
     }
   }
 
+  /**
+   * Le type annoncé par le navigateur ne prouve rien : on lit les premiers octets du fichier enregistré. Un fichier qui n'est
+   * pas une vraie image du format annoncé est supprimé tout de suite.
+   */
+  private assertRealImage(file: Express.Multer.File) {
+    let head = Buffer.alloc(0);
+    try {
+      const fd = fs.openSync(file.path, 'r');
+      try {
+        head = Buffer.alloc(12);
+        const read = fs.readSync(fd, head, 0, 12, 0);
+        head = head.subarray(0, read);
+      } finally {
+        fs.closeSync(fd);
+      }
+    } catch {
+      head = Buffer.alloc(0);
+    }
+    const real = sniffImage(head);
+    const declared = path.extname(file.filename).slice(1).toLowerCase();
+    if (!real || real !== declared) {
+      this.removeFile(file.filename);
+      throw new BadRequestException('Ce fichier n’est pas une image valide (JPEG, PNG, WebP ou GIF).');
+    }
+  }
+
   async saveAvatar(userId: number, file: Express.Multer.File) {
     if (!file || !file.filename) throw new BadRequestException('Aucun fichier reçu.');
+    this.assertRealImage(file);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       this.removeFile(file.filename);

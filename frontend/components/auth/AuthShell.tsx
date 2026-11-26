@@ -160,57 +160,7 @@ const UI_ES: AuthUi = {
   emailPlaceholder: "ejemplo@empresa.tn",
   checking: "Comprobando su sesión…",
   planChosen: "Plan elegido: {plan}. Lo confirmará al final de la prueba.",
-};
-
-const UI_AR: AuthUi = {
-  showPassword: "إظهار كلمة المرور",
-  hidePassword: "إخفاء كلمة المرور",
-  capsLock: "مفتاح Caps Lock مفعّل",
-  ruleLength: "8 أحرف على الأقل",
-  ruleLetter: "حرف واحد",
-  ruleDigit: "رقم واحد",
-  fixFields: "راجع الحقول المشار إليها.",
-  nameRequired: "أدخل اسمك الكامل.",
-  companyRequired: "أدخل اسم شركتك.",
-  emailInvalid: "أدخل بريدًا إلكترونيًا صحيحًا.",
-  phoneInvalid: "رقم غير صحيح: 8 أرقام لتونس، أو رمز البلد (مثال: ‎+33…).",
-  passwordWeak: "كلمة المرور ضعيفة: 8 أحرف على الأقل، مع حرف ورقم.",
-  sectorRequired: "اختر قطاع نشاطك.",
-  termsRequired: "يجب أن توافق على شروط الاستخدام.",
-  taxIdInvalid: "المعرّف الجبائي غير صحيح: 7 أرقام + حرف واحد (مثال: 1234567X أو 1234567X/A/M/000).",
-  otpFormat: "أدخل الرمز المكوّن من 6 أرقام.",
-  tooMany: "محاولات كثيرة. أعد المحاولة لاحقًا.",
-  tooManyMinutes: "محاولات كثيرة. أعد المحاولة بعد {minutes} د.",
-  genericError: "تعذّر إتمام الطلب. أعد المحاولة.",
-  retry: "إعادة المحاولة",
-  loading: "جارٍ التحميل…",
-  sending: "جارٍ الإرسال…",
-  saving: "جارٍ الحفظ…",
-  trialNeutral: "تجربة مجانية، دون بطاقة بنكية. بياناتك تبقى ملكك.",
-  trialFor: "تجربة مجانية لمدة {duration}، دون بطاقة بنكية. بياناتك تبقى ملكك.",
-  googleUnavailable: "تسجيل الدخول بحساب Google غير متاح حاليًا.",
-  googleTwoFactor: "هذا الحساب موجود ومحمي بالمصادقة الثنائية. سجّل دخولك للمتابعة.",
-  otherMethod: "استخدام طريقة أخرى",
-  alreadyVerified: "هذا البريد الإلكتروني مؤكَّد من قبل.",
-  verifyHelp: "سجّل دخولك: سنرسل إليك رمز تحقق عبر البريد الإلكتروني.",
-  accountLabel: "الحساب:",
-  appleUnavailable: "تسجيل الدخول بحساب Apple غير متاح حاليًا.",
-  socialReady: "تم التعرّف على حساب {provider}: {email}. أكمل معلومات شركتك لبدء التجربة المجانية.",
-  socialReadyNoEmail: "تم التعرّف على حساب {provider}. أكمل معلومات شركتك لبدء التجربة المجانية.",
-  socialExpired: "انتهت صلاحية تأكيد {provider}: اضغط على الزر من جديد.",
-  continueWith: "المتابعة بحساب {provider}",
-  optionalMark: "(اختياري)",
-  loginTitle: "سجّل دخولك",
-  loginWelcome: "ادخل إلى فضاء الإدارة الخاص بك.",
-  loggingIn: "جارٍ تسجيل الدخول…",
-  remember: "تذكّرني",
-  secure: "اتصال آمن",
-  emailPlaceholder: "example@company.tn",
-  checking: "جارٍ التحقق من جلستك…",
-  planChosen: "الباقة المختارة: {plan}. ستؤكّدها عند نهاية التجربة.",
-};
-
-const AUTH_UI: Record<string, AuthUi> = { fr: UI_FR, en: UI_EN, es: UI_ES, ar: UI_AR };
+};const AUTH_UI: Record<string, AuthUi> = { fr: UI_FR, en: UI_EN, es: UI_ES };
 
 // ─── Messages du serveur ───────────────────────────────────────────────────────
 
@@ -219,74 +169,98 @@ const AUTH_UI: Record<string, AuthUi> = { fr: UI_FR, en: UI_EN, es: UI_ES, ar: U
  * utilisé, lien expiré, compte Google…) sont repris ici dans les autres langues ; tout autre message est affiché
  * tel que le serveur l'a écrit.
  */
-const SERVER_TEXTS: Record<string, { en: string; es: string; ar: string }> = {
+const SERVER_TEXTS: Record<string, { en: string; es: string }> = {
   "Email ou mot de passe incorrect": {
     en: "Invalid email or password",
     es: "Correo o contraseña incorrectos",
-    ar: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
   },
-  "Compte désactivé": { en: "This account is disabled", es: "Cuenta desactivada", ar: "هذا الحساب معطَّل" },
+  "Compte désactivé": { en: "This account is disabled", es: "Cuenta desactivada" },
   "Le compte de la société est désactivé": {
     en: "The company account is disabled",
     es: "La cuenta de la empresa está desactivada",
-    ar: "حساب الشركة معطَّل",
   },
-  "Code de vérification requis": { en: "Verification code required", es: "Se requiere el código de verificación", ar: "رمز التحقق مطلوب" },
-  "Code de vérification invalide": { en: "Invalid verification code", es: "Código de verificación no válido", ar: "رمز التحقق غير صحيح" },
+  "Code de vérification requis": { en: "Verification code required", es: "Se requiere el código de verificación" },
+  "Code de vérification invalide": { en: "Invalid verification code", es: "Código de verificación no válido" },
   "Un compte existe déjà avec cet email. Connectez-vous, ou réinitialisez votre mot de passe.": {
     en: "An account already exists with this email. Sign in, or reset your password.",
     es: "Ya existe una cuenta con este correo. Inicie sesión o restablezca su contraseña.",
-    ar: "يوجد حساب بهذا البريد الإلكتروني. سجّل دخولك أو أعد تعيين كلمة المرور.",
   },
   "Lien invalide ou expiré. Refaites une demande de réinitialisation.": {
     en: "Invalid or expired link. Request a new reset link.",
     es: "Enlace no válido o caducado. Solicite un nuevo enlace.",
-    ar: "الرابط غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا.",
   },
   "Lien invalide ou expiré. Demandez un nouveau lien depuis votre espace.": {
     en: "Invalid or expired link. Request a new link from your workspace.",
     es: "Enlace no válido o caducado. Solicite un nuevo enlace desde su espacio.",
-    ar: "الرابط غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا من فضائك.",
   },
   "Jeton Google invalide ou expiré. Réessayez.": {
     en: "Invalid or expired Google sign-in. Try again.",
     es: "Acceso con Google no válido o caducado. Inténtelo de nuevo.",
-    ar: "تسجيل الدخول بحساب Google غير صالح أو انتهت صلاحيته. أعد المحاولة.",
   },
   "Cette adresse Google n'est pas vérifiée.": {
     en: "This Google address is not verified.",
     es: "Esta dirección de Google no está verificada.",
-    ar: "عنوان Google هذا غير موثَّق.",
   },
   "Ce compte se connecte avec son mot de passe.": {
     en: "This account signs in with its password.",
     es: "Esta cuenta inicia sesión con su contraseña.",
-    ar: "هذا الحساب يسجّل الدخول بكلمة المرور.",
   },
   "Ce compte est relié à un autre compte Google.": {
     en: "This account is linked to another Google account.",
     es: "Esta cuenta está vinculada a otra cuenta de Google.",
-    ar: "هذا الحساب مرتبط بحساب Google آخر.",
   },
   "Jeton Apple invalide ou expiré. Réessayez.": {
     en: "Invalid or expired Apple sign-in. Try again.",
     es: "Acceso con Apple no válido o caducado. Inténtelo de nuevo.",
-    ar: "تسجيل الدخول بحساب Apple غير صالح أو انتهت صلاحيته. أعد المحاولة.",
   },
   "Ce compte est relié à un autre identifiant Apple.": {
     en: "This account is linked to another Apple ID.",
     es: "Esta cuenta está vinculada a otro ID de Apple.",
-    ar: "هذا الحساب مرتبط بمعرّف Apple آخر.",
   },
   "Votre adresse email n'a pas été communiquée : autorisez son partage, ou créez votre compte avec votre email.": {
     en: "Your email address was not shared: allow sharing it, or create your account with your email.",
     es: "No se ha compartido su correo: permita compartirlo o cree su cuenta con su correo.",
-    ar: "لم يتم إرسال بريدك الإلكتروني: اسمح بمشاركته أو أنشئ حسابك ببريدك الإلكتروني.",
   },
   "Choisissez votre secteur d'activité dans la liste.": {
     en: "Choose your business sector from the list.",
     es: "Elija su sector de actividad en la lista.",
-    ar: "اختر قطاع نشاطك من القائمة.",
+  },
+  "Mot de passe incorrect": { en: "Incorrect password", es: "Contraseña incorrecta" },
+  "Mot de passe trop faible : 8 caractères minimum, avec au moins une lettre et un chiffre.": {
+    en: "Password too weak: at least 8 characters, with at least one letter and one digit.",
+    es: "Contraseña demasiado débil: mínimo 8 caracteres, con al menos una letra y un número.",
+  },
+  "Ce mot de passe est trop courant ou trop prévisible : choisissez-en un autre (une courte phrase est idéale).": {
+    en: "This password is too common or too predictable: choose another one (a short phrase is ideal).",
+    es: "Esta contraseña es demasiado común o previsible: elija otra (una frase corta es ideal).",
+  },
+  "Le mot de passe ne doit pas contenir votre adresse email : choisissez-en un autre.": {
+    en: "The password must not contain your email address: choose another one.",
+    es: "La contraseña no debe contener su correo electrónico: elija otra.",
+  },
+  "Code invalide. Vérifiez l'heure de votre téléphone.": {
+    en: "Invalid code. Check the time on your phone.",
+    es: "Código no válido. Compruebe la hora de su teléfono.",
+  },
+  "Code invalide.": { en: "Invalid code.", es: "Código no válido." },
+  "Ancien mot de passe incorrect": { en: "The current password is incorrect", es: "La contraseña actual es incorrecta" },
+  "La double authentification est déjà activée.": {
+    en: "Two-factor authentication is already enabled.",
+    es: "La autenticación en dos pasos ya está activada.",
+  },
+  "Lancez d'abord la configuration (/auth/2fa/setup).": {
+    en: "Start the setup first.",
+    es: "Inicie primero la configuración.",
+  },
+  "Cet email est déjà utilisé.": { en: "This email is already in use.", es: "Este correo ya está en uso." },
+  "Email invalide.": { en: "Invalid email address.", es: "Correo electrónico no válido." },
+  "Ce compte est relié à Google : son adresse email ne peut pas être modifiée ici.": {
+    en: "This account is linked to Google: its email address cannot be changed here.",
+    es: "Esta cuenta está vinculada a Google: su correo no se puede cambiar aquí.",
+  },
+  "Ce compte est relié à Apple : son adresse email ne peut pas être modifiée ici.": {
+    en: "This account is linked to Apple: its email address cannot be changed here.",
+    es: "Esta cuenta está vinculada a Apple: su correo no se puede cambiar aquí.",
   },
 };
 
@@ -297,7 +271,7 @@ const normalizeText = (s: string) => s.replace(/[’‘]/g, "'").replace(/\s+/g,
 export function serverText(message: string, language: string): string {
   if (!message || language === "fr") return message;
   const known = SERVER_TEXTS[normalizeText(message)];
-  return (known && known[language as "en" | "es" | "ar"]) || message;
+  return (known && known[language as "en" | "es"]) || message;
 }
 
 // ─── Problèmes à afficher ──────────────────────────────────────────────────────
@@ -503,13 +477,11 @@ interface AuthFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement
   icon?: React.ReactNode;
   hint?: React.ReactNode;
   error?: string;
-  /** Contenu toujours lu de gauche à droite, même en arabe (téléphone, code, matricule). */
-  ltr?: boolean;
   inputRef?: React.Ref<HTMLInputElement>;
 }
 
 /** Champ de saisie avec son libellé, son icône, son aide et son message d'erreur. */
-export function AuthField({ id, label, icon, hint, error, ltr = false, inputRef, ...input }: AuthFieldProps) {
+export function AuthField({ id, label, icon, hint, error, inputRef, ...input }: AuthFieldProps) {
   const describedBy = [error ? `${id}-err` : "", hint ? `${id}-hint` : ""].filter(Boolean).join(" ") || undefined;
   return (
     <div className="lg-field">
@@ -520,7 +492,7 @@ export function AuthField({ id, label, icon, hint, error, ltr = false, inputRef,
           {...input}
           id={id}
           ref={inputRef}
-          className={"lg-input" + (icon ? "" : " lg-input-plain") + (ltr ? " lg-input-ltr" : "")}
+          className={"lg-input" + (icon ? "" : " lg-input-plain")}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
         />

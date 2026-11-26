@@ -39,14 +39,6 @@ const translations = {
       // ... autres traductions existantes
     }
   },
-  ar: {
-    sales: {
-      selectClient: "اختر عميلًا",
-      clientSelected: "العميل المحدد",
-      productSelected: "المنتج المحدد",
-      selectProduct: "اختر منتجًا",
-    }
-  }
 };
 
 // --- Types ---------------------------------------------------------------------

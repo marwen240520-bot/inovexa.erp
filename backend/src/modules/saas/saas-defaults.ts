@@ -26,13 +26,13 @@ const BASE = ['products', 'categories', 'clients', 'invoices', 'finance', 'repor
 export interface DefaultItem { name: string; unit?: string; cost?: number; margin?: number; price?: number; kind?: 'product' | 'service'; lots?: boolean; description?: string }
 export interface DefaultCategory { name: string; description?: string; items: DefaultItem[]; children?: DefaultCategory[] }
 export interface DefaultSector {
-  code: string; name: string; nameEn: string; nameAr: string; description: string;
+  code: string; name: string; nameEn: string; description: string;
   modules: string[]; recommendations: string[]; categories: DefaultCategory[];
 }
 
 export const DEFAULT_SECTORS: DefaultSector[] = [
   {
-    code: 'commerce', name: 'Commerce et détail', nameEn: 'Commerce and retail', nameAr: 'التجارة والبيع بالتفصيل',
+    code: 'commerce', name: 'Commerce et détail', nameEn: 'Commerce and retail',
     description: 'Boutiques, magasins et points de vente : caisse, stock et réassort.',
     modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'hr', 'objectives'],
     recommendations: [
@@ -56,7 +56,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'wholesale', name: 'Gros et distribution', nameEn: 'Wholesale and distribution', nameAr: 'تجارة الجملة والتوزيع',
+    code: 'wholesale', name: 'Gros et distribution', nameEn: 'Wholesale and distribution',
     description: 'Grossistes et distributeurs : volumes, dépôts, tournées de livraison.',
     modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
     recommendations: [
@@ -78,7 +78,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'healthcare', name: 'Santé et pharmacies', nameEn: 'Healthcare and pharmacies', nameAr: 'الصحة والصيدليات',
+    code: 'healthcare', name: 'Santé et pharmacies', nameEn: 'Healthcare and pharmacies',
     description: 'Pharmacies, parapharmacies, cabinets et fournisseurs médicaux : lots et dates de péremption.',
     modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr', 'appointments', 'objectives'],
     recommendations: [
@@ -101,7 +101,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'construction', name: 'Construction et BTP', nameEn: 'Construction', nameAr: 'البناء والأشغال العامة',
+    code: 'construction', name: 'Construction et BTP', nameEn: 'Construction',
     description: 'Entreprises de bâtiment et négoce de matériaux : devis, matériaux, main-d’œuvre.',
     modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'projects', 'objectives'],
     recommendations: [
@@ -125,7 +125,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'education', name: 'Éducation et formation', nameEn: 'Education and training', nameAr: 'التعليم والتكوين',
+    code: 'education', name: 'Éducation et formation', nameEn: 'Education and training',
     description: 'Écoles privées et centres de formation : inscriptions, mensualités, formateurs.',
     modules: [...BASE, 'sales', 'hr', 'appointments', 'objectives'],
     recommendations: [
@@ -147,7 +147,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'restaurant', name: 'Restaurants et cafés', nameEn: 'Restaurants and cafés', nameAr: 'المطاعم والمقاهي',
+    code: 'restaurant', name: 'Restaurants et cafés', nameEn: 'Restaurants and cafés',
     description: 'Restaurants, cafés, pâtisseries et restauration rapide : carte, ingrédients, caisse.',
     modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr', 'appointments', 'objectives'],
     recommendations: [
@@ -172,7 +172,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'logistics', name: 'Logistique et transport', nameEn: 'Logistics and transport', nameAr: 'اللوجستيك والنقل',
+    code: 'logistics', name: 'Logistique et transport', nameEn: 'Logistics and transport',
     description: 'Transporteurs, messageries et entrepôts : expéditions, tournées, tarifs.',
     modules: [...BASE, 'logistics', 'stock', 'sales', 'orders', 'purchases', 'suppliers', 'hr', 'objectives'],
     recommendations: [
@@ -194,7 +194,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'manufacturing', name: 'Industrie et fabrication', nameEn: 'Manufacturing and industry', nameAr: 'الصناعة والتصنيع',
+    code: 'manufacturing', name: 'Industrie et fabrication', nameEn: 'Manufacturing and industry',
     description: 'Ateliers et usines : matières premières, produits finis, achats et expéditions.',
     modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
     recommendations: [
@@ -216,7 +216,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'services', name: 'Services professionnels', nameEn: 'Professional services', nameAr: 'الخدمات المهنية',
+    code: 'services', name: 'Services professionnels', nameEn: 'Professional services',
     description: 'Cabinets, agences et indépendants : honoraires, contrats, relances.',
     modules: [...BASE, 'sales', 'hr', 'appointments', 'projects', 'objectives'],
     recommendations: [
@@ -238,7 +238,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'agrifood', name: 'Agriculture et agroalimentaire', nameEn: 'Agriculture and agri-food', nameAr: 'الفلاحة والصناعات الغذائية',
+    code: 'agrifood', name: 'Agriculture et agroalimentaire', nameEn: 'Agriculture and agri-food',
     description: 'Exploitations, huileries, conditionnement et transformation : récoltes, lots, fabrication et export.',
     modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
     recommendations: [
@@ -261,7 +261,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'automotive', name: 'Automobile et pièces détachées', nameEn: 'Automotive and spare parts', nameAr: 'السيارات وقطع الغيار',
+    code: 'automotive', name: 'Automobile et pièces détachées', nameEn: 'Automotive and spare parts',
     description: 'Magasins de pièces, garages et ateliers : références, stock, devis de réparation et main-d’œuvre.',
     modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'hr', 'appointments', 'objectives'],
     recommendations: [
@@ -289,7 +289,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'ecommerce', name: 'Vente en ligne', nameEn: 'Online sales', nameAr: 'البيع عبر الإنترنت',
+    code: 'ecommerce', name: 'Vente en ligne', nameEn: 'Online sales',
     description: 'Boutiques en ligne et vente sur les réseaux sociaux : commandes, stock, colis et retours.',
     modules: [...BASE, 'stock', 'sales', 'orders', 'purchases', 'suppliers', 'logistics', 'objectives'],
     recommendations: [
@@ -311,7 +311,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'textile', name: 'Textile et habillement', nameEn: 'Textile and clothing', nameAr: 'النسيج والملابس',
+    code: 'textile', name: 'Textile et habillement', nameEn: 'Textile and clothing',
     description: 'Ateliers de confection, façonniers et marques : tissus, fournitures, ordres de fabrication et livraisons.',
     modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
     recommendations: [
@@ -336,7 +336,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'beauty', name: 'Beauté et bien-être', nameEn: 'Beauty and wellness', nameAr: 'التجميل والعناية',
+    code: 'beauty', name: 'Beauté et bien-être', nameEn: 'Beauty and wellness',
     description: 'Salons de coiffure, instituts, spas et parfumeries : prestations, produits et caisse.',
     modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr', 'appointments', 'objectives'],
     recommendations: [
@@ -360,7 +360,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
-    code: 'other', name: 'Autre activité', nameEn: 'Other businesses', nameAr: 'نشاط آخر',
+    code: 'other', name: 'Autre activité', nameEn: 'Other businesses',
     description: 'Tous les modules sont proposés : gardez ceux qui vous servent.',
     modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'appointments', 'projects', 'objectives'],
     recommendations: [

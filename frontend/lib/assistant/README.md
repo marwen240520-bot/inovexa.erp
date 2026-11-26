@@ -3,7 +3,7 @@
 Assistant d'analyse en langage naturel, branché sur **toutes** les données de l'utilisateur.
 Il répond comme un contrôleur de gestion : chiffres exacts, période précisée, recommandation concrète.
 
-## Ce qu'il comprend (FR / EN / ES / arabe / derja)
+## Ce qu'il comprend (FR / EN / ES, derja en lettres latines)
 
 | Domaine | Exemples |
 |---|---|

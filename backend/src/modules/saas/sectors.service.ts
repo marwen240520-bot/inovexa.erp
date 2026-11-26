@@ -142,7 +142,6 @@ export class SectorsService {
     }
     if (!partial || dto.name !== undefined) out.name = text(dto.name, 120, 'Nom', true)!;
     if (dto.nameEn !== undefined) out.nameEn = text(dto.nameEn, 120, 'Nom (anglais)');
-    if (dto.nameAr !== undefined) out.nameAr = text(dto.nameAr, 120, 'Nom (arabe)');
     if (dto.description !== undefined) out.description = text(dto.description, 500, 'Description');
     if (dto.modules !== undefined) out.modules = this.cleanModules(dto.modules);
     if (dto.recommendations !== undefined) out.recommendations = Array.isArray(dto.recommendations) ? dto.recommendations.map((r: any) => String(r).trim().slice(0, 300)).filter(Boolean).slice(0, 12) : null;

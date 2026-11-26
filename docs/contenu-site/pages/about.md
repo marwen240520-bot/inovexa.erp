@@ -67,7 +67,7 @@ No hidden fees and no surprise contracts. You know what you are getting, what it
 
 ### Built for Real Teams
 
-Teams work in French, Arabic, Spanish, or English, and screens are designed for warehouse and shop-floor staff as well as accountants.
+Teams work in French, Spanish, or English, and screens are designed for warehouse and shop-floor staff as well as accountants.
 
 ### Less Hardware
 
@@ -209,7 +209,7 @@ Cloud ERP built in Tunisia, used by growing businesses across the world.
 | data-i18n | about.value2Title | Clear Pricing and Terms |
 | data-i18n | about.value2Desc | No hidden fees and no surprise contracts. You know what you are getting, what it costs, and what is on our roadmap. |
 | data-i18n | about.value3Title | Built for Real Teams |
-| data-i18n | about.value3Desc | Teams work in French, Arabic, Spanish, or English, and screens are designed for warehouse and shop-floor staff as well as accountants. |
+| data-i18n | about.value3Desc | Teams work in French, Spanish, or English, and screens are designed for warehouse and shop-floor staff as well as accountants. |
 | data-i18n | about.value4Title | Less Hardware |
 | data-i18n | about.value4Desc | Cloud deployment replaces on-premise servers that run around the clock, so there is less hardware to buy, power, and maintain. |
 | data-i18n | about.statsLabel | By the Numbers |

@@ -58,16 +58,14 @@ const Icons = {
 
 // Helper functions pour les labels
 const getMonthLabelsByLang = (language: string): string[] => {
-  if (language === 'fr') return ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoé", "Sep", "Oct", "Nov", "Déc"];
+  if (language === 'fr') return ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
   if (language === 'es') return ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  if (language === 'ar') return ["جانفي", "فيفري", "مارس", "أفريل", "ماي", "جوان", "جويلية", "أوت", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
   return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 };
 
 const getWeekDaysByLang = (language: string): string[] => {
   if (language === 'fr') return ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-  if (language === 'es') return ["Lun", "Mar", "Mié", "Jue", "Vie", "Séb", "Dom"];
-  if (language === 'ar') return ["الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"];
+  if (language === 'es') return ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
   return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 };
 

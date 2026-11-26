@@ -47,7 +47,7 @@ export class TransporteursService {
     const password = body.password === undefined || body.password === null ? '' : String(body.password);
     if (forCreate || password.trim() !== '') {
       if (!password) throw new BadRequestException('Mot de passe requis pour le compte du transporteur.');
-      assertStrongPassword(password);
+      assertStrongPassword(password, email);
     }
     return {
       name, email, password,

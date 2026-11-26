@@ -70,6 +70,22 @@ export function saveSession(data: { access_token: string; user: SessionUser }) {
   try { window.dispatchEvent(new Event(SESSION_CLEARED_EVENT)); } catch { /* ignoré */ }
 }
 
+/** Met à jour l'adresse email du profil gardé par le navigateur (après une correction d'adresse acceptée par le serveur). */
+export function updateStoredEmail(email: string) {
+  try {
+    const user = getStoredUser();
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify({ ...user, email }));
+  } catch { /* stockage indisponible */ }
+}
+
+/** Garde l'état de la double authentification dans le profil du navigateur (affichage seulement : c'est le serveur qui décide). */
+export function updateStoredTwoFactor(enabled: boolean) {
+  try {
+    const user = getStoredUser();
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify({ ...user, twoFactorEnabled: enabled }));
+  } catch { /* stockage indisponible */ }
+}
+
 /** Remplace seulement le jeton (après un changement de mot de passe, le serveur en remet un neuf). */
 export function replaceToken(token?: string | null) {
   if (!token) return;

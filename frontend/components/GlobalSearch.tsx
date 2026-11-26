@@ -68,20 +68,6 @@ const TEXTS: Record<string, any> = {
     clear: "Borrar búsqueda",
     groups: { clients: "Clientes", suppliers: "Proveedores", products: "Productos", categories: "Categorías", invoices: "Facturas", sales: "Ventas", purchases: "Compras", orders: "Pedidos", employees: "Empleados", shipments: "Envíos" },
   },
-  ar: {
-    micNetwork: "تعذّر الوصول إلى خدمة التعرف على الصوت: تحقق من اتصالك بالإنترنت", micNoSpeech: "لم يُسمع شيء: أعد المحاولة وتحدّث بالقرب من الميكروفون", micNoDevice: "لم يُعثر على ميكروفون في هذا الجهاز", micOther: "التعرف على الصوت غير متاح في هذا المتصفح",
-    voice: "بحث صوتي", listening: "جارٍ الاستماع… تحدّث الآن", micDenied: "الميكروفون محظور: اسمح به في المتصفح",
-    placeholder: "ابحث في فضائك…",
-    hint: "العملاء، المنتجات، الفواتير، المبيعات، الموظفون…",
-    searching: "جارٍ البحث…",
-    none: "لا توجد نتائج عن",
-    tooShort: "أدخل حرفين على الأقل",
-    error: "فشل البحث. أعد المحاولة.",
-    errAuth: "انتهت الجلسة: سجّل دخولك من جديد للبحث.",
-    errNetwork: "تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت.",
-    clear: "مسح البحث",
-    groups: { clients: "العملاء", suppliers: "الموردون", products: "المنتجات", categories: "الأصناف", invoices: "الفواتير", sales: "المبيعات", purchases: "المشتريات", orders: "الطلبيات", employees: "الموظفون", shipments: "الشحنات" },
-  },
 };
 
 /** Recherche de secours : utilise les listes que les pages chargent déjà (clients, factures, produits…) */

@@ -1,5 +1,5 @@
 import {
-  BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query, Request, Res, UseGuards,
+  BadGatewayException, BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query, Request, Res, UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -10,7 +10,11 @@ import * as bcrypt from 'bcrypt';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
 import { AuditLog } from '../../common/audit/audit-log.entity';
+import { AuditService } from '../../common/audit/audit.service';
 import { MailService } from '../../common/mail/mail.service';
+import { pickMailLang, testMail } from '../../common/mail/auth-mails';
+import { AuthService } from '../auth/auth.service';
+import { PaymentGatewayService } from './payment-gateway.service';
 import { AdminGuard } from './admin.guard';
 import { SaasSettingsService } from './saas-settings.service';
 import { SubscriptionService } from './subscription.service';
@@ -18,6 +22,8 @@ import { SectorsService } from './sectors.service';
 import { MODULE_KEYS } from './account-access';
 import { PAYMENT_METHODS } from './saas-defaults';
 import { apiPublicUrl, frontendUrl, returnBaseFor } from '../../common/origins';
+import { securityChecks, securitySummary } from '../../common/security/security-report';
+import { buildSecurityFacts } from '../../common/security/security-facts';
 
 const actorId = (req: any): number => req.user.actorId ?? req.user.userId;
 
@@ -258,7 +264,7 @@ export class BillingController {
     const owner = await this.subscriptions.owner(req.user.userId);
     const list = await this.sectors.list('public');
     const code = (sector || owner.sector || list[0]?.code || '').toLowerCase();
-    return { sectors: list.map((s) => ({ code: s.code, name: s.name, nameEn: s.nameEn, nameAr: s.nameAr, itemCount: s.itemCount })), current: code, ...(code ? await this.sectors.detail(code, 'public') : {}) };
+    return { sectors: list.map((s) => ({ code: s.code, name: s.name, nameEn: s.nameEn, itemCount: s.itemCount })), current: code, ...(code ? await this.sectors.detail(code, 'public') : {}) };
   }
 }
 
@@ -291,6 +297,9 @@ export class AdminSaasController {
     @InjectRepository(AuditLog) private readonly audit: Repository<AuditLog>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly mail: MailService,
+    private readonly auth: AuthService,
+    private readonly audits: AuditService,
+    private readonly gateway: PaymentGatewayService,
   ) {}
 
   // ── Tableau de bord ──
@@ -334,6 +343,24 @@ export class AdminSaasController {
   @Post('accounts/:id/extend-trial') @HttpCode(200)
   extendTrial(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Body() body: any) {
     return this.subscriptions.extendTrial(id, Number(body?.hours), actorId(req));
+  }
+
+  @Post('accounts/:id/verify-email') @HttpCode(200)
+  @ApiOperation({ summary: 'Confirme l’adresse email du compte à la place du client (vérification manuelle, journalisée)' })
+  verifyEmail(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.auth.adminMarkEmailVerified(id, { id: actorId(req), email: req.user.email }, (req.ip || '').toString());
+  }
+
+  @Post('accounts/:id/reset-2fa') @HttpCode(200)
+  @ApiOperation({ summary: 'Réinitialise la double authentification d’un client qui a perdu son téléphone (sessions fermées, client prévenu, journalisé)' })
+  resetTwoFactor(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.auth.adminResetTwoFactor(id, { id: actorId(req), email: req.user.email }, (req.ip || '').toString());
+  }
+
+  @Post('accounts/:id/resend-verification') @HttpCode(200)
+  @ApiOperation({ summary: 'Renvoie un code de vérification à l’adresse du compte (sans délai d’attente)' })
+  resendVerification(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    return this.auth.adminSendVerificationCode(id, { id: actorId(req), email: req.user.email }, body?.language, (req.ip || '').toString());
   }
 
   @Patch('accounts/:id/subscription')
@@ -396,6 +423,42 @@ export class AdminSaasController {
     return this.subscriptions.receipt(null, id);
   }
 
+  @Post('payments/:id/recheck') @HttpCode(200)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Relit tout de suite chez Konnect l’état d’un paiement en ligne et ouvre l’abonnement s’il est encaissé' })
+  recheckPayment(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.subscriptions.recheckPayment(id, actorId(req));
+  }
+
+  @Post('payments/:id/refund') @HttpCode(200)
+  @ApiOperation({ summary: 'Marque un paiement validé comme remboursé et retire la période qu’il avait ouverte (le virement se fait depuis le tableau de bord Konnect)' })
+  refundPayment(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    return this.subscriptions.refundPayment(id, body?.reason, actorId(req));
+  }
+
+  // ── Paiement en ligne : mise en production ──
+  @Get('online-payment')
+  @ApiOperation({ summary: 'Liste de contrôle « mise en production » du paiement par carte (Konnect), sans appeler Konnect' })
+  async onlinePaymentStatus() {
+    return this.subscriptions.onlineReadiness(await this.settings.get());
+  }
+
+  @Get('security')
+  @ApiOperation({ summary: 'Contrôles de sécurité de la configuration du serveur (jamais de secret dans la réponse)' })
+  async security() {
+    const checks = securityChecks(await buildSecurityFacts({ mail: this.mail, gateway: this.gateway, users: this.users }));
+    return { ...securitySummary(checks), production: process.env.NODE_ENV === 'production', checks };
+  }
+
+  @Post('online-payment/test') @HttpCode(200)
+  @Throttle({ default: { limit: 6, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Teste la connexion à Konnect : clé d’API acceptée ? (et, avec wallet = true, portefeuille reconnu ?)' })
+  async onlinePaymentTest(@Request() req: any, @Body() body: any) {
+    const result = await this.gateway.probe({ wallet: body?.wallet === true, webhookUrl: `${apiPublicUrl(req)}/public/payments/konnect/return` });
+    await this.audits.record({ userId: actorId(req), actorId: actorId(req), actorEmail: req.user.email, action: 'konnect_test', entity: 'admin', ip: (req.ip || '').toString(), status: 200, details: { wallet: body?.wallet === true, keyAccepted: result.keyAccepted, walletAccepted: result.walletAccepted, mode: result.mode } });
+    return result;
+  }
+
   // ── Secteurs, suggestions, prestations ──
   @Get('sectors') sectorsList() { return this.sectors.list('all'); }
   @Get('sectors/:code/detail') sectorDetail(@Param('code') code: string) { return this.sectors.detail(code, 'all'); }
@@ -439,6 +502,30 @@ export class AdminSaasController {
   }
 
   // ── Maintenance ──
+  @Get('maintenance/mail')
+  @ApiOperation({ summary: 'État de l’envoi d’emails : configuration (sans secret) et réponse du serveur SMTP' })
+  mailStatus() { return this.mail.check(); }
+
+  @Post('maintenance/test-email') @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Envoie un email de test (à l’administrateur, ou à `to`) pour vérifier le serveur d’envoi' })
+  async testEmail(@Request() req: any, @Body() body: any) {
+    const me = await this.users.findOne({ where: { id: actorId(req) } });
+    const to = String(body?.to || me?.email || '').trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to) || to.length > 190) throw new BadRequestException('Adresse email invalide.');
+    let ok = true;
+    let failure = '';
+    try {
+      await this.mail.send({ to, ...testMail(pickMailLang(body?.language, me?.language)) });
+    } catch (e: any) {
+      ok = false;
+      failure = String(e?.message || e).slice(0, 300);
+    }
+    await this.audits.record({ userId: actorId(req), actorId: actorId(req), actorEmail: req.user.email, action: ok ? 'mail_test_sent' : 'mail_test_failed', entity: 'admin', ip: (req.ip || '').toString(), status: ok ? 200 : 502, details: { to, error: failure || undefined } });
+    if (!ok) throw new BadGatewayException(`L’email de test n’a pas pu partir : ${failure}`);
+    return { success: true, to };
+  }
+
   @Post('maintenance/sweep') @HttpCode(200)
   @ApiOperation({ summary: 'Lance tout de suite le balayage : expirations, rappels, relecture des paiements en ligne ouverts' })
   sweep() { return this.subscriptions.sweep(); }

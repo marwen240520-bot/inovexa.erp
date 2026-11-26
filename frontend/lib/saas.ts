@@ -41,7 +41,7 @@ export interface Plan {
 export interface PlansResponse { currency: string; vatRate: number; trialHours?: number; plans: Plan[] }
 
 export interface Sector {
-  id: number; code: string; name: string; nameEn: string | null; nameAr: string | null; description: string | null;
+  id: number; code: string; name: string; nameEn: string | null; description: string | null;
   modules: string[] | null; recommendations: string[] | null; isActive: boolean; sortOrder: number; itemCount: number;
 }
 
@@ -80,7 +80,7 @@ export interface PublicConfig {
 export interface SubscriptionPayment {
   id: number; userId: number; planCode: string; planName: string; billingCycle: "monthly" | "annual"; periodMonths: number;
   amountHT: number; vatRate: number; amountTTC: number; currency: string; method: string; provider: string;
-  reference: string | null; note: string | null; status: "pending" | "validated" | "rejected" | "cancelled" | "initiated" | "expired"; rejectReason: string | null;
+  reference: string | null; note: string | null; status: "pending" | "validated" | "rejected" | "cancelled" | "initiated" | "expired" | "refunded"; rejectReason: string | null;
   declaredBy: "client" | "admin"; validatedAt: string | null; periodStart: string | null; periodEnd: string | null; receiptNumber: string | null; createdAt: string;
 }
 
@@ -128,12 +128,14 @@ export interface ModulesView {
   plan: { code: string; name: string; allModules: boolean } | null;
   trial: boolean;
   modules: Array<{ key: string; enabled: boolean; included: boolean; recommended: boolean }>;
-  sectors: Array<{ code: string; name: string; nameEn: string | null; nameAr: string | null; modules: string[] }>;
+  sectors: Array<{ code: string; name: string; nameEn: string | null; modules: string[] }>;
 }
 
 export interface Receipt {
   receiptNumber: string; issuedAt: string; planName: string; billingCycle: string; periodStart: string; periodEnd: string;
   amountHT: number; vatRate: number; vatAmount: number; amountTTC: number; currency: string; method: string; reference: string | null;
+  /** Identité légale de l’éditeur (réglages de la plateforme) ; null tant que l’administrateur ne l’a pas renseignée. */
+  issuer?: { name: string; taxId: string | null; address: string | null; registry: string | null; email: string | null; phone: string | null } | null;
   customer: { name: string; taxId: string | null; address: string | null; email: string | null }; notice: string;
 }
 
@@ -210,19 +212,19 @@ export async function publicPost<T = any>(path: string, body: unknown, opts: { s
 
 // ───────────── Formats ─────────────
 
-const INTL: Record<string, string> = { fr: "fr-TN", en: "en-GB", es: "es-ES", ar: "ar-TN" };
+const INTL: Record<string, string> = { fr: "fr-TN", en: "en-GB", es: "es-ES" };
 
-/** Symbole d'une devise dans la langue de l'interface : « $ », « € », et pour le dinar « DT » / « TND » / « د.ت ». */
+/** Symbole d'une devise dans la langue de l'interface : « $ », « € », et pour le dinar « DT » (français) / « TND ». */
 export function currencySymbol(currency = "USD", lang = "fr"): string {
   if (currency === "USD") return "$";
   if (currency === "EUR") return "€";
-  if (currency === "TND") return lang === "fr" ? "DT" : lang === "ar" ? "د.ت" : "TND";
+  if (currency === "TND") return lang === "fr" ? "DT" : "TND";
   return currency;
 }
 
 function withSymbol(value: string, currency: string, lang: string): string {
   const symbol = currencySymbol(currency, lang);
-  // « $29 » en anglais ; « 29 $ » en français, espagnol et arabe ; le dinar s'écrit toujours après le montant.
+  // « $29 » en anglais ; « 29 $ » en français et en espagnol ; le dinar s'écrit toujours après le montant.
   if (currency === "USD" && lang === "en") return `${symbol}${value}`;
   if (currency === "EUR" && lang === "en") return `${symbol}${value}`;
   return `${value} ${symbol}`;
@@ -270,8 +272,7 @@ export function formatPhone(value: string | null | undefined): string {
 }
 
 /** Nom d'un secteur dans la langue de l'interface. */
-export function sectorName(sector: Pick<Sector, "name" | "nameEn" | "nameAr">, lang = "fr"): string {
-  if (lang === "ar" && sector.nameAr) return sector.nameAr;
+export function sectorName(sector: Pick<Sector, "name" | "nameEn">, lang = "fr"): string {
   if ((lang === "en" || lang === "es") && sector.nameEn) return sector.nameEn;
   return sector.name;
 }

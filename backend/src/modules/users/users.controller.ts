@@ -22,9 +22,17 @@ export class UsersController {
     return this.usersService.getProfile(req.user.actorId ?? req.user.userId);
   }
 
+  /**
+   * Changer d'adresse email exige le mot de passe actuel (`currentPassword`) et passe par AuthService.changeEmail :
+   * nouvelle adresse à confirmer par un code, ancienne adresse prévenue. Les autres champs ne demandent rien de plus.
+   */
   @Patch('profile')
-  async updateProfile(@Request() req: any, @Body() body: { name?: string; email?: string; phone?: string; companyName?: string }) {
-    return this.usersService.updateProfile(req.user.actorId ?? req.user.userId, body);
+  async updateProfile(@Request() req: any, @Body() body: { name?: string; email?: string; phone?: string; companyName?: string; currentPassword?: string; language?: string }) {
+    const actorId = req.user.actorId ?? req.user.userId;
+    const { email, currentPassword, language, ...rest } = body || {};
+    const change = email !== undefined ? await this.authService.changeEmail(actorId, email, String(currentPassword ?? ''), language, (req.ip || '').toString()) : null;
+    const profile = await this.usersService.updateProfile(actorId, rest);
+    return change?.changed ? { ...profile, emailChange: { codeSent: change.emailSent === true, verificationRequired: change.verification?.required === true } } : profile;
   }
 
   @Patch('change-password')
@@ -32,7 +40,10 @@ export class UsersController {
     const actorId = req.user.actorId ?? req.user.userId;
     const result = await this.usersService.changePassword(actorId, body?.oldPassword, body?.newPassword);
     // Les autres sessions ouvertes sont fermées ; celle-ci continue avec un nouveau jeton.
-    return { ...result, access_token: await this.authService.rotateSession(actorId) };
+    const access_token = await this.authService.rotateSession(actorId);
+    // Le titulaire est prévenu par email : un mot de passe changé à son insu doit se voir tout de suite.
+    await this.authService.notifyPasswordChanged(actorId);
+    return { ...result, access_token };
   }
 
   // GET /users/:id/modules -> configuration des modules de l'utilisateur

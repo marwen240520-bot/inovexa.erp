@@ -17,8 +17,8 @@ interface NavItem {
   label: string;
 }
 
-const LANG_LABELS: Record<string, string> = { fr: "Français", en: "English", es: "Español", ar: "العربية" };
-/** Les pages publiques existent en français, anglais et espagnol ; la page d'accueil ajoute l'arabe. */
+const LANG_LABELS: Record<string, string> = { fr: "Français", en: "English", es: "Español" };
+/** Les pages publiques existent en français, anglais et espagnol. */
 const DEFAULT_LANGUAGES = ["fr", "en", "es"] as const;
 
 const IconChevronDown = () => (
@@ -62,7 +62,7 @@ export default function SiteHeader({
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Une langue hors liste garde son code, sans drapeau.
-  const known = (code: string): code is LangCode => code === "fr" || code === "en" || code === "es" || code === "ar";
+  const known = (code: string): code is LangCode => code === "fr" || code === "en" || code === "es";
   const currentLabel = LANG_LABELS[lang] ?? lang.toUpperCase();
 
   // Ombre légère dès que la page a défilé : la barre se détache du contenu qui passe dessous.

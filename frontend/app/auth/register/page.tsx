@@ -93,7 +93,7 @@ function RegisterForm() {
   const sectors: SectorOption[] = useMemo(
     () => apiSectors
       ? apiSectors.map((s) => {
-        // Nom espagnol : le serveur ne garde que le français, l'anglais et l'arabe.
+        // Nom espagnol : le serveur ne garde que le français et l'anglais.
         const known = SECTORS.find((c) => c.code === s.code);
         return { code: s.code, label: language === "es" && known ? known.name.es : sectorName(s, language), modules: s.modules || [] };
       })
@@ -155,7 +155,7 @@ function RegisterForm() {
     setProblem(null);
 
     if (pending) {
-      const extra: Record<string, unknown> = { intent: "register", companyName: form.companyName.trim(), sector: form.sector, acceptTerms: true };
+      const extra: Record<string, unknown> = { intent: "register", companyName: form.companyName.trim(), sector: form.sector, acceptTerms: true, language };
       if (form.phone.trim()) extra.phone = form.phone.trim();
       if (pending.provider === "apple" && form.name.trim().length >= 2) extra.name = form.name.trim();
       const res = await publicPost(`/auth/${pending.provider}`, socialBody(pending.provider, pending.token, extra));
@@ -176,7 +176,7 @@ function RegisterForm() {
 
     const body: Record<string, unknown> = {
       name: form.name.trim(), companyName: form.companyName.trim(), email: form.email.trim().toLowerCase(), phone: form.phone.trim(),
-      password: form.password, sector: form.sector, acceptTerms: true,
+      password: form.password, sector: form.sector, acceptTerms: true, language,
     };
     for (const key of ["city", "address", "legalForm", "taxId"] as const) if (form[key].trim()) body[key] = form[key].trim();
     const res = await publicPost("/auth/register", body);
@@ -264,9 +264,9 @@ function RegisterForm() {
           )}
           <AuthField id="rg-companyName" label={tx.company} icon={<IconBuilding />} value={form.companyName} onChange={(e) => set("companyName", e.target.value)} autoComplete="organization" maxLength={160} error={errorText("companyName")} required />
           {pending ? null : (
-            <AuthField id="rg-email" label={tx.email} icon={<IconMail />} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" autoCapitalize="none" inputMode="email" spellCheck={false} maxLength={190} error={errorText("email")} ltr required />
+            <AuthField id="rg-email" label={tx.email} icon={<IconMail />} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" autoCapitalize="none" inputMode="email" spellCheck={false} maxLength={190} error={errorText("email")} required />
           )}
-          <AuthField id="rg-phone" label={pending ? `${tx.phone} ${ui.optionalMark}` : tx.phone} icon={<IconPhone />} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel" inputMode="tel" maxLength={30} hint={tx.phoneHint} error={errorText("phone")} ltr required={!pending} />
+          <AuthField id="rg-phone" label={pending ? `${tx.phone} ${ui.optionalMark}` : tx.phone} icon={<IconPhone />} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel" inputMode="tel" maxLength={30} hint={tx.phoneHint} error={errorText("phone")} required={!pending} />
         </div>
 
         {pending ? null : (
@@ -320,7 +320,7 @@ function RegisterForm() {
                 </div>
               </div>
               <AuthField id="rg-address" label={tx.address} icon={<IconHome />} value={form.address} onChange={(e) => set("address", e.target.value)} autoComplete="street-address" maxLength={300} />
-              <AuthField id="rg-taxId" label={tx.taxId} icon={<IconHash />} value={form.taxId} onChange={(e) => set("taxId", e.target.value)} maxLength={40} placeholder="1234567X/A/M/000" error={errorText("taxId")} ltr />
+              <AuthField id="rg-taxId" label={tx.taxId} icon={<IconHash />} value={form.taxId} onChange={(e) => set("taxId", e.target.value)} maxLength={40} placeholder="1234567X/A/M/000" error={errorText("taxId")} />
             </div>
           </details>
         )}

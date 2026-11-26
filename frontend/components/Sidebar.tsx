@@ -22,34 +22,34 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
 );
 
 const EXTRA_LABELS: Record<string, Record<string, string>> = {
-  "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida", ar: "الصندوق السريع" },
-  "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos", ar: "الأهداف" },
-  "common.appointments": { fr: "Rendez-vous", en: "Appointments", es: "Citas", ar: "المواعيد" },
-  "common.projects": { fr: "Projets", en: "Projects", es: "Proyectos", ar: "المشاريع" },
-  "common.more": { fr: "Plus", en: "More", es: "Más", ar: "المزيد" },
-  "common.menu": { fr: "Menu", en: "Menu", es: "Menú", ar: "القائمة" },
-  "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos", ar: "الفواتير وعروض الأسعار" },
-  "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad", ar: "المحاسبة" },
-  "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión", ar: "تقارير التسيير" },
-  "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja", ar: "جلسات الصندوق" },
-  "nav.billing": { fr: "Abonnement", en: "Subscription", es: "Suscripción", ar: "الاشتراك" },
-  "nav.suggestions": { fr: "Suggestions secteur", en: "Sector suggestions", es: "Sugerencias del sector", ar: "اقتراحات القطاع" },
+  "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida" },
+  "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
+  "common.appointments": { fr: "Rendez-vous", en: "Appointments", es: "Citas" },
+  "common.projects": { fr: "Projets", en: "Projects", es: "Proyectos" },
+  "common.more": { fr: "Plus", en: "More", es: "Más" },
+  "common.menu": { fr: "Menu", en: "Menu", es: "Menú" },
+  "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos" },
+  "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
+  "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión" },
+  "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja" },
+  "nav.billing": { fr: "Abonnement", en: "Subscription", es: "Suscripción" },
+  "nav.suggestions": { fr: "Suggestions secteur", en: "Sector suggestions", es: "Sugerencias del sector" },
   // Espace de l'administrateur de la plateforme
-  "admin.overview": { fr: "Tableau de bord", en: "Overview", es: "Panel", ar: "لوحة المتابعة" },
-  "admin.accounts": { fr: "Comptes clients", en: "Customer accounts", es: "Cuentas de clientes", ar: "حسابات الحرفاء" },
-  "admin.payments": { fr: "Paiements", en: "Payments", es: "Pagos", ar: "المدفوعات" },
-  "admin.plans": { fr: "Formules et tarifs", en: "Plans and pricing", es: "Planes y precios", ar: "الباقات والأسعار" },
-  "admin.sectors": { fr: "Secteurs et suggestions", en: "Sectors and suggestions", es: "Sectores y sugerencias", ar: "القطاعات والاقتراحات" },
-  "admin.platformSettings": { fr: "Réglages de la plateforme", en: "Platform settings", es: "Ajustes de la plataforma", ar: "إعدادات المنصة" },
-  "admin.audit": { fr: "Journal d’activité", en: "Activity log", es: "Registro de actividad", ar: "سجلّ النشاط" },
-  "admin.legacyClients": { fr: "Création et démonstration", en: "Creation and demo data", es: "Creación y demostración", ar: "الإنشاء والبيانات التجريبية" },
+  "admin.overview": { fr: "Tableau de bord", en: "Overview", es: "Panel" },
+  "admin.accounts": { fr: "Comptes clients", en: "Customer accounts", es: "Cuentas de clientes" },
+  "admin.payments": { fr: "Paiements", en: "Payments", es: "Pagos" },
+  "admin.plans": { fr: "Formules et tarifs", en: "Plans and pricing", es: "Planes y precios" },
+  "admin.sectors": { fr: "Secteurs et suggestions", en: "Sectors and suggestions", es: "Sectores y sugerencias" },
+  "admin.platformSettings": { fr: "Réglages de la plateforme", en: "Platform settings", es: "Ajustes de la plataforma" },
+  "admin.audit": { fr: "Journal d’activité", en: "Activity log", es: "Registro de actividad" },
+  "admin.legacyClients": { fr: "Création et démonstration", en: "Creation and demo data", es: "Creación y demostración" },
   // Titres des sections de la barre latérale
-  "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial", ar: "المبيعات والعملاء" },
-  "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento", ar: "التزويد" },
-  "nav.groups.inventory": { fr: "Stock & logistique", en: "Inventory & logistics", es: "Inventario y logística", ar: "المخزون واللوجستيك" },
-  "nav.groups.finance": { fr: "Finance & RH", en: "Finance & HR", es: "Finanzas y RR. HH.", ar: "المالية والموارد البشرية" },
-  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Análisis", ar: "المتابعة والتحليل" },
-  "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta", ar: "الحساب" },
+  "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial" },
+  "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento" },
+  "nav.groups.inventory": { fr: "Stock & logistique", en: "Inventory & logistics", es: "Inventario y logística" },
+  "nav.groups.finance": { fr: "Finance & RH", en: "Finance & HR", es: "Finanzas y RR. HH." },
+  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Análisis" },
+  "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta" },
 };
 
 const ICONS: Record<string, React.ReactElement> = {
@@ -379,7 +379,7 @@ export function getCachedModules(): Record<string, boolean> | null {
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { t, language, isRtl } = useLanguage();
+  const { t, language } = useLanguage();
   const { theme, themeId } = useTheme();
 
   const [user, setUser] = useState<User | null>(sidebarCachedUser);
@@ -921,7 +921,7 @@ export default function Sidebar() {
     },
   };
 
-  const hoverShift = isRtl ? "translateX(-4px)" : "translateX(4px)";
+  const hoverShift = "translateX(4px)";
 
   const handleMouseEnter = (itemId: string) => setHoveredItem(itemId);
   const handleMouseLeave = () => setHoveredItem(null);
@@ -1009,7 +1009,7 @@ export default function Sidebar() {
           )}
           <span
             aria-hidden="true"
-            style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : isRtl ? "rotate(90deg)" : "rotate(-90deg)" }}
+            style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
           >
             {ICONS.chevron}
           </span>
@@ -1285,7 +1285,7 @@ export default function Sidebar() {
               </div>
 
               <div style={styles.brandContainer}>
-                <div style={{ ...styles.logoTitle, textAlign: isRtl ? "right" : "left" }} lang="en" dir="ltr">
+                <div style={{ ...styles.logoTitle, textAlign: "left" }} lang="en">
                   INOVEXA <span style={styles.logoErp}>ERP</span>
                 </div>
                 <div style={{

@@ -2,7 +2,8 @@
  * Crée (ou réinitialise) le compte administrateur de la plateforme.
  *
  *   ADMIN_EMAIL=moi@exemple.tn ADMIN_PASSWORD='un mot de passe long' npm run admin:create   (en production : node dist/cli/create-admin.js)
- *   ADMIN_RESET=true …                       réinitialise le mot de passe d'un compte existant
+ *   ADMIN_RESET=true …                       réinitialise le mot de passe d'un compte existant (et sa double authentification)
+ *   ADMIN_RESET_2FA=true ADMIN_EMAIL=moi@exemple.tn …   n'efface QUE la double authentification d'un administrateur qui a perdu son téléphone (sans mot de passe)
  *
  * Remplace les anciens scripts qui créaient un administrateur avec un mot de passe écrit dans le code.
  * Le mot de passe n'est jamais affiché ni enregistré ailleurs que haché (bcrypt).
@@ -16,8 +17,9 @@ import { User } from '../modules/users/entities/user.entity';
 async function main() {
   const email = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD || '';
+  const only2fa = process.env.ADMIN_RESET_2FA === 'true';
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('ADMIN_EMAIL invalide ou manquant.');
-  if (password.length < 12) throw new Error('ADMIN_PASSWORD : 12 caractères minimum.');
+  if (!only2fa && password.length < 12) throw new Error('ADMIN_PASSWORD : 12 caractères minimum.');
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL manquant.');
 
   // Applique les migrations en attente (utile sur une base neuve), sans synchronisation automatique.
@@ -26,12 +28,25 @@ async function main() {
   try {
     const repo = ds.getRepository(User);
     const existing = await repo.findOne({ where: { email } });
+    if (only2fa) {
+      // Administrateur qui a perdu son téléphone : seule la double authentification est effacée, ses sessions sont fermées.
+      if (!existing || (existing.role !== 'admin' && existing.role !== 'super_admin')) throw new Error(`Aucun compte administrateur ${email}.`);
+      existing.twoFactorEnabled = false;
+      existing.twoFactorSecret = null;
+      existing.tokenVersion = (existing.tokenVersion ?? 0) + 1;
+      await repo.save(existing);
+      console.log(`✔ Double authentification de ${email} effacée : reconnectez-vous avec votre mot de passe, puis réactivez-la.`);
+      return;
+    }
     const hash = await bcrypt.hash(password, 12);
     if (existing) {
       if (process.env.ADMIN_RESET !== 'true') throw new Error(`Le compte ${email} existe déjà (ADMIN_RESET=true pour réinitialiser son mot de passe).`);
       existing.password = hash;
       existing.role = 'admin';
       existing.isActive = true;
+      existing.twoFactorEnabled = false;
+      existing.twoFactorSecret = null;
+      existing.tokenVersion = (existing.tokenVersion ?? 0) + 1;
       await repo.save(existing);
       console.log(`✔ Mot de passe de ${email} réinitialisé.`);
     } else {

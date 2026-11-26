@@ -10,12 +10,12 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import AuthShell, { AuthField, AuthMessage, IconKey, SubmitButton, failed, useAuthTexts, type AuthProblem } from "@/components/auth/AuthShell";
+import AuthShell, { AuthField, AuthMessage, IconKey, IconLock, IconMail, SubmitButton, failed, isEmail, serverText, useAuthTexts, type AuthProblem } from "@/components/auth/AuthShell";
 import { codeResendDelay, markCodeSent } from "@/lib/authFlow";
 import { useOnlineTexts } from "@/lib/onlineTexts";
 import { API_URL, fetchWithRetry, publicPost } from "@/lib/saas";
 import { fill } from "@/lib/saasTexts";
-import { clearSession, getStoredUser, getToken, homeFor, type AccountState } from "@/lib/session";
+import { clearSession, getStoredUser, getToken, homeFor, updateStoredEmail, type AccountState } from "@/lib/session";
 
 // ───────────── Ancien lien ─────────────
 
@@ -66,7 +66,7 @@ function VerifyByLink({ token, email }: { token: string; email: string }) {
 // ───────────── Code à 6 chiffres ─────────────
 
 interface CodeReply {
-  success?: boolean; alreadyVerified?: boolean; emailSent?: boolean; account?: AccountState | null;
+  success?: boolean; alreadyVerified?: boolean; emailSent?: boolean; account?: AccountState | null; email?: string; changed?: boolean; verification?: { resendInSeconds?: number };
   code?: "CODE_INVALID" | "CODE_EXPIRED" | "CODE_LOCKED" | "CODE_TOO_SOON"; remainingAttempts?: number; retryInSeconds?: number; resendInSeconds?: number; message?: string;
 }
 
@@ -88,14 +88,17 @@ async function authed(path: string, method: "GET" | "POST", body?: unknown): Pro
 type Feedback = { tone: "error" | "success" | "info"; text: string } | null;
 
 function VerifyByCode() {
-  const { tx, ui } = useAuthTexts();
+  const { tx, ui, language } = useAuthTexts();
   const o = useOnlineTexts();
   const v = o.verify;
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(true);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [busy, setBusy] = useState<"verify" | "resend" | null>(null);
+  const [busy, setBusy] = useState<"verify" | "resend" | "change" | null>(null);
+  const [changing, setChanging] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [wait, setWait] = useState(0);
   const [done, setDone] = useState(false);
@@ -182,7 +185,7 @@ function VerifyByCode() {
     if (busy || wait > 0) return;
     setBusy("resend");
     setFeedback(null);
-    const res = await authed("/auth/resend-verification", "POST");
+    const res = await authed("/auth/resend-verification", "POST", { language });
     setBusy(null);
     if (res.status === 401) { clearSession(); setSignedIn(false); return; }
     const data = res.data as CodeReply | null;
@@ -203,9 +206,37 @@ function VerifyByCode() {
     setFeedback({ tone: "error", text: explainRefusal(res) });
   };
 
-  const restart = () => {
-    clearSession();
-    leaveTo("/auth/register");
+  /** Faute de frappe à l'inscription : le mot de passe confirme le titulaire, puis un code part vers la bonne adresse. */
+  const changeAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    const target = newEmail.trim().toLowerCase();
+    if (!isEmail(target)) { setFeedback({ tone: "error", text: v.badEmail }); return; }
+    if (target === email.toLowerCase()) { setFeedback({ tone: "error", text: v.sameEmail }); return; }
+    if (!password) { setFeedback({ tone: "error", text: v.badPassword }); return; }
+    setBusy("change");
+    setFeedback(null);
+    const res = await authed("/auth/change-email", "POST", { email: target, password, language });
+    setBusy(null);
+    const data = res.data as (CodeReply & { message?: string }) | null;
+    if (res.status === 401 && data?.message !== "Mot de passe incorrect") { clearSession(); setSignedIn(false); return; }
+    if (res.ok && data?.success) {
+      const next = String(data.email || target);
+      updateStoredEmail(next);
+      setEmail(next);
+      setChanging(false);
+      setNewEmail("");
+      setPassword("");
+      setCode("");
+      if (data.emailSent) { markCodeSent(); setWait(data.verification?.resendInSeconds ?? 60); }
+      setFeedback({ tone: data.emailSent ? "success" : "info", text: data.emailSent ? fill(v.changed, { email: next }) : v.changedNoMail });
+      return;
+    }
+    if (res.status === 401) setFeedback({ tone: "error", text: v.badPassword });
+    else if (res.status === 409) setFeedback({ tone: "error", text: v.emailTaken });
+    else if (res.status === 0 || res.status >= 500) setFeedback({ tone: "error", text: tx.serverError });
+    else if (res.status === 429) setFeedback({ tone: "error", text: ui.tooMany });
+    else setFeedback({ tone: "error", text: serverText(String(data?.message || ""), language) || v.badEmail });
   };
 
   if (!ready) {
@@ -220,6 +251,22 @@ function VerifyByCode() {
       <AuthShell title={v.title}>
         <AuthMessage tone="info">{v.needLogin}</AuthMessage>
         <Link href="/auth/login" className="lg-btn">{tx.signIn}</Link>
+      </AuthShell>
+    );
+  }
+
+  if (changing) {
+    return (
+      <AuthShell title={v.title} subtitle={v.restart}>
+        {feedback ? <AuthMessage tone={feedback.tone}>{feedback.text}</AuthMessage> : null}
+        <form onSubmit={(e) => void changeAddress(e)} noValidate>
+          <AuthField id="lg-new-email" label={v.newEmail} icon={<IconMail />} type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} autoComplete="email" autoCapitalize="none" inputMode="email" spellCheck={false} maxLength={190} disabled={busy === "change"} required />
+          <AuthField id="lg-confirm-password" label={v.passwordConfirm} icon={<IconLock />} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" maxLength={128} hint={v.passwordHint} disabled={busy === "change"} required />
+          <SubmitButton label={v.changeSubmit} loadingLabel={v.checking} loading={busy === "change"} disabled={!newEmail.trim() || !password} />
+        </form>
+        <p className="lg-after-btn">
+          <button type="button" className="lg-linkbtn" onClick={() => { setChanging(false); setFeedback(null); setPassword(""); }} disabled={busy !== null}>{v.changeBack}</button>
+        </p>
       </AuthShell>
     );
   }
@@ -242,7 +289,6 @@ function VerifyByCode() {
           placeholder="••••••"
           disabled={busy === "verify" || done}
           hint={fill(v.hint, { min: 15 })}
-          ltr
           required
         />
         <SubmitButton label={v.submit} loadingLabel={v.checking} loading={busy === "verify" || done} disabled={code.length !== 6} />
@@ -257,7 +303,7 @@ function VerifyByCode() {
       <div className="lg-links">
         <p>
           {v.wrongEmail}{" "}
-          <button type="button" className="lg-linkbtn" onClick={restart} disabled={busy !== null || done}>{v.restart}</button>
+          <button type="button" className="lg-linkbtn" onClick={() => { setChanging(true); setFeedback(null); setNewEmail(""); setPassword(""); }} disabled={busy !== null || done}>{v.restart}</button>
         </p>
       </div>
     </AuthShell>

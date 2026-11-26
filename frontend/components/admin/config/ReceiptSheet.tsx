@@ -26,6 +26,8 @@ export interface ReceiptLabels {
   issued: (date: string) => string;
   customer: string;
   taxId: string;
+  /** « Registre du commerce » (identité de l’éditeur) ; à défaut, le libellé français. */
+  registry?: string;
   plan: string;
   cycle: (cycle: string) => string;
   covered: string;
@@ -47,6 +49,7 @@ const FR_LABELS: ReceiptLabels = {
   issued: (date) => `Émis le ${date}`,
   customer: "Client",
   taxId: "Matricule fiscal",
+  registry: "Registre du commerce",
   plan: "Formule",
   cycle: (cycle) => cycleLabel(cycle).toLowerCase(),
   covered: "Période couverte",
@@ -70,6 +73,15 @@ export function ReceiptSheet({ receipt, labels = FR_LABELS }: { receipt: Receipt
         <div>
           <div dir="ltr" style={{ fontFamily: "var(--font-orbitron), var(--font-poppins), sans-serif", fontWeight: 800, fontSize: 18, letterSpacing: 0.5 }}>Inovexa ERP</div>
           <div style={{ ...label, fontSize: 13, marginTop: 2 }}>{L.subtitle}</div>
+          {receipt.issuer ? (
+            <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 700, overflowWrap: "anywhere" }}>{receipt.issuer.name}</div>
+              {receipt.issuer.address ? <div style={{ overflowWrap: "anywhere" }}>{receipt.issuer.address}</div> : null}
+              {receipt.issuer.taxId ? <div>{L.taxId} : <bdi>{receipt.issuer.taxId}</bdi></div> : null}
+              {receipt.issuer.registry ? <div>{L.registry ?? "Registre du commerce"} : <bdi>{receipt.issuer.registry}</bdi></div> : null}
+              {receipt.issuer.email || receipt.issuer.phone ? <div style={{ overflowWrap: "anywhere" }}><bdi>{[receipt.issuer.email, receipt.issuer.phone].filter(Boolean).join(" · ")}</bdi></div> : null}
+            </div>
+          ) : null}
         </div>
         <div style={{ textAlign: "end" }}>
           <div dir="ltr" style={{ fontWeight: 800, fontSize: 16 }}>{receipt.receiptNumber}</div>
@@ -120,7 +132,7 @@ const PRINT_CSS = `
 
 export function ReceiptPrintRoot({ receipt, labels }: { receipt: Receipt; labels?: ReceiptLabels }) {
   return createPortal(
-    <div className="cfg-print-root" aria-hidden="true" dir={labels?.lang === "ar" ? "rtl" : "ltr"}>
+    <div className="cfg-print-root" aria-hidden="true">
       <style>{PRINT_CSS}</style>
       <ReceiptSheet receipt={receipt} labels={labels} />
     </div>,

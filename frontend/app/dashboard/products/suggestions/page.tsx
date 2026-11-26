@@ -11,7 +11,7 @@ import { formatMoney, sectorName, type SectorDetail } from "@/lib/saas";
 import { fill, useSaasTexts } from "@/lib/saasTexts";
 
 interface SuggestionsResponse extends Partial<SectorDetail> {
-  sectors: Array<{ code: string; name: string; nameEn: string | null; nameAr: string | null; itemCount: number }>;
+  sectors: Array<{ code: string; name: string; nameEn: string | null; itemCount: number }>;
   current: string;
 }
 
@@ -58,7 +58,7 @@ export default function SectorSuggestionsPage() {
   }, [data, search, category, kind]);
 
   /** Nom du secteur dans la langue de l'écran (le serveur ne garde pas l'espagnol : il vient du catalogue). */
-  const nameOf = (entry: { code: string; name: string; nameEn: string | null; nameAr: string | null }) => {
+  const nameOf = (entry: { code: string; name: string; nameEn: string | null }) => {
     const known = SECTORS.find((c) => c.code === entry.code);
     return language === "es" && known ? known.name.es : sectorName(entry, language);
   };

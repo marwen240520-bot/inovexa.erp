@@ -1,7 +1,7 @@
 "use client";
 /**
  * Administration › Secteurs et suggestions.
- * Pour chaque secteur d'activité proposé à l'inscription : son nom (français, anglais, arabe), les modules ouverts
+ * Pour chaque secteur d'activité proposé à l'inscription : son nom (français, anglais), les modules ouverts
  * d'office aux nouveaux clients (chaque client ouvre et ferme ensuite les siens ; cette page ne modifie jamais les
  * comptes existants), les conseils de démarrage, ses catégories et ses suggestions de produits et de prestations (valeurs
  * indicatives), et les prestations de mise en service proposées.
@@ -24,10 +24,10 @@ const amountText = (n: number | null | undefined) => (n === null || n === undefi
 
 // ───────────── Fiche du secteur ─────────────
 
-interface SectorForm { code: string; name: string; nameEn: string; nameAr: string; description: string; modules: string[]; recommendations: string; isActive: boolean; sortOrder: string }
+interface SectorForm { code: string; name: string; nameEn: string; description: string; modules: string[]; recommendations: string; isActive: boolean; sortOrder: string }
 const sectorForm = (s: Sector | null, nextOrder: number): SectorForm => s
-  ? { code: s.code, name: s.name, nameEn: s.nameEn || "", nameAr: s.nameAr || "", description: s.description || "", modules: s.modules || [], recommendations: (s.recommendations || []).join("\n"), isActive: s.isActive, sortOrder: String(s.sortOrder) }
-  : { code: "", name: "", nameEn: "", nameAr: "", description: "", modules: ["products", "categories", "clients", "invoices", "finance", "reports"], recommendations: "", isActive: true, sortOrder: String(nextOrder) };
+  ? { code: s.code, name: s.name, nameEn: s.nameEn || "", description: s.description || "", modules: s.modules || [], recommendations: (s.recommendations || []).join("\n"), isActive: s.isActive, sortOrder: String(s.sortOrder) }
+  : { code: "", name: "", nameEn: "", description: "", modules: ["products", "categories", "clients", "invoices", "finance", "reports"], recommendations: "", isActive: true, sortOrder: String(nextOrder) };
 
 function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { sector: Sector | null; nextOrder: number; onSaved: (s: Sector) => void; onDeleted: () => void; notify: (m: string, t?: "ok" | "err") => void }) {
   const [form, setForm] = useState<SectorForm>(sectorForm(sector, nextOrder));
@@ -45,7 +45,7 @@ function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { secto
     setBusy(true);
     setError(null);
     const body = {
-      ...(sector ? {} : { code: form.code.trim() }), name: form.name.trim(), nameEn: form.nameEn.trim() || null, nameAr: form.nameAr.trim() || null, description: form.description.trim() || null,
+      ...(sector ? {} : { code: form.code.trim() }), name: form.name.trim(), nameEn: form.nameEn.trim() || null, description: form.description.trim() || null,
       modules: form.modules, recommendations: form.recommendations.split("\n").map((line) => line.trim()).filter(Boolean), isActive: form.isActive, sortOrder: Number(form.sortOrder) || 0,
     };
     try {
@@ -80,7 +80,6 @@ function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { secto
       <Row>
         <FormField label="Nom (français)"><input value={form.name} onChange={(e) => set("name", e.target.value)} maxLength={120} style={inputStyle} /></FormField>
         <FormField label="Nom (anglais)"><input value={form.nameEn} onChange={(e) => set("nameEn", e.target.value)} maxLength={120} style={inputStyle} /></FormField>
-        <FormField label="Nom (arabe)"><input value={form.nameAr} onChange={(e) => set("nameAr", e.target.value)} maxLength={120} style={inputStyle} dir="rtl" /></FormField>
       </Row>
       <Row>
         <FormField label="Code" hint={sector ? "Le code ne change plus une fois le secteur créé." : "Identifiant technique, en minuscules."} basis={160}>

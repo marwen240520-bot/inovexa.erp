@@ -18,6 +18,8 @@ export interface AdminSettings {
   trialHours: number; trialReminderHours: number; renewalReminderDays: number; requireEmailVerification: boolean;
   currency: string; vatRate: number; paymentInstructions: string | null; paymentMethods: string[] | null;
   supportEmail: string | null; supportPhone: string | null; supportWhatsapp: string | null;
+  /** Identité légale de l’éditeur, imprimée sur les reçus de paiement (vide = en-tête « Inovexa ERP » seul). */
+  issuerName?: string | null; issuerTaxId?: string | null; issuerAddress?: string | null; issuerRegistry?: string | null;
   /** Lien https de la page de paiement par carte (prestataire de l'éditeur) ; null = non renseigné. */
   paymentLink?: string | null;
   /** Version du contenu de départ (secteurs, formules proposées) installée dans cette base. */
@@ -31,6 +33,30 @@ export interface AdminSettings {
   emailVerificationActive?: boolean;
   /** Calculés par le serveur, en lecture seule (absents de la réponse de PUT /admin/settings). */
   googleConfigured: boolean; paymentMethodOptions: string[]; moduleKeys: string[];
+}
+
+/** GET /admin/online-payment : ce qu'il reste à régler avant d'encaisser de vrais clients (sans appeler Konnect). */
+export interface OnlineReadiness {
+  enabled: boolean; mode: "production" | "sandbox"; provider: string;
+  /** Adresse que Konnect appelle après chaque paiement (transmise à Konnect à chaque paiement). */
+  webhookUrl: string; siteUrls: string[];
+  /** Un client peut payer. */
+  ready: boolean;
+  /** De vrais paiements, et rien d'important à corriger. */
+  live: boolean;
+  checks: Array<{ key: string; ok: boolean; level: "error" | "warn"; message: string }>;
+}
+
+/** GET /admin/security : contrôles de sécurité de la configuration du serveur (jamais de secret dans la réponse). */
+export interface SecurityReport {
+  ok: boolean; errors: number; warnings: number; production: boolean;
+  checks: Array<{ key: string; ok: boolean; level: "error" | "warn"; message: string }>;
+}
+
+/** POST /admin/online-payment/test : résultat du test de connexion à Konnect (null = non vérifié). */
+export interface ConnectionTest {
+  provider: string; mode: "production" | "sandbox"; configured: boolean;
+  reachable: boolean | null; keyAccepted: boolean | null; walletAccepted: boolean | null; message: string;
 }
 
 export interface AccountRef { id: number; email: string | null; name: string | null; companyName: string | null }

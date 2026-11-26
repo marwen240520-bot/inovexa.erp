@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ForgotPasswordDto, LoginWithOtpDto, ResetPasswordDto, TwoFactorCodeDto, TwoFactorDisableDto } from './dto/auth-security.dto';
-import { AppleAuthDto, GoogleAuthDto, RegisterDto, VerifyEmailCodeDto, VerifyEmailDto } from './dto/register.dto';
+import { AppleAuthDto, ChangeEmailDto, GoogleAuthDto, RegisterDto, ResendVerificationDto, VerifyEmailCodeDto, VerifyEmailDto } from './dto/register.dto';
 
 const actor = (req: any): number => req.user.actorId ?? req.user.userId;
 const ipOf = (req: any): string => (req.ip || '').toString();
@@ -76,9 +76,21 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 5, ttl: 600_000 } })
+  @UsePipes(STRICT)
   @ApiOperation({ summary: 'Envoie un nouveau code de vérification (un envoi par minute)' })
-  resendVerification(@Request() req: any) {
-    return this.authService.resendVerification(actor(req));
+  resendVerification(@Request() req: any, @Body() body: ResendVerificationDto) {
+    return this.authService.resendVerification(actor(req), body?.language);
+  }
+
+  @Post('change-email')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 600_000 } })
+  @UsePipes(STRICT)
+  @ApiOperation({ summary: 'Corrige l’adresse email (mot de passe exigé) : un code part vers la nouvelle adresse, l’ancienne est prévenue' })
+  changeEmail(@Request() req: any, @Body() body: ChangeEmailDto) {
+    return this.authService.changeEmail(actor(req), body.email, body.password, body.language, ipOf(req));
   }
 
   @Post('forgot-password')
@@ -86,7 +98,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Envoie un lien de réinitialisation par email (réponse identique que le compte existe ou non)' })
   forgot(@Body() body: ForgotPasswordDto) {
-    return this.authService.forgotPassword(body.email);
+    return this.authService.forgotPassword(body.email, body.language);
   }
 
   @Post('reset-password')
@@ -118,6 +130,7 @@ export class AuthController {
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 600_000 } })
   @ApiOperation({ summary: 'Démarre la double authentification : clé secrète et QR code à scanner' })
   setup2fa(@Request() req: any) {
     return this.authService.twoFactorSetup(actor(req));
@@ -127,6 +140,7 @@ export class AuthController {
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 600_000 } })
   enable2fa(@Request() req: any, @Body() body: TwoFactorCodeDto) {
     return this.authService.twoFactorEnable(actor(req), body.code);
   }
@@ -135,6 +149,7 @@ export class AuthController {
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 600_000 } })
   disable2fa(@Request() req: any, @Body() body: TwoFactorDisableDto) {
     return this.authService.twoFactorDisable(actor(req), body.password, body.code);
   }

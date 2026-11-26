@@ -7,6 +7,7 @@ import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 
 import * as QRCode from 'qrcode';
 import { User } from '../users/entities/user.entity';
 import { MailService } from '../../common/mail/mail.service';
+import { emailChangedMail, passwordResetMail, pickMailLang, securityNoticeMail, verificationCodeMail, type SecurityNotice } from '../../common/mail/auth-mails';
 import { AuditService } from '../../common/audit/audit.service';
 import { generateSecret, otpauthUrl, verifyTotp } from '../../common/totp';
 import { PermissionsService } from './permissions.service';
@@ -22,12 +23,15 @@ import { verifyAppleIdToken } from './apple-verifier';
 import type { AppleAuthDto, GoogleAuthDto, RegisterDto } from './dto/register.dto';
 import { JWT_SECRET } from './jwt.strategy';
 import { frontendUrl } from '../../common/origins';
+import { PASSWORD_MESSAGES, passwordProblem } from '../../common/security/passwords';
 
-/** 8 caractères minimum, au moins une lettre et un chiffre. */
-export function assertStrongPassword(password: string) {
-  if (typeof password !== 'string' || password.length < 8 || password.length > 128 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-    throw new BadRequestException('Mot de passe trop faible : 8 caractères minimum, avec au moins une lettre et un chiffre.');
-  }
+/**
+ * 8 caractères minimum, une lettre et un chiffre ; ni un des mots de passe les plus répandus, ni l'adresse email du compte
+ * (voir common/security/passwords.ts). `email` : l'adresse du compte, quand on la connaît.
+ */
+export function assertStrongPassword(password: string, email?: string | null) {
+  const problem = passwordProblem(password, { email });
+  if (problem) throw new BadRequestException(PASSWORD_MESSAGES[problem]);
 }
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -53,7 +57,10 @@ export class AuthService {
 
   // Limiteur de tentatives en mémoire, par email.
   private attempts = new Map<string, { count: number; resetAt: number; blockedUntil: number }>();
+  /** Échecs permis par clé (adresse email + adresse IP à la connexion ; une seule clé ailleurs). */
   private readonly MAX_ATTEMPTS = 5;
+  /** Échecs permis pour une même adresse email, toutes adresses IP confondues : bloque une attaque répartie sur plusieurs machines. */
+  private readonly MAX_ATTEMPTS_PER_EMAIL = 30;
   private readonly WINDOW_MS = 15 * 60 * 1000;
   private readonly BLOCK_MS = 15 * 60 * 1000;
 
@@ -119,14 +126,18 @@ export class AuthService {
     }
   }
 
-  private registerFailure(key: string) {
+  private registerFailure(key: string, max = this.MAX_ATTEMPTS) {
     const now = Date.now();
+    // Les clés d'une fenêtre écoulée ne servent plus à rien : on les retire pour que la table ne grossisse pas sans fin.
+    if (this.attempts.size > 5000) {
+      for (const [k, r] of this.attempts) if (r.resetAt < now && r.blockedUntil < now) this.attempts.delete(k);
+    }
     let rec = this.attempts.get(key);
     if (!rec || rec.resetAt < now) {
       rec = { count: 0, resetAt: now + this.WINDOW_MS, blockedUntil: 0 };
     }
     rec.count += 1;
-    if (rec.count >= this.MAX_ATTEMPTS) {
+    if (rec.count >= max) {
       rec.blockedUntil = now + this.BLOCK_MS;
     }
     this.attempts.set(key, rec);
@@ -136,8 +147,21 @@ export class AuthService {
     this.attempts.delete(key);
   }
 
+  /**
+   * Échec de connexion : compté pour (adresse email + adresse IP) — 5 échecs bloquent CETTE machine pour ce compte — et, plus
+   * largement, pour l'adresse email seule (30 échecs toutes machines confondues). Ainsi, quelqu'un qui tape au hasard sur le compte
+   * d'un client ne peut pas l'empêcher de se connecter depuis chez lui, mais personne ne peut non plus essayer des milliers de
+   * mots de passe en se répartissant sur plusieurs adresses.
+   */
+  private loginFailure(email: string, ipKey: string) {
+    this.registerFailure(ipKey);
+    this.registerFailure(email, this.MAX_ATTEMPTS_PER_EMAIL);
+  }
+
   async login(email: string, password: string, otp?: string, ip?: string) {
     const normalizedEmail = (email || '').trim().toLowerCase();
+    const ipKey = `${normalizedEmail}|${ip || 'inconnue'}`;
+    this.guardRateLimit(ipKey);
     this.guardRateLimit(normalizedEmail);
 
     // Recherche insensible à la casse, sans casser les emails déjà enregistrés.
@@ -153,7 +177,7 @@ export class AuthService {
     );
 
     if (!user || !passwordValid) {
-      this.registerFailure(normalizedEmail);
+      this.loginFailure(normalizedEmail, ipKey);
       void this.audit.record({ userId: user?.ownerId ?? user?.id ?? null, actorId: user?.id ?? null, actorEmail: normalizedEmail, action: 'login_failed', entity: 'auth', ip: ip || null, status: 401 });
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
@@ -170,7 +194,7 @@ export class AuthService {
         throw new UnauthorizedException({ statusCode: 401, message: 'Code de vérification requis', error: 'Unauthorized', requires2fa: true });
       }
       if (!verifyTotp(user.twoFactorSecret, otp)) {
-        this.registerFailure(normalizedEmail);
+        this.loginFailure(normalizedEmail, ipKey);
         void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'login_2fa_failed', entity: 'auth', ip: ip || null, status: 401 });
         throw new UnauthorizedException({ statusCode: 401, message: 'Code de vérification invalide', error: 'Unauthorized', requires2fa: true });
       }
@@ -184,6 +208,7 @@ export class AuthService {
     }
 
     this.resetAttempts(normalizedEmail);
+    this.resetAttempts(ipKey);
     await this.userRepository.update({ id: user.id }, { lastLoginAt: new Date() });
     void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'login', entity: 'auth', ip: ip || null, status: 200 });
 
@@ -233,7 +258,7 @@ export class AuthService {
    */
   private async createOwner(input: {
     email: string; name: string; companyName: string; phone: string | null; passwordHash: string; sectorCode: string;
-    source: 'self' | 'google' | 'apple'; googleSub?: string | null; appleSub?: string | null; emailVerified: boolean; verifyHash?: string | null;
+    source: 'self' | 'google' | 'apple'; googleSub?: string | null; appleSub?: string | null; emailVerified: boolean; verifyHash?: string | null; language?: string;
   }): Promise<User> {
     const now = new Date();
     const trial = await this.subscriptions.trialDates(now);
@@ -242,7 +267,7 @@ export class AuthService {
       role: 'client', isActive: true, ownerId: null,
       modules: await this.subscriptions.sectorModules(input.sectorCode), sector: input.sectorCode,
       accountStatus: 'TRIAL', trialStartedAt: trial.trialStartedAt, trialEndsAt: trial.trialEndsAt, expiryEnforced: true, statusChangedAt: now,
-      signupSource: input.source, googleSub: input.googleSub ?? null, appleSub: input.appleSub ?? null,
+      signupSource: input.source, googleSub: input.googleSub ?? null, appleSub: input.appleSub ?? null, language: pickMailLang(input.language),
       emailVerifiedAt: input.emailVerified ? now : null,
       emailVerifyHash: input.verifyHash ?? null, emailVerifyExpires: input.verifyHash ? new Date(now.getTime() + 48 * 3600_000) : null,
       lastLoginAt: now,
@@ -282,7 +307,7 @@ export class AuthService {
    * Tire un nouveau code à 6 chiffres, n'en garde que l'empreinte, et l'envoie par email.
    * Renvoie false si l'email n'a pas pu partir (serveur d'envoi non configuré ou en panne).
    */
-  private async issueEmailCode(user: User, welcome: boolean): Promise<boolean> {
+  private async issueEmailCode(user: User, welcome: boolean, languageHint?: string): Promise<boolean> {
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     const now = new Date();
     user.emailCodeHash = emailCodeHash(user.id, code);
@@ -291,16 +316,8 @@ export class AuthService {
     user.emailCodeSentAt = now;
     await this.userRepository.update({ id: user.id }, { emailCodeHash: user.emailCodeHash, emailCodeExpires: user.emailCodeExpires, emailCodeAttempts: 0, emailCodeSentAt: now });
     const page = `${this.frontendUrl()}/auth/verify-email`;
-    const intro = welcome ? 'Bienvenue sur Inovexa ERP. Votre essai gratuit est ouvert.' : 'Voici votre code de vérification.';
-    const sent = await this.mail.trySend({
-      to: user.email,
-      subject: `${code} — votre code de vérification Inovexa ERP`,
-      text: `Bonjour ${user.name},\n\n${intro}\nSaisissez ce code pour confirmer votre adresse email :\n\n    ${code}\n\nIl est valable ${EMAIL_CODE_MINUTES} minutes. Page de saisie : ${page}\n\nSi vous n’êtes pas à l’origine de cette inscription, ignorez ce message.\n\nL’équipe Inovexa ERP`,
-      html: `<p>Bonjour ${escapeHtml(user.name)},</p><p>${escapeHtml(intro)}</p><p>Saisissez ce code pour confirmer votre adresse email :</p>`
-        + `<p style="font-size:30px;font-weight:700;letter-spacing:8px;font-family:Consolas,Menlo,monospace;margin:18px 0">${code}</p>`
-        + `<p>Il est valable ${EMAIL_CODE_MINUTES} minutes. <a href="${page}">Ouvrir la page de saisie</a></p>`
-        + `<p style="color:#667085">Si vous n’êtes pas à l’origine de cette inscription, ignorez ce message.</p><p>L’équipe Inovexa ERP</p>`,
-    });
+    const mail = verificationCodeMail({ lang: pickMailLang(languageHint, user.language), name: user.name, code, minutes: EMAIL_CODE_MINUTES, url: page, welcome });
+    const sent = await this.mail.trySend({ to: user.email, ...mail });
     // Le code n'apparaît dans les journaux qu'en développement, quand aucun serveur d'envoi n'est configuré.
     if (!sent && process.env.NODE_ENV !== 'production') console.warn(`[auth] SMTP non configuré : code de vérification pour ${user.email} -> ${code}`);
     return sent;
@@ -313,18 +330,18 @@ export class AuthService {
 
   async register(dto: RegisterDto, ip?: string) {
     if (dto.acceptTerms !== true) throw new BadRequestException('Vous devez accepter les conditions d’utilisation.');
-    assertStrongPassword(dto.password);
+    assertStrongPassword(dto.password, dto.email);
     const email = dto.email.trim().toLowerCase();
     const checked = await this.checkSignup(dto.sector, dto.phone, dto.taxId);
     if (await this.findByEmail(email)) throw new ConflictException('Un compte existe déjà avec cet email. Connectez-vous, ou réinitialisez votre mot de passe.');
 
     const user = await this.createOwner({
       email, name: dto.name.trim(), companyName: dto.companyName.trim(), phone: checked.phone, passwordHash: await bcrypt.hash(dto.password, 10),
-      sectorCode: checked.sector.code, source: 'self', emailVerified: false,
+      sectorCode: checked.sector.code, source: 'self', emailVerified: false, language: dto.language,
     });
     await this.afterSignup(user, { city: dto.city, address: dto.address, legalForm: dto.legalForm, taxId: checked.taxId }, ip);
     // Le code part dès que le serveur sait envoyer des emails ; il n'est EXIGÉ que si le réglage est actif.
-    const emailSent = this.mail.isConfigured() || process.env.NODE_ENV !== 'production' ? await this.issueEmailCode(user, true) : false;
+    const emailSent = this.mail.isConfigured() || process.env.NODE_ENV !== 'production' ? await this.issueEmailCode(user, true, dto.language) : false;
     const required = this.settings.verificationRequired(await this.settings.get());
     return { ...(await this.session(user, null)), emailSent, verification: this.verificationInfo(required, emailSent) };
   }
@@ -344,11 +361,12 @@ export class AuthService {
     return { success: true, message: 'Adresse email confirmée.' };
   }
 
-  private async markEmailVerified(user: User) {
+  private async markEmailVerified(user: User, byAdmin = false) {
     const patch = { emailVerifiedAt: new Date(), emailVerifyHash: null, emailVerifyExpires: null, emailCodeHash: null, emailCodeExpires: null, emailCodeAttempts: 0 };
     await this.userRepository.update({ id: user.id }, patch);
     Object.assign(user, patch);
-    void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'email_verified', entity: 'auth' });
+    // Confirmée par la personne elle-même : on le journalise ici. Confirmée par l'administrateur : c'est lui qui est journalisé.
+    if (!byAdmin) void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'email_verified', entity: 'auth' });
   }
 
   /**
@@ -388,7 +406,7 @@ export class AuthService {
   }
 
   /** Envoie un nouveau code (un par minute, cinq par quart d'heure). */
-  async resendVerification(actorId: number) {
+  async resendVerification(actorId: number, language?: string) {
     const user = await this.userRepository.findOne({ where: { id: actorId } });
     if (!user) throw new UnauthorizedException();
     if (user.emailVerifiedAt) return { success: true, alreadyVerified: true };
@@ -398,11 +416,86 @@ export class AuthService {
     }
     this.guardRateLimit(`resend:${user.id}`);
     this.registerFailure(`resend:${user.id}`); // 5 envois / 15 min
-    const emailSent = await this.issueEmailCode(user, false);
+    const emailSent = await this.issueEmailCode(user, false, language);
     return {
       success: true, emailSent, ...this.verificationInfo(this.settings.verificationRequired(await this.settings.get()), emailSent),
       message: emailSent ? 'Un nouveau code vient de vous être envoyé.' : 'L’envoi d’emails n’est pas disponible pour le moment. Réessayez plus tard.',
     };
+  }
+
+  // ───────────── Outils d'administration de la vérification ─────────────
+
+  private async verifiableTarget(targetId: number): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: targetId } });
+    // Le compte de la plateforme n'a pas d'adresse à confirmer ; un membre d'équipe est confirmé par son propriétaire.
+    if (!user || isPlatformAdmin(user.role)) throw new NotFoundException('Compte introuvable.');
+    return user;
+  }
+
+  /** L'administrateur confirme lui-même l'adresse d'un compte (client joint par téléphone, boîte de réception inaccessible). */
+  async adminMarkEmailVerified(targetId: number, admin: { id: number; email?: string | null }, ip?: string) {
+    const user = await this.verifiableTarget(targetId);
+    if (user.emailVerifiedAt) return { success: true, alreadyVerified: true, verifiedAt: user.emailVerifiedAt };
+    await this.markEmailVerified(user, true);
+    void this.audit.record({ userId: user.ownerId ?? user.id, actorId: admin.id, actorEmail: admin.email ?? null, action: 'email_verified_by_admin', entity: 'account', entityId: user.id, ip: ip || null, status: 200, details: { email: user.email } });
+    return { success: true, alreadyVerified: false, verifiedAt: user.emailVerifiedAt };
+  }
+
+  /** L'administrateur renvoie un code de vérification au client, sans le délai d'attente imposé au client lui-même. */
+  async adminSendVerificationCode(targetId: number, admin: { id: number; email?: string | null }, language?: string, ip?: string) {
+    const user = await this.verifiableTarget(targetId);
+    if (user.emailVerifiedAt) return { success: true, alreadyVerified: true, emailSent: false };
+    if (!this.mail.isConfigured()) throw new ServiceUnavailableException('L’envoi d’emails n’est pas configuré sur le serveur (variables SMTP_*).');
+    const emailSent = await this.issueEmailCode(user, false, language);
+    void this.audit.record({ userId: user.ownerId ?? user.id, actorId: admin.id, actorEmail: admin.email ?? null, action: 'email_code_sent_by_admin', entity: 'account', entityId: user.id, ip: ip || null, status: 200, details: { email: user.email, emailSent } });
+    return { success: true, alreadyVerified: false, emailSent };
+  }
+
+  // ───────────── Changement d'adresse email ─────────────
+
+  /**
+   * Remplace l'adresse email du compte (faute de frappe à l'inscription, changement de messagerie).
+   *  - le mot de passe actuel est exigé : une session volée ne suffit pas à détourner le compte ;
+   *  - un propriétaire inscrit par email doit confirmer la NOUVELLE adresse : un code y part tout de suite ;
+   *  - l'ancienne adresse est prévenue du changement ;
+   *  - un compte relié à Google ou à Apple garde l'adresse que ce fournisseur a vérifiée.
+   */
+  async changeEmail(actorId: number, rawEmail: string, password: string, language?: string, ip?: string) {
+    const user = await this.userRepository.findOne({ where: { id: actorId } });
+    if (!user) throw new UnauthorizedException();
+    const email = String(rawEmail ?? '').trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 190) throw new BadRequestException('Email invalide.');
+    if (email === String(user.email).trim().toLowerCase()) return { success: true, changed: false, email: user.email };
+    if (user.signupSource === 'google' || user.signupSource === 'apple') {
+      throw new BadRequestException(`Ce compte est relié à ${user.signupSource === 'google' ? 'Google' : 'Apple'} : son adresse email ne peut pas être modifiée ici.`);
+    }
+    this.guardRateLimit(`chmail:${user.id}`);
+    if (!(await bcrypt.compare(password || '', user.password))) {
+      this.registerFailure(`chmail:${user.id}`);
+      void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'email_change_failed', entity: 'auth', ip: ip || null, status: 401 });
+      throw new UnauthorizedException('Mot de passe incorrect');
+    }
+    if (await this.findByEmail(email)) throw new ConflictException('Cet email est déjà utilisé.');
+
+    const previous = user.email;
+    const reverify = !user.ownerId && user.signupSource === 'self';
+    const patch: Partial<User> = { email };
+    if (reverify) Object.assign(patch, { emailVerifiedAt: null, emailVerifyHash: null, emailVerifyExpires: null, emailCodeHash: null, emailCodeExpires: null, emailCodeAttempts: 0, emailCodeSentAt: null });
+    try {
+      await this.userRepository.update({ id: user.id }, patch);
+    } catch (e: any) {
+      if (e?.code === '23505' || e?.driverError?.code === '23505') throw new ConflictException('Cet email est déjà utilisé.');
+      throw e;
+    }
+    Object.assign(user, patch);
+    this.resetAttempts(`chmail:${user.id}`);
+
+    // L'ancienne adresse est prévenue ; la nouvelle reçoit le code à saisir.
+    void this.mail.trySend({ to: previous, ...emailChangedMail({ lang: pickMailLang(language, user.language), name: user.name, newEmail: email }) });
+    const emailSent = reverify && (this.mail.isConfigured() || process.env.NODE_ENV !== 'production') ? await this.issueEmailCode(user, false, language) : false;
+    void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: email, action: 'email_changed', entity: 'auth', ip: ip || null, status: 200, details: { reverify } });
+    const required = this.settings.verificationRequired(await this.settings.get());
+    return { success: true, changed: true, email, reverify, emailSent, verification: this.verificationInfo(required && reverify, emailSent) };
   }
 
   // ───────────── Connexion et inscription avec Google ou Apple ─────────────
@@ -430,7 +523,7 @@ export class AuthService {
   private async socialSignIn(
     provider: 'google' | 'apple',
     identity: { sub: string; email: string | null; name: string },
-    dto: { intent?: 'login' | 'register'; companyName?: string; sector?: string; phone?: string; acceptTerms?: boolean; otp?: string },
+    dto: { intent?: 'login' | 'register'; companyName?: string; sector?: string; phone?: string; acceptTerms?: boolean; otp?: string; language?: string },
     ip?: string,
   ) {
     const p = AuthService.SOCIAL[provider];
@@ -472,7 +565,7 @@ export class AuthService {
       email: identity.email, name: identity.name, companyName, phone: checked.phone,
       // Mot de passe aléatoire inutilisable : la personne peut en définir un avec « mot de passe oublié ».
       passwordHash: await bcrypt.hash(randomBytes(32).toString('hex'), 10),
-      sectorCode: checked.sector.code, source: provider, [p.column]: identity.sub, emailVerified: true,
+      sectorCode: checked.sector.code, source: provider, [p.column]: identity.sub, emailVerified: true, language: dto.language,
     });
     await this.afterSignup(user, {}, ip);
     return { ...(await this.session(user, null)), created: true };
@@ -520,7 +613,7 @@ export class AuthService {
   // ───────────── Mot de passe oublié ─────────────
 
   /** Répond toujours de la même façon : on ne révèle pas si l'email existe. */
-  async forgotPassword(email: string) {
+  async forgotPassword(email: string, language?: string) {
     const generic = { success: true, message: 'Si ce compte existe, un email de réinitialisation vient d’être envoyé.' };
     const normalized = (email || '').trim().toLowerCase();
     this.guardRateLimit(`reset:${normalized}`);
@@ -533,14 +626,9 @@ export class AuthService {
     user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
     await this.userRepository.save(user);
 
-    const base = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
-    const link = `${base}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
-    const sent = await this.mail.trySend({
-      to: user.email,
-      subject: 'Réinitialisation de votre mot de passe Inovexa ERP',
-      text: `Bonjour ${user.name},\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) :\n${link}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valable.`,
-      html: `<p>Bonjour ${escapeHtml(user.name)},</p><p>Pour choisir un nouveau mot de passe, cliquez sur le lien ci-dessous (valable 1 heure) :</p><p><a href="${link}">Réinitialiser mon mot de passe</a></p><p>Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valable.</p>`,
-    });
+    const link = `${this.frontendUrl()}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
+    const mail = passwordResetMail({ lang: pickMailLang(language, user.language), name: user.name, link, minutes: 60 });
+    const sent = await this.mail.trySend({ to: user.email, ...mail });
     // Le lien contient le jeton : il n'est écrit dans les journaux qu'en développement.
     if (!sent) console.warn(process.env.NODE_ENV === 'production' ? `[auth] Email SMTP non configuré : réinitialisation demandée pour ${user.email}, aucun email envoyé.` : `[auth] Email SMTP non configuré : lien de réinitialisation pour ${user.email} -> ${link}`);
     void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'password_reset_requested', entity: 'auth' });
@@ -548,7 +636,7 @@ export class AuthService {
   }
 
   async resetPassword(email: string, token: string, newPassword: string) {
-    assertStrongPassword(newPassword);
+    assertStrongPassword(newPassword, email);
     const normalized = (email || '').trim().toLowerCase();
     this.guardRateLimit(`resetpw:${normalized}`);
     const user = await this.userRepository.createQueryBuilder('u').where('LOWER(u.email) = :e', { e: normalized }).getOne();
@@ -563,7 +651,19 @@ export class AuthService {
     user!.tokenVersion = (user!.tokenVersion ?? 0) + 1; // déconnecte toutes les sessions ouvertes
     await this.userRepository.save(user!);
     void this.audit.record({ userId: user!.ownerId ?? user!.id, actorId: user!.id, actorEmail: user!.email, action: 'password_reset', entity: 'auth' });
+    this.notifySecurity(user!, 'password_changed');
     return { success: true, message: 'Mot de passe modifié. Vous pouvez vous connecter.' };
+  }
+
+  /** Prévient la personne, par email et dans sa langue, d'un changement de sécurité sur son compte (jamais bloquant). */
+  notifySecurity(user: Pick<User, 'email' | 'name' | 'language'>, kind: SecurityNotice) {
+    void this.mail.trySend({ to: user.email, ...securityNoticeMail({ lang: pickMailLang(user.language), name: user.name, kind }) });
+  }
+
+  /** Notification après un changement de mot de passe fait depuis le profil (appelée par le contrôleur des utilisateurs). */
+  async notifyPasswordChanged(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) this.notifySecurity(user, 'password_changed');
   }
 
   /** Ferme toutes les sessions de la personne et renvoie un nouveau jeton pour celle qui vient d'agir. */
@@ -599,6 +699,7 @@ export class AuthService {
     user.twoFactorEnabled = true;
     await this.userRepository.save(user);
     void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: '2fa_enabled', entity: 'auth' });
+    this.notifySecurity(user, 'two_factor_enabled');
     return { success: true, twoFactorEnabled: true };
   }
 
@@ -611,7 +712,27 @@ export class AuthService {
     user.twoFactorSecret = null;
     await this.userRepository.save(user);
     void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: '2fa_disabled', entity: 'auth' });
+    this.notifySecurity(user, 'two_factor_disabled');
     return { success: true, twoFactorEnabled: false };
+  }
+
+  /**
+   * Le support réinitialise la double authentification d'un client qui a perdu son téléphone. Réservé aux comptes clients :
+   * celle d'un administrateur ne se réinitialise que depuis le serveur (ADMIN_RESET_2FA=true), pour qu'un seul compte
+   * administrateur compromis ne puisse pas affaiblir les autres. Les sessions du compte sont fermées et le titulaire est prévenu.
+   */
+  async adminResetTwoFactor(targetId: number, admin: { id: number; email?: string | null }, ip?: string) {
+    const user = await this.userRepository.findOne({ where: { id: targetId } });
+    if (!user) throw new NotFoundException('Compte introuvable.');
+    if (isPlatformAdmin(user.role)) throw new ForbiddenException('La double authentification d’un administrateur se réinitialise depuis le serveur (ADMIN_RESET_2FA=true, voir docs/OPERATIONS.md).');
+    if (!user.twoFactorEnabled && !user.twoFactorSecret) return { success: true, alreadyDisabled: true };
+    user.twoFactorEnabled = false;
+    user.twoFactorSecret = null;
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+    await this.userRepository.save(user);
+    void this.audit.record({ userId: user.ownerId ?? user.id, actorId: admin.id, actorEmail: admin.email ?? null, action: 'two_factor_reset_by_admin', entity: 'account', entityId: user.id, ip: ip || null, status: 200 });
+    this.notifySecurity(user, 'two_factor_reset');
+    return { success: true, alreadyDisabled: false };
   }
 
   async createClientByAdmin(body: {
@@ -651,8 +772,4 @@ export class AuthService {
       }
     };
   }
-}
-
-function escapeHtml(s: string) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }

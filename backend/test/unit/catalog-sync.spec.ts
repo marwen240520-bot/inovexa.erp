@@ -19,8 +19,8 @@ suite('catalogue du site = contenu de départ de la plateforme', () => {
     expect(site.SECTORS.map((s: any) => s.code)).toEqual(DEFAULT_SECTORS.map((s) => s.code));
     for (const def of DEFAULT_SECTORS) {
       const shown = site.SECTORS.find((s: any) => s.code === def.code);
-      expect([def.code, shown.name.fr, shown.name.en, shown.name.ar]).toEqual([def.code, def.name, def.nameEn, def.nameAr]);
-      for (const lang of ['fr', 'en', 'es', 'ar']) expect(shown.desc[lang].length).toBeGreaterThan(10);
+      expect([def.code, shown.name.fr, shown.name.en]).toEqual([def.code, def.name, def.nameEn]);
+      for (const lang of ['fr', 'en', 'es']) expect(shown.desc[lang].length).toBeGreaterThan(10);
     }
   });
 
@@ -31,11 +31,11 @@ suite('catalogue du site = contenu de départ de la plateforme', () => {
     }
   });
 
-  it('chaque module affiché a un nom et une description dans les quatre langues', () => {
+  it('chaque module affiché a un nom et une description dans les trois langues', () => {
     const shownModules = new Set<string>(site.SECTORS.flatMap((s: any) => s.modules));
     for (const key of shownModules) {
       expect(site.MODULE_INFO[key]).toBeDefined();
-      for (const lang of ['fr', 'en', 'es', 'ar']) {
+      for (const lang of ['fr', 'en', 'es']) {
         expect(site.MODULE_INFO[key].label[lang].length).toBeGreaterThan(1);
         expect(site.MODULE_INFO[key].desc[lang].length).toBeGreaterThan(10);
       }

@@ -803,6 +803,133 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   await db.query(`DELETE FROM subscription_payments WHERE "userId" = $1`, [G.id]);
   await db.query(`DELETE FROM users WHERE id = $1`, [G.id]);
 
+  // ═════════════════════════ Correction de l'adresse email, e-mails en trois langues, outils de l'administrateur ═════════════════════════
+  console.log('— Correction de l’adresse email, emails dans la langue du client, outils de l’administrateur');
+  {
+    /** Premier email reçu par cette adresse après le n-ième déjà vu (l'envoi à l'ancienne adresse part en tâche de fond). */
+    const mailTo = async (email, after, timeoutMs = 6000) => {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        const found = smtp.mails.slice(after).find((m) => m.to.includes(String(email).toLowerCase()));
+        if (found) return found;
+        await sleep(80);
+      }
+      return null;
+    };
+
+    // — Inscription : la langue de l'interface décide de la langue des emails.
+    const seenH = smtp.mails.length;
+    const h = await call('POST', '/auth/register', { body: signup({ email: 'h-faute@test.tn', companyName: 'Boutique H', sector: 'commerce', language: 'es' }) });
+    check('inscription depuis l’interface espagnole : compte créé, code exigé et envoyé', h.status === 201 && h.body.verification.required === true && h.body.emailSent === true, h.body.verification);
+    const H = { token: h.body.access_token, id: h.body.user.id };
+    const codeH1 = await smtp.codeFor('h-faute@test.tn', seenH);
+    const mailH1 = smtp.mails.slice(seenH).find((m) => m.to.includes('h-faute@test.tn'));
+    check('l’email du code est écrit en espagnol, avec une version HTML', /Bienvenido a Inovexa ERP/.test(mailH1.text) && /Hola /.test(mailH1.text) && /<html lang=3D"es"|<html lang="es"/.test(mailH1.text), mailH1.text.slice(0, 300));
+    row = await one(`SELECT language FROM users WHERE id = $1`, [H.id]);
+    check('la langue est gardée sur le compte (les rappels et reçus suivent)', row.language === 'es', row);
+    r = await call('POST', '/auth/register', { body: signup({ email: 'h-ar@test.tn', companyName: 'Langue inconnue', sector: 'commerce', language: 'ar' }) });
+    check('une langue qui n’existe pas (ou plus) retombe sur le français', r.status === 201, r.body);
+    row = await one(`SELECT language FROM users WHERE email = 'h-ar@test.tn'`);
+    check('… enregistrée comme « fr »', row.language === 'fr', row);
+    await db.query(`DELETE FROM users WHERE email = 'h-ar@test.tn'`);
+
+    // — Faute de frappe à l'inscription : l'adresse est corrigée avec le mot de passe.
+    r = await call('POST', '/auth/change-email', { body: { email: 'h@test.tn', password: PASSWORD } });
+    check('corriger l’adresse sans être connecté : 401', r.status === 401, r);
+    r = await call('POST', '/auth/change-email', { token: H.token, body: { email: 'h@test.tn', password: 'Mauvais#2026' } });
+    check('mauvais mot de passe : refusé (401), l’adresse ne bouge pas', r.status === 401, r);
+    row = await one(`SELECT email FROM users WHERE id = $1`, [H.id]);
+    check('… l’adresse est restée celle de l’inscription', row.email === 'h-faute@test.tn', row);
+    r = await call('POST', '/auth/change-email', { token: H.token, body: { email: 'a@test.tn', password: PASSWORD } });
+    check('adresse déjà prise par une autre société : 409', r.status === 409, r);
+    const seenChange = smtp.mails.length;
+    r = await call('POST', '/auth/change-email', { token: H.token, body: { email: 'H@Test.tn', password: PASSWORD, language: 'en' } });
+    check('mot de passe exact : adresse corrigée (casse ignorée), confirmation à refaire, code envoyé', r.status === 200 && r.body.changed === true && r.body.email === 'h@test.tn' && r.body.reverify === true && r.body.emailSent === true && r.body.verification.required === true && r.body.verification.resendInSeconds === 60, r.body);
+    const codeH2 = await smtp.codeFor('h@test.tn', seenChange);
+    const mailNew = await mailTo('h@test.tn', seenChange);
+    check('le code part vers la NOUVELLE adresse, en anglais (langue demandée)', /^\d{6}$/.test(codeH2) && /Hello /.test(mailNew.text), mailNew?.text.slice(0, 200));
+    const mailOld = await mailTo('h-faute@test.tn', seenChange);
+    check('l’ANCIENNE adresse est prévenue (sans aucun code)', !!mailOld && /h@test\.tn/.test(mailOld.text) && smtp.codeOf(mailOld) === null, mailOld?.text.slice(0, 300));
+    row = await one(`SELECT email, "emailVerifiedAt", "emailCodeHash", "emailCodeAttempts" FROM users WHERE id = $1`, [H.id]);
+    check('en base : nouvelle adresse, confirmation à refaire, empreinte du code seulement', row.email === 'h@test.tn' && row.emailVerifiedAt === null && /^[0-9a-f]{64}$/.test(row.emailCodeHash) && row.emailCodeAttempts === 0, row);
+    r = await call('POST', '/auth/login', { body: { email: 'h-faute@test.tn', password: PASSWORD } });
+    check('l’ancienne adresse ne permet plus de se connecter', r.status === 401, r);
+    r = await call('GET', '/auth/me', { token: H.token });
+    check('profil : nouvelle adresse non confirmée, ERP fermé par le code', r.status === 200 && r.body.email === 'h@test.tn' && r.body.emailVerified === false && r.body.account.reason === 'EMAIL_NOT_VERIFIED', r.body.account);
+    r = await call('GET', '/clients', { token: H.token });
+    check('l’ERP reste fermé tant que la nouvelle adresse n’est pas confirmée (402)', r.status === 402 && r.body.reason === 'EMAIL_NOT_VERIFIED', r);
+    if (codeH2 !== codeH1) {
+      r = await call('POST', '/auth/verify-email-code', { token: H.token, body: { code: codeH1 } });
+      check('le code reçu sur l’ancienne adresse ne sert plus à rien', r.status === 400 && r.body.code === 'CODE_INVALID', r);
+    }
+    r = await call('POST', '/auth/verify-email-code', { token: H.token, body: { code: codeH2 } });
+    check('le code reçu sur la nouvelle adresse ouvre l’espace', r.status === 200 && r.body.success === true && r.body.account.blocked === false, r);
+
+    // — Même opération depuis le profil : le mot de passe est exigé pour l'adresse, pas pour le reste.
+    r = await call('PATCH', '/users/profile', { token: H.token, body: { name: 'Sami H.', phone: '22 535 181' } });
+    check('profil : le nom et le téléphone se changent sans mot de passe', r.status === 200 && r.body.name === 'Sami H.' && !r.body.emailChange, r.body);
+    r = await call('PATCH', '/users/profile', { token: H.token, body: { email: 'h2@test.tn' } });
+    check('profil : changer l’adresse sans mot de passe est refusé (401)', r.status === 401, r);
+    r = await call('PATCH', '/users/profile', { token: H.token, body: { email: 'pas-une-adresse', currentPassword: PASSWORD } });
+    check('profil : adresse mal formée (400)', r.status === 400, r);
+    const seenProfile = smtp.mails.length;
+    r = await call('PATCH', '/users/profile', { token: H.token, body: { email: 'h2@test.tn', currentPassword: PASSWORD, language: 'fr' } });
+    check('profil : avec le mot de passe, adresse changée, code envoyé, confirmation exigée', r.status === 200 && r.body.emailChange?.codeSent === true && r.body.emailChange?.verificationRequired === true, r.body);
+    await smtp.codeFor('h2@test.tn', seenProfile);
+    r = await call('GET', '/auth/me', { token: H.token });
+    check('… le compte est de nouveau fermé jusqu’au code', r.status === 200 && r.body.email === 'h2@test.tn' && r.body.account.reason === 'EMAIL_NOT_VERIFIED', r.body.account);
+
+    // — Outils de l'administrateur.
+    const V = await signUp({ email: 'h-verifie@test.tn', companyName: 'Boutique V', sector: 'commerce' });
+    r = await call('POST', `/admin/accounts/${H.id}/verify-email`, { token: V.token });
+    check('un client ne peut pas confirmer sa propre adresse par l’API d’administration (403)', r.status === 403, r);
+    r = await call('POST', `/admin/accounts/${H.id}/resend-verification`, { token: V.token, body: {} });
+    check('… ni se faire renvoyer un code par cette voie (403)', r.status === 403, r);
+    const seenAdmin = smtp.mails.length;
+    r = await call('POST', `/admin/accounts/${H.id}/resend-verification`, { token: admin, body: { language: 'es' } });
+    check('l’administrateur renvoie un code au client, sans attendre la minute', r.status === 200 && r.body.emailSent === true, r);
+    const codeH3 = await smtp.codeFor('h2@test.tn', seenAdmin);
+    const mailAdmin = smtp.mails.slice(seenAdmin).find((m) => m.to.includes('h2@test.tn'));
+    check('… le code part à l’adresse du compte, dans la langue demandée', /^\d{6}$/.test(codeH3) && /Hola /.test(mailAdmin.text), mailAdmin?.text.slice(0, 200));
+    r = await call('POST', `/admin/accounts/${H.id}/verify-email`, { token: admin });
+    check('l’administrateur confirme l’adresse à la place du client', r.status === 200 && r.body.success === true && r.body.alreadyVerified === false && !!r.body.verifiedAt, r);
+    row = await one(`SELECT "emailVerifiedAt", "emailCodeHash" FROM users WHERE id = $1`, [H.id]);
+    check('… adresse confirmée en base, code effacé', !!row.emailVerifiedAt && row.emailCodeHash === null, row);
+    r = await call('GET', '/clients', { token: H.token });
+    check('… le client ouvre son espace sans code', r.status === 200, r);
+    r = await call('POST', `/admin/accounts/${H.id}/verify-email`, { token: admin });
+    check('adresse déjà confirmée : sans effet', r.status === 200 && r.body.alreadyVerified === true, r);
+    r = await call('POST', `/admin/accounts/${H.id}/resend-verification`, { token: admin, body: {} });
+    check('… et rien n’est renvoyé', r.status === 200 && r.body.alreadyVerified === true && r.body.emailSent === false, r);
+    r = await call('POST', '/admin/accounts/999999/verify-email', { token: admin });
+    check('compte inconnu : 404', r.status === 404, r);
+    await sleep(400);
+    const journal = (await db.query(`SELECT action, "actorEmail" FROM audit_logs WHERE "userId" = $1 AND action IN ('email_changed', 'email_verified_by_admin', 'email_code_sent_by_admin', 'email_change_failed')`, [H.id])).rows;
+    const actions = journal.map((x) => x.action);
+    check('le journal garde les changements d’adresse et les actions de l’administrateur', ['email_changed', 'email_verified_by_admin', 'email_code_sent_by_admin', 'email_change_failed'].every((a) => actions.includes(a)), actions);
+    check('… avec l’adresse de l’administrateur pour ses actions', journal.filter((x) => x.action.endsWith('_by_admin')).every((x) => x.actorEmail === 'admin@test.tn'), journal);
+
+    // — Diagnostic et test du serveur d'envoi.
+    r = await call('GET', '/admin/maintenance/mail', { token: admin });
+    check('diagnostic de l’envoi d’emails : configuré, serveur joignable, aucun mot de passe exposé', r.status === 200 && r.body.configured === true && r.body.reachable === true && r.body.host === '127.0.0.1' && r.body.error === null && /no-reply@test\.tn/.test(r.body.from) && !/pass/i.test(JSON.stringify(Object.keys(r.body))), r.body);
+    r = await call('GET', '/admin/maintenance/mail', { token: V.token });
+    check('… réservé à l’administrateur (403)', r.status === 403, r);
+    const seenTest = smtp.mails.length;
+    r = await call('POST', '/admin/maintenance/test-email', { token: admin, body: { to: 'verif@test.tn', language: 'en' } });
+    check('email de test envoyé à l’adresse demandée', r.status === 200 && r.body.success === true && r.body.to === 'verif@test.tn', r);
+    const mailTest = await mailTo('verif@test.tn', seenTest);
+    check('… il arrive, dans la langue demandée', !!mailTest && /Inovexa ERP/.test(mailTest.text) && /platform/.test(mailTest.text), mailTest?.text.slice(0, 200));
+    const seenSelf = smtp.mails.length;
+    r = await call('POST', '/admin/maintenance/test-email', { token: admin, body: {} });
+    check('sans adresse : le test part à l’administrateur lui-même', r.status === 200 && r.body.to === 'admin@test.tn' && !!(await mailTo('admin@test.tn', seenSelf)), r);
+    r = await call('POST', '/admin/maintenance/test-email', { token: admin, body: { to: 'pas-une-adresse' } });
+    check('adresse invalide : 400', r.status === 400, r);
+    r = await call('POST', '/admin/maintenance/test-email', { token: V.token, body: {} });
+    check('un client ne peut pas envoyer d’email de test (403)', r.status === 403, r);
+
+    await db.query(`DELETE FROM users WHERE id = ANY($1)`, [[H.id, V.id]]);
+  }
+
   // ═════════════════════════ Suppression d'un compte ═════════════════════════
   console.log('— Suppression d’un compte par l’administrateur');
   r = await call('DELETE', `/admin/clients/${C.id}`, { token: admin });

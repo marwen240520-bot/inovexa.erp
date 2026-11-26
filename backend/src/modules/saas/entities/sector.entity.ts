@@ -23,9 +23,6 @@ export class Sector {
   @Column({ type: 'varchar', length: 120, nullable: true })
   nameEn: string | null;
 
-  @Column({ type: 'varchar', length: 120, nullable: true })
-  nameAr: string | null;
-
   @Column({ type: 'varchar', length: 500, nullable: true })
   description: string | null;
 

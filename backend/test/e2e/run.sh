@@ -5,7 +5,7 @@
 #
 # Chaque suite (*.e2e.js) s'exécute sur une base neuve : la base d'essai est supprimée puis recréée avant chacune.
 # Variables : E2E_ADMIN_URL (obligatoire, base « postgres » d'un compte pouvant créer des bases),
-#             E2E_DB_NAME (défaut erp_e2e), E2E_PORT (défaut 4101).
+#             E2E_DB_NAME (défaut erp_e2e), E2E_PORT (défaut 4101), E2E_ONLY (facultatif : texte du nom de la suite à lancer, ex. saas).
 # Les suites saas.e2e.js et online.e2e.js tournent avec un FAUX serveur d'emails (SMTP) et un FAUX Konnect, démarrés par la suite elle-même
 # sur les ports E2E_PORT+100 et E2E_PORT+101 : le code de vérification et le paiement par carte sont testés pour de bon,
 # sans Internet ni vrai paiement. Les autres suites tournent sans SMTP ni Konnect (comme une installation vierge).
@@ -26,6 +26,8 @@ trap cleanup EXIT
 
 failed=0
 for suite in test/e2e/*.e2e.js; do
+  # E2E_ONLY=saas : ne lance que les suites dont le nom contient ce texte (utile pendant le développement).
+  [ -n "${E2E_ONLY:-}" ] && [[ "$(basename "$suite")" != *"$E2E_ONLY"* ]] && continue
   echo; echo "══ $(basename "$suite") ══"
   [ -n "$PID" ] && { kill "$PID" 2>/dev/null; wait "$PID" 2>/dev/null; PID=""; }
   psql "$E2E_ADMIN_URL" -q -c "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE)" -c "CREATE DATABASE \"$DB\"" >/dev/null || exit 1

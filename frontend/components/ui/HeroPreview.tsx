@@ -7,7 +7,6 @@ const ALT: Record<string, string> = {
   fr: "Aperçu du tableau de bord Inovexa",
   en: "Inovexa dashboard preview",
   es: "Vista previa del panel de Inovexa",
-  ar: "معاينة لوحة القيادة في Inovexa",
 };
 
 /**

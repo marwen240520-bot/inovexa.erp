@@ -52,3 +52,30 @@ Ils sont maintenant ignorés et retirés de la version courante, **mais restent 
 ## 5. Variables d'environnement
 
 Voir `.env.example`, qui liste chaque variable avec son effet. Obligatoires : `DATABASE_URL` (ou `POSTGRES_*` avec Docker Compose) et `JWT_SECRET`.
+
+## 6. Sécurité : contrôles et récupération
+
+**Contrôle de la configuration.** Au démarrage, l'API écrit dans ses journaux un rapport `Sécurité [clé] message` (rouge = erreur à
+corriger, orange = à vérifier ; le rapport informe, il n'empêche pas le serveur de démarrer) et, en production, un résumé `🔒 Sécurité : N erreur(s), M avertissement(s)`. Le même rapport est
+lisible dans l'administration (Réglages › Sécurité du serveur, ou `GET /admin/security`). Il ne contient jamais de secret. Contrôlé :
+clé de session (32 caractères au moins), HTTPS public, schéma géré par les migrations, documentation Swagger fermée, emails, paiement,
+double authentification des administrateurs, sauvegardes.
+
+**Un administrateur a perdu son téléphone (double authentification).** Il n'y a pas de codes de secours : la récupération passe par
+le serveur, pour qu'un seul compte administrateur compromis ne puisse pas affaiblir les autres.
+
+```bash
+# Sur le serveur de l'API (ou en local avec DATABASE_URL pointant vers la base de production) :
+ADMIN_RESET_2FA=true ADMIN_EMAIL=vous@exemple.tn npm run admin:create:prod
+```
+
+Seule la double authentification est effacée (le mot de passe ne change pas) et les sessions ouvertes sont fermées : l'administrateur se
+reconnecte avec son mot de passe, puis la réactive dans Réglages › Double authentification. `ADMIN_RESET=true` (réinitialisation du mot de
+passe) efface aussi la double authentification.
+
+**Un client a perdu son téléphone.** Administration › Comptes › fiche du compte › « Réinitialiser la double authentification » (après avoir
+vérifié son identité : téléphone, contrat). Ses sessions sont fermées, il est prévenu par email, l'action est journalisée.
+
+**Derrière un CDN.** Le blocage des tentatives de connexion lit l'adresse du visiteur dans `X-Forwarded-For` en supposant un seul relais
+(Render, Railway…). Avec un relais de plus (Cloudflare devant Render), définissez `TRUST_PROXY=2` ; sans aucun relais, `TRUST_PROXY=0`.
+Une valeur trop basse fait partager la même adresse à tous les visiteurs ; trop haute, elle laisse un visiteur falsifier la sienne.

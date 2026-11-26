@@ -1,12 +1,14 @@
 ﻿"use client";
-import { useState, useEffect, useRef, type JSX } from "react";
+import { Fragment, useState, useEffect, useRef, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme, THEMES } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import Spinner from "@/components/ui/Spinner";
-import { USER_KEY, clearSession, getStoredUser, replaceToken } from "@/lib/session";
+import TwoFactorCard from "@/components/account/TwoFactorCard";
+import { serverText } from "@/components/auth/AuthShell";
+import { USER_KEY, clearSession, getStoredUser, replaceToken, updateStoredEmail } from "@/lib/session";
 import { formatDateTime } from "@/lib/saas";
 
 // Seuls ces champs du profil sont gardés dans le navigateur : la réponse complète de /users/profile (dates, état du
@@ -32,7 +34,7 @@ const profileTranslations = {
       changePassword: "Changer le mot de passe",
       oldPasswordRequired: "Veuillez entrer votre mot de passe actuel",
       passwordMismatch: "Les mots de passe ne correspondent pas",
-      passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
+      passwordMinLength: "Le mot de passe doit contenir au moins 8 caractères, avec une lettre et un chiffre",
       passwordChanged: "Mot de passe changé avec succès",
       personalInfo: "Informations personnelles",
       security: "Sécurité",
@@ -52,7 +54,13 @@ const profileTranslations = {
       connectedSince: "Connecté depuis",
       profileUpdated: "Profil mis à jour",
       logoutAllConfirm: "Se déconnecter de tous les appareils ?",
-      logoutAllFailed: "La déconnexion de tous les appareils a échoué. Réessayez."
+      logoutAllFailed: "La déconnexion de tous les appareils a échoué. Réessayez.",
+      emailPassword: "Mot de passe actuel (requis pour changer l’email)",
+      emailPasswordHint: "Un code de vérification sera envoyé à la nouvelle adresse ; l’ancienne adresse sera prévenue.",
+      emailNeedsPassword: "Saisissez votre mot de passe actuel pour changer l’adresse email.",
+      wrongPassword: "Mot de passe incorrect.",
+      emailTaken: "Cette adresse email est déjà utilisée.",
+      emailChanged: "Profil mis à jour. Un code de vérification vient d’être envoyé à la nouvelle adresse."
     }
   },
   es: {
@@ -63,7 +71,7 @@ const profileTranslations = {
       changePassword: "Cambiar contraseña",
       oldPasswordRequired: "Por favor, introduzca su contraseña actual",
       passwordMismatch: "Las contraseñas no coinciden",
-      passwordMinLength: "La contraseña debe tener al menos 6 caracteres",
+      passwordMinLength: "La contraseña debe tener al menos 8 caracteres, con una letra y un número",
       passwordChanged: "Contraseña cambiada con éxito",
       personalInfo: "Información personal",
       security: "Seguridad",
@@ -83,7 +91,13 @@ const profileTranslations = {
       connectedSince: "Conectado desde",
       profileUpdated: "Perfil actualizado",
       logoutAllConfirm: "¿Cerrar sesión en todos los dispositivos?",
-      logoutAllFailed: "No se pudo cerrar sesión en todos los dispositivos. Inténtelo de nuevo."
+      logoutAllFailed: "No se pudo cerrar sesión en todos los dispositivos. Inténtelo de nuevo.",
+      emailPassword: "Contraseña actual (necesaria para cambiar el correo)",
+      emailPasswordHint: "Se enviará un código de verificación a la nueva dirección; la anterior será avisada.",
+      emailNeedsPassword: "Introduzca su contraseña actual para cambiar el correo electrónico.",
+      wrongPassword: "Contraseña incorrecta.",
+      emailTaken: "Este correo electrónico ya está en uso.",
+      emailChanged: "Perfil actualizado. Se acaba de enviar un código de verificación a la nueva dirección."
     }
   },
   en: {
@@ -94,7 +108,7 @@ const profileTranslations = {
       changePassword: "Change password",
       oldPasswordRequired: "Please enter your current password",
       passwordMismatch: "Passwords do not match",
-      passwordMinLength: "Password must be at least 6 characters",
+      passwordMinLength: "Password must be at least 8 characters, with a letter and a digit",
       passwordChanged: "Password changed successfully",
       personalInfo: "Personal information",
       security: "Security",
@@ -114,40 +128,15 @@ const profileTranslations = {
       connectedSince: "Connected since",
       profileUpdated: "Profile updated",
       logoutAllConfirm: "Log out from all devices?",
-      logoutAllFailed: "Logging out of all devices failed. Please try again."
+      logoutAllFailed: "Logging out of all devices failed. Please try again.",
+      emailPassword: "Current password (required to change the email)",
+      emailPasswordHint: "A verification code will be sent to the new address; the old address will be notified.",
+      emailNeedsPassword: "Enter your current password to change the email address.",
+      wrongPassword: "Incorrect password.",
+      emailTaken: "This email address is already in use.",
+      emailChanged: "Profile updated. A verification code has just been sent to the new address."
     }
   },
-  ar: {
-    profile: {
-      oldPassword: "كلمة المرور القديمة",
-      newPassword: "كلمة المرور الجديدة",
-      confirmPassword: "تأكيد كلمة المرور",
-      changePassword: "تغيير كلمة المرور",
-      oldPasswordRequired: "يرجى إدخال كلمة المرور الحالية",
-      passwordMismatch: "كلمتا المرور غير متطابقتين",
-      passwordMinLength: "يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل",
-      passwordChanged: "تم تغيير كلمة المرور بنجاح",
-      personalInfo: "المعلومات الشخصية",
-      security: "الأمان",
-      activity: "النشاط",
-      company: "الشركة",
-      memberSince: "عضو منذ",
-      lastLogin: "آخر تسجيل دخول",
-      admin: "مسؤول",
-      transporter: "ناقل",
-      client: "عميل",
-      dangerZone: "منطقة الخطر",
-      logoutAllWarning: "تسجيل الخروج من جميع الأجهزة",
-      logoutAllDevices: "تسجيل الخروج من جميع الأجهزة",
-      personalStats: "الإحصائيات الشخصية",
-      revenueGenerated: "رقم المعاملات المحقق",
-      currentSession: "الجلسة الحالية",
-      connectedSince: "متصل منذ",
-      profileUpdated: "تم تحديث الملف الشخصي",
-      logoutAllConfirm: "تسجيل الخروج من جميع الأجهزة؟",
-      logoutAllFailed: "تعذّر تسجيل الخروج من جميع الأجهزة. أعد المحاولة."
-    }
-  }
 };
 
 // ==================== SVG ICONS ====================
@@ -332,6 +321,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
   const [form, setForm] = useState({ name: "", email: "", phone: "", companyName: "" });
+  const [emailPassword, setEmailPassword] = useState("");
   const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "warning">("success");
@@ -360,7 +350,6 @@ export default function ProfilePage() {
     fr: { themeChanged: "Thème changé", chooseTheme: "Choisir un thème" },
     en: { themeChanged: "Theme changed", chooseTheme: "Choose a theme" },
     es: { themeChanged: "Tema cambiado", chooseTheme: "Elegir un tema" },
-    ar: { themeChanged: "تم تغيير المظهر", chooseTheme: "اختيار المظهر" }
   };
   const themeT = themeTranslations[language as keyof typeof themeTranslations] || themeTranslations.fr;
 
@@ -383,14 +372,14 @@ export default function ProfilePage() {
 
   const getThemeName = (themeId: string) => {
     const themesMap: Record<string, Record<string, string>> = {
-      dark: { fr: "Sombre", en: "Dark", es: "Oscuro", ar: "داكن" },
-      light: { fr: "Clair", en: "Light", es: "Claro", ar: "فاتح" },
-      lightPremium: { fr: "Premium Clair", en: "Premium Light", es: "Premium Claro", ar: "فاتح مميز" },
-      blue: { fr: "Bleu Océan", en: "Ocean Blue", es: "Azul Océano", ar: "أزرق المحيط" },
-      purple: { fr: "Violet", en: "Purple", es: "Púrpura", ar: "بنفسجي" },
-      green: { fr: "Forêt", en: "Forest", es: "Bosque", ar: "الغابة" },
-      sunset: { fr: "Coucher de Soleil", en: "Sunset", es: "Atardecer", ar: "الغروب" },
-      rose: { fr: "Rose", en: "Rose", es: "Rosa", ar: "وردي" }
+      dark: { fr: "Sombre", en: "Dark", es: "Oscuro" },
+      light: { fr: "Clair", en: "Light", es: "Claro" },
+      lightPremium: { fr: "Premium Clair", en: "Premium Light", es: "Premium Claro" },
+      blue: { fr: "Bleu Océan", en: "Ocean Blue", es: "Azul Océano" },
+      purple: { fr: "Violet", en: "Purple", es: "Púrpura" },
+      green: { fr: "Forêt", en: "Forest", es: "Bosque" },
+      sunset: { fr: "Coucher de Soleil", en: "Sunset", es: "Atardecer" },
+      rose: { fr: "Rose", en: "Rose", es: "Rosa" }
     };
     return themesMap[themeId]?.[language as keyof typeof themesMap.dark] || themeId;
   };
@@ -500,18 +489,28 @@ export default function ProfilePage() {
   const memberSince = formatDateTime(user?.createdAt, language, false);
   const lastLogin = formatDateTime(user?.lastLoginAt, language);
 
+  // Changer l'adresse email exige le mot de passe actuel (le serveur le vérifie) : le champ n'apparaît que dans ce cas.
+  const emailChanging = !!user && form.email.trim().toLowerCase() !== String(user.email || "").trim().toLowerCase();
+
   const updateProfile = async () => {
     const token = localStorage.getItem("token");
+    if (emailChanging && !emailPassword) { showMessage(profileT.profile.emailNeedsPassword, "error"); return; }
     try {
       const res = await fetch(`${API_URL}/users/profile`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
+        body: JSON.stringify(emailChanging ? { ...form, currentPassword: emailPassword, language } : { name: form.name, phone: form.phone, companyName: form.companyName })
       });
       if (res.ok) {
+        const data = await res.json().catch(() => null);
+        setEmailPassword("");
+        if (data?.emailChange) updateStoredEmail(form.email.trim().toLowerCase());
+        if (data?.emailChange?.verificationRequired) { window.location.assign("/auth/verify-email"); return; }
         const freshUser = await loadUserFromBackend();
         if (freshUser) { setUser(freshUser); setProfileImage(freshUser.avatar || freshUser.profileImage || null); }
-        showMessage(profileT.profile.profileUpdated || "Profil mis à jour", "success");
+        showMessage(data?.emailChange ? profileT.profile.emailChanged : (profileT.profile.profileUpdated || "Profil mis à jour"), "success");
+      } else if (res.status === 401) { showMessage(profileT.profile.wrongPassword, "error");
+      } else if (res.status === 409) { showMessage(profileT.profile.emailTaken, "error");
       } else { showMessage(t("common.error") || "Erreur", "error"); }
     } catch(e) { showMessage(t("common.error") || "Erreur de connexion", "error"); }
   };
@@ -609,8 +608,10 @@ export default function ProfilePage() {
       showMessage(profileT.profile.passwordMismatch || "Les mots de passe ne correspondent pas", "error");
       return;
     }
-    if (passwordForm.newPassword.length < 6) {
-      showMessage(profileT.profile.passwordMinLength || "Le mot de passe doit contenir au moins 6 caractères", "error");
+    // Même règle que le serveur : 8 caractères minimum, avec au moins une lettre et un chiffre (il refuse en plus les mots de passe courants).
+    const next = passwordForm.newPassword;
+    if (next.length < 8 || !/[A-Za-z\u00C0-\u024F]/.test(next) || !/\d/.test(next)) {
+      showMessage(profileT.profile.passwordMinLength || "Le mot de passe doit contenir au moins 8 caractères, avec une lettre et un chiffre", "error");
       return;
     }
     const token = localStorage.getItem("token");
@@ -631,8 +632,10 @@ export default function ProfilePage() {
         setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
         showMessage(profileT.profile.passwordChanged || "Mot de passe changé", "success");
       } else {
-        const err = await res.json();
-        showMessage(err.message || t("common.error") || "Erreur", "error");
+        const err = await res.json().catch(() => null);
+        // Le serveur répond en français : les messages connus (mot de passe trop courant, ancien mot de passe faux…) sont traduits.
+        const serverMessage = Array.isArray(err?.message) ? err.message.join(" · ") : err?.message;
+        showMessage(serverMessage ? serverText(serverMessage, language) : t("common.error") || "Erreur", "error");
       }
     } catch(e) {
       showMessage(t("common.error") || "Erreur de connexion", "error");
@@ -1072,7 +1075,8 @@ export default function ProfilePage() {
                 { label: t("common.phone") || "Téléphone", key: "phone", type: "tel" },
                 { label: profileT.profile.company || "Société", key: "companyName", type: "text" },
               ].map(field => (
-                <div key={field.key} style={{ marginBottom: "20px" }}>
+                <Fragment key={field.key}>
+                <div style={{ marginBottom: "20px" }}>
                   <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{field.label}</label>
                   <input
                     type={field.type}
@@ -1091,6 +1095,21 @@ export default function ProfilePage() {
                     }}
                   />
                 </div>
+                {field.key === "email" && emailChanging ? (
+                  <div style={{ marginBottom: "20px", marginTop: "-8px" }}>
+                    <label style={{ color: currentTheme.textSecondary, display: "block", marginBottom: "8px", fontSize: isMobile ? "13px" : "14px" }}>{profileT.profile.emailPassword}</label>
+                    <input
+                      type="password"
+                      value={emailPassword}
+                      onChange={(e) => setEmailPassword(e.target.value)}
+                      autoComplete="current-password"
+                      maxLength={128}
+                      style={{ width: "100%", padding: isMobile ? "10px" : "12px", background: currentTheme.surfaceHover, border: `1px solid ${currentTheme.border}`, borderRadius: "10px", color: currentTheme.text, boxSizing: "border-box", outline: "none", fontSize: isMobile ? "13px" : "14px" }}
+                    />
+                    <p style={{ color: currentTheme.textSecondary, fontSize: "12px", margin: "6px 0 0" }}>{profileT.profile.emailPasswordHint}</p>
+                  </div>
+                ) : null}
+                </Fragment>
               ))}
               <button
                 onClick={updateProfile}
@@ -1197,6 +1216,10 @@ export default function ProfilePage() {
               >
                 <Icons.Key /> {profileT.profile.changePassword || "Changer le mot de passe"}
               </button>
+
+              <div style={{ marginTop: "32px" }}>
+                <TwoFactorCard tone="nested" />
+              </div>
 
               <div style={{ 
                 marginTop: "32px", 

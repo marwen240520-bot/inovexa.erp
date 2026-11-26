@@ -74,8 +74,8 @@ export default async function BlogPage() {
             <p className="st-lead">{t("blog.ctaSubtitle")}</p>
           </header>
           <p className="st-actions">
-            <Link href="/contact#form-section" className="st-btn">
-              {t("cta.bookFreeDemo")}
+            <Link href="/auth/register" className="st-btn">
+              {t("cta.requestDemo")}
             </Link>
           </p>
         </div>

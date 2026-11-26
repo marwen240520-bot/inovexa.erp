@@ -321,6 +321,133 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   r = await call('GET', '/clients', { token: P9.token });
   check('accès rétabli', r.status === 200, r);
 
+  {
+  // ─── Reçus sans trou, identité de l'éditeur, relecture, remboursement, mise en production ───
+  console.log('— Reçus numérotés sans trou, identité de l’éditeur, relecture et remboursement (admin)');
+  const year = new Date().getUTCFullYear();
+  const suffix = (n) => String(n).padStart(5, '0');
+  // Des pages de paiement abandonnées consomment des identifiants de paiement, mais JAMAIS un numéro de reçu.
+  const Q1 = await signUp({ email: 'q1@test.tn', companyName: 'Boutique Q1', sector: 'commerce', language: 'es' });
+  const lastBefore = (await one(`SELECT COALESCE(MAX("lastValue"), 0)::int AS n FROM number_sequences WHERE "userId" = 0 AND key = 'platform_receipt' AND year = $1`, [year])).n;
+  const abandoned = await checkout(Q1, 'starter', 'monthly');
+  const abandoned2 = await checkout(Q1, 'business', 'monthly'); // referme la première page, qui reste « expired »
+  check('deux pages de paiement ouvertes, la première est refermée', abandoned.r.status === 201 && abandoned2.r.status === 201 && (await one('SELECT status FROM subscription_payments WHERE id = $1', [abandoned.co.id])).status === 'expired', [abandoned.co, abandoned2.co]);
+  konnect.pay(abandoned2.ref);
+  r = await verify(Q1, abandoned2.co.id);
+  const q1Receipt = r.body.payment?.receiptNumber;
+  check('paiement validé : le reçu suit le DERNIER numéro émis (compteur), pas l’identifiant du paiement', r.body.status === 'paid' && q1Receipt === `REC-${year}-${suffix(lastBefore + 1)}` && abandoned2.co.id > lastBefore + 1, { q1Receipt, lastBefore, id: abandoned2.co.id });
+  row = await one(`SELECT COUNT(*)::int AS n, COUNT(DISTINCT "receiptNumber")::int AS distinct_n, MAX(substring("receiptNumber" from 10)::int) AS max_n FROM subscription_payments WHERE "receiptNumber" LIKE $1`, [`REC-${year}-%`]);
+  check('tous les reçus de l’année forment une suite continue 1…N, sans trou ni doublon', row.n > 5 && row.n === row.distinct_n && row.max_n === row.n, row);
+  const mailQ1 = await waitMail('q1@test.tn', q1Receipt);
+  check('le reçu part par email dans la langue du client (espagnol)', !!mailQ1 && /Hemos recibido su pago con tarjeta/.test(mailQ1.text) && /Plan Business/.test(mailQ1.text), mailQ1?.text.slice(0, 400));
+
+  r = await call('GET', `/billing/payments/${abandoned2.co.id}/receipt`, { token: Q1.token });
+  check('reçu du client : sans identité d’éditeur tant que l’administrateur n’en a pas renseigné', r.status === 200 && r.body.issuer === null && r.body.receiptNumber === q1Receipt, r.body.issuer);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { issuerTaxId: 'pas un matricule' } });
+  check('matricule fiscal de l’éditeur invalide : refusé (400)', r.status === 400, r);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { issuerName: 'MSAI Systems SARL', issuerTaxId: '1234567x/a/m/000', issuerAddress: '12 rue de la Liberté, 1002 Tunis', issuerRegistry: 'B0123456789', supportEmail: 'billing@test.tn', supportPhone: '+216 71 000 000' } });
+  check('identité de l’éditeur enregistrée, matricule normalisé', r.status === 200 && r.body.issuerName === 'MSAI Systems SARL' && r.body.issuerTaxId === '1234567X/A/M/000', r.body);
+  r = await call('GET', `/billing/payments/${abandoned2.co.id}/receipt`, { token: Q1.token });
+  check('le reçu porte maintenant l’identité légale de l’éditeur', r.body.issuer?.name === 'MSAI Systems SARL' && r.body.issuer.taxId === '1234567X/A/M/000' && r.body.issuer.address.includes('Tunis') && r.body.issuer.registry === 'B0123456789' && r.body.issuer.email === 'billing@test.tn', r.body.issuer);
+  r = await call('GET', `/admin/payments/${abandoned2.co.id}/receipt`, { token: admin });
+  check('… et celui de l’administrateur aussi', r.status === 200 && r.body.issuer?.name === 'MSAI Systems SARL', r.body.issuer);
+
+  // — Relecture à la demande de l'administrateur (« j'ai payé mais rien ne s'ouvre »).
+  const Q2 = await signUp({ email: 'q2@test.tn', companyName: 'Boutique Q2', sector: 'commerce' });
+  const c2 = await checkout(Q2, 'starter', 'monthly');
+  konnect.pay(c2.ref); // payé chez Konnect, mais le client n'est jamais revenu sur le site
+  r = await call('POST', `/admin/payments/${c2.co.id}/recheck`, { token: Q2.token });
+  check('relecture : réservée à l’administrateur (403)', r.status === 403, r);
+  r = await call('POST', '/admin/payments/999999/recheck', { token: admin });
+  check('paiement inconnu : 404', r.status === 404, r);
+  r = await call('POST', `/admin/payments/${c2.co.id}/recheck`, { token: admin });
+  check('relecture chez Konnect : encaissé, abonnement ouvert', r.status === 200 && r.body.status === 'paid' && r.body.payment.status === 'validated', r.body);
+  r = await call('POST', `/admin/payments/${c2.co.id}/recheck`, { token: admin });
+  check('relecture répétée : aucun second encaissement', r.status === 200 && r.body.status === 'paid' && (await one(`SELECT COUNT(*)::int AS n FROM subscription_payments WHERE "userId" = $1 AND status = 'validated'`, [Q2.id])).n === 1, r.body);
+  check('la relecture est tracée dans le journal', (await auditCount('payment_rechecked', Q2.id)) === 2, await auditCount('payment_rechecked', Q2.id));
+  const c2b = await checkout(Q2, 'business', 'monthly');
+  r = await call('POST', `/admin/payments/${c2b.co.id}/recheck`, { token: admin });
+  check('page non payée : « en attente », rien n’est activé', r.status === 200 && r.body.status === 'pending' && r.body.payment.status === 'initiated', r.body);
+
+  // — Remboursement : paiement le plus récent d'abord, l'abonnement revient en arrière période après période.
+  const Q3 = await signUp({ email: 'q3@test.tn', companyName: 'Boutique Q3', sector: 'commerce' });
+  const first = await checkout(Q3, 'starter', 'monthly');
+  konnect.pay(first.ref);
+  await verify(Q3, first.co.id);
+  const second = await checkout(Q3, 'business', 'monthly');
+  konnect.pay(second.ref);
+  await verify(Q3, second.co.id);
+  const endBoth = new Date((await one('SELECT "subscriptionEnd" FROM users WHERE id = $1', [Q3.id])).subscriptionEnd);
+  const payFirst = await one('SELECT id, "receiptNumber", "periodStart", "periodEnd" FROM subscription_payments WHERE id = $1', [first.co.id]);
+  check('deux paiements validés à la suite : l’abonnement couvre les deux périodes (plan Business)', Math.abs(monthsBetween(new Date(payFirst.periodStart), endBoth) - 2) < 0.1 && (await one('SELECT "planCode" FROM users WHERE id = $1', [Q3.id])).planCode === 'business', { payFirst, endBoth });
+
+  r = await call('POST', `/admin/payments/${first.co.id}/refund`, { token: Q3.token, body: {} });
+  check('remboursement : réservé à l’administrateur (403)', r.status === 403, r);
+  r = await call('POST', `/admin/payments/${first.co.id}/refund`, { token: admin, body: { reason: 'Erreur' } });
+  check('le plus ancien ne se rembourse pas avant le plus récent (409)', r.status === 409 && /plus récent/.test(String(r.body.message)), r);
+  r = await call('POST', `/admin/payments/${c2b.co.id}/refund`, { token: admin, body: {} });
+  check('une page non payée ne se rembourse pas (409)', r.status === 409, r);
+  r = await call('POST', '/admin/payments/999999/refund', { token: admin, body: {} });
+  check('paiement inconnu : 404', r.status === 404, r);
+  r = await call('POST', `/admin/payments/${second.co.id}/refund`, { token: admin, body: { reason: 'Doublon', amount: 1 } });
+  check('remboursement du plus récent : paiement « refunded », abonnement revenu à la période précédente (formule Starter)', r.status === 200 && r.body.payment.status === 'refunded' && r.body.payment.rejectReason === 'Doublon' && r.body.account.status === 'ACTIVE' && r.body.account.planCode === 'starter', r.body);
+  row = await one('SELECT "subscriptionEnd", "planCode", "accountStatus" FROM users WHERE id = $1', [Q3.id]);
+  check('… et l’échéance est celle d’avant ce paiement', Math.abs(new Date(row.subscriptionEnd).getTime() - new Date(payFirst.periodEnd).getTime()) < 2000 && row.planCode === 'starter', row);
+  row = await one('SELECT status, "receiptNumber" FROM subscription_payments WHERE id = $1', [second.co.id]);
+  check('le numéro de reçu reste attaché au paiement remboursé (la suite des numéros ne change pas)', row.status === 'refunded' && /^REC-\d{4}-\d{5}$/.test(row.receiptNumber), row);
+  r = await call('GET', `/billing/payments/${second.co.id}/receipt`, { token: Q3.token });
+  check('un paiement remboursé n’a plus de reçu à télécharger (404)', r.status === 404, r);
+  r = await call('GET', '/billing/payments', { token: Q3.token });
+  check('l’historique du client montre le remboursement', r.body.find((p) => p.id === second.co.id)?.status === 'refunded' && r.body.filter((p) => p.status === 'validated').length === 1, r.body.map((p) => [p.id, p.status]));
+  const mailRefund = await waitMail('q3@test.tn', 'a été remboursé');
+  check('le client reçoit un email de remboursement', !!mailRefund && mailRefund.text.includes('Doublon'), mailRefund?.text.slice(0, 300));
+  r = await call('POST', `/admin/payments/${second.co.id}/refund`, { token: admin, body: {} });
+  check('déjà remboursé : refusé (409), pas de second retrait', r.status === 409, r);
+  r = await call('POST', `/admin/payments/${first.co.id}/refund`, { token: admin, body: { reason: 'Annulation' } });
+  check('puis le premier : remboursé pendant l’essai, l’essai reprend là où il en était (aucun jour perdu)', r.status === 200 && r.body.account.status === 'TRIAL' && r.body.account.blocked === false && r.body.account.subscriptionEnd === null, r.body.account);
+  r = await call('GET', '/clients', { token: Q3.token });
+  check('ERP ouvert (essai en cours)', r.status === 200, r);
+  check('les deux remboursements sont tracés', (await auditCount('payment_refunded', Q3.id)) === 2, await auditCount('payment_refunded', Q3.id));
+  r = await call('GET', '/admin/overview', { token: admin });
+  row = await one(`SELECT COALESCE(SUM("amountTTC"), 0)::float AS refunded FROM subscription_payments WHERE status = 'refunded'`);
+  check('les paiements remboursés ne comptent pas dans les revenus', r.status === 200 && row.refunded > 0, row);
+
+  // Remboursement quand l'essai est déjà fini : plus aucune période payée, l'accès se referme (les données restent).
+  const Q4 = await signUp({ email: 'q4@test.tn', companyName: 'Boutique Q4', sector: 'commerce' });
+  await db.query(`UPDATE users SET "trialEndsAt" = now() - interval '2 days', "accountStatus" = 'EXPIRED', "statusReason" = 'TRIAL_EXPIRED' WHERE id = $1`, [Q4.id]);
+  const c4 = await checkout(Q4, 'starter', 'monthly');
+  konnect.pay(c4.ref);
+  r = await verify(Q4, c4.co.id);
+  check('essai terminé puis paiement : abonnement ouvert', r.body.status === 'paid' && r.body.account.status === 'ACTIVE', r.body);
+  r = await call('POST', `/admin/payments/${c4.co.id}/refund`, { token: admin, body: { reason: 'Demande du client' } });
+  check('remboursé : plus aucune période payée, le compte est fermé « abonnement échu »', r.status === 200 && r.body.account.status === 'EXPIRED' && r.body.account.blocked === true && r.body.account.reason === 'SUBSCRIPTION_EXPIRED', r.body.account);
+  r = await call('GET', '/clients', { token: Q4.token });
+  check('ERP fermé (402), données conservées', r.status === 402 && r.body.reason === 'SUBSCRIPTION_EXPIRED', r);
+  row = await one(`SELECT COUNT(*)::int AS n FROM users WHERE id = $1 AND "isActive" = true`, [Q4.id]);
+  check('le compte reste actif (rien n’est supprimé)', row.n === 1, row);
+
+  // — Liste de contrôle « mise en production » et test de connexion à Konnect.
+  r = await call('GET', '/admin/online-payment', { token: Q1.token });
+  check('liste de contrôle : réservée à l’administrateur (403)', r.status === 403, r);
+  r = await call('GET', '/admin/online-payment', { token: admin });
+  const byKey = Object.fromEntries((r.body.checks || []).map((c) => [c.key, c]));
+  check('liste de contrôle : clés, devise, formules, emails et identité de l’éditeur en règle', r.status === 200 && r.body.enabled === true && ['credentials', 'currency', 'plans', 'mail', 'issuer'].every((k) => byKey[k]?.ok === true), r.body.checks);
+  check('… mode test signalé (avertissement), pas encore « en production »', byKey.mode.ok === false && byKey.mode.level === 'warn' && r.body.mode === 'sandbox' && r.body.live === false, byKey.mode);
+  check('… adresses http locales : erreur bloquante en production, avec l’adresse que Konnect appellera', byKey.apiUrl.ok === false && byKey.apiUrl.level === 'error' && /API_PUBLIC_URL/.test(byKey.apiUrl.message) && r.body.ready === false && r.body.webhookUrl === `${BASE}/public/payments/konnect/return`, { apiUrl: byKey.apiUrl, ready: r.body.ready });
+  check('… ni la clé ni le portefeuille ne sortent du serveur', !JSON.stringify(r.body).includes('e2e-konnect-key') && !JSON.stringify(r.body).includes('e2e-wallet'), Object.keys(r.body));
+
+  r = await call('POST', '/admin/online-payment/test', { token: Q1.token, body: {} });
+  check('test de connexion : réservé à l’administrateur (403)', r.status === 403, r);
+  const initsBefore = konnect.initCount();
+  r = await call('POST', '/admin/online-payment/test', { token: admin, body: {} });
+  check('test de connexion : clé acceptée par Konnect, aucun paiement ouvert', r.status === 200 && r.body.keyAccepted === true && r.body.walletAccepted === null && r.body.reachable === true && r.body.mode === 'sandbox' && konnect.initCount() === initsBefore, r.body);
+  r = await call('POST', '/admin/online-payment/test', { token: admin, body: { wallet: true } });
+  check('test avec le portefeuille : reconnu, un paiement de test de 1 TND est ouvert (jamais encaissé)', r.status === 200 && r.body.walletAccepted === true && konnect.initCount() === initsBefore + 1 && konnect.lastInit().body.amount === 1000 && konnect.lastInit().body.token === 'TND' && String(konnect.lastInit().body.orderId).startsWith('connection-test-') && konnect.lastInit().body.webhook === `${BASE}/public/payments/konnect/return`, r.body);
+  check('le résultat ne contient ni la clé ni le portefeuille ; le test est tracé', !JSON.stringify(r.body).includes('e2e-konnect-key') && !JSON.stringify(r.body).includes('e2e-wallet') && (await one(`SELECT COUNT(*)::int AS n FROM audit_logs WHERE action = 'konnect_test'`)).n === 2, r.body);
+  await db.query(`DELETE FROM users WHERE id = ANY($1)`, [[Q1.id, Q2.id, Q3.id, Q4.id]]);
+  await call('PUT', '/admin/settings', { token: admin, body: { issuerName: '', issuerTaxId: '', issuerAddress: '', issuerRegistry: '', supportEmail: '', supportPhone: '' } });
+  }
+
   // ═════════════════════════ 2. Secteur et modules choisis par le client ═════════════════════════
   console.log('— Le client choisit lui-même son secteur et ses modules');
   const M1 = await signUp({ email: 'm1@test.tn', companyName: 'Restaurant M1', sector: 'restaurant' });

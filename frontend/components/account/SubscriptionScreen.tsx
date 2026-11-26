@@ -51,7 +51,7 @@ const normalize = (s: string) => s.replace(/[’‘]/g, "'").replace(/\s+/g, " "
 
 /** Ligne d'une formule qui ne fait que redire le nombre d'utilisateurs : il est déjà affiché à partir de la limite réelle. */
 const isUsersLine = (text: string) =>
-  text.length <= 44 && /utilisateur|\busers?\b|usuario|مستخدم/i.test(text) && (/\d/.test(text) || /illimit|unlimited|ilimitad|sin límite|غير محدود|بلا حد/i.test(text));
+  text.length <= 44 && /utilisateur|\busers?\b|usuario/i.test(text) && (/\d/.test(text) || /illimit|unlimited|ilimitad|sin límite/i.test(text));
 
 // ───────────── Icônes ─────────────
 
@@ -77,7 +77,7 @@ const IconCard = () => <svg {...ico} width={22} height={22}><rect x="2.5" y="5" 
 const IconShield = () => <svg {...ico} width={16} height={16}><path d="M12 3l8 3v6c0 4.6-3.2 8-8 9-4.800-1-8-4.400-8-9V6z" /><path d="M9 12l2.200 2.200L15.500 10" /></svg>;
 
 const STATUS_TONE: Record<string, string> = { TRIAL: "violet", ACTIVE: "green", EXPIRED: "amber", SUSPENDED: "red", CANCELLED: "gray" };
-const PAY_TONE: Record<string, string> = { pending: "amber", validated: "green", rejected: "red", cancelled: "gray" };
+const PAY_TONE: Record<string, string> = { pending: "amber", validated: "green", rejected: "red", cancelled: "gray", refunded: "violet" };
 
 // ───────────── Écran ─────────────
 
@@ -379,6 +379,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     issued: (date) => fill(b.receiptIssued, { date }),
     customer: b.receiptCustomer,
     taxId: b.receiptTaxId,
+    registry: b.receiptRegistry,
     plan: b.plan,
     cycle: (c) => (c === "annual" ? b.annual : b.monthly).toLowerCase(),
     covered: b.receiptCovered,

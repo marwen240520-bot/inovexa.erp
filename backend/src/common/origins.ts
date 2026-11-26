@@ -15,6 +15,16 @@ export function allowedOrigins(): string[] {
   return Array.from(new Set(list));
 }
 
+/** Adresse https accessible depuis Internet (ni localhost, ni adresse locale) : celle qu'un prestataire ou un client peut atteindre. */
+export function isPublicHttps(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && !['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** Adresse principale du site (liens des emails, retour par défaut après un paiement). */
 export function frontendUrl(): string {
   return allowedOrigins()[0];

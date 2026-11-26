@@ -124,6 +124,7 @@ export const PAYMENT_STATUS_META: Record<string, { label: string; tone: Tone }> 
   cancelled: { label: "Annulé", tone: "gray" },
   initiated: { label: "Paiement en cours", tone: "amber" },
   expired: { label: "Expiré", tone: "gray" },
+  refunded: { label: "Remboursé", tone: "violet" },
 };
 
 /** Synthèse des paiements d'un compte dans la liste (aucun / en attente / payé). */

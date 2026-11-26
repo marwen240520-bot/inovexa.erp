@@ -133,6 +133,10 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   emailCodeSentAt: Date | null;
 
+  /** Langue des emails du compte (fr | en | es) : celle de l'écran au moment de l'inscription. */
+  @Column({ type: 'varchar', length: 2, default: 'fr' })
+  language: string;
+
   /** Identifiant Google (« sub » du jeton d'identité) quand le compte est relié à Google. */
   @Index('UQ_users_google_sub', { unique: true, where: '"googleSub" IS NOT NULL' })
   @Column({ type: 'varchar', length: 64, nullable: true })

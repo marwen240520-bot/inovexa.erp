@@ -129,7 +129,7 @@ describe('modules de l’abonnement', () => {
       expect(new Set(s.modules).size).toBe(s.modules.length);
       expect(s.categories.length).toBeGreaterThan(0);
       expect(s.recommendations.length).toBeGreaterThan(0);
-      for (const text of [s.name, s.nameEn, s.nameAr, s.description]) expect(text.length).toBeGreaterThan(3);
+      for (const text of [s.name, s.nameEn, s.description]) expect(text.length).toBeGreaterThan(3);
     }
     expect(DEFAULT_SECTORS[DEFAULT_SECTORS.length - 1].code).toBe('other');
     const modulesOf = (code: string) => DEFAULT_SECTORS.find((s) => s.code === code)!.modules;

@@ -31,6 +31,10 @@ export class MailService {
         port: Number(process.env.SMTP_PORT || 587),
         secure: process.env.SMTP_SECURE === 'true',
         auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+        // Un serveur d'envoi qui ne répond pas ne doit pas bloquer l'inscription ou la demande de code (défauts : 2 min à 10 min).
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 20_000,
       });
     }
     return this.transporter;
@@ -50,6 +54,29 @@ export class MailService {
       replyTo: input.replyTo,
     });
     return { messageId: String(info.messageId) };
+  }
+
+  /**
+   * Diagnostic pour l'administrateur : ce qui est configuré (sans le moindre secret) et si le serveur d'envoi répond.
+   * `reachable` vaut null quand rien n'est configuré.
+   */
+  async check(): Promise<{ configured: boolean; host: string | null; port: number | null; secure: boolean; from: string | null; authenticated: boolean; reachable: boolean | null; error: string | null }> {
+    const configured = this.isConfigured();
+    const base = {
+      configured,
+      host: process.env.SMTP_HOST || null,
+      port: configured ? Number(process.env.SMTP_PORT || 587) : null,
+      secure: process.env.SMTP_SECURE === 'true',
+      from: process.env.SMTP_FROM || process.env.SMTP_USER || null,
+      authenticated: !!process.env.SMTP_USER,
+    };
+    if (!configured) return { ...base, reachable: null, error: null };
+    try {
+      await this.transport().verify();
+      return { ...base, reachable: true, error: null };
+    } catch (e: any) {
+      return { ...base, reachable: false, error: String(e?.message || e).slice(0, 300) };
+    }
   }
 
   /** N'échoue jamais : renvoie false si l'email n'a pas pu partir. */

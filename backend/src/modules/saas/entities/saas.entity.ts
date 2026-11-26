@@ -60,6 +60,19 @@ export class PlatformSettings {
   @Column({ type: 'varchar', length: 40, nullable: true })
   supportWhatsapp: string | null;
 
+  /** Identité de l'éditeur imprimée sur les reçus : raison sociale, matricule fiscal, adresse, registre du commerce. */
+  @Column({ type: 'varchar', length: 160, nullable: true })
+  issuerName: string | null;
+
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  issuerTaxId: string | null;
+
+  @Column({ type: 'varchar', length: 300, nullable: true })
+  issuerAddress: string | null;
+
+  @Column({ type: 'varchar', length: 60, nullable: true })
+  issuerRegistry: string | null;
+
   /** Heures avant la fin de l'essai auxquelles un rappel est envoyé. */
   @Column({ type: 'int', default: 24 })
   trialReminderHours: number;
@@ -210,10 +223,11 @@ export class SubscriptionPayment {
   @Column({ type: 'varchar', length: 500, nullable: true })
   note: string | null;
 
-  /** initiated | expired (paiement en ligne non abouti) | pending | validated | rejected | cancelled */
+  /** initiated | expired (paiement en ligne non abouti) | pending | validated | rejected | cancelled | refunded */
   @Column({ type: 'varchar', length: 12, default: 'pending' })
   status: string;
 
+  /** Motif du refus d'une déclaration, ou du remboursement d'un paiement validé. */
   @Column({ type: 'varchar', length: 300, nullable: true })
   rejectReason: string | null;
 

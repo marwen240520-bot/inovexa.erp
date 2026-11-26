@@ -39,10 +39,11 @@ export class UsersService {
   }
 
   /**
-   * Seuls quatre champs sont modifiables ici : nom, email, téléphone, nom de la société. Le rôle, les modules,
-   * l'abonnement, le rattachement à une société ou le mot de passe ne se changent JAMAIS par cette route.
+   * Seuls trois champs sont modifiables ici : nom, téléphone, nom de la société. Le rôle, les modules, l'abonnement,
+   * le rattachement à une société ou le mot de passe ne se changent JAMAIS par cette route. L'adresse email passe par
+   * AuthService.changeEmail (mot de passe exigé, nouvelle adresse à confirmer) : voir UsersController.updateProfile.
    */
-  async updateProfile(id: number, body: { name?: string; email?: string; phone?: string; companyName?: string }) {
+  async updateProfile(id: number, body: { name?: string; phone?: string; companyName?: string }) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
     const data = body && typeof body === 'object' ? body : {};
@@ -51,17 +52,6 @@ export class UsersService {
       const name = String(data.name ?? '').trim();
       if (name.length < 2 || name.length > 120) throw new BadRequestException('Nom invalide (2 à 120 caractères).');
       user.name = name;
-    }
-    if (data.email !== undefined) {
-      const email = String(data.email ?? '').trim().toLowerCase();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 190) throw new BadRequestException('Email invalide.');
-      if (email !== user.email.toLowerCase()) {
-        const taken = await this.userRepository.createQueryBuilder('u').where('LOWER(u.email) = :email AND u.id <> :id', { email, id }).getOne();
-        if (taken) throw new ConflictException('Cet email est déjà utilisé.');
-        user.email = email;
-        // Nouvelle adresse : elle devra être confirmée de nouveau.
-        user.emailVerifiedAt = null;
-      }
     }
     if (data.phone !== undefined) {
       const raw = String(data.phone ?? '').trim();
@@ -83,7 +73,7 @@ export class UsersService {
       throw new UnauthorizedException('Ancien mot de passe incorrect');
     }
 
-    assertStrongPassword(newPassword);
+    assertStrongPassword(newPassword, user.email);
     user.password = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
 

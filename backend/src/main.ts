@@ -13,13 +13,18 @@ import {
 import compression = require('compression');
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { JwtService } from '@nestjs/jwt';
 import { allowedOrigins } from './common/origins';
+import { trustProxyHops } from './common/security/proxy';
+import { securityChecks, securitySummary } from './common/security/security-report';
+import { collectSecurityFacts } from './common/security/security-facts';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Derrière un reverse-proxy (Render, Railway, Vercel…) : l'adresse IP réelle vient de X-Forwarded-For.
-  app.set('trust proxy', 1);
+  // Un seul relais par défaut ; TRUST_PROXY=2 derrière un CDN supplémentaire, TRUST_PROXY=0 sans relais (voir common/security/proxy.ts).
+  app.set('trust proxy', trustProxyHops());
 
   // Express 5 lit les paramètres d'URL en mode « simple » : on garde le mode « extended » d'Express 4
   // (ex. ?filtre[statut]=payee → { filtre: { statut: 'payee' } } et ?ids[]=1&ids[]=2 → { ids: ['1', '2'] }).
@@ -49,12 +54,31 @@ async function bootstrap() {
     }),
   );
 
-  // ✅ زيادة حجم الطلب المسموح به (افتراضياً 100kb فقط)
+  // Taille des corps de requête (Express limite à 100 Ko par défaut).
   // Routes ouvertes sans connexion (inscription, connexion, site public) : 200 Ko suffisent largement.
   // La limite de 50 Mo ci-dessous ne sert qu'aux imports et aux photos des utilisateurs connectés.
   app.use(['/auth', '/public'], json({ limit: '200kb' }));
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ extended: true, limit: '50mb' }));
+  // Ailleurs, le corps est lu AVANT que l'accès soit vérifié : sans session valide, 200 Ko aussi. Sinon n'importe qui pourrait faire
+  // lire des corps de 50 Mo au serveur (mémoire et processeur) sur des routes qu'il n'a même pas le droit d'appeler.
+  const sessions = app.get(JwtService, { strict: false });
+  const hasValidSession = (req: Request): boolean => {
+    const header = String(req.headers.authorization || '');
+    if (!/^Bearer\s+\S+$/i.test(header)) return false;
+    try {
+      sessions.verify(header.replace(/^Bearer\s+/i, ''));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const parsers = {
+    small: { json: json({ limit: '200kb' }), form: urlencoded({ extended: true, limit: '200kb' }) },
+    large: { json: json({ limit: '50mb' }), form: urlencoded({ extended: true, limit: '50mb' }) },
+  };
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const size = hasValidSession(req) ? parsers.large : parsers.small;
+    size.json(req, res, (err?: any) => (err ? next(err) : size.form(req, res, next)));
+  });
 
   // Express 5 laisse req.body à undefined quand la requête n'a pas de corps (Express 4 donnait {}) :
   // on garde l'ancien comportement pour les contrôleurs qui lisent body.xxx sans vérification.
@@ -93,5 +117,15 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`🚀 Server running on port ${port}`);
+
+  // Rapport de sécurité au démarrage : ce qui est à corriger apparaît dans les journaux de l'hébergeur (jamais de secret).
+  try {
+    const checks = securityChecks(await collectSecurityFacts(app));
+    const summary = securitySummary(checks);
+    for (const c of checks.filter((x) => !x.ok)) console.warn(`${c.level === 'error' ? '🔴' : '🟠'} Sécurité [${c.key}] ${c.message}`);
+    if (process.env.NODE_ENV === 'production') console.log(`🔒 Sécurité : ${summary.errors} erreur(s), ${summary.warnings} avertissement(s).`);
+  } catch (e: any) {
+    console.warn(`Rapport de sécurité indisponible : ${e?.message || e}`);
+  }
 }
 bootstrap();

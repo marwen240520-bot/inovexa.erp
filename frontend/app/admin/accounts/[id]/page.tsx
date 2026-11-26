@@ -5,8 +5,8 @@
  */
 import Link from "next/link";
 import React, { use } from "react";
-import { api, Badge, Card, Empty, ErrorBox, Loading, Page, Stat, TableWrap, num, td, th, useLoad, useNotice } from "@/components/erp/kit";
-import { LANG, cycleLabel, methodLabel, mutedStyle } from "@/components/admin/config/shared";
+import { api, Badge, Btn, Card, Empty, ErrorBox, Loading, Page, Stat, TableWrap, num, td, th, useLoad, useNotice } from "@/components/erp/kit";
+import { LANG, cycleLabel, errorText, methodLabel, mutedStyle } from "@/components/admin/config/shared";
 import { AccountMenu } from "@/components/admin/core/AccountMenu";
 import {
   AccountStatusBadge, AdminAccountDetail, Info, InfoGrid, PAYMENT_STATUS_META, TEAM_ROLE_LABELS, dateFr, dateTimeFr, effectiveStatus, isModuleOn, linkStyle, periodInfo, sourceLabel,
@@ -24,6 +24,45 @@ export default function AdminAccountPage({ params }: { params: Promise<{ id: str
   const lookups = useLoad(() => Promise.all([api<Plan[]>("/admin/plans"), api<Sector[]>("/admin/sectors")]), []);
   const [notice, notify] = useNotice();
   const [plans, sectors] = lookups.data ?? [[], []];
+  const [mailBusy, setMailBusy] = React.useState<"verify" | "resend" | null>(null);
+  const [tfaBusy, setTfaBusy] = React.useState(false);
+
+  /** Le client a perdu son téléphone : le support réinitialise la double authentification (sessions fermées, client prévenu, journalisé). */
+  const resetTwoFactor = async () => {
+    if (tfaBusy) return;
+    if (!window.confirm("Réinitialiser la double authentification de ce client ? À faire seulement après avoir vérifié son identité (téléphone, contrat). Il sera déconnecté de tous ses appareils, prévenu par email, et pourra la réactiver depuis son profil.")) return;
+    setTfaBusy(true);
+    try {
+      const res = await api<{ alreadyDisabled?: boolean }>(`/admin/accounts/${id}/reset-2fa`, { method: "POST", body: {} });
+      notify(res.alreadyDisabled ? "La double authentification n’était plus activée." : "Double authentification réinitialisée : le client se reconnecte avec son seul mot de passe.");
+      reload();
+    } catch (err) {
+      notify(errorText(err), "err");
+    } finally {
+      setTfaBusy(false);
+    }
+  };
+
+  /** Vérification de l'adresse : confirmer à la place du client, ou lui renvoyer un code. Journalisé côté serveur. */
+  const mailAction = async (kind: "verify" | "resend") => {
+    if (mailBusy) return;
+    if (kind === "verify" && !window.confirm("Confirmer l’adresse email de ce client sans code ? À faire seulement si vous avez vérifié son identité (téléphone, contrat).")) return;
+    setMailBusy(kind);
+    try {
+      if (kind === "verify") {
+        await api(`/admin/accounts/${id}/verify-email`, { method: "POST", body: {} });
+        notify("Adresse email confirmée : le client peut ouvrir son espace.");
+      } else {
+        const res = await api<{ emailSent: boolean; alreadyVerified?: boolean }>(`/admin/accounts/${id}/resend-verification`, { method: "POST", body: {} });
+        notify(res.alreadyVerified ? "Cette adresse est déjà confirmée." : res.emailSent ? "Un nouveau code vient d’être envoyé au client." : "Le code n’a pas pu partir : vérifiez le serveur d’emails dans les réglages.", res.emailSent || res.alreadyVerified ? "ok" : "err");
+      }
+      reload();
+    } catch (err) {
+      notify(errorText(err), "err");
+    } finally {
+      setMailBusy(null);
+    }
+  };
 
   if (error) return <Page title="Compte"><ErrorBox message={error} onRetry={reload} /><Link href="/admin/accounts" style={linkStyle}>← Tous les comptes</Link></Page>;
   if (!data) return <Page title="Compte">{loading ? <Loading /> : null}</Page>;
@@ -63,10 +102,25 @@ export default function AdminAccountPage({ params }: { params: Promise<{ id: str
         <Card title="Propriétaire du compte">
           <InfoGrid>
             <Info label="Nom">{data.name}</Info>
-            <Info label="Email"><a href={`mailto:${data.email}`} style={linkStyle}>{data.email}</a>{a.emailVerified ? "" : " (non confirmé)"}</Info>
+            <Info label="Email">
+              <a href={`mailto:${data.email}`} style={linkStyle}>{data.email}</a>{a.emailVerified ? "" : " (non confirmé)"}
+              {a.emailVerified ? null : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  <Btn type="button" onClick={() => mailAction("resend")} busy={mailBusy === "resend"}>Renvoyer le code</Btn>
+                  <Btn type="button" onClick={() => mailAction("verify")} busy={mailBusy === "verify"}>Confirmer sans code</Btn>
+                </div>
+              )}
+            </Info>
             <Info label="Téléphone">{data.phone ? <a href={`tel:${data.phone}`} style={linkStyle} dir="ltr">{formatPhone(data.phone)}</a> : "—"}</Info>
             <Info label="Dernière connexion">{data.lastLoginAt ? dateTimeFr(data.lastLoginAt) : "Jamais"}</Info>
-            <Info label="Sécurité">{[data.twoFactorEnabled ? "double authentification" : null, data.googleLinked ? "compte Google relié" : null, data.appleLinked ? "identifiant Apple relié" : null].filter(Boolean).join(", ") || "mot de passe seul"}</Info>
+            <Info label="Sécurité">
+              {[data.twoFactorEnabled ? "double authentification" : null, data.googleLinked ? "compte Google relié" : null, data.appleLinked ? "identifiant Apple relié" : null].filter(Boolean).join(", ") || "mot de passe seul"}
+              {data.twoFactorEnabled ? (
+                <div style={{ marginTop: 8 }}>
+                  <Btn type="button" variant="danger" onClick={resetTwoFactor} busy={tfaBusy}>Réinitialiser la double authentification</Btn>
+                </div>
+              ) : null}
+            </Info>
           </InfoGrid>
         </Card>
         <Card title="Société">

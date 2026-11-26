@@ -17,7 +17,15 @@ import { PAYMENT_STATUS_META, dateTimeFr, type AccountsResponse } from "@/compon
 import { formatMoney, formatPrice, withVat, type Plan, type Receipt } from "@/lib/saas";
 
 const LIMIT = 25;
-const STATUSES: Array<[string, string]> = [["validated", "Encaissés"], ["pending", "Hors ligne à valider"], ["rejected", "Refusés"], ["cancelled", "Annulés"], ["", "Tous"]];
+const STATUSES: Array<[string, string]> = [["validated", "Encaissés"], ["pending", "Hors ligne à valider"], ["initiated", "Carte en cours"], ["refunded", "Remboursés"], ["rejected", "Refusés"], ["cancelled", "Annulés"], ["expired", "Carte expirée"], ["", "Tous"]];
+
+const EMPTY: Record<string, string> = {
+  pending: "Aucun paiement hors ligne en attente de validation.",
+  validated: "Aucun paiement encaissé pour le moment.",
+  initiated: "Aucune page de paiement par carte ouverte en ce moment.",
+  expired: "Aucune page de paiement par carte expirée.",
+  refunded: "Aucun remboursement.",
+};
 
 // ───────────── Saisie d'un paiement reçu hors ligne ─────────────
 
@@ -141,6 +149,9 @@ function PaymentsScreen() {
   const [confirm, setConfirm] = useState<AdminPayment | null>(null);
   const [reject, setReject] = useState<AdminPayment | null>(null);
   const [reason, setReason] = useState("");
+  const [refund, setRefund] = useState<AdminPayment | null>(null);
+  const [refundReason, setRefundReason] = useState("");
+  const [rechecking, setRechecking] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -161,6 +172,24 @@ function PaymentsScreen() {
     }
   };
 
+  /** « J'ai payé mais rien ne s'ouvre » : relit l'état du paiement chez Konnect et ouvre l'accès s'il est encaissé. */
+  const recheck = async (payment: AdminPayment) => {
+    if (rechecking !== null) return;
+    setRechecking(payment.id);
+    try {
+      const res = await api<{ status: "paid" | "pending" | "expired" | "unknown" }>(`/admin/payments/${payment.id}/recheck`, { method: "POST" });
+      if (res.status === "paid") notify(`Paiement confirmé par Konnect : l’accès de ${accountLabel(payment.account)} est ouvert.`);
+      else if (res.status === "pending") notify("Konnect ne signale aucun paiement sur cette page pour l’instant : rien à ouvrir.");
+      else if (res.status === "expired") notify("La page de paiement a expiré sans être payée.");
+      else notify("Konnect ne connaît pas ce paiement.", "err");
+      reload();
+    } catch (err) {
+      notify(errorText(err), "err");
+    } finally {
+      setRechecking(null);
+    }
+  };
+
   const openReceipt = async (payment: AdminPayment) => {
     try { setReceipt(await api<Receipt>(`/admin/payments/${payment.id}/receipt`)); } catch (err) { notify(errorText(err), "err"); }
   };
@@ -168,7 +197,7 @@ function PaymentsScreen() {
   const presetAccount = userId && data?.items[0]?.account ? { id: userId, label: accountLabel(data.items[0].account) } : null;
 
   return (
-    <Page title="Paiements" subtitle="Les paiements par carte sont encaissés et activés automatiquement : cette page sert à les consulter. Rien à valider, sauf un paiement hors ligne déclaré par un client si vous les avez autorisés."
+    <Page title="Paiements" subtitle="Les paiements par carte sont encaissés et activés automatiquement : cette page sert à les consulter, à relire chez Konnect un paiement que le client dit avoir fait, et à rembourser. Rien à valider, sauf un paiement hors ligne déclaré par un client si vous les avez autorisés."
       actions={<Btn onClick={() => setRecording(true)}>Saisir un paiement hors ligne</Btn>}>
       {notice}
       <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
@@ -181,7 +210,7 @@ function PaymentsScreen() {
       </div>
       {error ? <ErrorBox message={error} onRetry={reload} /> : null}
       <Card pad={false}>
-        {!data ? (loading ? <Loading /> : null) : data.items.length === 0 ? <Empty>{status === "pending" ? "Aucun paiement hors ligne en attente de validation." : status === "validated" ? "Aucun paiement encaissé pour le moment." : "Aucun paiement."}</Empty> : (
+        {!data ? (loading ? <Loading /> : null) : data.items.length === 0 ? <Empty>{EMPTY[status] || "Aucun paiement."}</Empty> : (
           <>
             <TableWrap min={900}>
               <thead>
@@ -194,19 +223,26 @@ function PaymentsScreen() {
                   const meta = PAYMENT_STATUS_META[p.status] || { label: p.status, tone: "gray" as const };
                   return (
                     <tr key={p.id}>
-                      <td style={{ ...td, whiteSpace: "nowrap" }}>{dateTimeFr(p.validatedAt && p.provider !== "manual" ? p.validatedAt : p.createdAt)}<div style={mutedStyle}>{p.provider === "konnect" ? "payé en ligne par le client" : p.declaredBy === "admin" ? "saisi par l’administrateur" : "déclaré par le client"}</div></td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>{dateTimeFr(p.validatedAt && p.provider !== "manual" ? p.validatedAt : p.createdAt)}<div style={mutedStyle}>{p.provider === "konnect" ? (p.status === "initiated" ? "page de paiement ouverte par le client" : p.status === "expired" ? "page de paiement expirée" : "payé en ligne par le client") : p.declaredBy === "admin" ? "saisi par l’administrateur" : "déclaré par le client"}</div></td>
                       <td style={td}><AccountLink account={p.account} /><div style={mutedStyle}>{p.account.email}</div></td>
                       <td style={td}>{p.planName}<div style={mutedStyle}>{cycleLabel(p.billingCycle)}</div></td>
                       <td style={{ ...td, ...num }}><strong>{formatMoney(p.amountTTC, LANG, p.currency)}</strong><div style={mutedStyle}>{formatMoney(p.amountHT, LANG, p.currency)} HT</div></td>
                       <td style={td}>{methodLabel(p.method)}{p.provider === "konnect" ? <div style={mutedStyle}>activation automatique</div> : null}{p.reference ? <div style={{ ...mutedStyle, overflowWrap: "anywhere" }}>{p.reference}</div> : null}{p.note ? <div style={{ ...mutedStyle, fontStyle: "italic" }}>{p.note}</div> : null}</td>
-                      <td style={td}><Badge tone={meta.tone}>{meta.label}</Badge>{p.status === "rejected" && p.rejectReason ? <div style={mutedStyle}>{p.rejectReason}</div> : null}{p.status === "validated" && p.periodEnd ? <div style={mutedStyle}>jusqu’au {dateTimeFr(p.periodEnd)}</div> : null}</td>
+                      <td style={td}><Badge tone={meta.tone}>{meta.label}</Badge>{p.status === "rejected" && p.rejectReason ? <div style={mutedStyle}>{p.rejectReason}</div> : null}{p.status === "validated" && p.periodEnd ? <div style={mutedStyle}>jusqu’au {dateTimeFr(p.periodEnd)}</div> : null}{p.status === "refunded" ? <div style={mutedStyle}>{p.receiptNumber ? `reçu ${p.receiptNumber}` : "remboursé"}{p.rejectReason ? ` — ${p.rejectReason}` : ""}</div> : null}</td>
                       <td style={{ ...td, whiteSpace: "nowrap" }}>
                         {p.status === "pending" ? (
                           <span style={{ display: "flex", gap: 6 }}>
                             <Btn variant="success" onClick={() => { setActionError(null); setConfirm(p); }}>Valider</Btn>
                             <Btn variant="danger" onClick={() => { setActionError(null); setReason(""); setReject(p); }}>Refuser</Btn>
                           </span>
-                        ) : p.status === "validated" ? <Btn onClick={() => openReceipt(p)}>{p.receiptNumber || "Reçu"}</Btn> : null}
+                        ) : p.status === "validated" ? (
+                          <span style={{ display: "flex", gap: 6 }}>
+                            <Btn onClick={() => openReceipt(p)}>{p.receiptNumber || "Reçu"}</Btn>
+                            <Btn variant="danger" onClick={() => { setActionError(null); setRefundReason(""); setRefund(p); }}>Rembourser</Btn>
+                          </span>
+                        ) : (p.status === "initiated" || p.status === "expired") && p.provider === "konnect" ? (
+                          <Btn onClick={() => recheck(p)} busy={rechecking === p.id} disabled={rechecking !== null}>Relire chez Konnect</Btn>
+                        ) : null}
                       </td>
                     </tr>
                   );
@@ -235,6 +271,26 @@ function PaymentsScreen() {
           <FormField grow={false} label="Motif affiché au client" hint="Par exemple : « Virement non reçu », « Montant incomplet ».">
             <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} style={inputStyle} autoFocus />
           </FormField>
+        </ConfirmModal>
+      ) : null}
+
+      {refund ? (
+        <ConfirmModal title="Rembourser ce paiement ?" confirmLabel="Rembourser" variant="danger" busy={busy} error={actionError} onCancel={() => setRefund(null)}
+          onConfirm={() => act(() => api(`/admin/payments/${refund.id}/refund`, { method: "POST", body: { reason: refundReason.trim() } }), `Paiement remboursé : l’abonnement de ${accountLabel(refund.account)} est remis en accord.`, () => setRefund(null))}>
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55 }}>
+            <strong>{accountLabel(refund.account)}</strong> — {refund.planName} ({cycleLabel(refund.billingCycle).toLowerCase()}), <strong>{formatMoney(refund.amountTTC, LANG, refund.currency)} TTC</strong>{refund.receiptNumber ? `, reçu ${refund.receiptNumber}` : ""}.
+          </p>
+          <FormField grow={false} label="Motif (communiqué au client par email)" hint="Par exemple : « Paiement en double », « Demande du client ».">
+            <input value={refundReason} onChange={(e) => setRefundReason(e.target.value)} maxLength={300} style={inputStyle} autoFocus />
+          </FormField>
+          <p style={{ ...mutedStyle, margin: 0, lineHeight: 1.5 }}>
+            L’abonnement revient à l’état d’avant ce paiement : l’essai reprend s’il court encore, sinon l’accès se referme (les données sont conservées). Seul le paiement le plus récent d’un compte peut être remboursé ; le client est prévenu par email.
+          </p>
+          <p style={{ ...mutedStyle, margin: 0, lineHeight: 1.5 }}>
+            {refund.provider === "konnect"
+              ? <><strong>Konnect n’a pas de remboursement automatique</strong> : rendez l’argent au client depuis le tableau de bord Konnect, puis confirmez ici pour remettre son abonnement en accord.</>
+              : <>Rendez l’argent au client par le moyen utilisé pour le paiement, puis confirmez ici pour remettre son abonnement en accord.</>}
+          </p>
         </ConfirmModal>
       ) : null}
 

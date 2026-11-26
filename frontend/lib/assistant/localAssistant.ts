@@ -38,15 +38,11 @@ import {
   supplierProfile,
 } from "./erpQuery";
 
-export type ReplyLang = Lang | "ar";
+export type ReplyLang = Lang;
 
-/** Langue de réponse : arabe si la question est majoritairement en écriture arabe, sinon FR / EN / ES. */
+/** Langue de réponse : FR / EN / ES, d'après la question (la langue de l'interface sert de repli). */
 export function detectReplyLang(question: string, fallback: string = "fr"): ReplyLang {
-  const s = String(question || "");
-  const arabic = (s.match(/[\u0600-\u06ff]/g) || []).length;
-  const latin = (s.match(/[a-zA-Z]/g) || []).length;
-  if (arabic >= 3 && arabic >= latin) return "ar";
-  return detectLang(s, fallback);
+  return detectLang(String(question || ""), fallback);
 }
 
 type Money = (n: number) => string;

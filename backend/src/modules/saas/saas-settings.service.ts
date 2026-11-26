@@ -4,6 +4,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { Plan, PlatformSettings, SubscriptionPayment } from './entities/saas.entity';
 import { Sector, SectorCategory, SectorItem, ServiceOffer } from './entities/sector.entity';
 import { MailService } from '../../common/mail/mail.service';
+import { validateTaxId } from '../../common/fiscal';
 import { User } from '../users/entities/user.entity';
 import { CORE_MODULES } from './account-access';
 import {
@@ -98,6 +99,15 @@ export class SaasSettingsService implements OnApplicationBootstrap {
     text('supportPhone', 40);
     text('supportWhatsapp', 40);
     text('paymentLink', 300);
+    text('issuerName', 160);
+    text('issuerTaxId', 40);
+    text('issuerAddress', 300);
+    text('issuerRegistry', 60);
+    if (next.issuerTaxId) {
+      const check = validateTaxId(next.issuerTaxId);
+      if (!check.valid) throw new BadRequestException(check.message || 'Matricule fiscal invalide.');
+      next.issuerTaxId = check.normalized;
+    }
     // Le lien est ouvert par les clients : seule une adresse https est acceptée (jamais « javascript: » ni un chemin local).
     if (next.paymentLink) {
       let url: URL | null = null;
@@ -164,7 +174,7 @@ export class SaasSettingsService implements OnApplicationBootstrap {
 
   private async insertSector(em: EntityManager, s: DefaultSector, sortOrder: number): Promise<Sector> {
     const sector = await em.save(Sector, em.create(Sector, {
-      code: s.code, name: s.name, nameEn: s.nameEn, nameAr: s.nameAr, description: s.description,
+      code: s.code, name: s.name, nameEn: s.nameEn, description: s.description,
       modules: s.modules, recommendations: s.recommendations, isActive: true, sortOrder,
     }));
     await this.seedCategories(em, sector.id, s.categories, null);

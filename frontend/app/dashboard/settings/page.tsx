@@ -141,14 +141,15 @@ export default function SettingsPage() {
   const selectPadding = isMobile ? "12px" : "12px";
   const iconSize = isMobile ? 18 : 20;
 
-  // Arabe : drapeau tunisien (la variante proposée est l'arabe de Tunisie, « ar-TN »).
-  const flagCodes = { fr: "fr", en: "gb", es: "es", ar: "tn" };
+  const flagCodes = { fr: "fr", en: "gb", es: "es" };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) router.push("/auth/login");
 
-    const savedLanguage = localStorage.getItem("language") || "fr";
+    const storedLanguage = localStorage.getItem("language");
+    // Une langue qui n'existe plus (ancien choix « ar ») retombe sur le français.
+    const savedLanguage = isSupportedLanguage(storedLanguage) ? storedLanguage : "fr";
     const savedCurrency = readStoredCurrency();
     const savedDateFormat = localStorage.getItem("dateFormat") || "dd/mm/yyyy";
 
@@ -357,7 +358,6 @@ export default function SettingsPage() {
               <option value="fr">FRANÇAIS</option>
               <option value="en">ENGLISH</option>
               <option value="es">ESPAÑOL</option>
-              <option value="ar" lang="ar" dir="rtl">العربية</option>
             </select>
             <div style={{ marginTop: "12px", padding: "10px", background: `${theme.primary}15`, borderRadius: "8px", border: `1px solid ${theme.primary}30`, fontSize: isMobile ? "11px" : "12px" }}>
               <span style={{ color: theme.textSecondary }}>

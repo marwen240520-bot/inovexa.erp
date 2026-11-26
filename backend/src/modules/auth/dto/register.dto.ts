@@ -19,6 +19,8 @@ export class RegisterDto {
   @IsOptional() @IsString() @MaxLength(300) address?: string;
   @IsOptional() @IsString() @MaxLength(60) legalForm?: string;
   @IsOptional() @IsString() @MaxLength(40) taxId?: string;
+  /** Langue de l'écran d'inscription : celle des emails du compte (code de vérification, mot de passe oublié…). */
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
 }
 
 export class GoogleAuthDto {
@@ -31,6 +33,7 @@ export class GoogleAuthDto {
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
   @IsOptional() @IsBoolean() acceptTerms?: boolean;
   @IsOptional() @IsString() @MaxLength(10) otp?: string;
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
 }
 
 export class AppleAuthDto {
@@ -45,6 +48,7 @@ export class AppleAuthDto {
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
   @IsOptional() @IsBoolean() acceptTerms?: boolean;
   @IsOptional() @IsString() @MaxLength(10) otp?: string;
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
 }
 
 export class VerifyEmailDto {
@@ -55,4 +59,16 @@ export class VerifyEmailDto {
 export class VerifyEmailCodeDto {
   /** Code à 6 chiffres reçu par email. */
   @IsString() @Matches(/^\d{6}$/, { message: 'Le code comporte 6 chiffres.' }) code: string;
+}
+
+/** Corrige l'adresse email (faute de frappe à l'inscription) : le mot de passe confirme que c'est bien le titulaire. */
+export class ChangeEmailDto {
+  @IsEmail({}, { message: 'Email invalide' }) @MaxLength(190) email: string;
+  @IsString() @MinLength(1, { message: 'Mot de passe requis' }) @MaxLength(128) password: string;
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
+}
+
+/** Renvoi d'un code : la langue de l'écran peut être précisée. */
+export class ResendVerificationDto {
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
 }
