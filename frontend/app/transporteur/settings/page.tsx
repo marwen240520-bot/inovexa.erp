@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, isSupportedLanguage, type Lang } from "@/lib/i18n";
 import Spinner from "@/components/ui/Spinner";
+import { replaceToken } from "@/lib/session";
 
 // ==================== SVG ICONS ====================
 const Icons = {
@@ -200,8 +201,11 @@ export default function TransporteurSettingsPage() {
         })
       });
       const data = await res.json();
-      if (res.ok) { 
-        setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); 
+      if (res.ok) {
+        // Le serveur ferme les autres sessions et remet un jeton neuf pour celle-ci : sans lui, la requête suivante
+        // serait refusée (401) et le transporteur renvoyé à la connexion.
+        replaceToken(data?.access_token);
+        setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
         showMessage(getTranslation("transporteur.settings.password_changed"), "success"); 
       } else { 
         const errorMsg = data.message || getTranslation("common.error");

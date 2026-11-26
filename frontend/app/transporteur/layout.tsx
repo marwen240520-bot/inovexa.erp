@@ -5,6 +5,8 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import Spinner from "@/components/ui/Spinner";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { AppShellProvider } from "@/components/ui/PageSkeleton";
+import { USER_KEY, clearSession, getStoredUser, getToken, type SessionUser } from "@/lib/session";
+import { API_URL } from "@/lib/saas";
 
 // SVG Icons with better styling
 const DashboardIcon = ({ active = false }: { active?: boolean }) => (
@@ -93,28 +95,53 @@ export default function TransporteurLayout({
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    
+    const token = getToken();
     if (!token) {
       router.replace("/auth/login");
       return;
     }
 
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        if (user.role !== "transporteur") {
-          router.replace("/dashboard");
-          return;
-        }
-        setIsAuthenticated(true);
-      } catch (e) {
-        router.replace("/auth/login");
+    // Seul un transporteur reste dans cet espace ; les autres rôles repartent vers l'ERP.
+    const admit = (user: SessionUser) => {
+      if (user.role !== "transporteur") {
+        router.replace("/dashboard");
         return;
       }
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    };
+
+    const stored = getStoredUser();
+    if (stored) {
+      admit(stored);
+      return;
     }
-    setIsLoading(false);
+
+    // Jeton présent mais profil local absent ou illisible (stockage vidé à moitié, ancien onglet…) : la page restait
+    // indéfiniment sur le spinner. Le profil est reconstruit depuis le serveur ; s'il refuse le jeton ou ne répond
+    // pas, la session est fermée et l'on revient à la connexion.
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const me = await res.json();
+        if (cancelled) return;
+        if (!me?.id || !me?.role) throw new Error("Profil incomplet");
+        // Mêmes champs que ceux posés à la connexion : rien d'autre de la réponse n'est gardé dans le navigateur.
+        const user: SessionUser = {
+          id: me.id, email: me.email, name: me.name, role: me.role, companyName: me.companyName ?? null, modules: me.modules ?? null,
+          isTeamMember: !!me.isTeamMember, sector: me.sector ?? null, twoFactorEnabled: !!me.twoFactorEnabled, permissions: me.permissions,
+        };
+        try { localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch { /* stockage indisponible */ }
+        admit(user);
+      } catch {
+        if (cancelled) return;
+        clearSession();
+        router.replace("/auth/login");
+      }
+    })();
+    return () => { cancelled = true; };
   }, [router]);
 
   const getTranslation = (key: string): string => {
@@ -174,8 +201,8 @@ export default function TransporteurLayout({
   const logout = () => {
     const logoutMsg = getTranslation("common.logoutWarning");
     if (confirm(logoutMsg)) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      // Session complète (jeton, profil, caches de la barre latérale et de l'API) ; langue et thème sont conservés.
+      clearSession();
       router.push("/");
     }
   };

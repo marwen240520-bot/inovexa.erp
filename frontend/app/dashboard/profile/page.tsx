@@ -6,6 +6,21 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme, THEMES } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import Spinner from "@/components/ui/Spinner";
+import { USER_KEY, clearSession, getStoredUser, replaceToken } from "@/lib/session";
+import { formatDateTime } from "@/lib/saas";
+
+// Seuls ces champs du profil sont gardés dans le navigateur : la réponse complète de /users/profile (dates, état du
+// compte, réglages internes) n'a rien à y faire. Les champs posés à la connexion (secteur, droits…) sont conservés,
+// et tout le reste d'un ancien enregistrement est écarté.
+const PROFILE_FIELDS = ["id", "email", "name", "role", "companyName", "phone", "avatar", "modules"] as const;
+const SESSION_FIELDS = ["isTeamMember", "ownerId", "sector", "twoFactorEnabled", "permissions"] as const;
+function storeProfile(profile: Record<string, any>) {
+  const previous: Record<string, any> = getStoredUser() || {};
+  const next: Record<string, any> = {};
+  for (const key of SESSION_FIELDS) if (previous[key] !== undefined) next[key] = previous[key];
+  for (const key of PROFILE_FIELDS) if (profile[key] !== undefined) next[key] = profile[key];
+  try { localStorage.setItem(USER_KEY, JSON.stringify(next)); } catch { /* stockage indisponible */ }
+}
 
 // ==================== TRADUCTIONS ====================
 const profileTranslations = {
@@ -36,7 +51,8 @@ const profileTranslations = {
       currentSession: "Session actuelle",
       connectedSince: "Connecté depuis",
       profileUpdated: "Profil mis à jour",
-      logoutAllConfirm: "Se déconnecter de tous les appareils ?"
+      logoutAllConfirm: "Se déconnecter de tous les appareils ?",
+      logoutAllFailed: "La déconnexion de tous les appareils a échoué. Réessayez."
     }
   },
   es: {
@@ -66,7 +82,8 @@ const profileTranslations = {
       currentSession: "Sesión actual",
       connectedSince: "Conectado desde",
       profileUpdated: "Perfil actualizado",
-      logoutAllConfirm: "¿Cerrar sesión en todos los dispositivos?"
+      logoutAllConfirm: "¿Cerrar sesión en todos los dispositivos?",
+      logoutAllFailed: "No se pudo cerrar sesión en todos los dispositivos. Inténtelo de nuevo."
     }
   },
   en: {
@@ -96,7 +113,8 @@ const profileTranslations = {
       currentSession: "Current session",
       connectedSince: "Connected since",
       profileUpdated: "Profile updated",
-      logoutAllConfirm: "Log out from all devices?"
+      logoutAllConfirm: "Log out from all devices?",
+      logoutAllFailed: "Logging out of all devices failed. Please try again."
     }
   },
   ar: {
@@ -126,7 +144,8 @@ const profileTranslations = {
       currentSession: "الجلسة الحالية",
       connectedSince: "متصل منذ",
       profileUpdated: "تم تحديث الملف الشخصي",
-      logoutAllConfirm: "تسجيل الخروج من جميع الأجهزة؟"
+      logoutAllConfirm: "تسجيل الخروج من جميع الأجهزة؟",
+      logoutAllFailed: "تعذّر تسجيل الخروج من جميع الأجهزة. أعد المحاولة."
     }
   }
 };
@@ -327,12 +346,11 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement>(null);
+  const [loggingOutAll, setLoggingOutAll] = useState(false);
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
-    totalClients: 0,
-    memberSince: "",
-    lastLogin: new Date().toLocaleString()
+    totalClients: 0
   });
 
   const currentTheme = globalTheme;
@@ -399,7 +417,7 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         const userData = await res.json();
-        localStorage.setItem("user", JSON.stringify(userData));
+        storeProfile(userData);
         return userData;
       }
     } catch(e) {
@@ -465,21 +483,22 @@ export default function ProfilePage() {
         userClients = clients.filter(c => c.userId === currentUser.id || c.createdBy === currentUser.id);
       }
 
-      const memberDate = new Date();
       setStats({
         totalSales: totalSalesAmount,
         totalOrders: userOrders.length,
-        totalClients: userClients.length,
-        memberSince: memberDate.toLocaleDateString(locale, { year: "numeric", month: "long" }),
-        lastLogin: new Date().toLocaleString(locale)
+        totalClients: userClients.length
       });
     } catch(e) {
       console.error('Erreur fetchUserStats:', e);
-      const memberDate = new Date();
-      setStats({ totalSales: 0, totalOrders: 0, totalClients: 0, memberSince: memberDate.toLocaleDateString(), lastLogin: new Date().toLocaleString() });
+      setStats({ totalSales: 0, totalOrders: 0, totalClients: 0 });
     }
     setLoading(false);
   };
+
+  // Dates réelles du compte, renvoyées par GET /users/profile (heure de Tunis). Un tiret quand le serveur ne les
+  // donne pas — l'écran affichait auparavant la date du jour dans les deux cas.
+  const memberSince = formatDateTime(user?.createdAt, language, false);
+  const lastLogin = formatDateTime(user?.lastLoginAt, language);
 
   const updateProfile = async () => {
     const token = localStorage.getItem("token");
@@ -605,6 +624,10 @@ export default function ProfilePage() {
         })
       });
       if (res.ok) {
+        // Le serveur ferme les autres sessions et remet un jeton neuf pour celle-ci : sans lui, la requête suivante
+        // serait refusée (401) et l'utilisateur renvoyé à la connexion.
+        const data = await res.json().catch(() => null);
+        replaceToken(data?.access_token);
         setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
         showMessage(profileT.profile.passwordChanged || "Mot de passe changé", "success");
       } else {
@@ -617,13 +640,24 @@ export default function ProfilePage() {
   };
 
   const logoutAllDevices = async () => {
-    if (confirm(profileT.profile.logoutAllConfirm || "Se déconnecter de tous les appareils ?")) {
-      const token = localStorage.getItem("token");
-      try {
-        await fetch(`${API_URL}/users/logout-all`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        localStorage.clear();
-        router.push("/");
-      } catch(e) { console.error(e); }
+    if (!confirm(profileT.profile.logoutAllConfirm || "Se déconnecter de tous les appareils ?")) return;
+    const token = localStorage.getItem("token");
+    setLoggingOutAll(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/logout-all`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      // On ne quitte la page que si le serveur a bien fermé les sessions : sinon les autres appareils restent connectés.
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        const serverMessage = Array.isArray(err?.message) ? err.message.join(" · ") : err?.message;
+        showMessage(serverMessage || profileT.profile.logoutAllFailed, "error");
+        return;
+      }
+      clearSession();
+      router.push("/auth/login");
+    } catch {
+      showMessage(profileT.profile.logoutAllFailed, "error");
+    } finally {
+      setLoggingOutAll(false);
     }
   };
 
@@ -952,10 +986,10 @@ export default function ProfilePage() {
                 </p>
                 <div style={{ display: "flex", gap: "16px", marginTop: "8px", flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start" }}>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Calendar /> {profileT.profile.memberSince || "Membre depuis"} {stats.memberSince}
+                    <Icons.Calendar /> {profileT.profile.memberSince || "Membre depuis"} {memberSince}
                   </span>
                   <span style={{ color: currentTheme.textSecondary, fontSize: isMobile ? "10px" : "12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Icons.Lock /> {profileT.profile.lastLogin || "Dernière connexion"}: {stats.lastLogin}
+                    <Icons.Lock /> {profileT.profile.lastLogin || "Dernière connexion"}: {lastLogin}
                   </span>
                 </div>
               </div>
@@ -1184,14 +1218,16 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={logoutAllDevices}
-                  style={{ 
-                    width: "100%", 
-                    padding: isMobile ? "8px" : "10px", 
-                    background: "#b91c1c", 
-                    color: "white", 
-                    border: "none", 
-                    borderRadius: "8px", 
-                    cursor: "pointer", 
+                  disabled={loggingOutAll}
+                  style={{
+                    width: "100%",
+                    padding: isMobile ? "8px" : "10px",
+                    background: "#b91c1c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: loggingOutAll ? "not-allowed" : "pointer",
+                    opacity: loggingOutAll ? 0.6 : 1,
                     display: "flex", 
                     alignItems: "center", 
                     justifyContent: "center", 
@@ -1223,7 +1259,7 @@ export default function ProfilePage() {
                   { Icon: Icons.TrendingUp, value: formatCurrency(stats.totalSales), label: profileT.profile.revenueGenerated || "CA généré", color: currentTheme.accent },
                   { Icon: Icons.ClipboardList, value: stats.totalOrders, label: t("common.orders") || "Commandes", color: currentTheme.primary },
                   { Icon: Icons.Users, value: stats.totalClients, label: t("common.clients") || "Clients", color: currentTheme.secondary },
-                  { Icon: Icons.Clock, value: stats.memberSince, label: profileT.profile.memberSince || "Membre depuis", color: "#f59e0b" },
+                  { Icon: Icons.Clock, value: memberSince, label: profileT.profile.memberSince || "Membre depuis", color: "#f59e0b" },
                 ].map((item, i) => (
                   <div key={i} style={{ padding: isMobile ? "12px" : "16px", background: currentTheme.surfaceHover, borderRadius: "12px", textAlign: "center" }}>
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: item.color }}><item.Icon /></div>

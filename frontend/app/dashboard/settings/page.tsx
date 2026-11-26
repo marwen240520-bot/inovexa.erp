@@ -9,6 +9,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 import Spinner from "@/components/ui/Spinner";
 import { readStoredCurrency, CURRENCY_SYMBOLS } from "@/hooks/useAppSettings";
 import { readAiChatButton, writeAiChatButton } from "@/lib/aiChatButton";
+import { clearSession } from "@/lib/session";
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -140,7 +141,8 @@ export default function SettingsPage() {
   const selectPadding = isMobile ? "12px" : "12px";
   const iconSize = isMobile ? 18 : 20;
 
-  const flagCodes = { fr: "fr", en: "gb", es: "es" };
+  // Arabe : drapeau tunisien (la variante proposée est l'arabe de Tunisie, « ar-TN »).
+  const flagCodes = { fr: "fr", en: "gb", es: "es", ar: "tn" };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -211,7 +213,8 @@ export default function SettingsPage() {
 
   const logout = () => {
     if (confirm(t("settings.logoutWarning"))) {
-      localStorage.clear();
+      // Ne retire que la session : la langue, le thème et la devise choisis sur cet appareil sont conservés.
+      clearSession();
       router.push("/");
     }
   };
@@ -354,7 +357,7 @@ export default function SettingsPage() {
               <option value="fr">FRANÇAIS</option>
               <option value="en">ENGLISH</option>
               <option value="es">ESPAÑOL</option>
-              
+              <option value="ar" lang="ar" dir="rtl">العربية</option>
             </select>
             <div style={{ marginTop: "12px", padding: "10px", background: `${theme.primary}15`, borderRadius: "8px", border: `1px solid ${theme.primary}30`, fontSize: isMobile ? "11px" : "12px" }}>
               <span style={{ color: theme.textSecondary }}>

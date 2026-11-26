@@ -12,6 +12,20 @@ import Spinner from "@/components/ui/Spinner";
 import type { TooltipItem } from "chart.js";
 import { Line, Doughnut } from "@/components/charts/LazyCharts";
 import { Caveat } from "next/font/google";
+import { USER_KEY, clearSession, getStoredUser } from "@/lib/session";
+
+// Seuls ces champs du profil sont gardés dans le navigateur : la réponse complète de /users/profile (dates, état du
+// compte, réglages internes) n'a rien à y faire. Les champs posés à la connexion (secteur, droits…) sont conservés,
+// et tout le reste d'un ancien enregistrement est écarté.
+const PROFILE_FIELDS = ["id", "email", "name", "role", "companyName", "phone", "avatar", "modules"] as const;
+const SESSION_FIELDS = ["isTeamMember", "ownerId", "sector", "twoFactorEnabled", "permissions"] as const;
+function storeProfile(profile: Record<string, any>) {
+  const previous: Record<string, any> = getStoredUser() || {};
+  const next: Record<string, any> = {};
+  for (const key of SESSION_FIELDS) if (previous[key] !== undefined) next[key] = previous[key];
+  for (const key of PROFILE_FIELDS) if (profile[key] !== undefined) next[key] = profile[key];
+  try { localStorage.setItem(USER_KEY, JSON.stringify(next)); } catch { /* stockage indisponible */ }
+}
 
 // ✅ Police manuscrite — même police que « Votre ERP, partout avec vous. » sur la home
 const handwriting = Caveat({
@@ -334,9 +348,9 @@ export default function DashboardPage() {
   const getTempTranslation = (key: string): string => {
     const translations: Record<string, Record<string, string>> = {
       "dashboard.profile": { fr: "Mon profil", en: "My profile", es: "Mi perfil", ar: "ملفي الشخصي" },
-      "dashboard.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes", ar: "الإعدادات" },
+      "dashboard.settings": { fr: "Paramètres", en: "Settings", es: "Ajustes", ar: "الإعدادات" },
       "common.profile": { fr: "Profil", en: "Profile", es: "Perfil", ar: "الملف الشخصي" },
-      "common.settings": { fr: "Paramétres", en: "Settings", es: "Ajustes", ar: "الإعدادات" }
+      "common.settings": { fr: "Paramètres", en: "Settings", es: "Ajustes", ar: "الإعدادات" }
     };
     if (translations[key] && translations[key][language]) return translations[key][language];
     const translated = t(key);
@@ -385,7 +399,7 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         const userData = await res.json();
-        localStorage.setItem("user", JSON.stringify(userData));
+        storeProfile(userData);
         return userData;
       }
     } catch(e) { console.error("Erreur chargement utilisateur:", e); }
@@ -998,7 +1012,7 @@ export default function DashboardPage() {
                           <Icon name="Settings" size="0.9em" /> {getTempTranslation("common.settings")}
                         </div>
                         <div style={{ height: "1px", background: theme.border }} />
-                        <div onClick={() => { localStorage.clear(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                        <div onClick={() => { clearSession(); router.push("/"); setShowProfileMenu(false); }} style={{ padding: "10px 16px", color: "#f87171", cursor: "pointer", fontSize: isMobile ? "11px" : "12px", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = theme.surfaceHover} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
                           <Icon name="LogOut" size="0.9em" color="#f87171" /> {t("common.logout")}
                         </div>
                       </div>
