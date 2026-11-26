@@ -31,6 +31,19 @@ let generation = 0;
 let channel: BroadcastChannel | null = null;
 let nativeFetch: typeof fetch | null = null;
 
+/**
+ * Le serveur répond 402 quand le compte est bloqué (essai terminé, abonnement échu, suspension). C'est LUI qui décide,
+ * à chaque requête ; ici on se contente d'emmener la personne sur la page Abonnement, une seule fois.
+ */
+let blockedRedirecting = false;
+function onAccountBlocked() {
+  if (typeof window === "undefined" || blockedRedirecting) return;
+  const path = window.location.pathname;
+  if (path.startsWith("/subscription") || path.startsWith("/auth") || path.startsWith("/reset-password")) return;
+  blockedRedirecting = true;
+  window.location.assign("/subscription");
+}
+
 function isApiUrl(url: string): boolean {
   if (!API_ORIGIN) return false;
   try { return new URL(url, window.location.href).origin === API_ORIGIN; } catch { return false; }
@@ -100,7 +113,11 @@ export function installApiCache() {
     // et après (au cas où une lecture lancée entre-temps aurait reçu l'ancienne version).
     if (method !== "GET") {
       invalidateApiCache();
-      try { return await original(input as any, init); }
+      try {
+        const res = await original(input as any, init);
+        if (res.status === 402) onAccountBlocked();
+        return res;
+      }
       finally { invalidateApiCache(); }
     }
 
@@ -110,7 +127,11 @@ export function installApiCache() {
       init?.cache === "no-store" ||
       init?.cache === "reload" ||
       init?.cache === "no-cache";
-    if (bypass) return original(input as any, init);
+    if (bypass) {
+      const res = await original(input as any, init);
+      if (res.status === 402) onAccountBlocked();
+      return res;
+    }
 
     const key = url + "|" + readHeader(init?.headers, "authorization");
     const hit = store.get(key);
@@ -122,6 +143,7 @@ export function installApiCache() {
       pending = original(input as any, init)
         .then(snapshot)
         .then((s) => {
+          if (s.status === 402) onAccountBlocked();
           const contentType = s.headers.find(([k]) => k === "content-type")?.[1] || "";
           if (startedAt === generation && s.status >= 200 && s.status < 300 && contentType.includes("json")) {
             remember(key, s);

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, CSSProperties } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDeviceHint } from "@/contexts/DeviceContext";
-import { clearApiCache } from "@/lib/apiCache";
+import { SESSION_CLEARED_EVENT, clearSession, isPlatformAdmin } from "@/lib/session";
 import { prefetchRouteData } from "@/lib/routeData";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
@@ -29,6 +29,18 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad", ar: "المحاسبة" },
   "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión", ar: "تقارير التسيير" },
   "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja", ar: "جلسات الصندوق" },
+  "nav.billing": { fr: "Abonnement", en: "Subscription", es: "Suscripción", ar: "الاشتراك" },
+  "nav.suggestions": { fr: "Suggestions secteur", en: "Sector suggestions", es: "Sugerencias del sector", ar: "اقتراحات القطاع" },
+  // Espace de l'administrateur de la plateforme
+  "admin.overview": { fr: "Tableau de bord", en: "Overview", es: "Panel", ar: "لوحة المتابعة" },
+  "admin.accounts": { fr: "Comptes clients", en: "Customer accounts", es: "Cuentas de clientes", ar: "حسابات الحرفاء" },
+  "admin.payments": { fr: "Paiements", en: "Payments", es: "Pagos", ar: "المدفوعات" },
+  "admin.plans": { fr: "Formules et tarifs", en: "Plans and pricing", es: "Planes y precios", ar: "الباقات والأسعار" },
+  "admin.sectors": { fr: "Secteurs et suggestions", en: "Sectors and suggestions", es: "Sectores y sugerencias", ar: "القطاعات والاقتراحات" },
+  "admin.messages": { fr: "Messages", en: "Messages", es: "Mensajes", ar: "الرسائل" },
+  "admin.platformSettings": { fr: "Réglages de la plateforme", en: "Platform settings", es: "Ajustes de la plataforma", ar: "إعدادات المنصة" },
+  "admin.audit": { fr: "Journal d’activité", en: "Activity log", es: "Registro de actividad", ar: "سجلّ النشاط" },
+  "admin.legacyClients": { fr: "Création et démonstration", en: "Creation and demo data", es: "Creación y demostración", ar: "الإنشاء والبيانات التجريبية" },
   // Titres des sections de la barre latérale
   "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial", ar: "المبيعات والعملاء" },
   "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento", ar: "التزويد" },
@@ -280,10 +292,10 @@ interface NavGroup {
 const NAV_GROUPS: Array<{ id: string; label: string; items: string[] }> = [
   { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "pos", "pos-sessions"] },
   { id: "procurement", label: "nav.groups.procurement", items: ["purchases", "suppliers"] },
-  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "categories", "stock", "logistics"] },
+  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics"] },
   { id: "finance",     label: "nav.groups.finance",     items: ["finance", "accounting", "hr"] },
   { id: "insights",    label: "nav.groups.insights",    items: ["reports", "business-reports", "analytics", "objectives", "ai"] },
-  { id: "account",     label: "nav.groups.account",     items: ["profile", "settings"] },
+  { id: "account",     label: "nav.groups.account",     items: ["profile", "billing", "settings"] },
 ];
 
 /** Répartit les entrées visibles : d'abord celles hors section, puis les sections non vides. */
@@ -305,9 +317,26 @@ function buildSections(items: NavItem[]): { top: NavItem[]; groups: NavGroup[] }
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), 'Arial Black', sans-serif";
 
+// Sections ouvertes. Au chargement, Commercial, Approvisionnement et Stock & logistique sont ouvertes,
+// ainsi que la section de la page ouverte. Ce que l'utilisateur ouvre ou ferme est conservé pendant
+// la navigation, puis l'état initial revient au rechargement.
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = { commercial: true, procurement: true, inventory: true };
+let sidebarOpenGroups: Record<string, boolean> = { ...DEFAULT_OPEN_GROUPS };
+
 let sidebarCachedUser: User | null = null;
 let sidebarCachedModules: Record<string, boolean> | null = null;
 let modulesRefreshed = false;
+
+if (typeof window !== "undefined") {
+  // Connexion ou déconnexion faite ailleurs (page de connexion, profil, paramètres…) : on oublie le compte précédent,
+  // sinon le compte suivant voyait les modules de l'autre dans la barre latérale.
+  window.addEventListener(SESSION_CLEARED_EVENT, () => {
+    sidebarCachedUser = null;
+    sidebarCachedModules = null;
+    modulesRefreshed = false;
+    sidebarOpenGroups = { ...DEFAULT_OPEN_GROUPS };
+  });
+}
 
 const MODULES_STORAGE_KEY = "sidebar_modules";
 function readStoredModules(userId?: string | number): Record<string, boolean> | null {
@@ -323,11 +352,6 @@ function storeModules(userId: string | number, modules: Record<string, boolean>)
   try { localStorage.setItem(MODULES_STORAGE_KEY, JSON.stringify({ userId, modules })); } catch { /* ignoré */ }
 }
 
-// Sections ouvertes. Au chargement, Commercial, Approvisionnement et Stock & logistique sont ouvertes,
-// ainsi que la section de la page ouverte. Ce que l'utilisateur ouvre ou ferme est conservé pendant
-// la navigation, puis l'état initial revient au rechargement.
-const DEFAULT_OPEN_GROUPS: Record<string, boolean> = { commercial: true, procurement: true, inventory: true };
-let sidebarOpenGroups: Record<string, boolean> = { ...DEFAULT_OPEN_GROUPS };
 
 export function getCachedModules(): Record<string, boolean> | null {
   return sidebarCachedModules;
@@ -424,6 +448,7 @@ export default function Sidebar() {
   const allModules: NavItem[] = [
     { id: "dashboard",  path: "/dashboard",            label: "common.dashboard",  iconKey: "dashboard" },
     { id: "products",   path: "/dashboard/products",   label: "common.products",   iconKey: "products" },
+    { id: "suggestions", gate: "products", path: "/dashboard/products/suggestions", label: "nav.suggestions", iconKey: "objectives" },
     { id: "categories", path: "/dashboard/categories", label: "common.categories", iconKey: "categories" },
     { id: "stock",      path: "/dashboard/stock",      label: "common.stock",      iconKey: "stock" },
     { id: "sales",      path: "/dashboard/sales",      label: "common.sales",      iconKey: "sales" },
@@ -444,15 +469,24 @@ export default function Sidebar() {
     { id: "analytics",  path: "/dashboard/analytics",  label: "common.analytics",  iconKey: "analytics" },
     { id: "objectives", path: "/dashboard/objectives", label: "common.objectives", iconKey: "objectives" },
     { id: "profile",    path: "/dashboard/profile",    label: "common.profile",    iconKey: "profile" },
+    { id: "billing",    gate: "profile", path: "/dashboard/billing", label: "nav.billing", iconKey: "finance" },
     { id: "settings",   path: "/dashboard/settings",   label: "common.settings",   iconKey: "settings", also: ["/dashboard/company"] },
   ];
 
   const clientMenuItems = allModules.filter(m => isModuleActive(m.gate ?? m.id));
 
   const adminMenuItems: NavItem[] = [
-    { id: "adminClients", path: "/admin/clients",      label: "admin.clients",    iconKey: "adminClients" },
-    { id: "profile",      path: "/dashboard/profile",  label: "common.profile",   iconKey: "profile" },
-    { id: "settings",     path: "/dashboard/settings", label: "common.settings",  iconKey: "settings" },
+    { id: "adminOverview", path: "/admin",          label: "admin.overview",         iconKey: "dashboard" },
+    { id: "adminAccounts", path: "/admin/accounts", label: "admin.accounts",         iconKey: "adminClients" },
+    { id: "adminPayments", path: "/admin/payments", label: "admin.payments",         iconKey: "finance" },
+    { id: "adminMessages", path: "/admin/messages", label: "admin.messages",         iconKey: "invoices" },
+    { id: "adminPlans",    path: "/admin/plans",    label: "admin.plans",            iconKey: "orders" },
+    { id: "adminSectors",  path: "/admin/sectors",  label: "admin.sectors",          iconKey: "categories" },
+    { id: "adminSettings", path: "/admin/settings", label: "admin.platformSettings", iconKey: "adminModules" },
+    { id: "adminAudit",    path: "/admin/audit",    label: "admin.audit",            iconKey: "reports" },
+    { id: "adminClients",  path: "/admin/clients",  label: "admin.legacyClients",    iconKey: "production" },
+    { id: "profile",       path: "/dashboard/profile",  label: "common.profile",   iconKey: "profile" },
+    { id: "settings",      path: "/dashboard/settings", label: "common.settings",  iconKey: "settings" },
   ];
 
   const transporteurMenuItems: NavItem[] = [
@@ -462,7 +496,7 @@ export default function Sidebar() {
   ];
 
   let roleMenuItems: NavItem[] = clientMenuItems;
-  if (role === "admin") roleMenuItems = adminMenuItems;
+  if (isPlatformAdmin(role)) roleMenuItems = adminMenuItems;
   if (role === "transporteur") roleMenuItems = transporteurMenuItems;
 
   const sections = buildSections(roleMenuItems);
@@ -470,7 +504,7 @@ export default function Sidebar() {
   const menuItems: NavItem[] = [...sections.top, ...sections.groups.flatMap((g) => g.items)];
 
   const pathMatches = (path: string) =>
-    pathname === path || (path !== "/dashboard" && !!pathname && pathname.startsWith(path + "/"));
+    pathname === path || (path !== "/dashboard" && path !== "/admin" && !!pathname && pathname.startsWith(path + "/"));
   // Le lien le plus précis gagne : /dashboard/hr/payroll n'allume pas aussi « Ressources humaines ».
   const isActivePath = (path: string, also?: string[]) =>
     (pathMatches(path) && !menuItems.some((m) => m.path.length > path.length && pathMatches(m.path))) ||
@@ -534,14 +568,7 @@ export default function Sidebar() {
 
   const logout = () => {
     if (confirm(t("common.logoutWarning") || "Confirmer la déconnexion ?")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      try { localStorage.removeItem(MODULES_STORAGE_KEY); } catch { /* ignoré */ }
-      sidebarCachedUser = null;
-      sidebarCachedModules = null;
-      sidebarOpenGroups = { ...DEFAULT_OPEN_GROUPS };
-      modulesRefreshed = false;
-      clearApiCache();
+      clearSession();
       router.push("/");
     }
   };

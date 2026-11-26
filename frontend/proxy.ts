@@ -64,6 +64,11 @@ export function proxy(request: NextRequest) {
     }
   }
 
+  // « Continuer avec Google » (Google Identity Services) : script, cadre du bouton et feuille de style servis par Google.
+  // Sans GOOGLE_CLIENT_ID côté API, le bouton n'est pas affiché et rien n'est chargé depuis Google.
+  const GOOGLE_GSI = 'https://accounts.google.com/gsi/';
+  scriptSrc.push(GOOGLE_GSI + 'client');
+
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
 
@@ -72,6 +77,7 @@ export function proxy(request: NextRequest) {
     'style-src': [
       "'self'",
       "'unsafe-inline'",
+      GOOGLE_GSI + 'style',
     ],
 
     'img-src': [
@@ -95,13 +101,14 @@ export function proxy(request: NextRequest) {
       'blob:',
       API_ORIGIN,
       API_WS,
+      GOOGLE_GSI,
     ],
 
     'media-src': ["'self'"],
 
     'object-src': ["'none'"],
 
-    'frame-src': ["'self'"],
+    'frame-src': ["'self'", GOOGLE_GSI],
 
     'frame-ancestors': ["'self'"],
 
