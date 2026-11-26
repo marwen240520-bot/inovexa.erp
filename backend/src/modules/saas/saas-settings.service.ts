@@ -4,7 +4,12 @@ import { DataSource, EntityManager } from 'typeorm';
 import { Plan, PlatformSettings } from './entities/saas.entity';
 import { Sector, SectorCategory, SectorItem, ServiceOffer } from './entities/sector.entity';
 import { MailService } from '../../common/mail/mail.service';
-import { DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, DefaultCategory, PAYMENT_METHODS, basisFor } from './saas-defaults';
+import { User } from '../users/entities/user.entity';
+import { CORE_MODULES } from './account-access';
+import {
+  CATALOG_V1, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, DefaultCategory, DefaultSector,
+  PAYMENT_METHODS, basisFor, newSectorOffersV2,
+} from './saas-defaults';
 
 const CACHE_MS = 30_000;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -24,6 +29,11 @@ export class SaasSettingsService implements OnApplicationBootstrap {
       // Le serveur doit démarrer même si le contenu de départ n'a pas pu être créé (il sera retenté au prochain démarrage).
       this.logger.warn(`Contenu de départ non créé : ${e?.message || e}`);
     }
+    try {
+      await this.upgradeDefaults();
+    } catch (e: any) {
+      this.logger.warn(`Mise à niveau du contenu de départ non faite : ${e?.message || e}`);
+    }
   }
 
   async get(fresh = false): Promise<PlatformSettings> {
@@ -41,6 +51,19 @@ export class SaasSettingsService implements OnApplicationBootstrap {
   /** Identifiant client Google (public par nature) ; null = connexion Google non configurée. */
   googleClientId(): string | null {
     return (process.env.GOOGLE_CLIENT_ID || '').trim() || null;
+  }
+
+  /**
+   * Identifiants acceptés pour « Se connecter avec Apple » (APPLE_CLIENT_ID, séparés par des virgules) : d'abord
+   * l'identifiant de service du site web, puis éventuellement celui d'une application mobile. Vide = non configuré.
+   */
+  appleClientIds(): string[] {
+    return (process.env.APPLE_CLIENT_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
+  }
+
+  /** Identifiant de service Apple remis au navigateur (public par nature) ; null = connexion Apple non configurée. */
+  appleClientId(): string | null {
+    return this.appleClientIds()[0] || null;
   }
 
   async update(patch: Record<string, any>): Promise<PlatformSettings> {
@@ -65,6 +88,14 @@ export class SaasSettingsService implements OnApplicationBootstrap {
     text('supportEmail', 160);
     text('supportPhone', 40);
     text('supportWhatsapp', 40);
+    text('paymentLink', 300);
+    // Le lien est ouvert par les clients : seule une adresse https est acceptée (jamais « javascript: » ni un chemin local).
+    if (next.paymentLink) {
+      let url: URL | null = null;
+      try { url = new URL(next.paymentLink); } catch { url = null; }
+      if (!url || url.protocol !== 'https:') throw new BadRequestException('Lien de paiement invalide : une adresse complète commençant par https:// est attendue.');
+      next.paymentLink = url.toString();
+    }
     if (next.supportEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(next.supportEmail)) throw new BadRequestException('Email de support invalide.');
     if (patch.requireEmailVerification !== undefined) next.requireEmailVerification = patch.requireEmailVerification === true;
     // Sans serveur d'envoi, personne ne recevrait le lien de confirmation : tous les nouveaux comptes resteraient bloqués.
@@ -104,11 +135,7 @@ export class SaasSettingsService implements OnApplicationBootstrap {
       for (let i = 0; i < DEFAULT_SECTORS.length; i++) {
         const s = DEFAULT_SECTORS[i];
         if (await em.findOne(Sector, { where: { code: s.code } })) continue;
-        const sector = await em.save(Sector, em.create(Sector, {
-          code: s.code, name: s.name, nameEn: s.nameEn, nameAr: s.nameAr, description: s.description,
-          modules: s.modules, recommendations: s.recommendations, isActive: true, sortOrder: i + 1,
-        }));
-        await this.seedCategories(em, sector.id, s.categories, null);
+        await this.insertSector(em, s, i + 1);
       }
       for (let i = 0; i < DEFAULT_SERVICE_OFFERS.length; i++) {
         const o = DEFAULT_SERVICE_OFFERS[i];
@@ -117,10 +144,110 @@ export class SaasSettingsService implements OnApplicationBootstrap {
           basis: o.price === null ? 'Sur devis, selon le volume de données.' : 'Proposition de tarif à valider par l’administrateur.',
         } as any));
       }
-      await em.update(PlatformSettings, { id: 1 }, { defaultsSeeded: true, paymentMethods: DEFAULT_PAYMENT_METHODS });
+      // Une base neuve reçoit directement le contenu courant : rien à mettre à niveau ensuite.
+      await em.update(PlatformSettings, { id: 1 }, { defaultsSeeded: true, catalogVersion: CATALOG_VERSION, paymentMethods: DEFAULT_PAYMENT_METHODS });
       this.cache = null;
       this.logger.log('Contenu de départ créé : formules (brouillon), secteurs, suggestions, prestations (brouillon).');
       return { seeded: true };
+    });
+  }
+
+  private async insertSector(em: EntityManager, s: DefaultSector, sortOrder: number): Promise<Sector> {
+    const sector = await em.save(Sector, em.create(Sector, {
+      code: s.code, name: s.name, nameEn: s.nameEn, nameAr: s.nameAr, description: s.description,
+      modules: s.modules, recommendations: s.recommendations, isActive: true, sortOrder,
+    }));
+    await this.seedCategories(em, sector.id, s.categories, null);
+    return sector;
+  }
+
+  /**
+   * Reporte dans une base DÉJÀ installée les nouveautés du contenu de départ (saas-defaults.ts), une seule fois par
+   * version. Règle : ne jamais écraser ce que l'administrateur a modifié.
+   *
+   * Version 2 :
+   *  - modules par secteur : la liste d'un secteur est remplacée seulement si elle est restée celle de la version 1 ;
+   *    les comptes de ce secteur reçoivent alors les modules AJOUTÉS (jamais retirés), dans la limite de leur formule ;
+   *  - nouveaux secteurs (agroalimentaire, automobile, vente en ligne, textile, beauté) : créés avec leurs suggestions
+   *    et leur prestation de mise en service (en brouillon), placés avant « Autre activité » ;
+   *  - formules restées en BROUILLON et inchangées : prix proposés, description et arguments mis à jour ;
+   *  - moyens de paiement : complétés si la liste est restée celle de la version 1.
+   */
+  async upgradeDefaults(): Promise<{ upgraded: boolean; from?: number }> {
+    await this.get(true);
+    return this.ds.transaction(async (em) => {
+      const [row] = await em.query(`SELECT "defaultsSeeded", "catalogVersion", "paymentMethods" FROM "platform_settings" WHERE "id" = 1 FOR UPDATE`);
+      const from = Number(row?.catalogVersion) || 1;
+      if (!row || !row.defaultsSeeded || from >= CATALOG_VERSION) return { upgraded: false };
+      const sameSet = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x) => b.includes(String(x)));
+      const sameList = (a: unknown, b: readonly string[]) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
+      const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+
+      // ── Modules par secteur ──
+      const plans = await em.find(Plan);
+      const planModules = new Map(plans.map((p) => [p.code, p.modules?.length ? new Set(p.modules) : null]));
+      for (const def of DEFAULT_SECTORS) {
+        const v1 = CATALOG_V1.sectorModules[def.code];
+        if (!v1) continue;
+        const sector = await em.findOne(Sector, { where: { code: def.code } });
+        if (!sector || !sameSet(sector.modules, v1)) continue; // absent, ou personnalisé par l'administrateur
+        const added = def.modules.filter((m) => !v1.includes(m));
+        if (!added.length) continue;
+        await em.update(Sector, { id: sector.id }, { modules: def.modules, recommendations: def.recommendations });
+        const owners = await em.find(User, { where: { sector: def.code, role: 'client' }, select: ['id', 'modules', 'planCode', 'ownerId'] });
+        for (const owner of owners) {
+          // Compte jamais configuré (aucune clé) : tout est déjà ouvert pour lui, rien à ajouter.
+          if (owner.ownerId || !owner.modules || !Object.keys(owner.modules).length) continue;
+          const allowed = owner.planCode ? planModules.get(owner.planCode) ?? null : null;
+          const next = { ...owner.modules };
+          let changed = false;
+          for (const key of added) {
+            if (next[key] === true || CORE_MODULES.includes(key) || (allowed && !allowed.has(key))) continue;
+            next[key] = true;
+            changed = true;
+          }
+          if (changed) await em.update(User, { id: owner.id }, { modules: next });
+        }
+      }
+
+      // ── Nouveaux secteurs ──
+      const other = await em.findOne(Sector, { where: { code: 'other' } });
+      const [{ max }] = await em.query(`SELECT COALESCE(MAX("sortOrder"), 0)::int AS max FROM "sectors" WHERE "code" <> 'other'`);
+      let order = Number(max) || 0;
+      const created: string[] = [];
+      for (const def of DEFAULT_SECTORS) {
+        if (CATALOG_V1.sectorModules[def.code] || (await em.findOne(Sector, { where: { code: def.code } }))) continue;
+        await this.insertSector(em, def, ++order);
+        created.push(def.code);
+      }
+      if (created.length && other) await em.update(Sector, { id: other.id }, { sortOrder: order + 1 });
+      const [{ maxOffer }] = await em.query(`SELECT COALESCE(MAX("sortOrder"), 0)::int AS "maxOffer" FROM "service_offers"`);
+      let offerOrder = Number(maxOffer) || 0;
+      for (const o of newSectorOffersV2()) {
+        if (!o.sectorCode || !created.includes(o.sectorCode)) continue;
+        await em.save(ServiceOffer, em.create(ServiceOffer, { ...o, isPublic: false, isActive: true, sortOrder: ++offerOrder, basis: 'Proposition de tarif à valider par l’administrateur.' } as any));
+      }
+
+      // ── Formules restées en brouillon et inchangées ──
+      for (const def of DEFAULT_PLANS) {
+        const v1 = CATALOG_V1.plans[def.code];
+        const plan = plans.find((p) => p.code === def.code);
+        if (!v1 || !plan || plan.isPublic) continue;
+        const untouched = num(plan.priceMonthly) === v1.priceMonthly && num(plan.priceAnnual) === v1.priceAnnual && (plan.maxUsers ?? null) === v1.maxUsers && sameList(plan.features, v1.features);
+        if (!untouched) continue;
+        await em.update(Plan, { id: plan.id }, {
+          description: def.description, priceMonthly: def.priceMonthly, priceAnnual: def.priceAnnual, maxUsers: def.maxUsers,
+          modules: def.modules as any, features: def.features,
+        });
+      }
+
+      // ── Moyens de paiement ──
+      const patch: Partial<PlatformSettings> = { catalogVersion: CATALOG_VERSION };
+      if (sameSet(row.paymentMethods, CATALOG_V1.paymentMethods)) patch.paymentMethods = DEFAULT_PAYMENT_METHODS;
+      await em.update(PlatformSettings, { id: 1 }, patch);
+      this.cache = null;
+      this.logger.log(`Contenu de départ mis à niveau (version ${from} → ${CATALOG_VERSION})${created.length ? ` : nouveaux secteurs ${created.join(', ')}` : ''}.`);
+      return { upgraded: true, from };
     });
   }
 

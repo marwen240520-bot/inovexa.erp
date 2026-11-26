@@ -414,7 +414,12 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       const now = new Date();
       const currentEnd = owner.subscriptionEnd ? new Date(owner.subscriptionEnd) : null;
       // Renouvellement avant l'échéance : la nouvelle période s'ajoute à la suite, aucun jour payé n'est perdu.
-      const start = owner.accountStatus === 'ACTIVE' && owner.expiryEnforced !== false && currentEnd && currentEnd.getTime() > now.getTime() ? currentEnd : now;
+      // Paiement pendant l'essai gratuit : la période payée commence à la fin de l'essai, aucun jour gratuit n'est perdu.
+      const trialEnd = owner.trialEndsAt ? new Date(owner.trialEndsAt) : null;
+      const start =
+        owner.accountStatus === 'ACTIVE' && owner.expiryEnforced !== false && currentEnd && currentEnd.getTime() > now.getTime() ? currentEnd
+        : owner.accountStatus === 'TRIAL' && trialEnd && trialEnd.getTime() > now.getTime() ? trialEnd
+        : now;
       const end = addMonths(start, payment.periodMonths);
 
       await this.applyPlan(owner, payment.planCode, payment.billingCycle, em);
@@ -660,10 +665,11 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       }
       if (status === 'ACTIVE') {
         if (o.planCode) byPlan.set(o.planCode, (byPlan.get(o.planCode) || 0) + 1);
-        // Paiement validé dont la période couvre aujourd'hui : c'est lui qui compte dans le revenu récurrent.
+        // Paiement validé dont la période couvre aujourd'hui : c'est lui qui compte dans le revenu récurrent. À défaut, celui
+        // dont la période n'a pas encore commencé (client qui a payé pendant son essai : elle démarre à la fin de l'essai).
         const current = payments
-          .filter((p) => p.userId === o.id && p.periodStart && p.periodEnd && new Date(p.periodStart).getTime() <= now.getTime() && new Date(p.periodEnd).getTime() > now.getTime())
-          .sort((x, y) => new Date(y.periodStart!).getTime() - new Date(x.periodStart!).getTime())[0];
+          .filter((p) => p.userId === o.id && p.periodStart && p.periodEnd && new Date(p.periodEnd).getTime() > now.getTime())
+          .sort((x, y) => new Date(x.periodStart!).getTime() - new Date(y.periodStart!).getTime())[0];
         if (current) { counts.paying++; mrr += current.amountHT / Math.max(1, current.periodMonths); }
       }
     }
@@ -712,7 +718,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       sectors: named(bySector, new Map(sectors.map((s) => [s.code, s.name])), 'Non renseigné'),
       pendingPayments,
       unreadMessages,
-      note: 'Revenu récurrent mensuel (MRR) = somme des paiements validés couvrant aujourd’hui, ramenés au mois, hors taxes.',
+      note: 'Revenu récurrent mensuel (MRR) = abonnements payés en cours ou payés d’avance (paiements validés), ramenés au mois, hors taxes.',
     };
   }
 
@@ -781,7 +787,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     return {
       id: owner.id, email: owner.email, name: owner.name, companyName: owner.companyName, phone: owner.phone, sector: owner.sector,
       signupSource: owner.signupSource, createdAt: owner.createdAt, lastLoginAt: owner.lastLoginAt, isActive: owner.isActive,
-      twoFactorEnabled: owner.twoFactorEnabled, googleLinked: !!owner.googleSub, modules: owner.modules || {},
+      twoFactorEnabled: owner.twoFactorEnabled, googleLinked: !!owner.googleSub, appleLinked: !!owner.appleSub, modules: owner.modules || {},
       account: this.view(owner, settings), company: company || null, team, payments: await this.paymentsOf(ownerId), activity, usage,
     };
   }

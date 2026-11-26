@@ -24,9 +24,12 @@ export async function sitePageMetadata(name: PageName): Promise<Metadata> {
   const hero = data.blocks.find((block) => block.t === "hero");
   const heroTitle = plainText(hero?.title);
   const heroLead = plainText(hero?.blocks?.find((block: any) => block.t === "p")?.c);
+  // Les pages qui portent leurs propres titre et description dans chaque langue (« localized ») les utilisent tels quels ;
+  // les autres n'ont ces champs qu'en anglais : dans les autres langues, ils sont tirés du premier bloc.
+  const own = lang === "en" || (data as { localized?: boolean }).localized === true;
   return {
-    title: lang === "en" && data.title ? data.title : `${heroTitle} | Inovexa ERP`,
-    description: lang === "en" ? data.description : heroLead || data.description,
+    title: own && data.title ? data.title : `${heroTitle} | Inovexa ERP`,
+    description: own && data.description ? data.description : heroLead || data.description,
   };
 }
 
@@ -97,7 +100,7 @@ export async function SitePage({ name }: { name: PageName }) {
   const legalNote = name === "privacy" || name === "terms" ? LEGAL_NOTE[lang] : undefined;
   return (
     <div className={"st-page st-page-" + name}>
-      <Blocks blocks={data.blocks} extras={name === "contact" ? { contact: <ContactSection lang={lang} /> } : undefined} />
+      <Blocks blocks={data.blocks} extras={name === "contact" ? { lang, contact: <ContactSection lang={lang} /> } : { lang }} />
       {legalNote ? (
         <p className="st-wrap st-muted st-legal-note" lang={lang}>
           {legalNote}

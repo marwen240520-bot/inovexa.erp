@@ -44,11 +44,12 @@ ou un transporteur.
 | POST | `/auth/register` | `name`, `companyName`, `email`, `phone`, `password`, `sector`, `acceptTerms: true` ; facultatifs : `city`, `address`, `legalForm`, `taxId` | 201 `{ access_token, user, account, emailSent }`. Tout autre champ (`role`, `modules`…) → 400 |
 | POST | `/auth/login` | `email`, `password`, `otp?` | 200 `{ access_token, user, account }`. Double authentification active et pas de code : 401 `{ requires2fa: true }` |
 | POST | `/auth/google` | `credential` (jeton d'identité Google), `intent?: "login" \| "register"`, et pour une inscription `companyName`, `sector`, `phone?`, `acceptTerms: true`, `otp?` | 200 `{ access_token, user, account, created }`. Aucun compte et `intent` ≠ `register` : 404 `{ code: "ACCOUNT_NOT_FOUND", email, name }`. Google non configuré : 503 |
+| POST | `/auth/apple` | `identityToken` (jeton d'identité « Sign in with Apple »), `intent?: "login" \| "register"`, `name?` (Apple ne le donne qu'à la première autorisation) et, pour une inscription, `companyName`, `sector`, `phone?`, `acceptTerms: true`, `otp?` | Mêmes réponses que `/auth/google`. 503 si `APPLE_CLIENT_ID` n'est pas défini. Le jeton est vérifié avec les clés publiques d'Apple (signature RS256, `iss`, `aud`, expiration) ; une adresse non vérifiée ne sert jamais à retrouver un compte |
 | POST | `/auth/verify-email` | `email`, `token` | 200 `{ success, message, alreadyVerified? }` |
 | POST 🔒 | `/auth/resend-verification` | — | 200 `{ success, emailSent, message }` |
 | POST | `/auth/forgot-password` | `email` | 200 (même réponse que le compte existe ou non) |
 | POST | `/auth/reset-password` | `email`, `token`, `newPassword` | 200 `{ success, message }` |
-| GET 🔒 | `/auth/me` | — | profil + `account`, `sector`, `emailVerified`, `googleLinked`, `permissions` |
+| GET 🔒 | `/auth/me` | — | profil + `account`, `sector`, `emailVerified`, `googleLinked`, `appleLinked`, `permissions` |
 | POST 🔒 | `/auth/logout-all` | — | ferme toutes les sessions |
 | PATCH 🔒 | `/users/change-password` | `oldPassword`, `newPassword` | `{ success, message, access_token }` — **remplacer le jeton enregistré** par `access_token` |
 
@@ -59,7 +60,7 @@ Mot de passe : 8 caractères au moins, avec une lettre et un chiffre.
 
 | Route | Réponse |
 | --- | --- |
-| `GET /public/config` | `{ trialHours, currency, vatRate, requireEmailVerification, supportEmail, supportPhone, supportWhatsapp, googleClientId, modules }` — `googleClientId: null` = ne pas afficher le bouton Google |
+| `GET /public/config` | `{ trialHours, currency, vatRate, requireEmailVerification, supportEmail, supportPhone, supportWhatsapp, googleClientId, appleClientId, paymentMethods, modules }` — `googleClientId: null` / `appleClientId: null` = ne pas afficher le bouton ; `paymentMethods` = moyens de paiement proposés (les coordonnées de paiement ne sont pas publiques) |
 | `GET /public/plans` | `{ currency, vatRate, trialHours, plans: Plan[] }` — seulement les formules publiées |
 | `GET /public/sectors` | `Sector[]` (avec `itemCount`) |
 | `GET /public/sectors/:code` | `{ sector, categories, items, serviceOffers, disclaimer }` |
@@ -148,8 +149,8 @@ Toutes ces actions renvoient l'objet `account` mis à jour. Routes d'origine con
 | --- | --- | --- |
 | GET/POST | `/admin/plans` | création : `code`, `name`, `description?`, `priceMonthly?`, `priceAnnual?`, `maxUsers?`, `modules?` (`null` = tous), `features?: string[]`, `isPublic?`, `isActive?`, `highlight?`, `sortOrder?` |
 | PATCH/DELETE | `/admin/plans/:id` | suppression refusée (409) si la formule est utilisée |
-| GET | `/admin/settings` | réglages + `googleConfigured`, `paymentMethodOptions`, `moduleKeys` |
-| PUT | `/admin/settings` | `trialHours`, `trialReminderHours`, `renewalReminderDays`, `requireEmailVerification`, `currency`, `vatRate`, `paymentInstructions`, `paymentMethods: string[]`, `supportEmail`, `supportPhone`, `supportWhatsapp` |
+| GET | `/admin/settings` | réglages (dont `paymentLink`, `catalogVersion`) + `googleConfigured`, `appleConfigured`, `mailConfigured`, `paymentMethodOptions`, `moduleKeys` |
+| PUT | `/admin/settings` | `trialHours`, `trialReminderHours`, `renewalReminderDays`, `requireEmailVerification`, `currency`, `vatRate`, `paymentInstructions`, `paymentMethods: string[]` (`bank_transfer`, `d17`, `flouci`, `edinar`, `postal`, `cheque`, `cash`, `card`, `other`), `paymentLink` (adresse https de la page de paiement par carte, proposée quand `card` est activé), `supportEmail`, `supportPhone`, `supportWhatsapp` |
 | GET | `/admin/payments` | `status`, `userId`, `limit`, `offset` → `{ total, limit, offset, items: [paiement + account: { id, email, name, companyName }] }` |
 | POST | `/admin/payments` | `userId`, `planCode`, `billingCycle`, `method`, `reference?`, `note?`, `validate?` (validé tout de suite sauf `false`) |
 | POST | `/admin/payments/:id/validate` | — |
@@ -178,3 +179,20 @@ Toutes ces actions renvoient l'objet `account` mis à jour. Routes d'origine con
 | --- | --- | --- |
 | GET | `/admin/audit` | `action`, `userId`, `from`, `to`, `limit`, `offset` → `{ total, limit, offset, items: [{ id, userId, actorId, actorEmail, action, entity, entityId, method, path, status, ip, createdAt, details }] }` |
 | POST | `/admin/maintenance/sweep` | lance tout de suite le balayage des expirations et des rappels → `{ checked, expired, reminders }` |
+| POST | `/admin/maintenance/upgrade-catalog` | reporte les nouveautés du contenu de départ (nouveaux secteurs, modules ajoutés aux secteurs restés d'origine, prix proposés des formules encore en brouillon, moyens de paiement) sans toucher à ce que l'administrateur a modifié → `{ upgraded, from?, to? }`. Fait aussi tout seul au démarrage, une fois par version |
+
+
+## Essai gratuit, paiement et écrans (résumé)
+
+- **Inscription en libre-service** : `/auth/register` (email + mot de passe), `/auth/google`, `/auth/apple`. L'essai démarre tout de suite
+  pour `trialHours` heures (72 par défaut = 3 jours). À son terme, sans paiement validé, toute route hors `/auth/*`, `/billing/*` et
+  `/public/*` répond **402** : le site emmène la personne sur `/subscription`.
+- **Paiement pendant ou après l'essai** : le client choisit sa formule et son moyen (`GET /billing/subscription` → `payment.methods`,
+  `payment.instructions`, `payment.link`), puis déclare son paiement (`POST /billing/payments`). L'administrateur le valide
+  (`POST /admin/payments/:id/validate`) : l'accès est ouvert et le reçu est créé. **Un paiement validé pendant l'essai fait commencer
+  la période payée à la fin de l'essai** : aucun jour gratuit n'est perdu.
+- **Écrans** : `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/reset-password`, `/auth/verify-email`, `/subscription`
+  (accès fermé), `/dashboard/billing` (dans l'ERP), et côté administrateur `/admin` (vue d'ensemble), `/admin/accounts` (+ fiche),
+  `/admin/payments`, `/admin/messages`, `/admin/plans`, `/admin/sectors`, `/admin/settings`, `/admin/audit`.
+- **Variables d'environnement de l'API** : `GOOGLE_CLIENT_ID` (bouton Google), `APPLE_CLIENT_ID` (identifiant de service Apple ; plusieurs
+  valeurs séparées par des virgules sont acceptées), `SMTP_*` (emails). Sans elles, les boutons et les envois correspondants sont simplement absents.

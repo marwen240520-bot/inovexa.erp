@@ -105,7 +105,7 @@ export class User {
   @Column({ type: 'int', nullable: true })
   userLimit: number | null;
 
-  /** self | google | admin */
+  /** self | google | apple | admin */
   @Column({ type: 'varchar', length: 12, default: 'admin' })
   signupSource: string;
 
@@ -122,6 +122,11 @@ export class User {
   @Index('UQ_users_google_sub', { unique: true, where: '"googleSub" IS NOT NULL' })
   @Column({ type: 'varchar', length: 64, nullable: true })
   googleSub: string | null;
+
+  /** Identifiant Apple (« sub » du jeton d'identité) quand le compte est relié à « Se connecter avec Apple ». */
+  @Index('UQ_users_apple_sub', { unique: true, where: '"appleSub" IS NOT NULL' })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  appleSub: string | null;
 
   /** Rappels déjà envoyés (0 = aucun) : évite d'envoyer deux fois le même email. */
   @Column({ type: 'int', default: 0 })

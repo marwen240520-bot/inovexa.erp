@@ -3,10 +3,15 @@
 import React from "react";
 import Link from "next/link";
 import type { Block, Inline } from "@/lib/site/content";
+import { CatalogStats, ModulesBlock, PlanMatrixBlock, SectorsBlock, StepsBlock } from "@/components/site/CatalogBlocks";
+import LivePlans from "@/components/site/LivePlans";
+import PaymentMethods from "@/components/site/PaymentMethods";
 
 export interface BlockExtras {
   /** Rendu du bloc « contact » (formulaire + coordonnées). */
   contact?: React.ReactNode;
+  /** Langue de la page : utilisée par les blocs tirés du catalogue de l'ERP (modules, secteurs, formules). */
+  lang?: string;
 }
 
 export function SiteLink({
@@ -215,6 +220,21 @@ function BlockNode({ block: b, extras }: { block: Block; extras?: BlockExtras })
       );
     case "contact":
       return <>{extras?.contact ?? null}</>;
+    // ── Blocs tirés du catalogue réel de l'ERP (lib/catalog.ts) ──
+    case "catalogStats":
+      return <CatalogStats lang={extras?.lang || "fr"} labels={b.labels} />;
+    case "modules":
+      return <ModulesBlock lang={extras?.lang || "fr"} />;
+    case "sectors":
+      return <SectorsBlock lang={extras?.lang || "fr"} labels={b.labels} />;
+    case "planMatrix":
+      return <PlanMatrixBlock lang={extras?.lang || "fr"} labels={b.labels} />;
+    case "livePlans":
+      return <LivePlans lang={extras?.lang || "fr"} labels={b.labels} />;
+    case "payments":
+      return <PaymentMethods lang={extras?.lang || "fr"} />;
+    case "steps":
+      return <StepsBlock items={b.items} />;
     case "table":
       return (
         <div className="st-table-wrap">

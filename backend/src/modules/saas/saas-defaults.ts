@@ -2,16 +2,25 @@
  * Contenu de départ de la plateforme : formules, secteurs, catalogue de suggestions, prestations.
  *
  * ⚠️  TOUS LES MONTANTS SONT DES PROPOSITIONS À VALIDER PAR L'ADMINISTRATEUR.
- *  - Formules et prestations : créées en BROUILLON (isPublic = false). Rien n'apparaît sur le site tant que
- *    l'administrateur n'a pas relu les prix et publié.
+ *  - Formules et prestations : créées en BROUILLON (isPublic = false). Elles ne peuvent être souscrites qu'une fois
+ *    relues et publiées par l'administrateur (Administration › Formules et tarifs).
  *  - Catalogue par secteur : exemples chiffrés pour montrer le calcul « coût d'achat + marge = prix de vente ».
  *    Ce ne sont PAS des prix de marché et aucune étude de marché n'est derrière : chaque ligne porte sa base de
  *    calcul (`basis`), et chaque société remplace ces valeurs par les siennes.
  *  - La TVA n'est pas renseignée par article : c'est le taux par défaut de la société qui s'applique (modifiable).
  *
  * Ce contenu n'est inséré qu'une fois (platform_settings.defaultsSeeded) ; ensuite tout se gère depuis l'administration.
+ * Quand ce fichier évolue (nouveaux secteurs, modules d'un secteur), CATALOG_VERSION augmente et
+ * SaasSettingsService.upgradeDefaults() reporte les nouveautés dans les bases déjà installées, SANS toucher à ce que
+ * l'administrateur a modifié (voir CATALOG_V1 plus bas).
+ *
+ * ⚠️  Le site public affiche le même catalogue : frontend/lib/catalog.ts. Les deux fichiers se modifient ensemble.
  */
 
+/** Version du contenu de départ ci-dessous (platform_settings.catalogVersion). */
+export const CATALOG_VERSION = 2;
+
+/** Modules utiles à toute société, quel que soit son secteur. */
 const BASE = ['products', 'categories', 'clients', 'invoices', 'finance', 'reports', 'analytics', 'ai'];
 
 export interface DefaultItem { name: string; unit?: string; cost?: number; margin?: number; price?: number; kind?: 'product' | 'service'; lots?: boolean; description?: string }
@@ -25,7 +34,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   {
     code: 'commerce', name: 'Commerce et détail', nameEn: 'Commerce and retail', nameAr: 'التجارة والبيع بالتفصيل',
     description: 'Boutiques, magasins et points de vente : caisse, stock et réassort.',
-    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'objectives'],
+    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'hr', 'objectives'],
     recommendations: [
       'Créez vos catégories avant vos produits : les rapports de marge se lisent par catégorie.',
       'Renseignez un seuil d’alerte par produit pour être prévenu avant la rupture.',
@@ -71,7 +80,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   {
     code: 'healthcare', name: 'Santé et pharmacies', nameEn: 'Healthcare and pharmacies', nameAr: 'الصحة والصيدليات',
     description: 'Pharmacies, parapharmacies, cabinets et fournisseurs médicaux : lots et dates de péremption.',
-    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr'],
+    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr', 'objectives'],
     recommendations: [
       'Activez le suivi par lot sur les produits périssables : les sorties se font au premier périmé (FEFO).',
       'Les alertes signalent les lots qui périment dans les 30 jours.',
@@ -137,7 +146,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   {
     code: 'restaurant', name: 'Restaurants et cafés', nameEn: 'Restaurants and cafés', nameAr: 'المطاعم والمقاهي',
     description: 'Restaurants, cafés, pâtisseries et restauration rapide : carte, ingrédients, caisse.',
-    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr'],
+    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr', 'objectives'],
     recommendations: [
       'Créez vos plats et boissons pour la caisse, et vos ingrédients comme produits stockés.',
       'Coût d’un plat = somme des ingrédients ; visez un prix de vente qui laisse la marge que vous vous fixez.',
@@ -161,7 +170,7 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   {
     code: 'logistics', name: 'Logistique et transport', nameEn: 'Logistics and transport', nameAr: 'اللوجستيك والنقل',
     description: 'Transporteurs, messageries et entrepôts : expéditions, tournées, tarifs.',
-    modules: [...BASE, 'logistics', 'sales', 'orders', 'purchases', 'suppliers', 'hr', 'objectives'],
+    modules: [...BASE, 'logistics', 'stock', 'sales', 'orders', 'purchases', 'suppliers', 'hr', 'objectives'],
     recommendations: [
       'Créez vos transporteurs puis vos expéditions : chaque transporteur suit ses colis depuis son espace.',
       'Facturez vos prestations (course, stockage, emballage) comme des services, sans stock.',
@@ -183,8 +192,9 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
   {
     code: 'manufacturing', name: 'Industrie et fabrication', nameEn: 'Manufacturing and industry', nameAr: 'الصناعة والتصنيع',
     description: 'Ateliers et usines : matières premières, produits finis, achats et expéditions.',
-    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
+    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
     recommendations: [
+      'Créez un ordre de fabrication par série : la nomenclature (composants par unité) sort du stock à chaque avancement, le produit fini y entre.',
       'Séparez matières premières et produits finis en catégories : la valeur du stock se lit par catégorie.',
       'Le coût moyen pondéré se met à jour à chaque réception d’achat.',
       'Les inventaires tournants corrigent le stock sans arrêter l’activité.',
@@ -223,9 +233,129 @@ export const DEFAULT_SECTORS: DefaultSector[] = [
     ],
   },
   {
+    code: 'agrifood', name: 'Agriculture et agroalimentaire', nameEn: 'Agriculture and agri-food', nameAr: 'الفلاحة والصناعات الغذائية',
+    description: 'Exploitations, huileries, conditionnement et transformation : récoltes, lots, fabrication et export.',
+    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
+    recommendations: [
+      'Activez le suivi par lot : chaque récolte ou chaque fabrication garde sa traçabilité et sa date limite.',
+      'Créez un ordre de fabrication par transformation (olives → huile, lait → fromage) : les matières sortent du stock, le produit fini y entre.',
+      'Enregistrez intrants et emballages comme achats : le coût moyen se met à jour à chaque réception.',
+    ],
+    categories: [
+      { name: 'Matières et intrants', items: [
+        { name: 'Olives', unit: 'kg', cost: 2.2, lots: true }, { name: 'Bouteille en verre 75 cl', cost: 1.1 },
+        { name: 'Carton d’emballage', cost: 1.5 }, { name: 'Engrais', unit: 'sac', cost: 85 },
+      ] },
+      { name: 'Produits finis', items: [
+        { name: 'Huile d’olive vierge extra 1 l', unit: 'bouteille', cost: 18, margin: 30, lots: true }, { name: 'Dattes Deglet Nour 1 kg', unit: 'boîte', cost: 9, margin: 40, lots: true },
+        { name: 'Harissa 380 g', unit: 'bocal', cost: 2.4, margin: 45, lots: true }, { name: 'Miel 500 g', unit: 'pot', cost: 14, margin: 40, lots: true },
+      ] },
+      { name: 'Travail à façon', items: [
+        { name: 'Trituration à façon', unit: 'kg', price: 0.25, kind: 'service' }, { name: 'Conditionnement à façon', unit: 'unité', price: 0.4, kind: 'service' },
+      ] },
+    ],
+  },
+  {
+    code: 'automotive', name: 'Automobile et pièces détachées', nameEn: 'Automotive and spare parts', nameAr: 'السيارات وقطع الغيار',
+    description: 'Magasins de pièces, garages et ateliers : références, stock, devis de réparation et main-d’œuvre.',
+    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'hr', 'objectives'],
+    recommendations: [
+      'Saisissez la référence constructeur dans le code de l’article : la recherche retrouve la pièce par sa référence ou par son nom.',
+      'Créez la main-d’œuvre (heure d’atelier, diagnostic) comme prestation : elle s’ajoute aux pièces sur le devis et la facture.',
+      'Fixez un seuil d’alerte sur les pièces à forte rotation (filtres, plaquettes, huiles).',
+    ],
+    categories: [
+      { name: 'Pièces d’entretien', items: [
+        { name: 'Filtre à huile', cost: 9, margin: 60 }, { name: 'Filtre à air', cost: 14, margin: 55 }, { name: 'Plaquettes de frein (jeu)', unit: 'jeu', cost: 38, margin: 45 },
+        { name: 'Bougie d’allumage', cost: 7, margin: 70 }, { name: 'Courroie de distribution', cost: 55, margin: 40 },
+      ] },
+      { name: 'Lubrifiants et liquides', items: [
+        { name: 'Huile moteur 5W40 (5 l)', unit: 'bidon', cost: 78, margin: 25 }, { name: 'Liquide de refroidissement (5 l)', unit: 'bidon', cost: 16, margin: 50 },
+        { name: 'Liquide de frein (500 ml)', unit: 'flacon', cost: 9, margin: 60 },
+      ] },
+      { name: 'Pneus et batteries', items: [
+        { name: 'Pneu 195/65 R15', cost: 160, margin: 18 }, { name: 'Batterie 60 Ah', cost: 210, margin: 20 },
+      ] },
+      { name: 'Atelier', items: [
+        { name: 'Heure de main-d’œuvre', unit: 'heure', price: 35, kind: 'service' }, { name: 'Vidange', unit: 'forfait', price: 25, kind: 'service' },
+        { name: 'Diagnostic électronique', unit: 'forfait', price: 40, kind: 'service' },
+      ] },
+    ],
+  },
+  {
+    code: 'ecommerce', name: 'Vente en ligne', nameEn: 'Online sales', nameAr: 'البيع عبر الإنترنت',
+    description: 'Boutiques en ligne et vente sur les réseaux sociaux : commandes, stock, colis et retours.',
+    modules: [...BASE, 'stock', 'sales', 'orders', 'purchases', 'suppliers', 'logistics', 'objectives'],
+    recommendations: [
+      'Enregistrez chaque commande reçue (site, Facebook, Instagram, TikTok) : elle devient bon de livraison puis facture, sans ressaisie.',
+      'Créez vos transporteurs dans Logistique : chaque colis a son numéro de suivi et son statut de livraison.',
+      'Ajoutez la livraison comme prestation pour la facturer à part.',
+    ],
+    categories: [
+      { name: 'Mode', items: [
+        { name: 'Robe', cost: 45, margin: 80 }, { name: 'Ensemble', cost: 60, margin: 70 }, { name: 'Chaussures', unit: 'paire', cost: 55, margin: 65 }, { name: 'Sac', cost: 35, margin: 90 },
+      ] },
+      { name: 'Beauté et accessoires', items: [
+        { name: 'Coffret cadeau', cost: 28, margin: 75 }, { name: 'Parfum 50 ml', cost: 40, margin: 60 }, { name: 'Montre', cost: 50, margin: 80 },
+      ] },
+      { name: 'Livraison et services', items: [
+        { name: 'Livraison à domicile', unit: 'colis', price: 8, kind: 'service' }, { name: 'Emballage cadeau', unit: 'unité', price: 3, kind: 'service' },
+        { name: 'Frais de retour', unit: 'colis', price: 8, kind: 'service' },
+      ] },
+    ],
+  },
+  {
+    code: 'textile', name: 'Textile et habillement', nameEn: 'Textile and clothing', nameAr: 'النسيج والملابس',
+    description: 'Ateliers de confection, façonniers et marques : tissus, fournitures, ordres de fabrication et livraisons.',
+    modules: [...BASE, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
+    recommendations: [
+      'Créez un ordre de fabrication par modèle : la nomenclature (tissu, fil, boutons par pièce) sort du stock à chaque avancement.',
+      'Séparez tissus, fournitures et produits finis en catégories pour lire la valeur du stock par famille.',
+      'Facturez le travail à façon comme une prestation à la pièce.',
+    ],
+    categories: [
+      { name: 'Tissus', items: [
+        { name: 'Tissu coton', unit: 'm', cost: 7 }, { name: 'Tissu denim', unit: 'm', cost: 11 }, { name: 'Doublure', unit: 'm', cost: 3.5 },
+      ] },
+      { name: 'Fournitures', items: [
+        { name: 'Fil à coudre', unit: 'cône', cost: 4 }, { name: 'Boutons (100)', unit: 'lot', cost: 6 }, { name: 'Fermeture éclair', cost: 0.9 }, { name: 'Étiquettes (100)', unit: 'lot', cost: 8 },
+      ] },
+      { name: 'Produits finis', items: [
+        { name: 'Chemise', cost: 22, margin: 55 }, { name: 'Pantalon', cost: 28, margin: 50 }, { name: 'Tablier professionnel', cost: 12, margin: 60 },
+      ] },
+      { name: 'Travail à façon', items: [
+        { name: 'Confection à façon', unit: 'pièce', price: 5, kind: 'service' }, { name: 'Coupe', unit: 'pièce', price: 0.8, kind: 'service' },
+        { name: 'Repassage et emballage', unit: 'pièce', price: 0.6, kind: 'service' },
+      ] },
+    ],
+  },
+  {
+    code: 'beauty', name: 'Beauté et bien-être', nameEn: 'Beauty and wellness', nameAr: 'التجميل والعناية',
+    description: 'Salons de coiffure, instituts, spas et parfumeries : prestations, produits et caisse.',
+    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr', 'objectives'],
+    recommendations: [
+      'Créez vos soins et coupes comme prestations : ils s’encaissent à la caisse sans mouvement de stock.',
+      'Enregistrez chaque cliente comme client pour suivre ses visites et ses achats.',
+      'Suivez les lots des produits cosmétiques : les alertes signalent ceux qui approchent de leur date limite.',
+    ],
+    categories: [
+      { name: 'Coiffure', items: [
+        { name: 'Coupe femme', unit: 'prestation', price: 25, kind: 'service' }, { name: 'Brushing', unit: 'prestation', price: 15, kind: 'service' },
+        { name: 'Coloration', unit: 'prestation', price: 60, kind: 'service' }, { name: 'Coupe homme', unit: 'prestation', price: 12, kind: 'service' },
+      ] },
+      { name: 'Soins', items: [
+        { name: 'Soin du visage', unit: 'séance', price: 45, kind: 'service' }, { name: 'Manucure', unit: 'séance', price: 20, kind: 'service' },
+        { name: 'Hammam et gommage', unit: 'séance', price: 35, kind: 'service' },
+      ] },
+      { name: 'Produits', items: [
+        { name: 'Shampooing professionnel', cost: 18, margin: 60, lots: true }, { name: 'Sérum capillaire', cost: 22, margin: 70, lots: true }, { name: 'Vernis à ongles', cost: 6, margin: 100, lots: true },
+      ] },
+    ],
+  },
+  {
     code: 'other', name: 'Autre activité', nameEn: 'Other businesses', nameAr: 'نشاط آخر',
     description: 'Tous les modules sont proposés : gardez ceux qui vous servent.',
-    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
+    modules: [...BASE, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'logistics', 'production', 'hr', 'objectives'],
     recommendations: [
       'Commencez par la fiche société (Paramètres › Société & fiscalité) : elle alimente vos factures.',
       'Importez vos produits et clients depuis un fichier Excel ou CSV pour démarrer vite.',
@@ -244,24 +374,28 @@ export function basisFor(item: DefaultItem): string {
   return 'Coût d’achat d’exemple (matière ou ingrédient non revendu tel quel). Remplacez par votre coût réel.';
 }
 
+/**
+ * Formules proposées. Prix HORS TAXES en dinars, PROPOSÉS à l'administrateur (voir l'avertissement en tête de fichier) :
+ * l'annuel vaut dix mensualités (deux mois offerts). `modules: null` = tous les modules du secteur de la société.
+ */
 export const DEFAULT_PLANS = [
   {
     code: 'starter', name: 'Starter', sortOrder: 1, highlight: false, maxUsers: 3, priceMonthly: 49, priceAnnual: 490,
-    description: 'Pour démarrer : ventes, stock, facturation.',
-    modules: ['products', 'categories', 'stock', 'sales', 'pos', 'purchases', 'clients', 'suppliers', 'invoices', 'reports'],
-    features: ['Jusqu’à 3 utilisateurs', 'Ventes, caisse, achats et stock', 'Devis, factures et règlements', 'Rapports standard', 'Support par email'],
+    description: 'Pour démarrer : ventes, caisse, stock et facturation.',
+    modules: ['products', 'categories', 'stock', 'sales', 'pos', 'purchases', 'orders', 'clients', 'suppliers', 'invoices', 'reports'],
+    features: ['Jusqu’à 3 utilisateurs', 'Ventes, caisse, achats, commandes et stock', 'Devis, factures, avoirs et règlements', 'Fichier TEIF pour El Fatoora', 'Rapports, exports Excel et PDF', 'Support par email'],
   },
   {
     code: 'business', name: 'Business', sortOrder: 2, highlight: true, maxUsers: 10, priceMonthly: 99, priceAnnual: 990,
-    description: 'Tous les modules pour une PME qui grandit.',
+    description: 'Tous les modules de votre secteur pour une PME qui grandit.',
     modules: null,
-    features: ['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, paie et RH', 'Analyses et assistant IA', 'Support prioritaire'],
+    features: ['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, TVA et rapprochement bancaire', 'RH, congés et paie (CNSS, IRPP)', 'Logistique, production et objectifs', 'Analyses et assistant IA', 'Support prioritaire'],
   },
   {
-    code: 'enterprise', name: 'Enterprise', sortOrder: 3, highlight: false, maxUsers: null, priceMonthly: null, priceAnnual: null,
-    description: 'Multi-sites, besoins spécifiques, accompagnement dédié.',
+    code: 'enterprise', name: 'Enterprise', sortOrder: 3, highlight: false, maxUsers: null, priceMonthly: 249, priceAnnual: 2490,
+    description: 'Utilisateurs illimités et accompagnement dédié.',
     modules: null,
-    features: ['Utilisateurs illimités', 'Paramétrage sur mesure', 'Reprise de données accompagnée', 'Interlocuteur dédié'],
+    features: ['Utilisateurs illimités', 'Tous les modules de votre secteur', 'Mise en service et reprise de données accompagnées', 'Formation de vos équipes', 'Interlocuteur dédié', 'Paramétrage sur mesure (sur devis)'],
   },
 ];
 
@@ -279,7 +413,51 @@ export const DEFAULT_SERVICE_OFFERS = [
   { sectorCode: 'education', category: 'setup', name: 'Formation : inscriptions et mensualités', description: 'Catalogue de formations, échéanciers, relances.', price: 350, priceUnit: 'one_time' },
   { sectorCode: 'manufacturing', category: 'setup', name: 'Industrie : matières et produits finis', description: 'Catégories de stock, coûts, circuit d’achat.', price: 500, priceUnit: 'one_time' },
   { sectorCode: 'services', category: 'setup', name: 'Services : prestations et facturation', description: 'Catalogue d’honoraires, modèles de devis et de factures.', price: 300, priceUnit: 'one_time' },
+  ...newSectorOffersV2(),
 ];
 
-export const DEFAULT_PAYMENT_METHODS = ['bank_transfer', 'cash', 'cheque', 'd17'];
-export const PAYMENT_METHODS = ['bank_transfer', 'cash', 'cheque', 'd17', 'card', 'other'] as const;
+/** Prestations des secteurs ajoutés à la version 2 du catalogue (aussi utilisées par la mise à niveau des bases existantes). */
+export function newSectorOffersV2() {
+  return [
+    { sectorCode: 'agrifood', category: 'setup', name: 'Agroalimentaire : lots, fabrication et traçabilité', description: 'Suivi par lot, nomenclatures de transformation, inventaire initial.', price: 500, priceUnit: 'one_time' },
+    { sectorCode: 'automotive', category: 'setup', name: 'Automobile : références, stock et atelier', description: 'Reprise des références, seuils d’alerte, prestations d’atelier, caisse.', price: 400, priceUnit: 'one_time' },
+    { sectorCode: 'ecommerce', category: 'setup', name: 'Vente en ligne : commandes, colis et retours', description: 'Circuit commande → livraison → facture, transporteurs, frais de livraison.', price: 350, priceUnit: 'one_time' },
+    { sectorCode: 'textile', category: 'setup', name: 'Textile : nomenclatures et ordres de fabrication', description: 'Tissus et fournitures, nomenclature par modèle, travail à façon.', price: 500, priceUnit: 'one_time' },
+    { sectorCode: 'beauty', category: 'setup', name: 'Beauté : prestations, produits et caisse', description: 'Carte des prestations, produits en vente, sessions de caisse.', price: 300, priceUnit: 'one_time' },
+  ] as Array<{ sectorCode: string | null; category: string; name: string; description: string; price: number | null; priceUnit: string }>;
+}
+
+/**
+ * Moyens de paiement d'un abonnement (déclaration du client, validation par l'administrateur).
+ *  - bank_transfer : virement bancaire        - d17 : application D17 de La Poste        - flouci : portefeuille Flouci
+ *  - edinar : carte e-Dinar                   - postal : mandat minute (La Poste)        - cheque, cash
+ *  - card : carte bancaire, par le lien de paiement en ligne renseigné dans les réglages (platform_settings.paymentLink)
+ */
+export const PAYMENT_METHODS = ['bank_transfer', 'd17', 'flouci', 'edinar', 'postal', 'cheque', 'cash', 'card', 'other'] as const;
+export const DEFAULT_PAYMENT_METHODS = ['bank_transfer', 'd17', 'flouci', 'cheque', 'cash'];
+
+/**
+ * Contenu de départ de la VERSION 1 : sert uniquement à reconnaître, dans une base déjà installée, ce que
+ * l'administrateur n'a pas modifié. Une valeur encore identique à celle-ci est mise à niveau ; toute autre est conservée.
+ */
+const BASE_V1 = ['products', 'categories', 'clients', 'invoices', 'finance', 'reports', 'analytics', 'ai'];
+export const CATALOG_V1 = {
+  sectorModules: {
+    commerce: [...BASE_V1, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'objectives'],
+    wholesale: [...BASE_V1, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
+    healthcare: [...BASE_V1, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr'],
+    construction: [...BASE_V1, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
+    education: [...BASE_V1, 'sales', 'hr', 'objectives'],
+    restaurant: [...BASE_V1, 'stock', 'sales', 'pos', 'purchases', 'suppliers', 'hr'],
+    logistics: [...BASE_V1, 'logistics', 'sales', 'orders', 'purchases', 'suppliers', 'hr', 'objectives'],
+    manufacturing: [...BASE_V1, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
+    services: [...BASE_V1, 'sales', 'hr', 'objectives'],
+    other: [...BASE_V1, 'stock', 'sales', 'pos', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'],
+  } as Record<string, string[]>,
+  plans: {
+    starter: { priceMonthly: 49, priceAnnual: 490, maxUsers: 3, features: ['Jusqu’à 3 utilisateurs', 'Ventes, caisse, achats et stock', 'Devis, factures et règlements', 'Rapports standard', 'Support par email'] },
+    business: { priceMonthly: 99, priceAnnual: 990, maxUsers: 10, features: ['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, paie et RH', 'Analyses et assistant IA', 'Support prioritaire'] },
+    enterprise: { priceMonthly: null, priceAnnual: null, maxUsers: null, features: ['Utilisateurs illimités', 'Paramétrage sur mesure', 'Reprise de données accompagnée', 'Interlocuteur dédié'] },
+  } as Record<string, { priceMonthly: number | null; priceAnnual: number | null; maxUsers: number | null; features: string[] }>,
+  paymentMethods: ['bank_transfer', 'cash', 'cheque', 'd17'],
+};

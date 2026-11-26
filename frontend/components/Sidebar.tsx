@@ -292,7 +292,7 @@ interface NavGroup {
 const NAV_GROUPS: Array<{ id: string; label: string; items: string[] }> = [
   { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "pos", "pos-sessions"] },
   { id: "procurement", label: "nav.groups.procurement", items: ["purchases", "suppliers"] },
-  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics"] },
+  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics", "production"] },
   { id: "finance",     label: "nav.groups.finance",     items: ["finance", "accounting", "hr"] },
   { id: "insights",    label: "nav.groups.insights",    items: ["reports", "business-reports", "analytics", "objectives", "ai"] },
   { id: "account",     label: "nav.groups.account",     items: ["profile", "billing", "settings"] },
@@ -463,6 +463,7 @@ export default function Sidebar() {
     { id: "finance",    path: "/dashboard/finance",    label: "common.finance",    iconKey: "finance" },
     { id: "accounting", gate: "finance", path: "/dashboard/accounting", label: "nav.accounting", iconKey: "finance" },
     { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" },
+    { id: "production", path: "/dashboard/production", label: "common.production", iconKey: "production" },
     { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },
     { id: "reports",    path: "/dashboard/reports",    label: "common.reports",    iconKey: "reports" },
     { id: "business-reports", gate: "reports", path: "/dashboard/reports/business", label: "nav.businessReports", iconKey: "reports" },

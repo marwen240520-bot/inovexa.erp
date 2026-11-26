@@ -33,6 +33,20 @@ export class GoogleAuthDto {
   @IsOptional() @IsString() @MaxLength(10) otp?: string;
 }
 
+export class AppleAuthDto {
+  /** Jeton d'identité remis par Apple au navigateur (JWT « id_token »). */
+  @IsString() @MinLength(20) @MaxLength(4096) identityToken: string;
+  /** login = se connecter ; register = créer la société si aucun compte n'existe pour cet identifiant. */
+  @IsOptional() @IsIn(['login', 'register']) intent?: 'login' | 'register';
+  /** Nom communiqué par Apple au navigateur à la première autorisation (absent ensuite) : affichage seulement. */
+  @IsOptional() @IsString() @MaxLength(120) name?: string;
+  @IsOptional() @IsString() @MaxLength(160) companyName?: string;
+  @IsOptional() @IsString() @MaxLength(40) sector?: string;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @IsOptional() @IsBoolean() acceptTerms?: boolean;
+  @IsOptional() @IsString() @MaxLength(10) otp?: string;
+}
+
 export class VerifyEmailDto {
   @IsEmail({}, { message: 'Email invalide' }) email: string;
   @IsString() @MinLength(20) @MaxLength(200) token: string;

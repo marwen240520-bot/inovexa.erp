@@ -219,3 +219,64 @@
   .st-btn { transition: none; }
   .st-btn:hover { transform: none; }
 }
+
+/* ── Blocs tirés du catalogue de l'ERP (pages Produits et Tarifs) ── */
+.st-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.st-section[id], .st-sector, .st-mod { scroll-margin-top: 92px; }
+
+.st-modgroups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 0 0 22px; align-items: start; }
+.st-modcol { display: grid; gap: 20px; min-width: 0; }
+.st-modgroup { padding: 24px; border-radius: var(--st-radius); background: var(--st-surface); border: 1px solid var(--st-glass-border); box-shadow: var(--st-shadow); }
+.st-modgroup-title { margin: 0 0 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--st-accent); }
+.st-mods { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.st-mod { display: flex; gap: 14px; align-items: flex-start; }
+.st-mod-ico { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: var(--st-soft); color: var(--st-accent); }
+.st-mod h4 { margin: 0 0 2px; font-size: 16px; font-weight: 700; line-height: 1.3; }
+.st-mod p { margin: 0; color: var(--st-muted); font-size: 14.5px; line-height: 1.55; }
+
+.st-sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; margin: 0 0 22px; }
+.st-sector { display: flex; flex-direction: column; padding: 22px; border-radius: var(--st-radius); background: var(--st-surface); border: 1px solid var(--st-glass-border); box-shadow: var(--st-shadow); }
+.st-sector:target { outline: 2px solid var(--st-accent); outline-offset: 3px; }
+.st-sector header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.st-sector-ico { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; background: var(--st-btn); color: #fff; }
+.st-sector h3 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; }
+.st-sector > p { color: var(--st-muted); font-size: 14.5px; margin-bottom: 12px; }
+.st-sector .st-sector-label { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--st-muted); }
+.st-sector-mods { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.st-sector-mods li { padding: 3px 10px; border-radius: 999px; background: var(--st-soft); font-size: 12.5px; font-weight: 600; color: var(--st-text); }
+.st-sector-cta { margin-top: auto; font-size: 14.5px; font-weight: 700; text-decoration: none; }
+.st-sector-cta:hover { text-decoration: underline; }
+
+.st-matrix th[scope="row"] { text-align: left; font-weight: 600; }
+.st-matrix .st-matrix-plan, .st-matrix .st-matrix-cell { text-align: center; width: 17%; }
+.st-matrix .st-matrix-cell.is-on { color: var(--st-accent); font-weight: 800; }
+.st-matrix .st-matrix-cell.is-off { color: #9a9dc0; }
+.st-matrix .st-matrix-group th { text-align: left; background: var(--st-soft); font-size: 12.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--st-accent); }
+
+.st-live { margin: 0 0 8px; }
+.st-cycle { display: inline-flex; margin: 0 0 30px; padding: 4px; border-radius: 999px; background: var(--st-surface); border: 1px solid var(--st-glass-border); box-shadow: 0 4px 14px rgba(62, 84, 190, 0.1); }
+.st-cycle button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 18px; border: none; border-radius: 999px; background: transparent; color: var(--st-muted); font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+.st-cycle button.is-on { background: var(--st-btn); color: #fff; }
+.st-save { display: inline-flex; padding: 2px 9px; border-radius: 999px; background: #d9f7e8; color: #06683f; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.st-live .st-plan-desc { min-height: 3.2em; }
+.st-live-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 4px 0 0 !important; }
+.st-live-price strong { font-family: var(--font-poppins), sans-serif; font-size: clamp(30px, 3.4vw, 38px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--st-text); }
+.st-live-price span { color: var(--st-muted); font-size: 14px; font-weight: 600; }
+.st-live-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 26px; margin: 4px 0 14px !important; color: var(--st-muted); font-size: 13.5px; }
+.st-live .st-plan .st-btn { margin: 0 0 20px; }
+
+.st-steps { list-style: none; margin: 0 0 22px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; counter-reset: none; }
+.st-step { position: relative; padding: 24px 22px 22px; border-radius: var(--st-radius); background: var(--st-surface); border: 1px solid var(--st-glass-border); box-shadow: var(--st-shadow); }
+.st-step-n { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; margin-bottom: 12px; border-radius: 50%; background: var(--st-btn); color: #fff; font-weight: 800; font-size: 15px; }
+.st-step h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; line-height: 1.3; }
+.st-step p { margin: 0; color: var(--st-muted); font-size: 14.5px; }
+.st-paychips { margin: 0 0 18px; }
+
+@media (max-width: 860px) {
+  .st-modgroups { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .st-cycle { display: flex; }
+  .st-cycle button { flex: 1; justify-content: center; padding: 6px 10px; }
+  .st-matrix .st-matrix-plan, .st-matrix .st-matrix-cell { width: auto; }
+}

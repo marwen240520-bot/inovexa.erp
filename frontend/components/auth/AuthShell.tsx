@@ -46,6 +46,20 @@ const UI_FR = {
   alreadyVerified: "Cette adresse email est déjà confirmée.",
   verifyHelp: "Connectez-vous pour demander un nouveau lien de confirmation.",
   accountLabel: "Compte :",
+  appleUnavailable: "La connexion avec Apple n’est pas disponible pour le moment.",
+  socialReady: "Compte {provider} reconnu : {email}. Complétez les informations de votre société pour démarrer l’essai gratuit.",
+  socialReadyNoEmail: "Compte {provider} reconnu. Complétez les informations de votre société pour démarrer l’essai gratuit.",
+  socialExpired: "La validation {provider} a expiré : cliquez de nouveau sur le bouton.",
+  continueWith: "Continuer avec {provider}",
+  optionalMark: "(facultatif)",
+  loginTitle: "Connectez-vous",
+  loginWelcome: "Accédez à votre espace de gestion.",
+  loggingIn: "Connexion…",
+  remember: "Se souvenir de moi",
+  secure: "Connexion sécurisée",
+  emailPlaceholder: "exemple@societe.tn",
+  checking: "Vérification de votre session…",
+  planChosen: "Formule choisie : {plan}. Vous la confirmerez à la fin de l’essai.",
 };
 
 export type AuthUi = typeof UI_FR;
@@ -82,6 +96,20 @@ const UI_EN: AuthUi = {
   alreadyVerified: "This email address is already confirmed.",
   verifyHelp: "Sign in to request a new confirmation link.",
   accountLabel: "Account:",
+  appleUnavailable: "Apple sign-in is not available right now.",
+  socialReady: "{provider} account recognised: {email}. Complete your company details to start the free trial.",
+  socialReadyNoEmail: "{provider} account recognised. Complete your company details to start the free trial.",
+  socialExpired: "The {provider} confirmation has expired: click the button again.",
+  continueWith: "Continue with {provider}",
+  optionalMark: "(optional)",
+  loginTitle: "Sign in",
+  loginWelcome: "Access your management workspace.",
+  loggingIn: "Signing in…",
+  remember: "Remember me",
+  secure: "Secure sign-in",
+  emailPlaceholder: "example@company.tn",
+  checking: "Checking your session…",
+  planChosen: "Chosen plan: {plan}. You will confirm it at the end of the trial.",
 };
 
 const UI_ES: AuthUi = {
@@ -116,6 +144,20 @@ const UI_ES: AuthUi = {
   alreadyVerified: "Este correo electrónico ya está confirmado.",
   verifyHelp: "Inicie sesión para solicitar un nuevo enlace de confirmación.",
   accountLabel: "Cuenta:",
+  appleUnavailable: "El acceso con Apple no está disponible por el momento.",
+  socialReady: "Cuenta de {provider} reconocida: {email}. Complete los datos de su empresa para empezar la prueba gratuita.",
+  socialReadyNoEmail: "Cuenta de {provider} reconocida. Complete los datos de su empresa para empezar la prueba gratuita.",
+  socialExpired: "La validación de {provider} ha caducado: pulse de nuevo el botón.",
+  continueWith: "Continuar con {provider}",
+  optionalMark: "(opcional)",
+  loginTitle: "Inicie sesión",
+  loginWelcome: "Acceda a su espacio de gestión.",
+  loggingIn: "Iniciando sesión…",
+  remember: "Recordarme",
+  secure: "Conexión segura",
+  emailPlaceholder: "ejemplo@empresa.tn",
+  checking: "Comprobando su sesión…",
+  planChosen: "Plan elegido: {plan}. Lo confirmará al final de la prueba.",
 };
 
 const UI_AR: AuthUi = {
@@ -150,6 +192,20 @@ const UI_AR: AuthUi = {
   alreadyVerified: "هذا البريد الإلكتروني مؤكَّد من قبل.",
   verifyHelp: "سجّل دخولك لطلب رابط تأكيد جديد.",
   accountLabel: "الحساب:",
+  appleUnavailable: "تسجيل الدخول بحساب Apple غير متاح حاليًا.",
+  socialReady: "تم التعرّف على حساب {provider}: {email}. أكمل معلومات شركتك لبدء التجربة المجانية.",
+  socialReadyNoEmail: "تم التعرّف على حساب {provider}. أكمل معلومات شركتك لبدء التجربة المجانية.",
+  socialExpired: "انتهت صلاحية تأكيد {provider}: اضغط على الزر من جديد.",
+  continueWith: "المتابعة بحساب {provider}",
+  optionalMark: "(اختياري)",
+  loginTitle: "سجّل دخولك",
+  loginWelcome: "ادخل إلى فضاء الإدارة الخاص بك.",
+  loggingIn: "جارٍ تسجيل الدخول…",
+  remember: "تذكّرني",
+  secure: "اتصال آمن",
+  emailPlaceholder: "example@company.tn",
+  checking: "جارٍ التحقق من جلستك…",
+  planChosen: "الباقة المختارة: {plan}. ستؤكّدها عند نهاية التجربة.",
 };
 
 const AUTH_UI: Record<string, AuthUi> = { fr: UI_FR, en: UI_EN, es: UI_ES, ar: UI_AR };
@@ -210,6 +266,26 @@ const SERVER_TEXTS: Record<string, { en: string; es: string; ar: string }> = {
     es: "Esta cuenta está vinculada a otra cuenta de Google.",
     ar: "هذا الحساب مرتبط بحساب Google آخر.",
   },
+  "Jeton Apple invalide ou expiré. Réessayez.": {
+    en: "Invalid or expired Apple sign-in. Try again.",
+    es: "Acceso con Apple no válido o caducado. Inténtelo de nuevo.",
+    ar: "تسجيل الدخول بحساب Apple غير صالح أو انتهت صلاحيته. أعد المحاولة.",
+  },
+  "Ce compte est relié à un autre identifiant Apple.": {
+    en: "This account is linked to another Apple ID.",
+    es: "Esta cuenta está vinculada a otro ID de Apple.",
+    ar: "هذا الحساب مرتبط بمعرّف Apple آخر.",
+  },
+  "Votre adresse email n'a pas été communiquée : autorisez son partage, ou créez votre compte avec votre email.": {
+    en: "Your email address was not shared: allow sharing it, or create your account with your email.",
+    es: "No se ha compartido su correo: permita compartirlo o cree su cuenta con su correo.",
+    ar: "لم يتم إرسال بريدك الإلكتروني: اسمح بمشاركته أو أنشئ حسابك ببريدك الإلكتروني.",
+  },
+  "Choisissez votre secteur d'activité dans la liste.": {
+    en: "Choose your business sector from the list.",
+    es: "Elija su sector de actividad en la lista.",
+    ar: "اختر قطاع نشاطك من القائمة.",
+  },
 };
 
 /** Apostrophes typographiques et espaces ramenés à une forme unique avant de chercher un message connu. */
@@ -228,6 +304,9 @@ export function serverText(message: string, language: string): string {
  * Ce qu'une page garde en mémoire après un échec : la cause, pas la phrase. Le texte est calculé à l'affichage,
  * donc il suit la langue si la personne en change alors que le message est à l'écran.
  */
+/** Messages du contrôle de saisie de l'API (« email must be an email », « property x should not exist »…). */
+const TECHNICAL_MESSAGE = /\b(must be|must match|must contain|should not|is not allowed|Bad Request|Unexpected token)\b/i;
+
 export type AuthProblem =
   | { kind: "failure"; status: number; message: string }
   | { kind: "ui"; key: keyof AuthUi }
@@ -261,6 +340,8 @@ export function useAuthTexts() {
         const minutes = /(\d+)\s*min/.exec(problem.message);
         return minutes ? fill(ui.tooManyMinutes, { minutes: minutes[1] }) : ui.tooMany;
       }
+      // Refus technique du contrôle de saisie de l'API (texte anglais, destiné au développeur) : jamais montré tel quel.
+      if (TECHNICAL_MESSAGE.test(problem.message)) return options.fallback || ui.genericError;
       return serverText(problem.message, language) || options.fallback || ui.genericError;
     },
     [ui, tx, language],

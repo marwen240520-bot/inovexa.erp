@@ -19,8 +19,18 @@ export default function SiteFooter({ lang }: { lang: SiteLang }) {
     { href: "/blog", label: t("footer.blog") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("footer.contact") },
+    { href: "/auth/login", label: t("cta.signIn") },
+    { href: "/auth/register", label: t("cta.createAccount") },
   ];
-  const industries = ["manufacturing", "retail", "distribution", "healthcare", "professionalServices", "agribusiness"];
+  // Chaque secteur renvoie à sa fiche sur la page Produits (ancres « sector-<code> » du catalogue).
+  const industries = [
+    { key: "manufacturing", sector: "manufacturing" },
+    { key: "retail", sector: "commerce" },
+    { key: "distribution", sector: "wholesale" },
+    { key: "healthcare", sector: "healthcare" },
+    { key: "professionalServices", sector: "services" },
+    { key: "agribusiness", sector: "agrifood" },
+  ];
 
   return (
     <footer className="st-footer">
@@ -56,9 +66,9 @@ export default function SiteFooter({ lang }: { lang: SiteLang }) {
         <nav aria-label={t("footer.industries")}>
           <h2 className="st-footer-title">{t("footer.industries")}</h2>
           <ul>
-            {industries.map((key) => (
+            {industries.map(({ key, sector }) => (
               <li key={key}>
-                <Link href="/products">{t("footer." + key)}</Link>
+                <Link href={`/products#sector-${sector}`}>{t("footer." + key)}</Link>
               </li>
             ))}
           </ul>

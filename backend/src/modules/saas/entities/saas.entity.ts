@@ -32,6 +32,13 @@ export class PlatformSettings {
   @Column({ type: 'jsonb', nullable: true })
   paymentMethods: string[] | null;
 
+  /**
+   * Lien de paiement en ligne par carte (page de paiement de votre prestataire : Konnect, Flouci, Paymee, ClicToPay…).
+   * Affiché au client quand il choisit « Carte bancaire » ; il y règle puis déclare la référence de la transaction.
+   */
+  @Column({ type: 'varchar', length: 300, nullable: true })
+  paymentLink: string | null;
+
   @Column({ type: 'varchar', length: 160, nullable: true })
   supportEmail: string | null;
 
@@ -52,6 +59,10 @@ export class PlatformSettings {
   /** Les formules, secteurs et prestations par défaut ont déjà été créés (ne pas les recréer si on les supprime). */
   @Column({ default: false })
   defaultsSeeded: boolean;
+
+  /** Version du contenu de départ déjà reportée dans cette base (voir CATALOG_VERSION dans saas-defaults.ts). */
+  @Column({ type: 'int', default: 1 })
+  catalogVersion: number;
 
   @UpdateDateColumn()
   updatedAt: Date;
@@ -149,7 +160,7 @@ export class SubscriptionPayment {
   @Column({ type: 'varchar', length: 3, default: 'TND' })
   currency: string;
 
-  /** bank_transfer | cash | cheque | d17 | card | other */
+  /** bank_transfer | d17 | flouci | edinar | postal | cheque | cash | card | other */
   @Column({ type: 'varchar', length: 20 })
   method: string;
 

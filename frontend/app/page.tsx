@@ -1,316 +1,64 @@
 ﻿"use client";
-import React from "react";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+// app/page.tsx — page d'accueil.
+//
+// Une page qui défile : premier écran (image, titre, essai gratuit), puis pourquoi Inovexa ERP, les modules, les
+// secteurs, le démarrage en trois étapes, les formules et un dernier appel à l'essai.
+// L'en-tête est celui des pages publiques (components/site/SiteHeader) : il garde sa place en haut de l'écran et
+// ne recouvre pas le contenu. Textes en français, anglais, espagnol et arabe (components/home/homeTexts.ts) ;
+// modules, secteurs et formules viennent du catalogue commun (lib/catalog.ts).
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SiteHeader from "@/components/site/SiteHeader";
-import { useResponsive } from "@/hooks/useResponsive";
-import { Poppins, Orbitron } from "next/font/google";
+import { ModuleIcon, MODULE_ICON_PATHS, type ModuleIconKey } from "@/components/site/ModuleIcon";
+import { SectorIcon } from "@/components/site/SectorIcon";
+import { HOME_TEXTS, fillText, type HomeLang } from "@/components/home/homeTexts";
+import { ALL_MODULES, MODULE_GROUPS, MODULE_INFO, SECTORS, pick, trialLabel } from "@/lib/catalog";
+import { usePublicOffer, twoMonthsFree } from "@/lib/publicOffer";
+import { formatPrice } from "@/lib/saas";
+import { getStoredUser, getToken, homeFor } from "@/lib/session";
 
-// ─── Polices ──────────────────────────────────────────────────────────────────
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-poppins",
-});
+const HOME_LANGS: HomeLang[] = ["fr", "en", "es", "ar"];
+/** Répartition des groupes de modules (lib/catalog.ts › MODULE_GROUPS) sur deux colonnes. */
+const GROUP_COLUMNS: string[][] = [["commercial", "insights"], ["supply", "finance"]];
+const BG_IMAGE = "/images/3.png";
 
-const orbitron = Orbitron({
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
-  display: "swap",
-  variable: "--font-orbitron",
-});
-
-// ─── Icônes SVG ────────────────────────────────────────────────────────────────
-type IconProps = { size?: number | string; color?: string };
-const svgBase = (size: number | string, color: string, strokeWidth = "2") => ({
-  width: size,
-  height: size,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: color,
-  strokeWidth,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true,
-  focusable: "false" as const,
-});
-
-const IconTarget = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /></svg>
+// ─── Icônes ────────────────────────────────────────────────────────────────────
+const stroke = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true, focusable: "false" as const };
+const IconArrow = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" strokeWidth="2.5" {...stroke}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
 );
-const IconBarChart = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+const IconCheck = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" strokeWidth="2.8" {...stroke}><polyline points="20 6 9 17 4 12" /></svg>
 );
-const IconShield = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-);
-const IconUsers = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color)}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-);
-const IconArrowRight = ({ size = "1.1em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.5")}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-);
-const IconCheck = ({ size = 13, color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.5")}><polyline points="20 6 9 17 4 12" /></svg>
-);
-const IconClose = ({ size = 18, color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "2.5")}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-);
-// Étincelles « IA » de la carte mise en avant
-const IconSparkles = ({ size = "1.35em", color = "currentColor" }: IconProps) => (
-  <svg {...svgBase(size, color, "1.8")}>
-    <path d="M11 4 Q12.5 10.5 19 12 Q12.5 13.5 11 20 Q9.5 13.5 3 12 Q9.5 10.5 11 4 Z" fill={color} />
+const IconSparkles = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" strokeWidth="1.8" {...stroke}>
+    <path d="M11 4 Q12.5 10.5 19 12 Q12.5 13.5 11 20 Q9.5 13.5 3 12 Q9.5 10.5 11 4 Z" fill="currentColor" />
     <path d="M19 2.5v4M17 4.5h4" />
     <path d="M19.5 17v3M18 18.5h3" />
   </svg>
 );
-
-// ─── Types & constantes ────────────────────────────────────────────────────────
-type Lang = "fr" | "en" | "es" | "ar";
-
-interface AboutSection {
-  title: string;
-  body: string;
-  items?: string[];
-}
-
-interface AboutContent {
-  headline: string;
-  intro: string[];
-  sections: AboutSection[];
-  ctaLabel: string;
-  ctaHref: string;
-  emailLabel: string;
-  email: string;
-}
-
-interface HomeText {
-  title: string;
-  modules: string;
-  subtitle: string;
-  button: string;
-  login: string;
-  aboutBtn: string;
-  aboutClose: string;
-  aboutBadge: string;
-  aboutContent: AboutContent;
-  copyright: string;
-  privacy: string;
-  terms: string;
-  langLabel: string;
-  ai: { title: string; badge: string; desc: string };
-  features: { title: string; desc: string }[];
-}
-
-const FEATURE_ICONS = [IconTarget, IconBarChart, IconShield, IconUsers];
-
-// Pages publiques de l'application (dossier app/(site)) : liens du menu de l'en-tête.
-const SITE_LINKS: Record<Lang, { href: string; label: string }[]> = {
-  fr: [
-    { href: "/products", label: "Produits" },
-    { href: "/pricing", label: "Tarifs" },
-    { href: "/blog", label: "Blog" },
-    { href: "/about", label: "À propos" },
-    { href: "/contact", label: "Contact" },
-  ],
-  en: [
-    { href: "/products", label: "Products" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/blog", label: "Blog" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-  ],
-  es: [
-    { href: "/products", label: "Productos" },
-    { href: "/pricing", label: "Precios" },
-    { href: "/blog", label: "Blog" },
-    { href: "/about", label: "Nosotros" },
-    { href: "/contact", label: "Contacto" },
-  ],
-  ar: [
-    { href: "/products", label: "المنتجات" },
-    { href: "/pricing", label: "الأسعار" },
-    { href: "/blog", label: "المدونة" },
-    { href: "/about", label: "من نحن" },
-    { href: "/contact", label: "اتصل بنا" },
-  ],
-};
-
-// Libellés de l'en-tête commun (components/site/SiteHeader) dans les langues de la page d'accueil.
-const HEADER_TEXT: Record<Lang, { home: string; demo: string }> = {
-  fr: { home: "Accueil", demo: "Réserver une démo" },
-  en: { home: "Home", demo: "Book Demo" },
-  es: { home: "Inicio", demo: "Reservar demo" },
-  ar: { home: "الرئيسية", demo: "احجز عرضًا تجريبيًا" },
-};
-
-const BG_IMAGE = "/images/3.png";
+const IconTarget = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" strokeWidth="2" {...stroke}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /></svg>
+);
+const IconBars = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" strokeWidth="2" {...stroke}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+);
+const IconShield = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" strokeWidth="2" {...stroke}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>
+);
+const IconFlag = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" strokeWidth="2" {...stroke}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
+);
+const FEATURE_ICONS = [IconTarget, IconBars, IconShield, IconFlag];
 
 // ─── Orbite des modules (icônes posées sur l'image, nom au survol) ─────────────
-// Les positions sont exprimées en pixels de l'image de fond (1672 × 941).
-// La couche .hp-orbit-box reproduit le cadrage « object-fit: cover » de .hp-bg-img
-// (object-position: 100% 55%) : les icônes restent collées au portable quelle que soit la taille d'écran.
-type ModuleKey =
-  | "dashboard" | "products" | "categories" | "stock" | "pos" | "sales" | "purchases" | "orders" | "invoices"
-  | "clients" | "suppliers" | "objectives" | "hr" | "finance" | "production" | "logistics" | "shipments"
-  | "reports" | "analytics" | "ai";
-
-const MODULE_ICONS: Record<ModuleKey, React.ReactNode> = {
-  dashboard: (
-    <>
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </>
-  ),
-  products: (
-    <>
-      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-      <line x1="12" y1="22.08" x2="12" y2="12" />
-    </>
-  ),
-  categories: (
-    <>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      <line x1="9" y1="9" x2="15" y2="9" /><line x1="9" y1="13" x2="12" y2="13" />
-    </>
-  ),
-  stock: (
-    <>
-      <line x1="18" y1="20" x2="18" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" />
-      <line x1="2" y1="20" x2="22" y2="20" />
-    </>
-  ),
-  pos: (
-    <>
-      <rect x="4" y="2" width="16" height="20" rx="2" />
-      <rect x="8" y="6" width="8" height="4" rx="1" />
-      <line x1="8" y1="14" x2="8.01" y2="14" /><line x1="12" y1="14" x2="12.01" y2="14" /><line x1="16" y1="14" x2="16.01" y2="14" />
-      <line x1="8" y1="18" x2="8.01" y2="18" /><line x1="12" y1="18" x2="16" y2="18" />
-    </>
-  ),
-  objectives: (
-    <>
-      <circle cx="12" cy="12" r="10" />
-      <circle cx="12" cy="12" r="6" />
-      <circle cx="12" cy="12" r="2" />
-    </>
-  ),
-  sales: (
-    <>
-      <line x1="12" y1="1" x2="12" y2="23" />
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-    </>
-  ),
-  purchases: (
-    <>
-      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
-    </>
-  ),
-  orders: (
-    <>
-      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-      <rect x="9" y="3" width="6" height="4" rx="1" />
-      <line x1="9" y1="12" x2="15" y2="12" />
-      <line x1="9" y1="16" x2="13" y2="16" />
-    </>
-  ),
-  clients: (
-    <>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </>
-  ),
-  suppliers: (
-    <>
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </>
-  ),
-  invoices: (
-    <>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <line x1="10" y1="9" x2="8" y2="9" />
-    </>
-  ),
-  hr: (
-    <>
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </>
-  ),
-  finance: (
-    <>
-      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-      <line x1="1" y1="10" x2="23" y2="10" />
-    </>
-  ),
-  logistics: (
-    <>
-      <rect x="1" y="3" width="15" height="13" rx="1" />
-      <path d="M16 8h4l3 5v3h-7V8z" />
-      <circle cx="5.5" cy="18.5" r="2.5" />
-      <circle cx="18.5" cy="18.5" r="2.5" />
-    </>
-  ),
-  production: (
-    <>
-      <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
-      <line x1="7" y1="18" x2="8" y2="18" />
-      <line x1="12" y1="18" x2="13" y2="18" />
-      <line x1="17" y1="18" x2="18" y2="18" />
-    </>
-  ),
-  ai: (
-    <>
-      <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-      <circle cx="9" cy="14" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="14" r="1" fill="currentColor" stroke="none" />
-    </>
-  ),
-  reports: (
-    <>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="8" y1="13" x2="16" y2="13" />
-      <line x1="8" y1="17" x2="12" y2="17" />
-    </>
-  ),
-  analytics: (
-    <>
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-    </>
-  ),
-  shipments: (
-    <>
-      <rect x="9" y="11" width="14" height="10" rx="1" />
-      <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
-      <circle cx="12" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-    </>
-  ),
-};
-
+// Les positions sont exprimées en pixels de l'image de fond (1672 × 941). La couche .hp-orbit-box reproduit le
+// cadrage « object-fit: cover » de .hp-bg-img (object-position: 100% 55%) : les icônes restent collées au portable
+// quelle que soit la taille de l'écran.
 const ORBIT_IMG_W = 1672;
 const ORBIT_IMG_H = 941;
-
-// Centre de chaque tuile, en pixels de l'image (arc intérieur puis arc extérieur)
-const ORBIT_ITEMS: { key: ModuleKey; x: number; y: number }[] = [
+const ORBIT_ITEMS: { key: ModuleIconKey; x: number; y: number }[] = [
   { key: "pos", x: 998.1, y: 428.9 },
   { key: "products", x: 1048.2, y: 367.7 },
   { key: "categories", x: 1110.6, y: 318.9 },
@@ -333,65 +81,27 @@ const ORBIT_ITEMS: { key: ModuleKey; x: number; y: number }[] = [
   { key: "production", x: 1616.1, y: 297.7 },
 ];
 
-const MODULE_LABELS: Record<Lang, Record<ModuleKey, string>> = {
-  fr: {
-    dashboard: "Tableau de bord", products: "Produits", categories: "Catégories", stock: "Inventaire",
-    pos: "Caisse rapide", sales: "Ventes", purchases: "Achats", orders: "Commandes", invoices: "Factures & devis",
-    clients: "Clients", suppliers: "Fournisseurs", objectives: "Objectifs", hr: "Ressources Humaines",
-    finance: "Finances", production: "Production", logistics: "Logistique", shipments: "Expéditions",
-    reports: "Rapports", analytics: "Analytique", ai: "Assistant IA",
-  },
-  en: {
-    dashboard: "Dashboard", products: "Products", categories: "Categories", stock: "Inventory",
-    pos: "Quick checkout", sales: "Sales", purchases: "Purchases", orders: "Orders", invoices: "Invoices & quotes",
-    clients: "Customers", suppliers: "Suppliers", objectives: "Objectives", hr: "Human Resources",
-    finance: "Finance", production: "Production", logistics: "Logistics", shipments: "Shipments",
-    reports: "Reports", analytics: "Analytics", ai: "AI Assistant",
-  },
-  es: {
-    dashboard: "Panel de control", products: "Productos", categories: "Categorías", stock: "Inventario",
-    pos: "Caja rápida", sales: "Ventas", purchases: "Compras", orders: "Pedidos", invoices: "Facturas y presupuestos",
-    clients: "Clientes", suppliers: "Proveedores", objectives: "Objetivos", hr: "Recursos Humanos",
-    finance: "Finanzas", production: "Producción", logistics: "Logística", shipments: "Envíos",
-    reports: "Informes", analytics: "Analítica", ai: "Asistente IA",
-  },
-  ar: {
-    dashboard: "لوحة القيادة", products: "المنتجات", categories: "الأصناف", stock: "المخزون",
-    pos: "الصندوق السريع", sales: "المبيعات", purchases: "المشتريات", orders: "الطلبيات", invoices: "الفواتير وعروض الأسعار",
-    clients: "العملاء", suppliers: "الموردون", objectives: "الأهداف", hr: "الموارد البشرية",
-    finance: "المالية", production: "الإنتاج", logistics: "اللوجستيك", shipments: "الشحنات",
-    reports: "التقارير", analytics: "التحليلات", ai: "المساعد الذكي",
-  },
-};
-
-const ORBIT_ARIA: Record<Lang, string> = {
-  fr: "Modules d'Inovexa ERP",
-  en: "Inovexa ERP modules",
-  es: "Módulos de Inovexa ERP",
-  ar: "وحدات Inovexa ERP",
-};
-
-function ModuleOrbit({ lang }: { lang: Lang }): React.ReactElement {
-  const labels = MODULE_LABELS[lang];
+function ModuleOrbit({ lang, label, shipments }: { lang: HomeLang; label: string; shipments: string }) {
+  const nameOf = (key: ModuleIconKey) => (key === "shipments" ? shipments : pick(MODULE_INFO[key].label, lang));
   return (
     <div className="hp-orbit">
       <div className="hp-orbit-box">
         <svg className="hp-orbit-lines" viewBox={`0 0 ${ORBIT_IMG_W} ${ORBIT_IMG_H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <defs>
             <linearGradient id="hp-orbit-icon-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-              <stop offset="0" style={{ stopColor: "var(--hp-orbit-icon-a)" }} />
-              <stop offset="1" style={{ stopColor: "var(--hp-orbit-icon-b)" }} />
+              <stop offset="0" stopColor="#7B5CFF" />
+              <stop offset="1" stopColor="#4B37E2" />
             </linearGradient>
             <linearGradient id="hp-orbit-line-in" gradientUnits="userSpaceOnUse" x1="982" y1="0" x2="1576" y2="0">
-              <stop offset="0" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0 }} />
-              <stop offset="0.12" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.85 }} />
-              <stop offset="0.88" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.85 }} />
-              <stop offset="1" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0 }} />
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+              <stop offset="0.12" stopColor="#ffffff" stopOpacity="0.85" />
+              <stop offset="0.88" stopColor="#ffffff" stopOpacity="0.85" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="hp-orbit-line-out" gradientUnits="userSpaceOnUse" x1="902" y1="0" x2="1659" y2="0">
-              <stop offset="0" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0 }} />
-              <stop offset="0.12" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.5 }} />
-              <stop offset="1" style={{ stopColor: "var(--hp-orbit-line)", stopOpacity: 0.5 }} />
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+              <stop offset="0.12" stopColor="#ffffff" stopOpacity="0.5" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity="0.5" />
             </linearGradient>
             <filter id="hp-orbit-glow" x="-5%" y="-5%" width="110%" height="110%">
               <feGaussianBlur stdDeviation="1.6" result="b" />
@@ -402,7 +112,7 @@ function ModuleOrbit({ lang }: { lang: Lang }): React.ReactElement {
           <path d="M 902.0 404.4 A 455 455 0 0 1 1658.5 344.9" fill="none" stroke="url(#hp-orbit-line-out)" strokeWidth="1.2" filter="url(#hp-orbit-glow)" />
         </svg>
 
-        <ul className="hp-orbit-list" aria-label={ORBIT_ARIA[lang]}>
+        <ul className="hp-orbit-list" aria-label={label}>
           {ORBIT_ITEMS.map((m, i) => (
             <li
               key={m.key}
@@ -411,10 +121,10 @@ function ModuleOrbit({ lang }: { lang: Lang }): React.ReactElement {
             >
               <span className="hp-orbit-tile">
                 <svg viewBox="0 0 24 24" fill="none" stroke="url(#hp-orbit-icon-grad)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-                  {MODULE_ICONS[m.key]}
+                  {MODULE_ICON_PATHS[m.key]}
                 </svg>
               </span>
-              <span className="hp-orbit-tip">{labels[m.key]}</span>
+              <span className="hp-orbit-tip">{nameOf(m.key)}</span>
             </li>
           ))}
         </ul>
@@ -423,690 +133,311 @@ function ModuleOrbit({ lang }: { lang: Lang }): React.ReactElement {
   );
 }
 
-const TRANSLATIONS: Record<Lang, HomeText> = {
-  fr: {
-    title: "L'avenir de la gestion d'entreprise commence ici.",
-    modules: "Ventes · Stock · Factures · RH · Finance et plus ...",
-    subtitle: "Avec Inovexa ERP, gérez toute votre entreprise depuis une seule plateforme",
-    button: "Accéder au Dashboard",
-    login: "Commencer maintenant",
-    aboutBtn: "À propos",
-    aboutClose: "Fermer",
-    aboutBadge: "Inovexa ERP — Next Generation ERP",
-    aboutContent: {
-      headline: "La gestion de votre entreprise, 100 % en ligne.",
-      intro: [
-        "Inovexa ERP est une solution de gestion d’entreprise basée sur le modèle SaaS, conçue pour centraliser, simplifier et optimiser vos opérations quotidiennes.",
-        "Grâce à une plateforme unique accessible via Internet, gérez vos stocks, ventes, achats, facturation, finances, ressources humaines et bien plus encore.",
-      ],
-      sections: [
-        {
-          title: "Notre mission",
-          body: "Accompagner les entreprises dans la digitalisation de leur gestion en proposant un environnement numérique qui facilite l’organisation des opérations et l’accès aux informations essentielles. Notre démarche vise une gestion plus structurée, favorisant la centralisation des données et la visibilité sur les activités.",
-        },
-        {
-          title: "Notre vision",
-          body: "Un environnement professionnel où les entreprises accèdent facilement à leurs données, organisent leurs processus et suivent leurs activités depuis un système de gestion intégré.",
-          items: [
-            "Digitalisation des processus métiers",
-            "Intégration des fonctions de gestion",
-            "Évolution technologique progressive",
-          ],
-        },
-        {
-          title: "Une solution ERP reposant sur le modèle SaaS",
-          body: "Inovexa ERP propose un environnement de gestion accessible via Internet depuis des appareils compatibles, selon les conditions d’accès applicables.",
-          items: [
-            "Accessibilité en ligne",
-            "Environnement de gestion centralisé",
-            "Approche modulaire",
-            "Évolution des besoins",
-            "Accès selon les autorisations",
-          ],
-        },
-        {
-          title: "Catalogue fonctionnel",
-          body: "Les modules couvrent l’ensemble des besoins opérationnels de l’entreprise :",
-          items: [
-            "Pilotage & tableau de bord",
-            "Produits, catégories et inventaire",
-            "Ventes, achats, commandes, caisse rapide",
-            "Clients, fournisseurs, factures",
-            "Finances et ressources humaines",
-            "Logistique, rapports et analytique",
-            "Assistant IA intégré",
-            "Profil et paramètres",
-          ],
-        },
-        {
-          title: "Les principes fondamentaux",
-          body: "Une approche structurée autour de la centralisation, de l’organisation et de la visibilité opérationnelle.",
-          items: [
-            "Centralisation des informations",
-            "Organisation des processus",
-            "Visibilité opérationnelle",
-            "Accessibilité en ligne",
-            "Assistance intelligente (IA)",
-            "Approche évolutive",
-          ],
-        },
-        {
-          title: "Secteurs d’activité",
-          body: "Inovexa ERP s’adresse notamment aux :",
-          items: [
-            "Commerces et distributeurs",
-            "Entreprises de services",
-            "Industries",
-            "Acteurs de la logistique",
-            "Entreprises en développement",
-          ],
-        },
-        {
-          title: "Sécurité & gestion des données",
-          body: "La protection repose sur la gestion des accès, l’authentification, la sécurisation des échanges et les procédures de maintenance. Les engagements précis sont présentés selon les dispositifs réellement déployés.",
-        },
-        {
-          title: "Notre engagement",
-          body: "Une approche orientée besoins, structurée autour de la clarté, l’organisation, l’accessibilité, l’adaptation, l’évolution et la transparence.",
-        },
-      ],
-      ctaLabel: "Découvrir notre solution",
-      ctaHref: "https://www.inovexa-erp.com/",
-      emailLabel: "Nous contacter",
-      email: "contact@inovexa.com",
-    },
-    copyright: "Tous droits réservés.",
-    privacy: "Confidentialité",
-    terms: "Conditions",
-    langLabel: "Choisir la langue",
-    ai: {
-      title: "Système intelligent",
-      badge: "IA intégrée",
-      desc: "Un assistant IA qui répond à vos questions à partir de vos propres données.",
-    },
-    features: [
-      { title: "Gestion centralisée", desc: "Tous vos processus métier réunis sur une seule plateforme." },
-      { title: "Pilotage intelligent", desc: "Transformez vos données en décisions stratégiques." },
-      { title: "Sécurité avancée", desc: "Une infrastructure conçue pour protéger vos données." },
-      { title: "Écosystème connecté", desc: "Connectez vos équipes et synchronisez vos activités pour une gestion plus fluide et efficace." },
-    ],
-  },
-  es: {
-    title: "El futuro de la gestión empresarial comienza aquí.",
-    modules: "Ventas · Stock · Facturas · RR. HH. · Finanzas y más ...",
-    subtitle: "Con Inovexa ERP, gestione toda su empresa desde una sola plataforma",
-    button: "Panel de Control",
-    login: "Empezar ahora",
-    aboutBtn: "Acerca de",
-    aboutClose: "Cerrar",
-    aboutBadge: "Inovexa ERP — Next Generation ERP",
-    aboutContent: {
-      headline: "La gestión de su empresa, 100 % en línea.",
-      intro: [
-        "Inovexa ERP es una solución de gestión empresarial basada en el modelo SaaS, diseñada para centralizar, simplificar y optimizar sus operaciones diarias.",
-        "Gracias a una plataforma única accesible a través de Internet, gestione sus existencias, ventas, compras, facturación, finanzas, recursos humanos y mucho más.",
-      ],
-      sections: [
-        {
-          title: "Nuestra misión",
-          body: "Acompañar a las empresas en la digitalización de su gestión ofreciendo un entorno digital que facilite la organización de las operaciones y el acceso a la información esencial.",
-        },
-        {
-          title: "Nuestra visión",
-          body: "Un entorno profesional donde las empresas accedan fácilmente a sus datos, organicen sus procesos y sigan sus actividades desde un sistema de gestión integrado.",
-          items: [
-            "Digitalización de los procesos de negocio",
-            "Integración de las funciones de gestión",
-            "Evolución tecnológica progresiva",
-          ],
-        },
-        {
-          title: "Una solución ERP basada en el modelo SaaS",
-          body: "Inovexa ERP ofrece un entorno de gestión accesible a través de Internet desde dispositivos compatibles, según las condiciones de acceso aplicables.",
-          items: [
-            "Accesibilidad en línea",
-            "Entorno de gestión centralizado",
-            "Enfoque modular",
-            "Evolución de las necesidades",
-            "Acceso según los permisos",
-          ],
-        },
-        {
-          title: "Catálogo funcional",
-          body: "Los módulos cubren todas las necesidades operativas de la empresa:",
-          items: [
-            "Pilotaje y panel de control",
-            "Productos, categorías e inventario",
-            "Ventas, compras, pedidos, caja rápida",
-            "Clientes, proveedores, facturas",
-            "Finanzas y recursos humanos",
-            "Logística, informes y analítica",
-            "Asistente de IA integrado",
-            "Perfil y parámetros",
-          ],
-        },
-        {
-          title: "Los principios fundamentales",
-          body: "Un enfoque estructurado en torno a la centralización, la organización y la visibilidad operativa.",
-          items: [
-            "Centralización de la información",
-            "Organización de los procesos",
-            "Visibilidad operativa",
-            "Accesibilidad en línea",
-            "Asistencia inteligente (IA)",
-            "Enfoque evolutivo",
-          ],
-        },
-        {
-          title: "Sectores de actividad",
-          body: "Inovexa ERP está dirigido en particular a:",
-          items: [
-            "Comercios y distribuidores",
-            "Empresas de servicios",
-            "Industrias",
-            "Actores de la logística",
-            "Empresas en desarrollo",
-          ],
-        },
-        {
-          title: "Seguridad y gestión de datos",
-          body: "La protección se basa en la gestión de accesos, la autenticación, la seguridad de los intercambios y los procedimientos de mantenimiento. Los compromisos precisos se presentan según los dispositivos realmente implementados.",
-        },
-        {
-          title: "Nuestro compromiso",
-          body: "Un enfoque orientado a las necesidades, estructurado en torno a la claridad, la organización, la accesibilidad, la adaptación, la evolución y la transparencia.",
-        },
-      ],
-      ctaLabel: "Descubra nuestra solución",
-      ctaHref: "https://www.inovexa-erp.com/",
-      emailLabel: "Contáctenos",
-      email: "contact@inovexa.com",
-    },
-    copyright: "Todos los derechos reservados.",
-    privacy: "Privacidad",
-    terms: "Términos",
-    langLabel: "Elegir idioma",
-    ai: {
-      title: "Sistema inteligente",
-      badge: "IA integrada",
-      desc: "Un asistente de IA que responde a sus preguntas a partir de sus propios datos.",
-    },
-    features: [
-      { title: "Gestión centralizada", desc: "Todos sus procesos de negocio reunidos en una sola plataforma." },
-      { title: "Pilotaje inteligente", desc: "Transforme sus datos en decisiones estratégicas." },
-      { title: "Seguridad avanzada", desc: "Una infraestructura diseñada para proteger sus datos." },
-      { title: "Ecosistema conectado", desc: "Conecte a sus equipos y sincronice sus actividades para una gestión más fluida y eficaz." },
-    ],
-  },
-  en: {
-    title: "The future of business management starts here.",
-    modules: "Sales · Stock · Invoices · HR · Finance and more ...",
-    subtitle: "With Inovexa ERP, run your entire business from a single platform",
-    button: "Go to Dashboard",
-    login: "Get Started Now",
-    aboutBtn: "About",
-    aboutClose: "Close",
-    aboutBadge: "Inovexa ERP — Next Generation ERP",
-    aboutContent: {
-      headline: "Your business management, 100% online.",
-      intro: [
-        "Inovexa ERP is a SaaS-based business management solution designed to centralize, simplify and optimize your daily operations.",
-        "With a single platform accessible over the Internet, manage your stock, sales, purchases, invoicing, finance, human resources and much more.",
-      ],
-      sections: [
-        {
-          title: "Our mission",
-          body: "Support companies in the digitalization of their management by providing a digital environment that facilitates the organization of operations and access to essential information.",
-        },
-        {
-          title: "Our vision",
-          body: "A professional environment where companies can easily access their data, organize their processes and track their activities through an integrated management system.",
-          items: [
-            "Digitalization of business processes",
-            "Integration of management functions",
-            "Progressive technological evolution",
-          ],
-        },
-        {
-          title: "An ERP solution based on the SaaS model",
-          body: "Inovexa ERP provides a management environment accessible over the Internet from compatible devices, subject to applicable access conditions.",
-          items: [
-            "Online accessibility",
-            "Centralized management environment",
-            "Modular approach",
-            "Evolving needs",
-            "Access based on permissions",
-          ],
-        },
-        {
-          title: "Functional catalog",
-          body: "The modules cover all the operational needs of the company:",
-          items: [
-            "Steering & dashboard",
-            "Products, categories and inventory",
-            "Sales, purchases, orders, quick checkout",
-            "Customers, suppliers, invoices",
-            "Finance and human resources",
-            "Logistics, reports and analytics",
-            "Built-in AI assistant",
-            "Profile and settings",
-          ],
-        },
-        {
-          title: "Fundamental principles",
-          body: "A structured approach around centralization, organization and operational visibility.",
-          items: [
-            "Information centralization",
-            "Process organization",
-            "Operational visibility",
-            "Online accessibility",
-            "Intelligent assistance (AI)",
-            "Scalable approach",
-          ],
-        },
-        {
-          title: "Industries",
-          body: "Inovexa ERP is particularly aimed at:",
-          items: [
-            "Retail and distribution",
-            "Service companies",
-            "Industry",
-            "Logistics players",
-            "Growing businesses",
-          ],
-        },
-        {
-          title: "Security & data management",
-          body: "Protection relies on access management, authentication, secure exchanges and maintenance procedures. Specific commitments are presented according to the measures actually implemented.",
-        },
-        {
-          title: "Our commitment",
-          body: "A needs-oriented approach structured around clarity, organization, accessibility, adaptation, evolution and transparency.",
-        },
-      ],
-      ctaLabel: "Discover our solution",
-      ctaHref: "https://www.inovexa-erp.com/",
-      emailLabel: "Contact us",
-      email: "contact@inovexa.com",
-    },
-    copyright: "All rights reserved.",
-    privacy: "Privacy",
-    terms: "Terms",
-    langLabel: "Choose language",
-    ai: {
-      title: "Intelligent system",
-      badge: "Built-in AI",
-      desc: "An AI assistant that answers your questions using your own data.",
-    },
-    features: [
-      { title: "Centralized management", desc: "All your business processes brought together on a single platform." },
-      { title: "Smart insights", desc: "Turn your data into strategic decisions." },
-      { title: "Advanced security", desc: "Infrastructure designed to protect your data." },
-      { title: "Connected ecosystem", desc: "Connect your teams and sync your activities for smoother, more efficient management." },
-    ],
-  },
-  ar: {
-    title: "مستقبل إدارة الأعمال يبدأ من هنا.",
-    modules: "المبيعات · المخزون · الفواتير · الموارد البشرية · المالية والمزيد...",
-    subtitle: "مع Inovexa ERP، أدِر مؤسستك كاملةً من منصة واحدة",
-    button: "الدخول إلى لوحة القيادة",
-    login: "ابدأ الآن",
-    aboutBtn: "من نحن",
-    aboutClose: "إغلاق",
-    aboutBadge: "Inovexa ERP — نظام ERP من الجيل الجديد",
-    aboutContent: {
-      headline: "إدارة مؤسستك، 100% عبر الإنترنت.",
-      intro: [
-        "Inovexa ERP حلّ لإدارة المؤسسات يعتمد نموذج SaaS، صُمّم لتجميع عملياتك اليومية وتبسيطها وتحسينها.",
-        "بفضل منصة واحدة متاحة عبر الإنترنت، أدِر مخزونك ومبيعاتك ومشترياتك وفواتيرك وماليتك ومواردك البشرية وغير ذلك الكثير.",
-      ],
-      sections: [
-        {
-          title: "مهمتنا",
-          body: "مرافقة المؤسسات في رقمنة إدارتها عبر توفير بيئة رقمية تسهّل تنظيم العمليات والوصول إلى المعلومات الأساسية. نسعى إلى إدارة أكثر تنظيمًا تدعم تجميع البيانات ووضوح الرؤية على الأنشطة.",
-        },
-        {
-          title: "رؤيتنا",
-          body: "بيئة مهنية تصل فيها المؤسسات إلى بياناتها بسهولة، وتنظّم إجراءاتها، وتتابع أنشطتها من نظام إدارة متكامل.",
-          items: [
-            "رقمنة إجراءات العمل",
-            "تكامل وظائف الإدارة",
-            "تطور تكنولوجي تدريجي",
-          ],
-        },
-        {
-          title: "حلّ ERP يعتمد نموذج SaaS",
-          body: "يوفّر Inovexa ERP بيئة إدارة متاحة عبر الإنترنت من الأجهزة المتوافقة، وفق شروط الوصول المعمول بها.",
-          items: [
-            "إتاحة عبر الإنترنت",
-            "بيئة إدارة مركزية",
-            "مقاربة قائمة على الوحدات",
-            "مواكبة تطور الحاجات",
-            "وصول حسب الصلاحيات",
-          ],
-        },
-        {
-          title: "قائمة الوظائف",
-          body: "تغطي الوحدات مجمل الحاجات التشغيلية للمؤسسة:",
-          items: [
-            "المتابعة ولوحة القيادة",
-            "المنتجات والأصناف والمخزون",
-            "المبيعات والمشتريات والطلبيات والصندوق السريع",
-            "العملاء والموردون والفواتير",
-            "المالية والموارد البشرية",
-            "اللوجستيك والتقارير والتحليلات",
-            "مساعد ذكي مدمج",
-            "الملف الشخصي والإعدادات",
-          ],
-        },
-        {
-          title: "المبادئ الأساسية",
-          body: "مقاربة منظَّمة تقوم على تجميع المعلومات والتنظيم ووضوح الرؤية التشغيلية.",
-          items: [
-            "تجميع المعلومات",
-            "تنظيم الإجراءات",
-            "وضوح الرؤية التشغيلية",
-            "إتاحة عبر الإنترنت",
-            "مساعدة ذكية (ذكاء اصطناعي)",
-            "مقاربة قابلة للتطور",
-          ],
-        },
-        {
-          title: "قطاعات النشاط",
-          body: "يتوجّه Inovexa ERP خاصةً إلى:",
-          items: [
-            "المتاجر والموزعين",
-            "مؤسسات الخدمات",
-            "المؤسسات الصناعية",
-            "الفاعلين في اللوجستيك",
-            "المؤسسات في طور النمو",
-          ],
-        },
-        {
-          title: "الأمان وإدارة البيانات",
-          body: "تقوم الحماية على إدارة صلاحيات الوصول، والتحقق من الهوية، وتأمين تبادل البيانات، وإجراءات الصيانة. وتُعرَض الالتزامات الدقيقة بحسب الآليات المعتمدة فعليًا.",
-        },
-        {
-          title: "التزامنا",
-          body: "مقاربة موجَّهة نحو حاجاتكم، تقوم على الوضوح والتنظيم وسهولة الوصول والتكيّف والتطور والشفافية.",
-        },
-      ],
-      ctaLabel: "اكتشف حلّنا",
-      ctaHref: "https://www.inovexa-erp.com/",
-      emailLabel: "اتصل بنا",
-      email: "contact@inovexa.com",
-    },
-    copyright: "جميع الحقوق محفوظة.",
-    privacy: "الخصوصية",
-    terms: "الشروط",
-    langLabel: "اختيار اللغة",
-    ai: {
-      title: "نظام ذكي",
-      badge: "ذكاء اصطناعي مدمج",
-      desc: "مساعد ذكي يجيب عن أسئلتك انطلاقًا من بياناتك الخاصة.",
-    },
-    features: [
-      { title: "إدارة مركزية", desc: "كل إجراءات عملك مجتمعة في منصة واحدة." },
-      { title: "قيادة ذكية", desc: "حوّل بياناتك إلى قرارات استراتيجية." },
-      { title: "أمان متقدم", desc: "بنية تحتية مصمَّمة لحماية بياناتك." },
-      { title: "منظومة مترابطة", desc: "اربط فرق عملك ونسّق أنشطتك لإدارة أكثر سلاسة وفعالية." },
-    ],
-  },
-};
-
-// Couleurs de la page
-const HP_LIGHT: Record<string, string> = {
-  "--hp-bg": "#f8f7ff",
-  "--hp-text": "#1E1035",
-  "--hp-muted": "#352C55",
-  "--hp-faint": "#4B4466",
-  "--hp-glass": "rgba(255,255,255,0.7)",
-  "--hp-glass-border": "rgba(109,40,217,0.14)",
-  "--hp-glass-line": "rgba(109,40,217,0.1)",
-  "--hp-chip-bg": "rgba(255,255,255,0.8)",
-  "--hp-chip-border": "rgba(109,40,217,0.18)",
-  "--hp-icon": "#6D28D9",
-  "--hp-accent-text": "#6D28D9",
-  "--hp-cta-bg": "#2E1065",
-  "--hp-cta-text": "#ffffff",
-  "--hp-cta-shadow": "rgba(109,40,217,0.35)",
-  "--hp-ghost-border": "rgba(46,16,101,0.25)",
-  "--hp-link": "#6D28D9",
-  "--hp-header-bg": "rgba(245,243,255,0.9)",
-  "--hp-menu-bg": "rgba(255,255,255,0.98)",
-  "--hp-menu-text": "#374151",
-  "--hp-shadow": "rgba(17,24,39,0.18)",
-  "--hp-modal-bg": "rgba(255,255,255,0.99)",
-  "--hp-overlay": "rgba(30,16,53,0.45)",
-  "--hp-hero-overlay": "none",
-  "--hp-hero-overlay-compact": "none",
-  "--hp-orbit-tile": "linear-gradient(150deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.56) 100%)",
-  "--hp-orbit-border": "rgba(255,255,255,0.78)",
-  "--hp-orbit-border-hover": "rgba(109,40,217,0.45)",
-  "--hp-orbit-shadow": "0 10px 24px rgba(40,30,150,0.14), 0 0 20px rgba(255,255,255,0.38), inset 0 1px 0 rgba(255,255,255,0.85)",
-  "--hp-orbit-shadow-hover": "0 16px 32px rgba(40,30,150,0.24), 0 0 26px rgba(255,255,255,0.6), inset 0 1px 0 rgba(255,255,255,0.9)",
-  "--hp-orbit-icon-a": "#7B5CFF",
-  "--hp-orbit-icon-b": "#4B37E2",
-  "--hp-orbit-line": "#ffffff",
-  "--hp-orbit-tip-bg": "#2E1065",
-  "--hp-orbit-tip-text": "#ffffff",
-  "--hp-orbit-tip-border": "rgba(255,255,255,0.12)",
-  "--hp-ai-bg": "linear-gradient(120deg, rgba(255,255,255,0.9) 0%, rgba(245,240,255,0.86) 55%, rgba(236,254,255,0.82) 100%)",
-  "--hp-ai-ring": "linear-gradient(120deg, #7B5CFF 0%, #C026D3 50%, #0891B2 100%)",
-  "--hp-ai-icon-bg": "linear-gradient(140deg, #6D28D9 0%, #A21CAF 100%)",
-  "--hp-ai-glow": "rgba(123,92,255,0.32)",
-  "--hp-ai-shadow": "rgba(76,29,149,0.14)",
-};
-
-// ─── Composant principal ───────────────────────────────────────────────────────
+// ─── Page ──────────────────────────────────────────────────────────────────────
 export default function HomePage(): React.ReactElement {
-  const router = useRouter();
-  const pathname = usePathname();
   const { language } = useLanguage();
-  const { isMobile, isTablet } = useResponsive();
-  const isCompact = isMobile || isTablet;
+  const lang: HomeLang = HOME_LANGS.includes(language as HomeLang) ? (language as HomeLang) : "en";
+  const text = HOME_TEXTS[lang];
+  const offer = usePublicOffer(lang);
+  const trial = trialLabel(offer.trialHours, lang);
 
-  const lang: Lang = (["fr", "en", "es", "ar"] as const).includes(language as Lang) ? (language as Lang) : "en";
-  const text = TRANSLATIONS[lang];
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  const aboutBtnRef = useRef<HTMLButtonElement>(null);
-  const aboutCloseRef = useRef<HTMLButtonElement>(null);
-
+  // La session n'est connue que dans le navigateur : le premier rendu est celui d'un visiteur.
+  const [workspace, setWorkspace] = useState<string | null>(null);
   useEffect(() => {
-    let token: string | null = null;
-    try { token = localStorage.getItem("token"); } catch { /* stockage indisponible */ }
-    setIsLoggedIn(!!token);
-    const full = { kind: "full" } as unknown as Parameters<typeof router.prefetch>[1];
-    try { router.prefetch(token ? "/dashboard" : "/auth/login", full); } catch { /* ignoré */ }
-  }, [pathname, router]);
-
-  const closeAbout = useCallback(() => {
-    setShowAbout(false);
-    aboutBtnRef.current?.focus();
+    setWorkspace(getToken() ? homeFor(getStoredUser()) : null);
   }, []);
 
-  useEffect(() => {
-    if (!showAbout) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeAbout();
-    };
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onKey);
-    aboutCloseRef.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [showAbout, closeAbout]);
-
   const year = new Date().getFullYear();
-  const ctaHref = isLoggedIn ? "/dashboard" : "/auth/login";
+  const withTrial = (template: string) => fillText(template, { trial });
+  const nav = [
+    { href: "/", label: text.header.home },
+    { href: "/products", label: text.header.products },
+    { href: "/pricing", label: text.header.pricing },
+    { href: "/blog", label: text.header.blog },
+    { href: "/about", label: text.header.about },
+    { href: "/contact", label: text.header.contact },
+  ];
 
   return (
-    <div
-      className={
-        "home-page " +
-        "hp-light" +
-        (isCompact ? " is-compact" : "") +
-        (isMobile ? " is-mobile" : "") +
-        " " +
-        `${poppins.variable} ${orbitron.variable}`
-      }
-      style={{
-        ...(HP_LIGHT as React.CSSProperties),
-        colorScheme: "light",
-        minHeight: "100dvh",
-        background: "var(--hp-bg)",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        fontFamily: "var(--font-poppins), -apple-system, BlinkMacSystemFont, sans-serif",
-        position: "relative",
-      }}
-    >
-      {/* Image de fond + dégradé de lisibilité */}
-      <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
-      <div className="hp-bg-overlay" aria-hidden="true" />
-
-      {/* Icônes des modules posées autour du portable — nom affiché au survol (ordinateur) */}
-      <ModuleOrbit lang={lang} />
-
-      {/* En-tête : le même que sur les pages publiques (components/site/SiteHeader) */}
+    <div className="home-page">
       <SiteHeader
         lang={lang}
-        nav={[{ href: "/", label: HEADER_TEXT[lang].home }, ...SITE_LINKS[lang]]}
-        cta={{ href: "/contact#form-section", label: HEADER_TEXT[lang].demo }}
-        labels={{ language: text.langLabel, menu: "Menu" }}
+        nav={nav}
+        login={workspace ? { href: workspace, label: text.dashboardCta } : { href: "/auth/login", label: text.header.login }}
+        cta={{ href: "/contact#form-section", label: text.header.demo }}
+        labels={{ language: text.header.language, menu: "Menu" }}
+        languages={HOME_LANGS}
       />
 
-      {/* Contenu principal */}
-      <main className="hp-main">
-        <div className="hp-content">
-          <div className="hp-rise hp-d1 hp-modules">
-            <span className="hp-live-dot" aria-hidden="true" />
-            {text.modules}
-          </div>
+      <main>
+        {/* ── Premier écran ── */}
+        <section className="hp-hero" aria-labelledby="hp-title">
+          <img className="hp-bg-img" src={BG_IMAGE} alt="" aria-hidden="true" draggable={false} decoding="async" />
+          <div className="hp-bg-veil" aria-hidden="true" />
+          <ModuleOrbit lang={lang} label={text.orbitLabel} shipments={text.shipments} />
 
-          {/* Espacement renforcé entre badge modules et titre */}
-          <h1 className="hp-slide hp-d2 hp-title">{text.title}</h1>
-          <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
-        </div>
+          <div className="hp-hero-content">
+            <p className="hp-rise hp-d1 hp-badge">
+              <span className="hp-live-dot" aria-hidden="true" />
+              {text.badge}
+            </p>
+            {/* Titre (élément le plus grand de l'écran) : glissement seul, sans opacité 0, pour être peint tout de suite */}
+            <h1 id="hp-title" className="hp-slide hp-title">{text.title}</h1>
+            <p className="hp-rise hp-d2 hp-subtitle">{text.subtitle}</p>
 
-        <ul className="hp-cards hp-rise hp-d4">
-          {/* Carte mise en avant : système intelligent à IA intégrée (pleine largeur) */}
-          <li className="hp-card hp-card-ai">
-            <span className="hp-card-icon hp-ai-icon"><IconSparkles color="var(--hp-icon)" /></span>
-            <div className="hp-card-text">
-              <h3 className="hp-card-title hp-ai-title">
-                {text.ai.title}{" "}
-                <span className="hp-ai-badge">{text.ai.badge}</span>
-              </h3>
-              <p className="hp-card-desc">{text.ai.desc}</p>
+            <div className="hp-rise hp-d3 hp-actions">
+              {workspace ? (
+                <>
+                  <Link href={workspace} className="hp-cta">
+                    {text.dashboardCta}
+                    <span className="hp-cta-arrow"><IconArrow /></span>
+                  </Link>
+                  <Link href="/pricing" className="hp-ghost">{text.pricingCta}</Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/auth/register" className="hp-cta">
+                    {withTrial(text.trialCta)}
+                    <span className="hp-cta-arrow"><IconArrow /></span>
+                  </Link>
+                  <Link href="/auth/login" className="hp-ghost">{text.loginCta}</Link>
+                </>
+              )}
             </div>
-          </li>
-          {text.features.map((f, i) => {
-            const Icon = FEATURE_ICONS[i];
-            return (
-              <li key={f.title} className="hp-card">
-                <span className="hp-card-icon"><Icon color="var(--hp-icon)" /></span>
-                <div className="hp-card-text">
-                  <h3 className="hp-card-title">{f.title}</h3>
-                  <p className="hp-card-desc">{f.desc}</p>
+
+            <ul className="hp-rise hp-d4 hp-trust">
+              {text.trust.map((item) => (
+                <li key={item}>
+                  <span className="hp-trust-check"><IconCheck /></span>
+                  {withTrial(item)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── Pourquoi Inovexa ERP ── */}
+        <section className="hp-section" aria-labelledby="hp-why-title">
+          <div className="hp-wrap">
+            <header className="hp-head">
+              <p className="hp-eyebrow">{text.why.eyebrow}</p>
+              <h2 id="hp-why-title" className="hp-h2">{text.why.title}</h2>
+              <p className="hp-lead">{text.why.lead}</p>
+            </header>
+            <ul className="hp-cards">
+              <li className="hp-card hp-card-ai">
+                <span className="hp-card-icon hp-ai-icon"><IconSparkles /></span>
+                <div>
+                  <h3 className="hp-card-title">
+                    {text.why.ai.title} <span className="hp-ai-badge">{text.why.ai.badge}</span>
+                  </h3>
+                  <p className="hp-card-desc">{text.why.ai.desc}</p>
                 </div>
               </li>
-            );
-          })}
-        </ul>
+              {text.why.features.map((f, i) => {
+                const Icon = FEATURE_ICONS[i] ?? IconTarget;
+                return (
+                  <li key={f.title} className="hp-card">
+                    <span className="hp-card-icon"><Icon /></span>
+                    <div>
+                      <h3 className="hp-card-title">{f.title}</h3>
+                      <p className="hp-card-desc">{f.desc}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
 
-        {/* Actions — désormais SOUS les cards sur tous les écrans */}
-        <div className="hp-rise hp-d3 hp-actions hp-actions-below">
-          <Link href={ctaHref} prefetch className="hp-cta">
-            {isLoggedIn ? text.button : text.login}
-            <span className="hp-cta-arrow"><IconArrowRight /></span>
-          </Link>
-          <button
-            ref={aboutBtnRef}
-            type="button"
-            className="hp-ghost"
-            aria-haspopup="dialog"
-            aria-expanded={showAbout}
-            onClick={() => setShowAbout(true)}
-          >
-            {text.aboutBtn}
-          </button>
-        </div>
-      </main>
+        {/* ── Modules ── */}
+        <section className="hp-section hp-tint" aria-labelledby="hp-modules-title">
+          <div className="hp-wrap">
+            <header className="hp-head">
+              <p className="hp-eyebrow">{fillText(text.modules.eyebrow, { n: ALL_MODULES.length })}</p>
+              <h2 id="hp-modules-title" className="hp-h2">{text.modules.title}</h2>
+              <p className="hp-lead">{text.modules.lead}</p>
+            </header>
+            {/* Deux colonnes de hauteur voisine : les groupes courts sont empilés avec les longs */}
+            <div className="hp-groups">
+              {GROUP_COLUMNS.map((column) => (
+                <div key={column.join("-")} className="hp-groups-col">
+                  {column.map((id) => {
+                    const group = MODULE_GROUPS.find((g) => g.id === id);
+                    if (!group) return null;
+                    return (
+                      <article key={group.id} className="hp-group">
+                        <h3 className="hp-group-title">{pick(group.label, lang)}</h3>
+                        <ul className="hp-modules">
+                          {group.modules.map((key) => (
+                            <li key={key}>
+                              <span className="hp-module-icon"><ModuleIcon name={key} size={18} /></span>
+                              <span>
+                                <strong>{pick(MODULE_INFO[key].label, lang)}</strong>
+                                <span className="hp-module-desc">{pick(MODULE_INFO[key].desc, lang)}</span>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </article>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <p className="hp-more"><Link href="/products" className="hp-link">{text.modules.cta} <IconArrow /></Link></p>
+          </div>
+        </section>
 
-      <footer className="hp-footer">
-        <p style={{ margin: 0 }} suppressHydrationWarning>© {year} Inovexa ERP. {text.copyright}</p>
-        <nav aria-label="Legal" style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-          <Link href="/privacy">{text.privacy}</Link>
-          <Link href="/terms">{text.terms}</Link>
-        </nav>
-      </footer>
+        {/* ── Secteurs ── */}
+        <section className="hp-section" aria-labelledby="hp-sectors-title">
+          <div className="hp-wrap">
+            <header className="hp-head">
+              <p className="hp-eyebrow">{fillText(text.sectors.eyebrow, { n: SECTORS.length })}</p>
+              <h2 id="hp-sectors-title" className="hp-h2">{text.sectors.title}</h2>
+              <p className="hp-lead">{text.sectors.lead}</p>
+            </header>
+            <ul className="hp-sectors">
+              {SECTORS.map((sector) => (
+                <li key={sector.code}>
+                  <Link href={`/products#sector-${sector.code}`} className="hp-sector">
+                    <span className="hp-sector-icon"><SectorIcon code={sector.code} /></span>
+                    <span className="hp-sector-name">{pick(sector.name, lang)}</span>
+                    <span className="hp-sector-count">{fillText(text.sectors.count, { n: sector.modules.length })}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="hp-more"><Link href="/products#sectors" className="hp-link">{text.sectors.cta} <IconArrow /></Link></p>
+          </div>
+        </section>
 
-      {showAbout && (
-        <div className="hp-overlay" onClick={closeAbout}>
-          <div
-            className="hp-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="hp-about-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              ref={aboutCloseRef}
-              type="button"
-              className="hp-modal-close"
-              aria-label={text.aboutClose}
-              onClick={closeAbout}
-            >
-              <IconClose />
-            </button>
+        {/* ── Démarrage ── */}
+        <section className="hp-section hp-tint" aria-labelledby="hp-steps-title">
+          <div className="hp-wrap">
+            <header className="hp-head">
+              <p className="hp-eyebrow">{text.steps.eyebrow}</p>
+              <h2 id="hp-steps-title" className="hp-h2">{text.steps.title}</h2>
+            </header>
+            <ol className="hp-steps">
+              {text.steps.items.map((step, i) => (
+                <li key={step.title} className="hp-step">
+                  <span className="hp-step-num" aria-hidden="true">{i + 1}</span>
+                  <h3 className="hp-card-title">{withTrial(step.title)}</h3>
+                  <p className="hp-card-desc">{step.desc}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
 
-            <span className="hp-modal-badge">{text.aboutBadge}</span>
-            <h2 id="hp-about-title" className="hp-modal-title">{text.aboutContent.headline}</h2>
-            {text.aboutContent.intro.map((p) => (
-              <p key={p} className="hp-modal-p">{p}</p>
-            ))}
-
-            {text.aboutContent.sections.map((section) => (
-              <section key={section.title} className="hp-modal-section">
-                <h3 className="hp-modal-sub">{section.title}</h3>
-                <p className="hp-modal-p">{section.body}</p>
-                {section.items && section.items.length > 0 && (
-                  <ul className="hp-modal-list">
-                    {section.items.map((item) => (
-                      <li key={item}>
-                        <span className="hp-modal-check"><IconCheck color="var(--hp-accent-text)" /></span>
-                        <span>{item}</span>
+        {/* ── Formules ── */}
+        <section className="hp-section" aria-labelledby="hp-pricing-title">
+          <div className="hp-wrap">
+            <header className="hp-head">
+              <p className="hp-eyebrow">{text.pricing.eyebrow}</p>
+              <h2 id="hp-pricing-title" className="hp-h2">{text.pricing.title}</h2>
+              <p className="hp-lead">{text.pricing.lead}{twoMonthsFree(offer.plans) ? ` ${text.pricing.twoMonths}` : ""}</p>
+            </header>
+            <div className="hp-plans">
+              {offer.plans.map((plan) => (
+                <article key={plan.code} className={"hp-plan" + (plan.highlight ? " is-featured" : "")}>
+                  {plan.highlight ? <span className="hp-plan-badge">{text.pricing.popular}</span> : null}
+                  <h3 className="hp-plan-name">{plan.name}</h3>
+                  <p className="hp-plan-price">
+                    {plan.priceMonthly === null ? (
+                      <strong>{text.pricing.onQuote}</strong>
+                    ) : (
+                      <>
+                        <strong>{formatPrice(plan.priceMonthly, lang, offer.currency)}</strong>
+                        <span> {text.pricing.exclTax} {text.pricing.perMonth}</span>
+                      </>
+                    )}
+                  </p>
+                  <p className="hp-plan-annual">
+                    {plan.priceAnnual === null ? " " : fillText(text.pricing.annual, { price: formatPrice(plan.priceAnnual, lang, offer.currency) })}
+                  </p>
+                  <p className="hp-plan-tagline">{plan.tagline}</p>
+                  <ul className="hp-plan-features">
+                    {plan.features.slice(0, 5).map((feature) => (
+                      <li key={feature}>
+                        <span className="hp-trust-check"><IconCheck /></span>
+                        {feature}
                       </li>
                     ))}
                   </ul>
-                )}
-              </section>
-            ))}
+                  <Link href={plan.priceMonthly === null ? "/contact#form-section" : `/auth/register?plan=${encodeURIComponent(plan.code)}`} className={plan.highlight ? "hp-cta" : "hp-ghost"}>
+                    {plan.priceMonthly === null ? text.header.demo : text.pricing.choose}
+                  </Link>
+                </article>
+              ))}
+            </div>
+            <p className="hp-more"><Link href="/pricing" className="hp-link">{text.pricing.cta} <IconArrow /></Link></p>
+          </div>
+        </section>
 
-            <div className="hp-modal-actions">
-              <a
-                href={text.aboutContent.ctaHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hp-cta"
-              >
-                {text.aboutContent.ctaLabel}
-                <span className="hp-cta-arrow"><IconArrowRight /></span>
-              </a>
-              <a href={`mailto:${text.aboutContent.email}`} className="hp-ghost">
-                {text.aboutContent.emailLabel}
-              </a>
+        {/* ── Dernier appel ── */}
+        <section className="hp-band" aria-labelledby="hp-final-title">
+          <div className="hp-wrap">
+            <h2 id="hp-final-title" className="hp-h2">{text.final.title}</h2>
+            <p className="hp-lead">{withTrial(text.final.lead)}</p>
+            <div className="hp-actions">
+              <Link href={workspace ?? "/auth/register"} className="hp-cta hp-cta-light">
+                {workspace ? text.dashboardCta : text.final.primary}
+                <span className="hp-cta-arrow"><IconArrow /></span>
+              </Link>
+              <Link href="/contact#form-section" className="hp-ghost hp-ghost-light">{text.final.secondary}</Link>
             </div>
           </div>
+        </section>
+      </main>
+
+      <footer className="hp-footer">
+        <div className="hp-wrap hp-footer-grid">
+          <div>
+            <Link href="/" className="st-brand" aria-label="Inovexa ERP">
+              <img src="/images/logo.png" alt="" width={40} height={40} />
+              <span className="st-brand-name" lang="en" dir="ltr"><b>INOV</b>EXA <span>ERP</span></span>
+            </Link>
+            <p className="hp-footer-tagline">{text.footer.tagline}</p>
+          </div>
+          <nav aria-label={text.footer.product}>
+            <h2 className="hp-footer-title">{text.footer.product}</h2>
+            <ul>
+              <li><Link href="/products">{text.header.products}</Link></li>
+              <li><Link href="/pricing">{text.header.pricing}</Link></li>
+              <li><Link href="/blog">{text.header.blog}</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label={text.footer.company}>
+            <h2 className="hp-footer-title">{text.footer.company}</h2>
+            <ul>
+              <li><Link href="/about">{text.header.about}</Link></li>
+              <li><Link href="/contact">{text.header.contact}</Link></li>
+              <li><Link href="/contact#form-section">{text.header.demo}</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label={text.footer.account}>
+            <h2 className="hp-footer-title">{text.footer.account}</h2>
+            <ul>
+              <li><Link href="/auth/login">{text.header.login}</Link></li>
+              <li><Link href="/auth/register">{text.footer.signup}</Link></li>
+              <li><a href="mailto:contact@inovexa-erp.com" dir="ltr">contact@inovexa-erp.com</a></li>
+              <li><a href="tel:+21622535181" dir="ltr">+216 22 535 181</a></li>
+            </ul>
+          </nav>
         </div>
-      )}
+        <div className="hp-wrap hp-footer-legal">
+          <p suppressHydrationWarning>
+            © {year} Inovexa ERP. {text.footer.rights} · {text.footer.partOf}{" "}
+            <a href="https://msai-systems.com" target="_blank" rel="noopener noreferrer">MSAI Systems</a>
+          </p>
+          <p>
+            <Link href="/privacy">{text.footer.privacy}</Link>
+            <Link href="/terms">{text.footer.terms}</Link>
+          </p>
+        </div>
+      </footer>
 
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
     </div>
@@ -1115,26 +446,78 @@ export default function HomePage(): React.ReactElement {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const STYLES = `
-  .home-page * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-  .home-page :focus-visible { outline: 2px solid #A78BFA; outline-offset: 3px; border-radius: 10px; }
-  .home-page ul { list-style: none; margin: 0; padding: 0; }
-
-  /* ── Fond : image plein cadre, ancrée à DROITE (le portable reste toujours visible) ── */
-  .hp-bg-img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 100% 55%;
-    user-select: none;
-    -webkit-user-drag: none;
-    z-index: 0;
+  .home-page {
+    --hp-bg: #f8f7ff;
+    --hp-text: #1E1035;
+    --hp-muted: #3d3560;
+    --hp-accent: #5b3fe0;
+    --hp-accent-deep: #2E1065;
+    --hp-line: rgba(91, 63, 224, 0.16);
+    --hp-glass: rgba(255, 255, 255, 0.78);
+    --hp-wave: linear-gradient(90deg, #6a54e7 0%, #8450e7 28%, #e659b0 62%, #fb7b6f 82%, #fdba69 100%);
+    --hp-pad: clamp(16px, 4vw, 56px);
+    /* Hauteur de l'en-tête (barre + liseré) : voir components/site/site-header.css */
+    --hp-header: 67px;
+    color-scheme: light;
+    min-height: 100dvh;
+    background: var(--hp-bg);
+    color: var(--hp-text);
+    font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    /* « clip » : rien ne déborde sur les côtés, sans créer de zone de défilement (l'en-tête reste collé en haut) */
+    overflow-x: clip;
   }
-  .hp-bg-overlay { position: absolute; inset: 0; z-index: 1; background: var(--hp-hero-overlay); }
+  .home-page *, .home-page *::before, .home-page *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  .home-page :focus-visible { outline: 2px solid #7c5cff; outline-offset: 3px; border-radius: 10px; }
+  .home-page ul, .home-page ol { list-style: none; margin: 0; padding: 0; }
+  .home-page h1, .home-page h2, .home-page h3, .home-page p { margin: 0; }
+  .hp-wrap { width: 100%; max-width: 1180px; margin: 0 auto; }
+
+  /* ══ Premier écran ══ */
+  .hp-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(100vh - var(--hp-header));
+    min-height: calc(100dvh - var(--hp-header));
+    padding: clamp(32px, 6vh, 72px) var(--hp-pad) clamp(40px, 9vh, 104px);
+  }
+  /* Image plein cadre, ancrée à DROITE : le portable reste toujours visible */
+  .hp-bg-img { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; object-position: 100% 55%; user-select: none; -webkit-user-drag: none; }
+  /* Voile clair sous le texte : le titre reste lisible sur la partie gauche de l'image */
+  .hp-bg-veil { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, rgba(248, 247, 255, 0.72) 0%, rgba(248, 247, 255, 0.38) 34%, rgba(248, 247, 255, 0) 58%); }
+  [dir="rtl"] .hp-bg-veil { background: linear-gradient(90deg, rgba(248, 247, 255, 0.72) 0%, rgba(248, 247, 255, 0.38) 34%, rgba(248, 247, 255, 0) 58%); }
+
+  .hp-hero-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; width: 100%; max-width: min(720px, 52vw); }
+  .hp-badge { display: inline-flex; align-items: center; gap: 9px; padding: 7px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.86); border: 1px solid rgba(109, 40, 217, 0.18); box-shadow: 0 6px 18px rgba(76, 29, 149, 0.08); color: var(--hp-text); font-size: clamp(12.5px, 0.95vw, 14.5px); font-weight: 600; line-height: 1.35; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .hp-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; flex-shrink: 0; animation: hpPing 2.4s ease-out infinite; }
+  @keyframes hpPing { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); } 80%, 100% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } }
+  .hp-title { margin-top: clamp(16px, 2.8vh, 28px) !important; font-size: clamp(32px, min(4.6vw, 7.4vh), 68px); font-weight: 700; line-height: 1.07; letter-spacing: -0.03em; text-wrap: balance; color: var(--hp-text); }
+  .hp-subtitle { margin-top: clamp(14px, 2.2vh, 22px) !important; max-width: 600px; color: var(--hp-muted); font-size: clamp(16px, min(1.35vw, 2.6vh), 20px); line-height: 1.55; }
+
+  /* Boutons */
+  .hp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; margin-top: clamp(22px, 3.6vh, 36px); }
+  .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 10px 28px; border-radius: 999px; font-family: inherit; font-size: 16.5px; line-height: 1.25; text-align: center; text-decoration: none; cursor: pointer; }
+  .hp-cta { gap: 10px; border: 0; background: var(--hp-accent-deep); color: #fff !important; font-weight: 700; box-shadow: 0 12px 34px rgba(76, 29, 149, 0.34); transition: transform 0.2s, box-shadow 0.2s; }
+  .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(76, 29, 149, 0.42); }
+  .hp-cta:active { transform: translateY(0); }
+  .hp-cta-arrow { display: inline-flex; transition: transform 0.2s; }
+  .hp-cta:hover .hp-cta-arrow { transform: translateX(3px); }
+  .hp-ghost { border: 1px solid rgba(46, 16, 101, 0.28); background: rgba(255, 255, 255, 0.6); color: var(--hp-text) !important; font-weight: 600; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: background 0.2s, border-color 0.2s; }
+  .hp-ghost:hover { background: #fff; border-color: rgba(46, 16, 101, 0.5); }
+
+  /* Garanties sous les boutons */
+  .hp-trust { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: clamp(18px, 3vh, 28px) !important; color: var(--hp-text); font-size: 14.5px; font-weight: 500; }
+  .hp-trust li { display: inline-flex; align-items: center; gap: 8px; }
+  .hp-trust-check { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: rgba(34, 197, 94, 0.16); color: #15803d; }
 
   /* ── Orbite des modules : même cadrage que .hp-bg-img (object-fit: cover ; object-position: 100% 55%) ── */
-  .hp-orbit { position: absolute; inset: 0; z-index: 2; pointer-events: none; container-type: size; }
+  .hp-orbit { position: absolute; inset: 0; z-index: 1; pointer-events: none; container-type: size; }
   .hp-orbit-box {
     --u: max(calc(100vw / 1672), calc(100vh / 941));
     position: absolute;
@@ -1152,340 +535,164 @@ const STYLES = `
   }
   .hp-orbit-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .home-page .hp-orbit-list { position: absolute; inset: 0; }
-  .hp-orbit-item {
-    position: absolute;
-    width: calc(48 * var(--u));
-    height: calc(48 * var(--u));
-    transform: translate(-50%, -50%);
-    pointer-events: auto;
-    animation: hpOrbitIn .5s cubic-bezier(0.22,1,0.36,1) both;
-    animation-delay: calc(380ms + var(--i, 0) * 28ms);
-  }
+  .hp-orbit-item { position: absolute; width: calc(48 * var(--u)); height: calc(48 * var(--u)); transform: translate(-50%, -50%); pointer-events: auto; animation: hpOrbitIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(380ms + var(--i, 0) * 28ms); }
   .hp-orbit-item:hover { z-index: 3; }
-  .hp-orbit-tile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    border-radius: calc(13 * var(--u));
-    background: var(--hp-orbit-tile);
-    border: 1px solid var(--hp-orbit-border);
-    box-shadow: var(--hp-orbit-shadow);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: var(--hp-orbit-icon-b);
-    transition: transform .22s cubic-bezier(0.22,1,0.36,1), box-shadow .22s, border-color .22s;
-  }
+  .hp-orbit-tile { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: calc(13 * var(--u)); background: linear-gradient(150deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.6) 100%); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 10px 24px rgba(40, 30, 150, 0.14), 0 0 20px rgba(255, 255, 255, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #4B37E2; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s, border-color 0.22s; }
   .hp-orbit-tile svg { width: 50%; height: 50%; overflow: visible; }
-  .hp-orbit-item:hover .hp-orbit-tile {
-    transform: translateY(-3px) scale(1.12);
-    border-color: var(--hp-orbit-border-hover);
-    box-shadow: var(--hp-orbit-shadow-hover);
-  }
-  .hp-orbit-tip {
-    position: absolute;
-    left: 50%;
-    bottom: calc(100% + 12px);
-    transform: translate(-50%, 6px);
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: var(--hp-orbit-tip-bg);
-    color: var(--hp-orbit-tip-text);
-    border: 1px solid var(--hp-orbit-tip-border);
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: 0.1px;
-    white-space: nowrap;
-    box-shadow: 0 10px 24px rgba(17,12,46,0.25);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .18s ease, transform .18s ease;
-  }
-  .hp-orbit-tip::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: var(--hp-orbit-tip-bg);
-  }
+  .hp-orbit-item:hover .hp-orbit-tile { transform: translateY(-3px) scale(1.12); border-color: rgba(109, 40, 217, 0.45); box-shadow: 0 16px 32px rgba(40, 30, 150, 0.24), 0 0 26px rgba(255, 255, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.9); }
+  .hp-orbit-tip { position: absolute; left: 50%; bottom: calc(100% + 12px); transform: translate(-50%, 6px); padding: 6px 12px; border-radius: 999px; background: #2E1065; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.2; white-space: nowrap; box-shadow: 0 10px 24px rgba(17, 12, 46, 0.25); opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease; }
+  .hp-orbit-tip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #2E1065; }
   .hp-orbit-item:hover .hp-orbit-tip { opacity: 1; transform: translate(-50%, 0); }
   /* Dernière icône, près du bord droit : bulle alignée à droite pour ne pas être coupée */
   .hp-orbit-item.is-end .hp-orbit-tip { left: auto; right: -6px; transform: translate(0, 6px); }
   .hp-orbit-item.is-end:hover .hp-orbit-tip { transform: translate(0, 0); }
   .hp-orbit-item.is-end .hp-orbit-tip::after { left: auto; right: calc(24 * var(--u)); transform: none; }
-  @keyframes hpOrbitIn { from { opacity: 0; transform: translate(-50%, -50%) scale(.85); } to { opacity: 1; transform: translate(-50%, -50%); } }
+  @keyframes hpOrbitIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); } to { opacity: 1; transform: translate(-50%, -50%); } }
 
-  /* Les zones vides du contenu laissent passer la souris jusqu'aux icônes */
-  .hp-main { pointer-events: none; }
-  .hp-content > *, .hp-cards, .hp-actions > * { pointer-events: auto; }
-
-  /* ── Structure ── */
-  .hp-main {
-    position: relative;
-    z-index: 10;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    gap: clamp(14px, 3vh, 32px);
-    padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 56px);
-  }
-  .hp-content { display: flex; flex-direction: column; width: 100%; max-width: 920px; }
-  .hp-footer { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: clamp(8px, 1.6vh, 18px) clamp(20px, 4vw, 56px); font-size: 14px; color: var(--hp-faint); }
-  .hp-footer a { color: var(--hp-link); font-weight: 600; text-decoration: none; padding: 4px 0; }
-  .hp-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .hp-light .hp-footer a { color: #000000; }
-  /* Sans voile sur le fond : copyright plus foncé pour rester lisible sur la vague colorée */
-  .hp-light .hp-footer { color: #1E1035; font-weight: 500; }
-
-  /* ── Cartes (format compact) ── */
-  .hp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 720px; }
-  .hp-card { display: flex; flex-direction: row; align-items: center; gap: 11px; padding: clamp(10px, 1.5vh, 14px) clamp(12px, 1vw, 16px); border-radius: 14px; background: var(--hp-glass); border: 1px solid var(--hp-glass-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .2s, border-color .2s; }
-  .hp-card:hover { transform: translateY(-3px); border-color: var(--hp-chip-border); }
-  .hp-card-icon { width: clamp(34px, 4.6vh, 42px); height: clamp(34px, 4.6vh, 42px); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
-  .hp-card-icon svg { width: 1.15em; height: 1.15em; }
-  .hp-card-title { margin: 0 0 2px; font-size: clamp(13.5px, min(1vw, 2vh), 16px); font-weight: 700; color: var(--hp-text); line-height: 1.2; }
-  .hp-card-desc { margin: 0; font-size: clamp(12px, min(0.85vw, 1.8vh), 14px); color: var(--hp-muted); line-height: 1.35; }
-
-  /* ── Carte mise en avant : système intelligent · IA intégrée (pleine largeur, en tête des cartes) ── */
-  .hp-card.hp-card-ai {
-    grid-column: 1 / -1;
-    position: relative;
-    border-color: transparent;
-    background: var(--hp-ai-bg);
-    box-shadow: 0 12px 34px var(--hp-ai-shadow);
-    transition: transform .2s, box-shadow .2s;
-  }
-  .hp-card.hp-card-ai:hover { box-shadow: 0 16px 42px var(--hp-ai-glow); }
-  /* Liseré dégradé : seul le contour est peint, le centre garde l'effet verre */
-  .hp-card-ai::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    padding: 1px;
-    background: var(--hp-ai-ring);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-  .hp-ai-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
-  .hp-ai-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.28em 0.7em;
-    border-radius: 999px;
-    background: var(--hp-chip-bg);
-    border: 1px solid var(--hp-chip-border);
-    color: var(--hp-icon);
-    font-size: max(9.5px, 0.7em);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    line-height: 1.2;
-    white-space: nowrap;
-  }
-
-  /* ── Textes ── */
-  .hp-modules {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    align-self: flex-start;
-    padding: 0.5em 1.05em;
-    border-radius: 999px;
-    background: var(--hp-chip-bg);
-    border: 1px solid var(--hp-chip-border);
-    color: var(--hp-text);
-    font-size: clamp(13px, min(1.1vw, 2.3vh), 18px);
-    font-weight: 600;
-    margin-bottom: clamp(12px, 2.4vh, 26px);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  .hp-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; animation: livePing 2.4s ease-out infinite; }
-  @keyframes livePing { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 80%,100% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } }
-  .hp-title { margin: 0 0 clamp(10px, 1.8vh, 20px); color: var(--hp-text); font-size: clamp(30px, min(4.7vw, 7.2vh), 76px); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; text-wrap: balance; }
-  .hp-subtitle { margin: 0 0 clamp(14px, 2.6vh, 28px); color: var(--hp-muted); font-size: clamp(16px, min(1.5vw, 2.9vh), 24px); line-height: 1.5; max-width: 680px; }
-
-  /* ── Boutons ── */
-  .hp-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; width: 100%; }
-  .hp-actions-below { margin-top: 4px; }
-
-  .hp-cta, .hp-ghost { display: inline-flex; align-items: center; justify-content: center; height: clamp(48px, 6.6vh, 62px); padding: 0 clamp(22px, 2vw, 34px); border-radius: 999px; font-size: clamp(15px, min(1.2vw, 2.4vh), 20px); text-decoration: none; white-space: nowrap; }
-  .hp-cta { gap: 10px; background: var(--hp-cta-bg); color: var(--hp-cta-text) !important; font-weight: 700; box-shadow: 0 10px 40px var(--hp-cta-shadow); transition: transform .2s, box-shadow .2s; }
-  .hp-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 48px var(--hp-cta-shadow); }
-  .hp-cta:active { transform: translateY(0); }
-  .hp-cta-arrow { display: inline-flex; transition: transform .2s; }
-  .hp-cta:hover .hp-cta-arrow { transform: translateX(3px); }
-  .hp-ghost { background: transparent; border: 1px solid var(--hp-ghost-border); color: var(--hp-text) !important; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .2s; }
-  .hp-ghost:hover { background: var(--hp-glass); }
-
-  /* ── Fenêtre « À propos » ── */
-  .hp-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--hp-overlay); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: overlayIn .2s ease-out; }
-  .hp-modal { position: relative; width: 100%; max-width: 720px; max-height: min(88dvh, 820px); overflow-y: auto; padding: clamp(24px, 4vw, 40px); border-radius: 24px; background: var(--hp-modal-bg); border: 1px solid var(--hp-chip-border); box-shadow: 0 30px 80px var(--hp-shadow); color: var(--hp-text); animation: modalIn .25s cubic-bezier(0.22,1,0.36,1); }
-  .hp-modal-close { position: absolute; top: 14px; inset-inline-end: 14px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-text); cursor: pointer; transition: background .2s; }
-  .hp-modal-close:hover { background: var(--hp-glass); }
-  .hp-modal-badge { display: inline-block; padding: 0.45em 1em; margin-bottom: 16px; border-radius: 999px; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); color: var(--hp-accent-text); font-size: 12px; font-weight: 700; letter-spacing: 0.4px; }
-  .hp-modal-title { margin: 0 0 14px; padding-inline-end: 36px; font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
-  .hp-modal-p { margin: 0 0 12px; color: var(--hp-muted); font-size: 15.5px; line-height: 1.65; }
-  .hp-modal-section { margin-bottom: 22px; }
-  .hp-modal-section:last-of-type { margin-bottom: 8px; }
-  .hp-modal-sub { margin: 22px 0 10px; font-size: 18px; font-weight: 700; color: var(--hp-text); }
-  .hp-modal-section .hp-modal-sub { margin-top: 0; }
-  .home-page .hp-modal-list { display: flex; flex-direction: column; gap: 9px; margin: 0 0 6px; }
-  .hp-modal-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.5; color: var(--hp-text); }
-  .hp-modal-check { display: inline-flex; flex-shrink: 0; margin-top: 3px; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--hp-chip-bg); border: 1px solid var(--hp-chip-border); }
-  .hp-modal-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--hp-glass-line); }
-  .hp-modal .hp-cta, .hp-modal .hp-ghost { height: 48px; padding: 0 22px; }
-  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
-
-  /* ── Tablette / mobile ── */
-  .is-compact .hp-bg-overlay { background: var(--hp-hero-overlay-compact); }
-  /* Tablette / mobile : le texte occupe toute la largeur, l'orbite est masquée */
-  .is-compact .hp-orbit { display: none; }
-  /* Paysage (tablette couchée) : portable visible à droite. Portrait : partie gauche épurée, texte lisible. */
-  .is-compact .hp-bg-img { object-position: 100% 55%; }
-  @media (orientation: portrait) { .is-compact .hp-bg-img { object-position: 0% center; } }
-  .is-mobile .hp-title { font-size: clamp(32px, 9vw, 44px); }
-  .is-mobile .hp-subtitle { font-size: 17px; }
-  .is-mobile .hp-footer { flex-direction: column-reverse; align-items: flex-start; }
-  .is-mobile .hp-overlay { padding: 12px; align-items: flex-end; }
-  .is-mobile .hp-modal { max-height: 90dvh; border-radius: 22px; }
-
-  /* ── Mobile : textes et cartes compacts ── */
-  .is-mobile .hp-main {
-    gap: 18px;
-    padding-top: 14px;
-    padding-bottom: 16px;
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-  .is-mobile .hp-modules {
-    font-size: 11px;
-    padding: 0.35em 0.85em;
-    gap: 6px;
-    margin-bottom: 14px;
-  }
-  .is-mobile .hp-live-dot { width: 6px; height: 6px; }
-  .is-mobile .hp-title {
-    font-size: clamp(21px, 6.2vw, 27px);
-    line-height: 1.12;
-    margin-bottom: 10px;
-  }
-  .is-mobile .hp-subtitle {
-    font-size: 13px;
-    line-height: 1.45;
-    margin-bottom: 0;
-  }
-  .is-mobile .hp-cards {
-    gap: 8px;
-    margin-top: 0;
-  }
-  .is-mobile .hp-card {
-    padding: 7px 10px;
-    gap: 9px;
-    border-radius: 11px;
-  }
-  .is-mobile .hp-card-icon {
-    width: 27px;
-    height: 27px;
-    border-radius: 8px;
-  }
-  .is-mobile .hp-card-icon svg { width: 0.9em; height: 0.9em; }
-  .is-mobile .hp-card-title { font-size: 12px; margin-bottom: 1px; }
-  .is-mobile .hp-card-desc  { font-size: 11px; line-height: 1.3; }
-
-  /* Actions sous les cards — pleine largeur */
-  .is-mobile .hp-actions-below {
-    flex-direction: column;
-    align-items: stretch;
-    margin-top: 4px;
-    gap: 10px;
-  }
-  .is-mobile .hp-actions-below .hp-cta,
-  .is-mobile .hp-actions-below .hp-ghost {
-    height: 42px;
-    font-size: 14px;
-    width: 100%;
-  }
-  .is-mobile .hp-footer { font-size: 12px; }
-
-  @media (max-height: 640px) and (min-width: 901px) { .hp-card-desc { display: none; } .hp-subtitle { margin-bottom: 12px; } }
-
-  /* Cartes : 2 × 2 ; 1 colonne sur petit mobile */
-  @media (max-width: 540px) { .hp-cards { grid-template-columns: 1fr; gap: 8px; } }
-
-  /* Remonte légèrement tout le bloc sur ordinateur */
-  @media (min-width: 901px) { .hp-main { padding-bottom: clamp(24px, 8vh, 90px); } }
-  /* Ordinateur peu haut : espacements resserrés pour que la carte IA ne repousse pas le pied de page hors de l'écran */
-  @media (min-width: 901px) and (max-height: 820px) { .hp-main { gap: clamp(12px, 2.4vh, 24px); padding-bottom: clamp(12px, 3vh, 28px); } }
-
-  /* ── Desktop : texte limité à la moitié gauche (ne recouvre pas le portable) + tailles réduites ── */
-  @media (min-width: 901px) {
-    .hp-content { max-width: min(920px, 54vw); }
-    .hp-cards { max-width: min(700px, 46vw); }
-    .hp-modules {
-      font-size: clamp(12px, min(0.95vw, 2vh), 15px);
-      padding: 0.42em 0.95em;
-      margin-bottom: clamp(14px, 2.6vh, 26px);
-    }
-    .hp-title {
-      font-size: clamp(28px, min(4vw, 6.2vh), 60px);
-      margin-bottom: clamp(8px, 1.5vh, 16px);
-    }
-    .hp-subtitle {
-      font-size: clamp(15px, min(1.25vw, 2.4vh), 19px);
-      max-width: 620px;
-      margin-bottom: clamp(12px, 2.2vh, 24px);
-    }
-    .hp-actions-below {
-      margin-top: 2px;
-    }
-  }
-
-  /* ── Orbite visible à partir de 1200 px de large : le texte s'arrête avant la première icône ──
-     (bord gauche de l'orbite = 100vw − 768.7 px d'image × échelle du fond) */
+  /* Le texte s'arrête avant la première icône de l'orbite (bord gauche = 100vw − 768,7 px d'image × échelle du fond) */
   @media (min-width: 1200px) {
-    .hp-content { max-width: min(920px, 54vw, calc(100vw - 768.7 * max(100vw / 1672, 100vh / 941) - clamp(20px, 4vw, 56px) - 32px)); }
+    .hp-hero-content { max-width: min(720px, 52vw, calc(100vw - 768.7 * max(100vw / 1672, (100vh - var(--hp-header)) / 941) - var(--hp-pad) - 32px)); }
   }
-  @media (max-width: 1199px) { .hp-orbit { display: none; } }
-
-  /* ── Arabe (lecture de droite à gauche) ──
-     L'image de fond ne se retourne pas (le portable et ses icônes restent à droite) : sur ordinateur,
-     la colonne de texte reste donc dans la moitié gauche ; elle est simplement alignée à droite et
-     s'arrête, comme en français, avant le portable (mêmes largeurs que .hp-content ci-dessus). */
-  @media (min-width: 901px) {
-    [dir="rtl"] .hp-main { padding-inline-start: calc(100% - clamp(20px, 4vw, 56px) - min(920px, 54vw)); }
-  }
-  @media (min-width: 1200px) {
-    [dir="rtl"] .hp-main { padding-inline-start: calc(100% - clamp(20px, 4vw, 56px) - min(920px, 54vw, calc(100vw - 768.7 * max(100vw / 1672, 100vh / 941) - clamp(20px, 4vw, 56px) - 32px))); }
-  }
-  /* L'écriture arabe est plus haute que l'écriture latine : interligne des titres relâché */
+  /* Arabe : l'image ne se retourne pas (le portable reste à droite) ; le texte reste donc dans la moitié gauche */
+  [dir="rtl"] .hp-hero-content { margin-inline-start: auto; }
   [dir="rtl"] .hp-title { line-height: 1.3; }
-  [dir="rtl"] .hp-modal-title { line-height: 1.4; }
-  /* Flèche des boutons : pointe vers la gauche, dans le sens de la lecture */
-  [dir="rtl"] .hp-cta-arrow svg { transform: scaleX(-1); }
+  [dir="rtl"] .hp-cta-arrow svg, [dir="rtl"] .hp-link svg { transform: scaleX(-1); }
   [dir="rtl"] .hp-cta:hover .hp-cta-arrow { transform: translateX(-3px); }
 
-  /* ── Apparition sans JavaScript ── */
-  .hp-rise { animation: hpRise .55s cubic-bezier(0.22,1,0.36,1) both; }
-  /* Titre (élément LCP) : glissement seul, sans opacité 0, pour être peint dès la première image */
-  .hp-slide { animation: hpSlide .55s cubic-bezier(0.22,1,0.36,1) both; }
-  @keyframes hpSlide { from { transform: translateY(14px); } to { transform: none; } }
-  .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 120ms; } .hp-d3 { animation-delay: 220ms; } .hp-d4 { animation-delay: 320ms; }
-  @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  /* Tablette et téléphone : le texte occupe la largeur, l'orbite est masquée, le voile couvre toute l'image */
+  @media (max-width: 1199px) {
+    .hp-orbit { display: none; }
+    .hp-hero-content { max-width: 680px; }
+    .hp-bg-veil, [dir="rtl"] .hp-bg-veil { background: linear-gradient(180deg, rgba(248, 247, 255, 0.82) 0%, rgba(248, 247, 255, 0.62) 55%, rgba(248, 247, 255, 0.3) 100%); }
+  }
+  @media (max-width: 1199px) and (orientation: portrait) { .hp-bg-img { object-position: 0% center; } }
+  @media (max-width: 640px) {
+    .hp-hero { justify-content: flex-start; padding-top: 36px; padding-bottom: 56px; }
+    .hp-actions { flex-direction: column; align-items: stretch; width: 100%; }
+    .hp-cta, .hp-ghost { width: 100%; min-height: 52px; }
+    .hp-trust { flex-direction: column; gap: 8px; }
+  }
+  /* Ordinateur peu haut : espacements resserrés pour que le premier écran reste entier */
+  @media (min-width: 1200px) and (max-height: 700px) {
+    .hp-hero { padding-top: 22px; padding-bottom: 30px; }
+    .hp-cta, .hp-ghost { min-height: 48px; }
+  }
 
+  /* ══ Sections ══ */
+  .hp-section { padding: clamp(52px, 7.5vw, 104px) var(--hp-pad); background: #fff; }
+  .hp-section.hp-tint { background: linear-gradient(180deg, #f6f4ff 0%, #eef0ff 100%); }
+  .hp-head { max-width: 760px; margin-bottom: clamp(26px, 3.6vw, 44px); }
+  .hp-eyebrow { display: inline-block; margin-bottom: 14px !important; padding: 6px 14px; border-radius: 999px; background: rgba(91, 63, 224, 0.09); color: var(--hp-accent); font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+  .hp-h2 { font-size: clamp(26px, 3.2vw, 40px); font-weight: 700; line-height: 1.14; letter-spacing: -0.02em; text-wrap: balance; }
+  .hp-lead { margin-top: 12px !important; color: var(--hp-muted); font-size: clamp(16px, 1.3vw, 18px); line-height: 1.6; }
+  .hp-more { margin-top: clamp(22px, 3vw, 34px) !important; }
+  .hp-link { display: inline-flex; align-items: center; gap: 8px; color: var(--hp-accent); font-weight: 700; text-decoration: none; }
+  .hp-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+  /* Cartes « pourquoi » */
+  .hp-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .hp-card { display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 18px; background: #fff; border: 1px solid var(--hp-line); box-shadow: 0 10px 30px rgba(62, 84, 190, 0.08); transition: transform 0.2s, box-shadow 0.2s; }
+  .hp-card:hover { transform: translateY(-3px); box-shadow: 0 16px 38px rgba(62, 84, 190, 0.14); }
+  .hp-card-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 46px; height: 46px; border-radius: 13px; background: rgba(91, 63, 224, 0.09); color: var(--hp-accent); }
+  .hp-card-title { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--hp-text); }
+  .hp-card-desc { margin-top: 6px !important; color: var(--hp-muted); font-size: 14.5px; line-height: 1.55; }
+  /* Carte mise en avant : pleine largeur, contour aux couleurs de la vague */
+  .hp-card.hp-card-ai { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 18px; border: 1.5px solid transparent; background: linear-gradient(120deg, #ffffff 0%, #f5f0ff 55%, #ecfeff 100%) padding-box, var(--hp-wave) border-box; }
+  .hp-ai-icon { background: linear-gradient(140deg, #6D28D9 0%, #A21CAF 100%); color: #fff; }
+  .hp-ai-badge { display: inline-flex; vertical-align: middle; margin-inline-start: 6px; padding: 3px 10px; border-radius: 999px; background: rgba(91, 63, 224, 0.1); color: var(--hp-accent); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.4; white-space: nowrap; }
+
+  /* Modules, par groupe */
+  .hp-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  .hp-groups-col { display: grid; gap: 18px; }
+  .hp-group { padding: 24px; border-radius: 20px; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.95); box-shadow: 0 12px 32px rgba(62, 84, 190, 0.1); }
+  .hp-group-title { margin-bottom: 14px !important; padding-bottom: 12px; border-bottom: 1px solid var(--hp-line); font-size: 17px; font-weight: 700; }
+  .hp-modules { display: grid; gap: 14px; }
+  .hp-modules li { display: flex; align-items: flex-start; gap: 12px; }
+  .hp-module-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: rgba(91, 63, 224, 0.09); color: var(--hp-accent); }
+  .hp-modules strong { display: block; font-size: 15px; font-weight: 700; line-height: 1.35; }
+  .hp-module-desc { display: block; margin-top: 2px; color: var(--hp-muted); font-size: 13.5px; line-height: 1.5; }
+
+  /* Secteurs */
+  .hp-sectors { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+  .hp-sector { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; height: 100%; padding: 18px; border-radius: 16px; background: #fff; border: 1px solid var(--hp-line); color: var(--hp-text); text-decoration: none; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+  .hp-sector:hover { transform: translateY(-3px); border-color: rgba(91, 63, 224, 0.5); box-shadow: 0 14px 30px rgba(62, 84, 190, 0.14); }
+  .hp-sector-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(140deg, rgba(106, 84, 231, 0.14), rgba(230, 89, 176, 0.14)); color: var(--hp-accent); }
+  .hp-sector-name { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .hp-sector-count { margin-top: auto; color: var(--hp-muted); font-size: 13px; font-weight: 500; }
+
+  /* Étapes */
+  .hp-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; counter-reset: none; }
+  .hp-step { padding: 26px 24px; border-radius: 20px; background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(255, 255, 255, 0.95); box-shadow: 0 12px 32px rgba(62, 84, 190, 0.1); }
+  .hp-step-num { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin-bottom: 16px; border-radius: 50%; background: var(--hp-wave); color: #fff; font-size: 17px; font-weight: 800; }
+
+  /* Formules */
+  .hp-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+  .hp-plan { position: relative; display: flex; flex-direction: column; padding: 30px 26px 26px; border-radius: 22px; background: #fff; border: 1px solid var(--hp-line); box-shadow: 0 12px 32px rgba(62, 84, 190, 0.08); }
+  .hp-plan.is-featured { border: 2px solid transparent; background: linear-gradient(#fff, #fff) padding-box, var(--hp-wave) border-box; box-shadow: 0 20px 48px rgba(91, 63, 224, 0.18); }
+  .hp-plan-badge { position: absolute; top: -13px; inset-inline-start: 26px; padding: 4px 13px; border-radius: 999px; background: linear-gradient(100deg, #4f3fd8 0%, #7a48e6 100%); color: #fff; font-size: 12px; font-weight: 700; }
+  .hp-plan-name { font-size: 21px; font-weight: 700; }
+  .hp-plan-price { margin-top: 10px !important; color: var(--hp-muted); font-size: 15px; }
+  .hp-plan-price strong { color: var(--hp-text); font-family: var(--font-poppins), sans-serif; font-size: clamp(30px, 3vw, 38px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .hp-plan-annual { margin-top: 4px !important; color: var(--hp-accent); font-size: 14px; font-weight: 600; }
+  .hp-plan-tagline { margin-top: 12px !important; color: var(--hp-muted); font-size: 15px; line-height: 1.5; min-height: 3em; }
+  .hp-plan-features { display: grid; gap: 10px; margin: 18px 0 24px !important; font-size: 14.5px; }
+  .hp-plan-features li { display: flex; align-items: flex-start; gap: 10px; line-height: 1.45; }
+  .hp-plan-features .hp-trust-check { margin-top: 1px; }
+  .hp-plan .hp-cta, .hp-plan .hp-ghost { margin-top: auto; width: 100%; min-height: 50px; font-size: 15.5px; }
+  .hp-plan .hp-ghost { background: #fff; }
+
+  /* Dernier appel */
+  .hp-band { padding: clamp(52px, 7vw, 92px) var(--hp-pad); background: linear-gradient(105deg, #2c21a8 0%, #5a35d6 44%, #a53fd0 72%, #ea4f96 90%, #fda85a 100%); color: #fff; }
+  .hp-band .hp-wrap { max-width: 860px; text-align: center; }
+  .hp-band .hp-h2 { color: #fff; }
+  .hp-band .hp-lead { color: rgba(255, 255, 255, 0.92); }
+  .hp-band .hp-actions { justify-content: center; }
+  .hp-cta-light { background: #fff; color: #2c21a8 !important; box-shadow: 0 12px 34px rgba(20, 12, 80, 0.3); }
+  .hp-ghost-light { background: transparent; border-color: rgba(255, 255, 255, 0.7); color: #fff !important; }
+  .hp-ghost-light:hover { background: rgba(255, 255, 255, 0.14); border-color: #fff; }
+
+  /* Pied de page */
+  .hp-footer { padding: clamp(36px, 5vw, 60px) var(--hp-pad) 24px; background: linear-gradient(160deg, #1c1a4f 0%, #262272 100%); color: #c9cdf5; font-size: 14.5px; }
+  .hp-footer a { color: #dfe2ff; text-decoration: none; }
+  .hp-footer a:hover { color: #fff; text-decoration: underline; }
+  .hp-footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.3fr; gap: 32px; }
+  .hp-footer .st-brand-name { color: #fff; }
+  .hp-footer .st-brand-name span { color: #b2aefc; }
+  .hp-footer-tagline { margin-top: 14px !important; max-width: 320px; }
+  .hp-footer-title { margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #fff; }
+  .hp-footer ul { display: grid; gap: 8px; }
+  .hp-footer-legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; margin-top: 34px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.16); font-size: 13.5px; }
+  .hp-footer-legal p { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+
+  /* ══ Écrans plus étroits ══ */
+  @media (max-width: 1100px) {
+    .hp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hp-sectors { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .hp-plans { grid-template-columns: 1fr; max-width: 520px; margin-inline: auto; }
+    .hp-plan-tagline { min-height: 0; }
+  }
+  @media (max-width: 860px) {
+    .hp-groups, .hp-steps { grid-template-columns: 1fr; }
+    .hp-footer-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .hp-cards { grid-template-columns: 1fr; }
+    .hp-card.hp-card-ai { flex-direction: column; align-items: flex-start; }
+    .hp-sectors { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .hp-sector { padding: 14px; }
+    .hp-group { padding: 20px 18px; }
+    .hp-footer-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ══ Apparition du premier écran (sans JavaScript) ══ */
+  .hp-rise { animation: hpRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hp-slide { animation: hpSlide 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hp-d1 { animation-delay: 60ms; } .hp-d2 { animation-delay: 140ms; } .hp-d3 { animation-delay: 220ms; } .hp-d4 { animation-delay: 300ms; }
+  @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes hpSlide { from { transform: translateY(14px); } to { transform: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-slide, .hp-live-dot, .hp-overlay, .hp-modal, .hp-orbit-item { animation: none !important; }
-    .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card, .hp-orbit-tile, .hp-orbit-tip { transition: none !important; }
-    .hp-orbit-item:hover .hp-orbit-tile { transform: none; }
+    .hp-rise, .hp-slide, .hp-live-dot, .hp-orbit-item { animation: none !important; }
+    .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card, .hp-sector, .hp-orbit-tile, .hp-orbit-tip { transition: none !important; }
+    .hp-cta:hover, .hp-card:hover, .hp-sector:hover, .hp-orbit-item:hover .hp-orbit-tile { transform: none; }
   }
 `;

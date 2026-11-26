@@ -18,7 +18,8 @@ import { CompanyService } from '../company/company.service';
 import { validateTaxId } from '../../common/fiscal';
 import { normalizePhone } from '../../common/phone';
 import { verifyGoogleIdToken } from './google-verifier';
-import type { GoogleAuthDto, RegisterDto } from './dto/register.dto';
+import { verifyAppleIdToken } from './apple-verifier';
+import type { AppleAuthDto, GoogleAuthDto, RegisterDto } from './dto/register.dto';
 
 /** 8 caractères minimum, au moins une lettre et un chiffre. */
 export function assertStrongPassword(password: string) {
@@ -184,7 +185,7 @@ export class AuthService {
       companyName: owner ? owner.companyName : user.companyName, modules: owner ? owner.modules : user.modules,
       isTeamMember: !!user.ownerId, twoFactorEnabled: !!user.twoFactorEnabled, lastLoginAt: user.lastLoginAt,
       permissions: user.ownerId ? this.permissions.effectivePermissions(user.role, user.extraPermissions) : ['*'],
-      sector: (owner ?? user).sector ?? null, googleLinked: !!user.googleSub,
+      sector: (owner ?? user).sector ?? null, googleLinked: !!user.googleSub, appleLinked: !!user.appleSub,
       emailVerified: !!user.emailVerifiedAt || user.signupSource !== 'self',
       // État du compte calculé par le serveur (essai, abonnement, suspension) : l'interface ne fait que l'afficher.
       account: !isPlatformAdmin(user.role) && (owner ?? user).role === 'client' ? this.subscriptions.view(owner ?? user, await this.settings.get()) : null,
@@ -210,7 +211,7 @@ export class AuthService {
    */
   private async createOwner(input: {
     email: string; name: string; companyName: string; phone: string | null; passwordHash: string; sectorCode: string;
-    source: 'self' | 'google'; googleSub?: string | null; emailVerified: boolean; verifyHash?: string | null;
+    source: 'self' | 'google' | 'apple'; googleSub?: string | null; appleSub?: string | null; emailVerified: boolean; verifyHash?: string | null;
   }): Promise<User> {
     const now = new Date();
     const trial = await this.subscriptions.trialDates(now);
@@ -219,7 +220,7 @@ export class AuthService {
       role: 'client', isActive: true, ownerId: null,
       modules: await this.subscriptions.sectorModules(input.sectorCode), sector: input.sectorCode,
       accountStatus: 'TRIAL', trialStartedAt: trial.trialStartedAt, trialEndsAt: trial.trialEndsAt, expiryEnforced: true, statusChangedAt: now,
-      signupSource: input.source, googleSub: input.googleSub ?? null,
+      signupSource: input.source, googleSub: input.googleSub ?? null, appleSub: input.appleSub ?? null,
       emailVerifiedAt: input.emailVerified ? now : null,
       emailVerifyHash: input.verifyHash ?? null, emailVerifyExpires: input.verifyHash ? new Date(now.getTime() + 48 * 3600_000) : null,
       lastLoginAt: now,
@@ -317,13 +318,82 @@ export class AuthService {
     return { success: true, emailSent, message: emailSent ? 'Un nouveau lien vient de vous être envoyé.' : 'L’envoi d’emails n’est pas configuré : contactez l’administrateur.' };
   }
 
-  // ───────────── Connexion et inscription avec Google ─────────────
+  // ───────────── Connexion et inscription avec Google ou Apple ─────────────
+
+  /** Ce qui diffère d'un fournisseur d'identité à l'autre : la colonne qui garde son identifiant, et les messages. */
+  private static readonly SOCIAL = {
+    google: {
+      column: 'googleSub' as const, action: 'login_google',
+      otherAccount: 'Ce compte est relié à un autre compte Google.',
+      notFound: 'Aucun compte n’est associé à cette adresse Google. Créez votre compte pour démarrer l’essai gratuit.',
+    },
+    apple: {
+      column: 'appleSub' as const, action: 'login_apple',
+      otherAccount: 'Ce compte est relié à un autre identifiant Apple.',
+      notFound: 'Aucun compte n’est associé à cet identifiant Apple. Créez votre compte pour démarrer l’essai gratuit.',
+    },
+  };
 
   /**
-   * Le navigateur envoie le jeton d'identité remis par Google ; il est vérifié ici (signature, destinataire, expiration).
-   *  - compte existant (même identifiant Google, ou même adresse email vérifiée par Google) : connexion ;
+   * Suite commune à Google et Apple, une fois le jeton d'identité vérifié :
+   *  - compte existant (même identifiant chez le fournisseur, ou même adresse email vérifiée par lui) : connexion ;
    *  - sinon, avec intent = « register » : création d'une société en essai gratuit ;
    *  - sinon : 404 avec le code ACCOUNT_NOT_FOUND, et l'interface propose la création de compte.
+   */
+  private async socialSignIn(
+    provider: 'google' | 'apple',
+    identity: { sub: string; email: string | null; name: string },
+    dto: { intent?: 'login' | 'register'; companyName?: string; sector?: string; phone?: string; acceptTerms?: boolean; otp?: string },
+    ip?: string,
+  ) {
+    const p = AuthService.SOCIAL[provider];
+    let user =
+      (await this.userRepository.findOne({ where: { [p.column]: identity.sub } as any })) ??
+      (identity.email ? await this.findByEmail(identity.email) : null);
+    if (user) {
+      // L'administrateur de la plateforme garde une authentification dédiée : mot de passe (+ double authentification).
+      if (isPlatformAdmin(user.role)) throw new ForbiddenException('Ce compte se connecte avec son mot de passe.');
+      if (user[p.column] && user[p.column] !== identity.sub) throw new UnauthorizedException(p.otherAccount);
+      if (!user.isActive) throw new UnauthorizedException('Compte désactivé');
+      if (user.twoFactorEnabled && user.twoFactorSecret) {
+        if (!dto.otp) throw new UnauthorizedException({ statusCode: 401, message: 'Code de vérification requis', error: 'Unauthorized', requires2fa: true });
+        if (!verifyTotp(user.twoFactorSecret, dto.otp)) throw new UnauthorizedException({ statusCode: 401, message: 'Code de vérification invalide', error: 'Unauthorized', requires2fa: true });
+      }
+      let owner: User | null = null;
+      if (user.ownerId) {
+        owner = await this.userRepository.findOne({ where: { id: user.ownerId } });
+        if (!owner || !owner.isActive) throw new UnauthorizedException('Le compte de la société est désactivé');
+      }
+      const patch: Partial<User> = { lastLoginAt: new Date() };
+      if (!user[p.column]) patch[p.column] = identity.sub;
+      if (!user.emailVerifiedAt) patch.emailVerifiedAt = new Date();
+      await this.userRepository.update({ id: user.id }, patch);
+      Object.assign(user, patch);
+      void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: p.action, entity: 'auth', ip: ip || null, status: 200 });
+      return { ...(await this.session(user, owner)), created: false };
+    }
+
+    if (dto.intent !== 'register') {
+      throw new NotFoundException({ statusCode: 404, error: 'Not Found', code: 'ACCOUNT_NOT_FOUND', message: p.notFound, email: identity.email, name: identity.name });
+    }
+    if (!identity.email) throw new BadRequestException('Votre adresse email n’a pas été communiquée : autorisez son partage, ou créez votre compte avec votre email.');
+    if (dto.acceptTerms !== true) throw new BadRequestException('Vous devez accepter les conditions d’utilisation.');
+    const companyName = String(dto.companyName || '').trim();
+    if (companyName.length < 2) throw new BadRequestException('Indiquez le nom de votre société.');
+    const checked = await this.checkSignup(String(dto.sector || ''), dto.phone, undefined);
+    user = await this.createOwner({
+      email: identity.email, name: identity.name, companyName, phone: checked.phone,
+      // Mot de passe aléatoire inutilisable : la personne peut en définir un avec « mot de passe oublié ».
+      passwordHash: await bcrypt.hash(randomBytes(32).toString('hex'), 10),
+      sectorCode: checked.sector.code, source: provider, [p.column]: identity.sub, emailVerified: true,
+    });
+    await this.afterSignup(user, {}, ip);
+    return { ...(await this.session(user, null)), created: true };
+  }
+
+  /**
+   * « Continuer avec Google » : le navigateur envoie le jeton d'identité remis par Google ; il est vérifié ici
+   * (signature, destinataire, expiration) avant toute recherche de compte.
    */
   async google(dto: GoogleAuthDto, ip?: string) {
     const clientId = this.settings.googleClientId();
@@ -336,46 +406,28 @@ export class AuthService {
       throw new UnauthorizedException('Jeton Google invalide ou expiré. Réessayez.');
     }
     if (!identity.emailVerified) throw new UnauthorizedException('Cette adresse Google n’est pas vérifiée.');
+    return this.socialSignIn('google', { sub: identity.sub, email: identity.email, name: identity.name }, dto, ip);
+  }
 
-    let user = (await this.userRepository.findOne({ where: { googleSub: identity.sub } })) ?? (await this.findByEmail(identity.email));
-    if (user) {
-      // L'administrateur de la plateforme garde une authentification dédiée : mot de passe (+ double authentification).
-      if (isPlatformAdmin(user.role)) throw new ForbiddenException('Ce compte se connecte avec son mot de passe.');
-      if (user.googleSub && user.googleSub !== identity.sub) throw new UnauthorizedException('Ce compte est relié à un autre compte Google.');
-      if (!user.isActive) throw new UnauthorizedException('Compte désactivé');
-      if (user.twoFactorEnabled && user.twoFactorSecret) {
-        if (!dto.otp) throw new UnauthorizedException({ statusCode: 401, message: 'Code de vérification requis', error: 'Unauthorized', requires2fa: true });
-        if (!verifyTotp(user.twoFactorSecret, dto.otp)) throw new UnauthorizedException({ statusCode: 401, message: 'Code de vérification invalide', error: 'Unauthorized', requires2fa: true });
-      }
-      let owner: User | null = null;
-      if (user.ownerId) {
-        owner = await this.userRepository.findOne({ where: { id: user.ownerId } });
-        if (!owner || !owner.isActive) throw new UnauthorizedException('Le compte de la société est désactivé');
-      }
-      const patch: Partial<User> = { lastLoginAt: new Date() };
-      if (!user.googleSub) patch.googleSub = identity.sub;
-      if (!user.emailVerifiedAt) patch.emailVerifiedAt = new Date();
-      await this.userRepository.update({ id: user.id }, patch);
-      Object.assign(user, patch);
-      void this.audit.record({ userId: user.ownerId ?? user.id, actorId: user.id, actorEmail: user.email, action: 'login_google', entity: 'auth', ip: ip || null, status: 200 });
-      return { ...(await this.session(user, owner)), created: false };
+  /**
+   * « Continuer avec Apple » : même principe, avec le jeton d'identité d'Apple. Le nom n'est pas dans le jeton (Apple ne
+   * le remet au navigateur qu'à la première autorisation) : il arrive à part et ne sert qu'à l'affichage.
+   */
+  async apple(dto: AppleAuthDto, ip?: string) {
+    const clientIds = this.settings.appleClientIds();
+    if (!clientIds.length) throw new ServiceUnavailableException('La connexion avec Apple n’est pas configurée sur ce serveur.');
+    let identity;
+    try {
+      identity = await verifyAppleIdToken(dto.identityToken, clientIds);
+    } catch (e: any) {
+      void this.audit.record({ action: 'login_apple_failed', entity: 'auth', ip: ip || null, status: 401, details: { error: String(e?.message || e).slice(0, 120) } });
+      throw new UnauthorizedException('Jeton Apple invalide ou expiré. Réessayez.');
     }
-
-    if (dto.intent !== 'register') {
-      throw new NotFoundException({ statusCode: 404, error: 'Not Found', code: 'ACCOUNT_NOT_FOUND', message: 'Aucun compte n’est associé à cette adresse Google. Créez votre compte pour démarrer l’essai gratuit.', email: identity.email, name: identity.name });
-    }
-    if (dto.acceptTerms !== true) throw new BadRequestException('Vous devez accepter les conditions d’utilisation.');
-    const companyName = String(dto.companyName || '').trim();
-    if (companyName.length < 2) throw new BadRequestException('Indiquez le nom de votre société.');
-    const checked = await this.checkSignup(String(dto.sector || ''), dto.phone, undefined);
-    user = await this.createOwner({
-      email: identity.email, name: identity.name, companyName, phone: checked.phone,
-      // Mot de passe aléatoire inutilisable : la personne peut en définir un avec « mot de passe oublié ».
-      passwordHash: await bcrypt.hash(randomBytes(32).toString('hex'), 10),
-      sectorCode: checked.sector.code, source: 'google', googleSub: identity.sub, emailVerified: true,
-    });
-    await this.afterSignup(user, {}, ip);
-    return { ...(await this.session(user, null)), created: true };
+    // Une adresse non vérifiée ne sert pas à retrouver un compte existant (elle ne prouve rien).
+    const email = identity.emailVerified ? identity.email : null;
+    const given = String(dto.name || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+    const name = given.length >= 2 ? given : email ? email.split('@')[0].slice(0, 120) : 'Utilisateur Apple';
+    return this.socialSignIn('apple', { sub: identity.sub, email, name }, dto, ip);
   }
 
   // ───────────── Mot de passe oublié ─────────────

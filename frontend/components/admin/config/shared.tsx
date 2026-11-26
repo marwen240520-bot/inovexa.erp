@@ -18,6 +18,11 @@ export interface AdminSettings {
   trialHours: number; trialReminderHours: number; renewalReminderDays: number; requireEmailVerification: boolean;
   currency: string; vatRate: number; paymentInstructions: string | null; paymentMethods: string[] | null;
   supportEmail: string | null; supportPhone: string | null; supportWhatsapp: string | null;
+  /** Lien https de la page de paiement par carte (prestataire de l'éditeur) ; null = non renseigné. */
+  paymentLink?: string | null;
+  /** Version du contenu de départ (secteurs, formules proposées) installée dans cette base. */
+  catalogVersion?: number;
+  appleConfigured?: boolean; mailConfigured?: boolean;
   /** Calculés par le serveur, en lecture seule (absents de la réponse de PUT /admin/settings). */
   googleConfigured: boolean; paymentMethodOptions: string[]; moduleKeys: string[];
 }
@@ -31,7 +36,8 @@ export interface Paged<T> { total: number; limit: number; offset: number; items:
 // ───────────── Libellés ─────────────
 
 export const METHOD_LABELS: Record<string, string> = {
-  bank_transfer: "Virement bancaire", cash: "Espèces", cheque: "Chèque", d17: "D17", card: "Carte bancaire", other: "Autre",
+  bank_transfer: "Virement bancaire", d17: "D17 (La Poste)", flouci: "Flouci", edinar: "Carte e-Dinar", postal: "Mandat minute",
+  cheque: "Chèque", cash: "Espèces", card: "Carte bancaire", other: "Autre",
 };
 export const methodLabel = (method: string | null | undefined) => (method ? METHOD_LABELS[method] || method : "—");
 

@@ -249,6 +249,19 @@ export const AUTH_EXTRA_STYLES = `
   .lg-google { display: flex; justify-content: center; min-height: 44px; color-scheme: light; }
   .lg-google[data-disabled="true"] { opacity: .55; pointer-events: none; }
 
+  /* Boutons Google et Apple, l'un sous l'autre, à la même largeur (400 px au plus : limite du bouton de Google) */
+  .lg-social-buttons { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .lg-social-buttons > * { width: 100%; max-width: 400px; }
+  /* Bouton Apple : noir sur thème clair, blanc sur thème sombre (recommandations d'Apple), même forme que celui de Google */
+  .lg-apple { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #000; background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", var(--font-poppins), sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+  .lg-dark .lg-apple { border-color: #fff; background: #fff; color: #000; }
+  .lg-apple:hover:not(:disabled) { opacity: .86; }
+  .lg-apple:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* Lien « mot de passe oublié » aligné à la fin de la ligne « se souvenir de moi » */
+  .lg-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 2px 0 clamp(16px, 2.6vh, 22px); font-size: 13.5px; }
+  .lg-row .lg-remember { margin: 0; }
+
   /* Attente (vérification en cours, chargement) */
   .lg-status { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; font-size: 14.5px; line-height: 1.5; color: var(--lg-muted); }
   .lg-status .lg-spinner { flex-shrink: 0; width: 20px; height: 20px; color: var(--lg-accent); }

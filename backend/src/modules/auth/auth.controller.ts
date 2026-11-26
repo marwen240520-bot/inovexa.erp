@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ForgotPasswordDto, LoginWithOtpDto, ResetPasswordDto, TwoFactorCodeDto, TwoFactorDisableDto } from './dto/auth-security.dto';
-import { GoogleAuthDto, RegisterDto, VerifyEmailDto } from './dto/register.dto';
+import { AppleAuthDto, GoogleAuthDto, RegisterDto, VerifyEmailDto } from './dto/register.dto';
 
 const actor = (req: any): number => req.user.actorId ?? req.user.userId;
 const ipOf = (req: any): string => (req.ip || '').toString();
@@ -40,6 +40,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Connexion ou inscription avec Google (jeton d’identité vérifié côté serveur)' })
   google(@Body() body: GoogleAuthDto, @Req() req: any) {
     return this.authService.google(body, ipOf(req));
+  }
+
+  @Post('apple')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @UsePipes(STRICT)
+  @ApiOperation({ summary: 'Connexion ou inscription avec Apple (jeton d’identité vérifié côté serveur)' })
+  apple(@Body() body: AppleAuthDto, @Req() req: any) {
+    return this.authService.apple(body, ipOf(req));
   }
 
   @Post('verify-email')

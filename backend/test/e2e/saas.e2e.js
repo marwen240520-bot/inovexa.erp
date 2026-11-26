@@ -33,10 +33,12 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   console.log('— Site public');
   let r = await call('GET', '/public/config');
   check('configuration publique : essai de 72 h, devise TND', r.status === 200 && r.body.trialHours === 72 && r.body.currency === 'TND', r);
-  check('Google non configuré : aucun identifiant client exposé', r.body.googleClientId === null, r.body);
+  check('Google et Apple non configurés : aucun identifiant client exposé', r.body.googleClientId === null && r.body.appleClientId === null, r.body);
   r = await call('GET', '/public/sectors');
-  check('10 secteurs proposés', r.status === 200 && r.body.length === 10 && r.body.every((s) => Array.isArray(s.modules) && s.itemCount > 0), r.body.length);
-  check('aucun secteur n’active la production', r.body.every((s) => !s.modules.includes('production')));
+  check('15 secteurs proposés, « Autre activité » en dernier', r.status === 200 && r.body.length === 15 && r.body[14].code === 'other' && r.body.every((s) => Array.isArray(s.modules) && s.itemCount > 0), r.body.map((s) => s.code));
+  check('la fabrication n’est proposée qu’aux secteurs qui transforment des matières', r.body.filter((s) => s.modules.includes('production')).map((s) => s.code).sort().join() === 'agrifood,manufacturing,other,textile', r.body.filter((s) => s.modules.includes('production')).map((s) => s.code));
+  r = await call('GET', '/public/sectors/automotive');
+  check('nouveau secteur (automobile) : pièces et prestations d’atelier suggérées', r.status === 200 && r.body.items.some((i) => i.kind === 'service') && r.body.items.some((i) => i.kind === 'product') && r.body.items.every((i) => i.basis), r.body.items?.length);
   r = await call('GET', '/public/sectors/logistics');
   check('catalogue logistique : catégories, suggestions et avertissement « valeurs indicatives »', r.status === 200 && r.body.categories.length >= 3 && r.body.items.length >= 5 && /indicatives/.test(r.body.disclaimer) && r.body.items.every((i) => i.basis), r.body.disclaimer);
   const logisticsItems = r.body.items;
@@ -101,6 +103,10 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('renvoi du lien : accepté (aucun email envoyé sans SMTP, et c’est dit)', r.status === 200 && r.body.emailSent === false, r);
   r = await call('POST', '/auth/google', { body: { credential: 'x'.repeat(60) } });
   check('Google non configuré : 503, pas de connexion', r.status === 503, r);
+  r = await call('POST', '/auth/apple', { body: { identityToken: 'x'.repeat(60) } });
+  check('Apple non configuré : 503, pas de connexion', r.status === 503, r);
+  r = await call('POST', '/auth/apple', { body: { identityToken: 'x'.repeat(60), role: 'admin' } });
+  check('connexion Apple : champ « role » refusé (400)', r.status === 400, r);
 
   // ═════════════════════════ Abonnement vu par le client ═════════════════════════
   console.log('— Abonnement (client)');
@@ -305,6 +311,18 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('réglages enregistrés', r.status === 200 && r.body.supportEmail === 'support@test.tn', r);
   r = await call('PUT', '/admin/settings', { token: admin, body: { trialHours: 0 } });
   check('durée d’essai invalide refusée', r.status === 400, r);
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('réglages : moyens de paiement tunisiens proposés, Apple et Google signalés non configurés', r.status === 200 && ['bank_transfer', 'd17', 'flouci', 'edinar', 'postal', 'cheque', 'cash', 'card'].every((m) => r.body.paymentMethodOptions.includes(m)) && r.body.paymentMethods.join() === 'bank_transfer,d17,flouci,cheque,cash' && r.body.appleConfigured === false && r.body.googleConfigured === false && r.body.mailConfigured === false, r.body);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: 'javascript:alert(1)' } });
+  check('lien de paiement : seul https est accepté', r.status === 400, r);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: 'http://pay.exemple.tn/inovexa' } });
+  check('lien de paiement en http : refusé', r.status === 400, r);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: 'https://pay.exemple.tn/inovexa', paymentMethods: ['bank_transfer', 'd17', 'flouci', 'cheque', 'cash', 'card'] } });
+  check('lien de paiement par carte enregistré', r.status === 200 && r.body.paymentLink === 'https://pay.exemple.tn/inovexa' && r.body.paymentMethods.includes('card'), r);
+  r = await call('GET', '/billing/subscription', { token: B.token });
+  check('le client voit le lien de paiement et les moyens proposés', r.status === 200 && r.body.payment.link === 'https://pay.exemple.tn/inovexa' && r.body.payment.methods.includes('card') && r.body.payment.methods.includes('flouci'), r.body.payment);
+  r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: '', paymentMethods: ['bank_transfer', 'd17', 'flouci', 'cheque', 'cash'] } });
+  check('lien de paiement retiré', r.status === 200 && r.body.paymentLink === null, r);
 
   const plans = (await call('GET', '/admin/plans', { token: admin })).body;
   const starter = plans.find((p) => p.code === 'starter');
@@ -496,6 +514,76 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('comparaison mensuelle : null quand il n’y a pas de mois précédent (plus de « +5,2 % » fixe)', r.status === 200 && r.body.clientGrowth === null && r.body.salesGrowth === null && r.body.profitGrowth === null, r);
   r = await call('DELETE', `/reports/saved/${savedReport.id}`, { token: newToken });
   check('le propriétaire supprime son rapport', r.status === 200 && r.body.success === true, r);
+
+  // ═════════════════════════ Mise à niveau du contenu de départ ═════════════════════════
+  console.log('— Mise à niveau du contenu de départ (base installée en version 1)');
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: newToken });
+  check('mise à niveau : réservée à l’administrateur (403)', r.status === 403, r);
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('base neuve : déjà à jour, rien n’est modifié', r.status === 200 && r.body.upgraded === false, r);
+  // On remet la base dans l'état d'une installation en version 1.
+  const BASE_V1 = ['products', 'categories', 'clients', 'invoices', 'finance', 'reports', 'analytics', 'ai'];
+  const V1_MANUFACTURING = [...BASE_V1, 'stock', 'sales', 'purchases', 'orders', 'suppliers', 'logistics', 'hr', 'objectives'];
+  await db.query(`UPDATE sectors SET modules = $1 WHERE code = 'manufacturing'`, [JSON.stringify(V1_MANUFACTURING)]);
+  await db.query(`UPDATE sectors SET modules = $1 WHERE code = 'healthcare'`, [JSON.stringify(['products', 'sales'])]); // personnalisé par l'administrateur
+  const NEW = ['agrifood', 'automotive', 'ecommerce', 'textile', 'beauty'];
+  await db.query(`DELETE FROM sector_items WHERE "sectorId" IN (SELECT id FROM sectors WHERE code = ANY($1))`, [NEW]);
+  await db.query(`DELETE FROM sector_categories WHERE "sectorId" IN (SELECT id FROM sectors WHERE code = ANY($1))`, [NEW]);
+  await db.query(`DELETE FROM service_offers WHERE "sectorCode" = ANY($1)`, [NEW]);
+  await db.query(`DELETE FROM sectors WHERE code = ANY($1)`, [NEW]);
+  await db.query(`UPDATE plans SET "priceMonthly" = NULL, "priceAnnual" = NULL, features = $1 WHERE code = 'enterprise'`, [JSON.stringify(['Utilisateurs illimités', 'Paramétrage sur mesure', 'Reprise de données accompagnée', 'Interlocuteur dédié'])]);
+  await db.query(`UPDATE plans SET "priceMonthly" = 120, features = $1 WHERE code = 'business'`, [JSON.stringify(['Jusqu’à 10 utilisateurs', 'Tous les modules de votre secteur', 'Comptabilité, paie et RH', 'Analyses et assistant IA', 'Support prioritaire'])]); // prix changé par l'administrateur
+  await db.query(`UPDATE platform_settings SET "catalogVersion" = 1, "paymentMethods" = $1`, [JSON.stringify(['bank_transfer', 'cash', 'cheque', 'd17'])]);
+  // Deux ateliers inscrits avant la mise à niveau : l'un en essai, l'autre sur la formule Starter (qui ne comprend pas la fabrication).
+  r = await call('POST', '/auth/register', { body: signup({ email: 'e@test.tn', companyName: 'Atelier E', sector: 'manufacturing' }) });
+  const E = { token: r.body.access_token, id: r.body.user.id };
+  check('avant la mise à niveau : un atelier n’a pas le module de fabrication', r.status === 201 && r.body.user.modules.production === false, r.body.user?.modules);
+  await db.query(`INSERT INTO users (email, password, name, "companyName", role, sector, "planCode", "accountStatus", "signupSource", modules) SELECT 'f@test.tn', password, 'F', 'Atelier F', 'client', 'manufacturing', 'starter', 'ACTIVE', 'admin', modules FROM users WHERE id = $1`, [E.id]);
+
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('mise à niveau exécutée une fois (version 1 → 2)', r.status === 200 && r.body.upgraded === true && r.body.from === 1, r);
+  r = await call('POST', '/admin/maintenance/upgrade-catalog', { token: admin });
+  check('second appel : plus rien à faire', r.status === 200 && r.body.upgraded === false, r);
+  const sectorsNow = (await call('GET', '/admin/sectors', { token: admin })).body;
+  const sectorBy = (code) => sectorsNow.find((s) => s.code === code);
+  check('secteur resté d’origine : la fabrication est ajoutée à l’industrie', sectorBy('manufacturing').modules.includes('production') && V1_MANUFACTURING.every((m) => sectorBy('manufacturing').modules.includes(m)), sectorBy('manufacturing').modules);
+  check('secteur personnalisé par l’administrateur : laissé tel quel', sectorBy('healthcare').modules.join() === 'products,sales', sectorBy('healthcare').modules);
+  check('nouveaux secteurs créés avec leurs suggestions, « Autre activité » reste en dernier', sectorsNow.length === 15 && NEW.every((c) => sectorBy(c) && sectorBy(c).itemCount > 0) && sectorsNow[14].code === 'other', sectorsNow.map((s) => s.code));
+  row = await one(`SELECT COUNT(*)::int AS n, BOOL_OR("isPublic") AS public FROM service_offers WHERE "sectorCode" = ANY($1)`, [NEW]);
+  check('leurs prestations de mise en service sont créées en brouillon', row.n === 5 && row.public === false, row);
+  const plansNow = (await call('GET', '/admin/plans', { token: admin })).body;
+  const planBy = (code) => plansNow.find((p) => p.code === code);
+  check('formule en brouillon restée d’origine : prix proposé renseigné', planBy('enterprise').priceMonthly === 249 && planBy('enterprise').priceAnnual === 2490 && planBy('enterprise').isPublic === false, planBy('enterprise'));
+  check('formule modifiée par l’administrateur : son prix est conservé', planBy('business').priceMonthly === 120, planBy('business'));
+  check('formule déjà publiée : jamais modifiée', planBy('starter').isPublic === true && planBy('starter').priceMonthly === 49, planBy('starter'));
+  r = await call('GET', '/admin/settings', { token: admin });
+  check('moyens de paiement d’origine : complétés (D17, Flouci…)', r.body.paymentMethods.join() === 'bank_transfer,d17,flouci,cheque,cash' && r.body.catalogVersion === 2, r.body.paymentMethods);
+  r = await call('GET', '/auth/me', { token: E.token });
+  check('compte en essai du secteur : reçoit le module ajouté', r.status === 200 && r.body.modules.production === true && r.body.modules.stock === true, r.body.modules);
+  row = await one(`SELECT modules FROM users WHERE email = 'f@test.tn'`);
+  check('compte sur une formule qui ne le comprend pas : ne le reçoit pas', row.modules.production === false, row.modules);
+  await db.query(`UPDATE plans SET "priceMonthly" = 99 WHERE code = 'business'`);
+  await db.query(`DELETE FROM users WHERE email IN ('e@test.tn', 'f@test.tn')`);
+
+  // ═════════════════════════ Paiement pendant l'essai gratuit ═════════════════════════
+  console.log('— Paiement pendant l’essai gratuit');
+  r = await call('POST', '/auth/register', { body: signup({ email: 'g@test.tn', companyName: 'Boutique G', sector: 'commerce' }) });
+  const G = { token: r.body.access_token, id: r.body.user.id, trialEndsAt: r.body.account.trialEndsAt };
+  check('compte en essai', r.status === 201 && r.body.account.status === 'TRIAL' && !!G.trialEndsAt, r.body.account);
+  r = await call('POST', '/billing/payments', { token: G.token, body: { planCode: 'starter', billingCycle: 'annual', method: 'flouci', reference: 'FLOUCI-778899' } });
+  check('paiement déclaré pendant l’essai, par Flouci', r.status === 201 && r.body.status === 'pending' && r.body.method === 'flouci' && r.body.amountHT === 490, r);
+  const trialPayment = r.body;
+  r = await call('GET', '/clients', { token: G.token });
+  check('l’essai continue pendant que le paiement attend', r.status === 200, r);
+  r = await call('POST', `/admin/payments/${trialPayment.id}/validate`, { token: admin });
+  check('validé : la période payée commence à la fin de l’essai (aucun jour gratuit perdu)', r.status === 200 && Math.abs(new Date(r.body.periodStart).getTime() - new Date(G.trialEndsAt).getTime()) < 2000, { periodStart: r.body.periodStart, trialEndsAt: G.trialEndsAt });
+  const paidEnd = r.body.periodEnd;
+  const paidMonths = (new Date(paidEnd).getTime() - new Date(r.body.periodStart).getTime()) / (86400000 * 30.4375);
+  check('période annuelle : 12 mois après la fin de l’essai', paidMonths > 11.9 && paidMonths < 12.1, paidMonths);
+  r = await call('GET', '/billing/subscription', { token: G.token });
+  check('compte actif jusqu’à la fin de la période payée', r.body.account.status === 'ACTIVE' && r.body.account.blocked === false && new Date(r.body.account.subscriptionEnd).getTime() === new Date(paidEnd).getTime(), r.body.account);
+  await db.query(`DELETE FROM subscription_payments WHERE "userId" = $1`, [G.id]);
+  await db.query(`DELETE FROM users WHERE id = $1`, [G.id]);
 
   // ═════════════════════════ Suppression d'un compte ═════════════════════════
   console.log('— Suppression d’un compte par l’administrateur');

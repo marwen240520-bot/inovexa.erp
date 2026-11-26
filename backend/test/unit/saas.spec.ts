@@ -3,9 +3,10 @@ import { blockMessage, isAllowedWhenBlocked, modulesFromList, resolveAccess } fr
 import { addMonths } from '../../src/modules/saas/subscription.service';
 import { isModuleEnabled, missingModuleFor } from '../../src/modules/auth/access.guard';
 import { googleVerifierDeps, resetGoogleKeyCache, verifyGoogleIdToken } from '../../src/modules/auth/google-verifier';
+import { appleVerifierDeps, resetAppleKeyCache, verifyAppleIdToken } from '../../src/modules/auth/apple-verifier';
 import { formatPhone, normalizePhone } from '../../src/common/phone';
 import { stripProtected } from '../../src/modules/saas/admin.guard';
-import { DEFAULT_SECTORS } from '../../src/modules/saas/saas-defaults';
+import { CATALOG_V1, CATALOG_VERSION, DEFAULT_PAYMENT_METHODS, DEFAULT_PLANS, DEFAULT_SECTORS, DEFAULT_SERVICE_OFFERS, PAYMENT_METHODS } from '../../src/modules/saas/saas-defaults';
 import { MODULE_KEYS } from '../../src/modules/saas/account-access';
 
 const NOW = new Date('2026-11-25T12:00:00Z');
@@ -120,15 +121,58 @@ describe('modules de l’abonnement', () => {
     for (const path of ['company', 'team', 'users', 'billing', 'auth', 'upload', 'notifications']) expect(missingModuleFor(restaurant, path)).toBeNull();
   });
 
-  it('chaque secteur par défaut n’utilise que des modules connus, sans la production', () => {
-    expect(DEFAULT_SECTORS).toHaveLength(10);
+  it('chaque secteur par défaut n’utilise que des modules connus et a son catalogue de suggestions', () => {
+    expect(DEFAULT_SECTORS).toHaveLength(15);
+    expect(new Set(DEFAULT_SECTORS.map((s) => s.code)).size).toBe(15);
     for (const s of DEFAULT_SECTORS) {
       for (const m of s.modules) expect(MODULE_KEYS).toContain(m);
-      expect(s.modules).not.toContain('production');
+      expect(new Set(s.modules).size).toBe(s.modules.length);
       expect(s.categories.length).toBeGreaterThan(0);
+      expect(s.recommendations.length).toBeGreaterThan(0);
+      for (const text of [s.name, s.nameEn, s.nameAr, s.description]) expect(text.length).toBeGreaterThan(3);
     }
-    expect(DEFAULT_SECTORS.find((s) => s.code === 'logistics')!.modules).toContain('logistics');
-    expect(DEFAULT_SECTORS.find((s) => s.code === 'restaurant')!.modules).toContain('pos');
+    expect(DEFAULT_SECTORS[DEFAULT_SECTORS.length - 1].code).toBe('other');
+    const modulesOf = (code: string) => DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
+    expect(modulesOf('logistics')).toEqual(expect.arrayContaining(['logistics', 'stock']));
+    expect(modulesOf('restaurant')).toContain('pos');
+    expect(modulesOf('restaurant')).not.toContain('production');
+    // La fabrication n'est proposée qu'aux secteurs qui transforment des matières.
+    expect(DEFAULT_SECTORS.filter((s) => s.modules.includes('production')).map((s) => s.code).sort()).toEqual(['agrifood', 'manufacturing', 'other', 'textile']);
+    // Secteurs sans marchandise : pas de stock imposé.
+    for (const code of ['education', 'services']) expect(modulesOf(code)).not.toContain('stock');
+  });
+
+  it('formules proposées : prix croissants, annuel = dix mensualités, modules connus', () => {
+    expect(DEFAULT_PLANS.map((p) => p.code)).toEqual(['starter', 'business', 'enterprise']);
+    let previous = 0;
+    for (const plan of DEFAULT_PLANS) {
+      expect(plan.priceMonthly).toBeGreaterThan(previous);
+      expect(plan.priceAnnual).toBe(plan.priceMonthly * 10);
+      previous = plan.priceMonthly;
+      for (const m of plan.modules || []) expect(MODULE_KEYS).toContain(m);
+      expect(plan.features.length).toBeGreaterThanOrEqual(5);
+    }
+    expect(DEFAULT_PLANS.filter((p) => p.highlight).map((p) => p.code)).toEqual(['business']);
+    // La formule d'entrée ne comprend ni la comptabilité, ni la paie, ni l'assistant.
+    for (const m of ['finance', 'hr', 'ai', 'production']) expect(DEFAULT_PLANS[0].modules).not.toContain(m);
+  });
+
+  it('moyens de paiement et prestations : valeurs connues, un secteur existant par prestation', () => {
+    for (const m of DEFAULT_PAYMENT_METHODS) expect(PAYMENT_METHODS).toContain(m);
+    expect(PAYMENT_METHODS).toEqual(expect.arrayContaining(['bank_transfer', 'd17', 'flouci', 'edinar', 'postal', 'cheque', 'cash', 'card']));
+    const codes = DEFAULT_SECTORS.map((s) => s.code);
+    for (const o of DEFAULT_SERVICE_OFFERS) if (o.sectorCode) expect(codes).toContain(o.sectorCode);
+  });
+
+  it('version 1 du catalogue : sert de repère pour la mise à niveau, sans rien perdre', () => {
+    expect(CATALOG_VERSION).toBe(2);
+    expect(Object.keys(CATALOG_V1.sectorModules)).toHaveLength(10);
+    for (const [code, v1] of Object.entries(CATALOG_V1.sectorModules)) {
+      const now = DEFAULT_SECTORS.find((s) => s.code === code)!.modules;
+      // Une mise à niveau n'enlève jamais un module à un secteur.
+      for (const m of v1) expect(now).toContain(m);
+    }
+    expect(Object.keys(CATALOG_V1.plans)).toEqual(DEFAULT_PLANS.map((p) => p.code));
   });
 });
 
@@ -220,5 +264,62 @@ describe('verifyGoogleIdToken — le jeton Google n’est jamais cru sur parole'
 
   it('signale une adresse non vérifiée par Google', async () => {
     expect((await verifyGoogleIdToken(sign(claims({ email_verified: false })), CLIENT, NOW)).emailVerified).toBe(false);
+  });
+});
+
+describe('verifyAppleIdToken — le jeton Apple n’est jamais cru sur parole', () => {
+  const CLIENT = 'tn.inovexa.erp.web';
+  const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const other = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const b64 = (o: any) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const seconds = Math.floor(NOW.getTime() / 1000);
+  const sign = (payload: Record<string, any>, opts: { key?: KeyObject; header?: Record<string, any> } = {}) => {
+    const head = b64({ alg: 'RS256', kid: 'a1', ...(opts.header || {}) });
+    const body = b64(payload);
+    const sig = createSign('RSA-SHA256').update(`${head}.${body}`).sign(opts.key || privateKey).toString('base64url');
+    return `${head}.${body}.${sig}`;
+  };
+  // Apple écrit les booléens sous forme de chaînes (« true »).
+  const claims = (over: Record<string, any> = {}) => ({ iss: 'https://appleid.apple.com', aud: CLIENT, sub: '001234.abcdef.5678', email: 'Sami@Exemple.tn', email_verified: 'true', iat: seconds - 10, exp: seconds + 3000, ...over });
+
+  beforeEach(() => {
+    resetAppleKeyCache();
+    appleVerifierDeps.fetchKeys = async () => ({ keys: new Map([['a1', publicKey]]), maxAgeSeconds: 3600 });
+  });
+
+  it('accepte un jeton signé par Apple pour notre identifiant de service', async () => {
+    expect(await verifyAppleIdToken(sign(claims()), CLIENT, NOW)).toEqual({ sub: '001234.abcdef.5678', email: 'sami@exemple.tn', emailVerified: true, isPrivateEmail: false });
+  });
+
+  it('accepte plusieurs identifiants (site web et application), et un « aud » en liste', async () => {
+    expect((await verifyAppleIdToken(sign(claims({ aud: 'tn.inovexa.erp' })), [CLIENT, 'tn.inovexa.erp'], NOW)).sub).toBe('001234.abcdef.5678');
+    expect((await verifyAppleIdToken(sign(claims({ aud: ['autre', CLIENT] })), CLIENT, NOW)).sub).toBe('001234.abcdef.5678');
+  });
+
+  it('adresse de relais privée : reconnue ; adresse absente ou non vérifiée : signalée', async () => {
+    expect(await verifyAppleIdToken(sign(claims({ email: 'x9k2@privaterelay.appleid.com', is_private_email: 'true' })), CLIENT, NOW)).toMatchObject({ email: 'x9k2@privaterelay.appleid.com', isPrivateEmail: true, emailVerified: true });
+    expect(await verifyAppleIdToken(sign(claims({ email: undefined })), CLIENT, NOW)).toMatchObject({ email: null, emailVerified: false });
+    expect((await verifyAppleIdToken(sign(claims({ email_verified: 'false' })), CLIENT, NOW)).emailVerified).toBe(false);
+  });
+
+  it('refuse un jeton émis pour une autre application, par un autre émetteur, ou expiré', async () => {
+    await expect(verifyAppleIdToken(sign(claims({ aud: 'com.autre.app' })), CLIENT, NOW)).rejects.toThrow(/autre application/);
+    await expect(verifyAppleIdToken(sign(claims({ iss: 'https://accounts.google.com' })), CLIENT, NOW)).rejects.toThrow(/Émetteur/);
+    await expect(verifyAppleIdToken(sign(claims({ exp: seconds - 3600 })), CLIENT, NOW)).rejects.toThrow(/expiré/);
+  });
+
+  it('refuse une autre clé, un contenu modifié, un algorithme « none » ou HS256, une clé inconnue', async () => {
+    await expect(verifyAppleIdToken(sign(claims(), { key: other.privateKey }), CLIENT, NOW)).rejects.toThrow(/Signature invalide/);
+    const [h, , sig] = sign(claims()).split('.');
+    await expect(verifyAppleIdToken(`${h}.${b64(claims({ sub: 'pirate' }))}.${sig}`, CLIENT, NOW)).rejects.toThrow(/Signature invalide/);
+    await expect(verifyAppleIdToken(`${b64({ alg: 'none', kid: 'a1' })}.${b64(claims())}.`, CLIENT, NOW)).rejects.toThrow(/Algorithme/);
+    await expect(verifyAppleIdToken(sign(claims(), { header: { alg: 'HS256' } }), CLIENT, NOW)).rejects.toThrow(/Algorithme/);
+    await expect(verifyAppleIdToken(sign(claims(), { header: { kid: 'inconnue' } }), CLIENT, NOW)).rejects.toThrow(/inconnue/);
+  });
+
+  it('refuse un jeton mal formé ou une configuration absente', async () => {
+    await expect(verifyAppleIdToken('pas-un-jeton', CLIENT, NOW)).rejects.toThrow(/mal formé/);
+    await expect(verifyAppleIdToken(sign(claims()), [], NOW)).rejects.toThrow(/APPLE_CLIENT_ID/);
+    await expect(verifyAppleIdToken(sign(claims({ sub: '' })), CLIENT, NOW)).rejects.toThrow(/Identité incomplète/);
   });
 });

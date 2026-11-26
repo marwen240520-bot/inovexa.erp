@@ -27,6 +27,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <SiteHeader
         lang={lang}
         nav={nav}
+        login={{ href: "/auth/login", label: t("cta.signIn") }}
         cta={{ href: "/contact#form-section", label: t("cta.bookDemo") }}
         labels={{ language: t("nav.language"), menu: "Menu" }}
       />

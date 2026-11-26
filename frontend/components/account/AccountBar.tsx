@@ -218,8 +218,9 @@ export default function AccountBar() {
     );
   }
 
-  // Le lien de confirmation part à l'adresse de la personne connectée : il n'est proposé qu'au propriétaire du compte.
-  if (!account.emailVerified && view.canManage) {
+  // Le lien de confirmation part à l'adresse de la personne connectée : il n'est proposé qu'au propriétaire du compte,
+  // et seulement si le serveur envoie des emails (sinon le rappel resterait affiché sans que personne puisse y répondre).
+  if (!account.emailVerified && view.canManage && view.emailEnabled !== false) {
     rows.push(
       <BarRow key="email" icon={<IconMail />} tone="neutral">
         <span>{tx.bar.verifyEmail}</span>

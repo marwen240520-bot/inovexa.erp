@@ -69,6 +69,12 @@ export function proxy(request: NextRequest) {
   const GOOGLE_GSI = 'https://accounts.google.com/gsi/';
   scriptSrc.push(GOOGLE_GSI + 'client');
 
+  // « Continuer avec Apple » (Sign in with Apple JS) : script servi par Apple, fenêtre d'autorisation sur appleid.apple.com.
+  // Sans APPLE_CLIENT_ID côté API, le bouton n'est pas affiché et rien n'est chargé depuis Apple.
+  const APPLE_SCRIPTS = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/';
+  const APPLE_ID = 'https://appleid.apple.com';
+  scriptSrc.push(APPLE_SCRIPTS);
+
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
 
@@ -102,13 +108,14 @@ export function proxy(request: NextRequest) {
       API_ORIGIN,
       API_WS,
       GOOGLE_GSI,
+      APPLE_ID,
     ],
 
     'media-src': ["'self'"],
 
     'object-src': ["'none'"],
 
-    'frame-src': ["'self'", GOOGLE_GSI],
+    'frame-src': ["'self'", GOOGLE_GSI, APPLE_ID],
 
     'frame-ancestors': ["'self'"],
 

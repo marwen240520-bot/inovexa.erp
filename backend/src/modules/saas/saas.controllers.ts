@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
 import { AuditLog } from '../../common/audit/audit-log.entity';
+import { MailService } from '../../common/mail/mail.service';
 import { AdminGuard } from './admin.guard';
 import { SaasSettingsService } from './saas-settings.service';
 import { SubscriptionService } from './subscription.service';
@@ -32,13 +33,15 @@ export class PublicController {
   ) {}
 
   @Get('config')
-  @ApiOperation({ summary: 'Durée de l’essai, devise, contacts, identifiant client Google (s’il est configuré)' })
+  @ApiOperation({ summary: 'Durée de l’essai, devise, contacts, identifiants Google et Apple (s’ils sont configurés)' })
   async config() {
     const s = await this.settings.get();
     return {
       trialHours: s.trialHours, currency: s.currency, vatRate: s.vatRate, requireEmailVerification: s.requireEmailVerification,
       supportEmail: s.supportEmail, supportPhone: s.supportPhone, supportWhatsapp: s.supportWhatsapp,
-      googleClientId: this.settings.googleClientId(), modules: MODULE_KEYS,
+      googleClientId: this.settings.googleClientId(), appleClientId: this.settings.appleClientId(), modules: MODULE_KEYS,
+      // Moyens de paiement proposés aux clients (page Tarifs du site). Les coordonnées de paiement, elles, ne sont pas publiques.
+      paymentMethods: s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer'],
     };
   }
 
@@ -79,6 +82,7 @@ export class BillingController {
     private readonly subscriptions: SubscriptionService,
     private readonly sectors: SectorsService,
     @InjectRepository(User) private readonly users: Repository<User>,
+    private readonly mail: MailService,
   ) {}
 
   /** Seul le propriétaire du compte engage la société (paiement, résiliation). */
@@ -101,9 +105,15 @@ export class BillingController {
       users: { used: 1 + teamCount, limit: owner.userLimit ?? null },
       modules: owner.modules || {},
       pendingPayment: payments.find((p) => p.status === 'pending') || null,
-      payment: { currency: s.currency, vatRate: s.vatRate, instructions: s.paymentInstructions, methods: s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer'], onlinePayment: false },
+      payment: {
+        currency: s.currency, vatRate: s.vatRate, instructions: s.paymentInstructions, methods: s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer'],
+        // Lien de la page de paiement par carte (prestataire choisi par l'éditeur). La validation reste faite par l'administrateur.
+        link: s.paymentLink || null, onlinePayment: false,
+      },
       support: { email: s.supportEmail, phone: s.supportPhone, whatsapp: s.supportWhatsapp },
       canManage: !req.user.isTeamMember,
+      // Sans serveur d'envoi, proposer « renvoyer le lien de confirmation » ne mènerait nulle part.
+      emailEnabled: this.mail.isConfigured(),
     };
   }
 
@@ -193,6 +203,7 @@ export class AdminSaasController {
     private readonly sectors: SectorsService,
     @InjectRepository(AuditLog) private readonly audit: Repository<AuditLog>,
     @InjectRepository(User) private readonly users: Repository<User>,
+    private readonly mail: MailService,
   ) {}
 
   // ── Tableau de bord ──
@@ -252,7 +263,10 @@ export class AdminSaasController {
   // ── Réglages ──
   @Get('settings')
   async getSettings() {
-    return { ...(await this.settings.get(true)), googleConfigured: !!this.settings.googleClientId(), paymentMethodOptions: PAYMENT_METHODS, moduleKeys: MODULE_KEYS };
+    return {
+      ...(await this.settings.get(true)), googleConfigured: !!this.settings.googleClientId(), appleConfigured: !!this.settings.appleClientId(),
+      mailConfigured: this.mail.isConfigured(), paymentMethodOptions: PAYMENT_METHODS, moduleKeys: MODULE_KEYS,
+    };
   }
 
   @Put('settings')
@@ -344,4 +358,8 @@ export class AdminSaasController {
   @Post('maintenance/sweep') @HttpCode(200)
   @ApiOperation({ summary: 'Lance tout de suite le balayage des expirations et des rappels' })
   sweep() { return this.subscriptions.sweep(); }
+
+  @Post('maintenance/upgrade-catalog') @HttpCode(200)
+  @ApiOperation({ summary: 'Reporte les nouveautés du contenu de départ (secteurs, modules, formules en brouillon) sans toucher aux réglages modifiés' })
+  upgradeCatalog() { return this.settings.upgradeDefaults(); }
 }

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useDeviceHint } from "@/contexts/DeviceContext";
 import { AppShellProvider } from "@/components/ui/PageSkeleton";
 import FloatingAssistant from "@/components/assistant/FloatingAssistant";
+import AccountBar from "@/components/account/AccountBar";
 
 export default function DashboardLayout({
   children,
@@ -65,6 +66,8 @@ export default function DashboardLayout({
           minWidth: 0,
         }}
       >
+        {/* État du compte : temps d'essai restant, abonnement bientôt échu. Rien n'est affiché quand tout est en ordre. */}
+        <AccountBar />
         <AppShellProvider>{children}</AppShellProvider>
       </main>
 

@@ -62,6 +62,7 @@ export interface AdminAccountDetail {
   isActive: boolean;
   twoFactorEnabled: boolean;
   googleLinked: boolean;
+  appleLinked?: boolean;
   modules: Record<string, boolean>;
   account: AccountState;
   company: AccountCompany | null;
@@ -103,6 +104,7 @@ export function effectiveStatus(status: AccountStatus, isActive: boolean): Accou
 export const SOURCE_LABELS: Record<string, string> = {
   self: "Inscription en ligne",
   google: "Inscription avec Google",
+  apple: "Inscription avec Apple",
   admin: "Créé par l’administrateur",
 };
 export const sourceLabel = (source: string | null | undefined) => (source ? SOURCE_LABELS[source] || source : "—");
@@ -110,7 +112,8 @@ export const sourceLabel = (source: string | null | undefined) => (source ? SOUR
 export const CYCLE_LABELS: Record<string, string> = { monthly: "Mensuel", annual: "Annuel" };
 
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  bank_transfer: "Virement bancaire", cash: "Espèces", cheque: "Chèque", d17: "D17", card: "Carte bancaire", other: "Autre",
+  bank_transfer: "Virement bancaire", d17: "D17 (La Poste)", flouci: "Flouci", edinar: "Carte e-Dinar", postal: "Mandat minute",
+  cheque: "Chèque", cash: "Espèces", card: "Carte bancaire", other: "Autre",
 };
 
 /** État d'un paiement d'abonnement. */

@@ -13,8 +13,8 @@ export const MODULE_KEYS = [
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 /** Toujours actifs, quel que soit l'abonnement. */
 export const CORE_MODULES: readonly string[] = ["dashboard", "profile", "settings"];
-/** Modules proposés à l'activation (la production n'a pas d'écran : elle n'est pas proposée). */
-export const SELECTABLE_MODULES: ModuleKey[] = MODULE_KEYS.filter((k) => !CORE_MODULES.includes(k) && k !== "production");
+/** Modules proposés à l'activation (tous sauf ceux qui sont toujours ouverts). */
+export const SELECTABLE_MODULES: ModuleKey[] = MODULE_KEYS.filter((k) => !CORE_MODULES.includes(k));
 
 /** Nom français de chaque module (écrans de l'administrateur). */
 export const MODULE_LABELS: Record<string, string> = {
@@ -65,7 +65,12 @@ export interface PublicConfig {
   trialHours: number; currency: string; vatRate: number; requireEmailVerification: boolean;
   supportEmail: string | null; supportPhone: string | null; supportWhatsapp: string | null;
   /** null = connexion Google non configurée sur le serveur : le bouton n'est pas affiché. */
-  googleClientId: string | null; modules: string[];
+  googleClientId: string | null;
+  /** Identifiant de service Apple ; null = « Continuer avec Apple » non configuré : le bouton n'est pas affiché. */
+  appleClientId?: string | null;
+  /** Moyens de paiement proposés aux clients (codes : bank_transfer, d17, flouci…). */
+  paymentMethods?: string[];
+  modules: string[];
 }
 
 export interface SubscriptionPayment {
@@ -82,7 +87,14 @@ export interface SubscriptionView {
   users: { used: number; limit: number | null };
   modules: Record<string, boolean>;
   pendingPayment: SubscriptionPayment | null;
-  payment: { currency: string; vatRate: number; instructions: string | null; methods: string[]; onlinePayment: boolean };
+  payment: {
+    currency: string; vatRate: number; instructions: string | null; methods: string[];
+    /** Lien de la page de paiement par carte du prestataire de l'éditeur (null = non renseigné). */
+    link?: string | null;
+    onlinePayment: boolean;
+  };
+  /** false : le serveur n'envoie pas d'emails (SMTP non configuré) — inutile de proposer « renvoyer le lien ». */
+  emailEnabled?: boolean;
   support: { email: string | null; phone: string | null; whatsapp: string | null };
   /** false pour un membre d'équipe : seul le propriétaire gère l'abonnement. */
   canManage: boolean;
@@ -152,7 +164,8 @@ export function formatDateTime(value: string | Date | null | undefined, lang = "
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat(INTL[lang] || INTL.fr, {
-    dateStyle: "medium", ...(withTime ? { timeStyle: "short" } : {}), timeZone: "Africa/Tunis", numberingSystem: "latn",
+    // Heure sur 24 h (« 14:30 ») : c'est l'usage en Tunisie ; sans cela « fr-TN » affiche « 2:30 PM ».
+    dateStyle: "medium", ...(withTime ? { timeStyle: "short", hourCycle: "h23" } : {}), timeZone: "Africa/Tunis", numberingSystem: "latn",
   } as Intl.DateTimeFormatOptions).format(d);
 }
 

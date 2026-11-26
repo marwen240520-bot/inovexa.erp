@@ -1,0 +1,518 @@
+// lib/catalog.ts
+// Catalogue public d'Inovexa ERP : modules, secteurs d'activité, formules et moyens de paiement, en français, anglais,
+// espagnol et arabe. Utilisé par la page d'accueil, les pages Produits et Tarifs, et l'écran d'inscription.
+//
+// ⚠️  Ce fichier est le pendant, côté site, de backend/src/modules/saas/saas-defaults.ts (contenu de départ de la
+//     plateforme) : codes des secteurs, modules par secteur, formules et prix PROPOSÉS. Les deux se modifient ensemble.
+//     Dès que l'administrateur publie ses formules (Administration › Formules et tarifs), le site affiche les prix
+//     renvoyés par l'API (GET /public/plans) ; les valeurs ci-dessous ne servent alors plus que de secours.
+// Pas de "use client" : lisible par les composants serveur comme par le navigateur.
+
+export type CatalogLang = "fr" | "en" | "es" | "ar";
+export type Localized = Record<CatalogLang, string>;
+
+export const pick = (text: Localized, lang: string): string => text[(lang as CatalogLang)] ?? text.fr;
+
+// ───────────────────────────── Modules ─────────────────────────────
+
+export type CatalogModule =
+  | "dashboard" | "products" | "categories" | "stock" | "sales" | "purchases" | "pos" | "orders" | "clients" | "suppliers"
+  | "invoices" | "hr" | "finance" | "logistics" | "production" | "ai" | "reports" | "analytics" | "objectives";
+
+export const MODULE_INFO: Record<CatalogModule, { label: Localized; desc: Localized }> = {
+  dashboard: {
+    label: { fr: "Tableau de bord", en: "Dashboard", es: "Panel de control", ar: "لوحة القيادة" },
+    desc: {
+      fr: "Chiffre d’affaires, ventes, stock et alertes en temps réel.",
+      en: "Revenue, sales, stock and alerts in real time.",
+      es: "Facturación, ventas, stock y alertas en tiempo real.",
+      ar: "رقم المعاملات والمبيعات والمخزون والتنبيهات في الوقت الحقيقي.",
+    },
+  },
+  sales: {
+    label: { fr: "Ventes", en: "Sales", es: "Ventas", ar: "المبيعات" },
+    desc: {
+      fr: "Suivi des ventes par client, par produit et par période.",
+      en: "Sales tracked by customer, product and period.",
+      es: "Seguimiento de ventas por cliente, producto y periodo.",
+      ar: "متابعة المبيعات حسب الحريف والمنتج والفترة.",
+    },
+  },
+  orders: {
+    label: { fr: "Commandes", en: "Orders", es: "Pedidos", ar: "الطلبيات" },
+    desc: {
+      fr: "Commandes clients transformées en devis, bon de livraison ou facture.",
+      en: "Customer orders turned into a quote, delivery note or invoice.",
+      es: "Pedidos de clientes convertidos en presupuesto, albarán o factura.",
+      ar: "طلبيات الحرفاء تتحوّل إلى عرض سعر أو وصل تسليم أو فاتورة.",
+    },
+  },
+  invoices: {
+    label: { fr: "Factures et devis", en: "Invoices and quotes", es: "Facturas y presupuestos", ar: "الفواتير وعروض الأسعار" },
+    desc: {
+      fr: "Devis → bon de livraison → facture → avoir, règlements, PDF et fichier TEIF pour El Fatoora.",
+      en: "Quote → delivery note → invoice → credit note, payments, PDF and TEIF file for El Fatoora.",
+      es: "Presupuesto → albarán → factura → abono, cobros, PDF y archivo TEIF para El Fatoora.",
+      ar: "عرض سعر ← وصل تسليم ← فاتورة ← فاتورة إرجاع، مع الخلاص وملفات PDF وملف TEIF لمنظومة الفوترة الإلكترونية.",
+    },
+  },
+  clients: {
+    label: { fr: "Clients et CRM", en: "Customers and CRM", es: "Clientes y CRM", ar: "الحرفاء وإدارة العلاقات" },
+    desc: {
+      fr: "Fiche 360°, listes de prix, encours et relances.",
+      en: "360° record, price lists, outstanding balances and reminders.",
+      es: "Ficha 360°, listas de precios, saldos pendientes y recordatorios.",
+      ar: "بطاقة شاملة لكل حريف، قوائم أسعار، المستحقات والتذكير بالخلاص.",
+    },
+  },
+  pos: {
+    label: { fr: "Caisse", en: "Point of sale", es: "Caja", ar: "الصندوق" },
+    desc: {
+      fr: "Vente au comptoir, sessions de caisse, tickets numérotés et rapport Z.",
+      en: "Counter sales, cash sessions, numbered receipts and Z report.",
+      es: "Venta en mostrador, sesiones de caja, tiques numerados e informe Z.",
+      ar: "البيع المباشر، حصص الصندوق، تذاكر مرقّمة وتقرير الإقفال اليومي.",
+    },
+  },
+  purchases: {
+    label: { fr: "Achats", en: "Purchases", es: "Compras", ar: "المشتريات" },
+    desc: {
+      fr: "Achats et réceptions qui mettent à jour le stock et le coût d’achat.",
+      en: "Purchases and receipts that update stock and purchase cost.",
+      es: "Compras y recepciones que actualizan el stock y el coste.",
+      ar: "مشتريات واستلامات تحدّث المخزون وكلفة الشراء.",
+    },
+  },
+  suppliers: {
+    label: { fr: "Fournisseurs", en: "Suppliers", es: "Proveedores", ar: "المزوّدون" },
+    desc: {
+      fr: "Conditions, échéances et historique des achats.",
+      en: "Terms, due dates and purchase history.",
+      es: "Condiciones, vencimientos e historial de compras.",
+      ar: "الشروط والآجال وسجلّ المشتريات.",
+    },
+  },
+  products: {
+    label: { fr: "Produits et services", en: "Products and services", es: "Productos y servicios", ar: "المنتجات والخدمات" },
+    desc: {
+      fr: "Catalogue, prix, TVA par article, photos, import Excel ou CSV.",
+      en: "Catalogue, prices, VAT per item, photos, Excel or CSV import.",
+      es: "Catálogo, precios, IVA por artículo, fotos, importación Excel o CSV.",
+      ar: "قائمة المنتجات، الأسعار، الأداء على القيمة المضافة لكل منتج، الصور والاستيراد من Excel أو CSV.",
+    },
+  },
+  categories: {
+    label: { fr: "Catégories", en: "Categories", es: "Categorías", ar: "الأصناف" },
+    desc: {
+      fr: "Familles de produits pour lire ventes et marges par catégorie.",
+      en: "Product families to read sales and margins by category.",
+      es: "Familias de productos para ver ventas y márgenes por categoría.",
+      ar: "عائلات المنتجات لقراءة المبيعات والهوامش حسب الصنف.",
+    },
+  },
+  stock: {
+    label: { fr: "Stock multi-dépôts", en: "Multi-warehouse stock", es: "Stock multialmacén", ar: "مخزون متعدّد المستودعات" },
+    desc: {
+      fr: "Mouvements tracés, coût moyen pondéré, lots et péremption, seuils d’alerte, inventaires.",
+      en: "Tracked movements, weighted average cost, batches and expiry, alert levels, stock counts.",
+      es: "Movimientos trazados, coste medio ponderado, lotes y caducidad, umbrales de alerta, inventarios.",
+      ar: "حركات موثّقة، كلفة متوسطة مرجّحة، دفعات وتواريخ صلوحية، عتبات تنبيه وجرد.",
+    },
+  },
+  logistics: {
+    label: { fr: "Logistique", en: "Logistics", es: "Logística", ar: "اللوجستيك" },
+    desc: {
+      fr: "Expéditions, transporteurs avec leur propre espace, suivi et taux de livraison.",
+      en: "Shipments, carriers with their own portal, tracking and delivery rate.",
+      es: "Envíos, transportistas con su propio espacio, seguimiento y tasa de entrega.",
+      ar: "الشحنات، فضاء خاص بكل ناقل، التتبّع ونسبة التسليم.",
+    },
+  },
+  production: {
+    label: { fr: "Production", en: "Production", es: "Producción", ar: "الإنتاج" },
+    desc: {
+      fr: "Ordres de fabrication et nomenclatures : matières sorties, produits finis entrés en stock.",
+      en: "Production orders and bills of materials: components out, finished goods into stock.",
+      es: "Órdenes de fabricación y listas de materiales: salen componentes, entran productos terminados.",
+      ar: "أوامر التصنيع وقوائم المكوّنات: خروج المواد ودخول المنتجات الجاهزة إلى المخزون.",
+    },
+  },
+  finance: {
+    label: { fr: "Finance et comptabilité", en: "Finance and accounting", es: "Finanzas y contabilidad", ar: "المالية والمحاسبة" },
+    desc: {
+      fr: "Dépenses, journaux, grand livre, balance, déclaration de TVA, rapprochement bancaire.",
+      en: "Expenses, journals, general ledger, trial balance, VAT return, bank reconciliation.",
+      es: "Gastos, diarios, libro mayor, balance, declaración de IVA, conciliación bancaria.",
+      ar: "المصاريف، اليوميات، الدفتر الكبير، ميزان المراجعة، التصريح بالأداء على القيمة المضافة والمقاربة البنكية.",
+    },
+  },
+  hr: {
+    label: { fr: "RH et paie", en: "HR and payroll", es: "RR. HH. y nóminas", ar: "الموارد البشرية والأجور" },
+    desc: {
+      fr: "Employés, congés, bulletins de paie avec CNSS et IRPP.",
+      en: "Employees, leave, payslips with CNSS and IRPP (Tunisian payroll).",
+      es: "Empleados, permisos, nóminas con CNSS e IRPP (nómina tunecina).",
+      ar: "الأعوان، العطل وبطاقات الخلاص مع الضمان الاجتماعي والضريبة على الدخل.",
+    },
+  },
+  reports: {
+    label: { fr: "Rapports", en: "Reports", es: "Informes", ar: "التقارير" },
+    desc: {
+      fr: "Ventes, marges, balance âgée, valorisation du stock, exports Excel et PDF.",
+      en: "Sales, margins, aged balance, stock valuation, Excel and PDF exports.",
+      es: "Ventas, márgenes, saldos por antigüedad, valoración de stock, exportación a Excel y PDF.",
+      ar: "المبيعات، الهوامش، أعمار الديون، تقييم المخزون والتصدير إلى Excel و PDF.",
+    },
+  },
+  analytics: {
+    label: { fr: "Analyses", en: "Analytics", es: "Analítica", ar: "التحليلات" },
+    desc: {
+      fr: "Tendances, comparaisons et indicateurs par période.",
+      en: "Trends, comparisons and indicators by period.",
+      es: "Tendencias, comparaciones e indicadores por periodo.",
+      ar: "الاتجاهات والمقارنات والمؤشرات حسب الفترة.",
+    },
+  },
+  objectives: {
+    label: { fr: "Objectifs", en: "Objectives", es: "Objetivos", ar: "الأهداف" },
+    desc: {
+      fr: "Objectifs chiffrés et suivi de leur avancement.",
+      en: "Numeric targets and progress tracking.",
+      es: "Objetivos cuantificados y seguimiento de su avance.",
+      ar: "أهداف رقمية ومتابعة تقدّمها.",
+    },
+  },
+  ai: {
+    label: { fr: "Assistant IA", en: "AI assistant", es: "Asistente IA", ar: "المساعد الذكي" },
+    desc: {
+      fr: "Posez vos questions en langage courant : il répond à partir de vos données.",
+      en: "Ask in plain language: it answers from your own data.",
+      es: "Pregunte en lenguaje natural: responde a partir de sus propios datos.",
+      ar: "اطرح أسئلتك بلغة عادية: يجيبك انطلاقًا من بياناتك.",
+    },
+  },
+};
+
+export const ALL_MODULES = Object.keys(MODULE_INFO) as CatalogModule[];
+
+/** Regroupement des modules (même logique que la barre latérale de l'ERP). */
+export const MODULE_GROUPS: Array<{ id: string; label: Localized; modules: CatalogModule[] }> = [
+  {
+    id: "commercial",
+    label: { fr: "Vente et relation client", en: "Sales and customers", es: "Ventas y clientes", ar: "البيع والحرفاء" },
+    modules: ["sales", "orders", "invoices", "clients", "pos"],
+  },
+  {
+    id: "supply",
+    label: { fr: "Achats, stock et logistique", en: "Purchasing, stock and logistics", es: "Compras, stock y logística", ar: "الشراء والمخزون واللوجستيك" },
+    modules: ["purchases", "suppliers", "products", "categories", "stock", "logistics", "production"],
+  },
+  {
+    id: "finance",
+    label: { fr: "Finance et ressources humaines", en: "Finance and people", es: "Finanzas y personas", ar: "المالية والموارد البشرية" },
+    modules: ["finance", "hr"],
+  },
+  {
+    id: "insights",
+    label: { fr: "Pilotage et intelligence", en: "Steering and intelligence", es: "Dirección e inteligencia", ar: "القيادة والذكاء" },
+    modules: ["dashboard", "reports", "analytics", "objectives", "ai"],
+  },
+];
+
+// ───────────────────────────── Secteurs ─────────────────────────────
+
+/** Modules utiles à toute société, quel que soit son secteur (comme BASE dans saas-defaults.ts) + le tableau de bord. */
+const BASE: CatalogModule[] = ["dashboard", "products", "categories", "clients", "invoices", "finance", "reports", "analytics", "ai"];
+
+export interface CatalogSector {
+  code: string;
+  name: Localized;
+  desc: Localized;
+  modules: CatalogModule[];
+}
+
+export const SECTORS: CatalogSector[] = [
+  {
+    code: "commerce",
+    name: { fr: "Commerce et détail", en: "Commerce and retail", es: "Comercio minorista", ar: "التجارة والبيع بالتفصيل" },
+    desc: {
+      fr: "Boutiques, magasins et points de vente : caisse, stock et réassort.",
+      en: "Shops and points of sale: checkout, stock and replenishment.",
+      es: "Tiendas y puntos de venta: caja, stock y reposición.",
+      ar: "المحلات ونقاط البيع: الصندوق والمخزون وإعادة التزويد.",
+    },
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "hr", "objectives"],
+  },
+  {
+    code: "wholesale",
+    name: { fr: "Gros et distribution", en: "Wholesale and distribution", es: "Mayoristas y distribución", ar: "تجارة الجملة والتوزيع" },
+    desc: {
+      fr: "Grossistes et distributeurs : volumes, dépôts, tarifs revendeurs, tournées.",
+      en: "Wholesalers and distributors: volumes, warehouses, reseller prices, delivery rounds.",
+      es: "Mayoristas y distribuidores: volúmenes, almacenes, tarifas de revendedor, rutas.",
+      ar: "تجّار الجملة والموزّعون: الكميات والمستودعات وأسعار الباعة وجولات التسليم.",
+    },
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "hr", "objectives"],
+  },
+  {
+    code: "healthcare",
+    name: { fr: "Santé et pharmacies", en: "Healthcare and pharmacies", es: "Salud y farmacias", ar: "الصحة والصيدليات" },
+    desc: {
+      fr: "Pharmacies, parapharmacies, cabinets et fournisseurs médicaux : lots et dates de péremption.",
+      en: "Pharmacies, practices and medical suppliers: batches and expiry dates.",
+      es: "Farmacias, consultas y proveedores médicos: lotes y fechas de caducidad.",
+      ar: "الصيدليات والعيادات ومزوّدو المستلزمات الطبية: الدفعات وتواريخ الصلوحية.",
+    },
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "objectives"],
+  },
+  {
+    code: "construction",
+    name: { fr: "Construction et BTP", en: "Construction", es: "Construcción", ar: "البناء والأشغال العامة" },
+    desc: {
+      fr: "Entreprises de bâtiment et négoce de matériaux : devis, matériaux, main-d’œuvre.",
+      en: "Builders and building-material traders: quotes, materials, labour.",
+      es: "Constructoras y venta de materiales: presupuestos, materiales, mano de obra.",
+      ar: "مقاولات البناء وتجارة مواد البناء: عروض الأسعار والمواد واليد العاملة.",
+    },
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "hr", "objectives"],
+  },
+  {
+    code: "education",
+    name: { fr: "Éducation et formation", en: "Education and training", es: "Educación y formación", ar: "التعليم والتكوين" },
+    desc: {
+      fr: "Écoles privées et centres de formation : inscriptions, mensualités, formateurs.",
+      en: "Private schools and training centres: enrolments, monthly fees, trainers.",
+      es: "Colegios privados y centros de formación: matrículas, mensualidades, formadores.",
+      ar: "المدارس الخاصة ومراكز التكوين: التسجيل والأقساط الشهرية والمكوّنون.",
+    },
+    modules: [...BASE, "sales", "hr", "objectives"],
+  },
+  {
+    code: "restaurant",
+    name: { fr: "Restaurants et cafés", en: "Restaurants and cafés", es: "Restaurantes y cafeterías", ar: "المطاعم والمقاهي" },
+    desc: {
+      fr: "Restaurants, cafés, pâtisseries et restauration rapide : carte, ingrédients, caisse.",
+      en: "Restaurants, cafés, pastry shops and fast food: menu, ingredients, checkout.",
+      es: "Restaurantes, cafeterías, pastelerías y comida rápida: carta, ingredientes, caja.",
+      ar: "المطاعم والمقاهي ومحلات الحلويات والأكلات السريعة: القائمة والمكوّنات والصندوق.",
+    },
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "objectives"],
+  },
+  {
+    code: "logistics",
+    name: { fr: "Logistique et transport", en: "Logistics and transport", es: "Logística y transporte", ar: "اللوجستيك والنقل" },
+    desc: {
+      fr: "Transporteurs, messageries et entrepôts : expéditions, tournées, tarifs.",
+      en: "Carriers, couriers and warehouses: shipments, rounds, rates.",
+      es: "Transportistas, mensajería y almacenes: envíos, rutas, tarifas.",
+      ar: "الناقلون وشركات التوصيل والمستودعات: الشحنات والجولات والتعريفات.",
+    },
+    modules: [...BASE, "logistics", "stock", "sales", "orders", "purchases", "suppliers", "hr", "objectives"],
+  },
+  {
+    code: "manufacturing",
+    name: { fr: "Industrie et fabrication", en: "Manufacturing and industry", es: "Industria y fabricación", ar: "الصناعة والتصنيع" },
+    desc: {
+      fr: "Ateliers et usines : matières premières, ordres de fabrication, produits finis, expéditions.",
+      en: "Workshops and factories: raw materials, production orders, finished goods, shipments.",
+      es: "Talleres y fábricas: materias primas, órdenes de fabricación, productos terminados, envíos.",
+      ar: "الورشات والمصانع: المواد الأولية وأوامر التصنيع والمنتجات الجاهزة والشحنات.",
+    },
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+  },
+  {
+    code: "services",
+    name: { fr: "Services professionnels", en: "Professional services", es: "Servicios profesionales", ar: "الخدمات المهنية" },
+    desc: {
+      fr: "Cabinets, agences et indépendants : honoraires, contrats, relances.",
+      en: "Firms, agencies and freelancers: fees, contracts, reminders.",
+      es: "Despachos, agencias y autónomos: honorarios, contratos, recordatorios.",
+      ar: "المكاتب والوكالات والمستقلّون: الأتعاب والعقود والتذكير بالخلاص.",
+    },
+    modules: [...BASE, "sales", "hr", "objectives"],
+  },
+  {
+    code: "agrifood",
+    name: { fr: "Agriculture et agroalimentaire", en: "Agriculture and agri-food", es: "Agricultura y agroalimentación", ar: "الفلاحة والصناعات الغذائية" },
+    desc: {
+      fr: "Exploitations, huileries, conditionnement et transformation : récoltes, lots, fabrication, export.",
+      en: "Farms, oil mills, packing and processing: harvests, batches, production, export.",
+      es: "Explotaciones, almazaras, envasado y transformación: cosechas, lotes, fabricación, exportación.",
+      ar: "الضيعات والمعاصر والتعليب والتحويل: المحاصيل والدفعات والتصنيع والتصدير.",
+    },
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+  },
+  {
+    code: "automotive",
+    name: { fr: "Automobile et pièces détachées", en: "Automotive and spare parts", es: "Automoción y recambios", ar: "السيارات وقطع الغيار" },
+    desc: {
+      fr: "Magasins de pièces, garages et ateliers : références, stock, devis de réparation, main-d’œuvre.",
+      en: "Parts shops, garages and workshops: part numbers, stock, repair quotes, labour.",
+      es: "Tiendas de recambios y talleres: referencias, stock, presupuestos de reparación, mano de obra.",
+      ar: "محلات قطع الغيار والمرائب والورشات: المراجع والمخزون وعروض الإصلاح واليد العاملة.",
+    },
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "hr", "objectives"],
+  },
+  {
+    code: "ecommerce",
+    name: { fr: "Vente en ligne", en: "Online sales", es: "Venta en línea", ar: "البيع عبر الإنترنت" },
+    desc: {
+      fr: "Boutiques en ligne et vente sur les réseaux sociaux : commandes, stock, colis et retours.",
+      en: "Online shops and social selling: orders, stock, parcels and returns.",
+      es: "Tiendas en línea y venta en redes sociales: pedidos, stock, paquetes y devoluciones.",
+      ar: "المتاجر الإلكترونية والبيع عبر شبكات التواصل: الطلبيات والمخزون والطرود والإرجاع.",
+    },
+    modules: [...BASE, "stock", "sales", "orders", "purchases", "suppliers", "logistics", "objectives"],
+  },
+  {
+    code: "textile",
+    name: { fr: "Textile et habillement", en: "Textile and clothing", es: "Textil y confección", ar: "النسيج والملابس" },
+    desc: {
+      fr: "Ateliers de confection, façonniers et marques : tissus, fournitures, ordres de fabrication.",
+      en: "Garment workshops, subcontractors and brands: fabrics, trims, production orders.",
+      es: "Talleres de confección, maquila y marcas: tejidos, fornituras, órdenes de fabricación.",
+      ar: "ورشات الخياطة والمناولة والعلامات: الأقمشة واللوازم وأوامر التصنيع.",
+    },
+    modules: [...BASE, "stock", "sales", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+  },
+  {
+    code: "beauty",
+    name: { fr: "Beauté et bien-être", en: "Beauty and wellness", es: "Belleza y bienestar", ar: "التجميل والعناية" },
+    desc: {
+      fr: "Salons de coiffure, instituts, spas et parfumeries : prestations, produits et caisse.",
+      en: "Hair salons, beauty institutes, spas and perfumeries: services, products and checkout.",
+      es: "Peluquerías, centros de estética, spas y perfumerías: servicios, productos y caja.",
+      ar: "قاعات الحلاقة ومراكز التجميل والحمّامات ومحلات العطور: الخدمات والمنتجات والصندوق.",
+    },
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "suppliers", "hr", "objectives"],
+  },
+  {
+    code: "other",
+    name: { fr: "Autre activité", en: "Other businesses", es: "Otra actividad", ar: "نشاط آخر" },
+    desc: {
+      fr: "Tous les modules sont proposés : gardez ceux qui vous servent.",
+      en: "Every module is offered: keep the ones you need.",
+      es: "Se ofrecen todos los módulos: conserve los que necesite.",
+      ar: "كل الوحدات متاحة: احتفظ بما يفيدك.",
+    },
+    modules: [...BASE, "stock", "sales", "pos", "purchases", "orders", "suppliers", "logistics", "production", "hr", "objectives"],
+  },
+];
+
+// ───────────────────────────── Formules ─────────────────────────────
+
+export interface CatalogPlan {
+  code: string;
+  name: string;
+  /** Prix PROPOSÉS, hors taxes, en dinars. */
+  priceMonthly: number;
+  priceAnnual: number;
+  /** null = illimité. */
+  maxUsers: number | null;
+  /** null = tous les modules du secteur de la société. */
+  modules: CatalogModule[] | null;
+  highlight: boolean;
+  tagline: Localized;
+  features: Localized[];
+}
+
+/** Modules de la formule d'entrée (les modules de base — tableau de bord, profil, paramètres — sont toujours actifs). */
+const STARTER_MODULES: CatalogModule[] = ["dashboard", "products", "categories", "stock", "sales", "pos", "purchases", "orders", "clients", "suppliers", "invoices", "reports"];
+
+export const PLANS: CatalogPlan[] = [
+  {
+    code: "starter", name: "Starter", priceMonthly: 49, priceAnnual: 490, maxUsers: 3, modules: STARTER_MODULES, highlight: false,
+    tagline: {
+      fr: "Pour démarrer : ventes, caisse, stock et facturation.",
+      en: "To get started: sales, checkout, stock and invoicing.",
+      es: "Para empezar: ventas, caja, stock y facturación.",
+      ar: "للانطلاق: المبيعات والصندوق والمخزون والفوترة.",
+    },
+    features: [
+      { fr: "Jusqu’à 3 utilisateurs", en: "Up to 3 users", es: "Hasta 3 usuarios", ar: "حتى 3 مستخدمين" },
+      { fr: "Ventes, caisse, achats, commandes et stock", en: "Sales, checkout, purchases, orders and stock", es: "Ventas, caja, compras, pedidos y stock", ar: "المبيعات والصندوق والمشتريات والطلبيات والمخزون" },
+      { fr: "Devis, factures, avoirs et règlements", en: "Quotes, invoices, credit notes and payments", es: "Presupuestos, facturas, abonos y cobros", ar: "عروض الأسعار والفواتير وفواتير الإرجاع والخلاص" },
+      { fr: "Fichier TEIF pour El Fatoora", en: "TEIF file for El Fatoora e-invoicing", es: "Archivo TEIF para El Fatoora", ar: "ملف TEIF للفوترة الإلكترونية" },
+      { fr: "Rapports, exports Excel et PDF", en: "Reports, Excel and PDF exports", es: "Informes, exportación a Excel y PDF", ar: "التقارير والتصدير إلى Excel و PDF" },
+      { fr: "Support par email", en: "Email support", es: "Soporte por correo", ar: "دعم عبر البريد الإلكتروني" },
+    ],
+  },
+  {
+    code: "business", name: "Business", priceMonthly: 99, priceAnnual: 990, maxUsers: 10, modules: null, highlight: true,
+    tagline: {
+      fr: "Tous les modules de votre secteur pour une PME qui grandit.",
+      en: "Every module of your sector for a growing business.",
+      es: "Todos los módulos de su sector para una pyme en crecimiento.",
+      ar: "كل وحدات قطاعك لمؤسسة في طور النموّ.",
+    },
+    features: [
+      { fr: "Jusqu’à 10 utilisateurs", en: "Up to 10 users", es: "Hasta 10 usuarios", ar: "حتى 10 مستخدمين" },
+      { fr: "Tous les modules de votre secteur", en: "Every module of your sector", es: "Todos los módulos de su sector", ar: "كل وحدات قطاعك" },
+      { fr: "Comptabilité, TVA et rapprochement bancaire", en: "Accounting, VAT and bank reconciliation", es: "Contabilidad, IVA y conciliación bancaria", ar: "المحاسبة والأداء على القيمة المضافة والمقاربة البنكية" },
+      { fr: "RH, congés et paie (CNSS, IRPP)", en: "HR, leave and payroll (CNSS, IRPP)", es: "RR. HH., permisos y nóminas (CNSS, IRPP)", ar: "الموارد البشرية والعطل والأجور" },
+      { fr: "Logistique, production et objectifs", en: "Logistics, production and objectives", es: "Logística, producción y objetivos", ar: "اللوجستيك والإنتاج والأهداف" },
+      { fr: "Analyses et assistant IA", en: "Analytics and AI assistant", es: "Analítica y asistente IA", ar: "التحليلات والمساعد الذكي" },
+      { fr: "Support prioritaire", en: "Priority support", es: "Soporte prioritario", ar: "دعم ذو أولوية" },
+    ],
+  },
+  {
+    code: "enterprise", name: "Enterprise", priceMonthly: 249, priceAnnual: 2490, maxUsers: null, modules: null, highlight: false,
+    tagline: {
+      fr: "Utilisateurs illimités et accompagnement dédié.",
+      en: "Unlimited users and dedicated support.",
+      es: "Usuarios ilimitados y acompañamiento dedicado.",
+      ar: "مستخدمون بلا حدّ ومرافقة خاصة.",
+    },
+    features: [
+      { fr: "Utilisateurs illimités", en: "Unlimited users", es: "Usuarios ilimitados", ar: "مستخدمون بلا حدّ" },
+      { fr: "Tous les modules de votre secteur", en: "Every module of your sector", es: "Todos los módulos de su sector", ar: "كل وحدات قطاعك" },
+      { fr: "Mise en service et reprise de données accompagnées", en: "Guided set-up and data migration", es: "Puesta en marcha y migración de datos acompañadas", ar: "مرافقة في الإعداد ونقل البيانات" },
+      { fr: "Formation de vos équipes", en: "Training for your teams", es: "Formación de sus equipos", ar: "تكوين فريقك" },
+      { fr: "Interlocuteur dédié", en: "Dedicated contact", es: "Interlocutor dedicado", ar: "مخاطب خاص بك" },
+      { fr: "Paramétrage sur mesure (sur devis)", en: "Custom configuration (on quote)", es: "Configuración a medida (a consultar)", ar: "إعدادات على المقاس (حسب الطلب)" },
+    ],
+  },
+];
+
+/** Un module est-il compris dans une formule ? (null = tous) */
+export const planIncludes = (plan: Pick<CatalogPlan, "modules">, module: CatalogModule): boolean => !plan.modules || plan.modules.includes(module);
+
+/** Modules réellement ouverts pour un secteur et une formule : ceux du secteur, limités à ceux de la formule. */
+export const modulesFor = (sector: CatalogSector, plan: Pick<CatalogPlan, "modules">): CatalogModule[] => sector.modules.filter((m) => planIncludes(plan, m));
+
+// ───────────────────────────── Essai et paiement ─────────────────────────────
+
+/** Durée de l'essai gratuit par défaut (réglable par l'administrateur : GET /public/config › trialHours). */
+export const DEFAULT_TRIAL_HOURS = 72;
+export const DEFAULT_VAT_RATE = 19;
+
+export const PAYMENT_METHOD_LABELS: Record<string, Localized> = {
+  bank_transfer: { fr: "Virement bancaire", en: "Bank transfer", es: "Transferencia bancaria", ar: "تحويل بنكي" },
+  d17: { fr: "D17 (La Poste)", en: "D17 (Tunisian Post)", es: "D17 (Correos de Túnez)", ar: "D17 (البريد التونسي)" },
+  flouci: { fr: "Flouci", en: "Flouci", es: "Flouci", ar: "Flouci" },
+  edinar: { fr: "Carte e-Dinar", en: "e-Dinar card", es: "Tarjeta e-Dinar", ar: "بطاقة e-Dinar" },
+  postal: { fr: "Mandat minute (La Poste)", en: "Postal money order", es: "Giro postal", ar: "حوالة بريدية" },
+  cheque: { fr: "Chèque", en: "Cheque", es: "Cheque", ar: "شيك" },
+  cash: { fr: "Espèces", en: "Cash", es: "Efectivo", ar: "نقدًا" },
+  card: { fr: "Carte bancaire", en: "Bank card", es: "Tarjeta bancaria", ar: "بطاقة بنكية" },
+  other: { fr: "Autre", en: "Other", es: "Otro", ar: "أخرى" },
+};
+
+/** Moyens proposés par défaut (comme DEFAULT_PAYMENT_METHODS côté serveur). */
+export const DEFAULT_PAYMENT_METHODS = ["bank_transfer", "d17", "flouci", "cheque", "cash"];
+
+/** « 3 jours », « 36 heures »… à partir de la durée d'essai en heures. */
+export function trialLabel(hours: number, lang: string): string {
+  const h = Number.isFinite(hours) && hours > 0 ? Math.round(hours) : DEFAULT_TRIAL_HOURS;
+  const days = h / 24;
+  if (Number.isInteger(days)) {
+    if (lang === "en") return `${days} day${days > 1 ? "s" : ""}`;
+    if (lang === "es") return `${days} día${days > 1 ? "s" : ""}`;
+    if (lang === "ar") return days === 1 ? "يوم واحد" : days === 2 ? "يومين" : days <= 10 ? `${days} أيام` : `${days} يومًا`;
+    return `${days} jour${days > 1 ? "s" : ""}`;
+  }
+  if (lang === "en") return `${h} hours`;
+  if (lang === "es") return `${h} horas`;
+  if (lang === "ar") return `${h} ساعة`;
+  return `${h} heures`;
+}
