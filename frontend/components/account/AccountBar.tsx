@@ -111,7 +111,7 @@ export function ResendVerification({ onVerified, buttonStyle }: { onVerified?: (
     }
   };
 
-  const message = !result ? "" : result.kind === "sent" ? tx.bar.resent : result.kind === "noMail" ? tx.bar.resentNoMail : result.text;
+  const message = !result ? "" : result.kind === "sent" ? tx.bar.resent : result.kind === "noMail" ? tx.bar.resentNoMail : result.kind === "error" ? result.text : "";
   return (
     <>
       <button type="button" onClick={send} disabled={busy} aria-busy={busy} style={{ ...linkButton, opacity: busy ? 0.6 : 1, cursor: busy ? "wait" : "pointer", ...buttonStyle }}>
