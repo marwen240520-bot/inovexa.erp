@@ -1,7 +1,6 @@
 import {
-  BadGatewayException, BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query, Request, Res, UseGuards,
+  BadGatewayException, BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Headers, HttpCode, Logger, Param, ParseIntPipe, Patch, Post, Put, Query, Request, UnauthorizedException, UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,7 +21,7 @@ import { SubscriptionService } from './subscription.service';
 import { SectorsService } from './sectors.service';
 import { MODULE_KEYS, effectiveModules } from './account-access';
 import { PAYMENT_METHODS } from './saas-defaults';
-import { apiPublicUrl, frontendUrl, returnBaseFor } from '../../common/origins';
+import { apiPublicUrl, returnBaseFor } from '../../common/origins';
 import { securityChecks, securitySummary } from '../../common/security/security-report';
 import { buildSecurityFacts } from '../../common/security/security-facts';
 
@@ -35,11 +34,14 @@ const actorId = (req: any): number => req.user.actorId ?? req.user.userId;
 @Controller('public')
 @Throttle({ default: { limit: 60, ttl: 60_000 } })
 export class PublicController {
+  private readonly logger = new Logger('FlouciWebhook');
+
   constructor(
     private readonly settings: SaasSettingsService,
     private readonly subscriptions: SubscriptionService,
     private readonly sectors: SectorsService,
     private readonly mail: MailService,
+    private readonly gateway: PaymentGatewayService,
   ) {}
 
   /**
@@ -74,7 +76,8 @@ export class PublicController {
   async config() {
     const s = await this.settings.get();
     const online = this.subscriptions.onlinePayment(s);
-    // Le paiement se fait en ligne par carte (et carte e-Dinar) ; les moyens hors ligne ne s'ajoutent que si l'administrateur les a activés.
+    // Le paiement se fait en ligne (Flouci, code « card » : carte bancaire ou application) ; les moyens hors ligne ne s'ajoutent que si
+    // l'administrateur les a activés. Le code « flouci » reste celui du paiement Flouci HORS ligne : il n'est pas repris ici.
     const cardMethods = online.methods.filter((m) => m === 'card' || m === 'edinar');
     const offline = s.manualPayments ? (s.paymentMethods?.length ? s.paymentMethods : ['bank_transfer']) : [];
     return {
@@ -89,27 +92,24 @@ export class PublicController {
   }
 
   /**
-   * Retour du prestataire de paiement (Konnect) : il appelle cette adresse en GET avec ?payment_ref=… quand un paiement
-   * est traité — par son serveur, ou en y renvoyant le navigateur du client. La référence n'est jamais crue sur parole :
-   * l'état du paiement est relu chez Konnect avec la clé du serveur, puis le client est ramené sur le site.
+   * Notification de Flouci (serveur à serveur) : GET ?payment_id=…&success=True|False, signée par l'en-tête
+   * X-Flouci-Signature (HMAC-SHA256 avec le jeton privé). Une notification non signée ou mal signée est refusée sans rien
+   * relire. Même signée, elle n'est pas crue sur parole : l'état du paiement est relu chez Flouci avec les clés du serveur.
+   * Le client, lui, revient sur le site par success_link / fail_link (page Abonnement), qui relit aussi le paiement.
    */
-  @Get('payments/konnect/return')
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Notification / retour de paiement Konnect (?payment_ref=)' })
-  async konnectReturn(@Query('payment_ref') ref: string, @Res() res: Response) {
-    const providerRef = String(ref || '').slice(0, 80);
-    const out = providerRef ? await this.subscriptions.confirmCheckout({ providerRef }).catch(() => null) : null;
-    // L'adresse de retour a été enregistrée à l'ouverture du paiement, parmi les adresses autorisées du site.
-    const base = out?.payment?.returnBase || frontendUrl();
-    res.redirect(302, `${base}/subscription${out?.payment ? `?checkout=${out.payment.id}` : ''}`);
-  }
-
-  @Post('payments/konnect/return')
+  @Get('payments/flouci/webhook')
   @HttpCode(200)
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
-  async konnectNotify(@Query('payment_ref') ref: string, @Body() body: any) {
-    const providerRef = String(ref || body?.payment_ref || '').slice(0, 80);
-    if (providerRef) await this.subscriptions.confirmCheckout({ providerRef }).catch(() => null);
+  @ApiOperation({ summary: 'Notification de paiement Flouci (?payment_id=&success=), signée X-Flouci-Signature' })
+  async flouciWebhook(@Query('payment_id') paymentId: string, @Query('success') success: string, @Headers('x-flouci-signature') signature: string) {
+    const providerRef = String(paymentId || '').slice(0, 80);
+    const outcome = String(success ?? '');
+    if (!providerRef || !this.gateway.verifyWebhookSignature(signature, providerRef, outcome)) {
+      // Rien n'est relu : le paiement sera tout de même confirmé par le retour du client ou par le balayage périodique.
+      this.logger.warn(`Notification refusée (${!providerRef ? 'payment_id absent' : signature ? 'signature invalide ou trop ancienne' : 'signature absente'}).`);
+      throw new UnauthorizedException('Notification refusée : signature absente ou invalide.');
+    }
+    await this.subscriptions.confirmCheckout({ providerRef }).catch(() => null);
     return { received: true };
   }
 
@@ -181,8 +181,9 @@ export class BillingController {
       checkout: await this.subscriptions.openCheckout(owner.id),
       payment: {
         currency: s.currency, vatRate: s.vatRate,
-        // Paiement en ligne par carte : l'accès s'ouvre tout seul dès que le prestataire confirme l'encaissement.
-        online: { enabled: online.enabled, provider: online.provider, test: online.mode === 'sandbox', methods: online.methods },
+        // Paiement en ligne (Flouci) : l'accès s'ouvre tout seul dès que le prestataire confirme l'encaissement.
+        // charge : Flouci débite en dinars, au taux indiqué si les formules sont dans une autre devise.
+        online: { enabled: online.enabled, provider: online.provider, test: online.mode === 'sandbox', methods: online.methods, charge: online.charge },
         onlinePayment: online.enabled,
         // Paiement hors ligne (virement, chèque…) : seulement si l'administrateur l'a activé ; il le valide alors lui-même.
         manual: s.manualPayments === true,
@@ -199,7 +200,7 @@ export class BillingController {
 
   @Post('checkout')
   @Throttle({ default: { limit: 20, ttl: 3_600_000 } })
-  @ApiOperation({ summary: 'Ouvre un paiement par carte pour une formule : renvoie l’adresse de la page de paiement' })
+  @ApiOperation({ summary: 'Ouvre un paiement en ligne (Flouci) pour une formule : renvoie l’adresse de la page de paiement' })
   checkout(@Request() req: any, @Body() body: any) {
     this.assertOwner(req);
     if (!body?.planCode) throw new BadRequestException('Formule requise.');
@@ -219,7 +220,7 @@ export class BillingController {
     const p = out.payment;
     return {
       status: out.status,
-      payment: p ? { id: p.id, status: p.status, planName: p.planName, billingCycle: p.billingCycle, amountTTC: p.amountTTC, currency: p.currency, receiptNumber: p.receiptNumber, periodEnd: p.periodEnd } : null,
+      payment: p ? { id: p.id, status: p.status, planName: p.planName, billingCycle: p.billingCycle, amountTTC: p.amountTTC, currency: p.currency, chargedAmount: p.chargedAmount ?? null, chargedCurrency: p.chargedCurrency ?? null, receiptNumber: p.receiptNumber, periodEnd: p.periodEnd } : null,
       account: this.subscriptions.view(await this.subscriptions.owner(req.user.userId), await this.settings.get()),
     };
   }
@@ -410,7 +411,7 @@ export class AdminSaasController {
     return {
       ...s, googleConfigured: !!this.settings.googleClientId(), appleConfigured: !!this.settings.appleClientId(),
       mailConfigured: this.mail.isConfigured(), paymentMethodOptions: PAYMENT_METHODS, moduleKeys: MODULE_KEYS,
-      // Paiement en ligne (Konnect) : configuré par les variables d'environnement du serveur, jamais depuis cette page.
+      // Paiement en ligne (Flouci) : configuré par les variables d'environnement du serveur, jamais depuis cette page.
       onlinePayment: this.subscriptions.onlinePayment(s),
       // Le code de vérification n'est réellement demandé que si l'envoi d'emails fonctionne.
       emailVerificationActive: this.settings.verificationRequired(s),
@@ -454,20 +455,20 @@ export class AdminSaasController {
 
   @Post('payments/:id/recheck') @HttpCode(200)
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Relit tout de suite chez Konnect l’état d’un paiement en ligne et ouvre l’abonnement s’il est encaissé' })
+  @ApiOperation({ summary: 'Relit tout de suite chez Flouci l’état d’un paiement en ligne et ouvre l’abonnement s’il est encaissé' })
   recheckPayment(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
     return this.subscriptions.recheckPayment(id, actorId(req));
   }
 
   @Post('payments/:id/refund') @HttpCode(200)
-  @ApiOperation({ summary: 'Marque un paiement validé comme remboursé et retire la période qu’il avait ouverte (le virement se fait depuis le tableau de bord Konnect)' })
+  @ApiOperation({ summary: 'Marque un paiement validé comme remboursé et retire la période qu’il avait ouverte (l’argent se rend depuis le tableau de bord Flouci)' })
   refundPayment(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Body() body: any) {
     return this.subscriptions.refundPayment(id, body?.reason, actorId(req));
   }
 
   // ── Paiement en ligne : mise en production ──
   @Get('online-payment')
-  @ApiOperation({ summary: 'Liste de contrôle « mise en production » du paiement par carte (Konnect), sans appeler Konnect' })
+  @ApiOperation({ summary: 'Liste de contrôle « mise en production » du paiement en ligne (Flouci), sans appeler Flouci' })
   async onlinePaymentStatus() {
     return this.subscriptions.onlineReadiness(await this.settings.get());
   }
@@ -481,10 +482,11 @@ export class AdminSaasController {
 
   @Post('online-payment/test') @HttpCode(200)
   @Throttle({ default: { limit: 6, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Teste la connexion à Konnect : clé d’API acceptée ? (et, avec wallet = true, portefeuille reconnu ?)' })
+  @ApiOperation({ summary: 'Teste la connexion à Flouci : clés acceptées ? (et, avec checkout = true, ouverture d’un paiement de test de 1 TND acceptée ?)' })
   async onlinePaymentTest(@Request() req: any, @Body() body: any) {
-    const result = await this.gateway.probe({ wallet: body?.wallet === true, webhookUrl: `${apiPublicUrl(req)}/public/payments/konnect/return` });
-    await this.audits.record({ userId: actorId(req), actorId: actorId(req), actorEmail: req.user.email, action: 'konnect_test', entity: 'admin', ip: (req.ip || '').toString(), status: 200, details: { wallet: body?.wallet === true, keyAccepted: result.keyAccepted, walletAccepted: result.walletAccepted, mode: result.mode } });
+    const full = body?.checkout === true || body?.wallet === true;
+    const result = await this.gateway.probe({ checkout: full, webhookUrl: `${apiPublicUrl(req)}/public/payments/flouci/webhook` });
+    await this.audits.record({ userId: actorId(req), actorId: actorId(req), actorEmail: req.user.email, action: 'flouci_test', entity: 'admin', ip: (req.ip || '').toString(), status: 200, details: { checkout: full, keyAccepted: result.keyAccepted, checkoutAccepted: result.checkoutAccepted, mode: result.mode } });
     return result;
   }
 

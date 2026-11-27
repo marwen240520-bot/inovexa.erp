@@ -39,6 +39,8 @@ export interface ReceiptLabels {
   amountHT: string;
   vat: (rate: string) => string;
   paid: string;
+  /** « Montant débité » (paiement converti en dinars par Flouci) ; à défaut, le libellé français. */
+  charged?: string;
   /** Mention de bas de reçu ; à défaut, celle du serveur (en français). */
   notice?: string;
 }
@@ -60,6 +62,7 @@ const FR_LABELS: ReceiptLabels = {
   amountHT: "Montant hors taxes",
   vat: (rate) => `TVA (${rate} %)`,
   paid: "Montant payé TTC",
+  charged: "Montant débité par Flouci",
 };
 
 /** Le reçu tel que le serveur le renvoie : aucune valeur n'est recalculée ici. */
@@ -105,6 +108,7 @@ export function ReceiptSheet({ receipt, labels = FR_LABELS }: { receipt: Receipt
         <Line name={L.amountHT}>{amount(receipt.amountHT)}</Line>
         <Line name={L.vat(rate)}>{amount(receipt.vatAmount)}</Line>
         <Line name={L.paid} strong>{amount(receipt.amountTTC)}</Line>
+        {receipt.charged ? <Line name={L.charged ?? "Montant débité par Flouci"}>{formatMoney(receipt.charged.amount, L.lang, receipt.charged.currency)}</Line> : null}
       </section>
 
       <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: "var(--theme-text-secondary)" }}>{L.notice || receipt.notice}</p>

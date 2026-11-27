@@ -108,11 +108,11 @@ export default function AdminOverviewPage() {
               <strong>Formules publiées</strong> — {published > 0 ? `${plural(published, "formule visible", "formules visibles")} sur le site et proposées au paiement.` : "aucune formule n’est publiée : vos clients ne peuvent pas payer à la fin de l’essai. Relisez les prix proposés puis publiez."}
             </Todo>
             <Todo ok={!!online?.enabled} href="/admin/settings" action="Activer le paiement">
-              <strong>Paiement en ligne par carte</strong> — {online?.enabled
-                ? `actif (${online.provider === "konnect" ? "Konnect" : online.provider}${online.mode === "sandbox" ? ", mode test : aucun vrai paiement" : ""}) : vos clients paient seuls et leur compte est activé automatiquement, sans aucune validation de votre part.`
+              <strong>Paiement en ligne (Flouci)</strong> — {online?.enabled
+                ? `actif (${online.provider === "flouci" ? "Flouci" : online.provider}${online.mode === "sandbox" ? ", mode test : aucun vrai paiement" : ""}) : vos clients paient seuls, par carte ou avec l’application Flouci, et leur compte est activé automatiquement, sans aucune validation de votre part.`
                 : online?.reason === "CURRENCY_UNSUPPORTED"
-                  ? "la devise choisie n’est pas acceptée par le prestataire de paiement (USD, EUR ou TND)."
-                  : "non configuré : sans clé Konnect sur le serveur (KONNECT_API_KEY et KONNECT_WALLET_ID), vos clients ne peuvent pas payer à la fin de l’essai."}
+                  ? `Flouci encaisse en dinars : définissez FLOUCI_RATE_${settings.currency} sur le serveur de l’API (ex. 3.10), ou passez les formules en TND.`
+                  : "non configuré : sans jetons Flouci sur le serveur (FLOUCI_PUBLIC_TOKEN et FLOUCI_PRIVATE_TOKEN), vos clients ne peuvent pas payer à la fin de l’essai."}
             </Todo>
             <Todo ok={supportOk} optional href="/admin/settings" action="Renseigner">
               <strong>Contact de support</strong> — facultatif : email, téléphone ou WhatsApp affiché aux clients dont l’accès est fermé, en cas de problème de paiement. Le client choisit et paie seul, sans passer par vous.

@@ -1,12 +1,12 @@
 // Tests de bout en bout de la couche SaaS : inscription avec code de vérification reçu par email, essai de 72 h,
-// expiration, paiement PAR CARTE en ligne (faux Konnect) activé sans administrateur, paiements hors ligne facultatifs,
+// expiration, paiement PAR CARTE en ligne (faux Flouci) activé sans administrateur, paiements hors ligne facultatifs,
 // suspension, isolation entre sociétés, modules par secteur choisis par le client, agenda et projets, droits de
 // l'administrateur, logistique et transporteurs.
 // Lancé par run.sh sur une base neuve créée par les migrations (DATABASE_URL, BASE). Le serveur de l'ERP est démarré avec
-// SMTP_* et KONNECT_* pointant vers les faux serveurs démarrés ci-dessous (voir fakes.js).
+// SMTP_* et FLOUCI_* pointant vers les faux serveurs démarrés ci-dessous (voir fakes.js).
 const { Client } = require('pg');
 const bcrypt = require('bcrypt');
-const { startFakeKonnect, startFakeSmtp } = require('./fakes');
+const { startFakeFlouci, startFakeSmtp } = require('./fakes');
 
 const BASE = process.env.BASE || 'http://127.0.0.1:4101';
 let passes = 0, failures = 0;
@@ -38,7 +38,7 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   await db.connect();
   const one = async (sql, params) => (await db.query(sql, params)).rows[0];
   const smtp = await startFakeSmtp(Number(process.env.FAKE_SMTP_PORT));
-  const konnect = await startFakeKonnect(Number(process.env.FAKE_KONNECT_PORT));
+  const flouci = await startFakeFlouci(Number(process.env.FAKE_FLOUCI_PORT));
 
   /** Inscrit une société puis confirme son adresse avec le code reçu par email, comme le ferait le client. */
   const signUp = async (over) => {
@@ -402,8 +402,8 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   check('ancienne liste des clients : uniquement les propriétaires (pas les membres d’équipe)', r.status === 200 && r.body.length === 5 && r.body.every((c) => !('password' in c)), r.body.length);
 
   r = await call('GET', '/admin/settings', { token: admin });
-  check('réglages de départ : dollars, code de vérification actif, paiement par carte en ligne (mode test), hors ligne fermé', r.status === 200 && r.body.currency === 'USD' && r.body.requireEmailVerification === true && r.body.emailVerificationActive === true && r.body.manualPayments === false && r.body.onlinePayment.enabled === true && r.body.onlinePayment.provider === 'konnect' && r.body.onlinePayment.mode === 'sandbox' && r.body.onlinePayment.reason === null && r.body.catalogVersion === 4, r.body.onlinePayment);
-  check('la clé Konnect ne sort jamais du serveur', !JSON.stringify(r.body).includes('e2e-konnect-key') && !JSON.stringify(r.body).includes('e2e-wallet'), Object.keys(r.body));
+  check('réglages de départ : dollars, code de vérification actif, paiement par carte en ligne (mode test), hors ligne fermé', r.status === 200 && r.body.currency === 'USD' && r.body.requireEmailVerification === true && r.body.emailVerificationActive === true && r.body.manualPayments === false && r.body.onlinePayment.enabled === true && r.body.onlinePayment.provider === 'flouci' && r.body.onlinePayment.mode === 'sandbox' && r.body.onlinePayment.reason === null && r.body.catalogVersion === 4, r.body.onlinePayment);
+  check('les clés Flouci ne sortent jamais du serveur', !JSON.stringify(r.body).includes('e2e-flouci-private') && !JSON.stringify(r.body).includes('e2e-flouci-public'), Object.keys(r.body));
   r = await call('PUT', '/admin/settings', { token: admin, body: { requireEmailVerification: false } });
   check('code de vérification désactivé par l’administrateur : accepté', r.status === 200 && r.body.requireEmailVerification === false, r);
   r = await call('GET', '/public/config');
@@ -433,8 +433,8 @@ const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société'
   r = await call('GET', '/admin/settings', { token: admin });
   check('l’administration voit pourquoi (CURRENCY_UNSUPPORTED)', r.body.onlinePayment.enabled === false && r.body.onlinePayment.reason === 'CURRENCY_UNSUPPORTED', r.body.onlinePayment);
   r = await call('POST', '/billing/checkout', { token: B.token, body: { planCode: 'starter', billingCycle: 'monthly' } });
-  check('le client reçoit « paiement en cours d’activation » (503), sans détail technique', r.status === 503 && r.body.code === 'ONLINE_PAYMENT_UNAVAILABLE' && !/konnect/i.test(JSON.stringify(r.body)), r);
-  check('aucune page de paiement n’a été ouverte chez le prestataire', konnect.initCount() === 0, konnect.initCount());
+  check('le client reçoit « paiement en cours d’activation » (503), sans détail technique', r.status === 503 && r.body.code === 'ONLINE_PAYMENT_UNAVAILABLE' && !/flouci|e2e-/i.test(JSON.stringify(r.body)), r);
+  check('aucune page de paiement n’a été ouverte chez le prestataire', flouci.initCount() === 0, flouci.initCount());
   r = await call('PUT', '/admin/settings', { token: admin, body: { currency: 'USD' } });
   check('retour au dollar', r.status === 200 && r.body.currency === 'USD', r);
   r = await call('PUT', '/admin/settings', { token: admin, body: { paymentLink: 'javascript:alert(1)' } });

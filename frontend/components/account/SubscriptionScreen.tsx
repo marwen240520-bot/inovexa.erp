@@ -8,9 +8,10 @@
 //                           retour de la page de paiement ;
 //   • /dashboard/billing  — dans l'ERP, pendant l'essai ou l'abonnement (payer en cours d'essai, renouveler, modules).
 //
-// Paiement par carte : le client clique « Payer », le serveur ouvre le paiement chez le prestataire (Konnect) et renvoie
-// l'adresse de sa page sécurisée. Au retour, le serveur relit l'état du paiement CHEZ LE PRESTATAIRE et ouvre l'accès
-// tout seul : personne ne valide rien à la main, et le navigateur ne décide de rien (prix, TVA et état viennent du serveur).
+// Paiement en ligne : le client clique « Payer », le serveur ouvre le paiement chez Flouci (carte bancaire ou application
+// Flouci) et renvoie l'adresse de sa page sécurisée. Au retour, le serveur relit l'état du paiement CHEZ FLOUCI et ouvre
+// l'accès tout seul : personne ne valide rien à la main, et le navigateur ne décide de rien (prix, TVA, conversion en
+// dinars et état viennent du serveur ; le montant en dinars affiché ici n'est qu'un aperçu du même calcul).
 // Si l'administrateur a activé les paiements hors ligne (virement, chèque…), ils sont proposés à part, en second choix.
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -170,7 +171,10 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   // Le serveur relit l'état du paiement chez le prestataire. S'il est encaissé, l'accès est déjà ouvert quand la
   // réponse arrive ; sinon on réessaie quelques fois (la confirmation peut suivre le client de quelques secondes).
   useEffect(() => {
-    const id = Number(new URLSearchParams(window.location.search).get("checkout"));
+    // « checkout » ne garde que ses chiffres : un prestataire qui ajoute ses propres paramètres à l'adresse de retour
+    // (« ?checkout=12?payment_id=… ») ne doit pas empêcher la vérification.
+    const raw = new URLSearchParams(window.location.search).get("checkout") || "";
+    const id = Number(/^\d+/.exec(raw)?.[0] ?? Number.NaN);
     if (!Number.isInteger(id) || id <= 0 || !getToken()) return;
     let stopped = false;
     let timer: number | undefined;
@@ -289,7 +293,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     payRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  /** « Payer par carte » : le serveur ouvre le paiement chez le prestataire, le navigateur part sur sa page sécurisée. */
+  /** « Payer » : le serveur ouvre le paiement chez Flouci, le navigateur part sur sa page sécurisée. */
   const payByCard = async () => {
     if (busy) return;
     if (!plan || amountHT === null) { notify(b.choosePlanFirst, "err"); return; }
@@ -390,6 +394,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
     amountHT: b.totalHT,
     vat: (rate) => fill(b.vat, { rate }),
     paid: b.receiptPaid,
+    charged: b.receiptCharged,
     notice: b.receiptNotice,
   }), [b, language]);
 
@@ -444,7 +449,14 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
   const hasSupport = !!(support.email || support.phone || whatsappDigits);
   const canCancel = canManage && (account.status === "ACTIVE" || account.status === "TRIAL");
   const cardLink = method === "card" ? view.payment.link || null : null;
-  const online = view.payment.online ?? { enabled: view.payment.onlinePayment === true, provider: "konnect", test: false, methods: ["card"] };
+  const online = view.payment.online ?? { enabled: view.payment.onlinePayment === true, provider: "flouci", test: false, methods: ["card", "flouci"], charge: null };
+  // Flouci débite en dinars : quand les formules sont dans une autre devise, le montant TTC est converti au taux du serveur.
+  const charge = online.charge ?? null;
+  const converts = !!charge && charge.currency !== currency;
+  const chargeAmount = amountTTC === null ? null : converts && charge ? Math.round(amountTTC * charge.rate * 1000) / 1000 : amountTTC;
+  const chargeMoney = (n: number | null | undefined) => formatMoney(n, language, converts && charge ? charge.currency : currency);
+  const rateText = charge ? charge.rate.toLocaleString(language === "fr" ? "fr-FR" : language === "es" ? "es-ES" : "en-GB", { maximumFractionDigits: 4 }) : "";
+  const cardsText = online.methods.includes("card") ? o.pay.cards : o.pay.appOnly;
   const suspended = account.status === "SUSPENDED";
   const paid = returned?.state === "paid" ? returned.result.payment : null;
   // La page de paiement ouverte n'est proposée que si elle correspond encore à ce que le client a sous les yeux.
@@ -652,7 +664,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
         )}
       </section>
 
-      {/* ───── 2. Paiement par carte ───── */}
+      {/* ───── 2. Paiement en ligne (Flouci) ───── */}
       {plans.length ? (
         <section className="sub-card" ref={payRef} id="paiement">
           <div className="sub-card-head">
@@ -669,7 +681,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                   <div>
                     <h3>{o.pay.cardTitle}</h3>
                     <p className="sub-muted">{o.pay.cardIntro}</p>
-                    <p className="sub-cardpay-brands">{o.pay.cards}</p>
+                    <p className="sub-cardpay-brands">{cardsText}</p>
                   </div>
                 </div>
 
@@ -685,7 +697,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                     <IconClock />
                     <div>
                       <strong>{o.pay.resumeTitle}</strong>
-                      <p>{fill(o.pay.resumeText, { amount: formatMoney(resumable.amountTTC, language, resumable.currency), time: formatTime(resumable.expiresAt, language) })}</p>
+                      <p>{fill(o.pay.resumeText, { amount: resumable.chargedAmount != null && resumable.chargedCurrency ? formatMoney(resumable.chargedAmount, language, resumable.chargedCurrency) : formatMoney(resumable.amountTTC, language, resumable.currency), time: formatTime(resumable.expiresAt, language) })}</p>
                       <div className="sub-alert-actions"><a href={resumable.payUrl} className="sub-btn sub-btn-outline">{o.pay.resume}</a></div>
                     </div>
                   </div>
@@ -695,7 +707,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                 <ul className="sub-assurances">
                   <li><IconShield />{o.pay.secure}</li>
                   <li><IconShield />{o.pay.noAutoRenew}</li>
-                  <li><IconShield />{fill(o.pay.currencyNote, { currency })}</li>
+                  <li><IconShield />{fill(o.pay.currencyNote, { currency: charge?.currency || currency })}</li>
                 </ul>
               </div>
 
@@ -710,15 +722,18 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                       <div><dt>{fill(b.vat, { rate: vatRate.toLocaleString(language === "fr" ? "fr-FR" : "en-GB", { maximumFractionDigits: 2 }) })}</dt><dd>{money(vatAmount)}</dd></div>
                     </dl>
                     <p className="sub-total"><span>{b.totalTTC}</span><strong>{money(amountTTC)}</strong></p>
+                    {converts && charge && chargeAmount !== null ? (
+                      <p className="sub-muted sub-small sub-charge">{fill(o.pay.chargeLine, { amount: chargeMoney(chargeAmount), currency, rate: rateText })}</p>
+                    ) : null}
                   </>
                 ) : (
                   <p className="sub-muted">{b.choosePlanFirst}</p>
                 )}
                 <button type="button" className="sub-btn sub-btn-primary sub-btn-wide" onClick={() => void payByCard()}
                   disabled={!plan || amountHT === null || !online.enabled || suspended || busy === "pay"} aria-busy={busy === "pay"}>
-                  {busy === "pay" ? o.pay.redirecting : plan && amountTTC !== null ? fill(account.status === "ACTIVE" && account.planCode === plan.code ? o.pay.renewNow : o.pay.payNow, { amount: money(amountTTC) }) : fill(o.pay.payNow, { amount: "" }).replace(/\s{2,}/g, " ")}
+                  {busy === "pay" ? o.pay.redirecting : plan && chargeAmount !== null ? fill(account.status === "ACTIVE" && account.planCode === plan.code ? o.pay.renewNow : o.pay.payNow, { amount: chargeMoney(chargeAmount) }) : fill(o.pay.payNow, { amount: "" }).replace(/\s{2,}/g, " ").trim()}
                 </button>
-                <p className="sub-muted sub-small">{o.pay.cards}</p>
+                <p className="sub-muted sub-small">{cardsText}</p>
               </aside>
             </div>
           )}
@@ -1009,6 +1024,7 @@ const SUB_CSS = `
 .sub-summary dd { margin: 0; font-weight: 700; text-align: end; font-variant-numeric: tabular-nums; }
 .sub-total { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin: 0; font-size: 14px; font-weight: 700; }
 .sub-total strong { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.sub-charge { margin: -6px 0 0; line-height: 1.45; font-variant-numeric: tabular-nums; }
 
 .sub-table-wrap { overflow-x: auto; }
 .sub-table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; }

@@ -95,7 +95,7 @@ describe('securityChecks — rapport de configuration', () => {
     production: true, jwtSecretLength: 64, jwtSecretDistinct: 40,
     apiUrl: 'https://api.exemple.tn', siteUrls: ['https://www.exemple.tn'],
     synchronize: false, swagger: false, mailConfigured: true,
-    konnect: { configured: true, mode: 'production' }, backups: true, adminsWithoutTwoFactor: 0,
+    gateway: { provider: 'flouci', configured: true, mode: 'production' }, backups: true, adminsWithoutTwoFactor: 0,
   };
   const find = (facts: SecurityFacts, key: string) => securityChecks(facts).find((c) => c.key === key)!;
 
@@ -130,7 +130,7 @@ describe('securityChecks — rapport de configuration', () => {
   });
 
   it('avertissements : emails, paiement en mode test, Swagger public, administrateurs sans double authentification, sauvegardes', () => {
-    const warn = { ...good, mailConfigured: false, konnect: { configured: true, mode: 'sandbox' as const }, swagger: true, adminsWithoutTwoFactor: 2, backups: false };
+    const warn = { ...good, mailConfigured: false, gateway: { provider: 'flouci', configured: true, mode: 'sandbox' as const }, swagger: true, adminsWithoutTwoFactor: 2, backups: false };
     const checks = securityChecks(warn);
     for (const key of ['mail', 'payments', 'swagger', 'admin2fa', 'backups']) {
       const c = checks.find((x) => x.key === key)!;
@@ -138,7 +138,7 @@ describe('securityChecks — rapport de configuration', () => {
     }
     expect(checks.find((c) => c.key === 'admin2fa')!.message).toMatch(/^2 compte/);
     expect(securitySummary(checks)).toEqual({ ok: true, errors: 0, warnings: 5 });
-    expect(find({ ...good, konnect: { configured: false, mode: 'production' } }, 'payments').message).toMatch(/pas configuré/);
+    expect(find({ ...good, gateway: { provider: 'flouci', configured: false, mode: 'production' } }, 'payments').message).toMatch(/Flouci n’est pas configuré/);
   });
 
   it('contrôle des administrateurs ignoré quand il n’a pas pu être fait', () => {

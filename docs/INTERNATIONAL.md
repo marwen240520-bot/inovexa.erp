@@ -52,7 +52,7 @@ Migration : `1795720187386-CompanyCountry` (colonnes `companies.countryCode` —
 - **Pas de multi-devises** : une société = une devise, sans taux de change ; les factures en devise étrangère d'une société ne sont pas prévues.
 - **PDF** : libellés en français, caractères latins uniquement (pas de PDF en arabe, chinois, cyrillique…).
 - **Aucune règle fiscale locale** au-delà de la TVA en liste libre : pas de TVA intracommunautaire (autoliquidation), pas de taxe de vente par État, pas de facturation électronique étrangère (Factur-X, XRechnung, SDI, FatturaPA…).
-- **L'abonnement à Inovexa** reste facturé en dollars avec un seul taux de TVA global (19 %), payé par carte via Konnect : ce taux n'est pas encore adapté au pays du client.
+- **L'abonnement à Inovexa** reste facturé en dollars avec un seul taux de TVA global (19 %), payé en ligne via Flouci (débité en dinars, au taux `FLOUCI_RATE_USD` du serveur) : ce taux de TVA n'est pas encore adapté au pays du client.
 - **Suggestions de produits par secteur** : leurs prix de départ sont en dinars ; une société étrangère les corrige à la main.
 - **TEIF, timbre, retenue** : Tunisie uniquement, voir § 3.
 - **Paie** : un pack par pays dans `PAYROLL_PACKS` (`backend/src/common/countries.ts`) ; `localFeatures(pays).payroll` vaut `hasPayrollPack(pays)`. Ajouter un pays = ajouter son pack (cotisations sociales et impôt sur le salaire **vérifiés auprès des textes du pays**, jamais approximés : un bulletin faux est pire qu'un bulletin absent), puis son calcul dans le module RH. Aujourd'hui seul `TN` existe.
@@ -61,4 +61,4 @@ Migration : `1795720187386-CompanyCountry` (colonnes `companies.countryCode` —
 
 1. **Packs pays** : taux de TVA usuels, format de l'identifiant fiscal, plan comptable, mentions légales et **pack de paie** (cotisations sociales, impôt sur le salaire) de quelques pays (France, Maroc, Algérie, Espagne…).
 2. **Devises multiples et taux de change** (factures en devise étrangère, écarts de change), puis facturation électronique étrangère.
-3. **Paiements internationaux** de l'abonnement (carte internationale, TVA du pays du client) en plus de Konnect.
+3. **Paiements internationaux** de l'abonnement (paiement dans la devise du client, TVA du pays du client) en plus de Flouci, qui encaisse uniquement en dinars.

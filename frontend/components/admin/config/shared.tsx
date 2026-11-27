@@ -27,18 +27,25 @@ export interface AdminSettings {
   appleConfigured?: boolean; mailConfigured?: boolean;
   /** true : en plus de la carte, les clients peuvent déclarer un paiement hors ligne que l'administrateur valide. */
   manualPayments?: boolean;
-  /** Paiement en ligne par carte (Konnect), configuré par les variables d'environnement du serveur. */
-  onlinePayment?: { enabled: boolean; provider: string; mode: "production" | "sandbox"; methods: string[]; reason: "NOT_CONFIGURED" | "CURRENCY_UNSUPPORTED" | null };
+  /**
+   * Paiement en ligne (Flouci : carte bancaire ou application), configuré par les variables d'environnement du serveur.
+   * charge : Flouci débite en dinars, au taux « rate » (1 unité de la devise des formules = rate TND) ; null = devise non encaissable.
+   */
+  onlinePayment?: {
+    enabled: boolean; provider: string; mode: "production" | "sandbox"; methods: string[];
+    charge?: { currency: string; rate: number } | null;
+    reason: "NOT_CONFIGURED" | "CURRENCY_UNSUPPORTED" | null;
+  };
   /** Le code de vérification par email est réellement demandé (réglage actif ET envoi d'emails configuré). */
   emailVerificationActive?: boolean;
   /** Calculés par le serveur, en lecture seule (absents de la réponse de PUT /admin/settings). */
   googleConfigured: boolean; paymentMethodOptions: string[]; moduleKeys: string[];
 }
 
-/** GET /admin/online-payment : ce qu'il reste à régler avant d'encaisser de vrais clients (sans appeler Konnect). */
+/** GET /admin/online-payment : ce qu'il reste à régler avant d'encaisser de vrais clients (sans appeler Flouci). */
 export interface OnlineReadiness {
   enabled: boolean; mode: "production" | "sandbox"; provider: string;
-  /** Adresse que Konnect appelle après chaque paiement (transmise à Konnect à chaque paiement). */
+  /** Adresse que Flouci appelle après chaque paiement (transmise à Flouci à chaque paiement). */
   webhookUrl: string; siteUrls: string[];
   /** Un client peut payer. */
   ready: boolean;
@@ -53,10 +60,13 @@ export interface SecurityReport {
   checks: Array<{ key: string; ok: boolean; level: "error" | "warn"; message: string }>;
 }
 
-/** POST /admin/online-payment/test : résultat du test de connexion à Konnect (null = non vérifié). */
+/**
+ * POST /admin/online-payment/test : résultat du test de connexion à Flouci (null = non vérifié).
+ * checkoutAccepted : ouverture d'un paiement de test de 1 TND acceptée (seulement quand ce test est demandé).
+ */
 export interface ConnectionTest {
   provider: string; mode: "production" | "sandbox"; configured: boolean;
-  reachable: boolean | null; keyAccepted: boolean | null; walletAccepted: boolean | null; message: string;
+  reachable: boolean | null; keyAccepted: boolean | null; checkoutAccepted: boolean | null; message: string;
 }
 
 export interface AccountRef { id: number; email: string | null; name: string | null; companyName: string | null }

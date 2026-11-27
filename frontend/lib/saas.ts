@@ -72,7 +72,7 @@ export interface PublicConfig {
   appleClientId?: string | null;
   /** Moyens de paiement proposés aux clients (codes : card, edinar — et bank_transfer, d17… si le hors-ligne est activé). */
   paymentMethods?: string[];
-  /** true : le paiement en ligne par carte est actif sur le serveur. */
+  /** true : le paiement en ligne (Flouci) est actif sur le serveur. */
   onlinePayment?: boolean;
   modules: string[];
 }
@@ -80,6 +80,8 @@ export interface PublicConfig {
 export interface SubscriptionPayment {
   id: number; userId: number; planCode: string; planName: string; billingCycle: "monthly" | "annual"; periodMonths: number;
   amountHT: number; vatRate: number; amountTTC: number; currency: string; method: string; provider: string;
+  /** Montant réellement débité par Flouci (en dinars) quand les formules sont dans une autre devise ; null hors ligne. */
+  chargedAmount?: number | null; chargedCurrency?: string | null;
   reference: string | null; note: string | null; status: "pending" | "validated" | "rejected" | "cancelled" | "initiated" | "expired" | "refunded"; rejectReason: string | null;
   declaredBy: "client" | "admin"; validatedAt: string | null; periodStart: string | null; periodEnd: string | null; receiptNumber: string | null; createdAt: string;
 }
@@ -96,8 +98,11 @@ export interface SubscriptionView {
   checkout?: CheckoutSession | null;
   payment: {
     currency: string; vatRate: number;
-    /** Paiement en ligne par carte : l'accès s'ouvre tout seul dès que le prestataire confirme l'encaissement. */
-    online?: { enabled: boolean; provider: string; test: boolean; methods: string[] };
+    /**
+     * Paiement en ligne (Flouci, carte ou application) : l'accès s'ouvre tout seul dès que le prestataire confirme
+     * l'encaissement. charge : Flouci débite en dinars, au taux « rate » (1 unité de la devise des formules = rate TND).
+     */
+    online?: { enabled: boolean; provider: string; test: boolean; methods: string[]; charge?: { currency: string; rate: number } | null };
     onlinePayment: boolean;
     /** true : l'administrateur accepte aussi les paiements hors ligne (virement, chèque…), qu'il valide lui-même. */
     manual?: boolean;
@@ -113,12 +118,14 @@ export interface SubscriptionView {
 
 export interface CheckoutSession {
   id: number; payUrl: string; expiresAt: string; amountTTC: number; currency: string; planCode?: string; billingCycle?: string; resumed?: boolean;
+  /** Montant débité par Flouci, en dinars (converti si les formules sont dans une autre devise). */
+  chargedAmount?: number | null; chargedCurrency?: string | null; rate?: number;
 }
 
 /** Réponse de POST /billing/checkout/:id/verify : ce que le prestataire de paiement dit de ce paiement. */
 export interface CheckoutResult {
   status: "paid" | "pending" | "expired" | "unknown";
-  payment: { id: number; status: string; planName: string; billingCycle: string; amountTTC: number; currency: string; receiptNumber: string | null; periodEnd: string | null } | null;
+  payment: { id: number; status: string; planName: string; billingCycle: string; amountTTC: number; currency: string; chargedAmount?: number | null; chargedCurrency?: string | null; receiptNumber: string | null; periodEnd: string | null } | null;
   account: AccountState;
 }
 
@@ -138,6 +145,8 @@ export interface ModulesView {
 export interface Receipt {
   receiptNumber: string; issuedAt: string; planName: string; billingCycle: string; periodStart: string; periodEnd: string;
   amountHT: number; vatRate: number; vatAmount: number; amountTTC: number; currency: string; method: string; reference: string | null;
+  /** Montant réellement débité par Flouci (en dinars) quand les formules sont dans une autre devise ; null sinon. */
+  charged?: { amount: number; currency: string } | null;
   /** Identité légale de l’éditeur (réglages de la plateforme) ; null tant que l’administrateur ne l’a pas renseignée. */
   issuer?: { name: string; taxId: string | null; address: string | null; registry: string | null; email: string | null; phone: string | null } | null;
   customer: { name: string; taxId: string | null; address: string | null; email: string | null }; notice: string;

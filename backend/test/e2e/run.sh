@@ -6,9 +6,9 @@
 # Chaque suite (*.e2e.js) s'exécute sur une base neuve : la base d'essai est supprimée puis recréée avant chacune.
 # Variables : E2E_ADMIN_URL (obligatoire, base « postgres » d'un compte pouvant créer des bases),
 #             E2E_DB_NAME (défaut erp_e2e), E2E_PORT (défaut 4101), E2E_ONLY (facultatif : texte du nom de la suite à lancer, ex. saas).
-# Les suites saas.e2e.js et online.e2e.js tournent avec un FAUX serveur d'emails (SMTP) et un FAUX Konnect, démarrés par la suite elle-même
+# Les suites saas.e2e.js et online.e2e.js tournent avec un FAUX serveur d'emails (SMTP) et un FAUX Flouci, démarrés par la suite elle-même
 # sur les ports E2E_PORT+100 et E2E_PORT+101 : le code de vérification et le paiement par carte sont testés pour de bon,
-# sans Internet ni vrai paiement. Les autres suites tournent sans SMTP ni Konnect (comme une installation vierge).
+# sans Internet ni vrai paiement. Les autres suites tournent sans SMTP ni Flouci (comme une installation vierge).
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 : "${E2E_ADMIN_URL:?Définissez E2E_ADMIN_URL (ex. postgres://postgres:postgres@localhost:5432/postgres)}"
@@ -16,7 +16,7 @@ DB="${E2E_DB_NAME:-erp_e2e}"
 PORT="${E2E_PORT:-4101}"
 BASE_URL="${E2E_ADMIN_URL%/*}"
 export DATABASE_URL="$BASE_URL/$DB" NODE_ENV=production JWT_SECRET="e2e-secret" PORT="$PORT" BASE="http://127.0.0.1:$PORT"
-export FAKE_SMTP_PORT=$((PORT + 100)) FAKE_KONNECT_PORT=$((PORT + 101))
+export FAKE_SMTP_PORT=$((PORT + 100)) FAKE_FLOUCI_PORT=$((PORT + 101))
 LOG="$(mktemp)"
 PID=""
 cleanup() { [ -n "$PID" ] && kill "$PID" 2>/dev/null; psql "$E2E_ADMIN_URL" -q -c "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE)" >/dev/null 2>&1; }
@@ -33,7 +33,7 @@ for suite in test/e2e/*.e2e.js; do
   psql "$E2E_ADMIN_URL" -q -c "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE)" -c "CREATE DATABASE \"$DB\"" >/dev/null || exit 1
   EXTRA=()
   if [ "$(basename "$suite")" = "saas.e2e.js" ] || [ "$(basename "$suite")" = "online.e2e.js" ] || [ "$(basename "$suite")" = "contact.e2e.js" ]; then
-    EXTRA=(SMTP_HOST=127.0.0.1 "SMTP_PORT=$FAKE_SMTP_PORT" "SMTP_FROM=Inovexa ERP <no-reply@test.tn>" KONNECT_API_KEY=e2e-konnect-key KONNECT_WALLET_ID=e2e-wallet KONNECT_ENV=sandbox "KONNECT_API_URL=http://127.0.0.1:$FAKE_KONNECT_PORT/api/v2" "API_PUBLIC_URL=$BASE" FRONTEND_URL=http://localhost:3000)
+    EXTRA=(SMTP_HOST=127.0.0.1 "SMTP_PORT=$FAKE_SMTP_PORT" "SMTP_FROM=Inovexa ERP <no-reply@test.tn>" FLOUCI_PUBLIC_TOKEN=e2e-flouci-public FLOUCI_PRIVATE_TOKEN=e2e-flouci-private FLOUCI_ENV=test FLOUCI_RATE_USD=3.1 "FLOUCI_API_URL=http://127.0.0.1:$FAKE_FLOUCI_PORT/api/v2" "API_PUBLIC_URL=$BASE" FRONTEND_URL=http://localhost:3000)
   fi
   env ${EXTRA[@]+"${EXTRA[@]}"} node dist/main.js >"$LOG" 2>&1 &
   PID=$!

@@ -1,8 +1,8 @@
 "use client";
 /**
  * Administration › Paiements d'abonnement.
- * Les clients paient seuls, par carte bancaire, sur la page sécurisée du prestataire : le serveur vérifie l'encaissement
- * auprès du prestataire, ouvre l'accès et crée le reçu numéroté, sans aucune action de l'administrateur. Cette page sert
+ * Les clients paient seuls, en ligne (Flouci : carte bancaire ou application), sur la page sécurisée de Flouci : le serveur
+ * vérifie l'encaissement auprès de Flouci, ouvre l'accès et crée le reçu numéroté, sans aucune action de l'administrateur. Cette page sert
  * à les consulter. Si les paiements hors ligne sont activés dans les réglages, ceux que les clients déclarent arrivent
  * ici « en attente » ; un paiement reçu hors ligne peut aussi être saisi directement.
  */
@@ -16,14 +16,17 @@ import { ReceiptPrintRoot, ReceiptSheet } from "@/components/admin/config/Receip
 import { PAYMENT_STATUS_META, dateTimeFr, type AccountsResponse } from "@/components/admin/core/shared";
 import { formatMoney, formatPrice, withVat, type Plan, type Receipt } from "@/lib/saas";
 
+/** Paiement en ligne (prestataire automatique) : flouci aujourd'hui, konnect pour les paiements d'avant le passage à Flouci. */
+const isOnline = (provider: string | null | undefined) => !!provider && provider !== "manual";
+const providerLabel = (provider: string | null | undefined) => (provider === "flouci" ? "Flouci" : provider === "konnect" ? "Konnect" : provider || "—");
 const LIMIT = 25;
-const STATUSES: Array<[string, string]> = [["validated", "Encaissés"], ["pending", "Hors ligne à valider"], ["initiated", "Carte en cours"], ["refunded", "Remboursés"], ["rejected", "Refusés"], ["cancelled", "Annulés"], ["expired", "Carte expirée"], ["", "Tous"]];
+const STATUSES: Array<[string, string]> = [["validated", "Encaissés"], ["pending", "Hors ligne à valider"], ["initiated", "En ligne en cours"], ["refunded", "Remboursés"], ["rejected", "Refusés"], ["cancelled", "Annulés"], ["expired", "En ligne expirés"], ["", "Tous"]];
 
 const EMPTY: Record<string, string> = {
   pending: "Aucun paiement hors ligne en attente de validation.",
   validated: "Aucun paiement encaissé pour le moment.",
-  initiated: "Aucune page de paiement par carte ouverte en ce moment.",
-  expired: "Aucune page de paiement par carte expirée.",
+  initiated: "Aucune page de paiement en ligne ouverte en ce moment.",
+  expired: "Aucune page de paiement en ligne expirée ou refusée.",
   refunded: "Aucun remboursement.",
 };
 
@@ -172,16 +175,16 @@ function PaymentsScreen() {
     }
   };
 
-  /** « J'ai payé mais rien ne s'ouvre » : relit l'état du paiement chez Konnect et ouvre l'accès s'il est encaissé. */
+  /** « J'ai payé mais rien ne s'ouvre » : relit l'état du paiement chez Flouci et ouvre l'accès s'il est encaissé. */
   const recheck = async (payment: AdminPayment) => {
     if (rechecking !== null) return;
     setRechecking(payment.id);
     try {
       const res = await api<{ status: "paid" | "pending" | "expired" | "unknown" }>(`/admin/payments/${payment.id}/recheck`, { method: "POST" });
-      if (res.status === "paid") notify(`Paiement confirmé par Konnect : l’accès de ${accountLabel(payment.account)} est ouvert.`);
-      else if (res.status === "pending") notify("Konnect ne signale aucun paiement sur cette page pour l’instant : rien à ouvrir.");
-      else if (res.status === "expired") notify("La page de paiement a expiré sans être payée.");
-      else notify("Konnect ne connaît pas ce paiement.", "err");
+      if (res.status === "paid") notify(`Paiement confirmé par Flouci : l’accès de ${accountLabel(payment.account)} est ouvert.`);
+      else if (res.status === "pending") notify("Flouci ne signale aucun paiement sur cette page pour l’instant : rien à ouvrir.");
+      else if (res.status === "expired") notify("La page de paiement a expiré ou le paiement a été refusé : rien n’a été encaissé.");
+      else notify("Flouci ne connaît pas ce paiement.", "err");
       reload();
     } catch (err) {
       notify(errorText(err), "err");
@@ -197,7 +200,7 @@ function PaymentsScreen() {
   const presetAccount = userId && data?.items[0]?.account ? { id: userId, label: accountLabel(data.items[0].account) } : null;
 
   return (
-    <Page title="Paiements" subtitle="Les paiements par carte sont encaissés et activés automatiquement : cette page sert à les consulter, à relire chez Konnect un paiement que le client dit avoir fait, et à rembourser. Rien à valider, sauf un paiement hors ligne déclaré par un client si vous les avez autorisés."
+    <Page title="Paiements" subtitle="Les paiements en ligne (Flouci) sont encaissés et activés automatiquement : cette page sert à les consulter, à relire chez Flouci un paiement que le client dit avoir fait, et à rembourser. Rien à valider, sauf un paiement hors ligne déclaré par un client si vous les avez autorisés."
       actions={<Btn onClick={() => setRecording(true)}>Saisir un paiement hors ligne</Btn>}>
       {notice}
       <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
@@ -223,11 +226,11 @@ function PaymentsScreen() {
                   const meta = PAYMENT_STATUS_META[p.status] || { label: p.status, tone: "gray" as const };
                   return (
                     <tr key={p.id}>
-                      <td style={{ ...td, whiteSpace: "nowrap" }}>{dateTimeFr(p.validatedAt && p.provider !== "manual" ? p.validatedAt : p.createdAt)}<div style={mutedStyle}>{p.provider === "konnect" ? (p.status === "initiated" ? "page de paiement ouverte par le client" : p.status === "expired" ? "page de paiement expirée" : "payé en ligne par le client") : p.declaredBy === "admin" ? "saisi par l’administrateur" : "déclaré par le client"}</div></td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>{dateTimeFr(p.validatedAt && p.provider !== "manual" ? p.validatedAt : p.createdAt)}<div style={mutedStyle}>{isOnline(p.provider) ? (p.status === "initiated" ? "page de paiement ouverte par le client" : p.status === "expired" ? "page de paiement expirée ou refusée" : "payé en ligne par le client") : p.declaredBy === "admin" ? "saisi par l’administrateur" : "déclaré par le client"}</div></td>
                       <td style={td}><AccountLink account={p.account} /><div style={mutedStyle}>{p.account.email}</div></td>
                       <td style={td}>{p.planName}<div style={mutedStyle}>{cycleLabel(p.billingCycle)}</div></td>
-                      <td style={{ ...td, ...num }}><strong>{formatMoney(p.amountTTC, LANG, p.currency)}</strong><div style={mutedStyle}>{formatMoney(p.amountHT, LANG, p.currency)} HT</div></td>
-                      <td style={td}>{methodLabel(p.method)}{p.provider === "konnect" ? <div style={mutedStyle}>activation automatique</div> : null}{p.reference ? <div style={{ ...mutedStyle, overflowWrap: "anywhere" }}>{p.reference}</div> : null}{p.note ? <div style={{ ...mutedStyle, fontStyle: "italic" }}>{p.note}</div> : null}</td>
+                      <td style={{ ...td, ...num }}><strong>{formatMoney(p.amountTTC, LANG, p.currency)}</strong><div style={mutedStyle}>{formatMoney(p.amountHT, LANG, p.currency)} HT</div>{p.chargedAmount != null && p.chargedCurrency && p.chargedCurrency !== p.currency ? <div style={mutedStyle}>débité {formatMoney(p.chargedAmount, LANG, p.chargedCurrency)}</div> : null}</td>
+                      <td style={td}>{methodLabel(p.method)}{isOnline(p.provider) ? <div style={mutedStyle}>{providerLabel(p.provider)} · activation automatique</div> : null}{p.reference ? <div style={{ ...mutedStyle, overflowWrap: "anywhere" }}>{p.reference}</div> : null}{p.note ? <div style={{ ...mutedStyle, fontStyle: "italic" }}>{p.note}</div> : null}</td>
                       <td style={td}><Badge tone={meta.tone}>{meta.label}</Badge>{p.status === "rejected" && p.rejectReason ? <div style={mutedStyle}>{p.rejectReason}</div> : null}{p.status === "validated" && p.periodEnd ? <div style={mutedStyle}>jusqu’au {dateTimeFr(p.periodEnd)}</div> : null}{p.status === "refunded" ? <div style={mutedStyle}>{p.receiptNumber ? `reçu ${p.receiptNumber}` : "remboursé"}{p.rejectReason ? ` — ${p.rejectReason}` : ""}</div> : null}</td>
                       <td style={{ ...td, whiteSpace: "nowrap" }}>
                         {p.status === "pending" ? (
@@ -240,8 +243,8 @@ function PaymentsScreen() {
                             <Btn onClick={() => openReceipt(p)}>{p.receiptNumber || "Reçu"}</Btn>
                             <Btn variant="danger" onClick={() => { setActionError(null); setRefundReason(""); setRefund(p); }}>Rembourser</Btn>
                           </span>
-                        ) : (p.status === "initiated" || p.status === "expired") && p.provider === "konnect" ? (
-                          <Btn onClick={() => recheck(p)} busy={rechecking === p.id} disabled={rechecking !== null}>Relire chez Konnect</Btn>
+                        ) : (p.status === "initiated" || p.status === "expired") && p.provider === "flouci" ? (
+                          <Btn onClick={() => recheck(p)} busy={rechecking === p.id} disabled={rechecking !== null}>Relire chez Flouci</Btn>
                         ) : null}
                       </td>
                     </tr>
@@ -287,8 +290,8 @@ function PaymentsScreen() {
             L’abonnement revient à l’état d’avant ce paiement : l’essai reprend s’il court encore, sinon l’accès se referme (les données sont conservées). Seul le paiement le plus récent d’un compte peut être remboursé ; le client est prévenu par email.
           </p>
           <p style={{ ...mutedStyle, margin: 0, lineHeight: 1.5 }}>
-            {refund.provider === "konnect"
-              ? <><strong>Konnect n’a pas de remboursement automatique</strong> : rendez l’argent au client depuis le tableau de bord Konnect, puis confirmez ici pour remettre son abonnement en accord.</>
+            {isOnline(refund.provider)
+              ? <><strong>Le remboursement n’est pas envoyé automatiquement</strong> : rendez l’argent au client depuis votre tableau de bord {providerLabel(refund.provider)}{refund.chargedAmount != null && refund.chargedCurrency ? ` (${formatMoney(refund.chargedAmount, LANG, refund.chargedCurrency)} débités)` : ""}, puis confirmez ici pour remettre son abonnement en accord.</>
               : <>Rendez l’argent au client par le moyen utilisé pour le paiement, puis confirmez ici pour remettre son abonnement en accord.</>}
           </p>
         </ConfirmModal>

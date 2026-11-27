@@ -1,11 +1,13 @@
 // Faux prestataires pour les tests de bout en bout (aucun accès à Internet, aucun vrai paiement, aucun vrai email) :
-//  - startFakeKonnect : imite l'API Konnect v2 (init-payment, lecture d'un paiement) et permet de « payer » depuis le test ;
-//  - startFakeSmtp    : serveur SMTP qui garde les emails reçus, pour lire le code de vérification.
-// Le serveur de l'ERP les atteint par KONNECT_API_URL et SMTP_HOST/SMTP_PORT (voir run.sh).
+//  - startFakeFlouci : imite l'API Flouci v2 (generate_payment, verify_payment) et permet de « payer » depuis le test ;
+//                      sait aussi signer une notification comme Flouci (en-tête X-Flouci-Signature) ;
+//  - startFakeSmtp   : serveur SMTP qui garde les emails reçus, pour lire le code de vérification.
+// Le serveur de l'ERP les atteint par FLOUCI_API_URL et SMTP_HOST/SMTP_PORT (voir run.sh).
 const http = require('http');
 const net = require('net');
+const crypto = require('crypto');
 
-function startFakeKonnect(port, { apiKey = 'e2e-konnect-key', walletId = 'e2e-wallet' } = {}) {
+function startFakeFlouci(port, { publicToken = 'e2e-flouci-public', privateToken = 'e2e-flouci-private' } = {}) {
   const payments = new Map();
   const log = [];
   const state = { failInit: false, failGet: false, seq: 0 };
@@ -28,28 +30,38 @@ function startFakeKonnect(port, { apiKey = 'e2e-konnect-key', walletId = 'e2e-wa
       // Page de paiement (le client y saisit sa carte) : inutile ici, le test « paie » directement.
       if (req.method === 'GET' && url.pathname.startsWith('/pay/')) return send(res, 200, '<html>fake pay page</html>');
 
-      if (!url.pathname.startsWith('/api/v2/')) return send(res, 404, { message: 'not found' });
-      if (req.headers['x-api-key'] !== apiKey) return send(res, 401, { errors: [{ message: 'Invalid API key' }] });
+      if (!url.pathname.startsWith('/api/v2/')) return send(res, 404, { result: { status: 404, message: 'not found' } });
+      if (req.headers.authorization !== `Bearer ${publicToken}:${privateToken}`) return send(res, 401, { detail: 'Invalid token' });
 
-      if (req.method === 'POST' && url.pathname === '/api/v2/payments/init-payment') {
-        if (state.failInit) return send(res, 500, { errors: [{ message: 'Internal error' }] });
-        if (!body || body.receiverWalletId !== walletId) return send(res, 400, { errors: [{ message: 'Unknown wallet' }] });
-        if (!['TND', 'EUR', 'USD'].includes(body.token) || !Number.isInteger(body.amount) || body.amount <= 0 || !body.orderId) return send(res, 400, { errors: [{ message: 'Invalid payment' }] });
-        const ref = `fk${String(++state.seq).padStart(3, '0')}${Math.random().toString(36).slice(2, 10)}`;
-        payments.set(ref, { ref, status: 'pending', amount: body.amount, token: body.token, orderId: body.orderId, transactions: [], init: body });
-        return send(res, 200, { payUrl: `http://127.0.0.1:${port}/pay/${ref}`, paymentRef: ref });
+      if (req.method === 'POST' && url.pathname === '/api/v2/generate_payment') {
+        if (state.failInit) return send(res, 500, { result: { status: 500, message: 'Internal error' } });
+        // Comme Flouci : montant en millimes (texte de chiffres), adresses de retour obligatoires.
+        if (!body || !/^\d+$/.test(String(body.amount)) || Number(body.amount) <= 0 || !body.success_link || !body.fail_link) {
+          return send(res, 200, { result: { status: 400, message: 'Bad Request' } });
+        }
+        const id = `fk${String(++state.seq).padStart(3, '0')}${crypto.randomBytes(8).toString('hex')}`;
+        payments.set(id, { id, status: 'PENDING', type: 'NA', amount: Number(body.amount), developer_tracking_id: body.developer_tracking_id ?? null, init: body });
+        return send(res, 200, { result: { success: true, payment_id: id, link: `http://127.0.0.1:${port}/pay/${id}`, developer_tracking_id: body.developer_tracking_id ?? null }, name: 'developers', code: 0, version: 'v2' });
       }
 
-      const m = req.method === 'GET' && url.pathname.match(/^\/api\/v2\/payments\/([A-Za-z0-9_-]+)$/);
+      const m = req.method === 'GET' && url.pathname.match(/^\/api\/v2\/verify_payment\/([A-Za-z0-9_-]+)$/);
       if (m) {
-        if (state.failGet) return send(res, 500, { errors: [{ message: 'Internal error' }] });
+        if (state.failGet) return send(res, 500, { result: { status: 500, message: 'Internal error' } });
         const p = payments.get(m[1]);
-        if (!p) return send(res, 404, { message: 'Payment not found' });
-        return send(res, 200, { payment: { id: p.ref, status: p.status, amount: p.amount, token: p.token, orderId: p.orderId, transactions: p.transactions } });
+        // Flouci répond « introuvable » dans le corps (sans champ success).
+        if (!p) return send(res, 200, { result: { status: 404, message: 'Payment not found' } });
+        return send(res, 200, {
+          success: true,
+          result: { type: p.type, amount: p.amount, status: p.status, details: {}, developer_tracking_id: p.developer_tracking_id, settlement_status: p.status === 'SUCCESS' ? 'PROCESSING' : 'NOT_APPLICABLE' },
+          status_code: 200, name: 'developers', code: 0, version: '2.0.0',
+        });
       }
-      return send(res, 404, { message: 'not found' });
+      return send(res, 404, { result: { status: 404, message: 'not found' } });
     });
   });
+
+  const sign = (paymentId, success, { key = privateToken, t = Math.floor(Date.now() / 1000) } = {}) =>
+    `t=${t},v1=${crypto.createHmac('sha256', key).update(`${t}.payment_id=${paymentId}&success=${success}`).digest('hex')}`;
 
   return new Promise((resolve) => {
     server.listen(port, '127.0.0.1', () => resolve({
@@ -57,18 +69,21 @@ function startFakeKonnect(port, { apiKey = 'e2e-konnect-key', walletId = 'e2e-wa
       log,
       payments,
       /** Dernière ouverture de paiement reçue (corps JSON envoyé par l'ERP). */
-      lastInit: () => [...log].reverse().find((l) => l.method === 'POST' && l.path.endsWith('/init-payment')),
-      initCount: () => log.filter((l) => l.method === 'POST' && l.path.endsWith('/init-payment')).length,
+      lastInit: () => [...log].reverse().find((l) => l.method === 'POST' && l.path.endsWith('/generate_payment')),
+      initCount: () => log.filter((l) => l.method === 'POST' && l.path.endsWith('/generate_payment')).length,
+      verifyCount: () => log.filter((l) => l.method === 'GET' && l.path.includes('/verify_payment/')).length,
       refFromPayUrl: (payUrl) => String(payUrl).split('/pay/')[1],
-      /** Le client a payé : « completed » avec une transaction réussie (les valeurs peuvent être faussées pour tester les contrôles). */
-      pay(ref, over = {}) {
-        const p = payments.get(ref);
-        if (!p) throw new Error(`Paiement inconnu : ${ref}`);
-        Object.assign(p, { status: 'completed', transactions: [{ status: 'success', method: 'bank_card' }], amount: p.init.amount, token: p.init.token, orderId: p.init.orderId }, over);
+      /** Le client a payé : « SUCCESS » par carte (les valeurs peuvent être faussées pour tester les contrôles). */
+      pay(id, over = {}) {
+        const p = payments.get(id);
+        if (!p) throw new Error(`Paiement inconnu : ${id}`);
+        Object.assign(p, { status: 'SUCCESS', type: 'card', amount: Number(p.init.amount), developer_tracking_id: p.init.developer_tracking_id ?? null }, over);
       },
-      setStatus(ref, status, transactions = []) {
-        Object.assign(payments.get(ref), { status, transactions });
+      setStatus(id, status, over = {}) {
+        Object.assign(payments.get(id), { status }, over);
       },
+      /** En-tête X-Flouci-Signature d'une notification, comme Flouci la signe (clé et horodatage modifiables). */
+      sign,
       close: () => new Promise((r) => server.close(() => r())),
     }));
   });
@@ -145,4 +160,4 @@ function startFakeSmtp(port) {
   });
 }
 
-module.exports = { startFakeKonnect, startFakeSmtp };
+module.exports = { startFakeFlouci, startFakeSmtp };

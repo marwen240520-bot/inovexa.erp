@@ -1,7 +1,7 @@
 // lib/saasTexts.ts
 // Textes des écrans SaaS vus par les clients (inscription, essai, abonnement, suggestions par secteur),
 // en français, anglais et espagnol. Les écrans de l'administrateur de la plateforme restent en français.
-// Le paiement par carte, le choix des modules et le code de vérification ont leurs textes dans lib/onlineTexts.ts.
+// Le paiement en ligne (Flouci), le choix des modules et le code de vérification ont leurs textes dans lib/onlineTexts.ts.
 "use client";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -28,7 +28,7 @@ const fr = {
   },
   billing: {
     title: "Abonnement",
-    subtitle: "État de votre compte, formule, paiement par carte et reçus.",
+    subtitle: "État de votre compte, formule, paiement en ligne et reçus.",
     blockedTitle: "Votre accès est en pause",
     dataSafe: "Toutes vos données sont conservées. L’accès revient dès que votre paiement est confirmé.",
     state: "État du compte",
@@ -73,7 +73,7 @@ const fr = {
     pendingTitle: "Paiement en attente de validation",
     pendingText: "Déclaré le {date} — {amount}. Il est en cours de vérification.",
     cancelDeclaration: "Annuler cette déclaration",
-    noOnline: "Le paiement par carte est en cours d’activation.",
+    noOnline: "Le paiement en ligne est en cours d’activation.",
     ownerOnly: "Seul le propriétaire du compte gère l’abonnement.",
     history: "Historique des paiements",
     noPayments: "Aucun paiement pour le moment.",
@@ -105,7 +105,7 @@ const fr = {
     savePct: "−{pct} %",
     perMonthEquivalent: "soit {price} HT / mois",
     featuresTitle: "Compris dans la formule",
-    payOnline: "Payer en ligne par carte",
+    payOnline: "Payer en ligne",
     payOnlineHint: "La page de paiement s’ouvre dans un nouvel onglet. Une fois le paiement fait, indiquez ci-dessous la référence de la transaction.",
     methodHint: {
       bank_transfer: "Faites le virement avec les coordonnées ci-dessous, puis indiquez sa référence.",
@@ -145,6 +145,7 @@ const fr = {
     receiptFromTo: "du {from} au {to}",
     receiptCovered: "Période couverte",
     receiptPaid: "Montant payé TTC",
+    receiptCharged: "Montant débité par Flouci",
     receiptNotice: "Reçu de paiement d’abonnement. Il ne remplace pas la facture légale émise par l’éditeur.",
     pendingLock: "Un paiement est déjà en attente : vous pourrez en déclarer un autre dès qu’il sera traité.",
     choosePlanFirst: "Choisissez d’abord une formule ci-dessus.",
@@ -289,7 +290,7 @@ const en: SaasTexts = {
   },
   billing: {
     title: "Subscription",
-    subtitle: "Your account status, plan, card payment and receipts.",
+    subtitle: "Your account status, plan, online payment and receipts.",
     blockedTitle: "Your access is paused",
     dataSafe: "All your data is kept. Access returns as soon as your payment is confirmed.",
     state: "Account status",
@@ -334,7 +335,7 @@ const en: SaasTexts = {
     pendingTitle: "Payment awaiting validation",
     pendingText: "Declared on {date} — {amount}. It is being checked.",
     cancelDeclaration: "Cancel this declaration",
-    noOnline: "Card payment is being activated.",
+    noOnline: "Online payment is being activated.",
     ownerOnly: "Only the account owner manages the subscription.",
     history: "Payment history",
     noPayments: "No payment yet.",
@@ -366,7 +367,7 @@ const en: SaasTexts = {
     savePct: "−{pct}%",
     perMonthEquivalent: "i.e. {price} excl. tax / month",
     featuresTitle: "Included in the plan",
-    payOnline: "Pay online by card",
+    payOnline: "Pay online",
     payOnlineHint: "The payment page opens in a new tab. Once the payment is made, enter the transaction reference below.",
     methodHint: {
       bank_transfer: "Make the transfer with the details below, then enter its reference.",
@@ -406,6 +407,7 @@ const en: SaasTexts = {
     receiptFromTo: "from {from} to {to}",
     receiptCovered: "Period covered",
     receiptPaid: "Amount paid incl. tax",
+    receiptCharged: "Amount charged by Flouci",
     receiptNotice: "Subscription payment receipt. It does not replace the legal invoice issued by the publisher.",
     pendingLock: "A payment is already pending: you can declare another one as soon as it has been handled.",
     choosePlanFirst: "Choose a plan above first.",
@@ -548,7 +550,7 @@ const es: SaasTexts = {
   },
   billing: {
     title: "Suscripción",
-    subtitle: "Estado de su cuenta, plan, pago con tarjeta y recibos.",
+    subtitle: "Estado de su cuenta, plan, pago en línea y recibos.",
     blockedTitle: "Su acceso está en pausa",
     dataSafe: "Todos sus datos se conservan. El acceso vuelve en cuanto se confirma su pago.",
     state: "Estado de la cuenta",
@@ -593,7 +595,7 @@ const es: SaasTexts = {
     pendingTitle: "Pago pendiente de validación",
     pendingText: "Declarado el {date} — {amount}. Se está comprobando.",
     cancelDeclaration: "Anular esta declaración",
-    noOnline: "El pago con tarjeta se está activando.",
+    noOnline: "El pago en línea se está activando.",
     ownerOnly: "Solo el propietario de la cuenta gestiona la suscripción.",
     history: "Historial de pagos",
     noPayments: "Ningún pago por ahora.",
@@ -625,7 +627,7 @@ const es: SaasTexts = {
     savePct: "−{pct} %",
     perMonthEquivalent: "es decir, {price} sin IVA / mes",
     featuresTitle: "Incluido en el plan",
-    payOnline: "Pagar en línea con tarjeta",
+    payOnline: "Pagar en línea",
     payOnlineHint: "La página de pago se abre en una pestaña nueva. Una vez hecho el pago, indique abajo la referencia de la transacción.",
     methodHint: {
       bank_transfer: "Haga la transferencia con los datos de abajo e indique su referencia.",
@@ -665,6 +667,7 @@ const es: SaasTexts = {
     receiptFromTo: "del {from} al {to}",
     receiptCovered: "Periodo cubierto",
     receiptPaid: "Importe pagado con IVA",
+    receiptCharged: "Importe cobrado por Flouci",
     receiptNotice: "Recibo de pago de suscripción. No sustituye a la factura legal emitida por el editor.",
     pendingLock: "Ya hay un pago pendiente: podrá declarar otro en cuanto se haya tramitado.",
     choosePlanFirst: "Elija primero un plan arriba.",

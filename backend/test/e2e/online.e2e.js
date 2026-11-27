@@ -1,15 +1,16 @@
 // Tests de bout en bout du parcours 100 % en ligne :
-//  1. paiement PAR CARTE (faux Konnect) : l'abonnement s'ouvre tout seul, sans administrateur — montant calculé côté
-//     serveur, reprise de la même page, montant ou commande truqués, confirmations simultanées, essai expiré puis payé
-//     sans retour sur le site, panne du prestataire, limite par heure, compte suspendu ;
+//  1. paiement EN LIGNE (faux Flouci) : l'abonnement s'ouvre tout seul, sans administrateur — montant calculé côté serveur
+//     et converti en dinars au taux du serveur (FLOUCI_RATE_USD), reprise de la même page, montant ou commande truqués,
+//     notifications signées (et fausses notifications refusées), confirmations simultanées, essai expiré puis payé sans
+//     retour sur le site, paiement refusé puis payé quand même, panne du prestataire, limite par heure, compte suspendu ;
 //  2. secteur et modules choisis par le client lui-même (dans la limite de sa formule) ;
 //  3. agenda (rendez-vous) et projets : règles métier, isolation entre sociétés, droits liés aux modules.
 // Lancé par run.sh sur une base neuve créée par les migrations (DATABASE_URL, BASE). Le serveur de l'ERP est démarré avec
-// SMTP_* et KONNECT_* pointant vers les faux serveurs démarrés ci-dessous (voir fakes.js) : aucun vrai paiement, aucun
-// vrai email, aucun accès à Internet.
+// SMTP_* et FLOUCI_* pointant vers les faux serveurs démarrés ci-dessous (voir fakes.js) : aucun vrai paiement, aucun
+// vrai email, aucun accès à Internet. Taux du test : 1 USD = 3,1 TND.
 const { Client } = require('pg');
 const bcrypt = require('bcrypt');
-const { startFakeKonnect, startFakeSmtp } = require('./fakes');
+const { startFakeFlouci, startFakeSmtp } = require('./fakes');
 
 const BASE = process.env.BASE || 'http://127.0.0.1:4101';
 const FRONT = 'http://localhost:3000';
@@ -28,11 +29,6 @@ async function call(method, path, opts = {}) {
   let body; try { body = JSON.parse(text); } catch { body = text; }
   return { status: res.status, body };
 }
-/** Appel qui ne suit pas les redirections (retour du prestataire de paiement). */
-async function rawGet(path) {
-  const res = await fetch(BASE + path, { method: 'GET', redirect: 'manual' });
-  return { status: res.status, location: res.headers.get('location') };
-}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const PASSWORD = 'Essai#2026ok';
 const signup = (over = {}) => ({ name: 'Sami Trabelsi', companyName: 'Société', email: 'x@test.tn', phone: '22 535 181', password: PASSWORD, sector: 'commerce', acceptTerms: true, ...over });
@@ -44,8 +40,9 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   await db.connect();
   const one = async (sql, params) => (await db.query(sql, params)).rows[0];
   const smtp = await startFakeSmtp(Number(process.env.FAKE_SMTP_PORT));
-  const konnect = await startFakeKonnect(Number(process.env.FAKE_KONNECT_PORT));
-  const KPORT = Number(process.env.FAKE_KONNECT_PORT);
+  const flouci = await startFakeFlouci(Number(process.env.FAKE_FLOUCI_PORT));
+  const FPORT = Number(process.env.FAKE_FLOUCI_PORT);
+  const WEBHOOK = `${BASE}/public/payments/flouci/webhook`;
 
   /** Inscrit une société puis confirme son adresse avec le code reçu par email, comme le ferait le client. */
   const signUp = async (over) => {
@@ -69,27 +66,31 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
     }
     return null;
   };
-  /** Ouvre une page de paiement par carte et renvoie { co, ref }. */
+  /** Ouvre une page de paiement et renvoie { co, ref }. */
   const checkout = async (user, planCode, billingCycle) => {
     const r = await call('POST', '/billing/checkout', { token: user.token, headers: { Origin: FRONT }, body: { planCode, billingCycle } });
-    return { r, co: r.body, ref: r.status === 201 ? konnect.refFromPayUrl(r.body.payUrl) : null };
+    return { r, co: r.body, ref: r.status === 201 ? flouci.refFromPayUrl(r.body.payUrl) : null };
   };
   const verify = (user, id) => call('POST', `/billing/checkout/${id}/verify`, { token: user.token });
+  /** Notification de Flouci (GET signée), comme l'envoie son serveur ; signature modifiable pour les tests de refus. */
+  const notify = (ref, success = 'True', signature = flouci.sign(ref, success)) =>
+    call('GET', `/public/payments/flouci/webhook?payment_id=${encodeURIComponent(ref)}&success=${success}`, { headers: signature === null ? {} : { 'X-Flouci-Signature': signature } });
 
   await db.query(`INSERT INTO users (email,password,name,role,modules) VALUES ($1,$2,'Admin','admin','{}')`, ['admin@test.tn', await bcrypt.hash('Admin#2026-secret', 10)]);
   let r = await call('POST', '/auth/login', { body: { email: 'admin@test.tn', password: 'Admin#2026-secret' } });
   const admin = r.body.access_token;
-  let row, w;
+  let row;
 
-  // ═════════════════════════ 1. Paiement par carte : parcours complet ═════════════════════════
-  console.log('— Paiement par carte (faux Konnect) : parcours complet, sans administrateur');
+  // ═════════════════════════ 1. Paiement en ligne : parcours complet ═════════════════════════
+  console.log('— Paiement en ligne (faux Flouci) : parcours complet, sans administrateur');
   const P1 = await signUp({ email: 'p1@test.tn', companyName: 'Boutique P1', sector: 'commerce' });
   const P2 = await signUp({ email: 'p2@test.tn', companyName: 'Boutique P2', sector: 'commerce' });
   check('deux sociétés créées, adresses confirmées par le code', P1.r.status === 201 && P1.verify?.status === 200 && P2.r.status === 201 && P2.verify?.status === 200, [P1.r, P2.r]);
   const trialEnd1 = P1.account.trialEndsAt;
 
   r = await call('GET', '/billing/subscription', { token: P1.token });
-  check('avant tout paiement : aucune page ouverte, carte disponible, aucun paiement hors ligne', r.status === 200 && r.body.checkout === null && r.body.pendingPayment === null && r.body.payment.online.enabled === true && r.body.payment.manual === false, r.body.payment);
+  check('avant tout paiement : aucune page ouverte, paiement en ligne Flouci disponible, aucun paiement hors ligne', r.status === 200 && r.body.checkout === null && r.body.pendingPayment === null && r.body.payment.online.enabled === true && r.body.payment.online.provider === 'flouci' && r.body.payment.manual === false, r.body.payment);
+  check('la page Abonnement sait que Flouci débite en dinars, au taux 1 USD = 3,1 TND', r.body.payment.online.charge?.currency === 'TND' && r.body.payment.online.charge?.rate === 3.1 && r.body.payment.online.test === true && r.body.payment.online.methods.join() === 'card,flouci', r.body.payment.online);
   r = await call('POST', '/billing/checkout', { body: { planCode: 'business', billingCycle: 'monthly' } });
   check('sans connexion : 401', r.status === 401, r);
   r = await call('POST', '/billing/checkout', { token: P1.token, body: {} });
@@ -107,63 +108,73 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   check('formule gratuite : rien à payer (400)', r.status === 400 && /gratuite/i.test(String(r.body.message)), r);
   await call('DELETE', `/admin/plans/${planQuote.id}`, { token: admin });
   await call('DELETE', `/admin/plans/${planFree.id}`, { token: admin });
-  check('aucun de ces refus n’a été transmis au prestataire de paiement', konnect.initCount() === 0, konnect.initCount());
+  check('aucun de ces refus n’a été transmis au prestataire de paiement', flouci.initCount() === 0, flouci.initCount());
 
-  r = await call('POST', '/billing/checkout', { token: P1.token, headers: { Origin: FRONT }, body: { planCode: 'business', billingCycle: 'monthly', amountTTC: 1, amountHT: 1, amount: 1, currency: 'TND', userId: P2.id } });
-  check('carte : page de paiement ouverte — 29 $ HT + 19 % = 34,51 $ TTC calculés par le serveur, pas ceux du navigateur', r.status === 201 && r.body.amountTTC === 34.51 && r.body.currency === 'USD' && r.body.resumed === false && Number.isInteger(r.body.id) && r.body.payUrl.startsWith(`http://127.0.0.1:${KPORT}/pay/`) && Math.abs(new Date(r.body.expiresAt).getTime() - (Date.now() + 30 * 60_000)) < 60_000, r);
+  r = await call('POST', '/billing/checkout', { token: P1.token, headers: { Origin: FRONT }, body: { planCode: 'business', billingCycle: 'monthly', amountTTC: 1, amountHT: 1, amount: 1, currency: 'TND', chargedAmount: 1, userId: P2.id } });
+  check('page de paiement ouverte — 29 $ HT + 19 % = 34,51 $ TTC calculés par le serveur, pas ceux du navigateur', r.status === 201 && r.body.amountTTC === 34.51 && r.body.currency === 'USD' && r.body.resumed === false && Number.isInteger(r.body.id) && r.body.payUrl.startsWith(`http://127.0.0.1:${FPORT}/pay/`) && Math.abs(new Date(r.body.expiresAt).getTime() - (Date.now() + 30 * 60_000)) < 60_000, r);
+  check('… et débités en dinars : 34,51 $ × 3,1 = 106,981 TND', r.body.chargedAmount === 106.981 && r.body.chargedCurrency === 'TND' && r.body.rate === 3.1, r.body);
   const co1 = r.body;
-  const ref1 = konnect.refFromPayUrl(co1.payUrl);
-  const init1 = konnect.lastInit();
-  check('Konnect reçoit la clé secrète du serveur, le portefeuille, 3451 centimes USD et notre numéro de commande', konnect.initCount() === 1 && init1.headers['x-api-key'] === 'e2e-konnect-key' && init1.body.receiverWalletId === 'e2e-wallet' && init1.body.amount === 3451 && init1.body.token === 'USD' && init1.body.orderId === String(co1.id) && init1.body.type === 'immediate', init1.body);
-  check('adresses : notification serveur sur l’API, retour du client sur la page Abonnement du site', init1.body.webhook === `${BASE}/public/payments/konnect/return` && init1.body.successUrl === `${FRONT}/subscription?checkout=${co1.id}` && init1.body.failUrl === init1.body.successUrl, init1.body);
-  check('le client est identifié chez Konnect, cartes bancaires acceptées, page valable 30 min', init1.body.email === 'p1@test.tn' && init1.body.firstName === 'Sami' && init1.body.lastName === 'Trabelsi' && init1.body.acceptedPaymentMethods.includes('bank_card') && init1.body.lifespan === 30, init1.body);
+  const ref1 = flouci.refFromPayUrl(co1.payUrl);
+  const init1 = flouci.lastInit();
+  check('Flouci reçoit les clés du serveur dans l’en-tête, 106981 millimes et notre numéro de commande', flouci.initCount() === 1 && init1.headers.authorization === 'Bearer e2e-flouci-public:e2e-flouci-private' && init1.body.amount === '106981' && init1.body.developer_tracking_id === String(co1.id) && init1.body.accept_card === true, init1.body);
+  check('adresses : notification serveur sur l’API, retour du client sur la page Abonnement du site, page valable 30 min', init1.body.webhook === WEBHOOK && init1.body.success_link === `${FRONT}/subscription?checkout=${co1.id}` && init1.body.fail_link === init1.body.success_link && init1.body.session_timeout_secs === 1800, init1.body);
+  check('aucune clé dans le corps envoyé à Flouci', !JSON.stringify(init1.body).includes('e2e-flouci'), init1.body);
   row = await one('SELECT * FROM subscription_payments WHERE id = $1', [co1.id]);
-  check('enregistrement « initiated » : Konnect, référence, montants figés, retour vers le site d’origine', row.status === 'initiated' && row.provider === 'konnect' && row.method === 'card' && row.providerRef === ref1 && Number(row.amountHT) === 29 && Number(row.amountTTC) === 34.51 && Number(row.vatRate) === 19 && row.currency === 'USD' && row.returnBase === FRONT && row.declaredBy === 'client' && row.validatedBy === null && row.receiptNumber === null && row.userId === P1.id, row);
+  check('enregistrement « initiated » : Flouci, référence, montants figés (en dollars et en dinars), retour vers le site d’origine', row.status === 'initiated' && row.provider === 'flouci' && row.method === 'card' && row.providerRef === ref1 && Number(row.amountHT) === 29 && Number(row.amountTTC) === 34.51 && Number(row.vatRate) === 19 && row.currency === 'USD' && Number(row.chargedAmount) === 106.981 && row.chargedCurrency === 'TND' && /106,981 TND \(1 USD = 3,1 TND\)/.test(String(row.note)) && row.returnBase === FRONT && row.declaredBy === 'client' && row.validatedBy === null && row.receiptNumber === null && row.userId === P1.id, row);
   r = await call('GET', '/billing/subscription', { token: P1.token });
-  check('la page Abonnement retrouve la page de paiement ouverte', r.body.checkout?.id === co1.id && r.body.checkout.payUrl === co1.payUrl && r.body.pendingPayment === null && r.body.account.status === 'TRIAL', r.body.checkout);
+  check('la page Abonnement retrouve la page de paiement ouverte, avec le montant en dinars', r.body.checkout?.id === co1.id && r.body.checkout.payUrl === co1.payUrl && r.body.checkout.chargedAmount === 106.981 && r.body.checkout.chargedCurrency === 'TND' && r.body.pendingPayment === null && r.body.account.status === 'TRIAL', r.body.checkout);
   r = await call('GET', '/billing/payments', { token: P1.token });
   check('l’historique du client ne montre pas les pages de paiement non abouties', r.status === 200 && r.body.length === 0, r.body);
   r = await call('POST', '/billing/checkout', { token: P1.token, headers: { Origin: FRONT }, body: { planCode: 'business', billingCycle: 'monthly' } });
-  check('même choix redemandé : la même page est reprise, aucun doublon chez Konnect', r.status === 201 && r.body.resumed === true && r.body.id === co1.id && r.body.payUrl === co1.payUrl && konnect.initCount() === 1, r.body);
+  check('même choix redemandé : la même page est reprise, aucun doublon chez Flouci', r.status === 201 && r.body.resumed === true && r.body.id === co1.id && r.body.payUrl === co1.payUrl && r.body.chargedAmount === 106.981 && flouci.initCount() === 1, r.body);
 
   r = await verify(P1, co1.id);
   check('retour sans paiement : « en attente », rien n’est activé', r.status === 200 && r.body.status === 'pending' && r.body.account.status === 'TRIAL' && r.body.payment.status === 'initiated', r.body);
   r = await verify(P2, co1.id);
   check('la page de paiement d’une autre société est introuvable (« unknown »)', r.status === 200 && r.body.status === 'unknown' && r.body.payment === null, r.body);
-  w = await rawGet(`/public/payments/konnect/return?payment_ref=${ref1}`);
-  check('notification de Konnect avant paiement : le client est ramené sur sa page Abonnement', w.status === 302 && w.location === `${FRONT}/subscription?checkout=${co1.id}`, w);
-  w = await rawGet('/public/payments/konnect/return?payment_ref=inconnu123');
-  check('référence inconnue : simple retour sur le site, aucune erreur', w.status === 302 && w.location === `${FRONT}/subscription`, w);
-  w = await rawGet('/public/payments/konnect/return');
-  check('référence absente : simple retour sur le site', w.status === 302 && w.location === `${FRONT}/subscription`, w);
-  r = await call('POST', `/public/payments/konnect/return?payment_ref=${ref1}`);
-  check('notification en POST : accusé de réception', r.status === 200 && r.body.received === true, r);
+
+  // Notifications : seules celles signées par Flouci (jeton privé) sont acceptées, et elles ne font que relancer une relecture.
+  const verifiesBefore = flouci.verifyCount();
+  r = await notify(ref1, 'True', null);
+  check('notification SANS signature : refusée (401), rien n’est relu chez Flouci', r.status === 401 && flouci.verifyCount() === verifiesBefore, r);
+  r = await notify(ref1, 'True', flouci.sign(ref1, 'True', { key: 'mauvaise-cle' }));
+  check('notification signée avec une autre clé : refusée (401)', r.status === 401 && flouci.verifyCount() === verifiesBefore, r);
+  r = await notify(ref1, 'True', flouci.sign(ref1, 'True', { t: Math.floor(Date.now() / 1000) - 3600 }));
+  check('notification signée il y a une heure (rejeu) : refusée (401)', r.status === 401, r);
+  r = await notify(ref1, 'True', flouci.sign(ref1, 'False'));
+  check('signature d’un autre résultat (False signé, True annoncé) : refusée (401)', r.status === 401, r);
+  r = await call('GET', '/public/payments/flouci/webhook');
+  check('notification sans référence : refusée (401)', r.status === 401, r);
+  r = await notify(ref1, 'True');
+  check('notification correctement signée « success=True » avant paiement : accusé de réception, mais la relecture dit « pas payé »', r.status === 200 && r.body.received === true && flouci.verifyCount() === verifiesBefore + 1, r);
+  r = await notify('inconnu1234567', 'True');
+  check('notification signée pour un paiement inconnu : accusé de réception, sans effet', r.status === 200, r);
   row = await one('SELECT "accountStatus", "subscriptionEnd" FROM users WHERE id = $1', [P1.id]);
   check('toujours en essai après toutes ces notifications sans paiement', row.accountStatus === 'TRIAL' && row.subscriptionEnd === null, row);
 
-  // Konnect annonce autre chose que ce que nous avons demandé : l'abonnement ne s'ouvre pas.
-  konnect.pay(ref1, { amount: 100 });
+  // Flouci annonce autre chose que ce que nous avons demandé : l'abonnement ne s'ouvre pas.
+  flouci.pay(ref1, { amount: 3451 });
   r = await verify(P1, co1.id);
-  check('Konnect annonce un autre MONTANT (1,00 $ au lieu de 34,51 $) : abonnement NON ouvert', r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
-  konnect.pay(ref1, { orderId: '999999' });
+  check('Flouci annonce un autre MONTANT (3451 millimes au lieu de 106981) : abonnement NON ouvert', r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
+  flouci.pay(ref1, { developer_tracking_id: '999999' });
   r = await verify(P1, co1.id);
-  check('Konnect annonce une autre COMMANDE : abonnement NON ouvert', r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
-  konnect.pay(ref1, { transactions: [{ status: 'failure', method: 'bank_card' }] });
+  check('Flouci annonce une autre COMMANDE : abonnement NON ouvert', r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
+  flouci.setStatus(ref1, 'PREAUTH_SUCCESS');
   r = await verify(P1, co1.id);
-  check('« completed » sans aucune transaction réussie : pas encaissé', r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
-  konnect.setStatus(ref1, 'pending');
+  check('pré-autorisation seulement (pas d’encaissement) : pas payé', r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
+  flouci.setStatus(ref1, 'PENDING');
   r = await verify(P1, co1.id);
   row = await one('SELECT status FROM subscription_payments WHERE id = $1', [co1.id]);
-  check('paiement encore en cours chez Konnect : en attente, toujours « initiated » en base', r.body.status === 'pending' && row.status === 'initiated', [r.body, row]);
+  check('paiement encore en cours chez Flouci : en attente, toujours « initiated » en base', r.body.status === 'pending' && row.status === 'initiated', [r.body, row]);
   check('les deux écarts (montant, commande) sont tracés dans le journal pour l’administrateur', (await auditCount('payment_mismatch', P1.id)) === 2, await auditCount('payment_mismatch', P1.id));
 
   // Le client paie.
-  konnect.pay(ref1);
+  flouci.pay(ref1);
   r = await verify(P1, co1.id);
-  check('paiement confirmé par Konnect : abonnement ouvert tout de suite, sans administrateur', r.status === 200 && r.body.status === 'paid' && r.body.payment.status === 'validated' && /^REC-\d{4}-\d{5}$/.test(r.body.payment.receiptNumber) && r.body.account.status === 'ACTIVE' && r.body.account.blocked === false, r.body);
+  check('paiement confirmé par Flouci : abonnement ouvert tout de suite, sans administrateur', r.status === 200 && r.body.status === 'paid' && r.body.payment.status === 'validated' && /^REC-\d{4}-\d{5}$/.test(r.body.payment.receiptNumber) && r.body.payment.chargedAmount === 106.981 && r.body.account.status === 'ACTIVE' && r.body.account.blocked === false, r.body);
   const receipt1 = r.body.payment.receiptNumber;
   row = await one('SELECT * FROM subscription_payments WHERE id = $1', [co1.id]);
-  check('validé automatiquement : aucun administrateur, carte, référence Konnect, page de paiement effacée', row.status === 'validated' && row.validatedBy === null && row.method === 'card' && row.reference === ref1 && row.checkoutUrl === null && row.receiptNumber === receipt1 && !!row.validatedAt, row);
+  check('validé automatiquement : aucun administrateur, carte, référence Flouci, page de paiement effacée', row.status === 'validated' && row.validatedBy === null && row.method === 'card' && row.reference === ref1 && row.checkoutUrl === null && row.receiptNumber === receipt1 && !!row.validatedAt, row);
   check('période payée : commence à la fin de l’essai (aucun jour gratuit perdu), dure un mois', Math.abs(new Date(row.periodStart).getTime() - new Date(trialEnd1).getTime()) < 2000 && monthsBetween(row.periodStart, row.periodEnd) > 0.9 && monthsBetween(row.periodStart, row.periodEnd) < 1.1, row);
   r = await call('GET', '/billing/subscription', { token: P1.token });
   check('abonnement : formule Business, 10 utilisateurs, plus de page ouverte', r.body.account.status === 'ACTIVE' && r.body.account.planCode === 'business' && r.body.plan.code === 'business' && r.body.users.limit === 10 && r.body.checkout === null, r.body.account);
@@ -172,8 +183,8 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
 
   r = await verify(P1, co1.id);
   check('retour répété : même résultat, aucun second encaissement', r.body.status === 'paid' && r.body.payment.receiptNumber === receipt1, r.body);
-  w = await rawGet(`/public/payments/konnect/return?payment_ref=${ref1}`);
-  check('notification de Konnect reçue après coup : sans effet', w.status === 302, w);
+  r = await notify(ref1, 'True');
+  check('notification de Flouci reçue après coup : sans effet', r.status === 200, r);
   row = await one(`SELECT COUNT(*) FILTER (WHERE status = 'validated')::int AS validated, COUNT(*)::int AS total FROM subscription_payments WHERE "userId" = $1`, [P1.id]);
   check('un seul paiement, validé, un seul reçu', row.validated === 1 && row.total === 1, row);
   check('journal : « paiement reçu » une seule fois', (await auditCount('payment_received', P1.id)) === 1, await auditCount('payment_received', P1.id));
@@ -181,26 +192,35 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   check('historique du client : le paiement validé, avec son reçu', r.body.length === 1 && r.body[0].status === 'validated' && r.body[0].receiptNumber === receipt1 && r.body[0].method === 'card', r.body);
   r = await call('GET', `/billing/payments/${co1.id}/receipt`, { token: P1.token });
   check('reçu : 34,51 $ TTC, avec la mention qu’il ne remplace pas la facture légale', r.status === 200 && r.body.amountTTC === 34.51 && r.body.currency === 'USD' && /facture légale/.test(r.body.notice), r);
+  check('reçu : montant réellement débité par Flouci (106,981 TND)', r.body.charged?.amount === 106.981 && r.body.charged?.currency === 'TND', r.body.charged);
   const mail1 = await waitMail('p1@test.tn', receipt1);
-  check('un email de reçu part vers le client', !!mail1 && /carte/.test(mail1.text), mail1?.text.slice(0, 300));
+  check('un email de reçu part vers le client, avec le montant débité en dinars', !!mail1 && /paiement en ligne/.test(mail1.text) && /106,981\s?TND/.test(mail1.text), mail1?.text.slice(0, 400));
   r = await call('GET', '/admin/overview', { token: admin });
   check('administrateur : 1 client payant, 29 $ HT de revenu (34,51 $ TTC), rien à valider à la main', r.body.customers.paying === 1 && r.body.revenue.ht === 29 && r.body.revenue.ttc === 34.51 && r.body.mrr === 29 && r.body.pendingPayments === 0, { customers: r.body.customers, revenue: r.body.revenue, mrr: r.body.mrr });
   r = await call('GET', '/admin/payments?status=validated', { token: admin });
   const adminRow = r.body.items?.find((i) => i.id === co1.id);
-  check('l’administrateur voit le paiement en ligne, validé sans lui', r.status === 200 && adminRow && adminRow.provider === 'konnect' && adminRow.validatedBy === null && adminRow.account.email === 'p1@test.tn', adminRow);
+  check('l’administrateur voit le paiement en ligne, validé sans lui, avec le montant débité en dinars', r.status === 200 && adminRow && adminRow.provider === 'flouci' && adminRow.validatedBy === null && adminRow.chargedAmount === 106.981 && adminRow.chargedCurrency === 'TND' && adminRow.account.email === 'p1@test.tn', adminRow);
+
+  // ─── Paiement avec l'application Flouci (portefeuille) ───
+  console.log('— Paiement avec l’application Flouci : moyen « flouci »');
+  const P10 = await signUp({ email: 'p10@test.tn', companyName: 'Boutique P10', sector: 'commerce' });
+  const c10 = await checkout(P10, 'starter', 'monthly');
+  check('P10 : Starter mensuel, 17,85 $ TTC = 55,335 TND', c10.r.status === 201 && c10.co.amountTTC === 17.85 && c10.co.chargedAmount === 55.335 && flouci.lastInit().body.amount === '55335', c10.r.body);
+  flouci.pay(c10.ref, { type: 'wallet' });
+  r = await notify(c10.ref, 'True');
+  row = await one('SELECT status, method FROM subscription_payments WHERE id = $1', [c10.co.id]);
+  check('la notification signée suffit à ouvrir l’abonnement (le client n’est pas revenu) ; moyen enregistré : application Flouci', r.status === 200 && row.status === 'validated' && row.method === 'flouci', row);
 
   // ─── Plusieurs confirmations simultanées ───
   console.log('— Confirmations simultanées : un seul encaissement');
   const c2 = await checkout(P2, 'starter', 'monthly');
   check('P2 : page de paiement Starter ouverte (15 $ HT = 17,85 $ TTC)', c2.r.status === 201 && c2.co.amountTTC === 17.85, c2.r);
-  konnect.pay(c2.ref);
+  flouci.pay(c2.ref);
   const burst = await Promise.all([
     ...Array.from({ length: 6 }, () => verify(P2, c2.co.id)),
-    rawGet(`/public/payments/konnect/return?payment_ref=${c2.ref}`),
-    rawGet(`/public/payments/konnect/return?payment_ref=${c2.ref}`),
-    call('POST', `/public/payments/konnect/return?payment_ref=${c2.ref}`),
+    notify(c2.ref), notify(c2.ref), notify(c2.ref),
   ]);
-  check('6 retours du client et 3 notifications de Konnect en même temps : tous aboutissent', burst.slice(0, 6).every((x) => x.status === 200 && x.body.status === 'paid') && burst[6].status === 302 && burst[7].status === 302 && burst[8].status === 200, burst.map((x) => x.status));
+  check('6 retours du client et 3 notifications de Flouci en même temps : tous aboutissent', burst.slice(0, 6).every((x) => x.status === 200 && x.body.status === 'paid') && burst.slice(6).every((x) => x.status === 200), burst.map((x) => x.status));
   row = await one(`SELECT COUNT(*) FILTER (WHERE status = 'validated')::int AS validated, COUNT("receiptNumber")::int AS receipts, MAX("periodEnd") AS "periodEnd" FROM subscription_payments WHERE "userId" = $1`, [P2.id]);
   const subEnd2 = (await one('SELECT "subscriptionEnd" FROM users WHERE id = $1', [P2.id])).subscriptionEnd;
   check('un seul paiement validé, un seul reçu, une seule période (la fin de l’abonnement = la fin de cette période)', row.validated === 1 && row.receipts === 1 && new Date(row.periodEnd).getTime() === new Date(subEnd2).getTime(), row);
@@ -210,8 +230,8 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   console.log('— Essai expiré, paiement fait sans retour sur le site : reconnu par le balayage');
   const P3 = await signUp({ email: 'p3@test.tn', companyName: 'Boutique P3', sector: 'commerce' });
   const c3 = await checkout(P3, 'starter', 'annual');
-  check('P3 : page Starter annuelle ouverte (150 $ HT = 178,50 $ TTC)', c3.r.status === 201 && c3.co.amountTTC === 178.5, c3.r);
-  konnect.pay(c3.ref);
+  check('P3 : page Starter annuelle ouverte (150 $ HT = 178,50 $ TTC = 553,35 TND)', c3.r.status === 201 && c3.co.amountTTC === 178.5 && c3.co.chargedAmount === 553.35, c3.r);
+  flouci.pay(c3.ref);
   await db.query(`UPDATE users SET "trialStartedAt" = now() - interval '72 hours 1 minute', "trialEndsAt" = now() - interval '1 minute' WHERE id = $1`, [P3.id]);
   r = await call('POST', '/admin/maintenance/sweep', { token: admin });
   check('balayage : le paiement est reconnu AVANT de juger l’essai fini — le compte n’est pas expiré', r.status === 200 && r.body.checkouts.paid === 1 && r.body.expired === 0, r.body);
@@ -228,44 +248,44 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   console.log('— Paiement fait dans un autre onglet : reconnu en rouvrant la page Abonnement');
   const P8 = await signUp({ email: 'p8@test.tn', companyName: 'Boutique P8', sector: 'commerce' });
   const c8 = await checkout(P8, 'business', 'annual');
-  konnect.pay(c8.ref);
+  flouci.pay(c8.ref);
   r = await call('GET', '/billing/subscription', { token: P8.token });
   check('en ouvrant simplement la page Abonnement : abonnement Business annuel ouvert', r.status === 200 && r.body.account.status === 'ACTIVE' && r.body.plan.code === 'business' && r.body.checkout === null && r.body.account.billingCycle !== 'monthly', r.body.account);
 
   // ─── Pannes du prestataire ───
   console.log('— Pannes du prestataire de paiement');
   const P4 = await signUp({ email: 'p4@test.tn', companyName: 'Boutique P4', sector: 'commerce' });
-  konnect.state.failInit = true;
+  flouci.state.failInit = true;
   r = await call('POST', '/billing/checkout', { token: P4.token, headers: { Origin: 'https://pirate.example' }, body: { planCode: 'starter', billingCycle: 'monthly' } });
-  check('Konnect en panne à l’ouverture : 502 clair, sans aucun détail technique', r.status === 502 && r.body.code === 'PAYMENT_PROVIDER_ERROR' && !/konnect|e2e-konnect-key|e2e-wallet|Internal error/i.test(JSON.stringify(r.body)), r);
-  konnect.state.failInit = false;
+  check('Flouci en panne à l’ouverture : 502 clair, sans aucun détail technique', r.status === 502 && r.body.code === 'PAYMENT_PROVIDER_ERROR' && !/flouci|e2e-flouci|Internal error/i.test(JSON.stringify(r.body)), r);
+  flouci.state.failInit = false;
   row = await one('SELECT status, note, "checkoutUrl" FROM subscription_payments WHERE "userId" = $1 ORDER BY id DESC LIMIT 1', [P4.id]);
   check('l’ouverture manquée est refermée et notée pour l’administrateur ; aucune page ouverte', row.status === 'expired' && /refusée/.test(String(row.note)) && row.checkoutUrl === null, row);
   r = await call('GET', '/billing/subscription', { token: P4.token });
   check('le client n’a aucune page de paiement ouverte et peut réessayer', r.body.checkout === null && r.body.account.status === 'TRIAL', r.body.checkout);
   const c4 = await checkout(P4, 'starter', 'monthly');
-  check('Konnect revenu : nouvelle page ouverte', c4.r.status === 201 && c4.co.resumed === false, c4.r);
+  check('Flouci revenu : nouvelle page ouverte', c4.r.status === 201 && c4.co.resumed === false, c4.r);
   row = await one('SELECT "returnBase" FROM subscription_payments WHERE id = $1', [c4.co.id]);
   check('un site inconnu ne devient jamais l’adresse de retour du client', row.returnBase === FRONT, row);
   r = await call('POST', '/billing/checkout', { token: P4.token, headers: { Origin: 'https://pirate.example' }, body: { planCode: 'starter', billingCycle: 'monthly' } });
   row = await one('SELECT "returnBase" FROM subscription_payments WHERE id = $1', [r.body.id]);
   check('même avec l’en-tête Origin d’un site inconnu, retour vers le site officiel', r.status === 201 && row.returnBase === FRONT, row);
-  konnect.pay(c4.ref);
-  konnect.state.failGet = true;
+  flouci.pay(c4.ref);
+  flouci.state.failGet = true;
   r = await verify(P4, c4.co.id);
-  check('Konnect injoignable au retour du client : « en attente » (pas d’erreur), rien d’activé', r.status === 200 && r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
-  konnect.state.failGet = false;
+  check('Flouci injoignable au retour du client : « en attente » (pas d’erreur), rien d’activé', r.status === 200 && r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
+  flouci.state.failGet = false;
   r = await verify(P4, c4.co.id);
-  check('Konnect revenu : le paiement est reconnu', r.body.status === 'paid' && r.body.account.status === 'ACTIVE', r.body);
+  check('Flouci revenu : le paiement est reconnu', r.body.status === 'paid' && r.body.account.status === 'ACTIVE', r.body);
 
   // ─── Limite par heure ───
   console.log('— Limite de tentatives par heure');
   const P5 = await signUp({ email: 'p5@test.tn', companyName: 'Boutique P5', sector: 'commerce' });
   await db.query(`INSERT INTO subscription_payments ("userId","planCode","planName","billingCycle","periodMonths","amountHT","vatRate","amountTTC",currency,method,provider,status,"declaredBy")
-                  SELECT $1,'starter','Starter','monthly',1,15,19,17.85,'USD','card','konnect','expired','client' FROM generate_series(1,12)`, [P5.id]);
-  const before5 = konnect.initCount();
+                  SELECT $1,'starter','Starter','monthly',1,15,19,17.85,'USD','card','flouci','expired','client' FROM generate_series(1,12)`, [P5.id]);
+  const before5 = flouci.initCount();
   r = await call('POST', '/billing/checkout', { token: P5.token, headers: { Origin: FRONT }, body: { planCode: 'starter', billingCycle: 'monthly' } });
-  check('12 tentatives dans l’heure : la 13e est refusée (429) sans appeler Konnect', r.status === 429 && konnect.initCount() === before5, r);
+  check('12 tentatives dans l’heure : la 13e est refusée (429) sans appeler Flouci', r.status === 429 && flouci.initCount() === before5, r);
   await db.query(`UPDATE subscription_payments SET "createdAt" = now() - interval '2 hours' WHERE "userId" = $1`, [P5.id]);
   r = await call('POST', '/billing/checkout', { token: P5.token, headers: { Origin: FRONT }, body: { planCode: 'starter', billingCycle: 'monthly' } });
   check('une heure plus tard : de nouveau possible', r.status === 201, r);
@@ -275,33 +295,40 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   const P6 = await signUp({ email: 'p6@test.tn', companyName: 'Boutique P6', sector: 'commerce' });
   const c6a = await checkout(P6, 'starter', 'monthly');
   const c6b = await checkout(P6, 'business', 'annual');
-  check('autre choix : nouvelle page (Business annuel, 345,10 $ TTC) ; l’ancienne est refermée', c6a.r.status === 201 && c6b.r.status === 201 && c6b.co.resumed === false && c6b.co.amountTTC === 345.1 && c6b.co.id !== c6a.co.id, [c6a.r.body, c6b.r.body]);
+  check('autre choix : nouvelle page (Business annuel, 345,10 $ TTC = 1069,81 TND) ; l’ancienne est refermée', c6a.r.status === 201 && c6b.r.status === 201 && c6b.co.resumed === false && c6b.co.amountTTC === 345.1 && c6b.co.chargedAmount === 1069.81 && c6b.co.id !== c6a.co.id, [c6a.r.body, c6b.r.body]);
   row = await one('SELECT status, "checkoutUrl" FROM subscription_payments WHERE id = $1', [c6a.co.id]);
   check('l’ancienne page est « expired », sans adresse de paiement', row.status === 'expired' && row.checkoutUrl === null, row);
   r = await call('GET', '/billing/subscription', { token: P6.token });
   check('une seule page est proposée au client : la dernière', r.body.checkout?.id === c6b.co.id, r.body.checkout);
-  konnect.pay(c6a.ref);
+  flouci.pay(c6a.ref);
   r = await verify(P6, c6a.co.id);
   check('le client a payé l’ancienne page quand même : l’encaissement est reconnu, rien n’est perdu', r.body.status === 'paid' && r.body.account.status === 'ACTIVE' && r.body.account.planCode === 'starter', r.body);
   const first6 = await one('SELECT "periodStart", "periodEnd" FROM subscription_payments WHERE id = $1', [c6a.co.id]);
   r = await verify(P6, c6b.co.id);
   check('la page Business n’est pas payée : en attente, le compte reste sur Starter', r.body.status === 'pending' && r.body.account.planCode === 'starter', r.body);
-  konnect.pay(c6b.ref);
+  flouci.pay(c6b.ref);
   r = await verify(P6, c6b.co.id);
   const second6 = await one('SELECT "periodStart", "periodEnd" FROM subscription_payments WHERE id = $1', [c6b.co.id]);
   check('puis payée : passage à Business, la nouvelle période s’ajoute à la suite de la première (aucun jour payé perdu)', r.body.status === 'paid' && r.body.account.planCode === 'business' && new Date(second6.periodStart).getTime() === new Date(first6.periodEnd).getTime() && monthsBetween(second6.periodStart, second6.periodEnd) > 11.9, [r.body.account, first6, second6]);
 
-  // ─── Le prestataire annonce une autre devise ───
-  console.log('— Le prestataire annonce le montant dans une autre devise (conversion en dinars)');
+  // ─── Paiement refusé ou expiré chez Flouci ───
+  console.log('— Paiement refusé ou expiré chez Flouci');
   const P7 = await signUp({ email: 'p7@test.tn', companyName: 'Boutique P7', sector: 'commerce' });
   const c7 = await checkout(P7, 'starter', 'monthly');
-  konnect.pay(c7.ref, { token: 'TND', amount: 54000, orderId: '123456' });
+  flouci.setStatus(c7.ref, 'FAILURE');
   r = await verify(P7, c7.co.id);
-  check('autre devise ET autre commande : refusé', r.body.status === 'pending' && r.body.account.status === 'TRIAL', r.body);
-  konnect.pay(c7.ref, { token: 'TND', amount: 54000 });
+  row = await one('SELECT status, "checkoutUrl" FROM subscription_payments WHERE id = $1', [c7.co.id]);
+  check('carte refusée : « expired » tout de suite (le client voit l’échec et peut réessayer), page refermée', r.body.status === 'expired' && r.body.account.status === 'TRIAL' && row.status === 'expired' && row.checkoutUrl === null, [r.body, row]);
+  r = await call('GET', '/billing/subscription', { token: P7.token });
+  check('plus aucune page à reprendre', r.body.checkout === null, r.body.checkout);
+  flouci.pay(c7.ref);
   r = await verify(P7, c7.co.id);
-  check('autre devise, bonne commande : le montant n’est pas comparable, la commande l’est — accepté', r.body.status === 'paid' && r.body.account.status === 'ACTIVE', r.body);
-  check('l’écart de commande a été tracé une fois', (await auditCount('payment_mismatch', P7.id)) === 1, await auditCount('payment_mismatch', P7.id));
+  check('le client réessaie sur la même page Flouci et paie : l’encaissement est quand même reconnu', r.body.status === 'paid' && r.body.account.status === 'ACTIVE', r.body);
+  const c7b = await checkout(P7, 'business', 'monthly');
+  flouci.setStatus(c7b.ref, 'EXPIRED');
+  r = await verify(P7, c7b.co.id);
+  check('page expirée chez Flouci : « expired », rien n’est activé', r.body.status === 'expired' && r.body.account.planCode === 'starter', r.body);
+  check('aucun écart de montant ni de commande tracé pour P7', (await auditCount('payment_mismatch', P7.id)) === 0, await auditCount('payment_mismatch', P7.id));
 
   // ─── Compte suspendu ───
   console.log('— Compte suspendu par l’administrateur');
@@ -311,7 +338,7 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   check('compte suspendu', r.status === 200 && r.body.status === 'SUSPENDED', r);
   r = await call('POST', '/billing/checkout', { token: P9.token, headers: { Origin: FRONT }, body: { planCode: 'starter', billingCycle: 'monthly' } });
   check('un compte suspendu ne peut pas ouvrir de nouveau paiement (403)', r.status === 403, r);
-  konnect.pay(c9.ref);
+  flouci.pay(c9.ref);
   r = await verify(P9, c9.co.id);
   check('l’argent déjà encaissé est enregistré, mais la suspension de l’administrateur n’est pas levée', r.body.status === 'paid' && r.body.account.status === 'SUSPENDED' && r.body.account.blocked === true, r.body);
   r = await call('GET', '/clients', { token: P9.token });
@@ -332,14 +359,14 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   const abandoned = await checkout(Q1, 'starter', 'monthly');
   const abandoned2 = await checkout(Q1, 'business', 'monthly'); // referme la première page, qui reste « expired »
   check('deux pages de paiement ouvertes, la première est refermée', abandoned.r.status === 201 && abandoned2.r.status === 201 && (await one('SELECT status FROM subscription_payments WHERE id = $1', [abandoned.co.id])).status === 'expired', [abandoned.co, abandoned2.co]);
-  konnect.pay(abandoned2.ref);
+  flouci.pay(abandoned2.ref);
   r = await verify(Q1, abandoned2.co.id);
   const q1Receipt = r.body.payment?.receiptNumber;
   check('paiement validé : le reçu suit le DERNIER numéro émis (compteur), pas l’identifiant du paiement', r.body.status === 'paid' && q1Receipt === `REC-${year}-${suffix(lastBefore + 1)}` && abandoned2.co.id > lastBefore + 1, { q1Receipt, lastBefore, id: abandoned2.co.id });
   row = await one(`SELECT COUNT(*)::int AS n, COUNT(DISTINCT "receiptNumber")::int AS distinct_n, MAX(substring("receiptNumber" from 10)::int) AS max_n FROM subscription_payments WHERE "receiptNumber" LIKE $1`, [`REC-${year}-%`]);
   check('tous les reçus de l’année forment une suite continue 1…N, sans trou ni doublon', row.n > 5 && row.n === row.distinct_n && row.max_n === row.n, row);
   const mailQ1 = await waitMail('q1@test.tn', q1Receipt);
-  check('le reçu part par email dans la langue du client (espagnol)', !!mailQ1 && /Hemos recibido su pago con tarjeta/.test(mailQ1.text) && /Plan Business/.test(mailQ1.text), mailQ1?.text.slice(0, 400));
+  check('le reçu part par email dans la langue du client (espagnol)', !!mailQ1 && /Hemos recibido su pago en l(í|=C3=AD)nea/.test(mailQ1.text) && /Importe cobrado por Flouci/.test(mailQ1.text) && /Plan Business/.test(mailQ1.text), mailQ1?.text.slice(0, 400));
 
   r = await call('GET', `/billing/payments/${abandoned2.co.id}/receipt`, { token: Q1.token });
   check('reçu du client : sans identité d’éditeur tant que l’administrateur n’en a pas renseigné', r.status === 200 && r.body.issuer === null && r.body.receiptNumber === q1Receipt, r.body.issuer);
@@ -355,13 +382,13 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   // — Relecture à la demande de l'administrateur (« j'ai payé mais rien ne s'ouvre »).
   const Q2 = await signUp({ email: 'q2@test.tn', companyName: 'Boutique Q2', sector: 'commerce' });
   const c2 = await checkout(Q2, 'starter', 'monthly');
-  konnect.pay(c2.ref); // payé chez Konnect, mais le client n'est jamais revenu sur le site
+  flouci.pay(c2.ref); // payé chez Flouci, mais le client n'est jamais revenu sur le site
   r = await call('POST', `/admin/payments/${c2.co.id}/recheck`, { token: Q2.token });
   check('relecture : réservée à l’administrateur (403)', r.status === 403, r);
   r = await call('POST', '/admin/payments/999999/recheck', { token: admin });
   check('paiement inconnu : 404', r.status === 404, r);
   r = await call('POST', `/admin/payments/${c2.co.id}/recheck`, { token: admin });
-  check('relecture chez Konnect : encaissé, abonnement ouvert', r.status === 200 && r.body.status === 'paid' && r.body.payment.status === 'validated', r.body);
+  check('relecture chez Flouci : encaissé, abonnement ouvert', r.status === 200 && r.body.status === 'paid' && r.body.payment.status === 'validated', r.body);
   r = await call('POST', `/admin/payments/${c2.co.id}/recheck`, { token: admin });
   check('relecture répétée : aucun second encaissement', r.status === 200 && r.body.status === 'paid' && (await one(`SELECT COUNT(*)::int AS n FROM subscription_payments WHERE "userId" = $1 AND status = 'validated'`, [Q2.id])).n === 1, r.body);
   check('la relecture est tracée dans le journal', (await auditCount('payment_rechecked', Q2.id)) === 2, await auditCount('payment_rechecked', Q2.id));
@@ -372,10 +399,10 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   // — Remboursement : paiement le plus récent d'abord, l'abonnement revient en arrière période après période.
   const Q3 = await signUp({ email: 'q3@test.tn', companyName: 'Boutique Q3', sector: 'commerce' });
   const first = await checkout(Q3, 'starter', 'monthly');
-  konnect.pay(first.ref);
+  flouci.pay(first.ref);
   await verify(Q3, first.co.id);
   const second = await checkout(Q3, 'business', 'monthly');
-  konnect.pay(second.ref);
+  flouci.pay(second.ref);
   await verify(Q3, second.co.id);
   const endBoth = new Date((await one('SELECT "subscriptionEnd" FROM users WHERE id = $1', [Q3.id])).subscriptionEnd);
   const payFirst = await one('SELECT id, "receiptNumber", "periodStart", "periodEnd" FROM subscription_payments WHERE id = $1', [first.co.id]);
@@ -416,7 +443,7 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   const Q4 = await signUp({ email: 'q4@test.tn', companyName: 'Boutique Q4', sector: 'commerce' });
   await db.query(`UPDATE users SET "trialEndsAt" = now() - interval '2 days', "accountStatus" = 'EXPIRED', "statusReason" = 'TRIAL_EXPIRED' WHERE id = $1`, [Q4.id]);
   const c4 = await checkout(Q4, 'starter', 'monthly');
-  konnect.pay(c4.ref);
+  flouci.pay(c4.ref);
   r = await verify(Q4, c4.co.id);
   check('essai terminé puis paiement : abonnement ouvert', r.body.status === 'paid' && r.body.account.status === 'ACTIVE', r.body);
   r = await call('POST', `/admin/payments/${c4.co.id}/refund`, { token: admin, body: { reason: 'Demande du client' } });
@@ -426,24 +453,25 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   row = await one(`SELECT COUNT(*)::int AS n FROM users WHERE id = $1 AND "isActive" = true`, [Q4.id]);
   check('le compte reste actif (rien n’est supprimé)', row.n === 1, row);
 
-  // — Liste de contrôle « mise en production » et test de connexion à Konnect.
+  // — Liste de contrôle « mise en production » et test de connexion à Flouci.
   r = await call('GET', '/admin/online-payment', { token: Q1.token });
   check('liste de contrôle : réservée à l’administrateur (403)', r.status === 403, r);
   r = await call('GET', '/admin/online-payment', { token: admin });
   const byKey = Object.fromEntries((r.body.checks || []).map((c) => [c.key, c]));
-  check('liste de contrôle : clés, devise, formules, emails et identité de l’éditeur en règle', r.status === 200 && r.body.enabled === true && ['credentials', 'currency', 'plans', 'mail', 'issuer'].every((k) => byKey[k]?.ok === true), r.body.checks);
+  check('liste de contrôle : clés, devise, formules, emails et identité de l’éditeur en règle', r.status === 200 && r.body.enabled === true && r.body.provider === 'flouci' && ['credentials', 'currency', 'plans', 'mail', 'issuer'].every((k) => byKey[k]?.ok === true), r.body.checks);
+  check('… la conversion en dinars est annoncée avec son taux et sa variable', /1 USD = 3,1 TND/.test(byKey.currency.message) && /FLOUCI_RATE_USD/.test(byKey.currency.message), byKey.currency);
   check('… mode test signalé (avertissement), pas encore « en production »', byKey.mode.ok === false && byKey.mode.level === 'warn' && r.body.mode === 'sandbox' && r.body.live === false, byKey.mode);
-  check('… adresses http locales : erreur bloquante en production, avec l’adresse que Konnect appellera', byKey.apiUrl.ok === false && byKey.apiUrl.level === 'error' && /API_PUBLIC_URL/.test(byKey.apiUrl.message) && r.body.ready === false && r.body.webhookUrl === `${BASE}/public/payments/konnect/return`, { apiUrl: byKey.apiUrl, ready: r.body.ready });
-  check('… ni la clé ni le portefeuille ne sortent du serveur', !JSON.stringify(r.body).includes('e2e-konnect-key') && !JSON.stringify(r.body).includes('e2e-wallet'), Object.keys(r.body));
+  check('… adresses http locales : erreur bloquante en production, avec l’adresse que Flouci appellera', byKey.apiUrl.ok === false && byKey.apiUrl.level === 'error' && /API_PUBLIC_URL/.test(byKey.apiUrl.message) && r.body.ready === false && r.body.webhookUrl === WEBHOOK, { apiUrl: byKey.apiUrl, ready: r.body.ready });
+  check('… aucune clé ne sort du serveur', !JSON.stringify(r.body).includes('e2e-flouci'), Object.keys(r.body));
 
   r = await call('POST', '/admin/online-payment/test', { token: Q1.token, body: {} });
   check('test de connexion : réservé à l’administrateur (403)', r.status === 403, r);
-  const initsBefore = konnect.initCount();
+  const initsBefore = flouci.initCount();
   r = await call('POST', '/admin/online-payment/test', { token: admin, body: {} });
-  check('test de connexion : clé acceptée par Konnect, aucun paiement ouvert', r.status === 200 && r.body.keyAccepted === true && r.body.walletAccepted === null && r.body.reachable === true && r.body.mode === 'sandbox' && konnect.initCount() === initsBefore, r.body);
-  r = await call('POST', '/admin/online-payment/test', { token: admin, body: { wallet: true } });
-  check('test avec le portefeuille : reconnu, un paiement de test de 1 TND est ouvert (jamais encaissé)', r.status === 200 && r.body.walletAccepted === true && konnect.initCount() === initsBefore + 1 && konnect.lastInit().body.amount === 1000 && konnect.lastInit().body.token === 'TND' && String(konnect.lastInit().body.orderId).startsWith('connection-test-') && konnect.lastInit().body.webhook === `${BASE}/public/payments/konnect/return`, r.body);
-  check('le résultat ne contient ni la clé ni le portefeuille ; le test est tracé', !JSON.stringify(r.body).includes('e2e-konnect-key') && !JSON.stringify(r.body).includes('e2e-wallet') && (await one(`SELECT COUNT(*)::int AS n FROM audit_logs WHERE action = 'konnect_test'`)).n === 2, r.body);
+  check('test de connexion : clés acceptées par Flouci, aucun paiement ouvert', r.status === 200 && r.body.provider === 'flouci' && r.body.keyAccepted === true && r.body.checkoutAccepted === null && r.body.reachable === true && r.body.mode === 'sandbox' && flouci.initCount() === initsBefore, r.body);
+  r = await call('POST', '/admin/online-payment/test', { token: admin, body: { checkout: true } });
+  check('test complet : un paiement de test de 1 TND (1000 millimes) est ouvert chez Flouci (jamais encaissé, 5 minutes)', r.status === 200 && r.body.checkoutAccepted === true && flouci.initCount() === initsBefore + 1 && flouci.lastInit().body.amount === '1000' && flouci.lastInit().body.session_timeout_secs === 300 && String(flouci.lastInit().body.developer_tracking_id).startsWith('connection-test-') && flouci.lastInit().body.webhook === WEBHOOK, r.body);
+  check('le résultat ne contient aucune clé ; le test est tracé', !JSON.stringify(r.body).includes('e2e-flouci') && (await one(`SELECT COUNT(*)::int AS n FROM audit_logs WHERE action = 'flouci_test'`)).n === 2, r.body);
   await db.query(`DELETE FROM users WHERE id = ANY($1)`, [[Q1.id, Q2.id, Q3.id, Q4.id]]);
   await call('PUT', '/admin/settings', { token: admin, body: { issuerName: '', issuerTaxId: '', issuerAddress: '', issuerRegistry: '', supportEmail: '', supportPhone: '' } });
   }
@@ -493,7 +521,7 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   // M1 passe à la formule Starter en payant par carte : les modules hors formule se referment.
   r = await call('PUT', '/billing/modules', { token: M1.token, body: { modules: ['sales', 'stock', 'projects', 'logistics', 'hr', 'appointments'] } });
   const c1m = await checkout(M1, 'starter', 'monthly');
-  konnect.pay(c1m.ref);
+  flouci.pay(c1m.ref);
   r = await verify(M1, c1m.co.id);
   check('M1 paie la formule Starter par carte', r.body.status === 'paid' && r.body.account.planCode === 'starter', r.body);
   r = await call('GET', '/billing/modules', { token: M1.token });
@@ -506,7 +534,7 @@ const monthsBetween = (a, b) => (new Date(b).getTime() - new Date(a).getTime()) 
   r = await call('POST', '/projects', { token: M1.token, body: { name: 'Hors formule' } });
   check('et le serveur refuse bien d’écrire dans un module fermé par la formule', r.status === 403 && r.body.code === 'MODULE_DISABLED', r);
   const c2m = await checkout(M1, 'business', 'annual');
-  konnect.pay(c2m.ref);
+  flouci.pay(c2m.ref);
   r = await verify(M1, c2m.co.id);
   check('M1 passe à Business par carte', r.body.status === 'paid' && r.body.account.planCode === 'business', r.body);
   r = await call('PUT', '/billing/modules', { token: M1.token, body: { modules: ['sales', 'hr', 'projects'] } });

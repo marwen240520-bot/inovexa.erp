@@ -13,7 +13,7 @@ import { PaymentGatewayService } from './payment-gateway.service';
 import { AdminSaasController, BillingController, PublicController, SuggestionsController } from './saas.controllers';
 
 /**
- * Couche SaaS : essai gratuit, abonnements, paiement en ligne par carte, secteurs d'activité, administration de la plateforme.
+ * Couche SaaS : essai gratuit, abonnements, paiement en ligne (Flouci), secteurs d'activité, administration de la plateforme.
  * Global : l'authentification (JwtStrategy, AccessGuard) lit l'état du compte à chaque requête.
  */
 @Global()

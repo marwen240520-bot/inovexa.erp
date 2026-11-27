@@ -434,9 +434,10 @@ export function newSectorOffersV2() {
 
 /**
  * Moyens de paiement d'un abonnement.
- *  - card : carte bancaire EN LIGNE, par le prestataire de paiement (Konnect). C'est le seul moyen proposé par défaut :
- *    l'accès s'ouvre automatiquement dès que le prestataire confirme l'encaissement.
- *  - les autres (virement, D17, Flouci, e-Dinar, mandat, chèque, espèces) sont des paiements HORS LIGNE, déclarés par le
+ *  - card : paiement EN LIGNE par Flouci (carte bancaire ou application Flouci). C'est le seul moyen proposé par défaut :
+ *    l'accès s'ouvre automatiquement dès que Flouci confirme l'encaissement (un paiement fait avec l'application est
+ *    enregistré avec le code « flouci »).
+ *  - les autres (virement, D17, Flouci hors ligne, e-Dinar, mandat, chèque, espèces) sont des paiements HORS LIGNE, déclarés par le
  *    client puis validés par l'administrateur ; ils ne sont proposés que si l'administrateur les active
  *    (platform_settings.manualPayments).
  */

@@ -21,7 +21,7 @@ export class PlatformSettings {
   @Column({ default: true })
   requireEmailVerification: boolean;
 
-  /** Devise des formules et des paiements d'abonnement (USD par défaut ; TND et EUR sont aussi acceptées par Konnect). */
+  /** Devise des formules et des paiements d'abonnement (USD par défaut). Flouci encaisse en dinars : une autre devise est convertie (FLOUCI_RATE_<DEVISE>). */
   @Column({ type: 'varchar', length: 3, default: 'USD' })
   currency: string;
 
@@ -45,7 +45,7 @@ export class PlatformSettings {
   paymentMethods: string[] | null;
 
   /**
-   * Lien de paiement en ligne par carte (page de paiement de votre prestataire : Konnect, Flouci, Paymee, ClicToPay…).
+   * Lien de paiement en ligne par carte (page de paiement de votre prestataire : Flouci, Paymee, ClicToPay…).
    * Affiché au client quand il choisit « Carte bancaire » ; il y règle puis déclare la référence de la transaction.
    */
   @Column({ type: 'varchar', length: 300, nullable: true })
@@ -149,7 +149,7 @@ export class Plan {
 
 /**
  * Paiement d'abonnement.
- *  - En ligne par carte (provider = konnect) : créé à l'ouverture de la page de paiement (status = initiated), validé
+ *  - En ligne par carte ou application Flouci (provider = flouci) : créé à l'ouverture de la page de paiement (status = initiated), validé
  *    AUTOMATIQUEMENT dès que le prestataire confirme l'encaissement ; « expired » si la page de paiement est abandonnée.
  *  - Hors ligne (provider = manual) : déclaré par le client ou saisi par l'administrateur (pending), puis validé ou
  *    refusé par l'administrateur.
@@ -195,14 +195,24 @@ export class SubscriptionPayment {
   @Column({ type: 'varchar', length: 20 })
   method: string;
 
-  /** manual = validation par l'administrateur ; sinon le nom du prestataire de paiement en ligne (konnect). */
+  /** manual = validation par l'administrateur ; sinon le nom du prestataire de paiement en ligne (flouci ; konnect pour les anciens paiements). */
   @Column({ type: 'varchar', length: 30, default: 'manual' })
   provider: string;
 
-  /** Référence du paiement chez le prestataire (Konnect : paymentRef). */
+  /** Référence du paiement chez le prestataire (Flouci : payment_id). */
   @Index('IDX_subscription_payments_provider_ref', { where: '"providerRef" IS NOT NULL' })
   @Column({ type: 'varchar', length: 80, nullable: true })
   providerRef: string | null;
+
+  /**
+   * Montant réellement débité par le prestataire et sa devise (Flouci : toujours en dinars). Différent de amountTTC quand les
+   * formules sont dans une autre devise (montant TTC converti au taux FLOUCI_RATE_<DEVISE> du moment). null = hors ligne.
+   */
+  @Column({ ...PRICE, nullable: true })
+  chargedAmount: number | null;
+
+  @Column({ type: 'varchar', length: 3, nullable: true })
+  chargedCurrency: string | null;
 
   /** Adresse de la page de paiement du prestataire, tant que le paiement est ouvert. */
   @Column({ type: 'varchar', length: 500, nullable: true })

@@ -1,11 +1,12 @@
 "use client";
 /**
- * Administration › Réglages de la plateforme : durée de l'essai gratuit, rappels, devise et TVA, paiement en ligne par
- * carte (état), paiements hors ligne (facultatifs), contacts de support, état des connexions (Konnect, Google, Apple,
- * email) et opérations de maintenance.
+ * Administration › Réglages de la plateforme : durée de l'essai gratuit, rappels, devise et TVA, paiement en ligne
+ * (Flouci : état et test de connexion), paiements hors ligne (facultatifs), contacts de support, état des connexions
+ * (Flouci, Google, Apple, email) et opérations de maintenance.
  *
- * Tout le parcours du client est automatique : il s'inscrit, choisit sa formule et paie par carte sans que
- * l'administrateur intervienne. Cette page ne sert qu'à régler la plateforme.
+ * Tout le parcours du client est automatique : il s'inscrit, choisit sa formule et paie en ligne (carte bancaire ou
+ * application Flouci) sans que l'administrateur intervienne. Cette page ne sert qu'à régler la plateforme.
+ * Les jetons Flouci ne se saisissent jamais ici : ils vivent dans les variables d'environnement du serveur de l'API.
  */
 import React, { FormEvent, useEffect, useState } from "react";
 import { api, Badge, Btn, Card, ErrorBox, inputStyle, Loading, Notice, Page, Row, useLoad, useNotice } from "@/components/erp/kit";
@@ -78,11 +79,14 @@ function ReadinessList({ data }: { data: OnlineReadiness }) {
       <div style={{ marginBottom: 6 }}><Badge tone={headline.tone}>{headline.text}</Badge></div>
       <CheckRows checks={data.checks} />
       <p style={{ ...helpStyle, marginTop: 10 }}>
-        Adresse que Konnect appelle après chaque paiement : <code style={{ overflowWrap: "anywhere" }}>{data.webhookUrl}</code>. Elle est transmise à Konnect à chaque paiement : il n’y a rien à saisir dans son tableau de bord.
+        Adresse que Flouci appelle après chaque paiement : <code style={{ overflowWrap: "anywhere" }}>{data.webhookUrl}</code>. Elle est transmise à Flouci à chaque paiement : il n’y a rien à saisir dans son tableau de bord.
       </p>
     </div>
   );
 }
+
+/** Taux de conversion écrit à la française (3.1 → « 3,1 »). */
+const frRate = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 4 });
 
 function State({ ok, name, on, off }: { ok: boolean; name: string; on: string; off: string }) {
   return (
@@ -103,7 +107,7 @@ export default function AdminSettingsPage() {
   const [notice, notify] = useNotice();
   const readiness = useLoad(() => api<OnlineReadiness>("/admin/online-payment"), []);
   const security = useLoad(() => api<SecurityReport>("/admin/security"), []);
-  const [probing, setProbing] = useState<"key" | "wallet" | null>(null);
+  const [probing, setProbing] = useState<"key" | "checkout" | null>(null);
   const [probeResult, setProbeResult] = useState<ConnectionTest | null>(null);
 
   useEffect(() => { if (data && !form) setForm(formOf(data)); }, [data, form]);
@@ -145,13 +149,13 @@ export default function AdminSettingsPage() {
     }
   };
 
-  /** Test de connexion à Konnect : la clé seule (aucun paiement ouvert), ou la clé et le portefeuille (paiement de test de 1 TND). */
-  const testKonnect = async (wallet: boolean) => {
+  /** Test de connexion à Flouci : les jetons seuls (aucun paiement ouvert), ou les jetons et l'ouverture d'un paiement de test de 1 TND. */
+  const testFlouci = async (checkout: boolean) => {
     if (probing) return;
-    setProbing(wallet ? "wallet" : "key");
+    setProbing(checkout ? "checkout" : "key");
     setProbeResult(null);
     try {
-      setProbeResult(await api<ConnectionTest>("/admin/online-payment/test", { method: "POST", body: { wallet } }));
+      setProbeResult(await api<ConnectionTest>("/admin/online-payment/test", { method: "POST", body: { checkout } }));
     } catch (err) {
       notify(errorText(err), "err");
     } finally {
@@ -189,10 +193,17 @@ export default function AdminSettingsPage() {
   const trialHours = Number(form?.trialHours);
   const options = data?.paymentMethodOptions?.length ? data.paymentMethodOptions : Object.keys(METHOD_LABELS);
   const online = data?.onlinePayment;
-  const currencyKnown = ["USD", "TND", "EUR"].includes((form?.currency || "").toUpperCase());
+  const formCurrency = (form?.currency || "").toUpperCase();
+  const currencyKnown = ["USD", "TND", "EUR"].includes(formCurrency);
+  // Taux appliqué par le serveur : connu seulement pour la devise enregistrée (celle du formulaire peut ne pas l'être encore).
+  const savedRate = formCurrency === (data?.currency || "").toUpperCase() ? online?.charge?.rate ?? null : null;
+  const currencyHint = formCurrency === "TND"
+    ? "Flouci encaisse en dinars : le montant TTC est débité tel quel."
+    : `Flouci encaisse uniquement en dinars : en ${formCurrency || "devise étrangère"}, le client paie l’équivalent en dinars au taux FLOUCI_RATE_${formCurrency || "XXX"} défini sur le serveur de l’API${savedRate ? ` (actuellement 1 ${formCurrency} = ${frRate(savedRate)} TND)` : formCurrency === (data?.currency || "").toUpperCase() ? " (pas encore défini : le paiement en ligne reste fermé)" : ""}.`;
+  const cardAccepted = !online || online.methods.includes("card");
 
   return (
-    <Page title="Réglages de la plateforme" subtitle="Essai gratuit, paiement par carte, contacts et connexions.">
+    <Page title="Réglages de la plateforme" subtitle="Essai gratuit, paiement en ligne, contacts et connexions.">
       {notice}
       {error ? <ErrorBox message={error} onRetry={reload} /> : null}
       {!form || !data ? (loading ? <Loading /> : null) : (
@@ -226,7 +237,7 @@ export default function AdminSettingsPage() {
               <FormField label="Taux de TVA appliqué aux abonnements (%)" hint="Les prix des formules sont saisis hors taxes ; le montant TTC est calculé avec ce taux.">
                 <input inputMode="decimal" value={form.vatRate} onChange={(e) => set("vatRate", e.target.value)} style={inputStyle} />
               </FormField>
-              <FormField label="Devise des formules" hint={currencyKnown ? "Le paiement en ligne accepte USD, TND et EUR. En USD ou en EUR, Konnect convertit et vous verse en dinars." : "Cette devise n’est pas acceptée par le paiement en ligne (USD, TND ou EUR)."}>
+              <FormField label="Devise des formules" hint={currencyHint}>
                 <select value={currencyKnown ? form.currency : "other"} onChange={(e) => { if (e.target.value !== "other") set("currency", e.target.value); }} style={inputStyle}>
                   <option value="USD">USD — dollar ($)</option>
                   <option value="TND">TND — dinar tunisien</option>
@@ -238,30 +249,31 @@ export default function AdminSettingsPage() {
             <p style={{ ...helpStyle, marginTop: 22 }}>Changer de devise ne convertit pas les prix : après un changement, relisez les montants dans « Formules et tarifs ».</p>
           </Card>
 
-          <Card title="Paiement en ligne par carte (automatique)">
+          <Card title="Paiement en ligne Flouci (automatique)">
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", marginBottom: 10 }}>
               <Badge tone={online?.enabled ? (online.mode === "sandbox" ? "amber" : "green") : "red"}>
                 {online?.enabled ? (online.mode === "sandbox" ? "Actif — mode test" : "Actif") : "À activer"}
               </Badge>
-              <strong>Konnect</strong>
-              <span style={{ color: "var(--theme-text-secondary)", fontSize: 13 }}>carte bancaire (Visa, Mastercard, cartes tunisiennes) et carte e-Dinar</span>
+              <strong>Flouci</strong>
+              <span style={{ color: "var(--theme-text-secondary)", fontSize: 13 }}>{cardAccepted ? "carte bancaire (Visa, Mastercard, cartes tunisiennes) ou application Flouci" : "application Flouci (cartes non acceptées : FLOUCI_ACCEPT_CARD=false)"}</span>
             </div>
             {online?.enabled ? (
               <p style={helpStyle}>
-                Le client choisit sa formule, paie sur la page sécurisée de Konnect, et son accès s’ouvre tout seul dès que Konnect confirme l’encaissement : vous n’avez rien à valider. Les paiements apparaissent dans « Paiements » avec leur reçu.
-                {online.mode === "sandbox" ? " Mode test : aucun débit réel n’est fait — passez KONNECT_ENV à « production » (avec les clés de production) avant d’ouvrir aux clients." : ""}
+                Le client choisit sa formule, paie sur la page sécurisée de Flouci, et son accès s’ouvre tout seul dès que Flouci confirme l’encaissement : vous n’avez rien à valider. Les paiements apparaissent dans « Paiements » avec leur reçu.
+                {online.charge && online.charge.rate !== 1 ? ` Les formules sont en ${data.currency} : Flouci débite l’équivalent en dinars, au taux 1 ${data.currency} = ${frRate(online.charge.rate)} TND (FLOUCI_RATE_${data.currency}). Mettez ce taux à jour sur le serveur quand le cours change.` : ""}
+                {online.mode === "sandbox" ? " Mode test (FLOUCI_ENV=test) : avec les jetons de l’application « TEST APP », aucun débit réel n’est fait. Avant d’ouvrir aux clients, mettez les jetons de production et retirez FLOUCI_ENV." : ""}
               </p>
             ) : (
               <>
                 <Notice>
                   {online?.reason === "CURRENCY_UNSUPPORTED"
-                    ? `La devise ${data.currency} n’est pas acceptée par Konnect : choisissez USD, TND ou EUR ci-dessus.`
+                    ? `Flouci encaisse uniquement en dinars. Pour des formules en ${data.currency}, définissez FLOUCI_RATE_${data.currency} sur le serveur de l’API (ex. 3.10 pour 1 ${data.currency} = 3,10 TND), ou passez la devise des formules en TND ci-dessus.`
                     : "Tant que le paiement en ligne n’est pas activé, vos clients ne peuvent pas payer : à la fin de l’essai, leur accès reste fermé."}
                 </Notice>
                 <ol style={{ ...helpStyle, margin: 0, paddingInlineStart: 20, lineHeight: 1.7 }}>
-                  <li>Ouvrez un compte marchand sur <a href="https://konnect.network" target="_blank" rel="noopener noreferrer" style={{ color: "var(--theme-primary, #4f46e5)", fontWeight: 700 }}>konnect.network</a> et récupérez, dans son tableau de bord, votre <strong>clé d’API</strong> et l’<strong>identifiant de votre portefeuille</strong>.</li>
-                  <li>Sur le serveur de l’API (Render › Environment), ajoutez <code>KONNECT_API_KEY</code> et <code>KONNECT_WALLET_ID</code>. Pour essayer sans débit réel : <code>KONNECT_ENV=sandbox</code> avec les clés du bac à sable.</li>
-                  <li>Redémarrez le service : cette carte passe à « Actif », et le bouton « Payer par carte » s’ouvre pour vos clients.</li>
+                  <li>Dans votre espace marchand <a href="https://app.flouci.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--theme-primary, #4f46e5)", fontWeight: 700 }}>Flouci</a>, ouvrez <strong>Accepter en ligne › API</strong> et relevez le <strong>jeton public</strong> (Public Token) et le <strong>jeton privé</strong> (Private Token) de la même application.</li>
+                  <li>Sur le serveur de l’API (Environment), ajoutez <code>FLOUCI_PUBLIC_TOKEN</code> et <code>FLOUCI_PRIVATE_TOKEN</code>. Formules en dollars : ajoutez aussi <code>FLOUCI_RATE_USD</code> (ex. <code>3.10</code>). Pour essayer sans débit réel : les jetons de l’application « TEST APP » avec <code>FLOUCI_ENV=test</code>.</li>
+                  <li>Redémarrez le service : cette carte passe à « Actif », et le bouton « Payer » s’ouvre pour vos clients.</li>
                 </ol>
               </>
             )}
@@ -269,16 +281,16 @@ export default function AdminSettingsPage() {
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Avant d’encaisser de vrais clients</div>
               {readiness.error ? <InlineError>{readiness.error}</InlineError> : readiness.data ? <ReadinessList data={readiness.data} /> : <Loading />}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
-                <Btn type="button" onClick={() => testKonnect(false)} busy={probing === "key"} disabled={!online?.enabled || probing !== null}>Tester la connexion à Konnect</Btn>
-                <Btn type="button" onClick={() => testKonnect(true)} busy={probing === "wallet"} disabled={!online?.enabled || probing !== null}>Tester aussi le portefeuille</Btn>
+                <Btn type="button" onClick={() => testFlouci(false)} busy={probing === "key"} disabled={!online?.enabled || probing !== null}>Tester la connexion à Flouci</Btn>
+                <Btn type="button" onClick={() => testFlouci(true)} busy={probing === "checkout"} disabled={!online?.enabled || probing !== null}>Tester aussi l’ouverture d’un paiement</Btn>
               </div>
               <p style={{ ...helpStyle, marginTop: 8 }}>
-                « Tester la connexion » vérifie seulement votre clé d’API : aucun paiement n’est ouvert. « Tester aussi le portefeuille » ouvre chez Konnect un paiement de test de 1 TND qui expire tout seul au bout de 5 minutes : ne le payez pas.
+                « Tester la connexion » vérifie seulement vos jetons : aucun paiement n’est ouvert. « Tester aussi l’ouverture d’un paiement » ouvre chez Flouci un paiement de test de 1 TND qui expire tout seul au bout de 5 minutes : ne le payez pas.
               </p>
               {probeResult ? (
                 <div role="status" style={{ marginTop: 10, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 10px", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--theme-border)", fontSize: 13.5 }}>
-                  <Badge tone={probeResult.keyAccepted === true && probeResult.walletAccepted !== false ? "green" : probeResult.reachable === false || probeResult.keyAccepted === null ? "amber" : "red"}>
-                    {probeResult.keyAccepted === true && probeResult.walletAccepted !== false ? "Connexion réussie" : probeResult.reachable === false ? "Konnect injoignable" : probeResult.keyAccepted === null ? "Non vérifié" : "Refusé par Konnect"}
+                  <Badge tone={probeResult.keyAccepted === true && probeResult.checkoutAccepted !== false ? "green" : probeResult.reachable === false || probeResult.keyAccepted === null ? "amber" : "red"}>
+                    {probeResult.keyAccepted === true && probeResult.checkoutAccepted !== false ? "Connexion réussie" : probeResult.reachable === false ? "Flouci injoignable" : probeResult.keyAccepted === null ? "Non vérifié" : "Refusé par Flouci"}
                   </Badge>
                   <span style={{ flex: "1 1 280px", minWidth: 0, overflowWrap: "anywhere" }}>{probeResult.message}</span>
                 </div>
@@ -309,7 +321,7 @@ export default function AdminSettingsPage() {
               checked={form.manualPayments}
               onChange={(v) => set("manualPayments", v)}
               label="Accepter aussi les paiements hors ligne (virement, chèque, espèces…)"
-              hint="Désactivé par défaut : tout se paie par carte et rien n’attend votre validation. Activé, le client peut déclarer un paiement hors ligne ; vous le validez alors dans « Paiements » pour ouvrir son accès."
+              hint="Désactivé par défaut : tout se paie en ligne (Flouci) et rien n’attend votre validation. Activé, le client peut déclarer un paiement hors ligne ; vous le validez alors dans « Paiements » pour ouvrir son accès."
             />
             {form.manualPayments ? (
             <div style={{ marginTop: 30 }}>
@@ -356,7 +368,7 @@ export default function AdminSettingsPage() {
 
           <Card title="Connexions du serveur">
             <div style={{ marginTop: -9 }}>
-              <State ok={!!online?.enabled} name="Paiement par carte (Konnect)" on={online?.mode === "sandbox" ? "Mode test (bac à sable) : aucun débit réel." : "Les clients paient en ligne et leur accès s’ouvre automatiquement."} off="Définissez KONNECT_API_KEY et KONNECT_WALLET_ID sur le serveur de l’API (voir « Paiement en ligne par carte » plus haut)." />
+              <State ok={!!online?.enabled} name="Paiement en ligne (Flouci)" on={online?.mode === "sandbox" ? "Mode test (FLOUCI_ENV=test) : aucun débit réel." : "Les clients paient en ligne et leur accès s’ouvre automatiquement."} off={online?.reason === "CURRENCY_UNSUPPORTED" ? `Jetons présents, mais Flouci encaisse en dinars : définissez FLOUCI_RATE_${data.currency} sur le serveur de l’API, ou passez les formules en TND.` : "Définissez FLOUCI_PUBLIC_TOKEN et FLOUCI_PRIVATE_TOKEN sur le serveur de l’API (voir « Paiement en ligne Flouci » plus haut)."} />
               <State ok={!!data.googleConfigured} name="Continuer avec Google" on="Le bouton est affiché sur les pages de connexion et d’inscription." off="Définissez GOOGLE_CLIENT_ID sur le serveur de l’API (identifiant client OAuth « Application Web » de Google Cloud)." />
               <State ok={!!data.appleConfigured} name="Continuer avec Apple" on="Le bouton est affiché sur les pages de connexion et d’inscription." off="Définissez APPLE_CLIENT_ID sur le serveur de l’API (identifiant de service « Sign in with Apple », compte Apple Developer requis)." />
               <State ok={!!data.mailConfigured} name="Envoi d’emails" on="Code de vérification, mot de passe oublié, rappels et reçus de paiement partent par email." off="Définissez SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS et SMTP_FROM sur le serveur de l’API : sans cela, le code de vérification n’est pas envoyé." />

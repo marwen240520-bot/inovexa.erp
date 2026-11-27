@@ -45,24 +45,29 @@ function compose(lang: MailLang, subject: string, paragraphs: string[], cta?: { 
 
 // ───────────── Paiement reçu ─────────────
 
-export function receiptMail(input: { lang: MailLang; name: string; online: boolean; amount: number; currency: string; planName: string; periodEnd: Date | null; receiptNumber: string; url: string }): RenderedMail {
+export function receiptMail(input: {
+  lang: MailLang; name: string; online: boolean; amount: number; currency: string; planName: string; periodEnd: Date | null; receiptNumber: string; url: string;
+  /** Montant réellement débité par le prestataire quand il diffère de la devise des formules (Flouci : en dinars). */
+  charged?: { amount: number; currency: string } | null;
+}): RenderedMail {
   const { lang } = input;
   const paid = mailMoney(lang, input.amount, input.currency);
   const end = mailDate(lang, input.periodEnd);
+  const charged = input.charged && input.charged.currency !== input.currency ? mailMoney(lang, input.charged.amount, input.charged.currency) : null;
   const T = {
     fr: {
       subject: `${input.online ? 'Paiement reçu' : 'Paiement validé'} — reçu ${input.receiptNumber}`,
-      lines: [input.online ? `Nous avons bien reçu votre paiement par carte de ${paid} TTC.` : `Votre paiement de ${paid} TTC est validé.`, `Formule ${input.planName} : accès jusqu’au ${end}.`, `Reçu n° ${input.receiptNumber}.`],
+      lines: [input.online ? `Nous avons bien reçu votre paiement en ligne de ${paid} TTC.` : `Votre paiement de ${paid} TTC est validé.`, ...(charged ? [`Montant débité par Flouci : ${charged}.`] : []), `Formule ${input.planName} : accès jusqu’au ${end}.`, `Reçu n° ${input.receiptNumber}.`],
       cta: 'Voir mon abonnement et mon reçu', note: 'Merci pour votre confiance.',
     },
     en: {
       subject: `${input.online ? 'Payment received' : 'Payment confirmed'} — receipt ${input.receiptNumber}`,
-      lines: [input.online ? `We have received your card payment of ${paid} incl. VAT.` : `Your payment of ${paid} incl. VAT is confirmed.`, `${input.planName} plan: access until ${end}.`, `Receipt no. ${input.receiptNumber}.`],
+      lines: [input.online ? `We have received your online payment of ${paid} incl. VAT.` : `Your payment of ${paid} incl. VAT is confirmed.`, ...(charged ? [`Amount charged by Flouci: ${charged}.`] : []), `${input.planName} plan: access until ${end}.`, `Receipt no. ${input.receiptNumber}.`],
       cta: 'View my subscription and receipt', note: 'Thank you for your trust.',
     },
     es: {
       subject: `${input.online ? 'Pago recibido' : 'Pago validado'} — recibo ${input.receiptNumber}`,
-      lines: [input.online ? `Hemos recibido su pago con tarjeta de ${paid} IVA incluido.` : `Su pago de ${paid} IVA incluido está validado.`, `Plan ${input.planName}: acceso hasta el ${end}.`, `Recibo n.º ${input.receiptNumber}.`],
+      lines: [input.online ? `Hemos recibido su pago en línea de ${paid} IVA incluido.` : `Su pago de ${paid} IVA incluido está validado.`, ...(charged ? [`Importe cobrado por Flouci: ${charged}.`] : []), `Plan ${input.planName}: acceso hasta el ${end}.`, `Recibo n.º ${input.receiptNumber}.`],
       cta: 'Ver mi suscripción y mi recibo', note: 'Gracias por su confianza.',
     },
   }[lang];
@@ -94,9 +99,9 @@ export function trialReminderMail(input: { lang: MailLang; name: string; endsAt:
 export function renewalReminderMail(input: { lang: MailLang; name: string; endsAt: Date | null; url: string }): RenderedMail {
   const end = mailDate(input.lang, input.endsAt);
   const T = {
-    fr: { subject: 'Votre abonnement Inovexa ERP arrive à échéance', lines: [`Votre abonnement arrive à échéance le ${end}.`, 'Renouvelez-le dès maintenant par carte : la nouvelle période s’ajoute à la suite, aucun jour payé n’est perdu.'], cta: 'Renouveler mon abonnement' },
-    en: { subject: 'Your Inovexa ERP subscription is about to expire', lines: [`Your subscription expires on ${end}.`, 'Renew it now by card: the new period is added after the current one, no paid day is lost.'], cta: 'Renew my subscription' },
-    es: { subject: 'Su suscripción de Inovexa ERP está por vencer', lines: [`Su suscripción vence el ${end}.`, 'Renuévela ahora con tarjeta: el nuevo periodo se añade a continuación, no se pierde ningún día pagado.'], cta: 'Renovar mi suscripción' },
+    fr: { subject: 'Votre abonnement Inovexa ERP arrive à échéance', lines: [`Votre abonnement arrive à échéance le ${end}.`, 'Renouvelez-le dès maintenant en ligne : la nouvelle période s’ajoute à la suite, aucun jour payé n’est perdu.'], cta: 'Renouveler mon abonnement' },
+    en: { subject: 'Your Inovexa ERP subscription is about to expire', lines: [`Your subscription expires on ${end}.`, 'Renew it now online: the new period is added after the current one, no paid day is lost.'], cta: 'Renew my subscription' },
+    es: { subject: 'Su suscripción de Inovexa ERP está por vencer', lines: [`Su suscripción vence el ${end}.`, 'Renuévela ahora en línea: el nuevo periodo se añade a continuación, no se pierde ningún día pagado.'], cta: 'Renovar mi suscripción' },
   }[input.lang];
   return compose(input.lang, T.subject, T.lines, { url: input.url, label: T.cta }, input.name);
 }

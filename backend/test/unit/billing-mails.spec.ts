@@ -50,6 +50,20 @@ describe('billing-mails — trois langues, texte + HTML', () => {
     expect(m.text).toMatch(/11:30/); // 10:30 UTC = 11:30 à Tunis (UTC+1, sans heure d'été)
   });
 
+  it('paiement Flouci converti : le montant débité en dinars figure sur le reçu, dans les trois langues', () => {
+    const charged = { amount: 106.981, currency: 'TND' };
+    const fr = receiptMail({ lang: 'fr', name: 'Sami', online: true, amount: 34.51, currency: 'USD', planName: 'Business', periodEnd: end, receiptNumber: 'REC-2027-00001', url, charged });
+    expect(fr.text).toContain('paiement en ligne de 34,51 USD TTC');
+    expect(fr.text).toContain('Montant débité par Flouci : 106,981 TND.');
+    expect(fr.html).toContain('106,981 TND');
+    expect(receiptMail({ lang: 'en', name: 'S', online: true, amount: 34.51, currency: 'USD', planName: 'P', periodEnd: end, receiptNumber: 'R', url, charged }).text).toContain('Amount charged by Flouci: 106.981 TND.');
+    expect(receiptMail({ lang: 'es', name: 'S', online: true, amount: 34.51, currency: 'USD', planName: 'P', periodEnd: end, receiptNumber: 'R', url, charged }).text).toMatch(/Importe cobrado por Flouci: 106,981 TND\./);
+    // Même devise (formules en dinars) ou paiement hors ligne : pas de ligne en double.
+    const same = receiptMail({ lang: 'fr', name: 'S', online: true, amount: 120, currency: 'TND', planName: 'P', periodEnd: end, receiptNumber: 'R', url, charged: { amount: 120, currency: 'TND' } });
+    expect(same.text).not.toContain('Montant débité');
+    expect(receiptMail({ lang: 'fr', name: 'S', online: false, amount: 1, currency: 'USD', planName: 'P', periodEnd: end, receiptNumber: 'R', url }).text).not.toContain('Montant débité');
+  });
+
   it('le dinar s’écrit au millime, le dollar au centime', () => {
     expect(mailMoney('fr', 120, 'TND')).toBe('120,000 TND');
     expect(mailMoney('en', 34.5, 'USD')).toBe('34.50 USD');

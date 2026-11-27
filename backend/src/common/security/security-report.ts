@@ -12,7 +12,8 @@ export interface SecurityFacts {
   synchronize: boolean;
   swagger: boolean;
   mailConfigured: boolean;
-  konnect: { configured: boolean; mode: 'production' | 'sandbox' };
+  /** Paiement en ligne (Flouci) : clés présentes et mode (les clés elles-mêmes ne sortent jamais). */
+  gateway: { provider: string; configured: boolean; mode: 'production' | 'sandbox' };
   /** Sauvegardes chiffrées envoyées hors du serveur (BACKUP_PASSPHRASE et BACKUP_S3_URI). */
   backups: boolean;
   /** Administrateurs actifs sans double authentification ; null = non vérifié. */
@@ -48,9 +49,9 @@ export function securityChecks(f: SecurityFacts): SecurityCheck[] {
   add('mail', f.mailConfigured, 'warn',
     'Envoi d’emails configuré : code de vérification, mot de passe oublié, reçus et alertes partent.',
     'Envoi d’emails non configuré (SMTP_*) : l’adresse des nouveaux clients n’est pas vérifiée et « mot de passe oublié » ne peut pas fonctionner.');
-  add('payments', f.konnect.configured && f.konnect.mode === 'production', 'warn',
+  add('payments', f.gateway.configured && f.gateway.mode === 'production', 'warn',
     'Paiement en ligne en mode production.',
-    f.konnect.configured ? 'Konnect est en mode test (bac à sable) : aucun paiement réel n’est encaissé.' : 'Konnect n’est pas configuré : les clients ne peuvent pas payer en ligne.');
+    f.gateway.configured ? 'Flouci est en mode test (FLOUCI_ENV=test) : aucun paiement réel n’est encaissé.' : 'Flouci n’est pas configuré (FLOUCI_PUBLIC_TOKEN et FLOUCI_PRIVATE_TOKEN) : les clients ne peuvent pas payer en ligne.');
   if (f.adminsWithoutTwoFactor !== null) {
     add('admin2fa', f.adminsWithoutTwoFactor === 0, 'warn',
       'Tous les administrateurs ont la double authentification.',

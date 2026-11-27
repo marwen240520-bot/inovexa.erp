@@ -122,13 +122,13 @@ sont déjà vérifiés.
 
 | Route | Réponse |
 | --- | --- |
-| `GET /public/config` | `{ trialHours, currency, vatRate, requireEmailVerification, supportEmail, supportPhone, supportWhatsapp, googleClientId, appleClientId, paymentMethods, onlinePayment, modules }` — `googleClientId: null` / `appleClientId: null` = ne pas afficher le bouton ; `onlinePayment` = le paiement par carte est opérationnel ; `paymentMethods` = moyens proposés (`card`, `edinar`, et les moyens hors ligne seulement si l'administrateur les a ouverts) ; les coordonnées de paiement ne sont pas publiques |
+| `GET /public/config` | `{ trialHours, currency, vatRate, requireEmailVerification, supportEmail, supportPhone, supportWhatsapp, googleClientId, appleClientId, paymentMethods, onlinePayment, modules }` — `googleClientId: null` / `appleClientId: null` = ne pas afficher le bouton ; `onlinePayment` = le paiement en ligne (Flouci) est opérationnel ; `paymentMethods` = moyens proposés (`card` = paiement en ligne Flouci, et les moyens hors ligne seulement si l'administrateur les a ouverts) ; les coordonnées de paiement ne sont pas publiques |
 | `GET /public/plans` | `{ currency, vatRate, trialHours, plans: Plan[] }` — seulement les formules publiées |
 | `GET /public/sectors` | `Sector[]` (avec `itemCount` et la liste `modules` conseillée) |
 | `GET /public/sectors/:code` | `{ sector, categories, items, serviceOffers, disclaimer }` |
 | `GET /public/service-offers?sector=` | `ServiceOffer[]` publiées |
 | `POST /public/contact` | Formulaire « Écrivez-nous » (page Contact) : `{ firstName, lastName, company, email, phone?, size?, message?, language?, website? }` → `{ sent: true }`. Le message part par email à l'équipe (adresse de support des paramètres, sinon `CONTACT_EMAIL`, sinon `contact@inovexa-erp.com`) ; « répondre » écrit au visiteur ; aucune réponse automatique n'est envoyée. **503** quand l'envoi d'emails n'est pas configuré (le site propose alors d'écrire par sa messagerie). `website` est un champ piège : rempli, le message est ignoré sans erreur. Limite : 5 envois par 10 minutes et par adresse IP |
-| `GET` ou `POST /public/payments/konnect/return?payment_ref=` | **Appelée par Konnect**, jamais par le site. La référence n'est pas crue : l'état du paiement est relu chez Konnect avec la clé du serveur. `GET` répond **302** vers `/subscription?checkout=<id>` du site d'où le client est parti ; `POST` répond 200 `{ received: true }` |
+| `GET /public/payments/flouci/webhook?payment_id=&success=` | **Appelée par Flouci** (notification serveur à serveur, `webhook_version` 1), jamais par le site. Signée par l'en-tête `X-Flouci-Signature: t=<horodatage>,v1=<HMAC-SHA256>` (clé : jeton privé ; message : `<t>.payment_id=<id>&success=<True\|False>` ; refusée au-delà de 5 minutes) : non signée ou mal signée → **401**, sans rien relire. Même signée, elle n'est pas crue : l'état du paiement est relu chez Flouci (`verify_payment`) avec les jetons du serveur. Répond 200 `{ received: true }`. Le client, lui, revient par `success_link` / `fail_link` sur `/subscription?checkout=<id>` |
 
 Types : voir `frontend/lib/saas.ts` (`Plan`, `Sector`, `SectorCategory`, `SectorItem`, `ServiceOffer`).
 Une sous-catégorie est une `SectorCategory` dont `parentId` désigne sa catégorie (deux niveaux au maximum).
@@ -137,9 +137,9 @@ Une sous-catégorie est une `SectorCategory` dont `parentId` désigne sa catégo
 
 | Méthode | Route | Corps | Réponse |
 | --- | --- | --- | --- |
-| GET | `/billing/subscription` | — | `SubscriptionView` : `{ account, company, plan, users: { used, limit }, modules, pendingPayment, checkout, payment: { currency, vatRate, online: { enabled, provider, test, methods }, onlinePayment, manual, instructions, methods, link }, support, canManage, emailEnabled }`. `checkout` = page de paiement par carte encore ouverte (à reprendre). Un paiement par carte fait dans un autre onglet est reconnu ici |
-| POST | `/billing/checkout` | `planCode`, `billingCycle: "monthly" \| "annual"` | 201 `{ id, payUrl, expiresAt, amountTTC, currency, resumed }` : rediriger le navigateur vers `payUrl`. **Le montant TTC est calculé par le serveur** (formule + TVA + devise des réglages) ; tout montant envoyé par le navigateur est ignoré. Même choix déjà ouvert : la même page est reprise (`resumed: true`). Formule sur devis ou gratuite : 400 ; compte suspendu : 403 ; 12 ouvertures par heure et par compte : 429 ; Konnect en panne : 502 ; paiement non configuré : 503. Propriétaire seulement |
-| POST | `/billing/checkout/:id/verify` | — | 200 `{ status: "paid" \| "pending" \| "expired" \| "unknown", payment, account }`. Au retour de la page de paiement : relit l'état chez Konnect et, si c'est encaissé, **ouvre l'abonnement tout de suite**, sans administrateur. `unknown` = ce paiement n'appartient pas à cette société |
+| GET | `/billing/subscription` | — | `SubscriptionView` : `{ account, company, plan, users: { used, limit }, modules, pendingPayment, checkout, payment: { currency, vatRate, online: { enabled, provider, test, methods, charge }, onlinePayment, manual, instructions, methods, link }, support, canManage, emailEnabled }`. `online.charge` = `{ currency: "TND", rate }` : Flouci débite en dinars, au taux `rate` (1 unité de la devise des formules = `rate` TND ; 1 si les formules sont en TND) ; `null` = devise non encaissable. `checkout` = page de paiement en ligne encore ouverte (à reprendre), avec `chargedAmount` / `chargedCurrency`. Un paiement fait dans un autre onglet est reconnu ici |
+| POST | `/billing/checkout` | `planCode`, `billingCycle: "monthly" \| "annual"` | 201 `{ id, payUrl, expiresAt, amountTTC, currency, chargedAmount, chargedCurrency, rate, resumed }` : rediriger le navigateur vers `payUrl`. **Le montant TTC est calculé par le serveur** (formule + TVA + devise des réglages), puis converti en dinars au taux `FLOUCI_RATE_<DEVISE>` (`chargedAmount`, en TND) ; tout montant envoyé par le navigateur est ignoré. Même choix déjà ouvert (même montant en dinars) : la même page est reprise (`resumed: true`). Formule sur devis ou gratuite : 400 ; compte suspendu : 403 ; 12 ouvertures par heure et par compte : 429 ; Flouci en panne : 502 ; paiement non configuré (jetons absents, ou taux manquant pour la devise) : 503. Propriétaire seulement |
+| POST | `/billing/checkout/:id/verify` | — | 200 `{ status: "paid" \| "pending" \| "expired" \| "unknown", payment, account }`. Au retour de la page de paiement : relit l'état chez Flouci et, si c'est encaissé, **ouvre l'abonnement tout de suite**, sans administrateur. `unknown` = ce paiement n'appartient pas à cette société |
 | GET | `/billing/modules` | — | `{ sector, plan: { code, name, allModules } \| null, trial, modules: [{ key, enabled, activated, included, recommended }], sectors: [{ code, name, nameEn, modules }] }` — trois notions séparées : `included` = **disponible** (la formule le met à disposition), `recommended` = **par défaut** (le secteur l'ouvre au départ, un simple conseil), `activated` = **activé** (le choix du client, conservé même si la formule ne le comprend plus) ; `enabled` = réellement utilisable = activé **et** disponible (c'est ce que le serveur applique). Pendant l'essai aucune formule ne limite les modules |
 | PUT | `/billing/modules` | `{ modules: string[] }` | Le propriétaire ouvre ou ferme ses modules (tableau de bord, profil et réglages restent toujours ouverts). Module hors formule : 403 `MODULE_NOT_IN_PLAN` `{ modules }`. Renvoie la même vue que `GET /billing/modules` |
 | PUT | `/billing/sector` | `{ sector, applyModules?: boolean }` | Le propriétaire change de secteur ; `applyModules: true` reprend les modules conseillés (dans la limite de la formule) |
@@ -170,32 +170,37 @@ Une sous-catégorie est une `SectorCategory` dont `parentId` désigne sa catégo
 Le formulaire « écrire à l'administrateur » (`POST /billing/contact`, `/admin/messages`) a été **retiré** : tout se fait en ligne, sans
 intervention de l'administrateur. Ces routes répondent 404. La table `support_messages` est conservée pour ne perdre aucun ancien message.
 
-Moyens de paiement : `card` et `edinar` (en ligne, par Konnect) ; hors ligne, seulement si l'administrateur les ouvre : `bank_transfer`,
-`cash`, `cheque`, `d17`, `flouci`, `postal`, `other`. Côté Konnect, les moyens connus sont `bank_card` (`card`), `e-DINAR` (`edinar`) et `wallet`
-(portefeuille Konnect) : `KONNECT_PAYMENT_METHODS` n'en accepte pas d'autres, toute valeur inconnue est ignorée.
+Moyens de paiement : `card` (en ligne, par Flouci : carte bancaire ou application ; un paiement fait avec l'application est enregistré
+`flouci`) ; hors ligne, seulement si l'administrateur les ouvre : `bank_transfer`, `cash`, `cheque`, `d17`, `flouci`, `postal`, `other`.
+`FLOUCI_ACCEPT_CARD=false` limite la page Flouci à l'application (les cartes sont acceptées par défaut).
 
-### Paiement par carte (Konnect) : comment l'abonnement s'ouvre sans administrateur
+### Paiement en ligne (Flouci) : comment l'abonnement s'ouvre sans administrateur
 
-1. Le client choisit sa formule → `POST /billing/checkout` : le serveur calcule le TTC, crée un paiement `initiated`
-   (`provider: "konnect"`, `returnBase` = site d'où il vient, parmi `FRONTEND_URL`/`FRONTEND_URLS`) et ouvre le paiement chez Konnect
-   (`POST /payments/init-payment`, clé `x-api-key` du serveur, `orderId` = notre numéro de paiement).
-2. Le navigateur va sur `payUrl` (page Konnect : carte bancaire, e-Dinar). Konnect appelle ensuite `GET /public/payments/konnect/return?payment_ref=…`
-   et renvoie le client sur `/subscription?checkout=<id>`.
+API Flouci v2 (https://docs.flouci.com) : même adresse en test et en production (`https://developers.flouci.com/api/v2`), seules les clés
+changent. Authentification : `Authorization: Bearer <FLOUCI_PUBLIC_TOKEN>:<FLOUCI_PRIVATE_TOKEN>`. Les jetons ne quittent jamais le serveur.
+
+1. Le client choisit sa formule → `POST /billing/checkout` : le serveur calcule le TTC, le convertit en dinars si besoin (Flouci encaisse
+   **uniquement en TND** : `FLOUCI_RATE_USD=3.10` → 1 USD = 3,10 TND, arrondi au millime), crée un paiement `initiated` (`provider: "flouci"`,
+   `chargedAmount` / `chargedCurrency` = montant réellement débité, `returnBase` = site d'où il vient, parmi `FRONTEND_URL`/`FRONTEND_URLS`) et
+   ouvre le paiement chez Flouci (`POST /generate_payment` : `amount` en millimes, `developer_tracking_id` = notre numéro de paiement,
+   `success_link` / `fail_link` = `/subscription?checkout=<id>`, `webhook` = `/public/payments/flouci/webhook`, `session_timeout_secs`).
+2. Le navigateur va sur `link` (page Flouci : carte bancaire ou application Flouci). Flouci ramène ensuite le client sur `success_link` ou
+   `fail_link`, et appelle en parallèle la notification signée.
 3. **Trois chemins** peuvent confirmer le paiement, et un seul l'enregistre (ligne verrouillée en base, reçu unique) : le retour du client
-   (`POST /billing/checkout/:id/verify`), la notification de Konnect, et le balayage périodique (`reconcileCheckouts`, relit les pages ouvertes
-   depuis moins de 6 heures — il passe **avant** la vérification des essais terminés : un client qui a payé puis fermé l'onglet n'est pas expiré).
-4. Rien n'est jamais cru sur parole : le paiement est relu chez Konnect (`GET /payments/:ref`) et n'est accepté que s'il est `completed`
-   avec une transaction réussie, pour **la même commande** et **le même montant** (si Konnect annonce une autre devise, le montant n'est pas
-   comparable — la commande l'est). Sinon : le paiement reste en attente et un événement `payment_mismatch` est écrit dans le journal.
-5. Paiement enregistré : formule appliquée, reçu `REC-AAAA-NNNNN`, email de reçu, événement `payment_received`. Pendant l'essai, la période
-   payée commence à la fin de l'essai ; en renouvellement avant l'échéance, elle s'ajoute à la suite. Un compte **suspendu par
-   l'administrateur** reste suspendu (la période payée est conservée, l'accès revient à la réactivation).
+   (`POST /billing/checkout/:id/verify`), la notification de Flouci, et le balayage périodique (`reconcileCheckouts`, toutes les 10 minutes, relit
+   les pages ouvertes depuis moins de 6 heures — il passe **avant** la vérification des essais terminés : un client qui a payé puis fermé
+   l'onglet n'est pas expiré). Des relectures simultanées du même paiement partagent un seul appel (Flouci limite les relectures répétées).
+4. Rien n'est jamais cru sur parole : le paiement est relu chez Flouci (`GET /verify_payment/:payment_id`) ; il n'est accepté que si
+   `success` vaut `true` et `result.status` vaut `SUCCESS`, pour **la même commande** (`developer_tracking_id`) et **le même montant en
+   millimes** que celui ouvert. Sinon : le paiement reste en attente et un événement `payment_mismatch` est écrit dans le journal.
+   `EXPIRED`, `FAILURE` ou `SYSTEM_FAILURE` : la page est refermée (`expired`) et le client peut réessayer.
+5. Paiement enregistré : formule appliquée, reçu `REC-AAAA-NNNNN` (avec le montant débité en dinars s'il y a eu conversion), email de reçu,
+   événement `payment_received`. Pendant l'essai, la période payée commence à la fin de l'essai ; en renouvellement avant l'échéance, elle
+   s'ajoute à la suite. Un compte **suspendu par l'administrateur** reste suspendu (la période payée est conservée, l'accès revient à la réactivation).
 
-Statuts d'un paiement : `initiated` (page ouverte), `expired` (abandonnée ou refusée par Konnect), `pending` (déclaration hors ligne),
+Statuts d'un paiement : `initiated` (page ouverte), `expired` (abandonnée, expirée ou refusée par Flouci), `pending` (déclaration hors ligne),
 `validated`, `rejected`, `cancelled`, `refunded` (remboursé par l'administrateur). Une page refermée mais payée quand même est reconnue.
-
-**Paiement partiel** : si Konnect indique qu'une partie seulement du montant est réglée (`reachedAmount` inférieur à `amount`), le paiement n'est
-pas pris en compte (un avertissement est écrit dans les journaux du serveur) ; l'administrateur peut le relire plus tard.
+Les paiements `provider: "konnect"` d'avant le passage à Flouci restent consultables ; ils ne sont plus relus.
 
 **Reçus sans trou** : le numéro `REC-AAAA-NNNNN` est attribué à l'encaissement, depuis un compteur de la plateforme (table `number_sequences`,
 clé `platform_receipt`, par année), dans la même transaction que l'ouverture de l'abonnement. La suite est donc continue, même quand des pages de
@@ -203,7 +208,7 @@ paiement ont été abandonnées. Le numéro reste attaché à un paiement rembou
 légale de l'éditeur (`issuerName`, `issuerTaxId`, `issuerAddress`, `issuerRegistry` des réglages, plus l'email et le téléphone de support) ; il vaut
 `null` tant que la raison sociale n'est pas renseignée. **Un reçu n'est pas une facture légale** : la facture de l'abonnement reste à émettre par l'éditeur.
 
-**Remboursement** : Konnect n'a pas d'API de remboursement — l'argent se rend depuis le tableau de bord Konnect. `POST /admin/payments/:id/refund`
+**Remboursement** : l'argent se rend depuis le tableau de bord Flouci (le remboursement n'est pas envoyé automatiquement par l'ERP). `POST /admin/payments/:id/refund`
 remet ensuite l'abonnement en accord : seul le paiement validé **le plus récent** d'un compte peut être remboursé (409 sinon, avec le numéro du reçu à
 rembourser d'abord) ; la période qu'il avait ouverte est retirée (retour à l'échéance et à la formule d'avant ; l'essai reprend là où il en était s'il
 court encore, sinon l'accès se ferme — les données sont conservées) et le client reçoit un email dans sa langue.
@@ -320,16 +325,16 @@ Routes d'origine conservées : `GET/POST /admin/clients`,
 | GET/POST | `/admin/plans` | création : `code`, `name`, `description?`, `priceMonthly?`, `priceAnnual?`, `maxUsers?`, `modules?` (`null` = tous), `features?: string[]`, `isPublic?`, `isActive?`, `highlight?`, `sortOrder?` |
 | PATCH/DELETE | `/admin/plans/:id` | suppression refusée (409) si la formule est utilisée |
 | GET | `/admin/settings` | réglages (dont `manualPayments`, `catalogVersion`) + `googleConfigured`, `appleConfigured`, `mailConfigured`, `paymentMethodOptions`, `moduleKeys`, `onlinePayment: { enabled, provider, mode, methods, reason }` (`reason` : `NOT_CONFIGURED` ou `CURRENCY_UNSUPPORTED`), `emailVerificationActive` |
-| PUT | `/admin/settings` | `trialHours`, `trialReminderHours`, `renewalReminderDays`, `requireEmailVerification`, `manualPayments` (ouvre les paiements hors ligne, fermés par défaut), `currency` (3 lettres : `USD` par défaut), `vatRate`, `paymentInstructions`, `paymentMethods: string[]` (moyens hors ligne proposés), `paymentLink` (adresse https d'une page de paiement externe, proposée avec les paiements hors ligne), `supportEmail`, `supportPhone`, `supportWhatsapp`. **La clé Konnect n'est jamais saisie ici** : elle vient des variables d'environnement du serveur |
+| PUT | `/admin/settings` | `trialHours`, `trialReminderHours`, `renewalReminderDays`, `requireEmailVerification`, `manualPayments` (ouvre les paiements hors ligne, fermés par défaut), `currency` (3 lettres : `USD` par défaut), `vatRate`, `paymentInstructions`, `paymentMethods: string[]` (moyens hors ligne proposés), `paymentLink` (adresse https d'une page de paiement externe, proposée avec les paiements hors ligne), `supportEmail`, `supportPhone`, `supportWhatsapp`. **Les jetons Flouci ne sont jamais saisis ici** : ils viennent des variables d'environnement du serveur |
 | GET | `/admin/payments` | `status`, `userId`, `limit`, `offset` → `{ total, limit, offset, items: [paiement + account: { id, email, name, companyName }] }`. Sans `status`, les pages de paiement non abouties (`initiated`, `expired`) ne sont pas listées |
 | POST | `/admin/payments` | **Cas exceptionnel** : enregistrer un paiement reçu hors ligne (toujours permis) — `userId`, `planCode`, `billingCycle`, `method`, `reference?`, `note?`, `validate?` (validé tout de suite sauf `false`) |
 | POST | `/admin/payments/:id/validate` | valide une déclaration hors ligne |
 | POST | `/admin/payments/:id/reject` | `{ reason? }` |
 | GET | `/admin/payments/:id/receipt` | `Receipt` |
-| POST | `/admin/payments/:id/recheck` | — : « j'ai payé mais rien ne s'ouvre » — relit le paiement par carte chez Konnect et, s'il est encaissé, ouvre l'abonnement (même une page expirée). 200 `{ status: "paid" \| "pending" \| "expired" \| "unknown", payment }` ; 404 si ce n'est pas un paiement en ligne, 409 s'il n'a jamais été ouvert chez Konnect. Journal : `payment_rechecked` |
+| POST | `/admin/payments/:id/recheck` | — : « j'ai payé mais rien ne s'ouvre » — relit le paiement en ligne chez Flouci et, s'il est encaissé, ouvre l'abonnement (même une page expirée). 200 `{ status: "paid" \| "pending" \| "expired" \| "unknown", payment }` ; 404 si ce n'est pas un paiement Flouci, 409 s'il n'a jamais été ouvert chez Flouci. Journal : `payment_rechecked` |
 | POST | `/admin/payments/:id/refund` | `{ reason? }` : voir « Remboursement » ci-dessus. 200 `{ payment, account }` ; 409 si le paiement n'est pas validé, déjà remboursé, ou si un paiement plus récent est encore validé. Journal : `payment_refunded` |
-| GET | `/admin/online-payment` | liste de contrôle « mise en production » du paiement par carte, **sans appeler Konnect** : `{ enabled, mode, provider, webhookUrl, siteUrls, ready, live, checks: [{ key, ok, level: "error" \| "warn", message }] }`. Contrôles : `credentials`, `currency`, `plans`, `mode`, `apiUrl` (https public, appelée par Konnect), `siteUrl`, `mail`, `issuer`. `ready` : un client peut payer ; `live` : paiements réels et rien à corriger. Ni la clé ni le portefeuille n'y figurent |
-| POST | `/admin/online-payment/test` | `{ wallet?: boolean }` : teste la connexion à Konnect. Sans `wallet`, relit un paiement inexistant (404 ou 400 = clé acceptée, 401/403 = clé refusée, 5xx ou réseau = non vérifié) : **aucun paiement n'est ouvert**. Avec `wallet: true`, ouvre un paiement de test de 1 TND qui expire au bout de 5 minutes (jamais encaissé) pour vérifier le portefeuille. 200 `{ provider, mode, configured, reachable, keyAccepted, walletAccepted, message }` (`null` = non vérifié). 6 appels par minute au plus. Journal : `konnect_test` |
+| GET | `/admin/online-payment` | liste de contrôle « mise en production » du paiement en ligne, **sans appeler Flouci** : `{ enabled, mode, provider, webhookUrl, siteUrls, ready, live, checks: [{ key, ok, level: "error" \| "warn", message }] }`. Contrôles : `credentials`, `currency`, `plans`, `mode`, `apiUrl` (https public, appelée par Flouci), `siteUrl`, `mail`, `issuer`. `currency` vérifie que la devise des formules est encaissable (TND, ou taux `FLOUCI_RATE_<DEVISE>` défini). `ready` : un client peut payer ; `live` : paiements réels et rien à corriger. Les jetons n'y figurent jamais |
+| POST | `/admin/online-payment/test` | `{ checkout?: boolean }` : teste la connexion à Flouci. Sans `checkout`, relit un paiement inexistant (404 ou 400 = jetons acceptés, 401/403 = jetons refusés, 5xx ou réseau = non vérifié) : **aucun paiement n'est ouvert**. Avec `checkout: true`, ouvre un paiement de test de 1 TND qui expire au bout de 5 minutes (jamais encaissé). 200 `{ provider, mode, configured, reachable, keyAccepted, checkoutAccepted, message }` (`null` = non vérifié). 6 appels par minute au plus. Journal : `flouci_test` |
 | PUT | `/admin/settings` (identité de l'éditeur) | `issuerName` (160), `issuerTaxId` (matricule fiscal tunisien, validé et normalisé : `1234567X/A/M/000`), `issuerAddress`, `issuerRegistry` : imprimés en tête des reçus. Chaîne vide = effacer |
 
 ### Secteurs, suggestions, prestations
@@ -349,7 +354,7 @@ Routes d'origine conservées : `GET/POST /admin/clients`,
 ### Journal et maintenance
 | Méthode | Route | Notes |
 | --- | --- | --- |
-| GET | `/admin/audit` | `action`, `userId`, `from`, `to`, `limit`, `offset` → `{ total, limit, offset, items: [{ id, userId, actorId, actorEmail, action, entity, entityId, method, path, status, ip, createdAt, details }] }`. Actions de compte et de paiement : `account_registered`, `account_expired`, `checkout_started`, `payment_received` (carte, sans administrateur), `payment_mismatch` (Konnect annonce autre chose que ce qui a été demandé), `payment_validated`, `payment_rejected`, `payment_rechecked`, `payment_refunded`, `konnect_test`, `mail_test_sent`, `mail_test_failed`, `email_verified`, `email_verified_by_admin`, `email_code_sent_by_admin`, `email_changed`, `email_change_failed`, `email_code_failed`, `modules_changed`, `sector_changed`… |
+| GET | `/admin/audit` | `action`, `userId`, `from`, `to`, `limit`, `offset` → `{ total, limit, offset, items: [{ id, userId, actorId, actorEmail, action, entity, entityId, method, path, status, ip, createdAt, details }] }`. Actions de compte et de paiement : `account_registered`, `account_expired`, `checkout_started`, `payment_received` (en ligne, sans administrateur), `payment_mismatch` (Flouci annonce autre chose que ce qui a été demandé), `payment_validated`, `payment_rejected`, `payment_rechecked`, `payment_refunded`, `konnect_test`, `mail_test_sent`, `mail_test_failed`, `email_verified`, `email_verified_by_admin`, `email_code_sent_by_admin`, `email_changed`, `email_change_failed`, `email_code_failed`, `modules_changed`, `sector_changed`… |
 | GET | `/admin/security` | contrôles de sécurité de la configuration du serveur (voir « Sécurité ») |
 | GET | `/admin/maintenance/mail` | état de l'envoi d'emails : configuration (jamais le mot de passe) et réponse du serveur SMTP, avec délais maximum |
 | POST | `/admin/maintenance/test-email` | `{ to? }` (l'administrateur par défaut) : envoie un email de test ; 502 avec le motif si le serveur refuse. 5 par minute au plus. Journal : `mail_test_sent` / `mail_test_failed` |
@@ -361,18 +366,19 @@ Routes d'origine conservées : `GET/POST /admin/clients`,
 - **Inscription en libre-service** : `/auth/register` (email + mot de passe), `/auth/google`, `/auth/apple`. L'adresse est confirmée par un code à
   6 chiffres (voir plus haut), puis l'essai tourne pour `trialHours` heures (72 par défaut = 3 jours). À son terme, sans paiement,
   toute route hors `/auth/*`, `/billing/*` et `/public/*` répond **402** : le site emmène la personne sur `/subscription`.
-- **Paiement 100 % en ligne** : sur `/subscription` (ou `/dashboard/billing`), le client choisit sa formule et son cycle, clique « Payer par carte »
-  et règle sur la page Konnect. À son retour, l'abonnement est déjà ouvert. L'administrateur n'a rien à valider ; les paiements hors ligne
+- **Paiement 100 % en ligne** : sur `/subscription` (ou `/dashboard/billing`), le client choisit sa formule et son cycle, clique « Payer »
+  et règle sur la page Flouci (carte bancaire ou application Flouci). À son retour, l'abonnement est déjà ouvert. L'administrateur n'a rien à valider ; les paiements hors ligne
   (virement, D17, Flouci, chèque, espèces) n'existent que s'il les a activés dans Réglages. **Un paiement fait pendant l'essai fait commencer la période
   payée à la fin de l'essai** : aucun jour gratuit n'est perdu.
 - **Écrans** : `/auth/login`, `/auth/register`, `/auth/verify-email` (saisie du code), `/auth/forgot-password`, `/reset-password`, `/subscription`
   (accès fermé), `/dashboard/billing` (dans l'ERP : formule, paiement, modules et secteur), `/dashboard/appointments`, `/dashboard/projects`, et côté
   administrateur `/admin` (vue d'ensemble), `/admin/accounts` (+ fiche), `/admin/payments`, `/admin/plans`, `/admin/sectors`, `/admin/settings`, `/admin/audit`.
 - **Variables d'environnement de l'API** (voir `.env.example`) :
-  - `KONNECT_API_KEY`, `KONNECT_WALLET_ID` : paiement par carte (sans elles, le bouton « Payer par carte » n'est pas proposé) ;
-    `KONNECT_ENV` (`production` par défaut, `sandbox` pour les essais), `KONNECT_PAYMENT_METHODS` (`bank_card,e-DINAR` par défaut),
-    `KONNECT_API_URL` (tests automatisés seulement) ;
-  - `API_PUBLIC_URL` : adresse publique de l'API, appelée par Konnect (à défaut `RENDER_EXTERNAL_URL`, puis l'adresse de la requête) ;
+  - `FLOUCI_PUBLIC_TOKEN`, `FLOUCI_PRIVATE_TOKEN` : paiement en ligne (sans eux, le bouton « Payer » n'est pas proposé) ;
+    `FLOUCI_RATE_USD` / `FLOUCI_RATE_EUR`… (taux vers le dinar, **obligatoire** si les formules ne sont pas en TND) ;
+    `FLOUCI_ENV=test` (jetons de l'application « TEST APP », aucun débit réel), `FLOUCI_ACCEPT_CARD=false` (application Flouci seulement),
+    `FLOUCI_API_URL` (tests automatisés seulement) ;
+  - `API_PUBLIC_URL` : adresse publique de l'API, appelée par Flouci (à défaut `RENDER_EXTERNAL_URL`, puis l'adresse de la requête) ;
   - `FRONTEND_URL`, `FRONTEND_URLS` : adresses du site autorisées (CORS) et vers lesquelles le client est ramené après le paiement ;
   - `SMTP_*` : emails — **indispensable au code de vérification** (sans lui, le code n'est pas exigé) et aux reçus ;
   - `GOOGLE_CLIENT_ID` (bouton Google), `APPLE_CLIENT_ID` (identifiant de service Apple ; plusieurs valeurs séparées par des virgules sont acceptées).

@@ -16,7 +16,11 @@ import { Sector } from './entities/sector.entity';
 import { SaasSettingsService } from './saas-settings.service';
 import { AccountAccess, CORE_MODULES, MODULE_KEYS, blockMessage, isModuleEnabled, modulesFromList, resolveAccess } from './account-access';
 import { PAYMENT_METHODS } from './saas-defaults';
-import { PaymentGatewayService, toMinorUnits } from './payment-gateway.service';
+import { ONLINE_PROVIDER, PaymentGatewayService, toMinorUnits } from './payment-gateway.service';
+
+/** Nombre écrit à la française pour les messages (3.1 → « 3,1 » ; avec digits : 106.981 → « 106,981 »). */
+const frNumber = (n: number | null | undefined, digits?: number) =>
+  n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : (digits === undefined ? String(Number(n)) : Number(n).toFixed(digits)).replace('.', ',');
 
 const SWEEP_EVERY_MS = 10 * 60_000;
 const HOUR = 3_600_000;
@@ -462,10 +466,10 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     by: { role: 'client' | 'admin'; actorId: number },
   ) {
     const settings = await this.settings.get();
-    // Par défaut tout se paie en ligne par carte : la déclaration hors ligne n'existe pour le client que si
+    // Par défaut tout se paie en ligne (Flouci) : la déclaration hors ligne n'existe pour le client que si
     // l'administrateur l'a activée (Réglages › Paiements hors ligne).
     if (by.role === 'client' && !settings.manualPayments) {
-      throw new ForbiddenException({ statusCode: 403, error: 'Forbidden', code: 'MANUAL_PAYMENTS_DISABLED', message: 'Le paiement se fait en ligne, par carte bancaire.' });
+      throw new ForbiddenException({ statusCode: 403, error: 'Forbidden', code: 'MANUAL_PAYMENTS_DISABLED', message: 'Le paiement se fait en ligne, par carte bancaire ou avec l’application Flouci.' });
     }
     const owner = await this.owner(ownerId);
     const plan = await this.ds.getRepository(Plan).findOne({ where: { code: String(dto.planCode || '') } });
@@ -551,6 +555,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       ...receiptMail({
         lang: pickMailLang(owner.language), name: owner.name, online, amount: payment.amountTTC, currency: payment.currency, planName: payment.planName,
         periodEnd: payment.periodEnd, receiptNumber: String(payment.receiptNumber || ''), url: `${frontend()}/dashboard/billing`,
+        charged: online && payment.chargedAmount != null && payment.chargedCurrency ? { amount: payment.chargedAmount, currency: payment.chargedCurrency } : null,
       }),
     });
   }
@@ -570,32 +575,39 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     return payment;
   }
 
-  // ───────────── Paiement en ligne par carte (Konnect) : aucune intervention de l'administrateur ─────────────
+  // ───────────── Paiement en ligne (Flouci : carte bancaire ou application) : aucune intervention de l'administrateur ─────────────
 
   /** Ce que la page Abonnement (et l'administration) doivent savoir du paiement en ligne. */
   onlinePayment(settings: PlatformSettings) {
     const g = this.gateway.info();
-    const currencyOk = this.gateway.supports(settings.currency);
+    const rate = this.gateway.rate(settings.currency);
+    const currencyOk = rate !== null;
     return {
       enabled: g.configured && currencyOk,
       provider: g.provider,
       mode: g.mode,
       methods: g.methods,
-      // Pourquoi le bouton « Payer par carte » n'est pas disponible (affiché à l'administrateur, pas au client).
+      // Flouci débite en dinars : taux appliqué au montant des formules (1 si elles sont déjà en dinars ; null = non encaissable).
+      charge: currencyOk ? { currency: g.chargeCurrency, rate: rate as number } : null,
+      // Pourquoi le bouton « Payer » n'est pas disponible (affiché à l'administrateur, pas au client).
       reason: !g.configured ? 'NOT_CONFIGURED' : !currencyOk ? 'CURRENCY_UNSUPPORTED' : null,
     };
   }
 
   /** Page de paiement encore ouverte pour ce compte (pour la reprendre au lieu d'en créer une autre). */
   async openCheckout(ownerId: number, now = new Date()) {
-    const row = await this.ds.getRepository(SubscriptionPayment).findOne({ where: { userId: ownerId, status: 'initiated', provider: 'konnect' }, order: { id: 'DESC' } });
+    const row = await this.ds.getRepository(SubscriptionPayment).findOne({ where: { userId: ownerId, status: 'initiated', provider: ONLINE_PROVIDER }, order: { id: 'DESC' } });
     if (!row || !row.checkoutUrl || !row.expiresAt || new Date(row.expiresAt).getTime() <= now.getTime()) return null;
-    return { id: row.id, payUrl: row.checkoutUrl, expiresAt: row.expiresAt, planCode: row.planCode, billingCycle: row.billingCycle, amountTTC: row.amountTTC, currency: row.currency };
+    return {
+      id: row.id, payUrl: row.checkoutUrl, expiresAt: row.expiresAt, planCode: row.planCode, billingCycle: row.billingCycle, amountTTC: row.amountTTC, currency: row.currency,
+      chargedAmount: row.chargedAmount ?? null, chargedCurrency: row.chargedCurrency ?? null,
+    };
   }
 
   /**
-   * Le client choisit sa formule et clique « Payer par carte » : le montant est calculé ICI (formule, TVA, devise des
-   * réglages), le paiement est ouvert chez le prestataire, et le navigateur reçoit l'adresse de la page de paiement.
+   * Le client choisit sa formule et clique « Payer » : le montant est calculé ICI (formule, TVA, devise des réglages, puis
+   * conversion en dinars au taux du serveur si besoin), le paiement est ouvert chez Flouci, et le navigateur reçoit
+   * l'adresse de la page de paiement.
    */
   async startCheckout(
     ownerId: number,
@@ -612,7 +624,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     if (amountHT === null || amountHT === undefined) throw new BadRequestException('Cette formule est sur devis : elle ne peut pas être souscrite en ligne.');
     const online = this.onlinePayment(settings);
     if (!online.enabled) {
-      throw new ServiceUnavailableException({ statusCode: 503, error: 'Service Unavailable', code: 'ONLINE_PAYMENT_UNAVAILABLE', message: 'Le paiement par carte est en cours d’activation. Réessayez un peu plus tard.' });
+      throw new ServiceUnavailableException({ statusCode: 503, error: 'Service Unavailable', code: 'ONLINE_PAYMENT_UNAVAILABLE', message: 'Le paiement en ligne est en cours d’activation. Réessayez un peu plus tard.' });
     }
     const currency = settings.currency;
     const vatRate = Number(settings.vatRate) || 0;
@@ -621,35 +633,38 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     const digits = currency === 'TND' ? 3 : 2;
     const ttc = Math.round(ht * (1 + vatRate / 100) * 10 ** digits) / 10 ** digits;
     if (!(ttc > 0)) throw new BadRequestException('Cette formule est gratuite : il n’y a rien à payer.');
+    // Montant réellement débité par Flouci, en dinars (converti si les formules sont dans une autre devise).
+    const charge = this.gateway.quote(ttc, currency);
+    if (!(charge.minor > 0)) throw new BadRequestException('Montant trop faible pour un paiement en ligne.');
 
     const repo = this.ds.getRepository(SubscriptionPayment);
     const now = new Date();
-    const recent = await repo.createQueryBuilder('p').where(`p.userId = :ownerId AND p.provider = 'konnect' AND p.createdAt > :since`, { ownerId: owner.id, since: new Date(now.getTime() - HOUR) }).getCount();
+    const recent = await repo.createQueryBuilder('p').where(`p.userId = :ownerId AND p.provider = :provider AND p.createdAt > :since`, { ownerId: owner.id, provider: ONLINE_PROVIDER, since: new Date(now.getTime() - HOUR) }).getCount();
     if (recent >= CHECKOUTS_PER_HOUR) throw new HttpException('Trop de tentatives de paiement. Réessayez dans une heure.', 429);
 
     // Une seule page de paiement ouverte à la fois : on reprend celle qui correspond, les autres sont refermées.
     // (Si le client paie quand même une page refermée, l'encaissement est reconnu : voir confirmCheckout.)
-    const opened = await repo.find({ where: { userId: owner.id, status: 'initiated', provider: 'konnect' } });
+    const opened = await repo.find({ where: { userId: owner.id, status: 'initiated', provider: ONLINE_PROVIDER } });
     for (const row of opened) {
       const usable = row.checkoutUrl && row.expiresAt && new Date(row.expiresAt).getTime() > now.getTime() + 2 * 60_000;
-      if (usable && row.planCode === plan.code && row.billingCycle === cycle && row.amountTTC === ttc && row.currency === currency && row.returnBase === ctx.returnBase) {
-        return { id: row.id, payUrl: row.checkoutUrl!, expiresAt: row.expiresAt, amountTTC: row.amountTTC, currency: row.currency, resumed: true };
+      const sameCharge = row.chargedAmount === charge.amount && row.chargedCurrency === charge.currency;
+      if (usable && sameCharge && row.planCode === plan.code && row.billingCycle === cycle && row.amountTTC === ttc && row.currency === currency && row.returnBase === ctx.returnBase) {
+        return { id: row.id, payUrl: row.checkoutUrl!, expiresAt: row.expiresAt, amountTTC: row.amountTTC, currency: row.currency, chargedAmount: charge.amount, chargedCurrency: charge.currency, rate: charge.rate, resumed: true };
       }
       await repo.update({ id: row.id, status: 'initiated' }, { status: 'expired', checkoutUrl: null });
     }
 
     const payment = await repo.save(repo.create({
       userId: owner.id, planCode: plan.code, planName: plan.name, billingCycle: cycle, periodMonths: cycle === 'annual' ? 12 : 1,
-      amountHT: ht, vatRate, amountTTC: ttc, currency, method: 'card', provider: 'konnect', status: 'initiated', declaredBy: 'client',
+      amountHT: ht, vatRate, amountTTC: ttc, currency, method: 'card', provider: ONLINE_PROVIDER, status: 'initiated', declaredBy: 'client',
+      chargedAmount: charge.amount, chargedCurrency: charge.currency,
+      note: charge.currency !== currency ? `Débité par Flouci : ${frNumber(charge.amount, 3)} ${charge.currency} (1 ${currency} = ${frNumber(charge.rate)} ${charge.currency})` : null,
       expiresAt: new Date(now.getTime() + CHECKOUT_MINUTES * 60_000), returnBase: ctx.returnBase,
     }));
-    const [firstName, ...rest] = String(owner.name || '').trim().split(/\s+/);
     try {
       const session = await this.gateway.createCheckout({
-        orderId: String(payment.id), amount: ttc, currency,
-        description: `Inovexa ERP — formule ${plan.name} (${cycle === 'annual' ? '12 mois' : '1 mois'}) — ${owner.companyName || owner.name}`,
-        firstName: firstName || null, lastName: rest.join(' ') || null, email: owner.email, phone: owner.phone || null,
-        webhookUrl: `${ctx.apiBase}/public/payments/konnect/return`,
+        orderId: String(payment.id), amountMinor: charge.minor,
+        webhookUrl: `${ctx.apiBase}/public/payments/flouci/webhook`,
         successUrl: `${ctx.returnBase}/subscription?checkout=${payment.id}`,
         failUrl: `${ctx.returnBase}/subscription?checkout=${payment.id}`,
         lifespanMinutes: CHECKOUT_MINUTES,
@@ -662,8 +677,8 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       this.logger.error(`Paiement en ligne non ouvert (compte ${owner.id}) : ${e?.message || e}`);
       throw new BadGatewayException({ statusCode: 502, error: 'Bad Gateway', code: 'PAYMENT_PROVIDER_ERROR', message: 'Le prestataire de paiement ne répond pas. Réessayez dans un instant.' });
     }
-    await this.audit.record({ userId: owner.id, actorId: ctx.actorId, action: 'checkout_started', entity: 'subscription_payment', entityId: payment.id, details: { planCode: plan.code, cycle, amountTTC: ttc, currency } });
-    return { id: payment.id, payUrl: payment.checkoutUrl!, expiresAt: payment.expiresAt, amountTTC: ttc, currency, resumed: false };
+    await this.audit.record({ userId: owner.id, actorId: ctx.actorId, action: 'checkout_started', entity: 'subscription_payment', entityId: payment.id, details: { planCode: plan.code, cycle, amountTTC: ttc, currency, chargedAmount: charge.amount, chargedCurrency: charge.currency, rate: charge.rate } });
+    return { id: payment.id, payUrl: payment.checkoutUrl!, expiresAt: payment.expiresAt, amountTTC: ttc, currency, chargedAmount: charge.amount, chargedCurrency: charge.currency, rate: charge.rate, resumed: false };
   }
 
   /**
@@ -673,7 +688,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
    */
   async confirmCheckout(where: { id?: number; providerRef?: string; ownerId?: number }, now = new Date()): Promise<{ status: 'paid' | 'pending' | 'expired' | 'unknown'; payment: SubscriptionPayment | null }> {
     const repo = this.ds.getRepository(SubscriptionPayment);
-    const criteria: Record<string, any> = { provider: 'konnect' };
+    const criteria: Record<string, any> = { provider: ONLINE_PROVIDER };
     if (where.id) criteria.id = where.id;
     else if (where.providerRef) criteria.providerRef = where.providerRef;
     else return { status: 'unknown', payment: null };
@@ -691,22 +706,29 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       return { status: row.status === 'expired' ? 'expired' : 'pending', payment: row };
     }
     if (remote.paid) {
-      // Le paiement confirmé doit être CELUI que nous avons ouvert : même commande et même montant. Seul notre serveur
-      // ouvre les paiements (clé secrète), le client ne peut donc pas en modifier le montant : ces contrôles sont une
-      // double sécurité. Si le prestataire annonce une autre devise que la nôtre (montant converti en dinars de son côté),
-      // le montant n'est pas comparable : on garde le contrôle de la commande et on le note dans le journal.
-      const expected = toMinorUnits(row.amountTTC, row.currency);
-      const sameCurrency = remote.currency === null || remote.currency === row.currency;
-      if (!sameCurrency) this.logger.warn(`Paiement ${row.id} : le prestataire annonce ${remote.currency} (attendu ${row.currency}) ; montant non comparé.`);
+      // Le paiement confirmé doit être CELUI que nous avons ouvert : même commande, même montant, même devise. Seul notre
+      // serveur ouvre les paiements (clé secrète), le client ne peut donc pas en modifier le montant : ces contrôles sont
+      // une double sécurité. Le montant comparé est celui réellement débité (en dinars), figé à l'ouverture du paiement.
+      const chargedCurrency = row.chargedCurrency || row.currency;
+      const expected = toMinorUnits(row.chargedAmount ?? row.amountTTC, chargedCurrency);
       const mismatch =
         (remote.orderId !== null && remote.orderId !== String(row.id)) ||
-        (sameCurrency && remote.amountMinor !== null && Math.abs(remote.amountMinor - expected) > 1);
+        (remote.currency !== null && remote.currency !== chargedCurrency) ||
+        (remote.amountMinor !== null && Math.abs(remote.amountMinor - expected) > 1);
       if (mismatch) {
-        this.logger.error(`Paiement ${row.id} : la confirmation du prestataire ne correspond pas (commande ${remote.orderId}, ${remote.amountMinor} ${remote.currency} ; attendu ${expected} ${row.currency}). Abonnement NON ouvert.`);
-        await this.audit.record({ userId: row.userId, actorId: null, action: 'payment_mismatch', entity: 'subscription_payment', entityId: row.id, details: { orderId: remote.orderId, amountMinor: remote.amountMinor, currency: remote.currency, expected } });
+        this.logger.error(`Paiement ${row.id} : la confirmation du prestataire ne correspond pas (commande ${remote.orderId}, ${remote.amountMinor} ${remote.currency} ; attendu ${expected} ${chargedCurrency}). Abonnement NON ouvert.`);
+        await this.audit.record({ userId: row.userId, actorId: null, action: 'payment_mismatch', entity: 'subscription_payment', entityId: row.id, details: { orderId: remote.orderId, amountMinor: remote.amountMinor, currency: remote.currency, expected, expectedCurrency: chargedCurrency } });
         return { status: 'pending', payment: row };
       }
       return { status: 'paid', payment: await this.settleOnline(row.id, remote.method) };
+    }
+    // Refusé ou expiré chez Flouci : plus aucun paiement n'est attendu sur cette page (le client peut en ouvrir une autre).
+    // Si le client la paie quand même plus tard, l'encaissement reste reconnu (« expired » fait partie des états relus).
+    if (remote.closed && row.status === 'initiated') {
+      await repo.update({ id: row.id, status: 'initiated' }, { status: 'expired', checkoutUrl: null });
+      row.status = 'expired';
+      row.checkoutUrl = null;
+      return { status: 'expired', payment: row };
     }
     // Pas (encore) payé. Dix minutes après la fin de validité de la page, on n'attend plus.
     if (row.status === 'initiated' && row.expiresAt && new Date(row.expiresAt).getTime() + 10 * 60_000 < now.getTime()) {
@@ -723,12 +745,12 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       if (!payment) throw new NotFoundException('Paiement introuvable');
       if (payment.status === 'validated') return { payment, owner: null as User | null };
       if (!OPEN_ONLINE_STATUSES.includes(payment.status)) throw new ConflictException('Ce paiement a déjà été traité.');
-      if (method === 'edinar' || method === 'card') payment.method = method;
+      if (method === 'card' || method === 'flouci' || method === 'edinar' || method === 'other') payment.method = method;
       payment.reference = payment.providerRef;
       return this.applyValidated(em, payment, null, new Date());
     });
     if (result.owner) {
-      await this.audit.record({ userId: result.owner.id, actorId: null, action: 'payment_received', entity: 'subscription_payment', entityId: result.payment.id, details: { provider: 'konnect', receipt: result.payment.receiptNumber, amountTTC: result.payment.amountTTC, currency: result.payment.currency, periodEnd: result.payment.periodEnd } });
+      await this.audit.record({ userId: result.owner.id, actorId: null, action: 'payment_received', entity: 'subscription_payment', entityId: result.payment.id, details: { provider: ONLINE_PROVIDER, receipt: result.payment.receiptNumber, amountTTC: result.payment.amountTTC, currency: result.payment.currency, periodEnd: result.payment.periodEnd } });
       this.receiptMail(result.owner, result.payment, true);
     }
     return result.payment;
@@ -741,7 +763,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
   async reconcileCheckouts(now = new Date()): Promise<{ checked: number; paid: number }> {
     if (!this.gateway.isConfigured()) return { checked: 0, paid: 0 };
     const rows = await this.ds.getRepository(SubscriptionPayment).createQueryBuilder('p')
-      .where(`p.provider = 'konnect' AND p.providerRef IS NOT NULL AND p.status IN (:...open) AND p.createdAt > :since`, { open: OPEN_ONLINE_STATUSES, since: new Date(now.getTime() - 6 * HOUR) })
+      .where(`p.provider = :provider AND p.providerRef IS NOT NULL AND p.status IN (:...open) AND p.createdAt > :since`, { provider: ONLINE_PROVIDER, open: OPEN_ONLINE_STATUSES, since: new Date(now.getTime() - 6 * HOUR) })
       .orderBy('p.id', 'DESC').take(100).getMany();
     let paid = 0;
     for (const row of rows) {
@@ -752,12 +774,12 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
   }
 
   /**
-   * Support : « j'ai payé mais mon accès n'est pas ouvert ». Relit tout de suite chez Konnect l'état du paiement et, s'il
+   * Support : « j'ai payé mais mon accès n'est pas ouvert ». Relit tout de suite chez Flouci l'état du paiement et, s'il
    * est encaissé, ouvre l'abonnement. Fonctionne aussi pour une page de paiement que le client a payée après son expiration.
    */
   async recheckPayment(paymentId: number, adminId: number) {
     const row = await this.ds.getRepository(SubscriptionPayment).findOne({ where: { id: paymentId } });
-    if (!row || row.provider !== 'konnect') throw new NotFoundException('Paiement en ligne introuvable.');
+    if (!row || row.provider !== ONLINE_PROVIDER) throw new NotFoundException('Paiement en ligne introuvable.');
     if (!row.providerRef) throw new ConflictException('Ce paiement n’a jamais été ouvert chez le prestataire : il n’y a rien à relire.');
     const out = await this.confirmCheckout({ id: paymentId });
     await this.audit.record({ userId: row.userId, actorId: adminId, action: 'payment_rechecked', entity: 'subscription_payment', entityId: row.id, details: { before: row.status, result: out.status } });
@@ -765,8 +787,8 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
   }
 
   /**
-   * Remboursement d'un paiement validé, décidé par l'administrateur. Konnect n'a pas d'API de remboursement : le virement
-   * se fait depuis le tableau de bord Konnect ; ici l'abonnement est remis en accord et la trace est gardée.
+   * Remboursement d'un paiement validé, décidé par l'administrateur. L'argent se rend depuis le tableau de bord Flouci
+   * (Transactions) ; ici l'abonnement est remis en accord et la trace est gardée.
    * Seul le DERNIER paiement validé d'un compte peut être remboursé : la période qu'il avait ouverte est alors retirée
    * (l'abonnement revient à sa date d'avant, ou à l'essai s'il court encore). Le numéro de reçu reste attaché au paiement.
    */
@@ -826,7 +848,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
 
   /**
    * Liste de contrôle « mise en production » du paiement en ligne : ce qui empêche d'encaisser de vrais clients, et ce qu'il
-   * vaut mieux régler avant. Calculée sans appeler Konnect (voir PaymentGatewayService.probe pour le test de connexion).
+   * vaut mieux régler avant. Calculée sans appeler Flouci (voir PaymentGatewayService.probe pour le test de connexion).
    */
   async onlineReadiness(settings: PlatformSettings) {
     const online = this.onlinePayment(settings);
@@ -845,11 +867,15 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     const checks: Array<{ key: string; ok: boolean; level: Level; message: string }> = [];
     const add = (key: string, ok: boolean, level: Level, good: string, bad: string) => checks.push({ key, ok, level, message: ok ? good : bad });
 
-    add('credentials', this.gateway.isConfigured(), 'error', 'Clé d’API et portefeuille Konnect définis sur le serveur.', 'Définissez KONNECT_API_KEY et KONNECT_WALLET_ID sur le serveur de l’API (tableau de bord Konnect › Mon compte › Clés API).');
-    add('currency', this.gateway.supports(settings.currency), 'error', `Devise ${settings.currency} acceptée par Konnect.`, `La devise ${settings.currency} n’est pas acceptée par Konnect (TND, EUR ou USD) : changez-la dans les réglages.`);
+    const rate = this.gateway.rate(settings.currency);
+    const cur = String(settings.currency || '').toUpperCase();
+    add('credentials', this.gateway.isConfigured(), 'error', 'Jetons public et privé Flouci définis sur le serveur.', 'Définissez FLOUCI_PUBLIC_TOKEN et FLOUCI_PRIVATE_TOKEN sur le serveur de l’API (tableau de bord Flouci › Accepter en ligne › API).');
+    add('currency', rate !== null, 'error',
+      cur === 'TND' ? 'Formules en dinars : montant débité tel quel par Flouci.' : `Formules en ${cur}, débitées en dinars par Flouci au taux 1 ${cur} = ${frNumber(rate)} TND (FLOUCI_RATE_${cur}).`,
+      `Flouci encaisse uniquement en dinars : définissez FLOUCI_RATE_${cur} (ex. 3.10 pour 1 ${cur} = 3,10 TND) sur le serveur de l’API, ou passez la devise des formules en TND.`);
     add('plans', priced.length > 0, 'error', `${priced.length} formule(s) publiée(s) avec un prix.`, 'Aucune formule publiée avec un prix : publiez-en au moins une dans « Formules et tarifs ».');
-    add('mode', online.mode === 'production', production ? 'warn' : 'warn', 'Mode production : les paiements sont réels.', 'Mode test (bac à sable) : aucun débit réel. Pour encaisser de vrais clients, définissez KONNECT_ENV=production avec la clé de production.');
-    add('apiUrl', publicHttps(api), production ? 'error' : 'warn', `Konnect appellera ${api}/public/payments/konnect/return.`, `L’adresse publique de l’API (${api}) n’est pas une adresse https accessible depuis Internet : Konnect ne pourrait pas confirmer les paiements. Définissez API_PUBLIC_URL (ex. https://api.votre-domaine.tn).`);
+    add('mode', online.mode === 'production', production ? 'warn' : 'warn', 'Mode production : les paiements sont réels.', 'Mode test (FLOUCI_ENV=test) : avec les jetons de l’application « TEST APP », aucun débit réel. Pour encaisser de vrais clients, mettez les jetons de production et retirez FLOUCI_ENV.');
+    add('apiUrl', publicHttps(api), production ? 'error' : 'warn', `Flouci appellera ${api}/public/payments/flouci/webhook.`, `L’adresse publique de l’API (${api}) n’est pas une adresse https accessible depuis Internet : Flouci ne pourrait pas confirmer les paiements. Définissez API_PUBLIC_URL (ex. https://api.votre-domaine.tn).`);
     add('siteUrl', sites.some(publicHttps), production ? 'error' : 'warn', `Retour des clients sur ${sites.filter(publicHttps)[0] || sites[0]}.`, 'FRONTEND_URL n’est pas une adresse https publique : les liens des emails et le retour de paiement pointeraient vers un site inaccessible.');
     add('mail', this.mail.isConfigured(), 'warn', 'Envoi d’emails configuré : reçus, rappels et code de vérification partent.', 'Envoi d’emails non configuré : aucun reçu ni rappel ne sera envoyé (variables SMTP_*).');
     add('issuer', !!(settings.issuerName && settings.issuerTaxId), 'warn', 'Identité légale de l’éditeur renseignée : elle figure sur les reçus.', 'Renseignez la raison sociale et le matricule fiscal de l’éditeur : ils figureront sur les reçus remis aux clients.');
@@ -857,7 +883,7 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
     const blocking = checks.filter((c) => !c.ok && c.level === 'error');
     return {
       enabled: online.enabled, mode: online.mode, provider: online.provider,
-      webhookUrl: `${api}/public/payments/konnect/return`,
+      webhookUrl: `${api}/public/payments/flouci/webhook`,
       siteUrls: sites.filter((s) => s !== 'http://localhost:3000' || sites.length === 1),
       // « prêt » : un client peut payer ; « live » : de vrais paiements, et rien d'important à corriger.
       ready: online.enabled && blocking.length === 0,
@@ -914,6 +940,8 @@ export class SubscriptionService implements OnApplicationBootstrap, OnModuleDest
       periodStart: payment.periodStart, periodEnd: payment.periodEnd, amountHT: payment.amountHT, vatRate: payment.vatRate,
       vatAmount: round3(payment.amountTTC - payment.amountHT), amountTTC: payment.amountTTC, currency: payment.currency,
       method: payment.method, reference: payment.reference,
+      // Paiement en ligne converti en dinars par Flouci : montant réellement débité (absent si même devise ou hors ligne).
+      charged: payment.chargedAmount != null && payment.chargedCurrency && payment.chargedCurrency !== payment.currency ? { amount: payment.chargedAmount, currency: payment.chargedCurrency } : null,
       issuer,
       customer: { name: company?.legalName || owner?.companyName || owner?.name || '', taxId: company?.taxId || null, address: [company?.address, company?.postalCode, company?.city].filter(Boolean).join(' ') || null, email: owner?.email || null },
       notice: 'Reçu de paiement d’abonnement. Il ne remplace pas la facture légale émise par l’éditeur.',

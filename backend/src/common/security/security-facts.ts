@@ -32,7 +32,7 @@ export async function buildSecurityFacts({ mail, gateway, users }: SecurityDeps)
     synchronize: isSynchronizeEnabled(),
     swagger: process.env.ENABLE_SWAGGER === 'true',
     mailConfigured: mail.isConfigured(),
-    konnect: { configured: gateway.isConfigured(), mode: gateway.info().mode },
+    gateway: { provider: gateway.info().provider, configured: gateway.isConfigured(), mode: gateway.info().mode },
     backups: !!(process.env.BACKUP_PASSPHRASE && process.env.BACKUP_S3_URI),
     adminsWithoutTwoFactor,
   };
