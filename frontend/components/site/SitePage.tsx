@@ -12,10 +12,10 @@ const CONTACT_LABEL_KEYS = [
   "size5", "privacyA", "privacyB", "errRequired", "errEmail",
 ];
 
-/** Les textes juridiques n'existent qu'en anglais sur le site : on le signale dans les autres langues. */
+/** Les textes juridiques sont rédigés en anglais ; les versions françaises et espagnoles sont des traductions de courtoisie. */
 const LEGAL_NOTE: Partial<Record<SiteLang, string>> = {
-  fr: "Ce texte juridique n'est disponible qu'en anglais.",
-  es: "Este texto legal solo está disponible en inglés.",
+  fr: "Traduction de courtoisie : en cas de divergence, la version anglaise fait foi.",
+  es: "Traducción de cortesía: en caso de discrepancia, prevalece la versión en inglés.",
 };
 
 export async function sitePageMetadata(name: PageName): Promise<Metadata> {

@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { api } from "@/components/erp/kit";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MODULE_GROUPS, MODULE_INFO, pick, type CatalogModule } from "@/lib/catalog";
+import { ModuleIcon, MODULE_ICON_PATHS, type ModuleIconKey } from "@/components/site/ModuleIcon";
 import { fill } from "@/lib/saasTexts";
 import { sectorName, type ModulesView } from "@/lib/saas";
 import { useOnlineTexts } from "@/lib/onlineTexts";
@@ -118,6 +119,9 @@ export default function ModulesCard({ canManage, notify, errorText }: {
     return (
       <label key={key} className={"sub-mod" + (on ? " is-on" : "") + (info.included ? "" : " is-locked")}>
         <input type="checkbox" checked={on} disabled={!info.included || !canManage || busy !== null} onChange={() => toggle(key)} />
+        {key in MODULE_ICON_PATHS ? (
+          <span className="sub-mod-ico" aria-hidden="true"><ModuleIcon name={key as ModuleIconKey} size={20} /></span>
+        ) : null}
         <span className="sub-mod-body">
           <span className="sub-mod-name">
             {labelOf(key)}

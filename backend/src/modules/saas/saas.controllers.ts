@@ -16,6 +16,7 @@ import { pickMailLang, testMail } from '../../common/mail/auth-mails';
 import { AuthService } from '../auth/auth.service';
 import { PaymentGatewayService } from './payment-gateway.service';
 import { AdminGuard } from './admin.guard';
+import { ContactMessageDto } from './contact.dto';
 import { SaasSettingsService } from './saas-settings.service';
 import { SubscriptionService } from './subscription.service';
 import { SectorsService } from './sectors.service';
@@ -38,7 +39,35 @@ export class PublicController {
     private readonly settings: SaasSettingsService,
     private readonly subscriptions: SubscriptionService,
     private readonly sectors: SectorsService,
+    private readonly mail: MailService,
   ) {}
+
+  /**
+   * Formulaire « Écrivez-nous » : le message part par email à l'équipe (adresse de support des paramètres, sinon CONTACT_EMAIL,
+   * sinon contact@inovexa-erp.com) ; « répondre » écrit au visiteur. Aucune réponse automatique n'est envoyée au visiteur : cette
+   * route sans connexion ne doit pas pouvoir servir à inonder la boîte de quelqu'un d'autre. 503 quand l'envoi d'emails n'est pas
+   * configuré : le site propose alors d'écrire par sa messagerie.
+   */
+  @Post('contact')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 600_000 } })
+  @ApiOperation({ summary: 'Envoie le message du formulaire de contact à l’équipe (503 si les emails ne sont pas configurés)' })
+  async contact(@Body() body: ContactMessageDto) {
+    if (body.website) return { sent: true }; // robot : on fait comme si, sans rien envoyer
+    const s = await this.settings.get();
+    const to = s.supportEmail || process.env.CONTACT_EMAIL || 'contact@inovexa-erp.com';
+    const oneLine = (v: string) => String(v).replace(/[\r\n]+/g, ' ').trim();
+    const esc = (v: string) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    // Champs d'une seule ligne : un retour à la ligne glissé dans un nom ne doit pas fabriquer de fausses lignes dans le message.
+    const rows: Array<[string, string]> = ([
+      ['Prénom', body.firstName], ['Nom', body.lastName], ['Société', body.company], ['Email', body.email],
+      ['Téléphone', body.phone || '-'], ['Taille', body.size || '-'], ['Langue du site', body.language || '-'],
+    ] as Array<[string, string]>).map(([k, v]) => [k, oneLine(v)]);
+    const text = `${rows.map(([k, v]) => `${k} : ${v}`).join('\n')}\n\n${body.message || '(pas de message)'}\n`;
+    const html = `<table cellpadding="4" style="font-family:sans-serif;font-size:14px">${rows.map(([k, v]) => `<tr><td><b>${k}</b></td><td>${esc(v)}</td></tr>`).join('')}</table><p style="font-family:sans-serif;font-size:14px;white-space:pre-wrap">${esc(body.message || '(pas de message)')}</p>`;
+    await this.mail.send({ to, subject: oneLine(`[Contact du site] ${body.company} — ${body.firstName} ${body.lastName}`), text, html, replyTo: body.email });
+    return { sent: true };
+  }
 
   @Get('config')
   @ApiOperation({ summary: 'Durée de l’essai, devise, contacts, identifiants Google et Apple (s’ils sont configurés)' })

@@ -5,11 +5,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useDialog } from "@/components/ui/useDialog";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 type Mode = "sale" | "purchase";
-interface Product { id: number; name: string; sku?: string; price?: number | string; quantity?: number; imageUrl?: string | null; }
+interface Product { id: number; name: string; sku?: string; price?: number | string; quantity?: number; imageUrl?: string | null; isStockable?: boolean; }
 interface Line { product: Product; quantity: number; unitPrice: number; }
 interface Ticket { notice?: string; mode: Mode; ticketNumber: string; counterpart: string | null; paymentMethod: string | null; itemsCount: number; total: number; createdAt: string; lines: Array<{ productName: string; quantity: number; unitPrice: number; total: number }>; }
 
@@ -23,7 +24,7 @@ const TX: Record<string, Record<string, string>> = {
     outOfStock: "Rupture", stock: "Stock", cart: "Panier", cartEmpty: "Touchez un produit pour l'ajouter",
     customer: "Client (facultatif)", supplier: "Fournisseur (facultatif)", customerPh: "Client comptoir", payment: "Moyen de paiement",
     total: "Total", items: "article(s)", clear: "Vider", chargeSale: "Encaisser", chargePurchase: "Enregistrer l'achat",
-    unitPrice: "Prix unitaire", maxStock: "Stock maximum atteint", viewCart: "Voir le panier",
+    unitPrice: "Prix unitaire", service: "Service", quantity: "Quantité", decrease: "Diminuer la quantité", increase: "Augmenter la quantité", maxStock: "Stock maximum atteint", viewCart: "Voir le panier",
     ticket: "Ticket", newSale: "Nouvelle vente", newPurchase: "Nouvel achat", print: "Imprimer", close: "Fermer", saved: "Opération enregistrée",
     cash: "Espèces", card: "Carte", transfer: "Virement", check: "Chèque", mobile: "Mobile", other: "Autre",
     errServer: "Erreur du serveur. Réessayez.", errNetwork: "Impossible de joindre le serveur.", errAuth: "Session expirée : reconnectez-vous.",
@@ -39,7 +40,7 @@ const TX: Record<string, Record<string, string>> = {
     outOfStock: "Out of stock", stock: "Stock", cart: "Cart", cartEmpty: "Tap a product to add it",
     customer: "Customer (optional)", supplier: "Supplier (optional)", customerPh: "Walk-in customer", payment: "Payment method",
     total: "Total", items: "item(s)", clear: "Clear", chargeSale: "Charge", chargePurchase: "Record purchase",
-    unitPrice: "Unit price", maxStock: "Maximum stock reached", viewCart: "View cart",
+    unitPrice: "Unit price", service: "Service", quantity: "Quantity", decrease: "Decrease quantity", increase: "Increase quantity", maxStock: "Maximum stock reached", viewCart: "View cart",
     ticket: "Receipt", newSale: "New sale", newPurchase: "New purchase", print: "Print", close: "Close", saved: "Transaction saved",
     cash: "Cash", card: "Card", transfer: "Transfer", check: "Check", mobile: "Mobile", other: "Other",
     errServer: "Server error. Please try again.", errNetwork: "Cannot reach the server.", errAuth: "Session expired: please sign in again.",
@@ -55,7 +56,7 @@ const TX: Record<string, Record<string, string>> = {
     outOfStock: "Agotado", stock: "Stock", cart: "Carrito", cartEmpty: "Toque un producto para añadirlo",
     customer: "Cliente (opcional)", supplier: "Proveedor (opcional)", customerPh: "Cliente de mostrador", payment: "Método de pago",
     total: "Total", items: "artículo(s)", clear: "Vaciar", chargeSale: "Cobrar", chargePurchase: "Registrar la compra",
-    unitPrice: "Precio unitario", maxStock: "Stock máximo alcanzado", viewCart: "Ver carrito",
+    unitPrice: "Precio unitario", service: "Servicio", quantity: "Cantidad", decrease: "Disminuir la cantidad", increase: "Aumentar la cantidad", maxStock: "Stock máximo alcanzado", viewCart: "Ver carrito",
     ticket: "Ticket", newSale: "Nueva venta", newPurchase: "Nueva compra", print: "Imprimir", close: "Cerrar", saved: "Operación guardada",
     cash: "Efectivo", card: "Tarjeta", transfer: "Transferencia", check: "Cheque", mobile: "Móvil", other: "Otro",
     errServer: "Error del servidor. Inténtelo de nuevo.", errNetwork: "No se puede conectar con el servidor.", errAuth: "Sesión caducada: vuelva a iniciar sesión.",
@@ -92,6 +93,9 @@ export default function PosPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [flash, setFlash] = useState<number | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // Feuille du panier (mobile) et ticket : role="dialog", Échap pour fermer, focus piégé puis rendu.
+  const dlgCart = useDialog(isMobile && cartOpen, () => setCartOpen(false), t.cart);
+  const dlgTicket = useDialog(!!ticket, () => setTicket(null), t.ticket);
 
   const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` });
 
@@ -130,15 +134,17 @@ export default function PosPage() {
   }, [products, query]);
 
   const stockOf = (p: Product) => num(p.quantity);
+  // Un service (isStockable === false) n'a pas de stock : jamais « Rupture », pas de plafond de quantité.
+  const tracked = (p: Product) => p.isStockable !== false;
+  const cap = (p: Product) => (mode === "sale" && tracked(p) ? stockOf(p) : 100000);
 
   const addProduct = (p: Product) => {
     setError("");
-    if (mode === "sale" && stockOf(p) <= 0) return;
+    if (mode === "sale" && tracked(p) && stockOf(p) <= 0) return;
     setLines((prev) => {
       const i = prev.findIndex((l) => l.product.id === p.id);
       if (i >= 0) {
-        const cap = mode === "sale" ? stockOf(p) : 100000;
-        if (prev[i].quantity >= cap) return prev;
+        if (prev[i].quantity >= cap(p)) return prev;
         return prev.map((l, k) => (k === i ? { ...l, quantity: l.quantity + 1 } : l));
       }
       return [...prev, { product: p, quantity: 1, unitPrice: num(p.price) }];
@@ -148,8 +154,7 @@ export default function PosPage() {
 
   const setQty = (id: number, q: number) => setLines((prev) => prev.map((l) => {
     if (l.product.id !== id) return l;
-    const cap = mode === "sale" ? stockOf(l.product) : 100000;
-    return { ...l, quantity: Math.max(1, Math.min(cap, Math.round(q) || 1)) };
+    return { ...l, quantity: Math.max(1, Math.min(cap(l.product), Math.round(q) || 1)) };
   }));
   const setPrice = (id: number, v: number) => setLines((prev) => prev.map((l) => (l.product.id === id ? { ...l, unitPrice: Math.max(0, v) } : l)));
   const removeLine = (id: number) => setLines((prev) => prev.filter((l) => l.product.id !== id));
@@ -248,15 +253,15 @@ export default function PosPage() {
           <div key={l.product.id} style={{ border: `1px solid ${theme.border}`, borderRadius: 12, padding: 10, background: theme.surfaceHover, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
               <span style={{ color: theme.text, fontWeight: 600, fontSize: 14, wordBreak: "break-word" }}>{l.product.name}</span>
-              <button onClick={() => removeLine(l.product.id)} aria-label={t.remove} style={{ background: "none", border: "none", color: "#b91c1c", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "0 4px" }}>×</button>
+              <button onClick={() => removeLine(l.product.id)} aria-label={`${t.remove} : ${l.product.name}`} style={{ background: "none", border: "none", color: "#b91c1c", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "0 4px" }}>×</button>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", border: `1px solid ${theme.border}`, borderRadius: 10, overflow: "hidden", background: theme.surface }}>
-                <button onClick={() => setQty(l.product.id, l.quantity - 1)} aria-label="-" style={{ width: 40, height: 40, border: "none", background: "transparent", color: theme.text, fontSize: 20, cursor: "pointer" }}>−</button>
-                <input type="number" inputMode="numeric" min={1} value={l.quantity} onChange={(e) => setQty(l.product.id, num(e.target.value))} aria-label="Quantité" style={{ width: 52, height: 40, textAlign: "center", border: "none", borderLeft: `1px solid ${theme.border}`, borderRight: `1px solid ${theme.border}`, background: "transparent", color: theme.text, fontSize: 16, outline: "none" }} />
-                <button onClick={() => addProduct(l.product)} aria-label="+" style={{ width: 40, height: 40, border: "none", background: "transparent", color: theme.text, fontSize: 20, cursor: "pointer" }}>+</button>
+                <button onClick={() => setQty(l.product.id, l.quantity - 1)} aria-label={`${t.decrease} : ${l.product.name}`} style={{ width: 40, height: 40, border: "none", background: "transparent", color: theme.text, fontSize: 20, cursor: "pointer" }}>−</button>
+                <input type="number" inputMode="numeric" min={1} value={l.quantity} onChange={(e) => setQty(l.product.id, num(e.target.value))} aria-label={`${t.quantity} : ${l.product.name}`} style={{ width: 52, height: 40, textAlign: "center", border: "none", borderLeft: `1px solid ${theme.border}`, borderRight: `1px solid ${theme.border}`, background: "transparent", color: theme.text, fontSize: 16, outline: "none" }} />
+                <button onClick={() => addProduct(l.product)} aria-label={`${t.increase} : ${l.product.name}`} style={{ width: 40, height: 40, border: "none", background: "transparent", color: theme.text, fontSize: 20, cursor: "pointer" }}>+</button>
               </div>
-              <input type="number" inputMode="decimal" step="0.01" min={0} value={l.unitPrice} onChange={(e) => setPrice(l.product.id, num(e.target.value))} aria-label={t.unitPrice} title={t.unitPrice} style={{ width: 96, height: 40, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surface, color: theme.text, textAlign: "right", padding: "0 8px", fontSize: 16 }} />
+              <input type="number" inputMode="decimal" step="0.01" min={0} value={l.unitPrice} onChange={(e) => setPrice(l.product.id, num(e.target.value))} aria-label={`${t.unitPrice} : ${l.product.name}`} title={t.unitPrice} style={{ width: 96, height: 40, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surface, color: theme.text, textAlign: "right", padding: "0 8px", fontSize: 16 }} />
               <span style={{ marginLeft: "auto", color: theme.text, fontWeight: 700 }}>{formatCurrency(l.quantity * l.unitPrice)}</span>
             </div>
           </div>
@@ -264,14 +269,14 @@ export default function PosPage() {
       </div>
 
       <div>
-        <label style={{ color: theme.textSecondary, fontSize: 12, display: "block", marginBottom: 5 }}>{mode === "sale" ? t.customer : t.supplier}</label>
-        <input list="pos-names" value={counterpart} onChange={(e) => setCounterpart(e.target.value)} placeholder={mode === "sale" ? t.customerPh : ""} style={{ width: "100%", boxSizing: "border-box", height: 44, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surfaceHover, color: theme.text, padding: "0 12px", fontSize: 16 }} />
+        <label htmlFor="pos-counterpart" style={{ color: theme.textSecondary, fontSize: 12, display: "block", marginBottom: 5 }}>{mode === "sale" ? t.customer : t.supplier}</label>
+        <input id="pos-counterpart" list="pos-names" value={counterpart} onChange={(e) => setCounterpart(e.target.value)} placeholder={mode === "sale" ? t.customerPh : ""} style={{ width: "100%", boxSizing: "border-box", height: 44, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surfaceHover, color: theme.text, padding: "0 12px", fontSize: 16 }} />
         <datalist id="pos-names">{names2.slice(0, 200).map((n) => <option key={n} value={n} />)}</datalist>
       </div>
 
       <div>
-        <label style={{ color: theme.textSecondary, fontSize: 12, display: "block", marginBottom: 6 }}>{t.payment}</label>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+        <div id="pos-payment-label" style={{ color: theme.textSecondary, fontSize: 12, display: "block", marginBottom: 6 }}>{t.payment}</div>
+        <div role="group" aria-labelledby="pos-payment-label" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
           {PAYMENT_CODES.map((code) => (
             <button key={code} onClick={() => setPayment(code)} aria-pressed={payment === code} style={{ minHeight: 42, borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: payment === code ? 700 : 500, border: `1.5px solid ${payment === code ? theme.primary : theme.border}`, background: payment === code ? theme.primary : theme.surfaceHover, color: payment === code ? "#ffffff" : theme.text }}>{t[code]}</button>
           ))}
@@ -331,7 +336,7 @@ export default function PosPage() {
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 150 : 170}px, 1fr))`, gap: isMobile ? 10 : 12 }}>
                 {filtered.map((p) => {
-                  const out = mode === "sale" && stockOf(p) <= 0;
+                  const out = mode === "sale" && tracked(p) && stockOf(p) <= 0;
                   const inCart = lines.find((l) => l.product.id === p.id);
                   return (
                     <button key={p.id} onClick={() => addProduct(p)} disabled={out} style={{ ...card, padding: 0, overflow: "hidden", textAlign: "left", cursor: out ? "not-allowed" : "pointer", opacity: out ? 0.5 : 1, position: "relative", transform: flash === p.id ? "scale(0.96)" : "scale(1)", transition: "transform 0.15s", border: `1.5px solid ${inCart ? accent : theme.border}`, display: "flex", flexDirection: "column" }}>
@@ -347,7 +352,7 @@ export default function PosPage() {
                         <div style={{ color: theme.text, fontWeight: 600, fontSize: 14, lineHeight: 1.25, minHeight: 35, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{p.name}</div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
                           <span style={{ color: theme.text, fontWeight: 800 }}>{formatCurrency(num(p.price))}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: out ? "#b91c1c" : stockOf(p) < 10 ? "#b45309" : theme.textSecondary }}>{out ? t.outOfStock : `${t.stock} ${stockOf(p)}`}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: out ? "#b91c1c" : tracked(p) && stockOf(p) < 10 ? "#b45309" : theme.textSecondary }}>{!tracked(p) ? t.service : out ? t.outOfStock : `${t.stock} ${stockOf(p)}`}</span>
                         </div>
                       </div>
                       {inCart && <span style={{ position: "absolute", top: 8, right: 8, background: accent, color: "#fff", borderRadius: 999, minWidth: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, padding: "0 6px" }}>{inCart.quantity}</span>}
@@ -371,7 +376,7 @@ export default function PosPage() {
       )}
       {isMobile && cartOpen && (
         <div onClick={(e) => { if (e.target === e.currentTarget) setCartOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "flex-end" }}>
-          <div style={{ width: "100%", maxHeight: "calc(100dvh - 12px)", overflowY: "auto", background: theme.surface, borderRadius: "20px 20px 0 0", padding: "16px 16px calc(16px + env(safe-area-inset-bottom))" }}>
+          <div ref={dlgCart.ref} {...dlgCart.props} style={{ width: "100%", maxHeight: "calc(100dvh - 12px)", overflowY: "auto", background: theme.surface, borderRadius: "20px 20px 0 0", padding: "16px 16px calc(16px + env(safe-area-inset-bottom))" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h2 style={{ margin: 0, fontSize: 18, color: theme.text }}>{t.cart} · {itemsCount} {t.items}</h2>
               <button onClick={() => setCartOpen(false)} aria-label={t.close} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${theme.border}`, background: theme.surfaceHover, color: theme.text, fontSize: 20, cursor: "pointer" }}>×</button>
@@ -384,7 +389,7 @@ export default function PosPage() {
       {/* Ticket */}
       {ticket && (
         <div onClick={(e) => { if (e.target === e.currentTarget) setTicket(null); }} style={{ position: "fixed", inset: 0, zIndex: 3500, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 16 }}>
-          <div style={{ width: "100%", maxWidth: 420, background: theme.surface, color: theme.text, borderRadius: isMobile ? "20px 20px 0 0" : 20, padding: 22, maxHeight: "92dvh", overflowY: "auto" }}>
+          <div ref={dlgTicket.ref} {...dlgTicket.props} style={{ width: "100%", maxWidth: 420, background: theme.surface, color: theme.text, borderRadius: isMobile ? "20px 20px 0 0" : 20, padding: 22, maxHeight: "92dvh", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: 12 }}>
               <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#10b981", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✓</div>
               <h2 style={{ margin: "10px 0 2px", fontSize: 20 }}>{t.saved}</h2>

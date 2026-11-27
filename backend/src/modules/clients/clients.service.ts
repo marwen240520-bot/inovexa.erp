@@ -62,7 +62,8 @@ export class ClientsService {
   async create(userId: number, data: Partial<Client>) {
     const input = stripProtected(data as any) as Partial<Client>;
     await this.assertOwnPriceList(userId, (input as any).priceListId);
-    const client = this.clientRepository.create({ ...input, userId });
+    // La colonne email est obligatoire en base : un client de passage (nom + téléphone) est enregistré avec une adresse vide.
+    const client = this.clientRepository.create({ email: '', ...input, userId });
     return this.clientRepository.save(client);
   }
 

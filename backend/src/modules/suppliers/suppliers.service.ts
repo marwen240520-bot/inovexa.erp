@@ -50,13 +50,20 @@ export class SuppliersService {
   }
 
   async create(userId: number, data: Partial<Supplier>) {
-    const supplier = this.supplierRepository.create({ ...stripProtected(data as any), userId });
+    // La colonne email est obligatoire en base : un fournisseur sans adresse est enregistré avec une adresse vide.
+    const supplier = this.supplierRepository.create({ email: '', ...stripProtected(data as any), userId });
     return this.supplierRepository.save(supplier);
   }
 
   async update(id: number, userId: number, data: Partial<Supplier>) {
     const supplier = await this.findOne(id, userId);
     Object.assign(supplier, stripProtected(data as any, ['createdAt', 'updatedAt']));
+    return this.supplierRepository.save(supplier);
+  }
+
+  async updateStatus(id: number, userId: number, status: string) {
+    const supplier = await this.findOne(id, userId);
+    supplier.status = status;
     return this.supplierRepository.save(supplier);
   }
 

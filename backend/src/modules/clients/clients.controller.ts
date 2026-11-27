@@ -1,6 +1,7 @@
-﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ClientsService } from './clients.service';
+import { ClientStatusDto, CreateClientDto, UpdateClientDto } from './clients.dto';
 
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('Clients')
@@ -16,8 +17,8 @@ export class ClientsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req: any) {
-    return this.clientsService.findOne(parseInt(id), req.user.userId);
+  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.clientsService.findOne(id, req.user.userId);
   }
 
   // ⚠️ Route d'import : le front appelle POST /clients/import
@@ -27,24 +28,22 @@ export class ClientsController {
   }
 
   @Post()
-  async create(@Request() req: any, @Body() body: any) {
-    // Ajouter userId au body
-    body.userId = req.user.userId;
+  async create(@Request() req: any, @Body() body: CreateClientDto) {
     return this.clientsService.create(req.user.userId, body);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
-    return this.clientsService.update(parseInt(id), req.user.userId, body);
+  async update(@Param('id', ParseIntPipe) id: number, @Request() req: any, @Body() body: UpdateClientDto) {
+    return this.clientsService.update(id, req.user.userId, body);
   }
 
   @Patch(':id/status')
-  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
-    return this.clientsService.updateStatus(parseInt(id), req.user.userId, body.status);
+  async updateStatus(@Param('id', ParseIntPipe) id: number, @Request() req: any, @Body() body: ClientStatusDto) {
+    return this.clientsService.updateStatus(id, req.user.userId, body.status);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Request() req: any) {
-    return this.clientsService.delete(parseInt(id), req.user.userId);
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.clientsService.delete(id, req.user.userId);
   }
 }

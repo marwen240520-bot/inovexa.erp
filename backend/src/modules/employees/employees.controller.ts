@@ -1,6 +1,7 @@
-﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EmployeesService } from './employees.service';
+import { CreateEmployeeDto, EmployeeStatusDto, UpdateEmployeeDto } from './employees.dto';
 
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('Employés')
@@ -21,28 +22,28 @@ export class EmployeesController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req: any) {
-    return this.employeesService.findOne(parseInt(id), req.user.userId);
+  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.employeesService.findOne(id, req.user.userId);
   }
 
   @Post()
-  async create(@Request() req: any, @Body() body: any) {
+  async create(@Request() req: any, @Body() body: CreateEmployeeDto) {
     return this.employeesService.create(req.user.userId, body);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Request() req: any, @Body() body: any) {
-    return this.employeesService.update(parseInt(id), req.user.userId, body);
+  async update(@Param('id', ParseIntPipe) id: number, @Request() req: any, @Body() body: UpdateEmployeeDto) {
+    return this.employeesService.update(id, req.user.userId, body);
   }
 
   @Patch(':id/status')
-  async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: string }) {
-    return this.employeesService.updateStatus(parseInt(id), req.user.userId, body.status);
+  async updateStatus(@Param('id', ParseIntPipe) id: number, @Request() req: any, @Body() body: EmployeeStatusDto) {
+    return this.employeesService.updateStatus(id, req.user.userId, body.status);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Request() req: any) {
-    return this.employeesService.delete(parseInt(id), req.user.userId);
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.employeesService.delete(id, req.user.userId);
   }
 
   @Post('import')

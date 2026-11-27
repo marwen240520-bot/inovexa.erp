@@ -6,6 +6,9 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import Spinner from "@/components/ui/Spinner";
+import StockNav from "@/components/stock/StockNav";
+import { useDialog } from "@/components/ui/useDialog";
+import { makeTr, reasonLabel } from "@/components/stock/i18n";
 
 // --- Types --------------------------------------------------------------------
 interface Product {
@@ -147,6 +150,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     totalValue: "Valeur totale",
     lowStock: "Stock faible",
     outOfStock: "Rupture",
+    service: "Service",
     stockTurnover: "Rotation stock",
     thisWeek: "Cette semaine",
     thisMonth: "Ce mois",
@@ -204,6 +208,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     totalValue: "Valor total",
     lowStock: "Stock bajo",
     outOfStock: "Agotado",
+    service: "Servicio",
     stockTurnover: "Rotación stock",
     thisWeek: "Esta semana",
     thisMonth: "Este mes",
@@ -261,6 +266,7 @@ const stockTranslations: Record<string, Record<string, string>> = {
     totalValue: "Total value",
     lowStock: "Low stock",
     outOfStock: "Out of stock",
+    service: "Service",
     stockTurnover: "Stock turnover",
     thisWeek: "This week",
     thisMonth: "This month",
@@ -343,6 +349,10 @@ export default function StockPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year" | "all">("all");
   const [showInfo, setShowInfo] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const closeMovements = () => { setShowMovements(false); setSelectedProduct(null); };
+  // Feuilles et fenêtres : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlgFilter = useDialog(isMobile && showFilterSheet, () => setShowFilterSheet(false), makeTr(language)("Filtrer les produits", "Filter products", "Filtrar productos"));
+  const dlgMovements = useDialog(showMovements && !!selectedProduct, closeMovements, t.movementsTitle);
 
   // FIX: Dimensions alignées sur la page Produits
   const contentMarginLeft = isMobile ? "0" : "0px";
@@ -438,6 +448,29 @@ export default function StockPage() {
           });
         }
       });
+      // Journal réel des mouvements (achats, ventes, caisse, transferts, ajustements, inventaires) ;
+      // à défaut (ancien serveur), on garde les mouvements reconstitués ci-dessus depuis les achats et les ventes.
+      try {
+        const journalRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/stock/movements?limit=500${startDate ? `&from=${startDate.toISOString().slice(0, 10)}` : ""}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (journalRes.ok) {
+          const journal = await journalRes.json();
+          if (Array.isArray(journal?.items)) {
+            const tr = makeTr(language);
+            movements.length = 0;
+            journal.items.forEach((m: any) => movements.push({
+              productId: m.productId,
+              productName: m.productName,
+              quantity: Math.abs(Number(m.quantity) || 0),
+              type: Number(m.quantity) < 0 ? "out" : "in",
+              date: m.createdAt,
+              reference: [reasonLabel(tr, m.reason), m.refType ? `${m.refType}${m.refId ? ` #${m.refId}` : ""}` : ""].filter(Boolean).join(" · ")
+            }));
+          }
+        }
+      } catch { /* mouvements reconstitués conservés */ }
       movements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setStockMovements(movements);
 
@@ -448,12 +481,14 @@ export default function StockPage() {
       }));
 
       // Calcul des statistiques
-      const totalSalesQuantity = salesList.reduce((sum, s) => sum + s.quantity, 0);
-      const avgStock = updatedProducts.reduce((sum, p) => sum + p.currentStock, 0) / (updatedProducts.length || 1);
+      const stocked = updatedProducts.filter(p => p.isStockable !== false);
+      const stockedIds = new Set(stocked.map(p => p.id));
+      const totalSalesQuantity = salesList.filter(s => stockedIds.has(s.productId)).reduce((sum, s) => sum + s.quantity, 0);
+      const avgStock = stocked.reduce((sum, p) => sum + p.currentStock, 0) / (stocked.length || 1);
       const turnoverRate = avgStock > 0 ? (totalSalesQuantity / avgStock) : 0;
-      const totalValue = updatedProducts.reduce((sum, p) => sum + ((p.price || 0) * p.currentStock), 0);
-      const lowStockCount = updatedProducts.filter(p => p.currentStock < 10 && p.currentStock > 0).length;
-      const outOfStockCount = updatedProducts.filter(p => p.currentStock === 0).length;
+      const totalValue = stocked.reduce((sum, p) => sum + ((p.price || 0) * p.currentStock), 0);
+      const lowStockCount = stocked.filter(p => p.currentStock < 10 && p.currentStock > 0).length;
+      const outOfStockCount = stocked.filter(p => p.currentStock === 0).length;
 
       setProducts(updatedProducts);
       setStats({
@@ -475,7 +510,15 @@ export default function StockPage() {
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const getStockStatus = (quantity: number) => {
+  const getStockStatus = (quantity: number, isService = false) => {
+    if (isService) {
+      return {
+        text: t.service,
+        color: theme.textSecondary,
+        icon: <IconBox size={13} color={theme.textSecondary} />,
+        bgColor: theme.surfaceHover
+      };
+    }
     if (quantity <= 0) {
       return {
         text: t.outOfStockStatus,
@@ -512,9 +555,10 @@ export default function StockPage() {
     const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
     let matchesStatus = true;
-    if (filterStatus === "low") matchesStatus = p.currentStock < 10 && p.currentStock > 0;
-    if (filterStatus === "out") matchesStatus = p.currentStock === 0;
-    if (filterStatus === "well") matchesStatus = p.currentStock >= 10;
+    const stocked = p.isStockable !== false;
+    if (filterStatus === "low") matchesStatus = stocked && p.currentStock < 10 && p.currentStock > 0;
+    if (filterStatus === "out") matchesStatus = stocked && p.currentStock === 0;
+    if (filterStatus === "well") matchesStatus = stocked && p.currentStock >= 10;
     return matchesSearch && matchesStatus;
   });
 
@@ -628,6 +672,8 @@ export default function StockPage() {
               </div>
             </div>
 
+            <StockNav />
+
             {/* -- Recherche / filtre (mobile) : dans le flux, sous le titre, comme les autres pages -- */}
           {isMobile && (
             <div style={{ marginBottom: sectionMargin }}>
@@ -662,11 +708,12 @@ export default function StockPage() {
                   }}
                 >
                   <IconFilter size={12} />
-                  {filterStatus !== "all" ? filterOptions.find(f => f.value === filterStatus)?.label.split(" ")[0] : "Filtrer"}
+                  {filterStatus !== "all" ? filterOptions.find(f => f.value === filterStatus)?.label.split(" ")[0] : makeTr(language)("Filtrer", "Filter", "Filtrar")}
                 </button>
                 {/* Refresh */}
                 <button
                   onClick={() => fetchAllData()}
+                  aria-label={t.refresh}
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center",
                     width: "44px", height: "44px", flexShrink: 0,
@@ -783,7 +830,7 @@ export default function StockPage() {
                     <p style={{ color: theme.textSecondary, fontSize: "12px" }}>{searchTerm ? t.noResults : t.noProducts}</p>
                   </div>
                 ) : filteredProducts.map((p) => {
-                  const status = getStockStatus(p.currentStock);
+                  const status = getStockStatus(p.currentStock, p.isStockable === false);
                   const value = (p.price || 0) * p.currentStock;
                   return (
                     <div
@@ -868,7 +915,7 @@ export default function StockPage() {
                     </thead>
                     <tbody>
                       {filteredProducts.map(p => {
-                        const status = getStockStatus(p.currentStock);
+                        const status = getStockStatus(p.currentStock, p.isStockable === false);
                         const value = (p.price || 0) * p.currentStock;
                         return (
                           <tr key={p.id} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
@@ -930,6 +977,7 @@ export default function StockPage() {
           onClick={() => setShowFilterSheet(false)}
         >
           <div
+            ref={dlgFilter.ref} {...dlgFilter.props}
             onClick={e => e.stopPropagation()}
             style={{
               background: theme.surface, borderRadius: "20px 20px 0 0",
@@ -939,7 +987,7 @@ export default function StockPage() {
           >
             {/* Handle bar */}
             <div style={{ width: "40px", height: "4px", background: theme.border, borderRadius: "2px", margin: "0 auto 16px" }} />
-            <h3 style={{ color: theme.text, fontSize: "14px", marginBottom: "12px" }}>Filtrer les produits</h3>
+            <h3 style={{ color: theme.text, fontSize: "14px", marginBottom: "12px" }}>{makeTr(language)("Filtrer les produits", "Filter products", "Filtrar productos")}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {filterOptions.map(f => (
                 <button
@@ -977,6 +1025,7 @@ export default function StockPage() {
           onClick={() => { setShowMovements(false); setSelectedProduct(null); }}
         >
           <div
+            ref={dlgMovements.ref} {...dlgMovements.props}
             onClick={e => e.stopPropagation()}
             style={{
               background: theme.surface,
@@ -1000,7 +1049,8 @@ export default function StockPage() {
                 <p style={{ color: theme.textSecondary, margin: "2px 0 0", fontSize: "11px" }}>{selectedProduct.name}</p>
               </div>
               <button
-                onClick={() => { setShowMovements(false); setSelectedProduct(null); }}
+                onClick={closeMovements}
+                aria-label={t.close}
                 style={{ background: `${theme.border}60`, border: "none", borderRadius: "50%", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", color: theme.text, cursor: "pointer" }}
               >
                 <IconX size={14} />

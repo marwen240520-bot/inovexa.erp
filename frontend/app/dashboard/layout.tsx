@@ -7,6 +7,7 @@ import PageSkeleton, { AppShellProvider } from "@/components/ui/PageSkeleton";
 import { initCompanyProfile, refreshCompanyProfile, useCompanyProfile } from "@/lib/company-profile";
 import FloatingAssistant from "@/components/assistant/FloatingAssistant";
 import AccountBar from "@/components/account/AccountBar";
+import A11yAutoLabels from "@/components/ui/A11yAutoLabels";
 
 export default function DashboardLayout({
   children,
@@ -64,6 +65,8 @@ export default function DashboardLayout({
           donc elle ne se remonte plus a chaque navigation (fini le reload mobile).
           Le composant se positionne lui-meme : rail fixe en desktop, barre du bas en mobile. */}
       <Sidebar />
+      {/* Titre de l'onglet propre à chaque écran ; noms accessibles des champs, colonnes d'action et graphiques. */}
+      <A11yAutoLabels />
 
       {/* Contenu principal */}
       <main

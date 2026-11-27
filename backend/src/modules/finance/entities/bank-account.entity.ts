@@ -1,4 +1,5 @@
 ﻿import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { numericTransformer } from '../../../common/column-transformers';
 
 @Entity('bank_accounts')
 export class BankAccount {
@@ -14,7 +15,8 @@ export class BankAccount {
   @Column()
   type: string;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  // numericTransformer : le solde revient en nombre (« 100.00 » en texte se concaténait au lieu de s'additionner).
+  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: numericTransformer })
   balance: number;
 
   @Column({ nullable: true })

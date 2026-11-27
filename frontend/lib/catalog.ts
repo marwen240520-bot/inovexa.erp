@@ -9,6 +9,8 @@
 // Pas de "use client" : lisible par les composants serveur comme par le navigateur.
 
 export type CatalogLang = "fr" | "en" | "es";
+/** Langues de l'interface et du site (le nombre affiché sur la page Produits en est déduit). */
+export const CATALOG_LANGS: CatalogLang[] = ["fr", "en", "es"];
 export type Localized = Record<CatalogLang, string>;
 
 export const pick = (text: Localized, lang: string): string => text[(lang as CatalogLang)] ?? text.fr;

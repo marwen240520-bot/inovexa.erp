@@ -5,6 +5,7 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import Spinner from "@/components/ui/Spinner";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { AppShellProvider } from "@/components/ui/PageSkeleton";
+import A11yAutoLabels from "@/components/ui/A11yAutoLabels";
 import { USER_KEY, clearSession, getStoredUser, getToken, type SessionUser } from "@/lib/session";
 import { API_URL } from "@/lib/saas";
 
@@ -213,6 +214,8 @@ export default function TransporteurLayout({
 
   return (
     <>
+      {/* Titre de l'onglet propre à chaque écran ; noms accessibles des champs et boutons. */}
+      <A11yAutoLabels />
       {/* Mobile Bottom Navigation */}
       {isMobile && (
         <div style={{

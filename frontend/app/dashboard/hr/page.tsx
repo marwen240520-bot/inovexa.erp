@@ -13,6 +13,9 @@ import { Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
 
 // --- Interfaces ----------------------------------------------------------------
 
@@ -304,6 +307,12 @@ export default function HRPage() {
   const [filterDepartment, setFilterDepartment] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [modal, setModal] = useState<ModalState>({ open: false, form: {}, editMode: false, editId: null });
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const closeModal = () => { setFormError(null); setModal({ open: false, form: {}, editMode: false, editId: null }); };
+  // Fenêtre accessible : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, modal.editMode ? t("hr.editEmployee") : t("hr.addEmployee"));
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
@@ -382,36 +391,50 @@ export default function HRPage() {
     } catch(e) { console.error(e); }
   };
 
-  const createEmployee = async () => {
+  const saveEmployee = async () => {
+    if (saving) return;
+    // Mêmes règles que les « * » du formulaire ; l'API les revérifie.
+    const problem = validateForm(language, modal.form as Record<string, unknown>, [
+      { key: "name", label: t("common.name"), required: true },
+      { key: "email", label: t("common.email"), type: "email", required: true },
+      { key: "position", label: t("hr.position"), required: true },
+      { key: "salary", label: t("hr.salary"), type: "number", required: true, min: 0 },
+      { key: "hireDate", label: t("hr.hireDate"), type: "date" },
+    ]);
+    if (problem) { setFormError(problem); focusField(`employee-${problem.key}`); return; }
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
+    const editing = modal.editMode;
+    const f = modal.form;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees`, {
-        method: "POST",
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees${editing ? `/${modal.editId}` : ""}`, {
+        method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(modal.form)
+        // Seuls les champs du formulaire partent (avant : tout l'objet, y compris des champs que l'API ne connaît pas).
+        body: JSON.stringify({
+          name: String(f.name ?? "").trim(),
+          email: String(f.email ?? "").trim(),
+          position: String(f.position ?? "").trim(),
+          department: String(f.department ?? "").trim(),
+          salary: parseNumber(f.salary),
+          phone: String(f.phone ?? "").trim(),
+          hireDate: f.hireDate ? String(f.hireDate) : undefined,
+          status: f.status || "active",
+        }),
       });
       if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
+        closeModal();
         fetchEmployees();
-        showMessage(t("hr.employeeCreated"), "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch(e) { showMessage(t("common.error"), "error"); }
-  };
-
-  const updateEmployee = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${modal.editId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(modal.form)
-      });
-      if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
-        fetchEmployees();
-        showMessage(t("hr.employeeUpdated"), "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch(e) { showMessage(t("common.error"), "error"); }
+        showMessage(editing ? t("hr.employeeUpdated") : t("hr.employeeCreated"), "success");
+      } else {
+        setFormError({ message: await readApiError(res, t("common.error")) });
+      }
+    } catch {
+      setFormError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const updateStatus = async (id: number, status: string) => {
@@ -447,26 +470,39 @@ export default function HRPage() {
   };
 
   const deleteEmployee = async (id: number) => {
-    if (confirm(t("hr.confirmDelete"))) {
-      const token = localStorage.getItem("token");
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      fetchEmployees();
+    if (!confirm(t("hr.confirmDelete"))) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { showMessage(await readApiError(res, fm(language, "cannotDelete")), "error"); return; }
+      await fetchEmployees();
       showMessage(t("hr.employeeDeleted"), "success");
-      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      setSelectedIds((ids) => ids.filter((sid) => sid !== id));
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm(t("hr.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) {
-      const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    if (!confirm(t("hr.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) return;
+    const token = localStorage.getItem("token");
+    let ok = 0;
+    let failed = 0;
+    let reason = "";
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) ok++;
+        else { failed++; reason = reason || (await readApiError(res, fm(language, "cannotDelete"))); }
+      } catch {
+        failed++;
+        reason = reason || fm(language, "network");
       }
-      fetchEmployees();
-      setSelectedIds([]);
-      showMessage(t("hr.employeesDeleted").replace("{count}", String(selectedIds.length)), "success");
     }
+    await fetchEmployees();
+    setSelectedIds([]);
+    showMessage(failed ? fm(language, "bulkPartial", { ok, failed, reason }) : t("hr.employeesDeleted").replace("{count}", String(ok)), failed ? "error" : "success");
   };
 
   const importEmployees = async (data: Partial<Employee>[]) => {
@@ -488,7 +524,7 @@ export default function HRPage() {
       }
     } catch (error) {
       console.error("Erreur import:", error);
-      showMessage("Erreur de connexion lors de l'import", "error");
+      showMessage(fm(language, "network"), "error");
     } finally { setImporting(false); }
   };
 
@@ -657,7 +693,7 @@ export default function HRPage() {
                   <ExportButtons data={filteredEmployees} filename="employes" iconOnly={isMobile} />
                 </div>
 
-                {/* Add employee é full-width on mobile */}
+                {/* Add employee — full-width on mobile */}
                 <button
                   onClick={() => setModal({ open: true, editMode: false, editId: null, form: { name: "", email: "", position: "", department: "", salary: 0, phone: "", hireDate: "", status: "active" } })}
                   style={{
@@ -702,7 +738,7 @@ export default function HRPage() {
             </div>
           )}
 
-          {/* -- Stats Cards é improved -- */}
+          {/* -- Stats Cards — improved -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(5, 1fr)",
@@ -1094,16 +1130,18 @@ export default function HRPage() {
           background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px"
         }}>
-          <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "90vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
+          <div ref={dlg.ref} {...dlg.props} style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "90vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "20px", fontSize: isMobile ? "17px" : "22px", display: "flex", alignItems: "center", gap: "10px" }}>
               {modal.editMode
                 ? <><IconEdit size={isMobile ? 16 : 18} color={theme.primary} /> {t("hr.editEmployee")}</>
                 : <><IconPlus size={isMobile ? 16 : 18} color={theme.primary} /> {t("hr.addEmployee")}</>}
             </h2>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void saveEmployee(); }}>
+
             {([
               { label: t("common.name") + " *", key: "name" as keyof Employee, type: "text", placeholder: t("hr.employeeName"), autoFocus: true },
-              { label: t("common.email") + " *", key: "email" as keyof Employee, type: "email", placeholder: "Email" },
+              { label: t("common.email") + " *", key: "email" as keyof Employee, type: "email", placeholder: t("common.email") },
               { label: t("hr.position") + " *", key: "position" as keyof Employee, type: "text", placeholder: t("hr.position") },
               { label: t("hr.department"), key: "department" as keyof Employee, type: "text", placeholder: t("hr.department") },
               { label: t("hr.salary") + " *", key: "salary" as keyof Employee, type: "number", placeholder: "0", step: "0.01" },
@@ -1111,8 +1149,11 @@ export default function HRPage() {
               { label: t("hr.hireDate"), key: "hireDate" as keyof Employee, type: "date", placeholder: "" }
             ] as { label: string; key: keyof Employee; type: string; placeholder: string; step?: string; autoFocus?: boolean }[]).map((field) => (
               <div key={field.key} style={{ marginBottom: "14px" }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{field.label}</label>
+                <label htmlFor={`employee-${field.key}`} style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{field.label}</label>
                 <input
+                  id={`employee-${field.key}`}
+                  aria-required={field.label.endsWith("*") || undefined}
+                  aria-invalid={formError?.key === field.key || undefined}
                   type={field.type}
                   step={field.step}
                   placeholder={field.placeholder}
@@ -1133,8 +1174,9 @@ export default function HRPage() {
             ))}
 
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.status")}</label>
+              <label htmlFor="employee-status" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.status")}</label>
               <select
+                id="employee-status"
                 value={modal.form.status ?? "active"}
                 onChange={e => setModal({ ...modal, form: { ...modal.form, status: e.target.value } })}
                 style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
@@ -1145,9 +1187,20 @@ export default function HRPage() {
               </select>
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError.message}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "10px" }}>
               <button
-                onClick={modal.editMode ? updateEmployee : createEmployee}
+                type="submit"
+                disabled={saving}
+                aria-busy={saving || undefined}
                 style={{
                   flex: 1, padding: "12px", background: theme.gradient, color: "white",
                   border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600",
@@ -1162,7 +1215,8 @@ export default function HRPage() {
                 {modal.editMode ? t("common.save") : t("common.add")}
               </button>
               <button
-                onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })}
+                type="button"
+                onClick={closeModal}
                 style={{
                   flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text,
                   border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer",
@@ -1175,6 +1229,7 @@ export default function HRPage() {
                 {t("common.cancel")}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}

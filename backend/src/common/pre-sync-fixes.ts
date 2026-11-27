@@ -22,12 +22,19 @@ async function columnInfo(client: any, table: string, column: string): Promise<R
   return res.rows[0];
 }
 
-/** expenses : `amount` est décimal(10,2) en base (ancienne entité) ; `date` peut contenir des valeurs vides. */
+/** expenses : `amount` est décimal(10,2) en base (ancienne entité) ; HT, TVA et taux étaient entiers ; `date` peut contenir des valeurs vides. */
 async function fixExpenses(client: any): Promise<void> {
   const amount = await columnInfo(client, 'expenses', 'amount');
   if (amount && (amount.data_type !== 'numeric' || Number(amount.numeric_precision) !== 10 || Number(amount.numeric_scale) !== 2)) {
     await client.query(`ALTER TABLE "expenses" ALTER COLUMN "amount" TYPE numeric(10,2) USING "amount"::numeric(10,2)`);
     console.log('[pre-sync] expenses.amount converti en numeric(10,2) (données conservées)');
+  }
+  for (const [column, precision, scale] of [['amountHT', 10, 2], ['taxAmount', 10, 2], ['taxRate', 5, 2]] as const) {
+    const info = await columnInfo(client, 'expenses', column);
+    if (info && (info.data_type !== 'numeric' || Number(info.numeric_precision) !== precision || Number(info.numeric_scale) !== scale)) {
+      await client.query(`ALTER TABLE "expenses" ALTER COLUMN "${column}" TYPE numeric(${precision},${scale}) USING "${column}"::numeric(${precision},${scale})`);
+      console.log(`[pre-sync] expenses.${column} converti en numeric(${precision},${scale}) (données conservées)`);
+    }
   }
   const date = await columnInfo(client, 'expenses', 'date');
   if (date) {

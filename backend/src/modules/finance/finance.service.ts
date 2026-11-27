@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, Between } from 'typeorm';
 import { Expense } from './entities/expense.entity';
@@ -6,6 +6,8 @@ import { Budget } from './entities/budget.entity';
 import { BankAccount } from './entities/bank-account.entity';
 import { AccountingService } from '../accounting/accounting.service';
 import { stripProtected } from '../saas/admin.guard';
+import type { ExpenseDto } from './finance.dto';
+import { completeExpense } from './expense-defaults';
 
 @Injectable()
 export class FinanceService {
@@ -25,21 +27,22 @@ export class FinanceService {
     let where: any = { userId };
     if (year !== undefined && month !== undefined) {
       const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0);
+      const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
       where.date = Between(start, end);
     } else if (year !== undefined) {
       const start = new Date(year, 0, 1);
-      const end = new Date(year, 11, 31);
+      const end = new Date(year, 11, 31, 23, 59, 59, 999);
       where.date = Between(start, end);
     }
     return this.expenseRepository.find({ where, order: { date: 'DESC' } });
   }
 
   /** Enregistre la dépense et son écriture comptable (charge HT + TVA déductible, réglée par caisse ou banque). */
-  async addExpense(userId: number, data: Partial<Expense>, actorId: number | null = null) {
+  async addExpense(userId: number, data: Partial<Expense> | ExpenseDto, actorId: number | null = null) {
+    const { id: _ignored, ...input } = (data || {}) as Partial<Expense>;
+    const fields = completeExpense(input);
     return this.ds.transaction(async (em) => {
-      const { id: _ignored, ...input } = data || {};
-      const expense = await em.getRepository(Expense).save(em.getRepository(Expense).create({ ...input, userId } as Partial<Expense>));
+      const expense = await em.getRepository(Expense).save(em.getRepository(Expense).create({ ...input, ...fields, userId } as Partial<Expense>));
       const entry = await this.accounting.postExpense(em, userId, actorId, expense);
       return { ...expense, journalEntry: entry ? { id: entry.id, number: entry.number, journal: entry.journal } : null };
     });
@@ -59,6 +62,13 @@ export class FinanceService {
   // Budgets
   async getBudgets(userId: number, year: number) {
     return this.budgetRepository.find({ where: { userId, year } });
+  }
+
+  async deleteBudget(id: number, userId: number) {
+    const budget = await this.budgetRepository.findOne({ where: { id, userId } });
+    if (!budget) throw new NotFoundException('Budget introuvable.');
+    await this.budgetRepository.delete({ id, userId });
+    return { success: true };
   }
 
   async setBudget(userId: number, data: { category: string; amount: number; year: number; department?: string }) {
@@ -92,7 +102,7 @@ export class FinanceService {
   }
 
   async addBankAccount(userId: number, data: Partial<BankAccount>) {
-    const account = this.bankAccountRepository.create({ ...stripProtected(data as any), userId });
+    const account = this.bankAccountRepository.create({ type: 'checking', ...stripProtected(data as any), userId });
     return this.bankAccountRepository.save(account);
   }
 
@@ -110,10 +120,12 @@ export class FinanceService {
       expensesByCategory[e.category] = (expensesByCategory[e.category] || 0) + (e.amount || 0);
     });
     const bankAccounts = await this.getBankAccounts(userId);
-    const totalCash = bankAccounts.reduce((s, a) => s + (a.balance || 0), 0);
+    const totalCash = bankAccounts.reduce((s, a) => s + (Number(a.balance) || 0), 0);
 
     const from = month !== undefined ? `${year}-${String(month + 1).padStart(2, '0')}-01` : `${year}-01-01`;
-    const to = month !== undefined ? `${year}-${String(month + 1).padStart(2, '0')}-31` : `${year}-12-31`;
+    // Dernier jour réel du mois : « 2026-02-31 » n'existe pas et faisait échouer la requête.
+    const lastDay = month !== undefined ? new Date(Date.UTC(year, month + 1, 0)).getUTCDate() : 31;
+    const to = month !== undefined ? `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}` : `${year}-12-31`;
     const [docs] = await this.ds.query(
       `SELECT
          COALESCE(SUM("totalHT") FILTER (WHERE "type" = 'invoice'),0)::float - COALESCE(SUM("totalHT") FILTER (WHERE "type" = 'credit_note'),0)::float AS "revenueHT",

@@ -10,6 +10,9 @@ import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, validateForm, focusField } from "@/lib/formValidation";
 // --- SVG Icon Components -------------------------------------------------------
 
 const IconBuilding2 = ({ size = 20, color = "currentColor", style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
@@ -243,6 +246,12 @@ export default function SuppliersPage() {
   }, []);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({ open: false, form: {}, editMode: false, editId: null });
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const closeModal = () => { setFormError(null); setModal({ open: false, form: {}, editMode: false, editId: null }); };
+  // Fenêtre accessible : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, modal.editMode ? (t("suppliers.editSupplier") || "Modifier fournisseur") : (t("suppliers.addSupplier") || "Ajouter fournisseur"));
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
@@ -317,79 +326,87 @@ export default function SuppliersPage() {
 
   // -- CRUD -------------------------------------------------------------------
 
-  const createSupplier = async () => {
+  const saveSupplier = async () => {
+    if (saving) return;
+    // Mêmes règles que les « * » du formulaire ; l'API les revérifie.
+    const problem = validateForm(language, modal.form as Record<string, unknown>, [
+      { key: "name", label: t("common.name"), required: true },
+      { key: "email", label: t("common.email"), type: "email", required: true },
+      { key: "totalPurchases", label: t("suppliers.totalPurchases") || "Total achats", type: "number", min: 0 },
+    ]);
+    if (problem) { setFormError(problem); focusField(`supplier-${problem.key}`); return; }
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
+    const editing = modal.editMode;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers`, {
-        method: "POST",
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers${editing ? `/${modal.editId}` : ""}`, {
+        method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          name: modal.form.name,
-          email: modal.form.email,
-          phone: modal.form.phone || "",
-          address: modal.form.address || "",
+          name: String(modal.form.name ?? "").trim(),
+          email: String(modal.form.email ?? "").trim(),
+          phone: String(modal.form.phone ?? "").trim(),
+          address: String(modal.form.address ?? "").trim(),
           totalPurchases: Number(modal.form.totalPurchases) || 0,
           status: modal.form.status || "active"
         })
       });
       if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
+        closeModal();
         fetchSuppliers();
-        showMessage(t("suppliers.supplierCreated") || "Fournisseur créé", "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch (e) { showMessage(t("common.error"), "error"); }
-  };
-
-  const updateSupplier = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${modal.editId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          name: modal.form.name,
-          email: modal.form.email,
-          phone: modal.form.phone || "",
-          address: modal.form.address || "",
-          totalPurchases: Number(modal.form.totalPurchases) || 0,
-          status: modal.form.status || "active"
-        })
-      });
-      if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
-        fetchSuppliers();
-        showMessage(t("suppliers.supplierUpdated") || "Fournisseur mis é jour", "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch (e) { showMessage(t("common.error"), "error"); }
+        showMessage(editing ? (t("suppliers.supplierUpdated") || "Fournisseur mis à jour") : (t("suppliers.supplierCreated") || "Fournisseur créé"), "success");
+      } else {
+        setFormError({ message: await readApiError(res, t("common.error")) });
+      }
+    } catch {
+      setFormError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const deleteSupplier = async (id: string) => {
-    if (confirm(t("suppliers.confirmDelete") || "Supprimer ce fournisseur ?")) {
-      const token = localStorage.getItem("token");
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}`, {
+    if (!confirm(t("suppliers.confirmDelete") || "Supprimer ce fournisseur ?")) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchSuppliers();
+      // Avant : « supprimé » s'affichait même quand l'API refusait (fournisseur lié à des achats) et la ligne restait.
+      if (!res.ok) { showMessage(await readApiError(res, fm(language, "cannotDelete")), "error"); return; }
+      await fetchSuppliers();
       showMessage(t("suppliers.supplierDeleted") || "Fournisseur supprimé", "success");
-      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      setSelectedIds((ids) => ids.filter((sid) => sid !== id));
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm(`${t("suppliers.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} fournisseur(s) ?`)) {
-      const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}`, {
+    if (!confirm(t("suppliers.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) return;
+    const token = localStorage.getItem("token");
+    let ok = 0;
+    let failed = 0;
+    let reason = "";
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suppliers/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (res.ok) ok++;
+        else { failed++; reason = reason || (await readApiError(res, fm(language, "cannotDelete"))); }
+      } catch {
+        failed++;
+        reason = reason || fm(language, "network");
       }
-      fetchSuppliers();
-      setSelectedIds([]);
-      showMessage(`${selectedIds.length} fournisseur(s) supprimé(s)`, "success");
     }
+    await fetchSuppliers();
+    setSelectedIds([]);
+    showMessage(failed ? fm(language, "bulkPartial", { ok, failed, reason }) : fm(language, "bulkDeleted", { count: ok }), failed ? "error" : "success");
   };
 
   const toggleStatus = async (id: string, currentStatus: string | undefined) => {
@@ -446,7 +463,7 @@ export default function SuppliersPage() {
       }
     } catch (error) {
       console.error("Erreur import:", error);
-      showMessage("Erreur de connexion lors de l'import", "error");
+      showMessage(fm(language, "network"), "error");
     } finally { setImporting(false); }
   };
 
@@ -894,7 +911,7 @@ export default function SuppliersPage() {
                   onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.3)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
                 >
-                  {/* Card header é avatar + name */}
+                  {/* Card header — avatar + name */}
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                     <div style={{
                       width: isMobile ? "38px" : "52px",
@@ -1022,7 +1039,7 @@ export default function SuppliersPage() {
           background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px"
         }}>
-          <div style={{
+          <div ref={dlg.ref} {...dlg.props} style={{
             background: theme.surface, padding: modalPadding, borderRadius: "24px",
             width: modalWidth, maxWidth: "95%", maxHeight: "90vh", overflowY: "auto",
             border: `1px solid ${theme.border}`
@@ -1033,18 +1050,23 @@ export default function SuppliersPage() {
                 : <><IconPlus size={isMobile ? 16 : 20} color={theme.primary} /> {t("suppliers.addSupplier") || "Ajouter fournisseur"}</>}
             </h2>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void saveSupplier(); }}>
+
             {([
               { label: (t("common.name") || "Nom") + " *", key: "name", type: "text", placeholder: t("suppliers.supplierName") || "Nom du fournisseur", autoFocus: true },
-              { label: (t("common.email") || "Email") + " *", key: "email", type: "email", placeholder: "Email" },
+              { label: (t("common.email") || "Email") + " *", key: "email", type: "email", placeholder: t("common.email") || "Email" },
               { label: t("common.phone") || "Téléphone", key: "phone", type: "tel", placeholder: t("common.phone") || "Téléphone" },
               { label: t("common.address") || "Adresse", key: "address", type: "text", placeholder: t("common.address") || "Adresse" },
               { label: (t("suppliers.totalPurchases") || "Total achats"), key: "totalPurchases", type: "number", placeholder: "0", step: "0.01" }
             ] as { label: string; key: string; type: string; placeholder: string; step?: string; autoFocus?: boolean }[]).map((field) => (
               <div key={field.key} style={{ marginBottom: "14px" }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>
+                <label htmlFor={`supplier-${field.key}`} style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>
                   {field.label}
                 </label>
                 <input
+                  id={`supplier-${field.key}`}
+                  aria-required={field.label.endsWith("*") || undefined}
+                  aria-invalid={formError?.key === field.key || undefined}
                   type={field.type}
                   step={field.step}
                   placeholder={field.placeholder}
@@ -1073,10 +1095,11 @@ export default function SuppliersPage() {
             ))}
 
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>
+              <label htmlFor="supplier-status" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>
                 {t("common.status") || "Statut"}
               </label>
               <select
+                id="supplier-status"
                 value={modal.form.status || "active"}
                 onChange={(e) => setModal({ ...modal, form: { ...modal.form, status: e.target.value } })}
                 style={{
@@ -1091,9 +1114,20 @@ export default function SuppliersPage() {
               </select>
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError.message}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "12px" }}>
               <button
-                onClick={modal.editMode ? updateSupplier : createSupplier}
+                type="submit"
+                disabled={saving}
+                aria-busy={saving || undefined}
                 style={{
                   flex: 1, padding: "10px", background: theme.gradient, color: "white",
                   border: "none", borderRadius: "10px", cursor: "pointer",
@@ -1108,7 +1142,8 @@ export default function SuppliersPage() {
                 {modal.editMode ? (t("common.edit") || "Modifier") : (t("common.add") || "Ajouter")}
               </button>
               <button
-                onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })}
+                type="button"
+                onClick={closeModal}
                 style={{
                   flex: 1, padding: "10px", background: theme.surfaceHover, color: theme.text,
                   border: `1px solid ${theme.border}`, borderRadius: "10px",
@@ -1120,6 +1155,7 @@ export default function SuppliersPage() {
                 {t("common.cancel") || "Annuler"}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}

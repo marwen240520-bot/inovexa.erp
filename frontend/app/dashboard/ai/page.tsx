@@ -86,7 +86,7 @@ const translations = {
     optimistic: "Optimiste", realistic: "Réaliste", pessimistic: "Pessimiste",
     salesForecast: "Prévisions des ventes", lowStock: "produit(s) en stock faible", outOfStock: "produit(s) en rupture",
     pendingOrders: "commande(s) en attente", send: "Envoyer", newChat: "Nouveau chat", online: "En ligne",
-    loading: "Chargement...", questionPlaceholder: "Posez votre question", refreshing: "Actualisation...",
+    loading: "Chargement...", questionPlaceholder: "Posez votre question", refreshing: "Actualisation...", refresh: "Actualiser", lastRefreshAt: "Dernière actualisation :",
     welcome: "Bonjour", whatCanIDo: "Ce que je peux faire", tryQuestions: "Essayez",
     askRevenue: "Quel est mon chiffre d'affaires ?", askSummary: "Résumé de mon activité",
     askTopProducts: "Top produits", askStock: "état du stock", askForecast: "Prévisions",
@@ -107,34 +107,34 @@ const translations = {
     inventoryTurnover: "Rotation stock", productivity: "Productivité par employé"
   },
   es: {
-    dashboard: "Tablero", chat: "Chat IA", forecasts: "Previsiones", recommendations: "Recomendaciones", analytics: "Anélisis",
+    dashboard: "Tablero", chat: "Chat IA", forecasts: "Previsiones", recommendations: "Recomendaciones", analytics: "Análisis",
     revenue: "Ingresos", profit: "Beneficio neto", activeClients: "Clientes activos", products: "Productos",
-    salesEvolution: "Evolucién de ventas", profitEvolution: "Evolucién del beneficio", topProducts: "Top productos", topClients: "Top clientes",
+    salesEvolution: "Evolución de ventas", profitEvolution: "Evolución del beneficio", topProducts: "Top productos", topClients: "Top clientes",
     forecastGrowth: "Crecimiento previsto", projectedRevenue: "Ingreso proyectado", projectedProfit: "Beneficio proyectado",
     instantAnswers: "Respuestas instantáneas", vsPrevShort: "vs ant.", vsPrevPeriod: "vs período anterior", nextMonthShort: "próximo mes", nextMonthLong: "para el próximo mes", estimateShort: "estimación", estimateMargin: "estimación con 35% de margen", recommendedLabel: "Recomendado:", unitsWord: "unidades", breakdownTitle: "Distribución", keyKpis: "KPIs clave",
     threeMonths: "3 meses", sixMonths: "6 meses", twelveMonths: "12 meses",
     optimistic: "Optimista", realistic: "Realista", pessimistic: "Pesimista",
-    salesForecast: "Previsién de ventas", lowStock: "producto(s) con stock bajo", outOfStock: "producto(s) agotado(s)",
-    pendingOrders: "pedido(s) pendiente(s)", send: "Enviar", newChat: "Nuevo chat", online: "En lénea",
-    loading: "Cargando...", questionPlaceholder: "Haz tu pregunta", refreshing: "Actualizando...",
+    salesForecast: "Previsión de ventas", lowStock: "producto(s) con stock bajo", outOfStock: "producto(s) agotado(s)",
+    pendingOrders: "pedido(s) pendiente(s)", send: "Enviar", newChat: "Nuevo chat", online: "En línea",
+    loading: "Cargando...", questionPlaceholder: "Haz tu pregunta", refreshing: "Actualizando...", refresh: "Actualizar", lastRefreshAt: "Última actualización:",
     welcome: "Hola", whatCanIDo: "Lo que puedo hacer", tryQuestions: "Prueba",
-    askRevenue: "éCuél es mi facturacién?", askSummary: "Resumen de mi actividad",
+    askRevenue: "¿Cuál es mi facturación?", askSummary: "Resumen de mi actividad",
     askTopProducts: "Top productos", askStock: "Estado del stock", askForecast: "Previsiones",
     viewStock: "Ver stock", restock: "Reabastecer", viewOrders: "Ver pedidos",
-    dashboardBtn: "Tablero", aiAssistant: "Asistente IA", aiSubtitle: "Inteligencia artificial para anélisis y previsiones",
+    dashboardBtn: "Tablero", aiAssistant: "Asistente IA", aiSubtitle: "Inteligencia artificial para análisis y previsiones",
     priorityHigh: "Alta prioridad", priorityMedium: "Prioridad media", priorityLow: "Prioridad baja",
     orderNow: "Pedir ahora", stockStatus: "Estado del stock", monthlyDemand: "Demanda mensual",
-    recommendedStock: "Stock recomendado", urgency: "Urgencia", action: "Accién",
+    recommendedStock: "Stock recomendado", urgency: "Urgencia", action: "Acción",
     confidence: "Nivel de confianza", highConfidence: "Confianza alta", mediumConfidence: "Confianza media",
-    upperBound: "Escenario optimista", lowerBound: "Escenario pesimista", roi: "Retorno de inversién",
-    backToDashboard: "Volver al tablero", quickActions: "Acciones répidas", aiThoughts: "La IA analiza tus datos...",
-    typeMessage: "Escribe tu mensaje...", newMessage: "Nuevo mensaje", copyConversation: "Copiar conversacién",
-    clearConversation: "Borrar conversacién", conversationCopied: "éConversacién copiada!", conversationCleared: "Conversacién borrada",
+    upperBound: "Escenario optimista", lowerBound: "Escenario pesimista", roi: "Retorno de inversión",
+    backToDashboard: "Volver al tablero", quickActions: "Acciones rápidas", aiThoughts: "La IA analiza tus datos...",
+    typeMessage: "Escribe tu mensaje...", newMessage: "Nuevo mensaje", copyConversation: "Copiar conversación",
+    clearConversation: "Borrar conversación", conversationCopied: "¡Conversación copiada!", conversationCleared: "Conversación borrada",
     typing: "escribiendo...", aiResponding: "La IA responde...",
     suggestedQuestions: "Preguntas sugeridas", askQuestion: "Hacer pregunta", welcomeBack: "Bienvenido",
     totalSales: "Ventas totales", averageTicket: "Ticket promedio", growthRate: "Tasa de crecimiento",
-    profitMargin: "Margen de beneficio", totalExpenses: "Gastos totales", conversionRate: "Tasa de conversién",
-    inventoryTurnover: "Rotacién de stock", productivity: "Productividad por empleado"
+    profitMargin: "Margen de beneficio", totalExpenses: "Gastos totales", conversionRate: "Tasa de conversión",
+    inventoryTurnover: "Rotación de stock", productivity: "Productividad por empleado"
   },
   en: {
     dashboard: "Dashboard", chat: "AI Chat", forecasts: "Forecasts", recommendations: "Recommendations", analytics: "Analytics",
@@ -146,7 +146,7 @@ const translations = {
     optimistic: "Optimistic", realistic: "Realistic", pessimistic: "Pessimistic",
     salesForecast: "Sales forecast", lowStock: "low stock product(s)", outOfStock: "out of stock product(s)",
     pendingOrders: "pending order(s)", send: "Send", newChat: "New chat", online: "Online",
-    loading: "Loading...", questionPlaceholder: "Ask your question", refreshing: "Refreshing...",
+    loading: "Loading...", questionPlaceholder: "Ask your question", refreshing: "Refreshing...", refresh: "Refresh", lastRefreshAt: "Last refreshed:",
     welcome: "Hello", whatCanIDo: "What I can do", tryQuestions: "Try",
     askRevenue: "What is my revenue?", askSummary: "Summary of my activity",
     askTopProducts: "Top products", askStock: "Stock status", askForecast: "Forecasts",
@@ -911,6 +911,7 @@ export default function IAPage() {
               <button 
                 onClick={refreshData} 
                 disabled={refreshing} 
+                aria-label={t.refresh}
                 style={{ 
                   display: "flex", 
                   alignItems: "center", 
@@ -929,12 +930,12 @@ export default function IAPage() {
                 <span style={{ display: "inline-flex", animation: refreshing ? "spin 1s linear infinite" : "none" }}>
                   <IconRefresh size={isMobile ? 12 : 12} />
                 </span>
-                {refreshing ? (isMobile ? "..." : t.refreshing) : (isMobile ? "" : "Actualiser")}
+                {refreshing ? (isMobile ? "..." : t.refreshing) : (isMobile ? "" : t.refresh)}
               </button>
             </div>
             {lastRefresh && !refreshing && !isMobile && (
               <p style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "8px", textAlign: "right" }}>
-                 Derniére actualisation: {lastRefresh.toLocaleTimeString()}
+                 {t.lastRefreshAt} {lastRefresh.toLocaleTimeString()}
               </p>
             )}
           </div>
@@ -1373,7 +1374,7 @@ export default function IAPage() {
                   </div>
                   <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>
                     <span style={{ display: "inline-flex", color: theme.accent }}><IconTrendingUp size={isMobile ? 20 : 24} /></span>
-                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: theme.accent, marginTop: "6px" }}>{stats?.employees?.total > 0 ? Math.round((stats?.sales?.revenue || 0) / (stats?.employees?.total || 1)).toLocaleString() : 0} é</div>
+                    <div style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: "bold", color: theme.accent, marginTop: "6px" }}>{formatCurrency(stats?.employees?.total > 0 ? Math.round((stats?.sales?.revenue || 0) / (stats?.employees?.total || 1)) : 0)}</div>
                     <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary }}>{t.productivity}</div>
                   </div>
                   <div style={{ textAlign: "center", padding: isMobile ? "12px" : "16px", background: theme.surfaceHover, borderRadius: "12px" }}>

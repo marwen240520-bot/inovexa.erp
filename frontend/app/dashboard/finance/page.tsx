@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useId, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -7,9 +7,13 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { Line, Doughnut, Bar } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
+import { useCompanyProfile } from "@/lib/company-profile";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
 
 
-// ==================== TRADUCTIONS COMPLéTES ====================
+// ==================== TRADUCTIONS COMPLÈTES ====================
 const translations = {
   fr: {
     common: {
@@ -37,7 +41,7 @@ const translations = {
       no: "Non",
       all: "Tous",
       error: "Erreur",
-      success: "Succés",
+      success: "Succès",
       noData: "Aucune donnée",
       year: "Exercice",
       lastUpdate: "MAJ",
@@ -52,9 +56,9 @@ const translations = {
       equity: "Capitaux propres",
       cogs: "Achats et stocks (COGS)",
       depreciation: "Amortissements",
-      interestExpense: "Intéréts",
-      incomeTax: "Impéts (25%)",
-      monthlyEvolution: "évolution mensuelle",
+      interestExpense: "Intérêts",
+      incomeTax: "Impôts (25%)",
+      monthlyEvolution: "Évolution mensuelle",
       assets: "Actif",
       inventory: "Stocks",
       totalAssets: "TOTAL ACTIF",
@@ -75,10 +79,10 @@ const translations = {
       paymentMethod: "Moyen de paiement",
       reference: "Référence",
       client: "Client",
-      dueDate: "échéance",
+      dueDate: "Échéance",
       delay: "Retard",
       unpaidInvoices: "Factures impayées",
-      agingSchedule: "échéancier client",
+      agingSchedule: "Échéancier client",
       customerInvoices: "Factures client",
       budgetVsActual: "Budget vs Réel",
       departmentPerformance: "Performance par département",
@@ -90,7 +94,7 @@ const translations = {
       paymentTerm: "Délai client",
       topClients: "Top 5 clients",
       topProducts: "Top 5 produits",
-      detailedProfitEvolution: "évolution détaillée du résultat",
+      detailedProfitEvolution: "Évolution détaillée du résultat",
       expenseDistribution: "Répartition des dépenses",
       actual: "Réel",
       budget: "Budget",
@@ -101,10 +105,10 @@ const translations = {
       supplier_label: "Fournisseur",
       date_label: "Date",
       accountsPayable: "Dettes fournisseurs",
-      current: "é échoir",
+      current: "À échoir",
       debtToEquity: "Endettement",
       debtToEquityDesc: "Dettes / Capitaux propres",
-      currentRatioDesc: "Capacité é payer les dettes CT",
+      currentRatioDesc: "Capacité à payer les dettes CT",
       quickRatioDesc: "Ratio hors stocks",
       netMarginDesc: "Rentabilité nette %",
       roiDesc: "Retour sur investissement",
@@ -112,7 +116,7 @@ const translations = {
       cash: "Liquidités",
       card: "Carte bancaire",
       transfer: "Virement",
-      check: "Chéque",
+      check: "Chèque",
       online: "Paiement en ligne",
       checking: "Compte courant",
       savings: "Compte épargne",
@@ -139,7 +143,7 @@ const translations = {
       roeLong: "Retour sur capitaux propres",
       ebitda: "EBITDA",
       ebitLong: "Résultat d'exploitation",
-      ebt: "Résultat avant impéts",
+      ebt: "Résultat avant impôts",
       quickRatio: "Ratio rapide",
       roe: "ROE",
       days: "j",
@@ -162,7 +166,7 @@ const translations = {
     },
     finance: {
       title: "Module Finance",
-      subtitle: "Comptabilité é Trésorerie é Analyse é Budgets é Fiscalité",
+      subtitle: "Comptabilité · Trésorerie · Analyse · Budgets · Fiscalité",
       revenue: "Chiffre d'affaires",
       profit: "Bénéfice net",
       cashBalance: "Trésorerie",
@@ -187,7 +191,7 @@ const translations = {
       netCashflow: "Flux net",
       operationalExpenses: "Opérationnelles",
       administrativeExpenses: "Administratives",
-      financialExpenses: "Financiéres",
+      financialExpenses: "Financières",
       addExpense: "Ajouter dépense",
       setBudget: "Définir budget",
       addAccount: "Ajouter compte",
@@ -227,15 +231,15 @@ const translations = {
       total: "Total",
       paid: "Pagado",
       pending: "Pendiente",
-      yes: "Sé",
+      yes: "Sí",
       no: "No",
       all: "Todos",
       error: "Error",
-      success: "éxito",
+      success: "Éxito",
       noData: "Sin datos",
       year: "Ejercicio",
       lastUpdate: "ACT",
-      cashAlert: "Alerta tesoreréa",
+      cashAlert: "Alerta tesorería",
       margin: "margen",
       forecast: "Proyectada",
       invoicesPending: "facturas impagas",
@@ -248,7 +252,7 @@ const translations = {
       depreciation: "Amortizaciones",
       interestExpense: "Intereses",
       incomeTax: "Impuestos (25%)",
-      monthlyEvolution: "Evolucién mensual",
+      monthlyEvolution: "Evolución mensual",
       assets: "Activo",
       inventory: "Inventario",
       totalAssets: "TOTAL ACTIVO",
@@ -261,8 +265,8 @@ const translations = {
       balanceSheetStructure: "Estructura del balance",
       currentBalance: "Saldo actual",
       monthlyCashflow: "Flujo de caja mensual",
-      sixMonthForecast: "Proyeccién 6 meses",
-      byCategory: "Por categoréa",
+      sixMonthForecast: "Proyección 6 meses",
+      byCategory: "Por categoría",
       byFamily: "Por familia",
       transactions: "Transacciones",
       supplier: "Proveedor",
@@ -280,18 +284,18 @@ const translations = {
       amountExcludingTax: "Monto sin IVA",
       accountName: "Nombre cuenta",
       initialBalance: "Saldo inicial",
-      situation: "Situacién",
+      situation: "Situación",
       paymentTerm: "Plazo cliente",
       topClients: "Top 5 clientes",
       topProducts: "Top 5 productos",
-      detailedProfitEvolution: "Evolucién detallada del resultado",
-      expenseDistribution: "Distribucién de gastos",
+      detailedProfitEvolution: "Evolución detallada del resultado",
+      expenseDistribution: "Distribución de gastos",
       actual: "Real",
       budget: "Presupuesto",
       performance: "Rendimiento",
       target: "Objetivo",
-      category: "Categoréa",
-      description: "Descripcién",
+      category: "Categoría",
+      description: "Descripción",
       supplier_label: "Proveedor",
       date_label: "Fecha",
       accountsPayable: "Cuentas por pagar",
@@ -301,7 +305,7 @@ const translations = {
       currentRatioDesc: "Capacidad de pago de deudas CP",
       quickRatioDesc: "Ratio excluye inventarios",
       netMarginDesc: "Rentabilidad neta %",
-      roiDesc: "Retorno inversién",
+      roiDesc: "Retorno inversión",
       roeDesc: "Retorno patrimonio",
       cash: "Efectivo",
       card: "Tarjeta",
@@ -322,27 +326,27 @@ const translations = {
       netCash: "Flujo neto",
       excellent: "Excelente",
       good: "Bueno",
-      warning: "Atencién",
-      critical: "Crético",
+      warning: "Atención",
+      critical: "Crítico",
       healthy: "Saneado",
       okay: "Aceptable",
       profitable: "Rentable",
       loss: "Deficitario",
-      healthScore: "Puntuacién salud",
-      roiLong: "Retorno inversién",
+      healthScore: "Puntuación salud",
+      roiLong: "Retorno inversión",
       roeLong: "Retorno patrimonio",
       ebitda: "EBITDA",
       ebitLong: "Resultado operativo",
       ebt: "Resultado antes impuestos",
-      quickRatio: "Ratio répido",
+      quickRatio: "Ratio rápido",
       roe: "ROE",
       days: "d",
       monthPlus: "M+",
       quarterShort: "T",
       yearCurrent: "Año actual",
-      confirmDelete: "éConfirmar eliminacién?",
-      confirmBulkDelete: "éConfirmar eliminacién de {count} elemento(s)?",
-      fillAmountAndCategory: "Por favor complete el monto y la categoréa",
+      confirmDelete: "¿Confirmar eliminación?",
+      confirmBulkDelete: "¿Confirmar eliminación de {count} elemento(s)?",
+      fillAmountAndCategory: "Por favor complete el monto y la categoría",
       fillAmount: "Por favor complete el monto",
       fillAccountName: "Por favor complete el nombre de la cuenta",
       expenseAdded: "Gasto agregado",
@@ -355,11 +359,11 @@ const translations = {
       value: "Valor"
     },
     finance: {
-      title: "Médulo Finanzas",
-      subtitle: "Contabilidad é Tesoreréa é Anélisis é Presupuestos é Fiscalidad",
+      title: "Módulo Finanzas",
+      subtitle: "Contabilidad · Tesorería · Análisis · Presupuestos · Fiscalidad",
       revenue: "Ingresos",
       profit: "Beneficio neto",
-      cashBalance: "Tesoreréa",
+      cashBalance: "Tesorería",
       ebitda: "EBITDA",
       accountsReceivable: "Cuentas por cobrar",
       accountsPayable: "Cuentas por pagar",
@@ -385,18 +389,18 @@ const translations = {
       addExpense: "Agregar gasto",
       setBudget: "Definir presupuesto",
       addAccount: "Agregar cuenta",
-      healthScore: "Puntuacién salud",
+      healthScore: "Puntuación salud",
       excellent: "Excelente",
       good: "Bueno",
-      warning: "Atencién",
-      critical: "Crético",
+      warning: "Atención",
+      critical: "Crítico",
       profitable: "Rentable",
       loss: "Deficitario",
       healthy: "Saneado",
       okay: "Aceptable",
       thisMonth: "Este mes",
       thisQuarter: "Este trimestre",
-      thisYear: "Este aéo"
+      thisYear: "Este año"
     }
   },
   en: {
@@ -550,7 +554,7 @@ const translations = {
     },
     finance: {
       title: "Finance Module",
-      subtitle: "Accounting é Cashflow é Analysis é Budgets é Taxation",
+      subtitle: "Accounting · Cashflow · Analysis · Budgets · Taxation",
       revenue: "Revenue",
       profit: "Net profit",
       cashBalance: "Cash balance",
@@ -650,46 +654,92 @@ const STORAGE_KEYS = {
   CASHFLOW_FORECAST: "finance_cashflow_forecast"
 };
 
+// Icônes écrites en échappements Unicode : le fichier ne contient aucun caractère que l'éditeur ou l'encodage puisse abîmer
+// (les emojis s'affichaient « ?? » après un enregistrement dans un autre encodage).
 const EXPENSE_CATEGORIES = {
   operational: [
-    { value: "salaries", labelKey: "salary", icon: "??", color: "#3b82f6", group: "operational", taxDeductible: true },
-    { value: "rent", labelKey: "rent", icon: "??", color: "#f59e0b", group: "operational", taxDeductible: true },
-    { value: "utilities", labelKey: "utilities", icon: "??", color: "#10b981", group: "operational", taxDeductible: true },
-    { value: "supplies", labelKey: "supplies", icon: "??", color: "#8b5cf6", group: "operational", taxDeductible: true },
-    { value: "marketing", labelKey: "marketing", icon: "??", color: "#ec4899", group: "operational", taxDeductible: true },
-    { value: "transport", labelKey: "transport", icon: "??", color: "#06b6d4", group: "operational", taxDeductible: true },
-    { value: "maintenance", labelKey: "maintenance", icon: "??", color: "#f97316", group: "operational", taxDeductible: true }
+    { value: "salaries", labelKey: "salary", icon: "\u{1F465}", color: "#3b82f6", group: "operational", taxDeductible: true },
+    { value: "rent", labelKey: "rent", icon: "\u{1F3E2}", color: "#f59e0b", group: "operational", taxDeductible: true },
+    { value: "utilities", labelKey: "utilities", icon: "\u{1F4A1}", color: "#10b981", group: "operational", taxDeductible: true },
+    { value: "supplies", labelKey: "supplies", icon: "\u{1F4E6}", color: "#8b5cf6", group: "operational", taxDeductible: true },
+    { value: "marketing", labelKey: "marketing", icon: "\u{1F4E3}", color: "#ec4899", group: "operational", taxDeductible: true },
+    { value: "transport", labelKey: "transport", icon: "\u{1F69A}", color: "#06b6d4", group: "operational", taxDeductible: true },
+    { value: "maintenance", labelKey: "maintenance", icon: "\u{1F527}", color: "#f97316", group: "operational", taxDeductible: true }
   ],
   administrative: [
-    { value: "taxes", labelKey: "taxes", icon: "??", color: "#ef4444", group: "administrative", taxDeductible: true },
-    { value: "insurance", labelKey: "insurance", icon: "???", color: "#6366f1", group: "administrative", taxDeductible: true },
-    { value: "software", labelKey: "software", icon: "??", color: "#14b8a6", group: "administrative", taxDeductible: true },
-    { value: "training", labelKey: "training", icon: "??", color: "#a855f7", group: "administrative", taxDeductible: true },
-    { value: "legal", labelKey: "legal", icon: "??", color: "#f43f5e", group: "administrative", taxDeductible: true },
-    { value: "accounting", labelKey: "accounting", icon: "??", color: "#0ea5e9", group: "administrative", taxDeductible: true }
+    { value: "taxes", labelKey: "taxes", icon: "\u{1F3DB}️", color: "#ef4444", group: "administrative", taxDeductible: true },
+    { value: "insurance", labelKey: "insurance", icon: "\u{1F6E1}️", color: "#6366f1", group: "administrative", taxDeductible: true },
+    { value: "software", labelKey: "software", icon: "\u{1F4BB}", color: "#14b8a6", group: "administrative", taxDeductible: true },
+    { value: "training", labelKey: "training", icon: "\u{1F393}", color: "#a855f7", group: "administrative", taxDeductible: true },
+    { value: "legal", labelKey: "legal", icon: "⚖️", color: "#f43f5e", group: "administrative", taxDeductible: true },
+    { value: "accounting", labelKey: "accounting", icon: "\u{1F9FE}", color: "#0ea5e9", group: "administrative", taxDeductible: true }
   ],
   financial: [
-    { value: "interest", labelKey: "interest", icon: "??", color: "#eab308", group: "financial", taxDeductible: true },
-    { value: "bank_fees", labelKey: "bankFees", icon: "??", color: "#a855f7", group: "financial", taxDeductible: true }
+    { value: "interest", labelKey: "interest", icon: "\u{1F4C8}", color: "#eab308", group: "financial", taxDeductible: true },
+    { value: "bank_fees", labelKey: "bankFees", icon: "\u{1F3E6}", color: "#a855f7", group: "financial", taxDeductible: true }
   ],
   other: [
-    { value: "other", labelKey: "other", icon: "??", color: "#64748b", group: "other", taxDeductible: false }
+    { value: "other", labelKey: "other", icon: "\u{1F4CC}", color: "#64748b", group: "other", taxDeductible: false }
   ]
 };
 
 const bankAccountTypes = [
-  { value: "checking", labelKey: "checking", icon: "??" },
-  { value: "savings", labelKey: "savings", icon: "??" },
-  { value: "cash", labelKey: "cash", icon: "??" }
+  { value: "checking", labelKey: "checking", icon: "\u{1F3E6}" },
+  { value: "savings", labelKey: "savings", icon: "\u{1F4B0}" },
+  { value: "cash", labelKey: "cash", icon: "\u{1F4B5}" }
 ];
 
 const paymentMethods = [
-  { value: "cash", labelKey: "cash", icon: "??" },
-  { value: "card", labelKey: "card", icon: "??" },
-  { value: "transfer", labelKey: "transfer", icon: "??" },
-  { value: "check", labelKey: "check", icon: "??" },
-  { value: "online", labelKey: "online", icon: "??" }
+  { value: "cash", labelKey: "cash", icon: "\u{1F4B5}" },
+  { value: "card", labelKey: "card", icon: "\u{1F4B3}" },
+  { value: "transfer", labelKey: "transfer", icon: "\u{1F504}" },
+  { value: "check", labelKey: "check", icon: "\u{1F4DD}" },
+  { value: "online", labelKey: "online", icon: "\u{1F310}" }
 ];
+
+// Textes de la page absents du dictionnaire ci-dessus. Les libellés des catégories de dépenses (« salary », « bankFees »…)
+// n'y figuraient pas : la liste affichait les clés brutes.
+const EXTRA_TEXTS = {
+  fr: {
+    categories: { salary: "Salaires", rent: "Loyer", utilities: "Eau, électricité, télécoms", supplies: "Fournitures", marketing: "Marketing", transport: "Transport", maintenance: "Maintenance", taxes: "Impôts et taxes", insurance: "Assurances", software: "Logiciels", training: "Formation", legal: "Frais juridiques", accounting: "Comptabilité", interest: "Intérêts", bankFees: "Frais bancaires" } as Record<string, string>,
+    realFigures: "Chiffres réels", realFiguresSuffix: "pièces validées (factures, caisse, dépenses)",
+    invoicedRevenue: "CA facturé HT", invoices: "facture(s)", posSales: "Ventes caisse (Z)", closedSessions: "session(s) clôturée(s)",
+    supplierPurchases: "Achats fournisseurs HT", recordedExpenses: "Dépenses saisies", inclTax: "TTC, écritures générées",
+    receivables: "Encours clients", toCollect: "reste à encaisser", payables: "Dettes fournisseurs", toPay: "reste à payer",
+    ledgerNote: "Les indicateurs ci-dessus viennent de la comptabilité (documents validés, rapports Z, dépenses). Les cartes en haut de page sont des estimations calculées à partir des ventes, achats et stocks.",
+    entry: "écriture", entryReversed: "écriture contre-passée",
+    budgetsTitle: "Budgets", accountsTitle: "Comptes bancaires", noBudgets: "Aucun budget défini pour cette année.", noAccounts: "Aucun compte bancaire enregistré.",
+    confirmDeleteBudget: "Supprimer ce budget ?", confirmDeleteAccount: "Supprimer ce compte bancaire ?", budgetDeleted: "Budget supprimé", accountDeleted: "Compte supprimé",
+    migrated: "Vos budgets et comptes enregistrés dans ce navigateur ont été transférés vers votre compte.",
+    chooseCategory: "Catégorie", mandatory: "obligatoire", balanceLabel: "Solde", typeLabel: "Type de compte",
+  },
+  en: {
+    categories: { salary: "Salaries", rent: "Rent", utilities: "Utilities", supplies: "Supplies", marketing: "Marketing", transport: "Transport", maintenance: "Maintenance", taxes: "Taxes and duties", insurance: "Insurance", software: "Software", training: "Training", legal: "Legal fees", accounting: "Accounting", interest: "Interest", bankFees: "Bank fees" } as Record<string, string>,
+    realFigures: "Actual figures", realFiguresSuffix: "validated documents (invoices, till, expenses)",
+    invoicedRevenue: "Invoiced revenue (excl. tax)", invoices: "invoice(s)", posSales: "Till sales (Z)", closedSessions: "closed session(s)",
+    supplierPurchases: "Supplier purchases (excl. tax)", recordedExpenses: "Recorded expenses", inclTax: "incl. tax, entries generated",
+    receivables: "Outstanding receivables", toCollect: "left to collect", payables: "Supplier payables", toPay: "left to pay",
+    ledgerNote: "The figures above come from the accounts (validated documents, Z reports, expenses). The cards at the top of the page are estimates calculated from sales, purchases and stock.",
+    entry: "entry", entryReversed: "entry reversed",
+    budgetsTitle: "Budgets", accountsTitle: "Bank accounts", noBudgets: "No budget set for this year.", noAccounts: "No bank account recorded.",
+    confirmDeleteBudget: "Delete this budget?", confirmDeleteAccount: "Delete this bank account?", budgetDeleted: "Budget deleted", accountDeleted: "Account deleted",
+    migrated: "Budgets and accounts saved in this browser have been moved to your account.",
+    chooseCategory: "Category", mandatory: "required", balanceLabel: "Balance", typeLabel: "Account type",
+  },
+  es: {
+    categories: { salary: "Salarios", rent: "Alquiler", utilities: "Suministros", supplies: "Material de oficina", marketing: "Marketing", transport: "Transporte", maintenance: "Mantenimiento", taxes: "Impuestos y tasas", insurance: "Seguros", software: "Software", training: "Formación", legal: "Gastos legales", accounting: "Contabilidad", interest: "Intereses", bankFees: "Comisiones bancarias" } as Record<string, string>,
+    realFigures: "Cifras reales", realFiguresSuffix: "documentos validados (facturas, caja, gastos)",
+    invoicedRevenue: "Ventas facturadas sin IVA", invoices: "factura(s)", posSales: "Ventas de caja (Z)", closedSessions: "sesión(es) cerrada(s)",
+    supplierPurchases: "Compras a proveedores sin IVA", recordedExpenses: "Gastos registrados", inclTax: "IVA incl., asientos generados",
+    receivables: "Cobros pendientes", toCollect: "pendiente de cobrar", payables: "Deudas con proveedores", toPay: "pendiente de pagar",
+    ledgerNote: "Los indicadores anteriores proceden de la contabilidad (documentos validados, informes Z, gastos). Las tarjetas de arriba son estimaciones calculadas a partir de ventas, compras y stock.",
+    entry: "asiento", entryReversed: "asiento revertido",
+    budgetsTitle: "Presupuestos", accountsTitle: "Cuentas bancarias", noBudgets: "Ningún presupuesto definido para este año.", noAccounts: "Ninguna cuenta bancaria registrada.",
+    confirmDeleteBudget: "¿Eliminar este presupuesto?", confirmDeleteAccount: "¿Eliminar esta cuenta bancaria?", budgetDeleted: "Presupuesto eliminado", accountDeleted: "Cuenta eliminada",
+    migrated: "Los presupuestos y cuentas guardados en este navegador se han transferido a su cuenta.",
+    chooseCategory: "Categoría", mandatory: "obligatorio", balanceLabel: "Saldo", typeLabel: "Tipo de cuenta",
+  },
+};
 
 // --- REUSABLE CARD COMPONENT --------------------------------------------------
 interface KpiCardProps {
@@ -764,11 +814,15 @@ const SectionCard = ({ title, children, theme, style = {} }: any) => (
 );
 
 // --- MODAL WRAPPER ------------------------------------------------------------
-const Modal = ({ open, onClose, title, children, theme, isMobile }: any) => {
+const Modal = ({ open, onClose, title, children, theme, isMobile, onSubmit }: any) => {
+  const { language } = useLanguage();
+  // role="dialog", Échap pour fermer, focus piégé dans la fenêtre puis rendu au bouton d'origine.
+  const dlg = useDialog(open, onClose, typeof title === "string" ? title : "");
   if (!open) return null;
+  const closeLabel = language === "en" ? "Close" : language === "es" ? "Cerrar" : "Fermer";
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-      <div style={{
+      <div ref={dlg.ref} {...dlg.props} style={{
         background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: isMobile ? "20px" : "28px",
         width: isMobile ? "95%" : "500px", maxHeight: isMobile ? "85vh" : "88vh", overflowY: "auto",
         border: `1px solid ${theme.border}`, boxShadow: "0 32px 80px rgba(17,24,39,0.18)",
@@ -776,29 +830,52 @@ const Modal = ({ open, onClose, title, children, theme, isMobile }: any) => {
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
           <h2 style={{ color: theme.text, fontSize: isMobile ? "18px" : "20px", fontWeight: "700", }}>{title}</h2>
-          <button onClick={onClose} style={{ background: theme.surfaceHover, border: "none", color: theme.textSecondary, cursor: "pointer", padding: "8px", borderRadius: "10px", display: "flex" }}>
+          <button type="button" aria-label={closeLabel} onClick={onClose} style={{ background: theme.surfaceHover, border: "none", color: theme.textSecondary, cursor: "pointer", padding: "8px", borderRadius: "10px", display: "flex" }}>
             <Icon.Close />
           </button>
         </div>
-        {children}
+        {onSubmit
+          ? <form noValidate onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>{children}</form>
+          : children}
       </div>
     </div>
   );
 };
 
 // --- FORM INPUT ---------------------------------------------------------------
-const FormField = ({ as: Tag = "input", theme, style = {}, ...props }: any) => (
-  <Tag
-    {...props}
-    style={{
-      width: "100%", padding: "11px 14px", marginBottom: "14px",
-      background: theme.surfaceHover, borderRadius: "12px",
-      border: `1px solid ${theme.border}`, color: theme.text,
-      fontSize: "14px", outline: "none", boxSizing: "border-box",
-      ...style
-    }}
-  />
-);
+// `label` : étiquette visible reliée au champ (avant : des champs sans nom, annoncés « champ de saisie » par les lecteurs d'écran).
+const FormField = ({ as: Tag = "input", theme, style = {}, label, id, error, ...props }: any) => {
+  const autoId = useId();
+  const fieldId = id || autoId;
+  const { marginBottom, ...fieldStyle } = style as React.CSSProperties;
+  return (
+    <div style={{ marginBottom: marginBottom ?? "14px" }}>
+      {label && (
+        <label htmlFor={fieldId} style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: 600, color: theme.textSecondary }}>{label}</label>
+      )}
+      <Tag
+        id={fieldId}
+        aria-label={label ? undefined : props.placeholder}
+        aria-invalid={error ? true : undefined}
+        {...props}
+        style={{
+          width: "100%", padding: "11px 14px", margin: 0,
+          background: theme.surfaceHover, borderRadius: "12px",
+          border: `1px solid ${error ? "#ef4444" : theme.border}`, color: theme.text,
+          fontSize: "14px", outline: "none", boxSizing: "border-box",
+          ...fieldStyle
+        }}
+      />
+    </div>
+  );
+};
+
+// Erreur de saisie affichée dans la fenêtre (le message du haut de page est caché derrière le fond sombre).
+const FormAlert = ({ error }: { error: { message: string } | null }) => error ? (
+  <div role="alert" style={{ background: "#ef444415", border: "1px solid #ef4444", color: "#ef4444", padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: "13px" }}>
+    {error.message}
+  </div>
+) : null;
 
 // --- ACTION BUTTON -------------------------------------------------------------
 const ActionButton = ({ icon, label, onClick, color, theme, isMobile }: any) => {
@@ -912,9 +989,12 @@ export default function FinancePage() {
   const { theme } = useTheme();
   const { isMobile } = useResponsive();
   const { formatCurrency, getCurrencySymbol, formatDate } = useAppSettings();
+  // Taux de TVA de la société (Tunisie : 0, 7, 13, 19 %) : la liste était figée sur 0 / 5,5 / 10 / 20 %, sans le 19 % par défaut.
+  const company = useCompanyProfile();
 
   const t = translations[language as keyof typeof translations]?.finance || translations.fr.finance;
   const tCommon = translations[language as keyof typeof translations]?.common || translations.fr.common;
+  const extra = EXTRA_TEXTS[language as keyof typeof EXTRA_TEXTS] || EXTRA_TEXTS.fr;
 
   // FIX: Margin left for desktop sidebar (280px)
   const contentMarginLeft = isMobile ? "0" : "0px";
@@ -952,16 +1032,24 @@ export default function FinancePage() {
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
   const [bankModalOpen, setBankModalOpen] = useState(false);
+  const [expenseError, setExpenseError] = useState<{ key?: string; message: string } | null>(null);
+  const [budgetError, setBudgetError] = useState<{ key?: string; message: string } | null>(null);
+  const [bankError, setBankError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
 
-  const [expenseForm, setExpenseForm] = useState({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: 19 });
+  const [expenseForm, setExpenseForm] = useState({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: company.defaultVatRate });
   const [budgetForm, setBudgetForm] = useState({ category: "revenue", amount: "", year: new Date().getFullYear(), department: "all" });
   const [bankForm, setBankForm] = useState({ name: "", type: "checking", balance: 0, accountNumber: "", iban: "" });
 
   const currencySymbol = getCurrencySymbol();
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
+  const vatOptions = useMemo(
+    () => Array.from(new Set([...company.vatRates, company.defaultVatRate].map(Number))).filter((n) => Number.isFinite(n)).sort((a, b) => a - b),
+    [company.vatRates, company.defaultVatRate],
+  );
 
   const [stats, setStats] = useState({
     revenue: 0, costOfGoodsSold: 0, grossProfit: 0, grossMargin: 0,
@@ -1011,12 +1099,12 @@ export default function FinancePage() {
       group.forEach((cat: any) => {
         allCategories.push({
           ...cat,
-          label: tCommon[cat.labelKey] || cat.labelKey
+          label: tCommon[cat.labelKey] || extra.categories[cat.labelKey] || cat.labelKey
         });
       });
     });
     return allCategories;
-  }, [tCommon]);
+  }, [tCommon, extra]);
 
   const getPaymentMethods = useCallback(() => {
     return paymentMethods.map(m => ({
@@ -1037,9 +1125,15 @@ export default function FinancePage() {
     if (!token) { router.push("/auth/login"); return; }
     loadLocalData();
     fetchAllModuleData();
-    loadServerFinance();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Chiffres réels et budgets dépendent de l'année choisie : rechargés à chaque changement (avant : une seule fois à l'ouverture).
+  useEffect(() => {
+    if (!localStorage.getItem("token")) return;
+    loadServerFinance(selectedYear);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear]);
 
   useEffect(() => {
     if (!loading) calculateAllFinancialStats();
@@ -1049,33 +1143,84 @@ export default function FinancePage() {
   // Dépenses : enregistrées sur le serveur (chaque dépense génère son écriture comptable) ; synthèse réelle des pièces validées.
   const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token") || ""}` });
   const [ledger, setLedger] = useState<any>(null);
-  const loadServerFinance = async () => {
+  // Le chargement le plus récent gagne : en changeant d'année vite, la réponse de l'année précédente ne doit pas écraser la nouvelle.
+  const serverLoadId = useRef(0);
+  const loadServerFinance = async (year: number = selectedYear) => {
+    const loadId = ++serverLoadId.current;
+    const api = process.env.NEXT_PUBLIC_API_URL;
+    const read = async (path: string) => {
+      try {
+        const res = await fetch(`${api}${path}`, { headers: authHeaders() });
+        return res.ok ? await res.json() : null;
+      } catch (e) { console.error(e); return null; }
+    };
+    const moved = await migrateLegacyLocalData();
+    const [exp, led, bud, acc] = await Promise.all([
+      read("/finance/expenses"),
+      read(`/finance/stats?year=${year}`),
+      read(`/finance/budgets?year=${year}`),
+      read("/finance/accounts"),
+    ]);
+    if (loadId !== serverLoadId.current) return;
+    if (Array.isArray(exp)) setExpenses(exp);
+    if (led) setLedger(led);
+    if (Array.isArray(bud)) setBudgets(bud);
+    if (Array.isArray(acc)) setBankAccounts(acc);
+    if (moved) showMessage(`${tCommon.success}: ${extra.migrated}`, "success");
+  };
+
+  // Budgets et comptes bancaires étaient gardés dans le navigateur seulement (donc perdus au changement d'appareil, et invisibles pour
+  // les autres utilisateurs de la société). On les envoie une fois à l'API, puis on les retire du navigateur.
+  const migrateLegacyLocalData = async (): Promise<boolean> => {
+    let accounts: any[] = [];
+    let budgetList: any[] = [];
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/expenses`, { headers: authHeaders() });
-      if (res.ok) { const list = await res.json(); if (Array.isArray(list)) setExpenses(list); }
-    } catch (e) { console.error(e); }
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/stats?year=${selectedYear}`, { headers: authHeaders() });
-      if (res.ok) setLedger(await res.json());
-    } catch (e) { console.error(e); }
+      accounts = JSON.parse(localStorage.getItem(STORAGE_KEYS.BANK_ACCOUNTS) || "[]");
+      budgetList = JSON.parse(localStorage.getItem(STORAGE_KEYS.BUDGETS) || "[]");
+    } catch { return false; }
+    if (!Array.isArray(accounts)) accounts = [];
+    if (!Array.isArray(budgetList)) budgetList = [];
+    if (accounts.length === 0 && budgetList.length === 0) return false;
+
+    const api = process.env.NEXT_PUBLIC_API_URL;
+    // « sent » : enregistré · « drop » : refusé (400), inutile de réessayer · « retry » : panne passagère, on garde pour la prochaine fois.
+    const post = async (path: string, body: any): Promise<"sent" | "drop" | "retry"> => {
+      try {
+        const res = await fetch(`${api}${path}`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+        return res.ok ? "sent" : res.status === 400 ? "drop" : "retry";
+      } catch { return "retry"; }
+    };
+    const persist = (key: string, list: any[]) => { try { if (list.length) localStorage.setItem(key, JSON.stringify(list)); else localStorage.removeItem(key); } catch { /* ignoré */ } };
+
+    let moved = false;
+    // L'API remplace le budget existant (même catégorie, année, département) : renvoyer ne crée jamais de doublon.
+    const keptBudgets: any[] = [];
+    for (const b of budgetList) {
+      const r = await post("/finance/budgets", { category: String(b?.category ?? ""), amount: Number(b?.amount) || 0, year: Number(b?.year), department: b?.department ? String(b.department) : "all" });
+      if (r === "sent") moved = true; else if (r === "retry") keptBudgets.push(b);
+    }
+    persist(STORAGE_KEYS.BUDGETS, keptBudgets);
+
+    // Les comptes : seulement vers une société qui n'en a encore aucun côté serveur (jamais de doublon, jamais d'écrasement).
+    let serverAccounts: any = null;
+    try { const r = await fetch(`${api}/finance/accounts`, { headers: authHeaders() }); if (r.ok) serverAccounts = await r.json(); } catch { /* ignoré */ }
+    if (Array.isArray(serverAccounts) && serverAccounts.length === 0 && accounts.length > 0) {
+      const keptAccounts: any[] = [];
+      for (const a of accounts) {
+        const r = await post("/finance/accounts", { name: String(a?.name ?? "").trim(), type: a?.type || "checking", balance: Number(a?.balance) || 0, accountNumber: a?.accountNumber ? String(a.accountNumber) : "", iban: a?.iban ? String(a.iban) : "" });
+        if (r === "sent") { moved = true; } else if (r === "retry") keptAccounts.push(a);
+      }
+      persist(STORAGE_KEYS.BANK_ACCOUNTS, keptAccounts);
+    }
+    return moved;
   };
 
   const loadLocalData = () => {
     try {
-      const se = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-      const sb = localStorage.getItem(STORAGE_KEYS.BUDGETS);
-      const sba = localStorage.getItem(STORAGE_KEYS.BANK_ACCOUNTS);
       const sf = localStorage.getItem(STORAGE_KEYS.CASHFLOW_FORECAST);
-      if (se) setExpenses(JSON.parse(se));
-      if (sb) setBudgets(JSON.parse(sb));
-      if (sba) setBankAccounts(JSON.parse(sba));
       if (sf) setCashflowForecast(JSON.parse(sf));
     } catch (err) { console.error(err); }
   };
-
-  const saveExpenses = (ne: any[]) => { try { localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(ne)); setExpenses(ne); } catch (e) { console.error(e); } };
-  const saveBudgets = (nb: any[]) => { try { localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(nb)); setBudgets(nb); } catch (e) { console.error(e); } };
-  const saveBankAccounts = (na: any[]) => { try { localStorage.setItem(STORAGE_KEYS.BANK_ACCOUNTS, JSON.stringify(na)); setBankAccounts(na); } catch (e) { console.error(e); } };
 
   const filterByPeriod = useCallback((data: any[], dateField = "createdAt") => {
     if (!data || !Array.isArray(data)) return [];
@@ -1348,60 +1493,145 @@ export default function FinancePage() {
     ]);
   };
 
+  const closeExpenseModal = () => { setExpenseError(null); setExpenseModalOpen(false); };
+  const closeBudgetModal = () => { setBudgetError(null); setBudgetModalOpen(false); };
+  const closeBankModal = () => { setBankError(null); setBankModalOpen(false); };
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const api = process.env.NEXT_PUBLIC_API_URL;
+
   const addExpense = async () => {
-    if (!expenseForm.amount || !expenseForm.category) { showMessage(`${tCommon.error}: ${tCommon.fillAmountAndCategory}`, "error"); return; }
-    const amountHT = Math.round(parseFloat(expenseForm.amount) * 1000) / 1000;
-    const taxAmt = Math.round(amountHT * (parseFloat(String(expenseForm.taxRate)) / 100) * 1000) / 1000;
+    if (saving) return;
+    const problem = validateForm(language, expenseForm as Record<string, unknown>, [
+      { key: "category", label: tCommon.category, required: true },
+      { key: "amount", label: tCommon.amountExcludingTax, type: "number", required: true, min: 0.01 },
+      { key: "date", label: tCommon.date, type: "date" },
+    ]);
+    if (problem) { setExpenseError(problem); focusField(`expense-${problem.key}`); return; }
+    setExpenseError(null);
+    setSaving(true);
+    // Deux décimales : précision des colonnes de la base (trois décimales faisaient diverger « HT + TVA » et « TTC »).
+    const amountHT = round2(parseNumber(expenseForm.amount));
+    const rate = parseNumber(expenseForm.taxRate);
+    const taxRate = Number.isFinite(rate) ? rate : 0;
+    const taxAmt = round2(amountHT * taxRate / 100);
     const payload = {
-      amount: Math.round((amountHT + taxAmt) * 1000) / 1000, amountHT, taxAmount: taxAmt,
-      taxRate: parseFloat(String(expenseForm.taxRate)), category: expenseForm.category,
-      description: expenseForm.description, date: expenseForm.date || new Date().toISOString().split("T")[0],
-      paymentMethod: expenseForm.paymentMethod, vendor: expenseForm.vendor, invoiceNumber: expenseForm.invoiceNumber,
+      amount: round2(amountHT + taxAmt), amountHT, taxAmount: taxAmt, taxRate,
+      category: expenseForm.category,
+      description: String(expenseForm.description ?? "").trim(),
+      // Date du jour dans le fuseau de la personne (toISOString donnait la veille entre minuit et 1 h en Tunisie).
+      date: expenseForm.date || new Date().toLocaleDateString("en-CA"),
+      paymentMethod: expenseForm.paymentMethod,
+      vendor: String(expenseForm.vendor ?? "").trim(),
+      invoiceNumber: String(expenseForm.invoiceNumber ?? "").trim(),
     };
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/expenses`, { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+      const res = await fetch(`${api}/finance/expenses`, { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+      if (!res.ok) { setExpenseError({ message: await readApiError(res, tCommon.error) }); return; }
       const saved = await res.json().catch(() => null);
-      if (!res.ok) { showMessage(saved?.message || tCommon.error, "error"); return; }
-      setExpenses([saved, ...expenses]);
-      setExpenseModalOpen(false);
-      setExpenseForm({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: 19 });
-      showMessage(`${tCommon.success}: ${tCommon.expenseAdded}${saved?.journalEntry ? ` — écriture ${saved.journalEntry.number}` : ""}`, "success");
+      if (saved) setExpenses((list) => [saved, ...list]);
+      closeExpenseModal();
+      setExpenseForm({ amount: "", category: "", description: "", date: "", paymentMethod: "transfer", vendor: "", invoiceNumber: "", taxRate: company.defaultVatRate });
+      showMessage(`${tCommon.success}: ${tCommon.expenseAdded}${saved?.journalEntry ? ` — ${extra.entry} ${saved.journalEntry.number}` : ""}`, "success");
       loadServerFinance();
-    } catch (e) {
-      showMessage(`${tCommon.error}: serveur injoignable`, "error");
+    } catch {
+      setExpenseError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const addBudget = () => {
-    if (!budgetForm.amount) { showMessage(`${tCommon.error}: ${tCommon.fillAmount}`, "error"); return; }
-    const ei = budgets.findIndex(b => b.category === budgetForm.category && b.year === budgetForm.year && b.department === budgetForm.department);
-    let nb;
-    if (ei >= 0) { nb = [...budgets]; nb[ei] = { ...nb[ei], amount: parseFloat(budgetForm.amount) }; }
-    else { nb = [...budgets, { id: Date.now(), category: budgetForm.category, amount: parseFloat(budgetForm.amount), year: budgetForm.year, department: budgetForm.department, createdAt: new Date().toISOString() }]; }
-    saveBudgets(nb);
-    setBudgetModalOpen(false);
-    setBudgetForm({ category: "revenue", amount: "", year: new Date().getFullYear(), department: "all" });
-    showMessage(`${tCommon.success}: ${tCommon.budgetSaved}`, "success");
+  const addBudget = async () => {
+    if (saving) return;
+    const problem = validateForm(language, budgetForm as Record<string, unknown>, [
+      { key: "category", label: tCommon.category, required: true },
+      { key: "amount", label: tCommon.amount, type: "number", required: true, min: 0.01 },
+    ]);
+    if (problem) { setBudgetError(problem); focusField(`budget-${problem.key}`); return; }
+    setBudgetError(null);
+    setSaving(true);
+    try {
+      // L'API remplace le budget existant pour la même catégorie, année et département.
+      const res = await fetch(`${api}/finance/budgets`, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({ category: budgetForm.category, amount: round2(parseNumber(budgetForm.amount)), year: Number(budgetForm.year), department: budgetForm.department }),
+      });
+      if (!res.ok) { setBudgetError({ message: await readApiError(res, tCommon.error) }); return; }
+      closeBudgetModal();
+      setBudgetForm({ category: "revenue", amount: "", year: new Date().getFullYear(), department: "all" });
+      showMessage(`${tCommon.success}: ${tCommon.budgetSaved}`, "success");
+      await loadServerFinance();
+    } catch {
+      setBudgetError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const addBankAccount = () => {
-    if (!bankForm.name) { showMessage(`${tCommon.error}: ${tCommon.fillAccountName}`, "error"); return; }
-    saveBankAccounts([...bankAccounts, { id: Date.now(), ...bankForm, balance: parseFloat(String(bankForm.balance)) || 0, createdAt: new Date().toISOString() }]);
-    setBankModalOpen(false);
-    setBankForm({ name: "", type: "checking", balance: 0, accountNumber: "", iban: "" });
-    showMessage(`${tCommon.success}: ${tCommon.accountAdded}`, "success");
+  const addBankAccount = async () => {
+    if (saving) return;
+    const problem = validateForm(language, bankForm as Record<string, unknown>, [
+      { key: "name", label: tCommon.accountName, required: true },
+      { key: "balance", label: tCommon.initialBalance, type: "number" },
+    ]);
+    if (problem) { setBankError(problem); focusField(`bank-${problem.key}`); return; }
+    setBankError(null);
+    setSaving(true);
+    try {
+      const res = await fetch(`${api}/finance/accounts`, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({
+          name: String(bankForm.name).trim(), type: bankForm.type,
+          balance: round2(parseNumber(bankForm.balance) || 0),
+          accountNumber: String(bankForm.accountNumber ?? "").trim(), iban: String(bankForm.iban ?? "").trim(),
+        }),
+      });
+      if (!res.ok) { setBankError({ message: await readApiError(res, tCommon.error) }); return; }
+      const saved = await res.json().catch(() => null);
+      if (saved) setBankAccounts((list) => [...list, saved]);
+      closeBankModal();
+      setBankForm({ name: "", type: "checking", balance: 0, accountNumber: "", iban: "" });
+      showMessage(`${tCommon.success}: ${tCommon.accountAdded}`, "success");
+    } catch {
+      setBankError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const deleteExpense = async (id: number) => {
     if (!confirm(tCommon.confirmDelete)) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/expenses/${id}`, { method: "DELETE", headers: authHeaders() });
-      if (!res.ok) { const b = await res.json().catch(() => null); showMessage(b?.message || tCommon.error, "error"); return; }
-      setExpenses(expenses.filter(e => e.id !== id));
-      showMessage(`${tCommon.success}: ${tCommon.expenseDeleted} (écriture contre-passée)`, "success");
+      const res = await fetch(`${api}/finance/expenses/${id}`, { method: "DELETE", headers: authHeaders() });
+      if (!res.ok) { showMessage(await readApiError(res, tCommon.error), "error"); return; }
+      setExpenses((list) => list.filter((e) => e.id !== id));
+      showMessage(`${tCommon.success}: ${tCommon.expenseDeleted} (${extra.entryReversed})`, "success");
       loadServerFinance();
-    } catch (e) {
-      showMessage(`${tCommon.error}: serveur injoignable`, "error");
+    } catch {
+      showMessage(fm(language, "network"), "error");
+    }
+  };
+
+  const deleteBudget = async (id: number) => {
+    if (!confirm(extra.confirmDeleteBudget)) return;
+    try {
+      const res = await fetch(`${api}/finance/budgets/${id}`, { method: "DELETE", headers: authHeaders() });
+      if (!res.ok) { showMessage(await readApiError(res, tCommon.error), "error"); return; }
+      setBudgets((list) => list.filter((b) => b.id !== id));
+      showMessage(`${tCommon.success}: ${extra.budgetDeleted}`, "success");
+    } catch {
+      showMessage(fm(language, "network"), "error");
+    }
+  };
+
+  const deleteBankAccount = async (id: number) => {
+    if (!confirm(extra.confirmDeleteAccount)) return;
+    try {
+      const res = await fetch(`${api}/finance/accounts/${id}`, { method: "DELETE", headers: authHeaders() });
+      if (!res.ok) { showMessage(await readApiError(res, tCommon.error), "error"); return; }
+      setBankAccounts((list) => list.filter((a) => a.id !== id));
+      showMessage(`${tCommon.success}: ${extra.accountDeleted}`, "success");
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
@@ -1651,7 +1881,7 @@ export default function FinancePage() {
   };
 
   const expensesGroupData = {
-    labels: Object.keys(expensesByGroup).map(g => t[g + "Expenses"] || g),
+    labels: Object.keys(expensesByGroup).map(g => t[g + "Expenses"] || (g === "other" ? tCommon.other : "") || g),
     datasets: [{
       data: Object.values(expensesByGroup),
       backgroundColor: ["#3b82f6", "#f59e0b", "#ec4899", "#64748b"],
@@ -1887,7 +2117,7 @@ export default function FinancePage() {
                     <span style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none", display: "inline-flex" }}>
                       <Icon.Refresh />
                     </span>
-                    {refreshing ? tCommon.sync + "é" : tCommon.refresh}
+                    {refreshing ? tCommon.sync + "…" : tCommon.refresh}
                   </button>
                 </div>
               </div>
@@ -1958,7 +2188,7 @@ export default function FinancePage() {
 
           {/* MESSAGE */}
           {message && (
-            <div style={{ background: messageType === "success" ? "#10b98115" : "#ef444415", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#ef4444", padding: isMobile ? "10px" : "13px 20px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", fontSize: isMobile ? "12px" : "14px", fontWeight: "500", animation: "slideIn 0.3s ease" }}>
+            <div role={messageType === "success" ? "status" : "alert"} style={{ background: messageType === "success" ? "#10b98115" : "#ef444415", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#ef4444", padding: isMobile ? "10px" : "13px 20px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", fontSize: isMobile ? "12px" : "14px", fontWeight: "500", animation: "slideIn 0.3s ease" }}>
               {messageType === "success" ? <Icon.CheckCircle /> : <Icon.Alert />}
               {message}
             </div>
@@ -1997,15 +2227,15 @@ export default function FinancePage() {
           {activeTab === "dashboard" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               {ledger && ledger.documents && (
-                <SectionCard title={<><Icon.Scale /> Chiffres réels {selectedYear} — pièces validées (factures, caisse, dépenses)</>} theme={theme} style={{ marginBottom: "20px" }}>
+                <SectionCard title={<><Icon.Scale /> {extra.realFigures} {selectedYear} — {extra.realFiguresSuffix}</>} theme={theme} style={{ marginBottom: "20px" }}>
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: "14px" }}>
                     {[
-                      ["CA facturé HT", ledger.documents.revenueHT, `${ledger.documents.clientInvoices} facture(s)`],
-                      ["Ventes caisse (Z)", ledger.pos?.sales, `${ledger.pos?.sessions ?? 0} session(s) clôturée(s)`],
-                      ["Achats fournisseurs HT", ledger.documents.purchasesHT, `${ledger.documents.supplierInvoices} facture(s)`],
-                      ["Dépenses saisies", ledger.totalExpenses, "TTC, écritures générées"],
-                      ["Encours clients", ledger.documents.receivables, "reste à encaisser"],
-                      ["Dettes fournisseurs", ledger.documents.payables, "reste à payer"],
+                      [extra.invoicedRevenue, ledger.documents.revenueHT, `${ledger.documents.clientInvoices} ${extra.invoices}`],
+                      [extra.posSales, ledger.pos?.sales, `${ledger.pos?.sessions ?? 0} ${extra.closedSessions}`],
+                      [extra.supplierPurchases, ledger.documents.purchasesHT, `${ledger.documents.supplierInvoices} ${extra.invoices}`],
+                      [extra.recordedExpenses, ledger.totalExpenses, extra.inclTax],
+                      [extra.receivables, ledger.documents.receivables, extra.toCollect],
+                      [extra.payables, ledger.documents.payables, extra.toPay],
                     ].map(([label, value, detail]: any) => (
                       <div key={label} style={{ padding: "12px 14px", borderRadius: "12px", background: theme.surfaceHover || "rgba(127,127,127,0.08)" }}>
                         <div style={{ fontSize: "11px", color: theme.textSecondary, fontWeight: 600 }}>{label}</div>
@@ -2014,7 +2244,7 @@ export default function FinancePage() {
                       </div>
                     ))}
                   </div>
-                  <p style={{ fontSize: "12px", color: theme.textSecondary, margin: "12px 0 0" }}>Les indicateurs ci-dessus viennent de la comptabilité (documents validés, rapports Z, dépenses). Les cartes en haut de page sont des estimations calculées à partir des ventes, achats et stocks.</p>
+                  <p style={{ fontSize: "12px", color: theme.textSecondary, margin: "12px 0 0" }}>{extra.ledgerNote}</p>
                 </SectionCard>
               )}
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
@@ -2209,7 +2439,7 @@ export default function FinancePage() {
                     <div key={i} style={{ textAlign: "center", padding: "8px", background: theme.surfaceHover, borderRadius: "10px" }}>
                       <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "700", color: theme.text }}>{p.month}</div>
                       <div style={{ fontSize: isMobile ? "10px" : "13px", color: p.status === "excellent" ? "#10b981" : p.status === "good" ? "#f59e0b" : "#ef4444", fontWeight: "700", marginTop: "2px" }}>{formatCurrency(p.balance)}</div>
-                      <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "2px" }}>{p.status === "excellent" ? `?? ${tCommon.healthy}` : p.status === "good" ? `?? ${tCommon.okay}` : `?? ${tCommon.critical}`}</div>
+                      <div style={{ fontSize: isMobile ? "8px" : "9px", color: theme.textSecondary, marginTop: "2px" }}>{p.status === "excellent" ? `\u{1F7E2} ${tCommon.healthy}` : p.status === "good" ? `\u{1F7E1} ${tCommon.okay}` : `\u{1F534} ${tCommon.critical}`}</div>
                     </div>
                   ))}
                 </div>
@@ -2280,7 +2510,7 @@ export default function FinancePage() {
                             </td>
                             <td style={{ padding: "8px 10px" }}>
                               <span style={{ background: `${cat?.color || "#64748b"}18`, color: cat?.color || "#64748b", padding: "2px 6px", borderRadius: "16px", fontSize: isMobile ? "9px" : "11px", fontWeight: "600" }}>
-                                {cat?.icon} {cat?.label || "é"}
+                                {cat?.icon} {cat?.label || "—"}
                               </span>
                             </td>
                             <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "10px" : "13px" }}>
@@ -2293,7 +2523,7 @@ export default function FinancePage() {
                               {formatCurrency(exp.amount)}
                             </td>
                             <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>
-                              {exp.vendor || "é"}
+                              {exp.vendor || "—"}
                             </td>
                             <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>
                               {getPaymentMethods().find(p => p.value === exp.paymentMethod)?.icon}
@@ -2358,16 +2588,16 @@ export default function FinancePage() {
                         const daysOverdue = inv.dueDate ? Math.floor((Date.now() - new Date(inv.dueDate).getTime()) / 86400000) : 0;
                         return (
                           <tr key={i} style={{ borderBottom: `1px solid ${theme.surfaceHover}` }}>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px", color: theme.textSecondary }}>{inv.reference || "é"}</td>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>{inv.clientName || "é"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px", color: theme.textSecondary }}>{inv.reference || "—"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "11px" : "13px" }}>{inv.clientName || "—"}</td>
                             <td style={{ padding: "8px 10px", textAlign: "right", fontSize: isMobile ? "11px" : "13px", fontWeight: "700", color: theme.accent }}>{formatCurrency(inv.amount)}</td>
                             <td style={{ padding: "8px 10px" }}>
                               <span style={{ background: inv.status === "paid" ? "#10b98120" : isOverdue ? "#ef444420" : "#f59e0b20", color: inv.status === "paid" ? "#10b981" : isOverdue ? "#ef4444" : "#f59e0b", padding: "2px 6px", borderRadius: "16px", fontSize: isMobile ? "9px" : "11px", fontWeight: "600" }}>
                                 {inv.status === "paid" ? tCommon.paid : isOverdue ? tCommon.overdue : tCommon.pending}
                               </span>
                             </td>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>{inv.dueDate ? formatDate(inv.dueDate) : "é"}</td>
-                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: isOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isOverdue ? "600" : "400" }}>{isOverdue ? `${daysOverdue}${tCommon.days.length > 1 ? " " : ""}${tCommon.days}` : "é"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: theme.textSecondary }}>{inv.dueDate ? formatDate(inv.dueDate) : "—"}</td>
+                            <td style={{ padding: "8px 10px", fontSize: isMobile ? "10px" : "12px", color: isOverdue ? "#ef4444" : theme.textSecondary, fontWeight: isOverdue ? "600" : "400" }}>{isOverdue ? `${daysOverdue}${tCommon.days.length > 1 ? " " : ""}${tCommon.days}` : "—"}</td>
                           </tr>
                         );
                       })}
@@ -2381,7 +2611,7 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* BUDGET & PRéVISIONS */}
+          {/* BUDGET & PRÉVISIONS */}
           {activeTab === "budget" && (
             <div style={{ animation: "fadeInUp 0.35s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "14px", marginBottom: "20px" }}>
@@ -2412,6 +2642,48 @@ export default function FinancePage() {
                   : <div style={{ textAlign: "center", padding: "40px", color: theme.textSecondary }}>{tCommon.noData}</div>
                 }
               </SectionCard>
+
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "20px", marginTop: "20px" }}>
+                <SectionCard title={<><Icon.Budget /> {extra.budgetsTitle} {selectedYear}</>} theme={theme}>
+                  {budgets.length === 0
+                    ? <div style={{ textAlign: "center", padding: "24px", color: theme.textSecondary }}>{extra.noBudgets}</div>
+                    : <div style={{ display: "grid", gap: "8px" }}>
+                        {budgets.map((b) => {
+                          const label = (b.category === "revenue" ? t.revenue : b.category === "expenses" ? tCommon.expenses : b.category === "profit" ? t.profit : b.category) + (b.department && b.department !== "all" ? ` · ${b.department}` : "");
+                          return (
+                            <div key={b.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "10px 12px", borderRadius: "12px", background: theme.surfaceHover }}>
+                              <span style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{label}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span style={{ fontWeight: 700, color: theme.text }}>{formatCurrency(Number(b.amount) || 0)}</span>
+                                <button type="button" aria-label={`${tCommon.delete} : ${label}`} onClick={() => deleteBudget(b.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", padding: "6px" }}><Icon.Delete /></button>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>}
+                </SectionCard>
+                <SectionCard title={<><Icon.Bank /> {extra.accountsTitle}</>} theme={theme}>
+                  {bankAccounts.length === 0
+                    ? <div style={{ textAlign: "center", padding: "24px", color: theme.textSecondary }}>{extra.noAccounts}</div>
+                    : <div style={{ display: "grid", gap: "8px" }}>
+                        {bankAccounts.map((a) => {
+                          const typeLabel = getBankAccountTypes().find((bt) => bt.value === a.type)?.label || a.type;
+                          return (
+                            <div key={a.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "10px 12px", borderRadius: "12px", background: theme.surfaceHover }}>
+                              <span style={{ minWidth: 0 }}>
+                                <span style={{ display: "block", fontSize: "13px", fontWeight: 600, color: theme.text, overflowWrap: "anywhere" }}>{a.name}</span>
+                                <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary }}>{typeLabel}</span>
+                              </span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                                <span style={{ fontWeight: 700, color: theme.text }}>{formatCurrency(Number(a.balance) || 0)}</span>
+                                <button type="button" aria-label={`${tCommon.delete} : ${a.name}`} onClick={() => deleteBankAccount(a.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", padding: "6px" }}><Icon.Delete /></button>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>}
+                </SectionCard>
+              </div>
             </div>
           )}
 
@@ -2421,7 +2693,7 @@ export default function FinancePage() {
               <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? "130px" : "180px"}, 1fr))`, gap: "14px", marginBottom: "20px" }}>
                 {financialRatios.map((r, i) => (
                   <div key={i} style={{ background: theme.surface, borderRadius: "18px", padding: "16px", textAlign: "center", border: `1px solid ${r.status === "good" ? "#10b98130" : r.status === "warning" ? "#f59e0b30" : "#ef444430"}` }}>
-                    <div style={{ fontSize: isMobile ? "18px" : "22px", marginBottom: "4px" }}>{r.status === "good" ? "??" : r.status === "warning" ? "??" : "??"}</div>
+                    <div style={{ fontSize: isMobile ? "18px" : "22px", marginBottom: "4px" }}>{r.status === "good" ? "\u{1F7E2}" : r.status === "warning" ? "\u{1F7E1}" : "\u{1F534}"}</div>
                     <div style={{ fontSize: isMobile ? "20px" : "26px", fontWeight: "800", color: r.status === "good" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4444", letterSpacing: "-1px" }}>{r.value.toFixed(1)}</div>
                     <div style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "600", color: theme.text, marginTop: "4px" }}>{r.name}</div>
                     <div style={{ fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary, marginTop: "2px" }}>{tCommon.target}: {r.target}{r.name.includes(t.currentRatio) ? "" : "%"}</div>
@@ -2442,65 +2714,65 @@ export default function FinancePage() {
       </div>
 
       {/* MODALS */}
-      <Modal open={expenseModalOpen} onClose={() => setExpenseModalOpen(false)} title={t.addExpense} theme={theme} isMobile={isMobile}>
-        <FormField as="select" theme={theme} value={expenseForm.category} onChange={(e: any) => setExpenseForm({ ...expenseForm, category: e.target.value })}>
-          <option value="">é {tCommon.category} é</option>
+      <Modal open={expenseModalOpen} onClose={closeExpenseModal} onSubmit={addExpense} title={t.addExpense} theme={theme} isMobile={isMobile}>
+        <FormField id="expense-category" label={`${tCommon.category} *`} as="select" theme={theme} error={expenseError?.key === "category"} aria-required="true" value={expenseForm.category} onChange={(e: any) => setExpenseForm({ ...expenseForm, category: e.target.value })}>
+          <option value="">— {tCommon.category} —</option>
           {getExpenseCategories().map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
         </FormField>
-        <FormField type="number" placeholder={`${tCommon.amountExcludingTax} (${currencySymbol})`} theme={theme} value={expenseForm.amount} onChange={(e: any) => setExpenseForm({ ...expenseForm, amount: e.target.value })} />
-        <FormField as="select" theme={theme} value={expenseForm.taxRate} onChange={(e: any) => setExpenseForm({ ...expenseForm, taxRate: e.target.value })}>
-          <option value="0">{tCommon.vat} 0%</option>
-          <option value="5.5">{tCommon.vat} 5.5%</option>
-          <option value="10">{tCommon.vat} 10%</option>
-          <option value="20">{tCommon.vat} 20%</option>
+        <FormField id="expense-amount" label={`${tCommon.amountExcludingTax} (${currencySymbol}) *`} type="number" min="0" step="0.01" inputMode="decimal" theme={theme} error={expenseError?.key === "amount"} aria-required="true" value={expenseForm.amount} onChange={(e: any) => setExpenseForm({ ...expenseForm, amount: e.target.value })} />
+        <FormField id="expense-taxRate" label={tCommon.vat} as="select" theme={theme} value={String(expenseForm.taxRate)} onChange={(e: any) => setExpenseForm({ ...expenseForm, taxRate: e.target.value })}>
+          {vatOptions.map(r => <option key={r} value={String(r)}>{tCommon.vat} {r}%</option>)}
         </FormField>
-        <FormField type="text" placeholder={tCommon.description} theme={theme} value={expenseForm.description} onChange={(e: any) => setExpenseForm({ ...expenseForm, description: e.target.value })} />
-        <FormField type="text" placeholder={tCommon.supplier_label} theme={theme} value={expenseForm.vendor} onChange={(e: any) => setExpenseForm({ ...expenseForm, vendor: e.target.value })} />
-        <FormField type="date" theme={theme} value={expenseForm.date} onChange={(e: any) => setExpenseForm({ ...expenseForm, date: e.target.value })} />
-        <FormField as="select" theme={theme} value={expenseForm.paymentMethod} onChange={(e: any) => setExpenseForm({ ...expenseForm, paymentMethod: e.target.value })} style={{ marginBottom: "22px" }}>
+        <FormField id="expense-description" label={tCommon.description} type="text" theme={theme} value={expenseForm.description} onChange={(e: any) => setExpenseForm({ ...expenseForm, description: e.target.value })} />
+        <FormField id="expense-vendor" label={tCommon.supplier_label} type="text" theme={theme} value={expenseForm.vendor} onChange={(e: any) => setExpenseForm({ ...expenseForm, vendor: e.target.value })} />
+        <FormField id="expense-date" label={tCommon.date} type="date" theme={theme} error={expenseError?.key === "date"} value={expenseForm.date} onChange={(e: any) => setExpenseForm({ ...expenseForm, date: e.target.value })} />
+        <FormField id="expense-paymentMethod" label={tCommon.paymentMethod} as="select" theme={theme} value={expenseForm.paymentMethod} onChange={(e: any) => setExpenseForm({ ...expenseForm, paymentMethod: e.target.value })} style={{ marginBottom: "22px" }}>
           {getPaymentMethods().map(p => <option key={p.value} value={p.value}>{p.icon} {p.label}</option>)}
         </FormField>
+        <FormAlert error={expenseError} />
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={addExpense} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <button type="submit" disabled={saving} aria-busy={saving || undefined} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             <Icon.Save /> {tCommon.save}
           </button>
-          <button onClick={() => setExpenseModalOpen(false)} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
+          <button type="button" onClick={closeExpenseModal} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
             {tCommon.cancel}
           </button>
         </div>
       </Modal>
 
-      <Modal open={budgetModalOpen} onClose={() => setBudgetModalOpen(false)} title={t.setBudget} theme={theme} isMobile={isMobile}>
-        <FormField as="select" theme={theme} value={budgetForm.category} onChange={(e: any) => setBudgetForm({ ...budgetForm, category: e.target.value })}>
-          <option value="revenue">?? {t.revenue}</option>
-          <option value="expenses">?? {tCommon.expenses}</option>
-          <option value="profit">?? {t.profit}</option>
+      <Modal open={budgetModalOpen} onClose={closeBudgetModal} onSubmit={addBudget} title={t.setBudget} theme={theme} isMobile={isMobile}>
+        <FormField id="budget-category" label={`${tCommon.category} *`} as="select" theme={theme} error={budgetError?.key === "category"} aria-required="true" value={budgetForm.category} onChange={(e: any) => setBudgetForm({ ...budgetForm, category: e.target.value })}>
+          <option value="revenue">{"\u{1F4B0}"} {t.revenue}</option>
+          <option value="expenses">{"\u{1F4B8}"} {tCommon.expenses}</option>
+          <option value="profit">{"\u{1F4C8}"} {t.profit}</option>
         </FormField>
-        <FormField type="number" placeholder={`${tCommon.amount} (${currencySymbol})`} theme={theme} value={budgetForm.amount} onChange={(e: any) => setBudgetForm({ ...budgetForm, amount: e.target.value })} />
-        <FormField as="select" theme={theme} value={budgetForm.year} onChange={(e: any) => setBudgetForm({ ...budgetForm, year: parseInt(e.target.value) })} style={{ marginBottom: "22px" }}>
+        <FormField id="budget-amount" label={`${tCommon.amount} (${currencySymbol}) *`} type="number" min="0" step="0.01" inputMode="decimal" theme={theme} error={budgetError?.key === "amount"} aria-required="true" value={budgetForm.amount} onChange={(e: any) => setBudgetForm({ ...budgetForm, amount: e.target.value })} />
+        <FormField id="budget-year" label={tCommon.year} as="select" theme={theme} value={budgetForm.year} onChange={(e: any) => setBudgetForm({ ...budgetForm, year: parseInt(e.target.value) })} style={{ marginBottom: "22px" }}>
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </FormField>
+        <FormAlert error={budgetError} />
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={addBudget} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <button type="submit" disabled={saving} aria-busy={saving || undefined} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             <Icon.Save /> {tCommon.save}
           </button>
-          <button onClick={() => setBudgetModalOpen(false)} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
+          <button type="button" onClick={closeBudgetModal} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
             {tCommon.cancel}
           </button>
         </div>
       </Modal>
 
-      <Modal open={bankModalOpen} onClose={() => setBankModalOpen(false)} title={t.addAccount} theme={theme} isMobile={isMobile}>
-        <FormField type="text" placeholder={tCommon.accountName} theme={theme} value={bankForm.name} onChange={(e: any) => setBankForm({ ...bankForm, name: e.target.value })} />
-        <FormField as="select" theme={theme} value={bankForm.type} onChange={(e: any) => setBankForm({ ...bankForm, type: e.target.value })}>
+      <Modal open={bankModalOpen} onClose={closeBankModal} onSubmit={addBankAccount} title={t.addAccount} theme={theme} isMobile={isMobile}>
+        <FormField id="bank-name" label={`${tCommon.accountName} *`} type="text" theme={theme} error={bankError?.key === "name"} aria-required="true" value={bankForm.name} onChange={(e: any) => setBankForm({ ...bankForm, name: e.target.value })} />
+        <FormField id="bank-type" label={extra.typeLabel} as="select" theme={theme} value={bankForm.type} onChange={(e: any) => setBankForm({ ...bankForm, type: e.target.value })}>
           {getBankAccountTypes().map(bt => <option key={bt.value} value={bt.value}>{bt.icon} {bt.label}</option>)}
         </FormField>
-        <FormField type="number" placeholder={`${tCommon.initialBalance} (${currencySymbol})`} theme={theme} value={bankForm.balance} onChange={(e: any) => setBankForm({ ...bankForm, balance: e.target.value })} style={{ marginBottom: "22px" }} />
+        <FormField id="bank-balance" label={`${tCommon.initialBalance} (${currencySymbol})`} type="number" step="0.01" inputMode="decimal" theme={theme} error={bankError?.key === "balance"} value={bankForm.balance} onChange={(e: any) => setBankForm({ ...bankForm, balance: e.target.value })} style={{ marginBottom: "22px" }} />
+        <FormAlert error={bankError} />
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={addBankAccount} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <button type="submit" disabled={saving} aria-busy={saving || undefined} style={{ flex: 1, padding: "12px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: "600", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             <Icon.Save /> {tCommon.add}
           </button>
-          <button onClick={() => setBankModalOpen(false)} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
+          <button type="button" onClick={closeBankModal} style={{ flex: 1, padding: "12px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "12px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "13px" : "14px" }}>
             {tCommon.cancel}
           </button>
         </div>

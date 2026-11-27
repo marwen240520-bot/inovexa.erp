@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { buildTypeOrmOptions, isSynchronizeEnabled } from './database/typeorm.config';
 import { UserThrottlerGuard } from './common/user-throttler.guard';
+import { DbErrorsFilter } from './common/db-errors.filter';
 import { AccessGuard } from './modules/auth/access.guard';
 import { AuditModule } from './common/audit/audit.module';
 import { MailModule } from './common/mail/mail.service';
@@ -120,6 +121,8 @@ import { SaasModule } from './modules/saas/saas.module';
     // Ordre important : d'abord l'authentification + droits, ensuite la limitation de débit (qui a besoin de savoir QUI appelle).
     { provide: APP_GUARD, useClass: AccessGuard },
     { provide: APP_GUARD, useClass: UserThrottlerGuard },
+    // Saisie invalide qui atteint la base (id « abc », date « zzz »…) : 400 lisible plutôt que 500.
+    { provide: APP_FILTER, useClass: DbErrorsFilter },
   ],
 })
 export class AppModule {}

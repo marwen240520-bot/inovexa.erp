@@ -111,7 +111,8 @@ export class OrdersService {
   async getStats(userId: number) {
     const orders = await this.findAll(userId);
     const total = orders.length;
-    const totalAmount = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+    // Les colonnes décimales arrivent de la base sous forme de texte (« 20.00 ») : sans Number(), « + » les concaténerait.
+    const totalAmount = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
     const pending = orders.filter(o => o.status === 'pending').length;
     const processing = orders.filter(o => o.status === 'processing').length;
     const delivered = orders.filter(o => o.status === 'delivered').length;

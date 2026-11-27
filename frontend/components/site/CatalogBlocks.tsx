@@ -5,16 +5,16 @@
 // Composants serveur (aucun état).
 import React from "react";
 import Link from "next/link";
-import { ModuleIcon, type ModuleIconKey } from "@/components/site/ModuleIcon";
+import { ModuleIcon, ModuleLabel, type ModuleIconKey } from "@/components/site/ModuleIcon";
 import { SectorIcon } from "@/components/site/SectorIcon";
-import { ALL_MODULES, DEFAULT_TRIAL_HOURS, MODULE_GROUPS, MODULE_INFO, PLANS, SECTORS, pick, planIncludes, trialLabel } from "@/lib/catalog";
+import { ALL_MODULES, CATALOG_LANGS, DEFAULT_TRIAL_HOURS, MODULE_GROUPS, MODULE_INFO, PLANS, SECTORS, pick, planIncludes, trialLabel } from "@/lib/catalog";
 
 /** Chiffres clés calculés sur le catalogue : jamais saisis à la main. */
 export function CatalogStats({ lang, labels }: { lang: string; labels: { modules: string; sectors: string; languages: string; trial: string } }) {
   const items = [
     { value: String(ALL_MODULES.length), label: labels.modules },
     { value: String(SECTORS.length), label: labels.sectors },
-    { value: "4", label: labels.languages },
+    { value: String(CATALOG_LANGS.length), label: labels.languages },
     { value: trialLabel(DEFAULT_TRIAL_HOURS, lang), label: labels.trial },
   ];
   return (
@@ -76,7 +76,7 @@ export function SectorsBlock({ lang, labels }: { lang: string; labels: { modules
           <p>{pick(sector.desc, lang)}</p>
           <p className="st-sector-label">{labels.modules}</p>
           <ul className="st-sector-mods">
-            {sector.modules.filter((code) => code !== "dashboard").map((code) => <li key={code}>{pick(MODULE_INFO[code].label, lang)}</li>)}
+            {sector.modules.filter((code) => code !== "dashboard").map((code) => <li key={code}><ModuleLabel moduleKey={code} label={pick(MODULE_INFO[code].label, lang)} size={14} gap={5} color="var(--st-accent)" /></li>)}
           </ul>
           <Link href={`/auth/register?sector=${sector.code}`} className="st-sector-cta">{labels.cta} →</Link>
         </article>

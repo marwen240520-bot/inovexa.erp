@@ -20,6 +20,7 @@ import { MODULE_INFO, PLANS, SECTORS, pick, trialLabel, type CatalogModule } fro
 import { usePublicConfig } from "@/lib/publicConfig";
 import { publicGet, publicPost, sectorName, type Sector } from "@/lib/saas";
 import { fill } from "@/lib/saasTexts";
+import { ModuleLabel } from "@/components/site/ModuleIcon";
 import { countryOptions, currencyOptions, defaultCurrencyFor } from "@/lib/countries";
 
 interface SectorOption { code: string; label: string; modules: string[] }
@@ -111,7 +112,7 @@ function RegisterForm() {
   }, [sectorParam, sectors]);
   const chosen = sectors.find((s) => s.code === form.sector) || null;
   const chosenModules = chosen
-    ? chosen.modules.filter((m) => m !== "dashboard" && m in MODULE_INFO).map((m) => pick(MODULE_INFO[m as CatalogModule].label, language))
+    ? chosen.modules.filter((m) => m !== "dashboard" && m in MODULE_INFO).map((m) => ({ key: m, label: pick(MODULE_INFO[m as CatalogModule].label, language) }))
     : [];
 
   const trial = trialLabel(config?.trialHours ?? 72, language);
@@ -351,7 +352,11 @@ function RegisterForm() {
           </div>
           {errors.sector ? <p className="lg-field-error">{errorText("sector")}</p> : null}
           <p id="rg-sector-hint" className="lg-hint">
-            {chosenModules.length ? chosenModules.join(" · ") : tx.sectorHint}
+            {chosenModules.length ? (
+              <span style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 2 }}>
+                {chosenModules.map((x) => <ModuleLabel key={x.key} moduleKey={x.key} label={x.label} size={14} gap={5} />)}
+              </span>
+            ) : tx.sectorHint}
           </p>
         </div>
 

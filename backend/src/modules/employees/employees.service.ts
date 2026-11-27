@@ -26,7 +26,9 @@ export class EmployeesService {
   }
 
   async create(userId: number, data: any) {
+    // La colonne email est obligatoire en base : un salarié sans adresse est enregistré avec une adresse vide.
     const employee = this.employeeRepository.create({
+      email: '',
       ...stripProtected(data),
       userId,
       hireDate: data.hireDate ? new Date(data.hireDate) : null

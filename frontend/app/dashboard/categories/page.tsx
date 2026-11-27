@@ -5,6 +5,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import Spinner from "@/components/ui/Spinner";
+import { useAppSettings } from "@/hooks/useAppSettings";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, focusField } from "@/lib/formValidation";
 
 // -- SVG Icons ----------------------------------------------
 const IconTag = ({ size = 20 }: { size?: number }) => (
@@ -146,6 +150,7 @@ export default function CategoriesPage() {
   const { t, language } = useLanguage();
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const { theme } = useTheme();
+  const { formatCurrency } = useAppSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,6 +167,14 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
   const [showProductsModal, setShowProductsModal] = useState(false);
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const closeModal = () => { setFormError(null); setModal({ open: false, form: {}, editMode: false, editId: null }); };
+  const closeProductsModal = () => setShowProductsModal(false);
+  // Fenêtres accessibles : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, modal.editMode ? t("categories.editCategory") : t("categories.addCategory"));
+  const dlgProducts = useDialog(showProductsModal, closeProductsModal, `${t("categories.productsIn")} ${selectedCategory?.name ?? ""}`.trim());
   const [viewMode, setViewMode] = useState("grid");
 
   // FIX: Margin left pour desktop (sidebar fixe 280px)
@@ -245,73 +258,54 @@ export default function CategoriesPage() {
     } catch(e) { console.error(e); }
   };
 
-  const createCategory = async () => {
-    // Validation côté client : évite les POST vides rejetés en 409 par le backend.
+  const saveCategory = async () => {
+    if (saving) return;
+    // Validation côté client : évite les envois vides.
     const name = String(modal.form?.name ?? "").trim();
     if (!name) {
-      showMessage(t("common.fillRequiredFields") || "Veuillez remplir les champs obligatoires", "error");
+      setFormError({ key: "name", message: fm(language, "required", { label: t("common.name") }) });
+      focusField("category-name");
       return;
     }
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
+    const editing = modal.editMode;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
-        method: "POST",
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories${editing ? `/${modal.editId}` : ""}`, {
+        method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...modal.form, name, description: String(modal.form?.description ?? "").trim() })
+        body: JSON.stringify({ name, description: String(modal.form?.description ?? "").trim() })
       });
       if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
-        await fetchCategories(); await fetchAllProducts();
-        showMessage(t("categories.categoryCreated"), "success");
-      } else {
-        const error = await res.json().catch(() => ({} as any));
-        const msg = Array.isArray(error?.message) ? error.message[0] : error?.message;
-        showMessage(
-          msg?.includes("already exists") ? t("categories.categoryExists") : (msg || t("common.error")),
-          "error"
-        );
-      }
-    } catch(e) { showMessage(t("common.error"), "error"); }
-  };
-
-  const updateCategory = async () => {
-    const name = String(modal.form?.name ?? "").trim();
-    if (!name) {
-      showMessage(t("common.fillRequiredFields") || "Veuillez remplir les champs obligatoires", "error");
-      return;
-    }
-    const token = localStorage.getItem("token");
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${modal.editId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...modal.form, name, description: String(modal.form?.description ?? "").trim() })
-      });
-      if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
+        closeModal();
         await fetchCategories();
-        showMessage(t("categories.categoryUpdated"), "success");
+        if (!editing) await fetchAllProducts();
+        showMessage(editing ? t("categories.categoryUpdated") : t("categories.categoryCreated"), "success");
       } else {
-        const error = await res.json().catch(() => ({} as any));
-        const msg = Array.isArray(error?.message) ? error.message[0] : error?.message;
-        showMessage(
-          msg?.includes("already exists") ? t("categories.categoryExists") : (msg || t("common.error")),
-          "error"
-        );
+        const msg = await readApiError(res, t("common.error"));
+        setFormError({ message: msg.includes("already exists") ? t("categories.categoryExists") : msg });
       }
-    } catch(e) { showMessage(t("common.error"), "error"); }
+    } catch {
+      setFormError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const deleteCategory = async (id: number | string, hasProducts: boolean = false) => {
     if (hasProducts) { showMessage(t("categories.cannotDelete"), "error"); return; }
-    if (confirm(t("categories.confirmDelete"))) {
-      const token = localStorage.getItem("token");
+    if (!confirm(t("categories.confirmDelete"))) return;
+    const token = localStorage.getItem("token");
+    try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { await fetchCategories(); showMessage(t("categories.categoryDeleted"), "success"); }
       else {
-        const error = await res.json();
-        showMessage(error.message?.includes("products") ? t("categories.cannotDelete") : t("common.error"), "error");
+        const msg = await readApiError(res, t("common.error"));
+        showMessage(msg.includes("products") ? t("categories.cannotDelete") : msg, "error");
       }
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
@@ -390,6 +384,8 @@ export default function CategoriesPage() {
               <div style={{ display: "flex", gap: "4px" }}>
                 <button
                   onClick={() => setViewMode("list")}
+                  aria-label={t("clients.listView") || "Liste"}
+                  aria-pressed={viewMode === "list"}
                   style={{ padding: buttonPadding, background: viewMode === "list" ? theme.primary : theme.surfaceHover, border: `1px solid ${viewMode === "list" ? theme.primary : theme.border}`, borderRadius: "8px", color: viewMode === "list" ? "white" : theme.text, cursor: "pointer", transition: "all 0.2s", fontSize: isMobile ? "11px" : "13px", display: "flex", alignItems: "center", gap: "4px" }}
                 >
                   <IconList size={14} />
@@ -397,6 +393,8 @@ export default function CategoriesPage() {
                 </button>
                 <button
                   onClick={() => setViewMode("grid")}
+                  aria-label={t("clients.gridView") || "Grille"}
+                  aria-pressed={viewMode === "grid"}
                   style={{ padding: buttonPadding, background: viewMode === "grid" ? theme.primary : theme.surfaceHover, border: `1px solid ${viewMode === "grid" ? theme.primary : theme.border}`, borderRadius: "8px", color: viewMode === "grid" ? "white" : theme.text, cursor: "pointer", transition: "all 0.2s", fontSize: isMobile ? "11px" : "13px", display: "flex", alignItems: "center", gap: "4px" }}
                 >
                   <IconGrid size={14} />
@@ -410,7 +408,7 @@ export default function CategoriesPage() {
                 onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
               >
                 <IconPlus size={16} />
-                {isMobile ? t("categories.addCategory").substring(0, 8) + "..." : t("categories.addCategory")}
+                {t("categories.addCategory")}
               </button>
             </div>
           </div>
@@ -562,6 +560,8 @@ export default function CategoriesPage() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); openEditModal(c); }}
+                        aria-label={t("common.edit")}
+                        title={t("common.edit")}
                         style={{ padding: "8px 12px", background: "#f59e0b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", transition: "opacity 0.2s", display: "flex", alignItems: "center" }}
                         onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
@@ -610,32 +610,44 @@ export default function CategoriesPage() {
       {/* -- Modal Ajout/Modification -- */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
-          <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "24px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}` }}>
+          <div ref={dlg.ref} {...dlg.props} style={{ background: theme.surface, padding: modalPadding, borderRadius: "24px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "20px", fontSize: isMobile ? "18px" : "24px", display: "flex", alignItems: "center", gap: "10px" }}>
               {modal.editMode ? <IconEdit size={20} /> : <IconPlus size={20} />}
               {modal.editMode ? t("categories.editCategory") : t("categories.addCategory")}
             </h2>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void saveCategory(); }}>
+
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>{t("common.name")} *</label>
-              <input type="text" placeholder={t("categories.categoryName")} value={modal.form.name || ""} onChange={(e) => setModal({ ...modal, form: { ...modal.form, name: e.target.value } })} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, transition: "border-color 0.2s", fontSize: isMobile ? "13px" : "14px" }} onFocus={(e) => e.currentTarget.style.borderColor = theme.primary} onBlur={(e) => e.currentTarget.style.borderColor = theme.border} autoFocus />
+              <label htmlFor="category-name" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>{t("common.name")} *</label>
+              <input id="category-name" aria-required="true" aria-invalid={formError?.key === "name" || undefined} type="text" placeholder={t("categories.categoryName")} value={modal.form.name || ""} onChange={(e) => setModal({ ...modal, form: { ...modal.form, name: e.target.value } })} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, transition: "border-color 0.2s", fontSize: isMobile ? "13px" : "14px" }} onFocus={(e) => e.currentTarget.style.borderColor = theme.primary} onBlur={(e) => e.currentTarget.style.borderColor = theme.border} autoFocus />
             </div>
 
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>{t("categories.description")}</label>
-              <textarea placeholder={t("categories.description")} value={modal.form.description || ""} onChange={(e) => setModal({ ...modal, form: { ...modal.form, description: e.target.value } })} rows={3} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, resize: "vertical", fontSize: isMobile ? "13px" : "14px" }} />
+              <label htmlFor="category-description" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "14px" }}>{t("categories.description")}</label>
+              <textarea id="category-description" placeholder={t("categories.description")} value={modal.form.description || ""} onChange={(e) => setModal({ ...modal, form: { ...modal.form, description: e.target.value } })} rows={3} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, resize: "vertical", fontSize: isMobile ? "13px" : "14px" }} />
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError.message}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "12px" }}>
-              <button onClick={modal.editMode ? updateCategory : createCategory} disabled={!String(modal.form?.name ?? "").trim()} style={{ flex: 1, padding: "10px", background: theme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: !String(modal.form?.name ?? "").trim() ? "not-allowed" : "pointer", opacity: !String(modal.form?.name ?? "").trim() ? 0.5 : 1, fontWeight: "500", transition: "opacity 0.2s", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }} onMouseEnter={(e) => { if (String(modal.form?.name ?? "").trim()) e.currentTarget.style.opacity = "0.8"; }} onMouseLeave={(e) => { if (String(modal.form?.name ?? "").trim()) e.currentTarget.style.opacity = "1"; }}>
+              <button type="submit" aria-busy={saving || undefined} disabled={saving || !String(modal.form?.name ?? "").trim()} style={{ flex: 1, padding: "10px", background: theme.gradient, color: "white", border: "none", borderRadius: "10px", cursor: !String(modal.form?.name ?? "").trim() ? "not-allowed" : "pointer", opacity: !String(modal.form?.name ?? "").trim() ? 0.5 : 1, fontWeight: "500", transition: "opacity 0.2s", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }} onMouseEnter={(e) => { if (String(modal.form?.name ?? "").trim()) e.currentTarget.style.opacity = "0.8"; }} onMouseLeave={(e) => { if (String(modal.form?.name ?? "").trim()) e.currentTarget.style.opacity = "1"; }}>
                 <IconSave size={16} />
                 {modal.editMode ? t("common.edit") : t("common.add")}
               </button>
-              <button onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "10px", background: theme.surfaceHover, color: theme.text, border: "none", borderRadius: "10px", cursor: "pointer", transition: "opacity 0.2s", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
+              <button type="button" onClick={closeModal} style={{ flex: 1, padding: "10px", background: theme.surfaceHover, color: theme.text, border: "none", borderRadius: "10px", cursor: "pointer", transition: "opacity 0.2s", fontSize: isMobile ? "13px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
                 <IconX size={16} />
                 {t("common.cancel")}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}
@@ -643,13 +655,13 @@ export default function CategoriesPage() {
       {/* -- Modal Produits de la catégorie -- */}
       {showProductsModal && selectedCategory && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, animation: "fadeIn 0.2s ease", padding: "16px" }}>
-          <div style={{ background: theme.surface, padding: "20px", borderRadius: "24px", width: productsModalWidth, maxWidth: "95%", maxHeight: "80vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
+          <div ref={dlgProducts.ref} {...dlgProducts.props} style={{ background: theme.surface, padding: "20px", borderRadius: "24px", width: productsModalWidth, maxWidth: "95%", maxHeight: "80vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
               <h2 style={{ color: theme.text, fontSize: isMobile ? "16px" : "20px", display: "flex", alignItems: "center", gap: "8px" }}>
                 <IconBox size={isMobile ? 16 : 20} />
                 {t("categories.productsIn")} "{selectedCategory.name}"
               </h2>
-              <button onClick={() => setShowProductsModal(false)} style={{ background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <button type="button" onClick={closeProductsModal} style={{ background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <IconX size={14} /> {t("common.close")}
               </button>
             </div>
@@ -666,7 +678,7 @@ export default function CategoriesPage() {
                           <div style={{ color: theme.textSecondary, fontSize: isMobile ? "9px" : "11px", marginTop: "4px" }}>SKU: {product.sku || "-"}</div>
                         </div>
                         <div style={{ textAlign: "right" }}>
-                          <div style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "13px" : "16px" }}>{product.price} é</div>
+                          <div style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "13px" : "16px" }}>{formatCurrency(Number(product.price) || 0)}</div>
                           <div style={{ color: statusColor, fontSize: isMobile ? "10px" : "12px", marginTop: "4px" }}>
                             {getStockStatusText(product.quantity || 0)} ({product.quantity || 0} {!isMobile && t("products.units")})
                           </div>

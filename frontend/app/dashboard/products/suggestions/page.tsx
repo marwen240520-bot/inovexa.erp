@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { api, Badge, Btn, Card, Empty, ErrorBox, Loading, Notice, Page, TableWrap, inputStyle, num, td, th, useNotice, useRequireAuth } from "@/components/erp/kit";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MODULE_INFO, SECTORS, pick, type CatalogModule } from "@/lib/catalog";
+import { ModuleLabel } from "@/components/site/ModuleIcon";
 import { formatMoney, sectorName, type SectorDetail } from "@/lib/saas";
 import { fill, useSaasTexts } from "@/lib/saasTexts";
 
@@ -158,7 +159,7 @@ export default function SectorSuggestionsPage() {
           {modules.length ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: "var(--theme-text-secondary)" }}>{s.modules} :</span>
-              {modules.map((m) => <Badge key={m} tone="violet">{pick(MODULE_INFO[m].label, language)}</Badge>)}
+              {modules.map((m) => <Badge key={m} tone="violet"><ModuleLabel moduleKey={m} label={pick(MODULE_INFO[m].label, language)} size={13} gap={5} /></Badge>)}
             </div>
           ) : null}
         </Card>

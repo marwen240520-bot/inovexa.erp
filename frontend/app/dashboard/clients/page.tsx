@@ -11,6 +11,9 @@ import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, validateForm, focusField } from "@/lib/formValidation";
 // --- SVG Icon Components -------------------------------------------------------
 
 const IconUsers = ({ size = 20, color = "currentColor", style = undefined as React.CSSProperties | undefined }) => (
@@ -213,6 +216,12 @@ export default function ClientsPage() {
   }, []);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({ open: false, form: {}, editMode: false, editId: null });
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const closeModal = () => { setFormError(null); setModal({ open: false, form: {}, editMode: false, editId: null }); };
+  // Fenêtre accessible : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, modal.editMode ? t("clients.editClient") : t("clients.addClient"));
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
@@ -281,74 +290,84 @@ export default function ClientsPage() {
     setLoading(false);
   };
 
-  const createClient = async () => {
+  const saveClient = async () => {
+    if (saving) return;
+    // Mêmes règles que les « * » du formulaire ; l'API les revérifie.
+    const problem = validateForm(language, modal.form, [
+      { key: "name", label: t("common.name"), required: true },
+      { key: "email", label: t("common.email"), type: "email", required: true },
+      { key: "totalSpent", label: t("clients.totalSpent"), type: "number", min: 0 },
+    ]);
+    if (problem) { setFormError(problem); focusField(`client-${problem.key}`); return; }
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
+    const editing = modal.editMode;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, {
-        method: "POST",
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients${editing ? `/${modal.editId}` : ""}`, {
+        method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          name: modal.form.name, email: modal.form.email,
-          phone: modal.form.phone || "", address: modal.form.address || "",
-          totalSpent: Number(modal.form.totalSpent) || 0, status: modal.form.status || "active",
+          name: String(modal.form.name ?? "").trim(),
+          email: String(modal.form.email ?? "").trim(),
+          phone: String(modal.form.phone ?? "").trim(),
+          address: String(modal.form.address ?? "").trim(),
+          totalSpent: Number(modal.form.totalSpent) || 0,
+          status: modal.form.status || "active",
         }),
       });
       if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
+        closeModal();
         fetchClients();
-        showMessage(t("clients.clientCreated"), "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch (e) { showMessage(t("common.error"), "error"); }
-  };
-
-  const updateClient = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${modal.editId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          name: modal.form.name, email: modal.form.email,
-          phone: modal.form.phone || "", address: modal.form.address || "",
-          totalSpent: Number(modal.form.totalSpent) || 0, status: modal.form.status || "active",
-        }),
-      });
-      if (res.ok) {
-        setModal({ open: false, form: {}, editMode: false, editId: null });
-        fetchClients();
-        showMessage(t("clients.clientUpdated"), "success");
-      } else { showMessage(t("common.error"), "error"); }
-    } catch (e) { showMessage(t("common.error"), "error"); }
+        showMessage(editing ? t("clients.clientUpdated") : t("clients.clientCreated"), "success");
+      } else {
+        setFormError({ message: await readApiError(res, t("common.error")) });
+      }
+    } catch {
+      setFormError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const deleteClient = async (id: string) => {
-    if (confirm(t("clients.confirmDelete"))) {
-      const token = localStorage.getItem("token");
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}`, {
+    if (!confirm(t("clients.confirmDelete"))) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
-      fetchClients();
+      if (!res.ok) { showMessage(await readApiError(res, fm(language, "cannotDelete")), "error"); return; }
+      await fetchClients();
       showMessage(t("clients.clientDeleted"), "success");
-      setSelectedIds(selectedIds.filter((sid) => sid !== id));
+      setSelectedIds((ids) => ids.filter((sid) => sid !== id));
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm(
-      t("clients.confirmBulkDelete")?.replace("{count}", String(selectedIds.length)) ||
-      `Supprimer ${selectedIds.length} client(s) ?`
-    )) {
-      const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}`, {
+    if (!confirm(t("clients.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) return;
+    const token = localStorage.getItem("token");
+    let ok = 0;
+    let failed = 0;
+    let reason = "";
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients/${id}`, {
           method: "DELETE", headers: { Authorization: `Bearer ${token}` },
         });
+        if (res.ok) ok++;
+        else { failed++; reason = reason || (await readApiError(res, fm(language, "cannotDelete"))); }
+      } catch {
+        failed++;
+        reason = reason || fm(language, "network");
       }
-      fetchClients();
-      setSelectedIds([]);
-      showMessage(`${selectedIds.length} client(s) supprimé(s)`, "success");
     }
+    await fetchClients();
+    setSelectedIds([]);
+    showMessage(failed ? fm(language, "bulkPartial", { ok, failed, reason }) : fm(language, "bulkDeleted", { count: ok }), failed ? "error" : "success");
   };
 
   const toggleStatus = async (id: string, currentStatus: string | undefined) => {
@@ -401,7 +420,7 @@ export default function ClientsPage() {
       }
     } catch (error) {
       console.error("Erreur import:", error);
-      showMessage("Erreur de connexion lors de l'import", "error");
+      showMessage(fm(language, "network"), "error");
     } finally { setImporting(false); }
   };
 
@@ -695,7 +714,7 @@ export default function ClientsPage() {
             </div>
           )}
 
-          {/* -- Stats Cards é 2 colonnes fixes sur mobile -- */}
+          {/* -- Stats Cards — 2 colonnes fixes sur mobile -- */}
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile
@@ -1099,7 +1118,7 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* -- MODAL é Add / Edit -- */}
+      {/* -- MODAL — Add / Edit -- */}
       {modal.open && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -1109,7 +1128,7 @@ export default function ClientsPage() {
           animation: "fadeIn 0.2s ease",
           padding: "16px",
         }}>
-          <div style={{
+          <div ref={dlg.ref} {...dlg.props} style={{
             background: theme.surface,
             padding: modalPadding,
             borderRadius: "20px",
@@ -1133,18 +1152,23 @@ export default function ClientsPage() {
                 : <><IconPlus size={isMobile ? 16 : 20} color={theme.primary} /> {t("clients.addClient")}</>}
             </h2>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void saveClient(); }}>
+
             {[
               { label: t("common.name") + " *", key: "name", type: "text", placeholder: t("clients.clientName"), autoFocus: true },
-              { label: t("common.email") + " *", key: "email", type: "email", placeholder: "Email" },
+              { label: t("common.email") + " *", key: "email", type: "email", placeholder: t("common.email") },
               { label: t("common.phone"), key: "phone", type: "tel", placeholder: t("common.phone") },
               { label: t("common.address"), key: "address", type: "text", placeholder: t("common.address") },
               { label: t("clients.totalSpent"), key: "totalSpent", type: "number", placeholder: t("clients.totalSpent"), step: "0.01" },
             ].map((field) => (
               <div key={field.key} style={{ marginBottom: "14px" }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+                <label htmlFor={`client-${field.key}`} style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                   {field.label}
                 </label>
                 <input
+                  id={`client-${field.key}`}
+                  aria-required={field.label.endsWith("*") || undefined}
+                  aria-invalid={formError?.key === field.key || undefined}
                   type={field.type}
                   step={field.step}
                   placeholder={field.placeholder}
@@ -1170,10 +1194,11 @@ export default function ClientsPage() {
             ))}
 
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+              <label htmlFor="client-status" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("common.status")}
               </label>
               <select
+                id="client-status"
                 value={modal.form.status || "active"}
                 onChange={(e) => setModal({ ...modal, form: { ...modal.form, status: e.target.value } })}
                 style={{
@@ -1193,9 +1218,20 @@ export default function ClientsPage() {
               </select>
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError.message}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "10px" }}>
               <button
-                onClick={modal.editMode ? updateClient : createClient}
+                type="submit"
+                disabled={saving}
+                aria-busy={saving || undefined}
                 style={{
                   flex: 1,
                   height: "44px",
@@ -1219,7 +1255,8 @@ export default function ClientsPage() {
                 {modal.editMode ? t("common.edit") : t("common.add")}
               </button>
               <button
-                onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })}
+                type="button"
+                onClick={closeModal}
                 style={{
                   flex: 1,
                   height: "44px",
@@ -1237,6 +1274,7 @@ export default function ClientsPage() {
                 {t("common.cancel")}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}

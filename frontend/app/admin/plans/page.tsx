@@ -7,6 +7,7 @@
 import React, { CSSProperties, FormEvent, useMemo, useState } from "react";
 import { api, ApiError, Badge, Btn, Empty, ErrorBox, inputStyle, Loading, Modal, Notice, Page, Row, useLoad, useNotice } from "@/components/erp/kit";
 import { MODULE_LABELS, SELECTABLE_MODULES, formatPrice, withVat, type Plan } from "@/lib/saas";
+import { ModuleLabel } from "@/components/site/ModuleIcon";
 import { AdminSettings, Check, ConfirmModal, FormField, InlineError, LANG, codeStyle, errorText, helpStyle, plural } from "@/components/admin/config/shared";
 
 // Mêmes règles que le serveur (subscription.service.ts › cleanPlan) : il reste seul juge, ceci évite un aller-retour.
@@ -347,7 +348,7 @@ function PlanCard({ plan, money, onEdit, onPublish, onDelete }: { plan: Plan; mo
           ? <span style={{ fontSize: 14 }}>Tous les modules du secteur du compte</span>
           : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {plan.modules.map((key) => <Badge key={key}>{MODULE_LABELS[key] || key}</Badge>)}
+              {plan.modules.map((key) => <Badge key={key}><ModuleLabel moduleKey={key} label={MODULE_LABELS[key] || key} size={13} gap={5} color="currentColor" /></Badge>)}
             </div>
           )}
       </div>
@@ -505,7 +506,7 @@ function PlanEditor({ plan, money, nextSortOrder, otherCodes, codeLocked, onCode
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 190px), 1fr))", gap: "10px 16px" }}>
                 {moduleOptions.map((key) => (
-                  <Check key={key} checked={form.modules.includes(key)} onChange={(on) => toggleModule(key, on)} label={<span style={{ fontWeight: 500 }}>{MODULE_LABELS[key] || key}</span>} />
+                  <Check key={key} checked={form.modules.includes(key)} onChange={(on) => toggleModule(key, on)} label={<ModuleLabel moduleKey={key} label={MODULE_LABELS[key] || key} weight={500} />} />
                 ))}
               </div>
               <p style={helpStyle}>Le tableau de bord, le profil et les paramètres restent toujours accessibles.</p>

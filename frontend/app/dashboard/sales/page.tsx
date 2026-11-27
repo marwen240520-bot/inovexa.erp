@@ -10,6 +10,9 @@ import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
 // --- Translations ------------------------------------------------------------
 const translations = {
   fr: {
@@ -66,6 +69,8 @@ interface Product {
   name: string;
   price: number;
   quantity: number;
+  /** false = service / article non géré en stock : jamais « en rupture », aucune quantité à contrôler. */
+  isStockable?: boolean;
 }
 
 interface Client {
@@ -280,6 +285,20 @@ export default function SalesPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | number | null>(null);
   const [importing, setImporting] = useState(false);
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const tr3 = (fr: string, en: string, es: string) => (language === "en" ? en : language === "es" ? es : fr);
+  const closeModal = () => {
+    setFormError(null);
+    setModal({ open: false, form: { status: "pending", quantity: 1, productId: undefined, clientId: undefined, unitPrice: 0, total: 0 } });
+    setSelectedProduct(null);
+    setSelectedClient(null);
+  };
+  const closeEditModal = () => setEditModal({ open: false, sale: null, status: "" });
+  // Fenêtres accessibles : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, t("sales.addSale"));
+  const dlgEdit = useDialog(editModal.open, closeEditModal, t("sales.editStatus"));
 
   const cardRadius = isMobile ? "16px" : "18px";
   const gridGap = isMobile ? "10px" : "20px";
@@ -326,7 +345,8 @@ export default function SalesPage() {
         sale.productName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    if (filterStatus !== "all") filtered = filtered.filter(sale => sale.status === filterStatus);
+    // Une vente de la caisse (« completed ») est une vente payée.
+    if (filterStatus !== "all") filtered = filtered.filter(sale => (filterStatus === "paid" ? sale.status === "paid" || sale.status === "completed" : sale.status === filterStatus));
     if (filterPeriod !== "all") {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -378,79 +398,61 @@ export default function SalesPage() {
       }
     } catch (error) {
       console.error("Erreur import:", error);
-      showMessage("Erreur de connexion lors de l'import", "error");
+      showMessage(fm(language, "network"), "error");
     } finally { setImporting(false); }
   };
 
   const createSale = async () => {
-
-    if (!modal.form.productId) {
-      showMessage("Veuillez sélectionner un produit", "error");
+    if (saving) return;
+    const product = products.find((p) => p.id === (typeof modal.form.productId === "string" ? parseInt(modal.form.productId, 10) : modal.form.productId));
+    // Mêmes règles que les « * » du formulaire ; l'API les revérifie.
+    const problem = validateForm(language, { product: product?.id, quantity: modal.form.quantity, unitPrice: modal.form.unitPrice } as Record<string, unknown>, [
+      { key: "product", label: t("common.product"), required: true },
+      { key: "quantity", label: t("common.quantity"), type: "int", required: true, min: 1 },
+      { key: "unitPrice", label: t("common.price"), type: "number", required: true, min: 0.01 },
+    ]);
+    if (problem || !product) {
+      const p = problem ?? { key: "product", message: fm(language, "required", { label: t("common.product") }) };
+      setFormError(p);
+      focusField(`sale-${p.key}`);
       return;
     }
-
-    if (!modal.form.quantity || modal.form.quantity <= 0) {
-      showMessage("La quantité doit étre supérieure é 0", "error");
+    const quantity = parseNumber(modal.form.quantity);
+    // Un service n'a pas de stock : seul un article géré en stock peut manquer.
+    if (product.isStockable !== false && Number(product.quantity) < quantity) {
+      setFormError({ key: "quantity", message: tr3(`Stock insuffisant. Disponible : ${product.quantity}`, `Not enough stock. Available: ${product.quantity}`, `Stock insuficiente. Disponible: ${product.quantity}`) });
+      focusField("sale-quantity");
       return;
     }
-
-    if (!modal.form.unitPrice || modal.form.unitPrice <= 0) {
-      showMessage("Le prix unitaire doit étre supérieur é 0", "error");
-      return;
-    }
-
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
-    
-    const productId = typeof modal.form.productId === 'string' 
-      ? parseInt(modal.form.productId) 
-      : modal.form.productId;
-
-    const product = products.find(p => p.id === productId);
-    if (!product) {
-      showMessage("Produit non trouvé", "error");
-      return;
-    }
-
-    if (product.quantity < (modal.form.quantity || 0)) {
-      showMessage(`Stock insuffisant. Disponible: ${product.quantity}`, "error");
-      return;
-    }
-
-    const formData = {
-      productId: productId,
-      quantity: modal.form.quantity || 1,
-      unitPrice: modal.form.unitPrice || 0,
-      clientName: modal.form.clientName || "",
-      productName: product.name,
-      status: modal.form.status || "pending"
-    };
-
-
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json", 
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify(formData)
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity,
+          unitPrice: parseNumber(modal.form.unitPrice),
+          clientName: String(modal.form.clientName ?? "").trim(),
+          productName: product.name,
+          status: modal.form.status || "pending",
+        }),
       });
-
-      const result = await res.json();
-
       if (res.ok) {
-        setModal({ open: false, form: { status: "pending", quantity: 1, productId: undefined, clientId: undefined, unitPrice: 0, total: 0 } });
-        setSelectedProduct(null);
-        setSelectedClient(null);
+        closeModal();
         await fetchSales();
         await fetchProducts();
-        showMessage("Vente créée avec succés !", "success");
+        showMessage(t("sales.saleCreated"), "success");
       } else {
-        showMessage(result.message || "Erreur lors de la création de la vente", "error");
+        setFormError({ message: await readApiError(res, t("common.error")) });
       }
-    } catch(e) {
-      console.error("? Erreur lors de la création:", e);
-      showMessage("Erreur de connexion au serveur", "error");
+    } catch (e) {
+      console.error("Erreur lors de la création:", e);
+      setFormError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -468,36 +470,48 @@ export default function SalesPage() {
         showMessage(`${t("sales.statusUpdated")}: ${getStatusText(newStatus)}`, "success");
         setEditModal({ open: false, sale: null, status: "" });
       } else {
-        const error = await res.json();
-        showMessage(error.message || t("common.error"), "error");
+        showMessage(await readApiError(res, t("common.error")), "error");
       }
     } catch(e) { showMessage(t("common.error"), "error"); }
     finally { setUpdatingStatus(null); }
   };
 
   const deleteSale = async (id: string | number) => {
-    if (confirm(t("sales.confirmDelete"))) {
-      const token = localStorage.getItem("token");
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    if (!confirm(t("sales.confirmDelete"))) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { showMessage(await readApiError(res, fm(language, "cannotDelete")), "error"); return; }
       await fetchSales();
       await fetchProducts();
       showMessage(t("sales.saleDeleted"), "success");
-      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      setSelectedIds((ids) => ids.filter((sid) => sid !== id));
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm((t("sales.confirmBulkDelete") || "Supprimer {count} vente(s) ?").replace("{count}", String(selectedIds.length)))) {
-      const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    if (!confirm(t("sales.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) return;
+    const token = localStorage.getItem("token");
+    let ok = 0;
+    let failed = 0;
+    let reason = "";
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) ok++;
+        else { failed++; reason = reason || (await readApiError(res, fm(language, "cannotDelete"))); }
+      } catch {
+        failed++;
+        reason = reason || fm(language, "network");
       }
-      await fetchSales();
-      await fetchProducts();
-      setSelectedIds([]);
-      showMessage(`${selectedIds.length} vente(s) supprimée(s)`, "success");
     }
+    await fetchSales();
+    await fetchProducts();
+    setSelectedIds([]);
+    showMessage(failed ? fm(language, "bulkPartial", { ok, failed, reason }) : fm(language, "bulkDeleted", { count: ok }), failed ? "error" : "success");
   };
 
   const showMessage = (msg: string, type: string) => {
@@ -506,14 +520,14 @@ export default function SalesPage() {
   };
 
   const getStatusColor = (status: string) => {
-    if (status === "paid") return "#10b981";
+    if (status === "paid" || status === "completed") return "#10b981";
     if (status === "pending") return "#f59e0b";
     if (status === "cancelled") return "#ef4444";
     return theme.textSecondary;
   };
 
   const getStatusText = (status: string) => {
-    if (status === "paid") return t("sales.paid");
+    if (status === "paid" || status === "completed") return t("sales.paid");
     if (status === "pending") return t("sales.pending");
     if (status === "cancelled") return t("sales.cancelled");
     return status;
@@ -619,10 +633,6 @@ export default function SalesPage() {
     const quantity = parseInt(e.target.value) || 1;
     const price = modal.form.unitPrice || 0;
     
-    if (selectedProduct && quantity > selectedProduct.quantity) {
-      showMessage(`Stock disponible: ${selectedProduct.quantity}`, "error");
-    }
-    
     setModal(prev => ({
       ...prev,
       form: {
@@ -648,7 +658,7 @@ export default function SalesPage() {
   };
 
   const openEditStatusModal = (sale: Sale) => {
-    setEditModal({ open: true, sale, status: sale.status });
+    setEditModal({ open: true, sale, status: sale.status === "completed" ? "paid" : sale.status });
   };
 
   const animations = `
@@ -1024,19 +1034,22 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* -- Modal é New Sale -- */}
+      {/* -- Modal — New Sale -- */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
-          <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "90vh", overflowY: "auto" }}>
+          <div ref={dlg.ref} {...dlg.props} style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "90vh", overflowY: "auto" }}>
             <h2 style={{ color: theme.text, marginBottom: "20px", fontSize: isMobile ? "17px" : "22px", display: "flex", alignItems: "center", gap: "10px" }}>
               <IconShoppingCart size={isMobile ? 18 : 22} color={theme.primary} />
               {t("sales.addSale")}
             </h2>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void createSale(); }}>
+
             {/* Client Selection */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.client")}</label>
-              <select 
+              <label htmlFor="sale-client" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.client")}</label>
+              <select
+                id="sale-client"
                 onChange={handleClientSelect}
                 value={modal.form.clientId ? String(modal.form.clientId) : ""}
                 style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
@@ -1056,6 +1069,8 @@ export default function SalesPage() {
               )}
               {/* Saisie libre : si le client n'existe pas, il sera créé automatiquement dans le module Clients */}
               <input
+                id="sale-clientName"
+                aria-label={t("sales.newClientPlaceholder")}
                 type="text"
                 placeholder={t("sales.newClientPlaceholder") || "Ou saisir le nom d'un nouveau client (créé automatiquement)"}
                 value={!selectedClient ? (modal.form.clientName || "") : ""}
@@ -1073,10 +1088,13 @@ export default function SalesPage() {
 
             {/* Product Selection - CORRIGéE */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+              <label htmlFor="sale-product" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("common.product")} *
               </label>
-              <select 
+              <select
+                id="sale-product"
+                aria-required="true"
+                aria-invalid={formError?.key === "product" || undefined}
                 onChange={handleProductSelect}
                 value={modal.form.productId ? String(modal.form.productId) : ""}
                 style={{ 
@@ -1093,39 +1111,36 @@ export default function SalesPage() {
                 <option value="">{localT.sales.selectProduct}</option>
                 {products.map((p) => (
                   <option key={String(p.id)} value={String(p.id)}>
-                    {p.name} - {formatCurrency(p.price)} (Stock: {p.quantity})
+                    {p.name} - {formatCurrency(p.price)} ({p.isStockable === false ? tr3("Service", "Service", "Servicio") : `Stock: ${p.quantity}`})
                   </option>
                 ))}
               </select>
-              {selectedProduct && (
-                <div style={{ 
-                  marginTop: "6px", 
-                  fontSize: isMobile ? "10px" : "11px", 
-                  color: selectedProduct.quantity >= (modal.form.quantity || 0) ? theme.accent : "#ef4444", 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: "4px" 
-                }}>
-                  {selectedProduct.quantity >= (modal.form.quantity || 0) ? (
-                    <IconCheckCircle size={12} color={theme.accent} />
-                  ) : (
-                    <IconXCircle size={12} color="#ef4444" />
-                  )}
-                  {localT.sales.productSelected}: {selectedProduct.name} (Stock: {selectedProduct.quantity})
-                  {selectedProduct.quantity < (modal.form.quantity || 0) && (
-                    <span style={{ color: "#ef4444", fontWeight: "bold" }}>
-                      {" "}- Stock insuffisant!
-                    </span>
-                  )}
-                </div>
-              )}
+              {selectedProduct && (() => {
+                // Un service n'a pas de stock à contrôler ; un article géré en stock doit en avoir assez.
+                const tracked = selectedProduct.isStockable !== false;
+                const enough = !tracked || Number(selectedProduct.quantity) >= (modal.form.quantity || 0);
+                return (
+                  <div style={{ marginTop: "6px", fontSize: isMobile ? "10px" : "11px", color: enough ? theme.accent : "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
+                    {enough ? <IconCheckCircle size={12} color={theme.accent} /> : <IconXCircle size={12} color="#ef4444" />}
+                    {localT.sales.productSelected}: {selectedProduct.name} ({tracked ? `Stock: ${selectedProduct.quantity}` : tr3("Service", "Service", "Servicio")})
+                    {!enough && (
+                      <span style={{ color: "#ef4444", fontWeight: "bold" }}>
+                        {" "}- {tr3("Stock insuffisant !", "Not enough stock!", "¡Stock insuficiente!")}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={{ display: "flex", gap: "12px", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
               <div style={{ flex: 1 }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.quantity")} *</label>
+                <label htmlFor="sale-quantity" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.quantity")} *</label>
                 <input 
                   type="number" 
+                  id="sale-quantity"
+                  aria-required="true"
+                  aria-invalid={formError?.key === "quantity" || undefined}
                   min="1"
                   value={modal.form.quantity || 1} 
                   onChange={handleQuantityChange} 
@@ -1133,10 +1148,13 @@ export default function SalesPage() {
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.price")} *</label>
+                <label htmlFor="sale-unitPrice" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.price")} *</label>
                 <input 
                   type="number" 
                   step="0.01" 
+                  id="sale-unitPrice"
+                  aria-required="true"
+                  aria-invalid={formError?.key === "unitPrice" || undefined}
                   min="0.01"
                   value={modal.form.unitPrice || 0} 
                   onChange={handlePriceChange} 
@@ -1146,8 +1164,8 @@ export default function SalesPage() {
             </div>
 
             <div style={{ marginBottom: "16px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.status")}</label>
-              <select value={modal.form.status || "pending"} onChange={(e) => setModal(prev => ({ ...prev, form: { ...prev.form, status: e.target.value } }))} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}>
+              <label htmlFor="sale-status" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.status")}</label>
+              <select id="sale-status" value={modal.form.status || "pending"} onChange={(e) => setModal(prev => ({ ...prev, form: { ...prev.form, status: e.target.value } }))} style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}>
                 <option value="pending">{t("sales.pending")}</option>
                 <option value="paid">{t("sales.paid")}</option>
                 <option value="cancelled">{t("sales.cancelled")}</option>
@@ -1159,9 +1177,20 @@ export default function SalesPage() {
               <span style={{ color: theme.accent, fontWeight: "bold", fontSize: isMobile ? "18px" : "22px" }}>{formatCurrency(modal.form.total || 0)}</span>
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError.message}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "10px" }}>
               <button
-                onClick={createSale}
+                type="submit"
+                disabled={saving}
+                aria-busy={saving || undefined}
                 style={{
                   flex: 1,
                   padding: "12px",
@@ -1182,21 +1211,8 @@ export default function SalesPage() {
                 <IconSave size={14} color="white" /> {t("common.save")}
               </button>
               <button
-                onClick={() => { 
-                  setModal({ 
-                    open: false, 
-                    form: { 
-                      status: "pending", 
-                      quantity: 1,
-                      productId: undefined,
-                      clientId: undefined,
-                      unitPrice: 0,
-                      total: 0
-                    } 
-                  }); 
-                  setSelectedProduct(null); 
-                  setSelectedClient(null); 
-                }}
+                type="button"
+                onClick={closeModal}
                 style={{
                   flex: 1,
                   padding: "12px",
@@ -1213,14 +1229,15 @@ export default function SalesPage() {
                 {t("common.cancel")}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* -- Modal é Edit Status -- */}
+      {/* -- Modal — Edit Status -- */}
       {editModal.open && editModal.sale && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px" }}>
-          <div style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "420px", maxWidth: "95%", border: `1px solid ${theme.border}` }}>
+          <div ref={dlgEdit.ref} {...dlgEdit.props} style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "420px", maxWidth: "95%", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "20px", fontSize: isMobile ? "17px" : "20px", display: "flex", alignItems: "center", gap: "10px" }}>
               <IconEdit size={isMobile ? 16 : 18} color={theme.primary} />
               {t("sales.editStatus") || "Modifier le statut"}
@@ -1242,8 +1259,9 @@ export default function SalesPage() {
             </div>
 
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.status")}</label>
+              <label htmlFor="sale-edit-status" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>{t("common.status")}</label>
               <select
+                id="sale-edit-status"
                 value={editModal.status}
                 onChange={(e) => setEditModal({ ...editModal, status: e.target.value })}
                 style={{ width: "100%", padding: "10px 12px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "10px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "13px" : "14px" }}
@@ -1281,7 +1299,8 @@ export default function SalesPage() {
                   : <><IconSave size={14} color="white" /> {t("common.save")}</>}
               </button>
               <button
-                onClick={() => setEditModal({ open: false, sale: null, status: "" })}
+                type="button"
+                onClick={closeEditModal}
                 style={{
                   flex: 1,
                   padding: "12px",

@@ -10,6 +10,8 @@ import TwoFactorCard from "@/components/account/TwoFactorCard";
 import { serverText } from "@/components/auth/AuthShell";
 import { USER_KEY, clearSession, getStoredUser, replaceToken, updateStoredEmail } from "@/lib/session";
 import { formatDateTime } from "@/lib/saas";
+import { isEmail, readApiError } from "@/lib/apiError";
+import { fm } from "@/lib/formValidation";
 
 // Seuls ces champs du profil sont gardés dans le navigateur : la réponse complète de /users/profile (dates, état du
 // compte, réglages internes) n'a rien à y faire. Les champs posés à la connexion (secteur, droits…) sont conservés,
@@ -495,6 +497,9 @@ export default function ProfilePage() {
   const updateProfile = async () => {
     const token = localStorage.getItem("token");
     if (emailChanging && !emailPassword) { showMessage(profileT.profile.emailNeedsPassword, "error"); return; }
+    // Contrôle avant l'envoi (le serveur revérifie : nom non vide, email valide, texte et non objet).
+    if (!form.name.trim()) { showMessage(fm(language, "required", { label: t("common.name") }), "error"); return; }
+    if (emailChanging && !isEmail(form.email)) { showMessage(fm(language, "email"), "error"); return; }
     try {
       const res = await fetch(`${API_URL}/users/profile`, {
         method: "PATCH",
@@ -511,6 +516,7 @@ export default function ProfilePage() {
         showMessage(data?.emailChange ? profileT.profile.emailChanged : (profileT.profile.profileUpdated || "Profil mis à jour"), "success");
       } else if (res.status === 401) { showMessage(profileT.profile.wrongPassword, "error");
       } else if (res.status === 409) { showMessage(profileT.profile.emailTaken, "error");
+      } else if (res.status === 400) { showMessage(serverText(await readApiError(res, t("common.error") || "Erreur"), language), "error");
       } else { showMessage(t("common.error") || "Erreur", "error"); }
     } catch(e) { showMessage(t("common.error") || "Erreur de connexion", "error"); }
   };

@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Expense } from '../finance/entities/expense.entity';
 import { stripProtected } from '../saas/admin.guard';
+import { completeExpense } from '../finance/expense-defaults';
+import type { ExpenseDto } from '../finance/finance.dto';
 
 @Injectable()
 export class ExpensesService {
@@ -15,8 +17,9 @@ export class ExpensesService {
     return this.expenseRepository.find({ where: { userId }, order: { date: 'DESC' } });
   }
 
-  async create(userId: number, data: Partial<Expense>) {
-    const expense = this.expenseRepository.create({ ...stripProtected(data as any), userId });
+  async create(userId: number, data: Partial<Expense> | ExpenseDto) {
+    const input = stripProtected(data as any) as Partial<Expense>;
+    const expense = this.expenseRepository.create({ ...input, ...completeExpense(input), userId });
     return this.expenseRepository.save(expense);
   }
 

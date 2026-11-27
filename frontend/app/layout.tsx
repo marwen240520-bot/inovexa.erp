@@ -2,11 +2,14 @@
 import { cookies, headers } from "next/headers";
 import localFont from "next/font/local";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import PageTitle from "@/components/ui/PageTitle";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import AppBoot from "@/components/AppBoot";
 import { LANG_COOKIE, deepMerge, pickLanguage, type Lang } from "@/lib/i18n";
 import { THEMES, THEME_COOKIE, normalizeThemeId, themeCssVars } from "@/lib/themes";
+import { HOME_SEO } from "@/components/home/homeSeo";
+import { SITE_URL } from "@/lib/site/siteUrl";
 
 const poppins = localFont({
   src: [
@@ -62,11 +65,21 @@ export const viewport: Viewport = {
   themeColor: "#f3f4f6",
 };
 
-export const metadata: Metadata = {
-  title: "Inovexa-ERP ",
-  description: "Gestion complete pour votre entreprise",
-  icons: { icon: "/images/logo.png" },
-};
+// Titre et description par défaut (pages d'authentification, espaces privés) dans la langue du visiteur ; les pages
+// publiques et l'accueil définissent les leurs. metadataBase sert à écrire les adresses complètes (canonical, Open Graph).
+export async function generateMetadata(): Promise<Metadata> {
+  const jar = await cookies();
+  const h = await headers();
+  const lang = pickLanguage(jar.get(LANG_COOKIE)?.value, h.get("accept-language"));
+  return {
+    metadataBase: new URL(SITE_URL),
+    applicationName: "Inovexa ERP",
+    title: "Inovexa ERP",
+    description: HOME_SEO[lang].description,
+    icons: { icon: "/images/logo.png" },
+    openGraph: { siteName: "Inovexa ERP", type: "website" },
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -106,6 +119,7 @@ export default async function RootLayout({
         <DeviceProvider isMobileHint={isMobileHint}>
           <LanguageProvider initialLanguage={language} initialMessages={messagesFor(language)}>
             <ThemeProvider initialThemeId={themeId}>
+              <PageTitle />
               {children}
             </ThemeProvider>
           </LanguageProvider>

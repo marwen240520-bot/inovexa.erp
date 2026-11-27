@@ -12,6 +12,9 @@ import ImageUpload from "@/components/ui/ImageUpload";
 import { IMAGE_ACCEPT, resizeImageToDataUrl } from "@/lib/imageUtils";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
 // -- Types --------------------------------------------------
 interface Product {
   id: number | string;
@@ -21,6 +24,8 @@ interface Product {
   quantity?: number;
   categoryId?: number | string;
   imageUrl?: string | null;
+  /** false = service / article non géré en stock : jamais « en rupture ». */
+  isStockable?: boolean;
   [key: string]: any;
 }
 
@@ -207,6 +212,13 @@ export default function ProductsPage() {
   }, []);
   const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
   const [modal, setModal] = useState<ModalState>({ open: false, form: {}, editMode: false, editId: null });
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const tr3 = (fr: string, en: string, es: string) => (language === "en" ? en : language === "es" ? es : fr);
+  const closeModal = () => { setFormError(null); setModal({ open: false, form: {}, editMode: false, editId: null }); };
+  // Fenêtre accessible : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, modal.editMode ? t("products.editProduct") : t("products.addProduct"));
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
@@ -264,120 +276,91 @@ export default function ProductsPage() {
     finally { setLoading(false); }
   };
 
-  const createProduct = async () => {
+  const saveProduct = async () => {
+    if (saving) return;
+    // Mêmes règles que les « * » du formulaire ; l'API les revérifie.
+    const problem = validateForm(language, modal.form as Record<string, unknown>, [
+      { key: "name", label: t("common.name"), required: true },
+      { key: "price", label: t("common.price"), type: "number", required: true, min: 0 },
+    ]);
+    if (problem) { setFormError(problem); focusField(`product-${problem.key}`); return; }
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
+    const editing = modal.editMode;
+    const editedId = modal.editId;
     try {
-      const productData = {
-        name: modal.form.name,
-        sku: modal.form.sku || "",
-        price: modal.form.price || 0,
-        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null,
-        imageUrl: modal.form.imageUrl || null
-      };
-
-      const res = await fetch(`${API_URL}/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(productData)
+      const res = await fetch(`${API_URL}/products${editing ? `/${editedId}` : ""}`, {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: String(modal.form.name ?? "").trim(),
+          sku: String(modal.form.sku ?? "").trim(),
+          price: parseNumber(modal.form.price),
+          categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId), 10) : null,
+          imageUrl: modal.form.imageUrl || null,
+        }),
       });
-
       if (res.ok) {
         const sentImage = !!modal.form.imageUrl;
         const saved = await res.json().catch(() => null);
-        setModal({ open: false, form: {}, editMode: false, editId: null });
+        closeModal();
         const list = await fetchProducts();
-        if (sentImage && saved?.id && !photoKept(list, saved.id)) showMessage(PHOTO_NOT_KEPT, "error");
-        else showMessage(t("products.productCreated"), "success");
+        const savedId = editing ? editedId : saved?.id;
+        if (sentImage && savedId !== null && savedId !== undefined && !photoKept(list, savedId)) showMessage(PHOTO_NOT_KEPT, "error");
+        else showMessage(editing ? t("products.productUpdated") : t("products.productCreated"), "success");
       } else {
-        const err = await res.json();
-        console.error("Erreur création produit:", err);
-        showMessage(err.message || t("common.error"), "error");
+        setFormError({ message: await readApiError(res, t("common.error")) });
       }
-    } catch(e) {
-      console.error("Exception création produit:", e);
-      showMessage(t("common.error"), "error");
-    }
-  };
-
-  const updateProduct = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const productData = {
-        name: modal.form.name,
-        sku: modal.form.sku || "",
-        price: modal.form.price || 0,
-        categoryId: modal.form.categoryId ? parseInt(String(modal.form.categoryId)) : null,
-        imageUrl: modal.form.imageUrl || null
-      };
-
-      const res = await fetch(`${API_URL}/products/${modal.editId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(productData)
-      });
-
-      if (res.ok) {
-        const sentImage = !!modal.form.imageUrl;
-        const editedId = modal.editId;
-        setModal({ open: false, form: {}, editMode: false, editId: null });
-        const list = await fetchProducts();
-        if (sentImage && editedId !== null && editedId !== undefined && !photoKept(list, editedId)) showMessage(PHOTO_NOT_KEPT, "error");
-        else showMessage(t("products.productUpdated"), "success");
-      } else {
-        const err = await res.json();
-        console.error("Erreur mise à jour produit:", err);
-        showMessage(err.message || t("common.error"), "error");
-      }
-    } catch(e) {
-      console.error("Exception mise à jour produit:", e);
-      showMessage(t("common.error"), "error");
+    } catch (e) {
+      console.error("Exception enregistrement produit:", e);
+      setFormError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
     }
   };
 
   const deleteProduct = async (id: number | string) => {
-    if (confirm(t("products.confirmDelete"))) {
-      const token = localStorage.getItem("token");
-      try {
-        await fetch(`${API_URL}/products/${id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        await fetchProducts();
-        showMessage(t("products.productDeleted"), "success");
-        setSelectedIds(selectedIds.filter(sid => sid !== id));
-      } catch(e) {
-        console.error("Erreur suppression produit:", e);
-        showMessage(t("common.error"), "error");
-      }
+    if (!confirm(t("products.confirmDelete"))) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${API_URL}/products/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) { showMessage(await readApiError(res, fm(language, "cannotDelete")), "error"); return; }
+      await fetchProducts();
+      showMessage(t("products.productDeleted"), "success");
+      setSelectedIds((ids) => ids.filter((sid) => sid !== id));
+    } catch(e) {
+      console.error("Erreur suppression produit:", e);
+      showMessage(fm(language, "network"), "error");
     }
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    const count = selectedIds.length;
-    if (confirm(t("products.confirmBulkDelete").replace("{count}", String(count)))) {
-      const token = localStorage.getItem("token");
+    if (!confirm(t("products.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) return;
+    const token = localStorage.getItem("token");
+    let ok = 0;
+    let failed = 0;
+    let reason = "";
+    for (const id of selectedIds) {
       try {
-        for (const id of selectedIds) {
-          await fetch(`${API_URL}/products/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        }
-        await fetchProducts();
-        setSelectedIds([]);
-        showMessage(`${count} produit(s) supprimé(s)`, "success");
-      } catch(e) {
-        console.error("Erreur suppression en masse:", e);
-        showMessage(t("common.error"), "error");
+        const res = await fetch(`${API_URL}/products/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) ok++;
+        else { failed++; reason = reason || (await readApiError(res, fm(language, "cannotDelete"))); }
+      } catch {
+        failed++;
+        reason = reason || fm(language, "network");
       }
     }
+    await fetchProducts();
+    setSelectedIds([]);
+    showMessage(failed ? fm(language, "bulkPartial", { ok, failed, reason }) : fm(language, "bulkDeleted", { count: ok }), failed ? "error" : "success");
   };
 
   const importProducts = async (data: any[]) => {
@@ -399,7 +382,7 @@ export default function ProductsPage() {
       }
     } catch (error) {
       console.error("Erreur import:", error);
-      showMessage("Erreur de connexion lors de l'import", "error");
+      showMessage(fm(language, "network"), "error");
     } finally { setImporting(false); }
   };
 
@@ -482,13 +465,17 @@ export default function ProductsPage() {
     return cat ? cat.name : "-";
   };
 
-  const getStatusText = (qty: number) => {
+  const getStatusText = (p: Product) => {
+    if (p.isStockable === false) return tr3("Service", "Service", "Servicio");
+    const qty = p.quantity || 0;
     if (qty <= 0) return t("products.outOfStock");
     if (qty < 10) return t("products.lowStock");
     return t("products.inStock");
   };
 
-  const getStatusColor = (qty: number) => {
+  const getStatusColor = (p: Product) => {
+    if (p.isStockable === false) return "#3b82f6";
+    const qty = p.quantity || 0;
     if (qty <= 0) return "#ef4444";
     if (qty < 10) return "#f59e0b";
     return "#10b981";
@@ -649,7 +636,7 @@ export default function ProductsPage() {
                 /* Mobile : une carte par produit — le nom s'affiche en entier et les actions restent visibles */
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {filteredProducts.map((p) => {
-                    const statusColor = getStatusColor(p.quantity || 0);
+                    const statusColor = getStatusColor(p);
                     const isChecked = selectedIds.includes(p.id);
                     return (
                       <div key={p.id} style={{ background: theme.surface, border: `1.5px solid ${isChecked ? theme.primary : theme.border}`, borderRadius: "14px", padding: "12px" }}>
@@ -674,7 +661,7 @@ export default function ProductsPage() {
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
                           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                             <span style={{ background: `${theme.primary}20`, color: theme.primary, padding: "3px 10px", borderRadius: "10px", fontSize: "12px", fontWeight: 600 }}>{getCategoryName(p.categoryId)}</span>
-                            <span style={{ background: `${statusColor}20`, color: statusColor, padding: "3px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>{getStatusText(p.quantity || 0)}</span>
+                            <span style={{ background: `${statusColor}20`, color: statusColor, padding: "3px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>{getStatusText(p)}</span>
                           </div>
                           <span style={{ color: theme.accent, fontWeight: 800, fontSize: "16px", whiteSpace: "nowrap" }}>{formatCurrency(p.price || 0)}</span>
                         </div>
@@ -713,7 +700,7 @@ export default function ProductsPage() {
                     </thead>
                     <tbody>
                       {filteredProducts.map((p, idx) => {
-                        const statusColor = getStatusColor(p.quantity || 0);
+                        const statusColor = getStatusColor(p);
                         const isChecked = selectedIds.includes(p.id);
                         return (
                           <tr key={p.id} style={{ borderBottom: `1px solid ${theme.surfaceHover}`, transition: "background 0.2s", animation: `slideIn 0.3s ease ${idx * 0.03}s` }}
@@ -741,7 +728,7 @@ export default function ProductsPage() {
                             </td>
                             <td style={{ padding: "8px", textAlign: "right", color: theme.accent, fontWeight: "bold", fontSize: tableFontSize, whiteSpace: "nowrap" }}>{formatCurrency(p.price || 0)}</td>
                             <td style={{ padding: "8px", textAlign: "center" }}>
-                              <span style={{ background: `${statusColor}20`, color: statusColor, padding: "2px 6px", borderRadius: "12px", fontSize: statusFontSize, whiteSpace: "nowrap" }}>{getStatusText(p.quantity || 0)}</span>
+                              <span style={{ background: `${statusColor}20`, color: statusColor, padding: "2px 6px", borderRadius: "12px", fontSize: statusFontSize, whiteSpace: "nowrap" }}>{getStatusText(p)}</span>
                             </td>
                             <td style={{ padding: "8px", textAlign: "center" }}>
                               <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
@@ -770,7 +757,7 @@ export default function ProductsPage() {
           {viewMode === "grid" && (
             <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinWidth}, 1fr))`, gap: gridGap, animation: "fadeInUp 0.5s ease 0.5s", opacity: animateCards ? 1 : 0 }}>
               {filteredProducts.map((p, idx) => {
-                const statusColor = getStatusColor(p.quantity || 0);
+                const statusColor = getStatusColor(p);
                 return (
                   <div key={p.id} style={{ background: theme.surface, borderRadius: cardRadius, padding: "12px", border: `1px solid ${statusColor}40`, transition: "transform 0.2s, box-shadow 0.2s", animation: `fadeInUp 0.3s ease ${idx * 0.05}s` }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)"; }}
@@ -780,7 +767,7 @@ export default function ProductsPage() {
                         {p.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={p.imageUrl} alt="" loading="lazy" style={{ width: isMobile ? 48 : 60, height: isMobile ? 48 : 60, borderRadius: 10, objectFit: "cover", display: "block", border: `1px solid ${theme.border}` }} />
-                        ) : (p.quantity || 0) <= 0 ? <IconXCircle size={isMobile ? 28 : 36} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={isMobile ? 28 : 36} color="#f59e0b" /> : <IconBox size={isMobile ? 28 : 36} />}
+                        ) : p.isStockable === false ? <IconBox size={isMobile ? 28 : 36} /> : (p.quantity || 0) <= 0 ? <IconXCircle size={isMobile ? 28 : 36} color="#ef4444" /> : (p.quantity || 0) < 10 ? <IconAlertTriangle size={isMobile ? 28 : 36} color="#f59e0b" /> : <IconBox size={isMobile ? 28 : 36} />}
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div title={p.name} style={{ color: theme.text, fontWeight: "bold", fontSize: isMobile ? "14px" : "14px", lineHeight: 1.3, overflowWrap: "anywhere" }}>{p.name}</div>
@@ -791,7 +778,7 @@ export default function ProductsPage() {
                       {[
                         { label: t("common.category"), value: getCategoryName(p.categoryId), style: { color: theme.primary, background: `${theme.primary}15`, padding: "2px 6px", borderRadius: "8px", fontSize: isMobile ? "11px" : "10px", fontWeight: "bold", display: "inline-block" as const } },
                         { label: t("common.price"), value: formatCurrency(p.price || 0), style: { color: theme.accent, fontSize: isMobile ? "13px" : "13px", fontWeight: "bold" } },
-                        { label: t("common.status"), value: getStatusText(p.quantity || 0), style: { color: statusColor, fontSize: isMobile ? "11px" : "10px", fontWeight: "bold" } },
+                        { label: t("common.status"), value: getStatusText(p), style: { color: statusColor, fontSize: isMobile ? "11px" : "10px", fontWeight: "bold" } },
                       ].map((row, i) => (
                         <div key={i} style={{ marginBottom: "4px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
                           <span style={{ color: theme.textSecondary, fontSize: isMobile ? "11px" : "10px" }}>{row.label}</span>
@@ -827,11 +814,13 @@ export default function ProductsPage() {
 
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-          <div style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
+          <div ref={dlg.ref} {...dlg.props} style={{ background: theme.surface, padding: modalPadding, borderRadius: "20px", width: modalWidth, maxWidth: "95%", maxHeight: "85vh", overflowY: "auto", border: `1px solid ${theme.border}` }}>
             <h2 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "18px" : "22px", display: "flex", alignItems: "center", gap: "8px" }}>
               {modal.editMode ? <IconEdit size={18} /> : <IconPlus size={18} />}
               {modal.editMode ? t("products.editProduct") : t("products.addProduct")}
             </h2>
+
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void saveProduct(); }}>
 
             <div style={{ marginBottom: "14px" }}>
               <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "11px" : "13px" }}>Photo du produit</label>
@@ -843,16 +832,16 @@ export default function ProductsPage() {
               { label: "SKU", key: "sku", type: "text", placeholder: t("products.sku") },
             ].map(({ label, key, type, placeholder }) => (
               <div key={key} style={{ marginBottom: "12px" }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{label}</label>
-                <input type={type} placeholder={placeholder} value={modal.form[key] || ""} onChange={(e) => setModal({ ...modal, form: { ...modal.form, [key]: e.target.value } })}
+                <label htmlFor={`product-${key}`} style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{label}</label>
+                <input id={`product-${key}`} aria-required={label.endsWith("*") || undefined} aria-invalid={formError?.key === key || undefined} type={type} placeholder={placeholder} value={modal.form[key] || ""} onChange={(e) => setModal({ ...modal, form: { ...modal.form, [key]: e.target.value } })}
                   style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: isMobile ? "12px" : "14px" }}
                   onFocus={(e) => e.currentTarget.style.borderColor = theme.primary} onBlur={(e) => e.currentTarget.style.borderColor = theme.border} />
               </div>
             ))}
 
             <div style={{ marginBottom: "12px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.category")}</label>
-              <select value={String(modal.form.categoryId || "")} onChange={(e) => setModal({ ...modal, form: { ...modal.form, categoryId: e.target.value } })}
+              <label htmlFor="product-categoryId" style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.category")}</label>
+              <select id="product-categoryId" value={String(modal.form.categoryId || "")} onChange={(e) => setModal({ ...modal, form: { ...modal.form, categoryId: e.target.value } })}
                 style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, cursor: "pointer", fontSize: isMobile ? "12px" : "14px" }}>
                 <option value="">{t("products.selectCategory") || "Sélectionner une catégorie"}</option>
                 {categories.map(cat => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
@@ -860,19 +849,29 @@ export default function ProductsPage() {
             </div>
 
             <div style={{ marginBottom: "16px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.price")} *</label>
-              <input type="number" step="0.01" placeholder={t("common.price")} value={modal.form.price || 0} onChange={(e) => setModal({ ...modal, form: { ...modal.form, price: parseFloat(e.target.value) || 0 } })}
+              <label htmlFor="product-price" style={{ color: theme.textSecondary, display: "block", marginBottom: "4px", fontSize: isMobile ? "11px" : "13px" }}>{t("common.price")} *</label>
+              <input id="product-price" aria-required="true" aria-invalid={formError?.key === "price" || undefined} type="number" min={0} step="0.01" placeholder={t("common.price")} value={modal.form.price || 0} onChange={(e) => setModal({ ...modal, form: { ...modal.form, price: parseFloat(e.target.value) || 0 } })}
                 style={{ width: "100%", padding: "8px 10px", background: theme.surfaceHover, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: isMobile ? "12px" : "14px" }} />
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError.message}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={modal.editMode ? updateProduct : createProduct} style={{ flex: 1, padding: "10px", background: theme.gradient, color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+              <button type="submit" disabled={saving} aria-busy={saving || undefined} style={{ flex: 1, padding: "10px", background: theme.gradient, color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "500", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <IconSave size={14} />{modal.editMode ? t("common.edit") : t("common.add")}
               </button>
-              <button onClick={() => setModal({ open: false, form: {}, editMode: false, editId: null })} style={{ flex: 1, padding: "10px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: "pointer", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+              <button type="button" onClick={closeModal} style={{ flex: 1, padding: "10px", background: theme.surfaceHover, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: "pointer", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <IconX size={14} />{t("common.cancel")}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}

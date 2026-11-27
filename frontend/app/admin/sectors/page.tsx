@@ -10,6 +10,7 @@ import React, { FormEvent, useEffect, useMemo, useState } from "react";
 import { api, Badge, Btn, Card, Empty, ErrorBox, inputStyle, Loading, Modal, Notice, Page, Row, Tabs, TableWrap, num, td, th, useLoad, useNotice } from "@/components/erp/kit";
 import { Check, ConfirmModal, FormField, InlineError, LANG, codeStyle, errorText, helpStyle, mutedStyle, plural } from "@/components/admin/config/shared";
 import { MODULE_LABELS, SELECTABLE_MODULES, formatMoney, type Sector, type SectorCategory, type SectorDetail, type SectorItem, type ServiceOffer } from "@/lib/saas";
+import { ModuleLabel } from "@/components/site/ModuleIcon";
 
 type Tab = "sector" | "categories" | "items" | "offers";
 const VAT_RATES = [0, 7, 13, 19];
@@ -92,7 +93,7 @@ function SectorEditor({ sector, nextOrder, onSaved, onDeleted, notify }: { secto
         <div style={{ fontSize: 12, fontWeight: 600, color: "var(--theme-text-secondary)", marginBottom: 8 }}>Modules activés d’office pour un nouveau compte de ce secteur</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 8 }}>
           {SELECTABLE_MODULES.map((key) => (
-            <Check key={key} checked={form.modules.includes(key)} onChange={(v) => set("modules", v ? [...form.modules, key] : form.modules.filter((m) => m !== key))} label={MODULE_LABELS[key] || key} />
+            <Check key={key} checked={form.modules.includes(key)} onChange={(v) => set("modules", v ? [...form.modules, key] : form.modules.filter((m) => m !== key))} label={<ModuleLabel moduleKey={key} label={MODULE_LABELS[key] || key} />} />
           ))}
         </div>
         <p style={{ ...helpStyle, marginTop: 8 }}>Tableau de bord, profil et paramètres sont toujours ouverts. Ces modules sont ouverts d’office aux nouveaux clients du secteur ; chaque client ouvre ou ferme ensuite les siens lui-même, dans la limite de sa formule. Vos changements ne touchent pas les comptes existants.</p>

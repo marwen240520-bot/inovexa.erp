@@ -1054,6 +1054,8 @@ const SUB_CSS = `
 .sub-mod.is-locked { cursor: not-allowed; opacity: .7; }
 .sub-mod.is-locked input { cursor: not-allowed; }
 .sub-mod:has(input:focus-visible) { outline: 2px solid var(--theme-primary, #4f46e5); outline-offset: 2px; }
+.sub-mod-ico { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 9px; color: var(--theme-primary, #4f46e5); background: rgba(var(--theme-primary-rgb, 79, 70, 229), .09); }
+.sub-mod.is-locked .sub-mod-ico { color: var(--theme-text-secondary); background: var(--theme-background); }
 .sub-mod-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .sub-mod-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
 .sub-mod-desc { font-size: 12.5px; line-height: 1.45; color: var(--theme-text-secondary); }

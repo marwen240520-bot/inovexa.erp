@@ -1,6 +1,7 @@
-﻿import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+﻿import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ExpensesService } from './expenses.service';
+import { ExpenseDto } from '../finance/finance.dto';
 
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('Dépenses')
@@ -16,12 +17,12 @@ export class ExpensesController {
   }
 
   @Post()
-  async create(@Request() req: any, @Body() body: any) {
+  async create(@Request() req: any, @Body() body: ExpenseDto) {
     return this.expensesService.create(req.user.userId, body);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Request() req: any) {
-    return this.expensesService.delete(parseInt(id), req.user.userId);
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.expensesService.delete(id, req.user.userId);
   }
 }

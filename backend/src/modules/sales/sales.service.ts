@@ -66,6 +66,8 @@ export class SalesService {
     const quantity = Number(data?.quantity || 0);
     if (!(quantity > 0)) throw new BadRequestException('La quantité doit être supérieure à 0');
     if (Number(data?.unitPrice || 0) < 0) throw new BadRequestException('Le prix unitaire ne peut pas être négatif');
+    // Sans identifiant de produit valide, la recherche ci-dessous ignorerait le filtre et prendrait le premier produit du compte.
+    if (!Number.isInteger(Number(data?.productId)) || Number(data.productId) < 1) throw new BadRequestException('Produit obligatoire.');
     // Auto-création du client si le nom saisi n'existe pas dans le module Clients
     const client = await this.ensureClientExists(userId, data.clientName);
 
@@ -128,8 +130,10 @@ export class SalesService {
 
   async getStats(userId: number) {
     const sales = await this.findAll(userId);
-    const total = sales.reduce((sum, s) => sum + (s.total || 0), 0);
-    const paid = sales.filter(s => s.status === 'paid').length;
+    // Les colonnes décimales arrivent de la base sous forme de texte (« 20.00 ») : sans Number(), « + » les concaténerait.
+    const total = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+    // Une vente de la caisse (« completed ») est encaissée : elle compte comme payée.
+    const paid = sales.filter(s => s.status === 'paid' || s.status === 'completed').length;
     const pending = sales.filter(s => s.status === 'pending').length;
     const cancelled = sales.filter(s => s.status === 'cancelled').length;
     

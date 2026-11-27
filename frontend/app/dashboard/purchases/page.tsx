@@ -10,6 +10,9 @@ import ImportButton from "@/components/ui/ImportButton";
 import Spinner from "@/components/ui/Spinner";
 
 import { summarizeImport, importHttpError } from "@/lib/importResult";
+import { readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm } from "@/lib/formValidation";
 // --- Interfaces ----------------------------------------------------------------
 
 interface Purchase {
@@ -280,6 +283,12 @@ export default function PurchasesPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterSupplier, setFilterSupplier] = useState("all");
   const [modal, setModal] = useState<ModalState>({ open: false, form: {} });
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const closeModal = () => { setFormError(null); setModal({ open: false, form: {} }); };
+  // Fenêtre accessible : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, t("purchases.newPurchase") || "Nouvel achat");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
@@ -396,15 +405,18 @@ export default function PurchasesPage() {
   // -- CRUD -------------------------------------------------------------------
 
   const createPurchase = async () => {
+    if (saving) return;
     // Validation côté client : évite les POST vides rejetés en 400 par le backend
     // ("Le produit est requis" quand aucun produit n'est sélectionné).
     const f: any = modal.form || {};
     const productName = String(f.productName ?? "").trim();
     const quantity = Number(f.quantity);
     if (!productName || !(quantity > 0)) {
-      showMessage(t("logistics.fillRequiredFields") || "Veuillez remplir les champs obligatoires", "error");
+      setFormError(fm(language, "required", { label: !productName ? (t("common.product") || "Produit") : (t("common.quantity") || "Quantité") }));
       return;
     }
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases`, {
@@ -415,17 +427,17 @@ export default function PurchasesPage() {
       if (res.ok) {
         // Le stock est déjà mis à jour par le backend (purchases.service.create).
         // Ne PAS refaire de PATCH /products ici, sinon le stock est incrémenté 2 fois.
-        setModal({ open: false, form: {} });
+        closeModal();
         await fetchPurchases();
         await fetchProducts();
         showMessage(t("purchases.purchaseCreated") || "Achat créé avec succès", "success");
       } else {
-        const error = await res.json().catch(() => ({} as any));
-        const msg = Array.isArray(error?.message) ? error.message[0] : error?.message;
-        showMessage(msg || t("common.error") || "Erreur lors de la création", "error");
+        setFormError(await readApiError(res, t("common.error") || "Erreur lors de la création"));
       }
     } catch (e) {
-      showMessage(t("common.error") || "Erreur de connexion", "error");
+      setFormError(fm(language, "network"));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -440,7 +452,7 @@ export default function PurchasesPage() {
       });
       if (res.ok) {
         await fetchPurchases();
-        showMessage(t("purchases.statusUpdated") || "Statut mis é jour", "success");
+        showMessage(t("purchases.statusUpdated") || "Statut mis à jour", "success");
       } else {
         const purchase = allPurchases.find(p => p.id === id);
         if (purchase) {
@@ -451,7 +463,7 @@ export default function PurchasesPage() {
           });
           if (putRes.ok) {
             await fetchPurchases();
-            showMessage(t("purchases.statusUpdated") || "Statut mis é jour", "success");
+            showMessage(t("purchases.statusUpdated") || "Statut mis à jour", "success");
           } else {
             showMessage(t("common.error") || "Erreur", "error");
           }
@@ -467,37 +479,50 @@ export default function PurchasesPage() {
   };
 
   const deletePurchase = async (id: number) => {
-    if (confirm(t("purchases.confirmDelete") || "Supprimer cet achat ?")) {
-      const token = localStorage.getItem("token");
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
+    if (!confirm(t("purchases.confirmDelete") || "Supprimer cet achat ?")) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (!res.ok) { showMessage(await readApiError(res, fm(language, "cannotDelete")), "error"); return; }
       // Le stock est rétabli par le backend (purchases.service.delete).
       // Pas de PATCH /products ici, sinon la quantité est déduite 2 fois.
       await fetchPurchases();
       await fetchProducts();
       showMessage(t("purchases.purchaseDeleted") || "Achat supprimé", "success");
-      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      setSelectedIds((ids) => ids.filter((sid) => sid !== id));
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm(`${t("purchases.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} achat(s) ?`)) {
-      const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
+    if (!confirm(`${t("purchases.confirmBulkDelete") || "Supprimer"} ${selectedIds.length} achat(s) ?`)) return;
+    const token = localStorage.getItem("token");
+    let ok = 0;
+    let failed = 0;
+    let reason = "";
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/purchases/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
         // Stock rétabli par le backend ; pas de PATCH /products (sinon double déduction).
+        if (res.ok) ok++;
+        else { failed++; reason = reason || (await readApiError(res, fm(language, "cannotDelete"))); }
+      } catch {
+        failed++;
+        reason = reason || fm(language, "network");
       }
-      await fetchPurchases();
-      await fetchProducts();
-      setSelectedIds([]);
-      showMessage(`${selectedIds.length} achat(s) supprimé(s)`, "success");
     }
+    await fetchPurchases();
+    await fetchProducts();
+    setSelectedIds([]);
+    showMessage(failed ? fm(language, "bulkPartial", { ok, failed, reason }) : fm(language, "bulkDeleted", { count: ok }), failed ? "error" : "success");
   };
 
   // -- Import -----------------------------------------------------------------
@@ -521,7 +546,7 @@ export default function PurchasesPage() {
       }
     } catch (error) {
       console.error("Erreur import:", error);
-      showMessage("Erreur de connexion lors de l'import", "error");
+      showMessage(fm(language, "network"), "error");
     } finally { setImporting(false); }
   };
 
@@ -1065,7 +1090,7 @@ export default function PurchasesPage() {
           background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 1000, animation: "fadeIn 0.2s ease", padding: "16px"
         }}>
-          <div style={{
+          <div ref={dlg.ref} {...dlg.props} style={{
             background: theme.surface,
             padding: modalPadding,
             borderRadius: "20px",
@@ -1080,12 +1105,15 @@ export default function PurchasesPage() {
               {t("purchases.newPurchase") || "Nouvel achat"}
             </h2>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void createPurchase(); }}>
+
             {/* Fournisseur - SELECT dynamique */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
-                {t("purchases.supplier") || "Fournisseur"} *
+              <label htmlFor="purchase-supplier" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+                {t("purchases.supplier") || "Fournisseur"}
               </label>
               <select
+                id="purchase-supplier"
                 value={modal.form.supplierId ?? ""}
                 onChange={(e) => handleSupplierChange(parseInt(e.target.value))}
                 style={{
@@ -1131,10 +1159,12 @@ export default function PurchasesPage() {
 
             {/* Produit - SELECT dynamique */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+              <label htmlFor="purchase-product" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("common.product") || "Produit"} *
               </label>
               <select
+                id="purchase-product"
+                aria-required="true"
                 value={modal.form.productId ?? ""}
                 onChange={(e) => handleProductChange(parseInt(e.target.value))}
                 style={{
@@ -1165,10 +1195,12 @@ export default function PurchasesPage() {
 
             {/* Quantité */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+              <label htmlFor="purchase-quantity" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("common.quantity") || "Quantité"} *
               </label>
               <input
+                id="purchase-quantity"
+                aria-required="true"
                 type="number"
                 min="1"
                 placeholder="1"
@@ -1191,10 +1223,11 @@ export default function PurchasesPage() {
 
             {/* Prix unitaire - peut étre modifié méme si sélectionné depuis produit */}
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+              <label htmlFor="purchase-unitPrice" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("purchases.unitPrice") || "Prix unitaire"} *
               </label>
               <input
+                id="purchase-unitPrice"
                 type="number"
                 step="0.01"
                 min="0"
@@ -1237,10 +1270,11 @@ export default function PurchasesPage() {
 
             {/* Status */}
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
+              <label htmlFor="purchase-status" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: isMobile ? "12px" : "13px" }}>
                 {t("common.status") || "Statut"}
               </label>
               <select
+                id="purchase-status"
                 value={modal.form.status ?? "pending"}
                 onChange={e => setModal({ ...modal, form: { ...modal.form, status: e.target.value } })}
                 style={{
@@ -1256,11 +1290,21 @@ export default function PurchasesPage() {
               </select>
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError}
+              </div>
+            )}
+
             {/* Buttons */}
             <div style={{ display: "flex", gap: "10px" }}>
               <button
-                onClick={createPurchase}
-                disabled={!String((modal.form as any)?.productName ?? "").trim() || !(Number((modal.form as any)?.quantity) > 0)}
+                type="submit"
+                aria-busy={saving || undefined}
+                disabled={saving || !String((modal.form as any)?.productName ?? "").trim() || !(Number((modal.form as any)?.quantity) > 0)}
                 style={{
                   flex: 1,
                   padding: "12px",
@@ -1287,7 +1331,8 @@ export default function PurchasesPage() {
                 {t("common.save") || "Enregistrer"}
               </button>
               <button
-                onClick={() => setModal({ open: false, form: {} })}
+                type="button"
+                onClick={closeModal}
                 style={{
                   flex: 1,
                   padding: "12px",
@@ -1313,6 +1358,7 @@ export default function PurchasesPage() {
                 {t("common.cancel") || "Annuler"}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}

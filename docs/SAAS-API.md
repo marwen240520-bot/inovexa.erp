@@ -14,11 +14,11 @@ lisible par l'interface quand le cas est connu (`MODULE_DISABLED`, `CODE_INVALID
 
 | Code | Signification | Que fait l'interface |
 | --- | --- | --- |
-| 400 | Données refusées. Code de vérification : `{ code: "CODE_INVALID" \| "CODE_EXPIRED" \| "CODE_LOCKED", remainingAttempts? }` | Affiche le message du serveur |
+| 400 | Données refusées, avec un message lisible (« Nom : champ obligatoire. », « Montant : nombre attendu, de 0 à 99 999 999,99. »…). Les valeurs que la base ne peut pas stocker (identifiant « abc », date invalide, nombre trop grand, texte trop long) donnent aussi 400, jamais 500. Code de vérification : `{ code: "CODE_INVALID" \| "CODE_EXPIRED" \| "CODE_LOCKED", remainingAttempts? }` | Affiche le message du serveur |
 | 401 | Pas de session, ou session fermée | Retour à `/auth/login` |
 | 402 | Compte bloqué : `{ code: "SUBSCRIPTION_REQUIRED", status, reason, message }` | Redirection vers `/subscription` (faite une fois pour toutes dans `frontend/lib/apiCache.ts`) |
 | 403 | Droit insuffisant, ou `{ code: "MODULE_DISABLED", module }`, `{ code: "MODULE_NOT_IN_PLAN", modules }`, `{ code: "MANUAL_PAYMENTS_DISABLED" }` | Affiche le message du serveur |
-| 409 | Conflit (email déjà utilisé, paiement déjà traité, `{ code: "SLOT_TAKEN", conflictId }` pour un rendez-vous…) | Affiche le message du serveur |
+| 409 | Conflit (email déjà utilisé, paiement déjà traité, `{ code: "SLOT_TAKEN", conflictId }` pour un rendez-vous, élément en double ou encore utilisé ailleurs…) | Affiche le message du serveur |
 | 429 | Trop de demandes : `{ code: "CODE_TOO_SOON", retryInSeconds }` pour un nouveau code, ou trop de tentatives de paiement | Affiche le message, attend |
 | 502 / 503 | Prestataire de paiement injoignable (`PAYMENT_PROVIDER_ERROR`) / paiement en ligne pas encore configuré (`ONLINE_PAYMENT_UNAVAILABLE`) | Message simple, sans détail technique |
 
@@ -127,6 +127,7 @@ sont déjà vérifiés.
 | `GET /public/sectors` | `Sector[]` (avec `itemCount` et la liste `modules` conseillée) |
 | `GET /public/sectors/:code` | `{ sector, categories, items, serviceOffers, disclaimer }` |
 | `GET /public/service-offers?sector=` | `ServiceOffer[]` publiées |
+| `POST /public/contact` | Formulaire « Écrivez-nous » (page Contact) : `{ firstName, lastName, company, email, phone?, size?, message?, language?, website? }` → `{ sent: true }`. Le message part par email à l'équipe (adresse de support des paramètres, sinon `CONTACT_EMAIL`, sinon `contact@inovexa-erp.com`) ; « répondre » écrit au visiteur ; aucune réponse automatique n'est envoyée. **503** quand l'envoi d'emails n'est pas configuré (le site propose alors d'écrire par sa messagerie). `website` est un champ piège : rempli, le message est ignoré sans erreur. Limite : 5 envois par 10 minutes et par adresse IP |
 | `GET` ou `POST /public/payments/konnect/return?payment_ref=` | **Appelée par Konnect**, jamais par le site. La référence n'est pas crue : l'état du paiement est relu chez Konnect avec la clé du serveur. `GET` répond **302** vers `/subscription?checkout=<id>` du site d'où le client est parti ; `POST` répond 200 `{ received: true }` |
 
 Types : voir `frontend/lib/saas.ts` (`Plan`, `Sector`, `SectorCategory`, `SectorItem`, `ServiceOffer`).

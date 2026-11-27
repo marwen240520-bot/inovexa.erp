@@ -1126,7 +1126,7 @@ export default function DashboardPage() {
                   {getCurrentDate()}
                   {!isMobile && (
                     <span style={{ marginLeft: "6px", fontSize: responsive.dateSize, color: "#666", display: "flex", alignItems: "center", gap: "3px" }}>
-                      <Icon name="Clock" size="0.8em" /> {t("common.lastUpdate") || "Derniére mise é jour"}: {refreshTime}
+                      <Icon name="Clock" size="0.8em" /> {t("common.lastUpdate") || "Dernière mise à jour"}: {refreshTime}
                     </span>
                   )}
                 </p>
@@ -1387,7 +1387,7 @@ export default function DashboardPage() {
           {/* Footer */}
           <div style={{ marginTop: responsive.sectionMargin, textAlign: "center", padding: isMobile ? "12px" : "10px", borderTop: `1px solid ${theme.border}`, fontSize: isMobile ? "8px" : "10px", color: theme.textSecondary, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <Icon name="Clock" size="0.9em" /> {t("common.lastUpdate") || "Derniére mise é jour"}: {refreshTime}
+              <Icon name="Clock" size="0.9em" /> {t("common.lastUpdate") || "Dernière mise à jour"}: {refreshTime}
             </span>
           </div>
         </div>

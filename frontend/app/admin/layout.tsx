@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { useDeviceHint } from "@/contexts/DeviceContext";
 import PageSkeleton, { AppShellProvider } from "@/components/ui/PageSkeleton";
 import { ErrorBox } from "@/components/erp/kit";
+import A11yAutoLabels from "@/components/ui/A11yAutoLabels";
 import { API_URL } from "@/lib/saas";
 import { clearSession, getStoredUser, getToken, homeFor, isPlatformAdmin, saveSession, type SessionUser } from "@/lib/session";
 
@@ -98,6 +99,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div style={{ display: "flex", minHeight: "100vh", position: "relative", background: "var(--theme-background)" }}>
       {/* Rendue une seule fois ici : elle ne se remonte pas à chaque changement de page de l'espace administrateur. */}
       {phase !== "leaving" && <Sidebar />}
+      <A11yAutoLabels />
 
       <main
         id="contenu"

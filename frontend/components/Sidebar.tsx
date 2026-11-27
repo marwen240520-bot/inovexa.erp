@@ -42,7 +42,6 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "admin.sectors": { fr: "Secteurs et suggestions", en: "Sectors and suggestions", es: "Sectores y sugerencias" },
   "admin.platformSettings": { fr: "Réglages de la plateforme", en: "Platform settings", es: "Ajustes de la plataforma" },
   "admin.audit": { fr: "Journal d’activité", en: "Activity log", es: "Registro de actividad" },
-  "admin.legacyClients": { fr: "Création et démonstration", en: "Creation and demo data", es: "Creación y demostración" },
   // Titres des sections de la barre latérale
   "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial" },
   "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento" },

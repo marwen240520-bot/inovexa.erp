@@ -32,7 +32,7 @@ for suite in test/e2e/*.e2e.js; do
   [ -n "$PID" ] && { kill "$PID" 2>/dev/null; wait "$PID" 2>/dev/null; PID=""; }
   psql "$E2E_ADMIN_URL" -q -c "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE)" -c "CREATE DATABASE \"$DB\"" >/dev/null || exit 1
   EXTRA=()
-  if [ "$(basename "$suite")" = "saas.e2e.js" ] || [ "$(basename "$suite")" = "online.e2e.js" ]; then
+  if [ "$(basename "$suite")" = "saas.e2e.js" ] || [ "$(basename "$suite")" = "online.e2e.js" ] || [ "$(basename "$suite")" = "contact.e2e.js" ]; then
     EXTRA=(SMTP_HOST=127.0.0.1 "SMTP_PORT=$FAKE_SMTP_PORT" "SMTP_FROM=Inovexa ERP <no-reply@test.tn>" KONNECT_API_KEY=e2e-konnect-key KONNECT_WALLET_ID=e2e-wallet KONNECT_ENV=sandbox "KONNECT_API_URL=http://127.0.0.1:$FAKE_KONNECT_PORT/api/v2" "API_PUBLIC_URL=$BASE" FRONTEND_URL=http://localhost:3000)
   fi
   env ${EXTRA[@]+"${EXTRA[@]}"} node dist/main.js >"$LOG" 2>&1 &

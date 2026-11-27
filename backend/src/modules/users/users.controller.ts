@@ -1,6 +1,7 @@
 import { Controller, Get, Patch, Body, Param, UseGuards, Request, Post, Delete, UploadedFile, UseInterceptors, ForbiddenException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
+import { UpdateProfileDto } from './users.dto';
 import { ClientModulesService } from '../client-modules/client-modules.service';
 import { AuthService } from '../auth/auth.service';
 import { isPlatformAdmin } from '../saas/account-access';
@@ -27,7 +28,7 @@ export class UsersController {
    * nouvelle adresse à confirmer par un code, ancienne adresse prévenue. Les autres champs ne demandent rien de plus.
    */
   @Patch('profile')
-  async updateProfile(@Request() req: any, @Body() body: { name?: string; email?: string; phone?: string; companyName?: string; currentPassword?: string; language?: string }) {
+  async updateProfile(@Request() req: any, @Body() body: UpdateProfileDto) {
     const actorId = req.user.actorId ?? req.user.userId;
     const { email, currentPassword, language, ...rest } = body || {};
     const change = email !== undefined ? await this.authService.changeEmail(actorId, email, String(currentPassword ?? ''), language, (req.ip || '').toString()) : null;

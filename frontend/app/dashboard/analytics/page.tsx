@@ -905,7 +905,7 @@ export default function AnalyticsPage() {
   };
 
   const topProductsChartData = {
-    labels: topProducts.map(p => isMobile && p.name.length > 10 ? p.name.substring(0, 8) + "é" : p.name),
+    labels: topProducts.map(p => isMobile && p.name.length > 10 ? p.name.substring(0, 8) + "…" : p.name),
     datasets: [{ 
       label: t("dashboard.topProducts"), 
       data: topProducts.map(p => p.amount), 
@@ -916,7 +916,7 @@ export default function AnalyticsPage() {
   };
 
   const topClientsChartData = {
-    labels: topClients.map(c => isMobile && c.name.length > 10 ? c.name.substring(0, 8) + "é" : c.name),
+    labels: topClients.map(c => isMobile && c.name.length > 10 ? c.name.substring(0, 8) + "…" : c.name),
     datasets: [{ 
       label: t("dashboard.topClients"), 
       data: topClients.map(c => c.amount), 

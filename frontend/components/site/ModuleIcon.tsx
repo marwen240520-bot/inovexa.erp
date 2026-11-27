@@ -172,6 +172,23 @@ export const MODULE_ICON_PATHS: Record<ModuleIconKey, React.ReactNode> = {
   ),
 };
 
+/** Nom d'un module précédé de son pictogramme ; un module sans pictogramme s'affiche avec son nom seul. */
+export function ModuleLabel({ moduleKey, label, size = 16, weight, gap = 7, color = "var(--theme-primary, #4f46e5)" }: {
+  moduleKey: string; label: React.ReactNode; size?: number; weight?: number; gap?: number; color?: string;
+}) {
+  const hasIcon = Object.prototype.hasOwnProperty.call(MODULE_ICON_PATHS, moduleKey);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap, fontWeight: weight, minWidth: 0 }}>
+      {hasIcon ? (
+        <span aria-hidden="true" style={{ display: "inline-flex", flexShrink: 0, color }}>
+          <ModuleIcon name={moduleKey as ModuleIconKey} size={size} />
+        </span>
+      ) : null}
+      <span>{label}</span>
+    </span>
+  );
+}
+
 /** Pictogramme d'un module. `stroke` accepte une couleur ou un dégradé SVG (« url(#id) »). */
 export function ModuleIcon({ name, size = 22, stroke = "currentColor", strokeWidth = 2 }: { name: ModuleIconKey; size?: number | string; stroke?: string; strokeWidth?: number }) {
   return (

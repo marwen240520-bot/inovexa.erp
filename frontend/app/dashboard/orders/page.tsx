@@ -7,6 +7,9 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useTheme } from "@/contexts/ThemeContext";
 import ExportButtons from "@/components/ui/ExportButtons";
 import Spinner from "@/components/ui/Spinner";
+import { apiMessage, readApiError } from "@/lib/apiError";
+import { useDialog } from "@/components/ui/useDialog";
+import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
 
 // --- Interfaces ----------------------------------------------------------------
 
@@ -229,6 +232,13 @@ export default function OrdersPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [modal, setModal] = useState<ModalState>({ open: false, form: {} });
+  // Erreur affichée DANS la fenêtre (le message du haut de page est caché derrière le fond sombre) + envoi en cours.
+  const [formError, setFormError] = useState<{ key?: string; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const closeModal = () => { setFormError(null); setModal({ open: false, form: {} }); };
+  // Fenêtre accessible : role="dialog", Échap pour fermer, focus piégé puis rendu au bouton d'origine.
+  const dlg = useDialog(modal.open, closeModal, t("orders.addOrder"));
+  const tr3 = (fr: string, en: string, es: string) => (language === "en" ? en : language === "es" ? es : fr);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [animateCards, setAnimateCards] = useState(false);
@@ -319,22 +329,46 @@ export default function OrdersPage() {
   };
 
   const createOrder = async () => {
+    if (saving) return;
+    // Mêmes règles que les « * » du formulaire ; l'API les revérifie.
+    const problem = validateForm(language, modal.form as Record<string, unknown>, [
+      { key: "clientName", label: t("common.client"), required: true },
+      { key: "productName", label: t("common.product"), required: true },
+      { key: "quantity", label: t("common.quantity"), type: "int", required: true, min: 1 },
+      { key: "unitPrice", label: t("common.price"), type: "number", required: true, min: 0 },
+    ]);
+    if (problem) { setFormError(problem); focusField(`order-${problem.key}`); return; }
+    setFormError(null);
+    setSaving(true);
     const token = localStorage.getItem("token");
+    const f = modal.form;
+    const quantity = parseNumber(f.quantity);
+    const unitPrice = parseNumber(f.unitPrice);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(modal.form)
+        body: JSON.stringify({
+          clientName: String(f.clientName ?? "").trim(),
+          productName: String(f.productName ?? "").trim(),
+          quantity,
+          unitPrice,
+          // Arrondi au centime : 0,1 × 3 donnait 0,30000000000000004.
+          total: Math.round(quantity * unitPrice * 100) / 100,
+          status: f.status || "pending",
+        }),
       });
       if (res.ok) {
-        setModal({ open: false, form: {} });
+        closeModal();
         fetchOrders();
         showMessage(t("orders.orderCreated"), "success");
       } else {
-        showMessage(t("common.error"), "error");
+        setFormError({ message: await readApiError(res, t("common.error")) });
       }
-    } catch (e) {
-      showMessage(t("common.error"), "error");
+    } catch {
+      setFormError({ message: fm(language, "network") });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -349,7 +383,7 @@ export default function OrdersPage() {
       });
       if (res.ok) {
         await fetchOrders();
-        showMessage(`? ${t("orders.statusUpdated")}`, "success");
+        showMessage(t("orders.statusUpdated"), "success");
       } else {
         const order = allOrders.find(o => o.id === id);
         if (order) {
@@ -360,7 +394,7 @@ export default function OrdersPage() {
           });
           if (putRes.ok) {
             await fetchOrders();
-            showMessage(`? ${t("orders.statusUpdated")}`, "success");
+            showMessage(t("orders.statusUpdated"), "success");
           } else {
             showMessage(t("common.error"), "error");
           }
@@ -383,38 +417,56 @@ export default function OrdersPage() {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type }),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) { showMessage(body?.message || "Conversion impossible", "error"); return; }
-    showMessage(type === "invoice" ? "Facture brouillon créée" : type === "delivery_note" ? "Bon de livraison brouillon créé" : "Devis brouillon créé", "success");
+    if (!res.ok) { showMessage(apiMessage(body, tr3("Conversion impossible", "Conversion failed", "No se pudo convertir")), "error"); return; }
+    showMessage(
+      type === "invoice" ? tr3("Facture brouillon créée", "Draft invoice created", "Factura en borrador creada")
+        : type === "delivery_note" ? tr3("Bon de livraison brouillon créé", "Draft delivery note created", "Albarán en borrador creado")
+        : tr3("Devis brouillon créé", "Draft quote created", "Presupuesto en borrador creado"),
+      "success",
+    );
     router.push(`/dashboard/documents/${body.document.id}`);
   };
 
   const deleteOrder = async (id: number) => {
-    if (confirm(t("orders.confirmDelete"))) {
-      const token = localStorage.getItem("token");
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`, {
+    if (!confirm(t("orders.confirmDelete"))) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchOrders();
+      if (!res.ok) { showMessage(await readApiError(res, fm(language, "cannotDelete")), "error"); return; }
+      await fetchOrders();
       showMessage(t("orders.orderDeleted"), "success");
-      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      setSelectedIds((ids) => ids.filter((sid) => sid !== id));
+    } catch {
+      showMessage(fm(language, "network"), "error");
     }
   };
 
   const deleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm(t("orders.confirmBulkDelete")?.replace("{count}", String(selectedIds.length)) || `Supprimer ${selectedIds.length} commande(s) ?`)) {
-      const token = localStorage.getItem("token");
-      for (const id of selectedIds) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`, {
+    if (!confirm(t("orders.confirmBulkDelete").replace("{count}", String(selectedIds.length)))) return;
+    const token = localStorage.getItem("token");
+    let ok = 0;
+    let failed = 0;
+    let reason = "";
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (res.ok) ok++;
+        else { failed++; reason = reason || (await readApiError(res, fm(language, "cannotDelete"))); }
+      } catch {
+        failed++;
+        reason = reason || fm(language, "network");
       }
-      fetchOrders();
-      setSelectedIds([]);
-      showMessage(`${selectedIds.length} commande(s) supprimée(s)`, "success");
     }
+    await fetchOrders();
+    setSelectedIds([]);
+    showMessage(failed ? fm(language, "bulkPartial", { ok, failed, reason }) : fm(language, "bulkDeleted", { count: ok }), failed ? "error" : "success");
   };
 
   const showMessage = (msg: string, type: string) => {
@@ -783,12 +835,12 @@ export default function OrdersPage() {
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                         {order.clientName?.length > (isMobile ? 12 : 20)
-                          ? order.clientName.substring(0, isMobile ? 10 : 17) + "é"
+                          ? order.clientName.substring(0, isMobile ? 10 : 17) + "…"
                           : order.clientName || "-"}
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", color: theme.textSecondary, fontSize: tableFontSize }}>
                         {order.productName?.length > (isMobile ? 12 : 20)
-                          ? order.productName.substring(0, isMobile ? 10 : 17) + "é"
+                          ? order.productName.substring(0, isMobile ? 10 : 17) + "…"
                           : order.productName || "-"}
                       </td>
                       <td style={{ padding: isMobile ? "13px 8px" : "10px 8px", textAlign: "right", color: theme.textSecondary, fontSize: tableFontSize }}>
@@ -922,7 +974,7 @@ export default function OrdersPage() {
           animation: "fadeIn 0.2s ease",
           padding: isMobile ? "0" : "16px"
         }}>
-          <div style={{
+          <div ref={dlg.ref} {...dlg.props} style={{
             background: theme.surface,
             padding: modalPadding,
             borderRadius: isMobile ? "24px 24px 0 0" : "24px",
@@ -949,11 +1001,17 @@ export default function OrdersPage() {
               {t("orders.addOrder")}
             </h2>
 
+            <form noValidate onSubmit={(e) => { e.preventDefault(); void createOrder(); }}>
+
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
+              <label htmlFor="order-clientName" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
                 {t("common.client")} *
               </label>
               <input
+                id="order-clientName"
+                aria-required="true"
+                aria-invalid={formError?.key === "clientName" || undefined}
+                autoFocus
                 type="text"
                 placeholder={t("orders.clientName")}
                 value={modal.form.clientName ?? ""}
@@ -972,10 +1030,13 @@ export default function OrdersPage() {
             </div>
 
             <div style={{ marginBottom: "14px" }}>
-              <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
+              <label htmlFor="order-productName" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
                 {t("common.product")} *
               </label>
               <input
+                id="order-productName"
+                aria-required="true"
+                aria-invalid={formError?.key === "productName" || undefined}
                 type="text"
                 placeholder={t("orders.productName")}
                 value={modal.form.productName ?? ""}
@@ -995,12 +1056,16 @@ export default function OrdersPage() {
 
             <div style={{ display: "flex", gap: "12px", marginBottom: "14px", flexDirection: isMobile ? "column" : "row" }}>
               <div style={{ flex: 1 }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
+                <label htmlFor="order-quantity" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
                   {t("common.quantity")} *
                 </label>
                 <input
+                  id="order-quantity"
+                  aria-required="true"
+                  aria-invalid={formError?.key === "quantity" || undefined}
                   type="number"
-                  placeholder="Quantité"
+                  min={1}
+                  placeholder={t("common.quantity")}
                   value={modal.form.quantity ?? 1}
                   onChange={e => {
                     const qty = parseInt(e.target.value) || 1;
@@ -1019,13 +1084,17 @@ export default function OrdersPage() {
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
+                <label htmlFor="order-unitPrice" style={{ color: theme.textSecondary, display: "block", marginBottom: "6px", fontSize: "13px" }}>
                   {t("common.price")} *
                 </label>
                 <input
+                  id="order-unitPrice"
+                  aria-required="true"
+                  aria-invalid={formError?.key === "unitPrice" || undefined}
                   type="number"
+                  min={0}
                   step="0.01"
-                  placeholder="Prix unitaire"
+                  placeholder={t("common.price")}
                   value={modal.form.unitPrice ?? 0}
                   onChange={e => {
                     const price = parseFloat(e.target.value) || 0;
@@ -1063,9 +1132,20 @@ export default function OrdersPage() {
               </span>
             </div>
 
+            {formError && (
+              <div role="alert" style={{
+                background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: theme.danger || "#ef4444",
+                padding: "10px 12px", borderRadius: "10px", marginBottom: "14px", fontSize: isMobile ? "12px" : "13px",
+              }}>
+                {formError.message}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "12px", flexDirection: isMobile ? "column" : "row" }}>
               <button
-                onClick={createOrder}
+                type="submit"
+                disabled={saving}
+                aria-busy={saving || undefined}
                 style={{
                   flex: 1,
                   padding: isMobile ? "14px" : "10px",
@@ -1090,7 +1170,8 @@ export default function OrdersPage() {
                 {t("common.save")}
               </button>
               <button
-                onClick={() => setModal({ open: false, form: {} })}
+                type="button"
+                onClick={closeModal}
                 style={{
                   flex: 1,
                   padding: isMobile ? "14px" : "10px",
@@ -1114,6 +1195,7 @@ export default function OrdersPage() {
                 {t("common.cancel")}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}
