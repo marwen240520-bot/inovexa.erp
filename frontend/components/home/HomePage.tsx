@@ -74,17 +74,17 @@ const ORBIT_ITEMS = [
   { key: "orders", x: 1494.9, y: 322.3 },
   { key: "invoices", x: 1550.1, y: 366.0 },
 
-  { key: "clients", x: 927.3, y: 364.0 },
-  { key: "suppliers", x: 972.2, y: 309.4 },
-  { key: "objectives", x: 1025.0, y: 262.5 },
-  { key: "hr", x: 1084.5, y: 224.3 },
-  { key: "projects", x: 1149.2, y: 195.7 },
-  { key: "finance", x: 1217.5, y: 177.5 },
-  { key: "ai", x: 1287.8, y: 170.2 },
-  { key: "logistics", x: 1358.4, y: 173.8 },
-  { key: "shipments", x: 1427.6, y: 188.2 },
-  { key: "reports", x: 1493.7, y: 213.3 },
-  { key: "analytics", x: 1555.1, y: 248.2 },
+  { key: "clients", x: 918.4, y: 377.2 },
+  { key: "suppliers", x: 968.3, y: 313.5 },
+  { key: "objectives", x: 1028.7, y: 259.7 },
+  { key: "hr", x: 1097.7, y: 217.5 },
+  { key: "projects", x: 1173.1, y: 188.1 },
+  { key: "finance", x: 1252.4, y: 172.5 },
+  { key: "ai", x: 1333.3, y: 171.2 },
+  { key: "logistics", x: 1413.2, y: 184.3 },
+  { key: "shipments", x: 1489.4, y: 211.3 },
+  { key: "reports", x: 1559.7, y: 251.4 },
+  { key: "analytics", x: 1621.7, y: 303.3 },
 ] as const satisfies readonly { key: ModuleIconKey; x: number; y: number }[];
 
 // Chaque module du catalogue (lib/catalog.ts) a son icône dans l'orbite : si un module est ajouté au catalogue sans l'être ici,
@@ -104,31 +104,32 @@ function ModuleOrbit({ lang, label, shipments }: { lang: HomeLang; label: string
               <stop offset="0" stopColor="#7B5CFF" />
               <stop offset="1" stopColor="#4B37E2" />
             </linearGradient>
-            <linearGradient id="hp-orbit-line-in" gradientUnits="userSpaceOnUse" x1="982" y1="0" x2="1576" y2="0">
+            <linearGradient id="hp-orbit-line-in" gradientUnits="userSpaceOnUse" x1="982" y1="0" x2="1572" y2="0">
               <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
               <stop offset="0.12" stopColor="#ffffff" stopOpacity="0.85" />
               <stop offset="0.88" stopColor="#ffffff" stopOpacity="0.85" />
               <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
-            <linearGradient id="hp-orbit-line-out" gradientUnits="userSpaceOnUse" x1="902" y1="0" x2="1659" y2="0">
+            <linearGradient id="hp-orbit-line-out" gradientUnits="userSpaceOnUse" x1="902" y1="0" x2="1643" y2="0">
               <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
               <stop offset="0.12" stopColor="#ffffff" stopOpacity="0.5" />
-              <stop offset="1" stopColor="#ffffff" stopOpacity="0.5" />
+              <stop offset="0.88" stopColor="#ffffff" stopOpacity="0.5" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
             <filter id="hp-orbit-glow" x="-5%" y="-5%" width="110%" height="110%">
               <feGaussianBlur stdDeviation="1.6" result="b" />
               <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
-          <path d="M 982.1 456.0 A 360 360 0 0 1 1575.8 393.6" fill="none" stroke="url(#hp-orbit-line-in)" strokeWidth="1.4" filter="url(#hp-orbit-glow)" />
-          <path d="M 902.0 404.4 A 455 455 0 0 1 1658.5 344.9" fill="none" stroke="url(#hp-orbit-line-out)" strokeWidth="1.2" filter="url(#hp-orbit-glow)" />
+          <path d="M 982.1 456.0 A 360 360 0 0 1 1571.7 388.8" fill="none" stroke="url(#hp-orbit-line-in)" strokeWidth="1.4" filter="url(#hp-orbit-glow)" />
+          <path d="M 902.0 404.4 A 455 455 0 0 1 1643.4 326.5" fill="none" stroke="url(#hp-orbit-line-out)" strokeWidth="1.2" filter="url(#hp-orbit-glow)" />
         </svg>
 
         <ul className="hp-orbit-list" aria-label={label}>
           {ORBIT_ITEMS.map((m, i) => (
             <li
               key={m.key}
-              className={"hp-orbit-item" + (m.x >= 1600 ? " is-end" : "")}
+              className={"hp-orbit-item" + (m.x >= 1590 ? " is-end" : "")}
               style={{ left: `${(m.x / ORBIT_IMG_W) * 100}%`, top: `${(m.y / ORBIT_IMG_H) * 100}%`, "--i": i } as React.CSSProperties}
             >
               <span className="hp-orbit-tile">
@@ -560,7 +561,7 @@ const STYLES = `
 
   /* Le texte s'arrête avant la première icône de l'orbite (bord gauche = 100vw − 768,7 px d'image × échelle du fond) */
   @media (min-width: 1200px) {
-    .hp-hero-content { max-width: min(720px, 52vw, calc(100vw - 768.7 * max(100vw / 1672, (100vh - var(--hp-header)) / 941) - var(--hp-pad) - 32px)); }
+    .hp-hero-content { max-width: min(720px, 52vw, calc(100vw - 777.6 * max(100vw / 1672, (100vh - var(--hp-header)) / 941) - var(--hp-pad) - 32px)); }
   }
 
   /* Tablette et téléphone : le texte occupe la largeur, l'orbite est masquée */
