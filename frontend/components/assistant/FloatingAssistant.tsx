@@ -12,6 +12,8 @@
 //   • conversation conservée pendant la navigation (le layout persiste)
 //   • Échap ferme la fenêtre ; plein écran sur mobile
 //   • masqué sur /dashboard/ai, qui affiche déjà le chat en grand
+//   • icône vectorielle (robot assistant + pastille « IA ») aux couleurs
+//     du thème : nette à toute taille, en clair comme en sombre
 // ============================================================
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -25,10 +27,10 @@ import { AI_CHAT_BUTTON_EVENT, AI_CHAT_BUTTON_KEY, readAiChatButton } from "@/li
 // Chargé à la demande : le code du chat (Markdown, graphiques…) n'alourdit pas les autres pages.
 const AssistantChat = dynamic(() => import("./AssistantChat"), { ssr: false });
 
-const LABELS: Record<string, { open: string; close: string; title: string; full: string }> = {
-  fr: { open: "Ouvrir le Chat IA", close: "Fermer le Chat IA", title: "Chat IA", full: "Ouvrir en plein écran" },
-  en: { open: "Open AI chat", close: "Close AI chat", title: "AI chat", full: "Open full screen" },
-  es: { open: "Abrir el chat IA", close: "Cerrar el chat IA", title: "Chat IA", full: "Abrir en pantalla completa" },
+const LABELS: Record<string, { open: string; close: string; title: string; full: string; badge: string }> = {
+  fr: { open: "Ouvrir le Chat IA", close: "Fermer le Chat IA", title: "Chat IA", full: "Ouvrir en plein écran", badge: "IA" },
+  en: { open: "Open AI chat", close: "Close AI chat", title: "AI chat", full: "Open full screen", badge: "AI" },
+  es: { open: "Abrir el chat IA", close: "Cerrar el chat IA", title: "Chat IA", full: "Abrir en pantalla completa", badge: "IA" },
 };
 
 // Mêmes modules que la page Assistant IA (un module absent renvoie simplement [])
@@ -57,15 +59,30 @@ async function loadDataset(): Promise<Record<string, any[]>> {
   return Object.fromEntries(entries);
 }
 
-// Animations du bouton : halo qui « respire » et éclats qui scintillent (désactivées si l'utilisateur réduit les animations)
+// Bouton : halo discret qui pulse trois fois à l'arrivée sur la page puis s'arrête (rien du tout si l'utilisateur réduit
+// les animations), anneau de focus visible au clavier.
 const FAB_STYLE = `
-@keyframes ixa-fab-halo { 0% { transform: scale(1); opacity: .55; } 70% { transform: scale(1.55); opacity: 0; } 100% { transform: scale(1.55); opacity: 0; } }
-@keyframes ixa-fab-twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
-.ixa-fab-halo { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(140deg, #4F46E5, #A21CAF); z-index: -1; animation: ixa-fab-halo 2.8s ease-out infinite; pointer-events: none; }
-.ixa-fab-twinkle { transform-box: fill-box; transform-origin: center; animation: ixa-fab-twinkle 2.2s ease-in-out infinite; }
-.ixa-fab-twinkle-2 { animation-delay: 1.1s; }
-@media (prefers-reduced-motion: reduce) { .ixa-fab-halo, .ixa-fab-twinkle { animation: none; } }
+@keyframes ixa-fab-halo { 0% { transform: scale(1); opacity: .4; } 80% { transform: scale(1.45); opacity: 0; } 100% { transform: scale(1.45); opacity: 0; } }
+.ixa-fab-halo { position: absolute; inset: 0; border-radius: inherit; z-index: -1; animation: ixa-fab-halo 2.6s ease-out 3; opacity: 0; pointer-events: none; }
+.ixa-fab:focus-visible { outline: 3px solid rgba(124, 58, 237, .55); outline-offset: 3px; }
+.ixa-fab-badge { position: absolute; top: -4px; inset-inline-end: -7px; z-index: 1; padding: 2px 6px; border-radius: 999px; background: #fff; color: #5b21b6;
+  font: 800 10px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .04em; box-shadow: 0 2px 6px rgba(0, 0, 0, .2); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .ixa-fab-halo { animation: none; } }
 `;
+
+/** Icône du Chat IA : tête de robot assistant, en trait blanc (la pastille « IA » est posée sur le bouton). */
+const RobotIcon = ({ size = 30 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    <circle cx="12" cy="2.9" r="1.15" fill="currentColor" stroke="none" />
+    <line x1="12" y1="4" x2="12" y2="6.2" />
+    <rect x="4.6" y="6.2" width="14.8" height="11.6" rx="3.6" />
+    <circle cx="9.3" cy="11.3" r="1.45" fill="currentColor" stroke="none" />
+    <circle cx="14.7" cy="11.3" r="1.45" fill="currentColor" stroke="none" />
+    <path d="M9.6 14.6c1.4 1 3.4 1 4.8 0" />
+    <line x1="2.6" y1="10.2" x2="2.6" y2="13.8" />
+    <line x1="21.4" y1="10.2" x2="21.4" y2="13.8" />
+  </svg>
+);
 
 const CloseIcon = ({ size = 22 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
@@ -215,6 +232,7 @@ export default function FloatingAssistant() {
           ref={buttonRef}
           type="button"
           onClick={() => setOpen((v) => !v)}
+          className="ixa-fab"
           aria-label={open ? L.close : L.open}
           aria-expanded={open}
           title={open ? L.close : L.open}
@@ -225,14 +243,15 @@ export default function FloatingAssistant() {
             bottom,
             width: isMobile ? 52 : 58,
             height: isMobile ? 52 : 58,
-            borderRadius: open ? "50%" : "24%",
+            borderRadius: "50%",
             border: "none",
             padding: 0,
             cursor: "pointer",
             color: "#fff",
-            background: open ? (theme.gradient || theme.primary) : "transparent",
+            // Couleurs du thème (clair : indigo → violet ; sombre : bleu → violet), ouvert comme fermé.
+            background: theme.gradient || theme.primary,
             isolation: "isolate",
-            boxShadow: "0 10px 28px rgba(79,70,229,0.38), 0 2px 6px rgba(0,0,0,0.18)",
+            boxShadow: "0 10px 28px rgba(79,70,229,0.35), 0 2px 6px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.28)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -243,13 +262,9 @@ export default function FloatingAssistant() {
           onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
         >
           <style>{FAB_STYLE}</style>
-          {!open && <span className="ixa-fab-halo" aria-hidden="true" />}
-          {open ? (
-            <CloseIcon size={isMobile ? 22 : 24} />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src="/images/ai-chat-icon.png" alt="" aria-hidden="true" draggable={false} style={{ width: "100%", height: "100%", display: "block", borderRadius: "inherit", userSelect: "none" }} />
-          )}
+          {!open && <span className="ixa-fab-halo" aria-hidden="true" style={{ background: theme.gradient || theme.primary }} />}
+          {open ? <CloseIcon size={isMobile ? 22 : 24} /> : <RobotIcon size={isMobile ? 27 : 30} />}
+          {!open && <span className="ixa-fab-badge" aria-hidden="true">{L.badge}</span>}
         </button>
       )}
     </>
