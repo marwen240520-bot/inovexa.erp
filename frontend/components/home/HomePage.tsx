@@ -3,7 +3,7 @@
 // app/page.tsx l'enveloppe côté serveur (titre, description, URL canonique, données structurées) ; ce composant client
 // affiche la page.
 //
-// Une page qui défile : premier écran (image, titre, essai gratuit), puis pourquoi Inovexa ERP, les modules, les
+// Une page qui défile : premier écran (image, titre, essai gratuit), la bande de témoignages, puis pourquoi Inovexa ERP, les modules, les
 // secteurs, le démarrage en trois étapes, les formules et un dernier appel à l'essai.
 // L'en-tête est celui des pages publiques (components/site/SiteHeader) : il garde sa place en haut de l'écran et
 // ne recouvre pas le contenu. Textes en français, anglais et espagnol (components/home/homeTexts.ts) ;
@@ -146,6 +146,30 @@ function ModuleOrbit({ lang, label, shipments }: { lang: HomeLang; label: string
   );
 }
 
+// ─── Bande de témoignages ──────────────────────────────────────────────────────
+const initialsOf = (name: string) => name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
+function TestimonialList({ items, hidden }: { items: { quote: string; name: string; role: string }[]; hidden?: boolean }) {
+  return (
+    <ul className="hp-testi-list" aria-hidden={hidden || undefined}>
+      {items.map((t) => (
+        <li key={t.name} className="hp-testi-card">
+          <figure>
+            <blockquote>{t.quote}</blockquote>
+            <figcaption>
+              <span className="hp-testi-avatar" aria-hidden="true">{initialsOf(t.name)}</span>
+              <span>
+                <strong>{t.name}</strong>
+                <span className="hp-testi-role">{t.role}</span>
+              </span>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function HomePage(): React.ReactElement {
   const { language } = useLanguage();
@@ -225,6 +249,20 @@ export default function HomePage(): React.ReactElement {
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        {/* ── Témoignages ── */}
+        <section className="hp-testi" aria-labelledby="hp-testi-title">
+          <header className="hp-testi-head">
+            <p className="hp-eyebrow">{text.testimonials.eyebrow}</p>
+            <h2 id="hp-testi-title" className="hp-h2">{text.testimonials.title}</h2>
+          </header>
+          <div className="hp-testi-viewport" role="region" aria-label={text.testimonials.label} tabIndex={0}>
+            <div className="hp-testi-track">
+              <TestimonialList items={text.testimonials.items} />
+              <TestimonialList items={text.testimonials.items} hidden />
+            </div>
           </div>
         </section>
 
@@ -582,6 +620,24 @@ const STYLES = `
     .hp-cta, .hp-ghost { min-height: 48px; }
   }
 
+  /* ══ Bande de témoignages ══ */
+  .hp-testi { padding: clamp(36px, 5vw, 64px) 0; background: linear-gradient(180deg, #f6f4ff 0%, #eef0ff 100%); border-bottom: 1px solid var(--hp-line); }
+  .hp-testi-head { max-width: 1180px; margin: 0 auto clamp(20px, 2.6vw, 32px); padding: 0 var(--hp-pad); text-align: center; }
+  .hp-testi-head .hp-eyebrow { margin-bottom: 12px !important; }
+  .hp-testi-viewport { overflow: hidden; padding: 6px 0 14px; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%); }
+  .hp-testi-track { display: flex; gap: 16px; width: max-content; animation: hpMarquee 70s linear infinite; }
+  .hp-testi-viewport:hover .hp-testi-track, .hp-testi-viewport:focus-within .hp-testi-track, .hp-testi-viewport:focus .hp-testi-track { animation-play-state: paused; }
+  .hp-testi-list { display: flex; gap: 16px; }
+  .hp-testi-card { flex: 0 0 auto; width: clamp(270px, 28vw, 360px); display: flex; }
+  .hp-testi-card figure { margin: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; width: 100%; padding: 22px; border-radius: 18px; background: #fff; border: 1px solid var(--hp-line); box-shadow: 0 10px 30px rgba(62, 84, 190, 0.08); }
+  .hp-testi-card blockquote { position: relative; margin: 0; padding-top: 30px; color: var(--hp-text); font-size: 16.5px; line-height: 1.55; font-weight: 500; }
+  .hp-testi-card blockquote::before { content: "\\201C"; position: absolute; top: -6px; left: -2px; font-size: 54px; line-height: 1; font-weight: 700; color: var(--hp-accent); opacity: 0.35; }
+  .hp-testi-card figcaption { display: flex; align-items: center; gap: 12px; }
+  .hp-testi-card figcaption strong { display: block; font-size: 15.5px; line-height: 1.3; }
+  .hp-testi-role { display: block; color: var(--hp-muted); font-size: 14.5px; line-height: 1.3; }
+  .hp-testi-avatar { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; background: var(--hp-wave); color: #fff; font-size: 14.5px; font-weight: 700; letter-spacing: 0.5px; }
+  @keyframes hpMarquee { to { transform: translateX(calc(-50% - 8px)); } }
+
   /* ══ Sections ══ */
   .hp-section { padding: clamp(52px, 7.5vw, 104px) var(--hp-pad); background: #fff; }
   .hp-section.hp-tint { background: linear-gradient(180deg, #f6f4ff 0%, #eef0ff 100%); }
@@ -695,7 +751,10 @@ const STYLES = `
   @keyframes hpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes hpSlide { from { transform: translateY(14px); } to { transform: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .hp-rise, .hp-slide, .hp-live-dot, .hp-orbit-item { animation: none !important; }
+    .hp-rise, .hp-slide, .hp-live-dot, .hp-orbit-item, .hp-testi-track { animation: none !important; }
+    /* Sans animation : la bande se parcourt au doigt ou au clavier, une seule fois */
+    .hp-testi-viewport { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+    .hp-testi-list[aria-hidden="true"] { display: none; }
     .hp-cta, .hp-cta-arrow, .hp-ghost, .hp-card, .hp-sector, .hp-orbit-tile, .hp-orbit-tip { transition: none !important; }
     .hp-cta:hover, .hp-card:hover, .hp-sector:hover, .hp-orbit-item:hover .hp-orbit-tile { transform: none; }
   }
