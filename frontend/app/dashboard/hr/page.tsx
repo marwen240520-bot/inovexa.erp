@@ -16,6 +16,7 @@ import { summarizeImport, importHttpError } from "@/lib/importResult";
 import { readApiError } from "@/lib/apiError";
 import { useDialog } from "@/components/ui/useDialog";
 import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 // --- Interfaces ----------------------------------------------------------------
 
@@ -725,7 +726,8 @@ export default function HRPage() {
 
           {/* -- Message -- */}
           {message && (
-            <div style={{
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{
               background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)",
               border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`,
               color: messageType === "success" ? theme.accent : "#f87171",
@@ -736,6 +738,7 @@ export default function HRPage() {
               {messageType === "success" ? <IconCheckCircle size={16} color={theme.accent} /> : <IconXCircle size={16} color="#f87171" />}
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* -- Stats Cards — improved -- */}

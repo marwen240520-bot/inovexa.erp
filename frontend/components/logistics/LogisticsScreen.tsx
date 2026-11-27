@@ -8,6 +8,8 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { Doughnut } from "@/components/charts/LazyCharts";
 import Spinner from "@/components/ui/Spinner";
+import { useDialog } from "@/components/ui/useDialog";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 
 // --- SVG Icon Components -------------------------------------------------------
@@ -287,6 +289,9 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
   const [selectedCarrierId, setSelectedCarrierId] = useState<number | null>(null);
   const activeTab: LogisticsTab = tab;
   const [stats, setStats] = useState({ total: 0, pending: 0, inTransit: 0, delivered: 0, cancelled: 0, onTime: 0 });
+  // Fenêtres d'ajout / modification : comportement standard (rôle « dialog », Échap, focus gardé dans la fenêtre).
+  const carrierDlg = useDialog(carrierModal.open, () => setCarrierModal({ open: false, form: {}, editMode: false, editId: null }), carrierModal.editMode ? t("logistics.editCarrier") : t("logistics.addCarrier"));
+  const shipmentDlg = useDialog(modal.open, () => setModal({ open: false, form: {}, editMode: false, editId: null }), modal.editMode ? t("logistics.editShipment") : t("logistics.addShipment"));
 
   const sectionMargin = isMobile ? "16px" : "24px";
   const headerTitleSize = isMobile ? "20px" : "28px";
@@ -383,10 +388,17 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
     return <IconPackage size={18} color="#94a3b8" />;
   };
 
+  // Message d'erreur renvoyé par le serveur : texte simple ou liste de messages de validation.
+  const serverMessage = (data: any, fallback: string): string => {
+    const m = data?.message ?? data?.error;
+    if (Array.isArray(m)) return m.filter(Boolean).join(", ") || fallback;
+    return typeof m === "string" && m ? m : fallback;
+  };
+
   const showMessage = (msg: string, type: string) => {
     setMessage(msg);
     setMessageType(type);
-    setTimeout(() => setMessage(""), 3000);
+    setTimeout(() => setMessage(""), type === "error" ? 6000 : 3000);
   };
 
   const createTransporteur = async () => {
@@ -427,7 +439,7 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
         showMessage(t("logistics.carrierCreated"), "success");
       } else {
         const data = await res.json();
-        showMessage(data.message || data.error || t("common.error"), "error");
+        showMessage(serverMessage(data, t("common.error")), "error");
       }
     } catch(e) {
       console.error(e);
@@ -472,7 +484,7 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
         showMessage(t("logistics.carrierUpdated"), "success");
       } else {
         const data = await res.json();
-        showMessage(data.message || data.error || t("common.error"), "error");
+        showMessage(serverMessage(data, t("common.error")), "error");
       }
     } catch(e) {
       console.error(e);
@@ -500,6 +512,12 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
 
   const createShipment = async () => {
     const token = localStorage.getItem("token");
+
+    if (!modal.form.trackingNumber || !modal.form.clientName || !modal.form.address) {
+      showMessage(t("logistics.fillRequiredFields"), "error");
+      return;
+    }
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/client/shipments`, {
         method: "POST",
@@ -511,7 +529,8 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
         fetchShipments();
         showMessage(t("logistics.shipmentCreated"), "success");
       } else {
-        showMessage(t("common.error"), "error");
+        const data = await res.json().catch(() => null);
+        showMessage(serverMessage(data, t("common.error")), "error");
       }
     } catch(e) {
       showMessage(t("common.error"), "error");
@@ -553,7 +572,7 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
         showMessage(t("logistics.shipmentUpdated"), "success");
       } else {
         const data = await res.json();
-        showMessage(data.message || data.error || t("common.error"), "error");
+        showMessage(serverMessage(data, t("common.error")), "error");
       }
     } catch(e) {
       console.error("Network error:", e);
@@ -769,7 +788,8 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
 
           {/* Notification */}
           {message && (
-            <div style={{
+            <FlashHolder>
+            <div role={modal.open || carrierModal.open ? undefined : messageType === "error" ? "alert" : "status"} style={{
               background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)",
               border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`,
               color: messageType === "success" ? theme.accent : "#f87171",
@@ -785,6 +805,7 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
               {messageType === "success" ? <IconCheck size={14} color={theme.accent} /> : <IconAlertCircle size={14} color="#f87171" />}
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* Stats Cards */}
@@ -1229,13 +1250,19 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
       {/* Modal: Carrier */}
       {carrierModal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-          <div style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "480px", maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "85vh", overflowY: "auto" }}>
+          <div ref={carrierDlg.ref} {...carrierDlg.props} style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "480px", maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "85vh", overflowY: "auto" }}>
             <h2 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "18px" : "20px", display: "flex", alignItems: "center", gap: "8px" }}>
               {carrierModal.editMode
                 ? <><IconEdit size={16} color={theme.primary} /> {t("logistics.editCarrier")}</>
                 : <><IconUser size={16} color={theme.primary} /> {t("logistics.addCarrier")}</>
               }
             </h2>
+            {message && messageType === "error" && (
+              <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: "#f87171", padding: "10px 12px", borderRadius: "10px", marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px" }}>
+                <IconAlertCircle size={14} color="#f87171" />
+                <span>{message}</span>
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: theme.textSecondary }}><IconUser size={13} /></span>
@@ -1289,13 +1316,19 @@ export default function LogisticsScreen({ tab }: { tab: LogisticsTab }) {
       {/* Modal: Shipment */}
       {modal.open && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-          <div style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "480px", maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "85vh", overflowY: "auto" }}>
+          <div ref={shipmentDlg.ref} {...shipmentDlg.props} style={{ background: theme.surface, padding: isMobile ? "20px" : "28px", borderRadius: "20px", width: isMobile ? "95%" : "480px", maxWidth: "95%", border: `1px solid ${theme.border}`, maxHeight: "85vh", overflowY: "auto" }}>
             <h2 style={{ color: theme.text, marginBottom: "16px", fontSize: isMobile ? "18px" : "20px", display: "flex", alignItems: "center", gap: "8px" }}>
               {modal.editMode
                 ? <><IconEdit size={16} color={theme.primary} /> {t("logistics.editShipment")}</>
                 : <><IconTruck size={16} color={theme.primary} /> {t("logistics.addShipment")}</>
               }
             </h2>
+            {message && messageType === "error" && (
+              <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid #ef4444", color: "#f87171", padding: "10px 12px", borderRadius: "10px", marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px" }}>
+                <IconAlertCircle size={14} color="#f87171" />
+                <span>{message}</span>
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: theme.textSecondary }}><IconTag size={13} /></span>

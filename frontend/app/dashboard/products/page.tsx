@@ -15,6 +15,7 @@ import { summarizeImport, importHttpError } from "@/lib/importResult";
 import { readApiError } from "@/lib/apiError";
 import { useDialog } from "@/components/ui/useDialog";
 import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
+import FlashHolder from "@/components/ui/FlashHolder";
 // -- Types --------------------------------------------------
 interface Product {
   id: number | string;
@@ -575,10 +576,12 @@ export default function ProductsPage() {
 
           {/* Message */}
           {message && (
-            <div style={{ background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`, color: messageType === "success" ? theme.accent : "#f87171", padding: "10px", borderRadius: "10px", marginBottom: "16px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "11px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{ background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`, color: messageType === "success" ? theme.accent : "#f87171", padding: "10px", borderRadius: "10px", marginBottom: "16px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "11px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
               {messageType === "success" ? <IconCheck size={14} /> : <IconX size={14} />}
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* Stats */}
@@ -733,8 +736,8 @@ export default function ProductsPage() {
                             <td style={{ padding: "8px", textAlign: "center" }}>
                               <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
                                 <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ background: theme.primary, color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
-                                <button onClick={() => openEditModal(p)} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconEdit size={11} /></button>
-                                <button onClick={() => deleteProduct(p.id)} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconTrash size={11} /></button>
+                                <button onClick={() => openEditModal(p)} title={t("common.edit")} aria-label={`${t("common.edit")} ${p.name}`} style={{ background: "#f59e0b", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconEdit size={11} /></button>
+                                <button onClick={() => deleteProduct(p.id)} title={t("common.delete")} aria-label={`${t("common.delete")} ${p.name}`} style={{ background: "#c33", color: "white", border: "none", borderRadius: "5px", padding: "4px 6px", cursor: "pointer", display: "flex", alignItems: "center" }}><IconTrash size={11} /></button>
                               </div>
                             </td>
                           </tr>
@@ -788,10 +791,10 @@ export default function ProductsPage() {
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
                       <button onClick={() => pickPhotoFor(p)} title="Photo" aria-label="Photo" style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: theme.primary, color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></button>
-                      <button onClick={() => openEditModal(p)} style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "12px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                      <button onClick={() => openEditModal(p)} title={t("common.edit")} aria-label={`${t("common.edit")} ${p.name}`} style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "12px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
                         <IconEdit size={isMobile ? 15 : 10} />{!isMobile && t("common.edit")}
                       </button>
-                      <button onClick={() => deleteProduct(p.id)} style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "12px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                      <button onClick={() => deleteProduct(p.id)} title={t("common.delete")} aria-label={`${t("common.delete")} ${p.name}`} style={{ flex: 1, padding: isMobile ? "10px 4px" : "5px", background: "#c33", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: isMobile ? "12px" : "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
                         <IconTrash size={isMobile ? 15 : 10} />{!isMobile && t("common.delete")}
                       </button>
                     </div>

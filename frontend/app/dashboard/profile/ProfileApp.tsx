@@ -13,6 +13,7 @@ import { USER_KEY, clearSession, getStoredUser, replaceToken, updateStoredEmail 
 import { formatDateTime } from "@/lib/saas";
 import { isEmail, readApiError } from "@/lib/apiError";
 import { fm } from "@/lib/formValidation";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 // Seuls ces champs du profil sont gardés dans le navigateur : la réponse complète de /users/profile (dates, état du
 // compte, réglages internes) n'a rien à y faire. Les champs posés à la connexion (secteur, droits…) sont conservés,
@@ -1015,7 +1016,8 @@ export default function ProfileApp() {
 
           {/* Message */}
           {message && (
-            <div style={{ 
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{ 
               background: messageType === "success" ? "rgba(16,185,129,0.1)" : messageType === "warning" ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)", 
               border: `1px solid ${messageType === "success" ? "#10b981" : messageType === "warning" ? "#f59e0b" : "#ef4444"}`, 
               color: messageType === "success" ? "#10b981" : messageType === "warning" ? "#f59e0b" : "#f87171", 
@@ -1033,6 +1035,7 @@ export default function ProfileApp() {
               {messageType === "success" ? <Icons.CheckCircle /> : messageType === "warning" ? <Icons.AlertTriangle /> : <Icons.XCircle />}
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* Tabs */}

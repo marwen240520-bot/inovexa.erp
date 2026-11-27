@@ -13,6 +13,7 @@ import { summarizeImport, importHttpError } from "@/lib/importResult";
 import { readApiError } from "@/lib/apiError";
 import { useDialog } from "@/components/ui/useDialog";
 import { fm, validateForm, focusField } from "@/lib/formValidation";
+import FlashHolder from "@/components/ui/FlashHolder";
 // --- SVG Icon Components -------------------------------------------------------
 
 const IconBuilding2 = ({ size = 20, color = "currentColor", style }: { size?: number; color?: string; style?: React.CSSProperties }) => (
@@ -659,7 +660,8 @@ export default function SuppliersPage() {
 
           {/* -- Message -- */}
           {message && (
-            <div style={{
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{
               background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
               border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`,
               color: messageType === "success" ? theme.accent : "#f87171",
@@ -673,6 +675,7 @@ export default function SuppliersPage() {
                 : <IconXCircle size={16} color="#f87171" />}
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* -- Stats Cards -- */}

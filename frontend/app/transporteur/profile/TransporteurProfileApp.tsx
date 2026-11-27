@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRouteTab } from "@/lib/useRouteTab";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import Spinner from "@/components/ui/Spinner";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 interface User {
   id?: number;
@@ -459,7 +460,8 @@ export default function TransporteurProfileApp() {
 
       {/* Toast message */}
       {message && (
-        <div style={{
+        <FlashHolder>
+        <div role={messageType === "error" ? "alert" : "status"} style={{
           background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
           border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`,
           color: messageType === "success" ? "#10b981" : "#f87171",
@@ -476,6 +478,7 @@ export default function TransporteurProfileApp() {
           {messageType === "success" ? <Icons.CheckSmall size={13} /> : <Icons.XCircle size={13} />}
           {message}
         </div>
+        </FlashHolder>
       )}
 
       {/* Avatar bar */}

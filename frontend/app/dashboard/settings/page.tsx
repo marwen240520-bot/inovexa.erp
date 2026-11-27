@@ -11,6 +11,7 @@ import Link from "next/link";
 import { currencyLabel, useCompanyProfile } from "@/lib/company-profile";
 import { readAiChatButton, writeAiChatButton } from "@/lib/aiChatButton";
 import { clearSession } from "@/lib/session";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -288,7 +289,8 @@ export default function SettingsPage() {
 
           {/* Notification */}
           {message && (
-            <div style={{
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{
               background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
               border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`,
               color: messageType === "success" ? "#10b981" : "#f87171",
@@ -308,6 +310,7 @@ export default function SettingsPage() {
               }
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* SECTION LANGUE */}

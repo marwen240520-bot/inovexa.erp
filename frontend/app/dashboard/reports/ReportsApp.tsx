@@ -7,6 +7,7 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { buildXlsx, reportToSheets, downloadBlob } from "@/lib/exportFiles";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 // ── SVG Icon Components ────────────────────────────────────────────────────────
 
@@ -485,7 +486,8 @@ export default function ReportsApp() {
 
           {/* ── Notification ── */}
           {message && (
-            <div style={{
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{
               background: `${messageColor}18`, border: `1px solid ${messageColor}50`,
               color: messageColor, padding: "12px 16px", borderRadius: "12px",
               marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px",
@@ -494,6 +496,7 @@ export default function ReportsApp() {
               <MessageIcon size={16} color={messageColor} />
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* ── Tabs ── */}

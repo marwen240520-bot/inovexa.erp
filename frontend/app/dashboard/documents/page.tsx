@@ -12,6 +12,11 @@ const SINGULAR: Record<string, string> = {
   invoice: "facture", quote: "devis", delivery_note: "bon de livraison", credit_note: "avoir",
   supplier_invoice: "facture fournisseur", purchase_order: "bon de commande", goods_receipt: "bon de réception", supplier_credit_note: "avoir fournisseur",
 };
+// Libellé du bouton de création, accordé au genre du mot (« Nouvelle facture », « Nouvel avoir »…).
+const NEW_LABEL: Record<string, string> = {
+  invoice: "+ Nouvelle facture", quote: "+ Nouveau devis", delivery_note: "+ Nouveau bon de livraison", credit_note: "+ Nouvel avoir",
+  supplier_invoice: "+ Nouvelle facture fournisseur", purchase_order: "+ Nouveau bon de commande", goods_receipt: "+ Nouveau bon de réception", supplier_credit_note: "+ Nouvel avoir fournisseur",
+};
 
 function DocumentsList() {
   useRequireAuth();
@@ -54,7 +59,7 @@ function DocumentsList() {
         <>
           {settles && !SINGULAR[type].includes("avoir") && <ImportButton onImport={importHistory} label="Importer un historique (Excel)" />}
           <Link href="/dashboard/documents/payments"><Btn>Règlements</Btn></Link>
-          <Btn variant="primary" onClick={() => router.push(`/dashboard/documents/new?type=${type}`)}>+ Nouveau {SINGULAR[type]}</Btn>
+          <Btn variant="primary" onClick={() => router.push(`/dashboard/documents/new?type=${type}`)}>{NEW_LABEL[type] || `+ Nouveau ${SINGULAR[type]}`}</Btn>
         </>
       }
     >

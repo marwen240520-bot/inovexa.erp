@@ -1,6 +1,7 @@
 // components/ui/PageSkeleton.tsx
 "use client";
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /**
  * Indique qu'on est à l'intérieur de l'interface de l'application (barre latérale visible).
@@ -50,12 +51,57 @@ function Bone({ w = "100%", h = 12, r, style }: { w?: number | string; h?: numbe
   return <div className="ix-skel__bone" style={{ width: w, height: h, borderRadius: r, ...style }} />;
 }
 
+// Au-delà de ce délai, le squelette n'est plus un simple temps de chargement : un fichier de la page est peut-être bloqué
+// (connexion coupée, extension de blocage, nouvelle version publiée pendant la visite). Il propose alors de recharger.
+const SLOW_MS = 15000;
+const SLOW_TEXTS = {
+  fr: { title: "Le chargement prend plus de temps que prévu.", hint: "Votre connexion est peut-être lente. Si rien ne s’affiche, rechargez la page.", reload: "Recharger la page" },
+  en: { title: "Loading is taking longer than expected.", hint: "Your connection may be slow. If nothing appears, reload the page.", reload: "Reload the page" },
+  es: { title: "La carga está tardando más de lo previsto.", hint: "Puede que su conexión sea lenta. Si no aparece nada, recargue la página.", reload: "Recargar la página" },
+} as const;
+
+function SlowLoadHint() {
+  const { language } = useLanguage();
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setSlow(true), SLOW_MS);
+    return () => window.clearTimeout(id);
+  }, []);
+  if (!slow) return null;
+  const L = SLOW_TEXTS[(language as keyof typeof SLOW_TEXTS) in SLOW_TEXTS ? (language as keyof typeof SLOW_TEXTS) : "fr"];
+  return (
+    <div
+      role="status"
+      data-slow-load
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
+        marginBottom: 20, padding: "12px 16px", borderRadius: 12,
+        background: "var(--theme-surface, #fff)", border: "1px solid var(--theme-border, #e5e7eb)",
+        color: "var(--theme-text, #111827)", fontSize: 14,
+      }}
+    >
+      <span style={{ minWidth: 0 }}>
+        <strong style={{ display: "block" }}>{L.title}</strong>
+        <span style={{ color: "var(--theme-text-secondary, #6b7280)" }}>{L.hint}</span>
+      </span>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        style={{ padding: "8px 16px", background: "#667eea", color: "white", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14 }}
+      >
+        {L.reload}
+      </button>
+    </div>
+  );
+}
+
 /** Squelette générique d'une page de l'ERP : en-tête, indicateurs, tableau. */
 export default function PageSkeleton({ rows = 6, kpis = 4 }: { rows?: number; kpis?: number }) {
   return (
     <div className="ix-skel" data-skeleton aria-busy="true" aria-live="polite">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <span className="ix-skel__sr">Chargement…</span>
+      <SlowLoadHint />
 
       <div className="ix-skel__head">
         <div style={{ flex: "1 1 260px", minWidth: 0 }}>

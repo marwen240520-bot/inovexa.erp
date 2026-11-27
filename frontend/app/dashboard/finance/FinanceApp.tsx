@@ -12,6 +12,7 @@ import { useCompanyProfile } from "@/lib/company-profile";
 import { readApiError } from "@/lib/apiError";
 import { useDialog } from "@/components/ui/useDialog";
 import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 
 // ==================== TRADUCTIONS COMPLÈTES ====================
@@ -2202,10 +2203,12 @@ export default function FinanceApp() {
 
           {/* MESSAGE */}
           {message && (
+            <FlashHolder>
             <div role={messageType === "success" ? "status" : "alert"} style={{ background: messageType === "success" ? "#10b98115" : "#ef444415", border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, color: messageType === "success" ? "#10b981" : "#ef4444", padding: isMobile ? "10px" : "13px 20px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", fontSize: isMobile ? "12px" : "14px", fontWeight: "500", animation: "slideIn 0.3s ease" }}>
               {messageType === "success" ? <Icon.CheckCircle /> : <Icon.Alert />}
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* KPI GRID */}

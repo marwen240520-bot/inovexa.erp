@@ -8,7 +8,7 @@ import { useDeviceHint } from "@/contexts/DeviceContext";
 import { MODULES_CHANGED_EVENT, SESSION_CLEARED_EVENT, clearSession, isPlatformAdmin } from "@/lib/session";
 import { moduleLabel } from "@/lib/sectorLabels";
 import { prefetchRouteData } from "@/lib/routeData";
-import { useCompanyProfile } from "@/lib/company-profile";
+import { useCompanyProfile, type LocalFeatures } from "@/lib/company-profile";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
 const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
@@ -32,7 +32,10 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   // Entrées du menu du tableau de bord (un libellé par entrée : fr / en / es)
   "nav.dashboard": { fr: "Tableau de bord", en: "Dashboard", es: "Panel" },
   "nav.clients": { fr: "Clients", en: "Customers", es: "Clientes" },
-  "nav.crm": { fr: "CRM", en: "CRM", es: "CRM" },
+  "nav.clientsList": { fr: "Liste des clients", en: "Customer list", es: "Lista de clientes" },
+  "nav.clientsOverview": { fr: "Fiche 360°", en: "360° profile", es: "Ficha 360°" },
+  "nav.clientsFollowups": { fr: "À relancer", en: "Follow-ups", es: "Recordatorios" },
+  "nav.clientsPrices": { fr: "Listes de prix", en: "Price lists", es: "Listas de precios" },
   "nav.orders": { fr: "Commandes", en: "Orders", es: "Pedidos" },
   "nav.sales": { fr: "Ventes", en: "Sales", es: "Ventas" },
   "nav.invoices": { fr: "Factures", en: "Invoices", es: "Facturas" },
@@ -41,6 +44,14 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "nav.suggestions": { fr: "Suggestions", en: "Suggestions", es: "Sugerencias" },
   "nav.categories": { fr: "Catégories", en: "Categories", es: "Categorías" },
   "nav.stock": { fr: "Stock", en: "Stock", es: "Stock" },
+  "nav.stockLevels": { fr: "Niveaux par dépôt", en: "Levels by warehouse", es: "Niveles por almacén" },
+  "nav.stockWarehouses": { fr: "Dépôts", en: "Warehouses", es: "Almacenes" },
+  "nav.stockMovements": { fr: "Mouvements", en: "Movements", es: "Movimientos" },
+  "nav.stockLots": { fr: "Lots et péremption", en: "Lots & expiry", es: "Lotes y caducidad" },
+  "nav.stockCounts": { fr: "Inventaires", en: "Stock counts", es: "Inventarios" },
+  "nav.stockAlerts": { fr: "Alertes", en: "Alerts", es: "Alertas" },
+  "nav.stockRotation": { fr: "Rotation", en: "Turnover", es: "Rotación" },
+  "nav.stockValuation": { fr: "Valorisation", en: "Valuation", es: "Valoración" },
   "nav.suppliers": { fr: "Fournisseurs", en: "Suppliers", es: "Proveedores" },
   "nav.purchases": { fr: "Achats", en: "Purchases", es: "Compras" },
   "nav.shipments": { fr: "Expéditions", en: "Shipments", es: "Envíos" },
@@ -64,6 +75,8 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "nav.employees": { fr: "Employés", en: "Employees", es: "Empleados" },
   "nav.payroll": { fr: "Paie", en: "Payroll", es: "Nóminas" },
   "nav.leaves": { fr: "Congés", en: "Leave", es: "Vacaciones" },
+  "nav.payslips": { fr: "Bulletins de paie", en: "Payslips", es: "Recibos de nómina" },
+  "nav.payrollSettings": { fr: "Paramètres de paie", en: "Payroll settings", es: "Ajustes de nómina" },
   "nav.analytics": { fr: "Analyses", en: "Analytics", es: "Análisis" },
   "nav.reports": { fr: "Rapports", en: "Reports", es: "Informes" },
   "nav.reportsGenerate": { fr: "Générer", en: "Generate", es: "Generar" },
@@ -79,6 +92,8 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "nav.profileSecurity": { fr: "Sécurité", en: "Security", es: "Seguridad" },
   "nav.profileActivity": { fr: "Activité", en: "Activity", es: "Actividad" },
   "nav.company": { fr: "Société", en: "Company", es: "Empresa" },
+  "nav.preferences": { fr: "Préférences", en: "Preferences", es: "Preferencias" },
+  "nav.companyTax": { fr: "Société & fiscalité", en: "Company & tax", es: "Empresa e impuestos" },
   "nav.settings": { fr: "Paramètres", en: "Settings", es: "Configuración" },
   "nav.billing": { fr: "Abonnement", en: "Subscription", es: "Suscripción" },
   "nav.carrierStats": { fr: "Statistiques", en: "Statistics", es: "Estadísticas" },
@@ -482,6 +497,75 @@ const ICONS: Record<string, React.ReactElement> = {
       <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
     </Icon>
   ),
+  bell: (
+    <Icon>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+    </Icon>
+  ),
+  tag: (
+    <Icon>
+      <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
+      <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
+    </Icon>
+  ),
+  warehouse: (
+    <Icon>
+      <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
+      <path d="M6 18h12"/>
+      <path d="M6 14h12"/>
+      <rect width="12" height="12" x="6" y="10"/>
+    </Icon>
+  ),
+  layers: (
+    <Icon>
+      <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
+      <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/>
+      <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
+    </Icon>
+  ),
+  arrowLeftRight: (
+    <Icon>
+      <path d="M8 3 4 7l4 4"/>
+      <path d="M4 7h16"/>
+      <path d="m16 21 4-4-4-4"/>
+      <path d="M20 17H4"/>
+    </Icon>
+  ),
+  hourglass: (
+    <Icon>
+      <path d="M5 22h14"/>
+      <path d="M5 2h14"/>
+      <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/>
+      <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+    </Icon>
+  ),
+  clipboard: (
+    <Icon>
+      <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+      <path d="M12 11h4"/>
+      <path d="M12 16h4"/>
+      <path d="M8 11h.01"/>
+      <path d="M8 16h.01"/>
+    </Icon>
+  ),
+  refreshCw: (
+    <Icon>
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+      <path d="M21 3v5h-5"/>
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+      <path d="M8 16H3v5"/>
+    </Icon>
+  ),
+  calendar: (
+    <Icon>
+      <path d="M8 2v4"/>
+      <path d="M16 2v4"/>
+      <rect width="18" height="18" x="3" y="4" rx="2"/>
+      <path d="M3 10h18"/>
+    </Icon>
+  ),
   menu: (
     <Icon d="M3 12h18M3 6h18M3 18h18"/>
   ),
@@ -543,6 +627,8 @@ interface NavItem {
   iconKey: string;
   also?: string[];
   exact?: string[];
+  /** Fonction locale requise (la paie n'existe que dans certains pays) : l'entrée disparaît sans elle. */
+  feature?: keyof LocalFeatures;
   children?: NavItem[];
 }
 
@@ -563,8 +649,14 @@ const CLIENT_TOP: NavItem[] = [
 const CLIENT_GROUPS: NavGroup[] = [
   {
     id: "sales", label: "nav.groups.sales", items: [
-      { id: "clients",      path: "/dashboard/clients",      label: "nav.clients",         iconKey: "clients" },
-      { id: "crm",          gate: "clients", path: "/dashboard/crm", label: "nav.crm",      iconKey: "crm" },
+      {
+        id: "clients", gate: "clients", path: "", label: "nav.clients", iconKey: "clients", children: [
+          { id: "clients-list",      gate: "clients", path: "/dashboard/clients",           label: "nav.clientsList",      iconKey: "clients" },
+          { id: "clients-overview",  gate: "clients", path: "/dashboard/clients/overview",  label: "nav.clientsOverview",  iconKey: "crm" },
+          { id: "clients-followups", gate: "clients", path: "/dashboard/clients/followups", label: "nav.clientsFollowups", iconKey: "bell" },
+          { id: "clients-prices",    gate: "clients", path: "/dashboard/clients/prices",    label: "nav.clientsPrices",    iconKey: "tag" },
+        ],
+      },
       { id: "appointments", path: "/dashboard/appointments", label: "common.appointments", iconKey: "appointments" },
       { id: "orders",       path: "/dashboard/orders",       label: "nav.orders",          iconKey: "orders" },
       { id: "sales",        path: "/dashboard/sales",        label: "nav.sales",           iconKey: "sales" },
@@ -578,7 +670,19 @@ const CLIENT_GROUPS: NavGroup[] = [
       { id: "products",    path: "/dashboard/products",    label: "nav.products",    iconKey: "products" },
       { id: "suggestions", gate: "products", path: "/dashboard/products/suggestions", label: "nav.suggestions", iconKey: "suggestions" },
       { id: "categories",  path: "/dashboard/categories",  label: "nav.categories",  iconKey: "categories" },
-      { id: "stock",       path: "/dashboard/stock",       label: "nav.stock",       iconKey: "stock" },
+      {
+        id: "stock", gate: "stock", path: "", label: "nav.stock", iconKey: "stock", children: [
+          { id: "stock-overview",   gate: "stock", path: "/dashboard/stock",            label: "nav.overview",        iconKey: "stock" },
+          { id: "stock-levels",     gate: "stock", path: "/dashboard/stock/levels",     label: "nav.stockLevels",     iconKey: "layers" },
+          { id: "stock-warehouses", gate: "stock", path: "/dashboard/stock/warehouses", label: "nav.stockWarehouses", iconKey: "warehouse" },
+          { id: "stock-movements",  gate: "stock", path: "/dashboard/stock/movements",  label: "nav.stockMovements",  iconKey: "arrowLeftRight" },
+          { id: "stock-lots",       gate: "stock", path: "/dashboard/stock/lots",       label: "nav.stockLots",       iconKey: "hourglass" },
+          { id: "stock-counts",     gate: "stock", path: "/dashboard/stock/counts",     label: "nav.stockCounts",     iconKey: "clipboard" },
+          { id: "stock-alerts",     gate: "stock", path: "/dashboard/stock/alerts",     label: "nav.stockAlerts",     iconKey: "bell" },
+          { id: "stock-rotation",   gate: "stock", path: "/dashboard/stock/rotation",   label: "nav.stockRotation",   iconKey: "refreshCw" },
+          { id: "stock-valuation",  gate: "stock", path: "/dashboard/stock/valuation",  label: "nav.stockValuation",  iconKey: "banknote" },
+        ],
+      },
     ],
   },
   {
@@ -619,8 +723,14 @@ const CLIENT_GROUPS: NavGroup[] = [
   },
   {
     id: "hr", label: "nav.groups.hr", items: [
-      { id: "hr-employees", gate: "hr", path: "/dashboard/hr",         label: "nav.employees", iconKey: "hr" },
-      { id: "hr-payroll",   gate: "hr", path: "/dashboard/hr/payroll", label: "nav.payroll",   iconKey: "wallet" },
+      { id: "hr-employees", gate: "hr", path: "/dashboard/hr", label: "nav.employees", iconKey: "hr" },
+      {
+        id: "hr-payroll", gate: "hr", feature: "payroll", path: "", label: "nav.payroll", iconKey: "wallet", children: [
+          { id: "hr-payslips",         gate: "hr", feature: "payroll", path: "/dashboard/hr/payroll",          label: "nav.payslips",        iconKey: "receipt" },
+          { id: "hr-payroll-settings", gate: "hr", feature: "payroll", path: "/dashboard/hr/payroll/settings", label: "nav.payrollSettings", iconKey: "settings" },
+        ],
+      },
+      { id: "hr-leaves", gate: "hr", path: "/dashboard/hr/leaves", label: "nav.leaves", iconKey: "calendar" },
     ],
   },
   {
@@ -655,8 +765,12 @@ const CLIENT_GROUPS: NavGroup[] = [
           { id: "profile-activity", gate: "profile", path: "/dashboard/profile/activity", label: "nav.profileActivity", iconKey: "history" },
         ],
       },
-      { id: "company",  gate: "settings", path: "/dashboard/company",  label: "nav.company",  iconKey: "building" },
-      { id: "settings", path: "/dashboard/settings", label: "nav.settings", iconKey: "settings" },
+      {
+        id: "settings", gate: "settings", path: "", label: "nav.settings", iconKey: "settings", children: [
+          { id: "settings-preferences", gate: "settings", path: "/dashboard/settings", label: "nav.preferences", iconKey: "settings" },
+          { id: "settings-company",     gate: "settings", path: "/dashboard/company",  label: "nav.companyTax",  iconKey: "building" },
+        ],
+      },
       { id: "billing",  gate: "profile",  path: "/dashboard/billing",  label: "nav.billing",  iconKey: "repeat" },
     ],
   },
@@ -696,10 +810,10 @@ function leafItems(items: NavItem[]): NavItem[] {
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), 'Arial Black', sans-serif";
 
-// Sections et sous-menus ouverts (clé « sub:<id> » pour un sous-menu). Au chargement, Ventes & clients, Produits & stock
-// et Achats sont ouvertes, ainsi que la section et le sous-menu de la page ouverte. Ce que l'utilisateur ouvre ou ferme
+// Sections et sous-menus ouverts (clé « sub:<id> » pour un sous-menu). Au chargement, TOUT est fermé : seuls la section et
+// le sous-menu de la page ouverte s'ouvrent d'eux-mêmes (pour qu'on voie où l'on est). Ce que l'utilisateur ouvre ou ferme
 // est conservé pendant la navigation, puis l'état initial revient au rechargement.
-const DEFAULT_OPEN_GROUPS: Record<string, boolean> = { sales: true, products: true, purchasing: true };
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {};
 let sidebarOpenGroups: Record<string, boolean> = { ...DEFAULT_OPEN_GROUPS };
 
 let sidebarCachedUser: User | null = null;
@@ -847,16 +961,17 @@ export default function Sidebar() {
 
   /**
    * Entrées autorisées par l'abonnement. Un parent (sous-menu) n'est gardé que s'il lui reste au moins un enfant.
-   * Dans un pays où la paie n'existe pas encore, « Paie » devient « Congés » (la page ouvre alors les congés).
+   * Une entrée qui exige une fonction locale absente du pays de la société (la paie) n'est pas affichée ; « Congés »
+   * reste disponible partout.
    */
   const keepAllowed = (items: NavItem[]): NavItem[] =>
     items.flatMap((item): NavItem[] => {
+      if (item.feature && !features[item.feature]) return [];
       if (item.children) {
         const kids = keepAllowed(item.children);
         return kids.length > 0 ? [{ ...item, children: kids }] : [];
       }
-      if (!isModuleActive(item.gate ?? item.id)) return [];
-      return [item.id === "hr-payroll" && !features.payroll ? { ...item, label: "nav.leaves" } : item];
+      return isModuleActive(item.gate ?? item.id) ? [item] : [];
     });
 
   const sections: { top: NavItem[]; groups: NavGroup[] } = isPlatformAdmin(role)
@@ -1265,13 +1380,17 @@ export default function Sidebar() {
   const handleMouseLeave = () => setHoveredItem(null);
 
   // Mobile : quatre entrées d'accès rapide dans la barre du bas, le reste dans le tiroir « Plus » (sections repliables).
-  // Si le forfait n'inclut pas l'une des entrées préférées, la suivante dans l'ordre du menu prend sa place.
+  // Si le forfait n'inclut pas l'une des entrées préférées, la suivante dans l'ordre du menu prend sa place :
+  // une seule entrée par sous-menu (la première), pour ne pas remplir la barre avec les pages d'un même module.
   const MOBILE_PRIMARY_PREFERRED = ["dashboard", "sales", "orders", "products"];
   const mobilePrimaryItems: NavItem[] = (() => {
     const picked = MOBILE_PRIMARY_PREFERRED
       .map((id) => menuItems.find((m) => m.id === id))
       .filter((m): m is NavItem => !!m);
-    for (const m of menuItems) {
+    const firstOfEach = [...sections.top, ...sections.groups.flatMap((g) => g.items)]
+      .map((entry) => leafItems([entry])[0])
+      .filter((m): m is NavItem => !!m);
+    for (const m of firstOfEach) {
       if (picked.length >= 4) break;
       if (!picked.includes(m)) picked.push(m);
     }

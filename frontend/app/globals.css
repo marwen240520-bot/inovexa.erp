@@ -1016,3 +1016,28 @@ html[data-mode="light"] img[src="/images/logo.png"],
 html[data-mode="light"] img[src="/logo.png"] {
   filter: drop-shadow(0 0 0.5px #1e1b4b) drop-shadow(0 0 0.5px #1e1b4b) drop-shadow(0 1px 2px rgba(30, 27, 75, 0.25)) !important;
 }
+
+/* Messages de confirmation / d'erreur des pages (composant FlashHolder) : fixés en haut de la fenêtre pour rester
+   visibles même quand l'action part du bas d'une longue page ; au-dessus des fenêtres de dialogue. */
+.ix-flash {
+  position: fixed;
+  top: 12px;
+  left: 0;
+  right: 0;
+  z-index: 10050;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+  pointer-events: none;
+}
+.ix-flash-card {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 560px;
+  border-radius: 12px;
+  background: var(--theme-surface, #ffffff);
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.22);
+}
+.ix-flash-card > * {
+  margin: 0 !important;
+}

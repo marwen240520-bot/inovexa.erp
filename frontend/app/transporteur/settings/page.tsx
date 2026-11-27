@@ -5,6 +5,7 @@ import { useLanguage } from "../../../contexts/LanguageContext";
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, isSupportedLanguage, type Lang } from "@/lib/i18n";
 import Spinner from "@/components/ui/Spinner";
 import { replaceToken } from "@/lib/session";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 // ==================== SVG ICONS ====================
 const Icons = {
@@ -300,7 +301,8 @@ export default function TransporteurSettingsPage() {
 
       {/* Message */}
       {message && (
-        <div style={{ 
+        <FlashHolder>
+        <div role={messageType === "error" ? "alert" : "status"} style={{ 
           background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", 
           border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`, 
           color: messageType === "success" ? "#10b981" : "#f87171", 
@@ -318,6 +320,7 @@ export default function TransporteurSettingsPage() {
           {messageType === "success" ? <Icons.CheckSmall size={isMobile ? 12 : 14} /> : <Icons.XCircle size={isMobile ? 12 : 14} />}
           {message}
         </div>
+        </FlashHolder>
       )}
 
       {/* Section Langue */}

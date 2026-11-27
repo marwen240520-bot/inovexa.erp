@@ -520,7 +520,7 @@ export function ValuationTab({ tr, notify, refresh, bump }: TabProps) {
           {data.productsWithoutCost > 0 && (
             <Notice>
               {tr(`${data.productsWithoutCost} produit(s) en stock n'ont pas de coût : la valorisation est sous-estimée. Renseignez le coût moyen dans `, `${data.productsWithoutCost} product(s) in stock have no cost: the valuation is understated. Enter the average cost in `, `${data.productsWithoutCost} producto(s) en stock no tienen costo: la valoración está subestimada. Indique el costo medio en `)}
-              <Link href="/dashboard/stock/manage?tab=levels">{tr("Niveaux par dépôt → Réglages", "Levels by warehouse → Settings", "Niveles por almacén → Ajustes")}</Link>.
+              <Link href="/dashboard/stock/levels">{tr("Niveaux par dépôt → Réglages", "Levels by warehouse → Settings", "Niveles por almacén → Ajustes")}</Link>.
             </Notice>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>

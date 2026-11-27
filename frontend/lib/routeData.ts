@@ -14,6 +14,7 @@ const ROUTE_ENDPOINTS: Record<string, string[]> = {
   "/dashboard/products": ["/categories", "/products"],
   "/dashboard/categories": ["/categories", "/products"],
   "/dashboard/stock": ["/products", "/sales", "/purchases"],
+  "/dashboard/stock/levels": ["/stock/warehouses", "/products"],
   "/dashboard/sales": ["/sales", "/products", "/clients"],
   "/dashboard/purchases": ["/purchases", "/products", "/suppliers"],
   "/dashboard/orders": ["/orders", "/clients", "/products"],
@@ -37,6 +38,7 @@ const ROUTE_ENDPOINTS: Record<string, string[]> = {
 const ROUTE_ALIASES: Array<[RegExp, string]> = [
   [/^\/dashboard\/finance\/(income|expenses|cashflow|balance|budget|ratios|invoices)$/, "/dashboard/finance"],
   [/^\/dashboard\/profile\/(security|activity)$/, "/dashboard/profile"],
+  [/^\/dashboard\/stock\/(warehouses|movements|lots|counts|alerts|rotation|valuation)$/, "/dashboard/stock/levels"],
 ];
 
 function readAuth(): { token: string | null; userId: string | null } {

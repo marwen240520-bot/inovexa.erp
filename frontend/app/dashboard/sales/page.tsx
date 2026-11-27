@@ -13,6 +13,7 @@ import { summarizeImport, importHttpError } from "@/lib/importResult";
 import { readApiError } from "@/lib/apiError";
 import { useDialog } from "@/components/ui/useDialog";
 import { fm, validateForm, focusField, parseNumber } from "@/lib/formValidation";
+import FlashHolder from "@/components/ui/FlashHolder";
 // --- Translations ------------------------------------------------------------
 const translations = {
   fr: {
@@ -788,7 +789,8 @@ export default function SalesPage() {
 
           {/* -- Message -- */}
           {message && (
-            <div style={{
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{
               background: messageType === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
               border: `1px solid ${messageType === "success" ? "#10b981" : "#ef4444"}`,
               color: messageType === "success" ? "#10b981" : "#f87171",
@@ -801,6 +803,7 @@ export default function SalesPage() {
             }}>
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* -- Stats Cards -- */}

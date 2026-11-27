@@ -9,6 +9,7 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { readApiError } from "@/lib/apiError";
 import { useDialog } from "@/components/ui/useDialog";
 import { fm, focusField } from "@/lib/formValidation";
+import FlashHolder from "@/components/ui/FlashHolder";
 
 // -- SVG Icons ----------------------------------------------
 const IconTag = ({ size = 20 }: { size?: number }) => (
@@ -415,10 +416,12 @@ export default function CategoriesPage() {
 
           {/* -- Message -- */}
           {message && (
-            <div style={{ background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`, color: messageType === "success" ? theme.accent : "#f87171", padding: "12px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <FlashHolder>
+            <div role={messageType === "error" ? "alert" : "status"} style={{ background: messageType === "success" ? `${theme.accent}15` : "rgba(239,68,68,0.1)", border: `1px solid ${messageType === "success" ? theme.accent : "#ef4444"}`, color: messageType === "success" ? theme.accent : "#f87171", padding: "12px", borderRadius: "12px", marginBottom: "20px", textAlign: "center", animation: "fadeInUp 0.3s ease", fontSize: isMobile ? "12px" : "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               {messageType === "success" ? <IconCheck size={16} /> : <IconAlertTriangle size={16} />}
               {message}
             </div>
+            </FlashHolder>
           )}
 
           {/* -- Recherche -- */}

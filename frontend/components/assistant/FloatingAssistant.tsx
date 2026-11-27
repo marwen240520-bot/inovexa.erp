@@ -57,14 +57,31 @@ async function loadDataset(): Promise<Record<string, any[]>> {
   return Object.fromEntries(entries);
 }
 
+// Icône du bouton : bulle de discussion « verre » + étoile IA à 4 branches + deux éclats qui scintillent
+const AiChatIcon = ({ size = 28 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    {/* bulle : fond translucide + contour */}
+    <path
+      d="M7.5 5h14A4.5 4.5 0 0 1 26 9.5v8a4.5 4.5 0 0 1-4.5 4.5H14l-5.2 4.3a.8.8 0 0 1-1.3-.6V22A4.5 4.5 0 0 1 3 17.5v-8A4.5 4.5 0 0 1 7.5 5z"
+      fill="rgba(255,255,255,0.18)" stroke="currentColor" strokeWidth={1.7} strokeLinejoin="round"
+    />
+    {/* étoile IA */}
+    <path d="M14.5 8.3c.5 2.6 1.6 3.7 4.2 4.2-2.6.5-3.7 1.6-4.2 4.2-.5-2.6-1.6-3.7-4.2-4.2 2.6-.5 3.7-1.6 4.2-4.2z" fill="currentColor" />
+    {/* éclats */}
+    <path className="ixa-fab-twinkle" d="M27 2.5c.25 1.3.8 1.85 2.1 2.1-1.3.25-1.85.8-2.1 2.1-.25-1.3-.8-1.85-2.1-2.1 1.3-.25 1.85-.8 2.1-2.1z" fill="currentColor" />
+    <circle className="ixa-fab-twinkle ixa-fab-twinkle-2" cx="29" cy="10" r="1" fill="currentColor" />
+  </svg>
+);
+
 // Animations du bouton : halo qui « respire » et éclats qui scintillent (désactivées si l'utilisateur réduit les animations)
 const FAB_STYLE = `
 @keyframes ixa-fab-halo { 0% { transform: scale(1); opacity: .55; } 70% { transform: scale(1.55); opacity: 0; } 100% { transform: scale(1.55); opacity: 0; } }
 @keyframes ixa-fab-twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
-.ixa-fab-halo { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(140deg, #4F46E5, #A21CAF); z-index: -1; animation: ixa-fab-halo 2.8s ease-out infinite; pointer-events: none; }
+.ixa-fab-halo { position: absolute; inset: 0; border-radius: 50%; background: inherit; z-index: -1; animation: ixa-fab-halo 2.8s ease-out infinite; pointer-events: none; }
 .ixa-fab-twinkle { transform-box: fill-box; transform-origin: center; animation: ixa-fab-twinkle 2.2s ease-in-out infinite; }
 .ixa-fab-twinkle-2 { animation-delay: 1.1s; }
 @media (prefers-reduced-motion: reduce) { .ixa-fab-halo, .ixa-fab-twinkle { animation: none; } }
+body[data-ix-nav-drawer="open"] .ixa-fab { display: none !important; }
 `;
 
 const CloseIcon = ({ size = 22 }: { size?: number }) => (
@@ -197,7 +214,7 @@ export default function FloatingAssistant() {
             <div style={{ textAlign: "end", marginTop: 6 }}>
               <button
                 type="button"
-                onClick={() => { setOpen(false); router.push("/dashboard/ai?tab=chat"); }}
+                onClick={() => { setOpen(false); router.push("/dashboard/ai/chat"); }}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6, background: theme.surface, border: `1px solid ${theme.border}`,
                   borderRadius: 999, color: theme.textSecondary, fontSize: 11.5, cursor: "pointer", padding: "4px 10px",
@@ -213,6 +230,7 @@ export default function FloatingAssistant() {
       {!(open && isMobile) && (
         <button
           ref={buttonRef}
+          className="ixa-fab"
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? L.close : L.open}
@@ -225,12 +243,11 @@ export default function FloatingAssistant() {
             bottom,
             width: isMobile ? 52 : 58,
             height: isMobile ? 52 : 58,
-            borderRadius: open ? "50%" : "24%",
+            borderRadius: "50%",
             border: "none",
-            padding: 0,
             cursor: "pointer",
             color: "#fff",
-            background: open ? (theme.gradient || theme.primary) : "transparent",
+            background: theme.gradient || theme.primary,
             isolation: "isolate",
             boxShadow: "0 10px 28px rgba(79,70,229,0.38), 0 2px 6px rgba(0,0,0,0.18)",
             display: "flex",
@@ -244,12 +261,7 @@ export default function FloatingAssistant() {
         >
           <style>{FAB_STYLE}</style>
           {!open && <span className="ixa-fab-halo" aria-hidden="true" />}
-          {open ? (
-            <CloseIcon size={isMobile ? 22 : 24} />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src="/images/ai-chat-icon.png" alt="" aria-hidden="true" draggable={false} style={{ width: "100%", height: "100%", display: "block", borderRadius: "inherit", userSelect: "none" }} />
-          )}
+          {open ? <CloseIcon size={isMobile ? 22 : 24} /> : <AiChatIcon size={isMobile ? 28 : 31} />}
         </button>
       )}
     </>
