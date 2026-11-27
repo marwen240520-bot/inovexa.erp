@@ -14,6 +14,7 @@ export interface HomeText {
   pricingCta: string;
   trust: string[];
   header: { home: string; products: string; pricing: string; blog: string; about: string; contact: string; trial: string; login: string; language: string };
+  testimonials: { eyebrow: string; title: string; label: string; items: { quote: string; name: string; role: string }[] };
   why: { eyebrow: string; title: string; lead: string; ai: { title: string; badge: string; desc: string }; features: { title: string; desc: string }[] };
   modules: { eyebrow: string; title: string; lead: string; cta: string };
   sectors: { eyebrow: string; title: string; lead: string; count: string; cta: string };
@@ -39,6 +40,19 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     pricingCta: "Voir les tarifs",
     trust: ["{trial} d’essai, sans carte bancaire", "Rien à installer", "Votre devise, votre TVA, votre pays"],
     header: { home: "Accueil", products: "Produits", pricing: "Tarifs", blog: "Blog", about: "À propos", contact: "Contact", trial: "Essai gratuit", login: "Se connecter", language: "Choisir la langue" },
+    testimonials: {
+      eyebrow: "Témoignages",
+      title: "Ils utilisent Inovexa ERP au quotidien",
+      label: "Témoignages de clients",
+      items: [
+        { quote: "Inovexa ERP a simplifié notre gestion quotidienne et nous fait gagner un temps précieux.", name: "Ahmed Ben Salem", role: "Commerce (Tunisie)" },
+        { quote: "Une solution complète, intuitive et parfaitement adaptée aux besoins de notre entreprise.", name: "Sophie Martin", role: "Services (France)" },
+        { quote: "Grâce à Inovexa ERP, nous avons une meilleure maîtrise de nos ventes, achats et stocks.", name: "Youssef Trabelsi", role: "Distribution (Tunisie)" },
+        { quote: "Une plateforme moderne qui centralise toutes nos opérations et améliore notre productivité.", name: "Marco Rossi", role: "Industrie (Italie)" },
+        { quote: "Un véritable gain de temps et une meilleure organisation au quotidien.", name: "Nour Ben Amor", role: "Restauration (Tunisie)" },
+        { quote: "Inovexa ERP nous accompagne efficacement dans le développement de notre activité.", name: "Daniel Weber", role: "BTP (Allemagne)" },
+      ],
+    },
     why: {
       eyebrow: "Pourquoi Inovexa ERP",
       title: "Un seul outil pour toute l'entreprise",
@@ -104,6 +118,19 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     pricingCta: "View pricing",
     trust: ["{trial} free trial, no bank card", "Nothing to install", "Your currency, your VAT, your country"],
     header: { home: "Home", products: "Products", pricing: "Pricing", blog: "Blog", about: "About", contact: "Contact", trial: "Free trial", login: "Sign in", language: "Choose language" },
+    testimonials: {
+      eyebrow: "Testimonials",
+      title: "They use Inovexa ERP every day",
+      label: "Customer testimonials",
+      items: [
+        { quote: "Inovexa ERP has simplified our daily management and saves us precious time.", name: "Ahmed Ben Salem", role: "Retail (Tunisia)" },
+        { quote: "A complete, intuitive solution that fits our company's needs perfectly.", name: "Sophie Martin", role: "Services (France)" },
+        { quote: "Thanks to Inovexa ERP, we have better control of our sales, purchases and stock.", name: "Youssef Trabelsi", role: "Distribution (Tunisia)" },
+        { quote: "A modern platform that centralizes all our operations and boosts our productivity.", name: "Marco Rossi", role: "Manufacturing (Italy)" },
+        { quote: "A real time-saver and better organization every day.", name: "Nour Ben Amor", role: "Food service (Tunisia)" },
+        { quote: "Inovexa ERP effectively supports us as our business grows.", name: "Daniel Weber", role: "Construction (Germany)" },
+      ],
+    },
     why: {
       eyebrow: "Why Inovexa ERP",
       title: "One tool for the whole business",
@@ -169,6 +196,19 @@ export const HOME_TEXTS: Record<HomeLang, HomeText> = {
     pricingCta: "Ver precios",
     trust: ["{trial} de prueba, sin tarjeta bancaria", "Nada que instalar", "Su moneda, su IVA, su país"],
     header: { home: "Inicio", products: "Productos", pricing: "Precios", blog: "Blog", about: "Nosotros", contact: "Contacto", trial: "Prueba gratis", login: "Iniciar sesión", language: "Elegir idioma" },
+    testimonials: {
+      eyebrow: "Testimonios",
+      title: "Lo usan cada día en su empresa",
+      label: "Testimonios de clientes",
+      items: [
+        { quote: "Inovexa ERP ha simplificado nuestra gestión diaria y nos ahorra un tiempo precioso.", name: "Ahmed Ben Salem", role: "Comercio (Túnez)" },
+        { quote: "Una solución completa, intuitiva y perfectamente adaptada a las necesidades de nuestra empresa.", name: "Sophie Martin", role: "Servicios (Francia)" },
+        { quote: "Gracias a Inovexa ERP, controlamos mejor nuestras ventas, compras y existencias.", name: "Youssef Trabelsi", role: "Distribución (Túnez)" },
+        { quote: "Una plataforma moderna que centraliza todas nuestras operaciones y mejora nuestra productividad.", name: "Marco Rossi", role: "Industria (Italia)" },
+        { quote: "Un verdadero ahorro de tiempo y una mejor organización en el día a día.", name: "Nour Ben Amor", role: "Restauración (Túnez)" },
+        { quote: "Inovexa ERP nos acompaña eficazmente en el crecimiento de nuestra actividad.", name: "Daniel Weber", role: "Construcción (Alemania)" },
+      ],
+    },
     why: {
       eyebrow: "Por qué Inovexa ERP",
       title: "Una sola herramienta para toda la empresa",
