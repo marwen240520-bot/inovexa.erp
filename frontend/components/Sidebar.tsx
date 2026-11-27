@@ -8,7 +8,6 @@ import { useDeviceHint } from "@/contexts/DeviceContext";
 import { MODULES_CHANGED_EVENT, SESSION_CLEARED_EVENT, clearSession, isPlatformAdmin } from "@/lib/session";
 import { moduleLabel } from "@/lib/sectorLabels";
 import { prefetchRouteData } from "@/lib/routeData";
-import { useCompanyProfile, type LocalFeatures } from "@/lib/company-profile";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
 const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
@@ -23,80 +22,18 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
 );
 
 const EXTRA_LABELS: Record<string, Record<string, string>> = {
-  "common.pos": { fr: "Caisse (POS)", en: "Checkout (POS)", es: "Caja (TPV)" },
+  "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida" },
   "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
   "common.appointments": { fr: "Rendez-vous", en: "Appointments", es: "Citas" },
   "common.projects": { fr: "Projets", en: "Projects", es: "Proyectos" },
   "common.more": { fr: "Plus", en: "More", es: "Más" },
   "common.menu": { fr: "Menu", en: "Menu", es: "Menú" },
-  // Entrées du menu du tableau de bord (un libellé par entrée : fr / en / es)
-  "nav.dashboard": { fr: "Tableau de bord", en: "Dashboard", es: "Panel" },
-  "nav.clients": { fr: "Clients", en: "Customers", es: "Clientes" },
-  "nav.clientsList": { fr: "Liste des clients", en: "Customer list", es: "Lista de clientes" },
-  "nav.clientsOverview": { fr: "Fiche 360°", en: "360° profile", es: "Ficha 360°" },
-  "nav.clientsFollowups": { fr: "À relancer", en: "Follow-ups", es: "Recordatorios" },
-  "nav.clientsPrices": { fr: "Listes de prix", en: "Price lists", es: "Listas de precios" },
-  "nav.orders": { fr: "Commandes", en: "Orders", es: "Pedidos" },
-  "nav.sales": { fr: "Ventes", en: "Sales", es: "Ventas" },
-  "nav.invoices": { fr: "Factures", en: "Invoices", es: "Facturas" },
-  "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja" },
-  "nav.products": { fr: "Produits", en: "Products", es: "Productos" },
-  "nav.suggestions": { fr: "Suggestions", en: "Suggestions", es: "Sugerencias" },
-  "nav.categories": { fr: "Catégories", en: "Categories", es: "Categorías" },
-  "nav.stock": { fr: "Stock", en: "Stock", es: "Stock" },
-  "nav.stockLevels": { fr: "Niveaux par dépôt", en: "Levels by warehouse", es: "Niveles por almacén" },
-  "nav.stockWarehouses": { fr: "Dépôts", en: "Warehouses", es: "Almacenes" },
-  "nav.stockMovements": { fr: "Mouvements", en: "Movements", es: "Movimientos" },
-  "nav.stockLots": { fr: "Lots et péremption", en: "Lots & expiry", es: "Lotes y caducidad" },
-  "nav.stockCounts": { fr: "Inventaires", en: "Stock counts", es: "Inventarios" },
-  "nav.stockAlerts": { fr: "Alertes", en: "Alerts", es: "Alertas" },
-  "nav.stockRotation": { fr: "Rotation", en: "Turnover", es: "Rotación" },
-  "nav.stockValuation": { fr: "Valorisation", en: "Valuation", es: "Valoración" },
-  "nav.suppliers": { fr: "Fournisseurs", en: "Suppliers", es: "Proveedores" },
-  "nav.purchases": { fr: "Achats", en: "Purchases", es: "Compras" },
-  "nav.shipments": { fr: "Expéditions", en: "Shipments", es: "Envíos" },
-  "nav.carriers": { fr: "Transporteurs", en: "Carriers", es: "Transportistas" },
-  "nav.logisticsAnalytics": { fr: "Analyses", en: "Analytics", es: "Análisis" },
-  "nav.overview": { fr: "Vue d'ensemble", en: "Overview", es: "Resumen" },
-  "nav.income": { fr: "Revenus", en: "Income", es: "Ingresos" },
-  "nav.expenses": { fr: "Dépenses", en: "Expenses", es: "Gastos" },
-  "nav.cashflow": { fr: "Trésorerie", en: "Cash flow", es: "Tesorería" },
-  "nav.balanceSheet": { fr: "Bilan", en: "Balance sheet", es: "Balance general" },
-  "nav.budget": { fr: "Budget", en: "Budget", es: "Presupuesto" },
-  "nav.ratios": { fr: "Ratios", en: "Ratios", es: "Ratios" },
+  "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos" },
   "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
-  "nav.journal": { fr: "Journal", en: "Journal", es: "Diario" },
-  "nav.trialBalance": { fr: "Balance comptable", en: "Trial balance", es: "Balance de comprobación" },
-  "nav.incomeStatement": { fr: "Résultat", en: "Income statement", es: "Resultados" },
-  "nav.vat": { fr: "TVA", en: "VAT", es: "IVA" },
-  "nav.bank": { fr: "Banque", en: "Bank", es: "Banco" },
-  "nav.documents": { fr: "Documents", en: "Documents", es: "Documentos" },
-  "nav.payments": { fr: "Paiements", en: "Payments", es: "Pagos" },
-  "nav.employees": { fr: "Employés", en: "Employees", es: "Empleados" },
-  "nav.payroll": { fr: "Paie", en: "Payroll", es: "Nóminas" },
-  "nav.leaves": { fr: "Congés", en: "Leave", es: "Vacaciones" },
-  "nav.payslips": { fr: "Bulletins de paie", en: "Payslips", es: "Recibos de nómina" },
-  "nav.payrollSettings": { fr: "Paramètres de paie", en: "Payroll settings", es: "Ajustes de nómina" },
-  "nav.analytics": { fr: "Analyses", en: "Analytics", es: "Análisis" },
-  "nav.reports": { fr: "Rapports", en: "Reports", es: "Informes" },
-  "nav.reportsGenerate": { fr: "Générer", en: "Generate", es: "Generar" },
-  "nav.reportsSaved": { fr: "Enregistrés", en: "Saved", es: "Guardados" },
-  "nav.reportsBusiness": { fr: "Business", en: "Business", es: "Negocio" },
-  "nav.aiDashboard": { fr: "Dashboard", en: "Dashboard", es: "Panel" },
-  "nav.aiChat": { fr: "Chat IA", en: "AI chat", es: "Chat IA" },
-  "nav.aiForecasts": { fr: "Prévisions", en: "Forecasts", es: "Previsiones" },
-  "nav.aiRecommendations": { fr: "Recommandations", en: "Recommendations", es: "Recomendaciones" },
-  "nav.aiAnalytics": { fr: "Analyses", en: "Analytics", es: "Análisis" },
-  "nav.profile": { fr: "Profil", en: "Profile", es: "Perfil" },
-  "nav.profileInfo": { fr: "Infos", en: "Info", es: "Datos" },
-  "nav.profileSecurity": { fr: "Sécurité", en: "Security", es: "Seguridad" },
-  "nav.profileActivity": { fr: "Activité", en: "Activity", es: "Actividad" },
-  "nav.company": { fr: "Société", en: "Company", es: "Empresa" },
-  "nav.preferences": { fr: "Préférences", en: "Preferences", es: "Preferencias" },
-  "nav.companyTax": { fr: "Société & fiscalité", en: "Company & tax", es: "Empresa e impuestos" },
-  "nav.settings": { fr: "Paramètres", en: "Settings", es: "Configuración" },
+  "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión" },
+  "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja" },
   "nav.billing": { fr: "Abonnement", en: "Subscription", es: "Suscripción" },
-  "nav.carrierStats": { fr: "Statistiques", en: "Statistics", es: "Estadísticas" },
+  "nav.suggestions": { fr: "Suggestions secteur", en: "Sector suggestions", es: "Sugerencias del sector" },
   // Espace de l'administrateur de la plateforme
   "admin.overview": { fr: "Tableau de bord", en: "Overview", es: "Panel" },
   "admin.accounts": { fr: "Comptes clients", en: "Customer accounts", es: "Cuentas de clientes" },
@@ -105,15 +42,13 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "admin.sectors": { fr: "Secteurs et suggestions", en: "Sectors and suggestions", es: "Sectores y sugerencias" },
   "admin.platformSettings": { fr: "Réglages de la plateforme", en: "Platform settings", es: "Ajustes de la plataforma" },
   "admin.audit": { fr: "Journal d’activité", en: "Activity log", es: "Registro de actividad" },
+  "admin.legacyClients": { fr: "Création et démonstration", en: "Creation and demo data", es: "Creación y demostración" },
   // Titres des sections de la barre latérale
-  "nav.groups.sales": { fr: "Ventes & clients", en: "Sales & customers", es: "Ventas y clientes" },
-  "nav.groups.products": { fr: "Produits & stock", en: "Products & stock", es: "Productos y stock" },
-  "nav.groups.purchasing": { fr: "Achats", en: "Purchasing", es: "Compras" },
-  "nav.groups.logistics": { fr: "Logistique", en: "Logistics", es: "Logística" },
-  "nav.groups.finance": { fr: "Finance", en: "Finance", es: "Finanzas" },
-  "nav.groups.hr": { fr: "RH", en: "HR", es: "RR. HH." },
-  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Seguimiento" },
-  "nav.groups.ai": { fr: "Assistant IA", en: "AI assistant", es: "Asistente IA" },
+  "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial" },
+  "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento" },
+  "nav.groups.inventory": { fr: "Stock & logistique", en: "Inventory & logistics", es: "Inventario y logística" },
+  "nav.groups.finance": { fr: "Finance & RH", en: "Finance & HR", es: "Finanzas y RR. HH." },
+  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Análisis" },
   "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta" },
 };
 
@@ -295,277 +230,6 @@ const ICONS: Record<string, React.ReactElement> = {
       <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
     </Icon>
   ),
-  // ── Icônes des entrées ajoutées avec les sous-menus (style Feather / Lucide, tracé 24×24) ──
-  crm: (
-    <Icon>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="8.5" cy="7" r="4"/>
-      <polyline points="17 11 19 13 23 9"/>
-    </Icon>
-  ),
-  sessions: (
-    <Icon>
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12 6 12 12 16 14"/>
-    </Icon>
-  ),
-  suggestions: (
-    <Icon>
-      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
-      <path d="M9 18h6"/>
-      <path d="M10 22h4"/>
-    </Icon>
-  ),
-  barChart: (
-    <Icon>
-      <line x1="12" y1="20" x2="12" y2="10"/>
-      <line x1="18" y1="20" x2="18" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="16"/>
-    </Icon>
-  ),
-  trendingUp: (
-    <Icon>
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-      <polyline points="17 6 23 6 23 12"/>
-    </Icon>
-  ),
-  trendingDown: (
-    <Icon>
-      <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
-      <polyline points="17 18 23 18 23 12"/>
-    </Icon>
-  ),
-  banknote: (
-    <Icon>
-      <rect x="2" y="6" width="20" height="12" rx="2"/>
-      <circle cx="12" cy="12" r="2"/>
-      <path d="M6 12h.01M18 12h.01"/>
-    </Icon>
-  ),
-  columns: (
-    <Icon>
-      <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/>
-    </Icon>
-  ),
-  pieChart: (
-    <Icon>
-      <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-      <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-    </Icon>
-  ),
-  gauge: (
-    <Icon>
-      <path d="m12 14 4-4"/>
-      <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
-    </Icon>
-  ),
-  calculator: (
-    <Icon>
-      <rect x="4" y="2" width="16" height="20" rx="2"/>
-      <line x1="8" y1="6" x2="16" y2="6"/>
-      <line x1="16" y1="14" x2="16" y2="18"/>
-      <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01"/>
-    </Icon>
-  ),
-  journal: (
-    <Icon>
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </Icon>
-  ),
-  scale: (
-    <Icon>
-      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-      <path d="M7 21h10"/>
-      <path d="M12 3v18"/>
-      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
-    </Icon>
-  ),
-  receipt: (
-    <Icon>
-      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/>
-      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
-      <path d="M12 17.5v-11"/>
-    </Icon>
-  ),
-  landmark: (
-    <Icon>
-      <line x1="3" y1="22" x2="21" y2="22"/>
-      <line x1="6" y1="18" x2="6" y2="11"/>
-      <line x1="10" y1="18" x2="10" y2="11"/>
-      <line x1="14" y1="18" x2="14" y2="11"/>
-      <line x1="18" y1="18" x2="18" y2="11"/>
-      <polygon points="12 2 20 7 4 7"/>
-    </Icon>
-  ),
-  files: (
-    <Icon>
-      <path d="M20 7h-3a2 2 0 0 1-2-2V2"/>
-      <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/>
-      <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>
-    </Icon>
-  ),
-  creditCard: (
-    <Icon>
-      <rect x="2" y="5" width="20" height="14" rx="2"/>
-      <line x1="2" y1="10" x2="22" y2="10"/>
-      <line x1="6" y1="15" x2="10" y2="15"/>
-    </Icon>
-  ),
-  wallet: (
-    <Icon>
-      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
-      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
-      <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
-    </Icon>
-  ),
-  filePlus: (
-    <Icon>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/>
-      <line x1="12" y1="18" x2="12" y2="12"/>
-      <line x1="9" y1="15" x2="15" y2="15"/>
-    </Icon>
-  ),
-  bookmark: (
-    <Icon>
-      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-    </Icon>
-  ),
-  briefcase: (
-    <Icon>
-      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-    </Icon>
-  ),
-  messageCircle: (
-    <Icon>
-      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-    </Icon>
-  ),
-  lineChart: (
-    <Icon>
-      <path d="M3 3v18h18"/>
-      <path d="m19 9-5 5-4-4-3 3"/>
-    </Icon>
-  ),
-  sparkles: (
-    <Icon>
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-      <path d="M5 3v4"/>
-      <path d="M19 17v4"/>
-      <path d="M3 5h4"/>
-      <path d="M17 19h4"/>
-    </Icon>
-  ),
-  info: (
-    <Icon>
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="12" y1="16" x2="12" y2="12"/>
-      <line x1="12" y1="8" x2="12.01" y2="8"/>
-    </Icon>
-  ),
-  shield: (
-    <Icon>
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    </Icon>
-  ),
-  history: (
-    <Icon>
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-      <path d="M3 3v5h5"/>
-      <path d="M12 7v5l4 2"/>
-    </Icon>
-  ),
-  building: (
-    <Icon>
-      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
-      <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-      <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
-      <path d="M10 6h4"/>
-      <path d="M10 10h4"/>
-      <path d="M10 14h4"/>
-      <path d="M10 18h4"/>
-    </Icon>
-  ),
-  repeat: (
-    <Icon>
-      <path d="m17 2 4 4-4 4"/>
-      <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
-      <path d="m7 22-4-4 4-4"/>
-      <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
-    </Icon>
-  ),
-  bell: (
-    <Icon>
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-    </Icon>
-  ),
-  tag: (
-    <Icon>
-      <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
-      <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
-    </Icon>
-  ),
-  warehouse: (
-    <Icon>
-      <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
-      <path d="M6 18h12"/>
-      <path d="M6 14h12"/>
-      <rect width="12" height="12" x="6" y="10"/>
-    </Icon>
-  ),
-  layers: (
-    <Icon>
-      <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
-      <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/>
-      <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
-    </Icon>
-  ),
-  arrowLeftRight: (
-    <Icon>
-      <path d="M8 3 4 7l4 4"/>
-      <path d="M4 7h16"/>
-      <path d="m16 21 4-4-4-4"/>
-      <path d="M20 17H4"/>
-    </Icon>
-  ),
-  hourglass: (
-    <Icon>
-      <path d="M5 22h14"/>
-      <path d="M5 2h14"/>
-      <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/>
-      <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
-    </Icon>
-  ),
-  clipboard: (
-    <Icon>
-      <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
-      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-      <path d="M12 11h4"/>
-      <path d="M12 16h4"/>
-      <path d="M8 11h.01"/>
-      <path d="M8 16h.01"/>
-    </Icon>
-  ),
-  refreshCw: (
-    <Icon>
-      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-      <path d="M21 3v5h-5"/>
-      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-      <path d="M8 16H3v5"/>
-    </Icon>
-  ),
-  calendar: (
-    <Icon>
-      <path d="M8 2v4"/>
-      <path d="M16 2v4"/>
-      <rect width="18" height="18" x="3" y="4" rx="2"/>
-      <path d="M3 10h18"/>
-    </Icon>
-  ),
   menu: (
     <Icon d="M3 12h18M3 6h18M3 18h18"/>
   ),
@@ -616,9 +280,7 @@ interface ThemeColors {
 }
 
 // `gate` : module de l'abonnement qui autorise l'entrée (par défaut, son propre id).
-// `also` : préfixes d'adresses qui allument aussi l'entrée (sous-pages d'un même module).
-// `exact` : adresses exactes qui allument aussi l'entrée (anciennes adresses d'entrée d'un module, ex. /dashboard/accounting).
-// `children` : sous-menu. L'entrée est alors un parent dépliable, sans page propre (`path` vide).
+// `also` : autres chemins qui allument l'entrée (sous-pages d'un même module).
 interface NavItem {
   id: string;
   gate?: string;
@@ -626,10 +288,6 @@ interface NavItem {
   label: string;
   iconKey: string;
   also?: string[];
-  exact?: string[];
-  /** Fonction locale requise (la paie n'existe que dans certains pays) : l'entrée disparaît sans elle. */
-  feature?: keyof LocalFeatures;
-  children?: NavItem[];
 }
 
 interface NavGroup {
@@ -638,182 +296,43 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// ─── Menu du tableau de bord ──────────────────────────────────────────────────
-// Chaque entrée mène à sa propre page. Les entrées sont rangées par section ; une section dont aucune
-// entrée n'est active dans l'abonnement n'est pas affichée, et un parent sans enfant visible non plus.
-// Pour déplacer une entrée, déplacez simplement sa ligne d'une section à l'autre.
-const CLIENT_TOP: NavItem[] = [
-  { id: "dashboard", path: "/dashboard", label: "nav.dashboard", iconKey: "dashboard" },
+// ─── Sections de la barre latérale ────────────────────────────────────────────
+// Chaque section liste les identifiants des modules (voir `allModules`) dans l'ordre d'affichage.
+// Pour déplacer un module, déplacez simplement son identifiant d'une section à l'autre.
+// Un module qui n'apparaît dans aucune section s'affiche en haut, hors section (ex. le tableau de bord).
+// Une section dont aucun module n'est actif dans l'abonnement n'est pas affichée.
+const NAV_GROUPS: Array<{ id: string; label: string; items: string[] }> = [
+  { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "appointments", "pos", "pos-sessions"] },
+  { id: "procurement", label: "nav.groups.procurement", items: ["purchases", "suppliers"] },
+  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics"] },
+  { id: "finance",     label: "nav.groups.finance",     items: ["finance", "accounting", "hr"] },
+  { id: "insights",    label: "nav.groups.insights",    items: ["projects", "reports", "business-reports", "analytics", "objectives", "ai"] },
+  { id: "account",     label: "nav.groups.account",     items: ["profile", "billing", "settings"] },
 ];
 
-const CLIENT_GROUPS: NavGroup[] = [
-  {
-    id: "sales", label: "nav.groups.sales", items: [
-      {
-        id: "clients", gate: "clients", path: "", label: "nav.clients", iconKey: "clients", children: [
-          { id: "clients-list",      gate: "clients", path: "/dashboard/clients",           label: "nav.clientsList",      iconKey: "clients" },
-          { id: "clients-overview",  gate: "clients", path: "/dashboard/clients/overview",  label: "nav.clientsOverview",  iconKey: "crm" },
-          { id: "clients-followups", gate: "clients", path: "/dashboard/clients/followups", label: "nav.clientsFollowups", iconKey: "bell" },
-          { id: "clients-prices",    gate: "clients", path: "/dashboard/clients/prices",    label: "nav.clientsPrices",    iconKey: "tag" },
-        ],
-      },
-      { id: "appointments", path: "/dashboard/appointments", label: "common.appointments", iconKey: "appointments" },
-      { id: "orders",       path: "/dashboard/orders",       label: "nav.orders",          iconKey: "orders" },
-      { id: "sales",        path: "/dashboard/sales",        label: "nav.sales",           iconKey: "sales" },
-      { id: "sales-invoices", gate: "invoices", path: "/dashboard/invoices", label: "nav.invoices", iconKey: "invoices" },
-      { id: "pos",          path: "/dashboard/pos",          label: "common.pos",          iconKey: "pos" },
-      { id: "pos-sessions", gate: "pos", path: "/dashboard/pos/sessions", label: "nav.posSessions", iconKey: "sessions" },
-    ],
-  },
-  {
-    id: "products", label: "nav.groups.products", items: [
-      { id: "products",    path: "/dashboard/products",    label: "nav.products",    iconKey: "products" },
-      { id: "suggestions", gate: "products", path: "/dashboard/products/suggestions", label: "nav.suggestions", iconKey: "suggestions" },
-      { id: "categories",  path: "/dashboard/categories",  label: "nav.categories",  iconKey: "categories" },
-      {
-        id: "stock", gate: "stock", path: "", label: "nav.stock", iconKey: "stock", children: [
-          { id: "stock-overview",   gate: "stock", path: "/dashboard/stock",            label: "nav.overview",        iconKey: "stock" },
-          { id: "stock-levels",     gate: "stock", path: "/dashboard/stock/levels",     label: "nav.stockLevels",     iconKey: "layers" },
-          { id: "stock-warehouses", gate: "stock", path: "/dashboard/stock/warehouses", label: "nav.stockWarehouses", iconKey: "warehouse" },
-          { id: "stock-movements",  gate: "stock", path: "/dashboard/stock/movements",  label: "nav.stockMovements",  iconKey: "arrowLeftRight" },
-          { id: "stock-lots",       gate: "stock", path: "/dashboard/stock/lots",       label: "nav.stockLots",       iconKey: "hourglass" },
-          { id: "stock-counts",     gate: "stock", path: "/dashboard/stock/counts",     label: "nav.stockCounts",     iconKey: "clipboard" },
-          { id: "stock-alerts",     gate: "stock", path: "/dashboard/stock/alerts",     label: "nav.stockAlerts",     iconKey: "bell" },
-          { id: "stock-rotation",   gate: "stock", path: "/dashboard/stock/rotation",   label: "nav.stockRotation",   iconKey: "refreshCw" },
-          { id: "stock-valuation",  gate: "stock", path: "/dashboard/stock/valuation",  label: "nav.stockValuation",  iconKey: "banknote" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "purchasing", label: "nav.groups.purchasing", items: [
-      { id: "suppliers", path: "/dashboard/suppliers", label: "nav.suppliers", iconKey: "suppliers" },
-      { id: "purchases", path: "/dashboard/purchases", label: "nav.purchases", iconKey: "purchases" },
-    ],
-  },
-  {
-    id: "logistics", label: "nav.groups.logistics", items: [
-      { id: "logistics-shipments", gate: "logistics", path: "/dashboard/logistics/shipments", label: "nav.shipments",         iconKey: "shipments" },
-      { id: "logistics-carriers",  gate: "logistics", path: "/dashboard/logistics/carriers",  label: "nav.carriers",          iconKey: "logistics" },
-      { id: "logistics-analytics", gate: "logistics", path: "/dashboard/logistics/analytics", label: "nav.logisticsAnalytics", iconKey: "barChart" },
-    ],
-  },
-  {
-    id: "finance", label: "nav.groups.finance", items: [
-      { id: "finance-overview", gate: "finance", path: "/dashboard/finance",          label: "nav.overview",     iconKey: "finance" },
-      { id: "finance-income",   gate: "finance", path: "/dashboard/finance/income",   label: "nav.income",       iconKey: "trendingUp" },
-      { id: "finance-expenses", gate: "finance", path: "/dashboard/finance/expenses", label: "nav.expenses",     iconKey: "trendingDown" },
-      { id: "finance-cashflow", gate: "finance", path: "/dashboard/finance/cashflow", label: "nav.cashflow",     iconKey: "banknote" },
-      { id: "finance-balance",  gate: "finance", path: "/dashboard/finance/balance",  label: "nav.balanceSheet", iconKey: "columns" },
-      { id: "finance-budget",   gate: "finance", path: "/dashboard/finance/budget",   label: "nav.budget",       iconKey: "pieChart" },
-      { id: "finance-ratios",   gate: "finance", path: "/dashboard/finance/ratios",   label: "nav.ratios",       iconKey: "gauge" },
-      { id: "finance-invoices", gate: "finance", path: "/dashboard/finance/invoices", label: "nav.invoices",     iconKey: "invoices" },
-      {
-        id: "accounting", gate: "finance", path: "", label: "nav.accounting", iconKey: "calculator", children: [
-          { id: "accounting-journal", gate: "finance", path: "/dashboard/accounting/journal", label: "nav.journal",         iconKey: "journal", exact: ["/dashboard/accounting"] },
-          { id: "accounting-balance", gate: "finance", path: "/dashboard/accounting/balance", label: "nav.trialBalance",    iconKey: "scale" },
-          { id: "accounting-result",  gate: "finance", path: "/dashboard/accounting/result",  label: "nav.incomeStatement", iconKey: "barChart" },
-          { id: "accounting-vat",     gate: "finance", path: "/dashboard/accounting/vat",     label: "nav.vat",             iconKey: "receipt" },
-          { id: "accounting-bank",    gate: "finance", path: "/dashboard/accounting/bank",    label: "nav.bank",            iconKey: "landmark" },
-        ],
-      },
-      { id: "documents", gate: "invoices", path: "/dashboard/documents",          label: "nav.documents", iconKey: "files" },
-      { id: "payments",  gate: "invoices", path: "/dashboard/documents/payments", label: "nav.payments",  iconKey: "creditCard" },
-    ],
-  },
-  {
-    id: "hr", label: "nav.groups.hr", items: [
-      { id: "hr-employees", gate: "hr", path: "/dashboard/hr", label: "nav.employees", iconKey: "hr" },
-      {
-        id: "hr-payroll", gate: "hr", feature: "payroll", path: "", label: "nav.payroll", iconKey: "wallet", children: [
-          { id: "hr-payslips",         gate: "hr", feature: "payroll", path: "/dashboard/hr/payroll",          label: "nav.payslips",        iconKey: "receipt" },
-          { id: "hr-payroll-settings", gate: "hr", feature: "payroll", path: "/dashboard/hr/payroll/settings", label: "nav.payrollSettings", iconKey: "settings" },
-        ],
-      },
-      { id: "hr-leaves", gate: "hr", path: "/dashboard/hr/leaves", label: "nav.leaves", iconKey: "calendar" },
-    ],
-  },
-  {
-    id: "insights", label: "nav.groups.insights", items: [
-      { id: "analytics", path: "/dashboard/analytics", label: "nav.analytics", iconKey: "analytics" },
-      {
-        id: "reports", gate: "reports", path: "", label: "nav.reports", iconKey: "reports", children: [
-          { id: "reports-generate", gate: "reports", path: "/dashboard/reports/generate", label: "nav.reportsGenerate", iconKey: "filePlus", exact: ["/dashboard/reports"] },
-          { id: "reports-saved",    gate: "reports", path: "/dashboard/reports/saved",    label: "nav.reportsSaved",    iconKey: "bookmark" },
-          { id: "reports-business", gate: "reports", path: "/dashboard/reports/business", label: "nav.reportsBusiness", iconKey: "briefcase" },
-        ],
-      },
-      { id: "objectives", path: "/dashboard/objectives", label: "common.objectives", iconKey: "objectives" },
-      { id: "projects",   path: "/dashboard/projects",   label: "common.projects",   iconKey: "projects" },
-    ],
-  },
-  {
-    id: "ai", label: "nav.groups.ai", items: [
-      { id: "ai-dashboard",       gate: "ai", path: "/dashboard/ai",                 label: "nav.aiDashboard",       iconKey: "ai" },
-      { id: "ai-chat",            gate: "ai", path: "/dashboard/ai/chat",            label: "nav.aiChat",            iconKey: "messageCircle" },
-      { id: "ai-forecasts",       gate: "ai", path: "/dashboard/ai/forecasts",       label: "nav.aiForecasts",       iconKey: "lineChart" },
-      { id: "ai-recommendations", gate: "ai", path: "/dashboard/ai/recommendations", label: "nav.aiRecommendations", iconKey: "sparkles" },
-      { id: "ai-analytics",       gate: "ai", path: "/dashboard/ai/analytics",       label: "nav.aiAnalytics",       iconKey: "pieChart" },
-    ],
-  },
-  {
-    id: "account", label: "nav.groups.account", items: [
-      {
-        id: "profile", gate: "profile", path: "", label: "nav.profile", iconKey: "profile", children: [
-          { id: "profile-info",     gate: "profile", path: "/dashboard/profile",          label: "nav.profileInfo",     iconKey: "info" },
-          { id: "profile-security", gate: "profile", path: "/dashboard/profile/security", label: "nav.profileSecurity", iconKey: "shield" },
-          { id: "profile-activity", gate: "profile", path: "/dashboard/profile/activity", label: "nav.profileActivity", iconKey: "history" },
-        ],
-      },
-      {
-        id: "settings", gate: "settings", path: "", label: "nav.settings", iconKey: "settings", children: [
-          { id: "settings-preferences", gate: "settings", path: "/dashboard/settings", label: "nav.preferences", iconKey: "settings" },
-          { id: "settings-company",     gate: "settings", path: "/dashboard/company",  label: "nav.companyTax",  iconKey: "building" },
-        ],
-      },
-      { id: "billing",  gate: "profile",  path: "/dashboard/billing",  label: "nav.billing",  iconKey: "repeat" },
-    ],
-  },
-];
-
-// Espace de l'administrateur de la plateforme : mêmes entrées qu'avant, hors abonnement.
-const ADMIN_TOP: NavItem[] = [
-  { id: "adminOverview", path: "/admin",          label: "admin.overview",         iconKey: "dashboard" },
-  { id: "adminAccounts", path: "/admin/accounts", label: "admin.accounts",         iconKey: "adminClients" },
-  { id: "adminPayments", path: "/admin/payments", label: "admin.payments",         iconKey: "finance" },
-  { id: "adminPlans",    path: "/admin/plans",    label: "admin.plans",            iconKey: "orders" },
-  { id: "adminSectors",  path: "/admin/sectors",  label: "admin.sectors",          iconKey: "categories" },
-  { id: "adminSettings", path: "/admin/settings", label: "admin.platformSettings", iconKey: "adminModules" },
-  { id: "adminAudit",    path: "/admin/audit",    label: "admin.audit",            iconKey: "reports" },
-];
-const ADMIN_ACCOUNT: NavItem[] = [
-  { id: "profile",  path: "/dashboard/profile",  label: "common.profile",  iconKey: "profile" },
-  { id: "settings", path: "/dashboard/settings", label: "common.settings", iconKey: "settings" },
-];
-
-// Un transporteur qui ouvre le tableau de bord retrouve ici le même menu que dans son espace (/transporteur).
-const CARRIER_TOP: NavItem[] = [
-  { id: "carrier-dashboard", path: "/transporteur/dashboard", label: "nav.dashboard", iconKey: "dashboard" },
-  { id: "carrier-shipments", path: "/transporteur/shipments", label: "nav.shipments", iconKey: "shipments" },
-];
-const CARRIER_ACCOUNT: NavItem[] = [
-  { id: "carrier-profile",  path: "/transporteur/profile",       label: "nav.profile",      iconKey: "profile" },
-  { id: "carrier-stats",    path: "/transporteur/profile/stats", label: "nav.carrierStats", iconKey: "barChart" },
-  { id: "carrier-settings", path: "/transporteur/settings",      label: "nav.settings",     iconKey: "settings" },
-];
-
-/** Entrées sans sous-menu, dans l'ordre d'affichage (les parents sont remplacés par leurs enfants). */
-function leafItems(items: NavItem[]): NavItem[] {
-  return items.flatMap((i) => (i.children ? leafItems(i.children) : [i]));
+/** Répartit les entrées visibles : d'abord celles hors section, puis les sections non vides. */
+function buildSections(items: NavItem[]): { top: NavItem[]; groups: NavGroup[] } {
+  const byId = new Map(items.map((m) => [m.id, m] as const));
+  const placed = new Set<string>();
+  const groups: NavGroup[] = [];
+  for (const g of NAV_GROUPS) {
+    const groupItems: NavItem[] = [];
+    for (const id of g.items) {
+      const item = byId.get(id);
+      if (item && !placed.has(id)) { groupItems.push(item); placed.add(id); }
+    }
+    if (groupItems.length > 0) groups.push({ id: g.id, label: g.label, items: groupItems });
+  }
+  return { top: items.filter((m) => !placed.has(m.id)), groups };
 }
 
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), 'Arial Black', sans-serif";
 
-// Sections et sous-menus ouverts (clé « sub:<id> » pour un sous-menu). Au chargement, TOUT est fermé : seuls la section et
-// le sous-menu de la page ouverte s'ouvrent d'eux-mêmes (pour qu'on voie où l'on est). Ce que l'utilisateur ouvre ou ferme
-// est conservé pendant la navigation, puis l'état initial revient au rechargement.
-const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {};
+// Sections ouvertes. Au chargement, Commercial, Approvisionnement et Stock & logistique sont ouvertes,
+// ainsi que la section de la page ouverte. Ce que l'utilisateur ouvre ou ferme est conservé pendant
+// la navigation, puis l'état initial revient au rechargement.
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = { commercial: true, procurement: true, inventory: true };
 let sidebarOpenGroups: Record<string, boolean> = { ...DEFAULT_OPEN_GROUPS };
 
 let sidebarCachedUser: User | null = null;
@@ -855,7 +374,6 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { t, language } = useLanguage();
   const { theme, themeId } = useTheme();
-  const { features } = useCompanyProfile();
 
   const [user, setUser] = useState<User | null>(sidebarCachedUser);
   const [userModules, setUserModules] = useState<Record<string, boolean> | null>(sidebarCachedModules);
@@ -882,10 +400,9 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    // Tiroir ouvert : la page ne défile pas derrière, et le bouton flottant de l'assistant s'efface (il masquait les sections).
-    if (mobileMoreOpen) { document.body.style.overflow = "hidden"; document.body.dataset.ixNavDrawer = "open"; }
-    else { document.body.style.overflow = ""; delete document.body.dataset.ixNavDrawer; }
-    return () => { document.body.style.overflow = ""; delete document.body.dataset.ixNavDrawer; };
+    if (mobileMoreOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
   }, [mobileMoreOpen]);
 
   const normalizeModules = (data: any): Record<string, boolean> | null => {
@@ -959,61 +476,83 @@ export default function Sidebar() {
 
   const role = user?.role;
 
-  /**
-   * Entrées autorisées par l'abonnement. Un parent (sous-menu) n'est gardé que s'il lui reste au moins un enfant.
-   * Une entrée qui exige une fonction locale absente du pays de la société (la paie) n'est pas affichée ; « Congés »
-   * reste disponible partout.
-   */
-  const keepAllowed = (items: NavItem[]): NavItem[] =>
-    items.flatMap((item): NavItem[] => {
-      if (item.feature && !features[item.feature]) return [];
-      if (item.children) {
-        const kids = keepAllowed(item.children);
-        return kids.length > 0 ? [{ ...item, children: kids }] : [];
-      }
-      return isModuleActive(item.gate ?? item.id) ? [item] : [];
-    });
+  const allModules: NavItem[] = [
+    { id: "dashboard",  path: "/dashboard",            label: "common.dashboard",  iconKey: "dashboard" },
+    { id: "products",   path: "/dashboard/products",   label: "common.products",   iconKey: "products" },
+    { id: "suggestions", gate: "products", path: "/dashboard/products/suggestions", label: "nav.suggestions", iconKey: "objectives" },
+    { id: "categories", path: "/dashboard/categories", label: "common.categories", iconKey: "categories" },
+    { id: "stock",      path: "/dashboard/stock",      label: "common.stock",      iconKey: "stock" },
+    { id: "sales",      path: "/dashboard/sales",      label: "common.sales",      iconKey: "sales" },
+    { id: "purchases",  path: "/dashboard/purchases",  label: "common.purchases",  iconKey: "purchases" },
+    { id: "pos",        path: "/dashboard/pos",        label: "common.pos",        iconKey: "pos" },
+    { id: "pos-sessions", gate: "pos", path: "/dashboard/pos/sessions", label: "nav.posSessions", iconKey: "pos" },
+    { id: "orders",     path: "/dashboard/orders",     label: "common.orders",     iconKey: "orders" },
+    { id: "clients",    path: "/dashboard/clients",    label: "common.clients",    iconKey: "clients", also: ["/dashboard/crm"] },
+    { id: "suppliers",  path: "/dashboard/suppliers",  label: "common.suppliers",  iconKey: "suppliers" },
+    { id: "documents",  gate: "invoices", path: "/dashboard/documents", label: "nav.documents", iconKey: "invoices" },
+    { id: "hr",         path: "/dashboard/hr",         label: "common.hr",         iconKey: "hr" },
+    { id: "finance",    path: "/dashboard/finance",    label: "common.finance",    iconKey: "finance" },
+    { id: "accounting", gate: "finance", path: "/dashboard/accounting", label: "nav.accounting", iconKey: "finance" },
+    { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" },
+    { id: "appointments", path: "/dashboard/appointments", label: "common.appointments", iconKey: "appointments" },
+    { id: "projects",   path: "/dashboard/projects",   label: "common.projects",   iconKey: "projects" },
+    { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },
+    { id: "reports",    path: "/dashboard/reports",    label: "common.reports",    iconKey: "reports" },
+    { id: "business-reports", gate: "reports", path: "/dashboard/reports/business", label: "nav.businessReports", iconKey: "reports" },
+    { id: "analytics",  path: "/dashboard/analytics",  label: "common.analytics",  iconKey: "analytics" },
+    { id: "objectives", path: "/dashboard/objectives", label: "common.objectives", iconKey: "objectives" },
+    { id: "profile",    path: "/dashboard/profile",    label: "common.profile",    iconKey: "profile" },
+    { id: "billing",    gate: "profile", path: "/dashboard/billing", label: "nav.billing", iconKey: "finance" },
+    { id: "settings",   path: "/dashboard/settings",   label: "common.settings",   iconKey: "settings", also: ["/dashboard/company"] },
+  ];
 
-  const sections: { top: NavItem[]; groups: NavGroup[] } = isPlatformAdmin(role)
-    ? { top: ADMIN_TOP, groups: [{ id: "account", label: "nav.groups.account", items: ADMIN_ACCOUNT }] }
-    : role === "transporteur"
-    ? { top: CARRIER_TOP, groups: [{ id: "account", label: "nav.groups.account", items: CARRIER_ACCOUNT }] }
-    : {
-        top: keepAllowed(CLIENT_TOP),
-        groups: CLIENT_GROUPS.map((g) => ({ ...g, items: keepAllowed(g.items) })).filter((g) => g.items.length > 0),
-      };
+  const clientMenuItems = allModules.filter(m => isModuleActive(m.gate ?? m.id));
 
-  // Entrées qui mènent à une page, dans l'ordre d'affichage (les sous-menus sont remplacés par leurs entrées) :
-  // sert à la barre du bas mobile et au lien actif.
-  const menuItems: NavItem[] = [...leafItems(sections.top), ...sections.groups.flatMap((g) => leafItems(g.items))];
+  const adminMenuItems: NavItem[] = [
+    { id: "adminOverview", path: "/admin",          label: "admin.overview",         iconKey: "dashboard" },
+    { id: "adminAccounts", path: "/admin/accounts", label: "admin.accounts",         iconKey: "adminClients" },
+    { id: "adminPayments", path: "/admin/payments", label: "admin.payments",         iconKey: "finance" },
+    { id: "adminPlans",    path: "/admin/plans",    label: "admin.plans",            iconKey: "orders" },
+    { id: "adminSectors",  path: "/admin/sectors",  label: "admin.sectors",          iconKey: "categories" },
+    { id: "adminSettings", path: "/admin/settings", label: "admin.platformSettings", iconKey: "adminModules" },
+    { id: "adminAudit",    path: "/admin/audit",    label: "admin.audit",            iconKey: "reports" },
+    { id: "profile",       path: "/dashboard/profile",  label: "common.profile",   iconKey: "profile" },
+    { id: "settings",      path: "/dashboard/settings", label: "common.settings",  iconKey: "settings" },
+  ];
+
+  const transporteurMenuItems: NavItem[] = [
+    { id: "shipments", path: "/transporteur/shipments", label: "logistics.shipments", iconKey: "shipments" },
+    { id: "profile",   path: "/dashboard/profile",      label: "common.profile",      iconKey: "profile" },
+    { id: "settings",  path: "/dashboard/settings",     label: "common.settings",     iconKey: "settings" },
+  ];
+
+  let roleMenuItems: NavItem[] = clientMenuItems;
+  if (isPlatformAdmin(role)) roleMenuItems = adminMenuItems;
+  if (role === "transporteur") roleMenuItems = transporteurMenuItems;
+
+  const sections = buildSections(roleMenuItems);
+  // Ordre d'affichage réel (sections comprises) : sert à la barre du bas mobile et au lien actif.
+  const menuItems: NavItem[] = [...sections.top, ...sections.groups.flatMap((g) => g.items)];
 
   const pathMatches = (path: string) =>
     pathname === path || (path !== "/dashboard" && path !== "/admin" && !!pathname && pathname.startsWith(path + "/"));
-  // Le lien le plus précis gagne : /dashboard/finance/income n'allume pas aussi « Vue d'ensemble ».
-  // Un parent de sous-menu est actif quand l'un de ses enfants l'est.
-  const isActiveItem = (item: NavItem): boolean => {
-    if (item.children) return item.children.some(isActiveItem);
-    if (item.exact?.some((p) => pathname === p)) return true;
-    if (item.also?.some((p) => pathMatches(p))) return true;
-    return pathMatches(item.path) && !menuItems.some((m) => m.path.length > item.path.length && pathMatches(m.path));
-  };
+  // Le lien le plus précis gagne : /dashboard/hr/payroll n'allume pas aussi « Ressources humaines ».
+  const isActivePath = (path: string, also?: string[]) =>
+    (pathMatches(path) && !menuItems.some((m) => m.path.length > path.length && pathMatches(m.path))) ||
+    !!also?.some((p) => pathMatches(p));
 
-  const activeGroupId = sections.groups.find((g) => g.items.some(isActiveItem))?.id ?? null;
-  const activeParentId = sections.groups.flatMap((g) => g.items).find((i) => i.children && isActiveItem(i))?.id ?? null;
+  const activeGroupId = sections.groups.find((g) => g.items.some((m) => isActivePath(m.path, m.also)))?.id ?? null;
 
-  // La section et le sous-menu de la page ouverte s'ouvrent d'eux-mêmes (au chargement et à chaque changement de page).
+  // La section de la page ouverte s'ouvre d'elle-même (au chargement et à chaque changement de page).
   useEffect(() => {
-    if (!activeGroupId && !activeParentId) return;
+    if (!activeGroupId) return;
     setOpenGroups((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      if (activeGroupId && !prev[activeGroupId]) { next[activeGroupId] = true; changed = true; }
-      if (activeParentId && !prev[`sub:${activeParentId}`]) { next[`sub:${activeParentId}`] = true; changed = true; }
-      if (!changed) return prev;
+      if (prev[activeGroupId]) return prev;
+      const next = { ...prev, [activeGroupId]: true };
       sidebarOpenGroups = next;
       return next;
     });
-  }, [activeGroupId, activeParentId, pathname]);
+  }, [activeGroupId, pathname]);
 
   const toggleGroup = (groupId: string) => {
     setOpenGroups((prev) => {
@@ -1379,64 +918,39 @@ export default function Sidebar() {
   const handleMouseEnter = (itemId: string) => setHoveredItem(itemId);
   const handleMouseLeave = () => setHoveredItem(null);
 
-  // Mobile : quatre entrées d'accès rapide dans la barre du bas, le reste dans le tiroir « Plus » (sections repliables).
-  // Si le forfait n'inclut pas l'une des entrées préférées, la suivante dans l'ordre du menu prend sa place :
-  // une seule entrée par sous-menu (la première), pour ne pas remplir la barre avec les pages d'un même module.
-  const MOBILE_PRIMARY_PREFERRED = ["dashboard", "sales", "orders", "products"];
-  const mobilePrimaryItems: NavItem[] = (() => {
-    const picked = MOBILE_PRIMARY_PREFERRED
-      .map((id) => menuItems.find((m) => m.id === id))
-      .filter((m): m is NavItem => !!m);
-    const firstOfEach = [...sections.top, ...sections.groups.flatMap((g) => g.items)]
-      .map((entry) => leafItems([entry])[0])
-      .filter((m): m is NavItem => !!m);
-    for (const m of firstOfEach) {
-      if (picked.length >= 4) break;
-      if (!picked.includes(m)) picked.push(m);
-    }
-    return picked.slice(0, 4);
-  })();
+  // Mobile : les 4 premières entrées (dans l'ordre des sections) vont dans la barre du bas,
+  // le reste dans le tiroir « Plus », regroupé par section.
+  const MOBILE_PRIMARY_COUNT = 4;
+  const mobilePrimaryItems = menuItems.slice(0, MOBILE_PRIMARY_COUNT);
+  const mobileMoreItems = menuItems.slice(MOBILE_PRIMARY_COUNT);
   const mobilePrimaryIds = new Set(mobilePrimaryItems.map((m) => m.id));
-  const withoutPrimary = (items: NavItem[]): NavItem[] =>
-    items.flatMap((i): NavItem[] => {
-      if (i.children) {
-        const kids = withoutPrimary(i.children);
-        return kids.length > 0 ? [{ ...i, children: kids }] : [];
-      }
-      return mobilePrimaryIds.has(i.id) ? [] : [i];
-    });
-  const mobileMoreTop = withoutPrimary(sections.top);
+  const mobileMoreTop = sections.top.filter((m) => !mobilePrimaryIds.has(m.id));
   const mobileMoreGroups = sections.groups
-    .map((g) => ({ ...g, items: withoutPrimary(g.items) }))
+    .map((g) => ({ ...g, items: g.items.filter((m) => !mobilePrimaryIds.has(m.id)) }))
     .filter((g) => g.items.length > 0);
-  const mobileHasMore = mobileMoreTop.length > 0 || mobileMoreGroups.length > 0;
 
-  /** Entrée du menu (ordinateur). `nested` : entrée d'un sous-menu, légèrement plus compacte. */
-  const renderNavItem = (item: NavItem, nested = false) => {
-    const isActive = isActiveItem(item);
+  const renderNavItem = (item: NavItem) => {
+    const isActive = isActivePath(item.path, item.also);
     const isHovered = hoveredItem === item.path;
     const label = getLabel(item.label);
     const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
-    const baseStyle: CSSProperties = nested
-      ? { ...styles.navItem, padding: "7px 10px", paddingInlineStart: "10px", marginBottom: "1px" }
-      : styles.navItem;
 
     const getNavItemStyle = (): CSSProperties => {
       if (isActive) {
         return {
-          ...baseStyle,
+          ...styles.navItem,
           background: `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)`,
           color: ct.primary,
         };
       } else if (isHovered) {
         return {
-          ...baseStyle,
+          ...styles.navItem,
           background: `${ct.primary}0f`,
           color: ct.primary,
           transform: hoverShift,
         };
       }
-      return { ...baseStyle, background: "transparent", color: navText };
+      return { ...styles.navItem, background: "transparent", color: navText };
     };
 
     return (
@@ -1454,59 +968,10 @@ export default function Sidebar() {
         style={getNavItemStyle()}
       >
         <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-        <span style={nested ? { ...styles.navLabel, fontSize: "15px" } : styles.navLabel}>{label}</span>
+        <span style={styles.navLabel}>{label}</span>
       </Link>
     );
   };
-
-  /** Parent dépliable (Comptabilité, Rapports, Profil) : un bouton, puis ses entrées en retrait. */
-  const renderParent = (item: NavItem) => {
-    const subKey = `sub:${item.id}`;
-    const open = !!openGroups[subKey];
-    const containsActive = isActiveItem(item);
-    const isHovered = hoveredItem === subKey;
-    const label = getLabel(item.label);
-    const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
-    const bodyId = `ix-nav-sub-${item.id}`;
-    return (
-      <div key={item.id}>
-        <button
-          type="button"
-          className="ix-nav-link"
-          aria-expanded={open}
-          aria-controls={bodyId}
-          onClick={() => toggleGroup(subKey)}
-          onMouseEnter={() => handleMouseEnter(subKey)}
-          onMouseLeave={handleMouseLeave}
-          style={{
-            ...styles.navItem,
-            width: "100%",
-            border: "none",
-            textAlign: "start",
-            background: containsActive ? `${ct.primary}12` : isHovered ? `${ct.primary}0f` : "transparent",
-            color: containsActive || isHovered ? ct.primary : navText,
-          }}
-        >
-          <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-          <span style={{ ...styles.navLabel, flex: 1, minWidth: 0 }}>{label}</span>
-          <span aria-hidden="true" style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>
-            {ICONS.chevron}
-          </span>
-        </button>
-        <div id={bodyId} role="group" aria-label={label} className="ix-nav-group-body" data-open={open ? "true" : "false"}>
-          <div className="ix-nav-group-clip">
-            <div className="ix-nav-group-items">
-              <div style={{ marginInlineStart: "22px", paddingInlineStart: "6px", borderInlineStart: `1px solid ${ct.primary}26` }}>
-                {item.children!.map((child) => renderNavItem(child, true))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderEntry = (item: NavItem) => (item.children ? renderParent(item) : renderNavItem(item));
 
   const renderGroup = (group: NavGroup) => {
     const open = !!openGroups[group.id];
@@ -1550,7 +1015,7 @@ export default function Sidebar() {
         >
           <div className="ix-nav-group-clip">
             <div className="ix-nav-group-items">
-              {group.items.map((item) => renderEntry(item))}
+              {group.items.map((item) => renderNavItem(item))}
             </div>
           </div>
         </div>
@@ -1558,9 +1023,8 @@ export default function Sidebar() {
     );
   };
 
-  /** Entrée du tiroir « Plus » (mobile). */
-  const renderMobileMoreItem = (item: NavItem, nested = false) => {
-    const isActive = isActiveItem(item);
+  const renderMobileMoreItem = (item: NavItem) => {
+    const isActive = isActivePath(item.path, item.also);
     const label = getLabel(item.label);
     const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
     return (
@@ -1578,7 +1042,7 @@ export default function Sidebar() {
           display: "flex",
           alignItems: "center",
           gap: "12px",
-          padding: nested ? "10px 12px" : "12px 14px",
+          padding: "12px 14px",
           marginBottom: "4px",
           borderRadius: "12px",
           background: isActive ? `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)` : "transparent",
@@ -1592,85 +1056,6 @@ export default function Sidebar() {
         <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
         <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
       </Link>
-    );
-  };
-
-  const renderMobileParent = (item: NavItem) => {
-    const subKey = `sub:${item.id}`;
-    const open = !!openGroups[subKey];
-    const containsActive = isActiveItem(item);
-    const label = getLabel(item.label);
-    const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
-    return (
-      <div key={item.id}>
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => toggleGroup(subKey)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            width: "100%",
-            padding: "12px 14px",
-            marginBottom: "4px",
-            borderRadius: "12px",
-            border: "none",
-            textAlign: "start",
-            background: containsActive ? `${ct.primary}12` : "transparent",
-            color: containsActive ? ct.primary : navText,
-            cursor: "pointer",
-            fontFamily: FONT_STACK,
-          }}
-        >
-          <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-          <span style={{ flex: 1, fontSize: "15px", fontWeight: containsActive ? 600 : 400 }}>{label}</span>
-          <span aria-hidden="true" style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>
-            {ICONS.chevron}
-          </span>
-        </button>
-        {open && (
-          <div role="group" aria-label={label} style={{ marginInlineStart: "20px", paddingInlineStart: "6px", borderInlineStart: `1px solid ${ct.primary}26` }}>
-            {item.children!.map((child) => renderMobileMoreItem(child, true))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderMobileEntry = (item: NavItem) => (item.children ? renderMobileParent(item) : renderMobileMoreItem(item));
-
-  const renderMobileGroup = (group: NavGroup) => {
-    const label = getLabel(group.label);
-    const open = !!openGroups[group.id];
-    return (
-      <div key={group.id} role="group" aria-label={label}>
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => toggleGroup(group.id)}
-          style={{
-            ...styles.mobileGroupTitle,
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            width: "100%",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            textAlign: "start",
-          }}
-        >
-          <span style={{ flex: 1 }}>{label}</span>
-          {!open && group.id === activeGroupId && (
-            <span aria-hidden="true" style={{ ...styles.groupDot, background: ct.primary }} />
-          )}
-          <span aria-hidden="true" style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>
-            {ICONS.chevron}
-          </span>
-        </button>
-        {open && group.items.map((item) => renderMobileEntry(item))}
-      </div>
     );
   };
 
@@ -1742,8 +1127,16 @@ export default function Sidebar() {
                     {ICONS.close}
                   </button>
                 </div>
-                {mobileMoreTop.map((item) => renderMobileEntry(item))}
-                {mobileMoreGroups.map((group) => renderMobileGroup(group))}
+                {mobileMoreTop.map((item) => renderMobileMoreItem(item))}
+                {mobileMoreGroups.map((group) => {
+                  const label = getLabel(group.label);
+                  return (
+                    <div key={group.id} role="group" aria-label={label}>
+                      <div style={styles.mobileGroupTitle} aria-hidden="true">{label}</div>
+                      {group.items.map((item) => renderMobileMoreItem(item))}
+                    </div>
+                  );
+                })}
                 <div style={styles.divider} />
                 <div
                   onClick={logout}
@@ -1769,7 +1162,7 @@ export default function Sidebar() {
 
           <div style={styles.mobileBottomNav}>
             {mobilePrimaryItems.map((item) => {
-              const isActive = isActiveItem(item);
+              const isActive = isActivePath(item.path, item.also);
               const label = getLabel(item.label);
               const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
               return (
@@ -1807,7 +1200,7 @@ export default function Sidebar() {
               );
             })}
 
-            {mobileHasMore && (
+            {mobileMoreItems.length > 0 && (
               <button
                 type="button"
                 aria-expanded={mobileMoreOpen}
@@ -1835,7 +1228,7 @@ export default function Sidebar() {
               </button>
             )}
 
-            {!mobileHasMore && (
+            {mobileMoreItems.length === 0 && (
               <button
                 onClick={logout}
                 style={{ ...(styles.mobileNavBtn as CSSProperties), color: "#f87171" }}
@@ -1909,7 +1302,7 @@ export default function Sidebar() {
           <div style={styles.headerDivider} aria-hidden="true" />
 
           <nav style={styles.nav} aria-label={getLabel("common.menu")}>
-            {sections.top.map((item) => renderEntry(item))}
+            {sections.top.map((item) => renderNavItem(item))}
             {sections.groups.map((group) => renderGroup(group))}
             <div style={styles.divider} />
             <div
