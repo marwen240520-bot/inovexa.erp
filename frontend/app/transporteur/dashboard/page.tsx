@@ -188,7 +188,7 @@ export default function TransporteurDashboard() {
       'dashboard.in_transit_status': { fr: 'en transit', en: 'in transit', es: 'en tránsito' },
       'dashboard.pending_status': { fr: 'en attente', en: 'pending', es: 'pendiente' },
       'dashboard.total_deliveries': { fr: 'Livraisons totales', en: 'Total deliveries', es: 'Entregas totales' },
-      'dashboard.pending': { fr: 'En attente', en: 'Pending', es: 'Pendientes' },
+      'dashboard.pending': { fr: 'À récupérer', en: 'To pick up', es: 'Por recoger' },
       'dashboard.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
       'dashboard.delivered': { fr: 'Livrées', en: 'Delivered', es: 'Entregadas' },
       'dashboard.success_rate': { fr: 'Taux de réussite', en: 'Success rate', es: 'Tasa de éxito' },
@@ -212,7 +212,7 @@ export default function TransporteurDashboard() {
       'dashboard.admin_will_assign': { fr: 'Un administrateur vous assignera des livraisons', en: 'An administrator will assign deliveries to you', es: 'Un administrador le asignará entregas' },
       'status.delivered': { fr: 'Livrée', en: 'Delivered', es: 'Entregado' },
       'status.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
-      'status.pending': { fr: 'En attente', en: 'Pending', es: 'Pendiente' },
+      'status.pending': { fr: 'À récupérer', en: 'To pick up', es: 'Por recoger' },
       'shipments.unknown_client': { fr: 'Client inconnu', en: 'Unknown client', es: 'Cliente desconocido' },
       'shipments.no_address': { fr: 'Adresse non disponible', en: 'Address not available', es: 'Dirección no disponible' },
     };

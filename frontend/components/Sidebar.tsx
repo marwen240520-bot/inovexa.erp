@@ -8,6 +8,7 @@ import { useDeviceHint } from "@/contexts/DeviceContext";
 import { MODULES_CHANGED_EVENT, SESSION_CLEARED_EVENT, clearSession, isPlatformAdmin } from "@/lib/session";
 import { moduleLabel } from "@/lib/sectorLabels";
 import { prefetchRouteData } from "@/lib/routeData";
+import { useCompanyProfile } from "@/lib/company-profile";
 
 // ─── SVG Icon Library ─────────────────────────────────────────────────────────
 const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
@@ -22,18 +23,65 @@ const Icon = ({ d, children }: { d?: string; children?: React.ReactNode }) => (
 );
 
 const EXTRA_LABELS: Record<string, Record<string, string>> = {
-  "common.pos": { fr: "Caisse rapide", en: "Quick checkout", es: "Caja rápida" },
+  "common.pos": { fr: "Caisse (POS)", en: "Checkout (POS)", es: "Caja (TPV)" },
   "common.objectives": { fr: "Objectifs", en: "Goals", es: "Objetivos" },
   "common.appointments": { fr: "Rendez-vous", en: "Appointments", es: "Citas" },
   "common.projects": { fr: "Projets", en: "Projects", es: "Proyectos" },
   "common.more": { fr: "Plus", en: "More", es: "Más" },
   "common.menu": { fr: "Menu", en: "Menu", es: "Menú" },
-  "nav.documents": { fr: "Factures & devis", en: "Invoices & quotes", es: "Facturas y presupuestos" },
-  "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
-  "nav.businessReports": { fr: "Rapports de gestion", en: "Management reports", es: "Informes de gestión" },
+  // Entrées du menu du tableau de bord (un libellé par entrée : fr / en / es)
+  "nav.dashboard": { fr: "Tableau de bord", en: "Dashboard", es: "Panel" },
+  "nav.clients": { fr: "Clients", en: "Customers", es: "Clientes" },
+  "nav.crm": { fr: "CRM", en: "CRM", es: "CRM" },
+  "nav.orders": { fr: "Commandes", en: "Orders", es: "Pedidos" },
+  "nav.sales": { fr: "Ventes", en: "Sales", es: "Ventas" },
+  "nav.invoices": { fr: "Factures", en: "Invoices", es: "Facturas" },
   "nav.posSessions": { fr: "Sessions de caisse", en: "Cash sessions", es: "Sesiones de caja" },
+  "nav.products": { fr: "Produits", en: "Products", es: "Productos" },
+  "nav.suggestions": { fr: "Suggestions", en: "Suggestions", es: "Sugerencias" },
+  "nav.categories": { fr: "Catégories", en: "Categories", es: "Categorías" },
+  "nav.stock": { fr: "Stock", en: "Stock", es: "Stock" },
+  "nav.suppliers": { fr: "Fournisseurs", en: "Suppliers", es: "Proveedores" },
+  "nav.purchases": { fr: "Achats", en: "Purchases", es: "Compras" },
+  "nav.shipments": { fr: "Expéditions", en: "Shipments", es: "Envíos" },
+  "nav.carriers": { fr: "Transporteurs", en: "Carriers", es: "Transportistas" },
+  "nav.logisticsAnalytics": { fr: "Analyses", en: "Analytics", es: "Análisis" },
+  "nav.overview": { fr: "Vue d'ensemble", en: "Overview", es: "Resumen" },
+  "nav.income": { fr: "Revenus", en: "Income", es: "Ingresos" },
+  "nav.expenses": { fr: "Dépenses", en: "Expenses", es: "Gastos" },
+  "nav.cashflow": { fr: "Trésorerie", en: "Cash flow", es: "Tesorería" },
+  "nav.balanceSheet": { fr: "Bilan", en: "Balance sheet", es: "Balance general" },
+  "nav.budget": { fr: "Budget", en: "Budget", es: "Presupuesto" },
+  "nav.ratios": { fr: "Ratios", en: "Ratios", es: "Ratios" },
+  "nav.accounting": { fr: "Comptabilité", en: "Accounting", es: "Contabilidad" },
+  "nav.journal": { fr: "Journal", en: "Journal", es: "Diario" },
+  "nav.trialBalance": { fr: "Balance comptable", en: "Trial balance", es: "Balance de comprobación" },
+  "nav.incomeStatement": { fr: "Résultat", en: "Income statement", es: "Resultados" },
+  "nav.vat": { fr: "TVA", en: "VAT", es: "IVA" },
+  "nav.bank": { fr: "Banque", en: "Bank", es: "Banco" },
+  "nav.documents": { fr: "Documents", en: "Documents", es: "Documentos" },
+  "nav.payments": { fr: "Paiements", en: "Payments", es: "Pagos" },
+  "nav.employees": { fr: "Employés", en: "Employees", es: "Empleados" },
+  "nav.payroll": { fr: "Paie", en: "Payroll", es: "Nóminas" },
+  "nav.leaves": { fr: "Congés", en: "Leave", es: "Vacaciones" },
+  "nav.analytics": { fr: "Analyses", en: "Analytics", es: "Análisis" },
+  "nav.reports": { fr: "Rapports", en: "Reports", es: "Informes" },
+  "nav.reportsGenerate": { fr: "Générer", en: "Generate", es: "Generar" },
+  "nav.reportsSaved": { fr: "Enregistrés", en: "Saved", es: "Guardados" },
+  "nav.reportsBusiness": { fr: "Business", en: "Business", es: "Negocio" },
+  "nav.aiDashboard": { fr: "Dashboard", en: "Dashboard", es: "Panel" },
+  "nav.aiChat": { fr: "Chat IA", en: "AI chat", es: "Chat IA" },
+  "nav.aiForecasts": { fr: "Prévisions", en: "Forecasts", es: "Previsiones" },
+  "nav.aiRecommendations": { fr: "Recommandations", en: "Recommendations", es: "Recomendaciones" },
+  "nav.aiAnalytics": { fr: "Analyses", en: "Analytics", es: "Análisis" },
+  "nav.profile": { fr: "Profil", en: "Profile", es: "Perfil" },
+  "nav.profileInfo": { fr: "Infos", en: "Info", es: "Datos" },
+  "nav.profileSecurity": { fr: "Sécurité", en: "Security", es: "Seguridad" },
+  "nav.profileActivity": { fr: "Activité", en: "Activity", es: "Actividad" },
+  "nav.company": { fr: "Société", en: "Company", es: "Empresa" },
+  "nav.settings": { fr: "Paramètres", en: "Settings", es: "Configuración" },
   "nav.billing": { fr: "Abonnement", en: "Subscription", es: "Suscripción" },
-  "nav.suggestions": { fr: "Suggestions secteur", en: "Sector suggestions", es: "Sugerencias del sector" },
+  "nav.carrierStats": { fr: "Statistiques", en: "Statistics", es: "Estadísticas" },
   // Espace de l'administrateur de la plateforme
   "admin.overview": { fr: "Tableau de bord", en: "Overview", es: "Panel" },
   "admin.accounts": { fr: "Comptes clients", en: "Customer accounts", es: "Cuentas de clientes" },
@@ -43,11 +91,14 @@ const EXTRA_LABELS: Record<string, Record<string, string>> = {
   "admin.platformSettings": { fr: "Réglages de la plateforme", en: "Platform settings", es: "Ajustes de la plataforma" },
   "admin.audit": { fr: "Journal d’activité", en: "Activity log", es: "Registro de actividad" },
   // Titres des sections de la barre latérale
-  "nav.groups.commercial": { fr: "Commercial", en: "Sales & CRM", es: "Comercial" },
-  "nav.groups.procurement": { fr: "Approvisionnement", en: "Procurement", es: "Aprovisionamiento" },
-  "nav.groups.inventory": { fr: "Stock & logistique", en: "Inventory & logistics", es: "Inventario y logística" },
-  "nav.groups.finance": { fr: "Finance & RH", en: "Finance & HR", es: "Finanzas y RR. HH." },
-  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Análisis" },
+  "nav.groups.sales": { fr: "Ventes & clients", en: "Sales & customers", es: "Ventas y clientes" },
+  "nav.groups.products": { fr: "Produits & stock", en: "Products & stock", es: "Productos y stock" },
+  "nav.groups.purchasing": { fr: "Achats", en: "Purchasing", es: "Compras" },
+  "nav.groups.logistics": { fr: "Logistique", en: "Logistics", es: "Logística" },
+  "nav.groups.finance": { fr: "Finance", en: "Finance", es: "Finanzas" },
+  "nav.groups.hr": { fr: "RH", en: "HR", es: "RR. HH." },
+  "nav.groups.insights": { fr: "Pilotage", en: "Insights", es: "Seguimiento" },
+  "nav.groups.ai": { fr: "Assistant IA", en: "AI assistant", es: "Asistente IA" },
   "nav.groups.account": { fr: "Compte", en: "Account", es: "Cuenta" },
 };
 
@@ -229,6 +280,208 @@ const ICONS: Record<string, React.ReactElement> = {
       <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
     </Icon>
   ),
+  // ── Icônes des entrées ajoutées avec les sous-menus (style Feather / Lucide, tracé 24×24) ──
+  crm: (
+    <Icon>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="8.5" cy="7" r="4"/>
+      <polyline points="17 11 19 13 23 9"/>
+    </Icon>
+  ),
+  sessions: (
+    <Icon>
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </Icon>
+  ),
+  suggestions: (
+    <Icon>
+      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+      <path d="M9 18h6"/>
+      <path d="M10 22h4"/>
+    </Icon>
+  ),
+  barChart: (
+    <Icon>
+      <line x1="12" y1="20" x2="12" y2="10"/>
+      <line x1="18" y1="20" x2="18" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="16"/>
+    </Icon>
+  ),
+  trendingUp: (
+    <Icon>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </Icon>
+  ),
+  trendingDown: (
+    <Icon>
+      <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
+      <polyline points="17 18 23 18 23 12"/>
+    </Icon>
+  ),
+  banknote: (
+    <Icon>
+      <rect x="2" y="6" width="20" height="12" rx="2"/>
+      <circle cx="12" cy="12" r="2"/>
+      <path d="M6 12h.01M18 12h.01"/>
+    </Icon>
+  ),
+  columns: (
+    <Icon>
+      <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/>
+    </Icon>
+  ),
+  pieChart: (
+    <Icon>
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+      <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+    </Icon>
+  ),
+  gauge: (
+    <Icon>
+      <path d="m12 14 4-4"/>
+      <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+    </Icon>
+  ),
+  calculator: (
+    <Icon>
+      <rect x="4" y="2" width="16" height="20" rx="2"/>
+      <line x1="8" y1="6" x2="16" y2="6"/>
+      <line x1="16" y1="14" x2="16" y2="18"/>
+      <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01"/>
+    </Icon>
+  ),
+  journal: (
+    <Icon>
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </Icon>
+  ),
+  scale: (
+    <Icon>
+      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+      <path d="M7 21h10"/>
+      <path d="M12 3v18"/>
+      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+    </Icon>
+  ),
+  receipt: (
+    <Icon>
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/>
+      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+      <path d="M12 17.5v-11"/>
+    </Icon>
+  ),
+  landmark: (
+    <Icon>
+      <line x1="3" y1="22" x2="21" y2="22"/>
+      <line x1="6" y1="18" x2="6" y2="11"/>
+      <line x1="10" y1="18" x2="10" y2="11"/>
+      <line x1="14" y1="18" x2="14" y2="11"/>
+      <line x1="18" y1="18" x2="18" y2="11"/>
+      <polygon points="12 2 20 7 4 7"/>
+    </Icon>
+  ),
+  files: (
+    <Icon>
+      <path d="M20 7h-3a2 2 0 0 1-2-2V2"/>
+      <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/>
+      <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>
+    </Icon>
+  ),
+  creditCard: (
+    <Icon>
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <line x1="2" y1="10" x2="22" y2="10"/>
+      <line x1="6" y1="15" x2="10" y2="15"/>
+    </Icon>
+  ),
+  wallet: (
+    <Icon>
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+      <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+    </Icon>
+  ),
+  filePlus: (
+    <Icon>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="18" x2="12" y2="12"/>
+      <line x1="9" y1="15" x2="15" y2="15"/>
+    </Icon>
+  ),
+  bookmark: (
+    <Icon>
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+    </Icon>
+  ),
+  briefcase: (
+    <Icon>
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+    </Icon>
+  ),
+  messageCircle: (
+    <Icon>
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    </Icon>
+  ),
+  lineChart: (
+    <Icon>
+      <path d="M3 3v18h18"/>
+      <path d="m19 9-5 5-4-4-3 3"/>
+    </Icon>
+  ),
+  sparkles: (
+    <Icon>
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+      <path d="M5 3v4"/>
+      <path d="M19 17v4"/>
+      <path d="M3 5h4"/>
+      <path d="M17 19h4"/>
+    </Icon>
+  ),
+  info: (
+    <Icon>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="16" x2="12" y2="12"/>
+      <line x1="12" y1="8" x2="12.01" y2="8"/>
+    </Icon>
+  ),
+  shield: (
+    <Icon>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </Icon>
+  ),
+  history: (
+    <Icon>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+      <path d="M3 3v5h5"/>
+      <path d="M12 7v5l4 2"/>
+    </Icon>
+  ),
+  building: (
+    <Icon>
+      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+      <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+      <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+      <path d="M10 6h4"/>
+      <path d="M10 10h4"/>
+      <path d="M10 14h4"/>
+      <path d="M10 18h4"/>
+    </Icon>
+  ),
+  repeat: (
+    <Icon>
+      <path d="m17 2 4 4-4 4"/>
+      <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+      <path d="m7 22-4-4 4-4"/>
+      <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+    </Icon>
+  ),
   menu: (
     <Icon d="M3 12h18M3 6h18M3 18h18"/>
   ),
@@ -279,7 +532,9 @@ interface ThemeColors {
 }
 
 // `gate` : module de l'abonnement qui autorise l'entrée (par défaut, son propre id).
-// `also` : autres chemins qui allument l'entrée (sous-pages d'un même module).
+// `also` : préfixes d'adresses qui allument aussi l'entrée (sous-pages d'un même module).
+// `exact` : adresses exactes qui allument aussi l'entrée (anciennes adresses d'entrée d'un module, ex. /dashboard/accounting).
+// `children` : sous-menu. L'entrée est alors un parent dépliable, sans page propre (`path` vide).
 interface NavItem {
   id: string;
   gate?: string;
@@ -287,6 +542,8 @@ interface NavItem {
   label: string;
   iconKey: string;
   also?: string[];
+  exact?: string[];
+  children?: NavItem[];
 }
 
 interface NavGroup {
@@ -295,43 +552,154 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// ─── Sections de la barre latérale ────────────────────────────────────────────
-// Chaque section liste les identifiants des modules (voir `allModules`) dans l'ordre d'affichage.
-// Pour déplacer un module, déplacez simplement son identifiant d'une section à l'autre.
-// Un module qui n'apparaît dans aucune section s'affiche en haut, hors section (ex. le tableau de bord).
-// Une section dont aucun module n'est actif dans l'abonnement n'est pas affichée.
-const NAV_GROUPS: Array<{ id: string; label: string; items: string[] }> = [
-  { id: "commercial",  label: "nav.groups.commercial",  items: ["sales", "orders", "documents", "clients", "appointments", "pos", "pos-sessions"] },
-  { id: "procurement", label: "nav.groups.procurement", items: ["purchases", "suppliers"] },
-  { id: "inventory",   label: "nav.groups.inventory",   items: ["products", "suggestions", "categories", "stock", "logistics"] },
-  { id: "finance",     label: "nav.groups.finance",     items: ["finance", "accounting", "hr"] },
-  { id: "insights",    label: "nav.groups.insights",    items: ["projects", "reports", "business-reports", "analytics", "objectives", "ai"] },
-  { id: "account",     label: "nav.groups.account",     items: ["profile", "billing", "settings"] },
+// ─── Menu du tableau de bord ──────────────────────────────────────────────────
+// Chaque entrée mène à sa propre page. Les entrées sont rangées par section ; une section dont aucune
+// entrée n'est active dans l'abonnement n'est pas affichée, et un parent sans enfant visible non plus.
+// Pour déplacer une entrée, déplacez simplement sa ligne d'une section à l'autre.
+const CLIENT_TOP: NavItem[] = [
+  { id: "dashboard", path: "/dashboard", label: "nav.dashboard", iconKey: "dashboard" },
 ];
 
-/** Répartit les entrées visibles : d'abord celles hors section, puis les sections non vides. */
-function buildSections(items: NavItem[]): { top: NavItem[]; groups: NavGroup[] } {
-  const byId = new Map(items.map((m) => [m.id, m] as const));
-  const placed = new Set<string>();
-  const groups: NavGroup[] = [];
-  for (const g of NAV_GROUPS) {
-    const groupItems: NavItem[] = [];
-    for (const id of g.items) {
-      const item = byId.get(id);
-      if (item && !placed.has(id)) { groupItems.push(item); placed.add(id); }
-    }
-    if (groupItems.length > 0) groups.push({ id: g.id, label: g.label, items: groupItems });
-  }
-  return { top: items.filter((m) => !placed.has(m.id)), groups };
+const CLIENT_GROUPS: NavGroup[] = [
+  {
+    id: "sales", label: "nav.groups.sales", items: [
+      { id: "clients",      path: "/dashboard/clients",      label: "nav.clients",         iconKey: "clients" },
+      { id: "crm",          gate: "clients", path: "/dashboard/crm", label: "nav.crm",      iconKey: "crm" },
+      { id: "appointments", path: "/dashboard/appointments", label: "common.appointments", iconKey: "appointments" },
+      { id: "orders",       path: "/dashboard/orders",       label: "nav.orders",          iconKey: "orders" },
+      { id: "sales",        path: "/dashboard/sales",        label: "nav.sales",           iconKey: "sales" },
+      { id: "sales-invoices", gate: "invoices", path: "/dashboard/invoices", label: "nav.invoices", iconKey: "invoices" },
+      { id: "pos",          path: "/dashboard/pos",          label: "common.pos",          iconKey: "pos" },
+      { id: "pos-sessions", gate: "pos", path: "/dashboard/pos/sessions", label: "nav.posSessions", iconKey: "sessions" },
+    ],
+  },
+  {
+    id: "products", label: "nav.groups.products", items: [
+      { id: "products",    path: "/dashboard/products",    label: "nav.products",    iconKey: "products" },
+      { id: "suggestions", gate: "products", path: "/dashboard/products/suggestions", label: "nav.suggestions", iconKey: "suggestions" },
+      { id: "categories",  path: "/dashboard/categories",  label: "nav.categories",  iconKey: "categories" },
+      { id: "stock",       path: "/dashboard/stock",       label: "nav.stock",       iconKey: "stock" },
+    ],
+  },
+  {
+    id: "purchasing", label: "nav.groups.purchasing", items: [
+      { id: "suppliers", path: "/dashboard/suppliers", label: "nav.suppliers", iconKey: "suppliers" },
+      { id: "purchases", path: "/dashboard/purchases", label: "nav.purchases", iconKey: "purchases" },
+    ],
+  },
+  {
+    id: "logistics", label: "nav.groups.logistics", items: [
+      { id: "logistics-shipments", gate: "logistics", path: "/dashboard/logistics/shipments", label: "nav.shipments",         iconKey: "shipments" },
+      { id: "logistics-carriers",  gate: "logistics", path: "/dashboard/logistics/carriers",  label: "nav.carriers",          iconKey: "logistics" },
+      { id: "logistics-analytics", gate: "logistics", path: "/dashboard/logistics/analytics", label: "nav.logisticsAnalytics", iconKey: "barChart" },
+    ],
+  },
+  {
+    id: "finance", label: "nav.groups.finance", items: [
+      { id: "finance-overview", gate: "finance", path: "/dashboard/finance",          label: "nav.overview",     iconKey: "finance" },
+      { id: "finance-income",   gate: "finance", path: "/dashboard/finance/income",   label: "nav.income",       iconKey: "trendingUp" },
+      { id: "finance-expenses", gate: "finance", path: "/dashboard/finance/expenses", label: "nav.expenses",     iconKey: "trendingDown" },
+      { id: "finance-cashflow", gate: "finance", path: "/dashboard/finance/cashflow", label: "nav.cashflow",     iconKey: "banknote" },
+      { id: "finance-balance",  gate: "finance", path: "/dashboard/finance/balance",  label: "nav.balanceSheet", iconKey: "columns" },
+      { id: "finance-budget",   gate: "finance", path: "/dashboard/finance/budget",   label: "nav.budget",       iconKey: "pieChart" },
+      { id: "finance-ratios",   gate: "finance", path: "/dashboard/finance/ratios",   label: "nav.ratios",       iconKey: "gauge" },
+      { id: "finance-invoices", gate: "finance", path: "/dashboard/finance/invoices", label: "nav.invoices",     iconKey: "invoices" },
+      {
+        id: "accounting", gate: "finance", path: "", label: "nav.accounting", iconKey: "calculator", children: [
+          { id: "accounting-journal", gate: "finance", path: "/dashboard/accounting/journal", label: "nav.journal",         iconKey: "journal", exact: ["/dashboard/accounting"] },
+          { id: "accounting-balance", gate: "finance", path: "/dashboard/accounting/balance", label: "nav.trialBalance",    iconKey: "scale" },
+          { id: "accounting-result",  gate: "finance", path: "/dashboard/accounting/result",  label: "nav.incomeStatement", iconKey: "barChart" },
+          { id: "accounting-vat",     gate: "finance", path: "/dashboard/accounting/vat",     label: "nav.vat",             iconKey: "receipt" },
+          { id: "accounting-bank",    gate: "finance", path: "/dashboard/accounting/bank",    label: "nav.bank",            iconKey: "landmark" },
+        ],
+      },
+      { id: "documents", gate: "invoices", path: "/dashboard/documents",          label: "nav.documents", iconKey: "files" },
+      { id: "payments",  gate: "invoices", path: "/dashboard/documents/payments", label: "nav.payments",  iconKey: "creditCard" },
+    ],
+  },
+  {
+    id: "hr", label: "nav.groups.hr", items: [
+      { id: "hr-employees", gate: "hr", path: "/dashboard/hr",         label: "nav.employees", iconKey: "hr" },
+      { id: "hr-payroll",   gate: "hr", path: "/dashboard/hr/payroll", label: "nav.payroll",   iconKey: "wallet" },
+    ],
+  },
+  {
+    id: "insights", label: "nav.groups.insights", items: [
+      { id: "analytics", path: "/dashboard/analytics", label: "nav.analytics", iconKey: "analytics" },
+      {
+        id: "reports", gate: "reports", path: "", label: "nav.reports", iconKey: "reports", children: [
+          { id: "reports-generate", gate: "reports", path: "/dashboard/reports/generate", label: "nav.reportsGenerate", iconKey: "filePlus", exact: ["/dashboard/reports"] },
+          { id: "reports-saved",    gate: "reports", path: "/dashboard/reports/saved",    label: "nav.reportsSaved",    iconKey: "bookmark" },
+          { id: "reports-business", gate: "reports", path: "/dashboard/reports/business", label: "nav.reportsBusiness", iconKey: "briefcase" },
+        ],
+      },
+      { id: "objectives", path: "/dashboard/objectives", label: "common.objectives", iconKey: "objectives" },
+      { id: "projects",   path: "/dashboard/projects",   label: "common.projects",   iconKey: "projects" },
+    ],
+  },
+  {
+    id: "ai", label: "nav.groups.ai", items: [
+      { id: "ai-dashboard",       gate: "ai", path: "/dashboard/ai",                 label: "nav.aiDashboard",       iconKey: "ai" },
+      { id: "ai-chat",            gate: "ai", path: "/dashboard/ai/chat",            label: "nav.aiChat",            iconKey: "messageCircle" },
+      { id: "ai-forecasts",       gate: "ai", path: "/dashboard/ai/forecasts",       label: "nav.aiForecasts",       iconKey: "lineChart" },
+      { id: "ai-recommendations", gate: "ai", path: "/dashboard/ai/recommendations", label: "nav.aiRecommendations", iconKey: "sparkles" },
+      { id: "ai-analytics",       gate: "ai", path: "/dashboard/ai/analytics",       label: "nav.aiAnalytics",       iconKey: "pieChart" },
+    ],
+  },
+  {
+    id: "account", label: "nav.groups.account", items: [
+      {
+        id: "profile", gate: "profile", path: "", label: "nav.profile", iconKey: "profile", children: [
+          { id: "profile-info",     gate: "profile", path: "/dashboard/profile",          label: "nav.profileInfo",     iconKey: "info" },
+          { id: "profile-security", gate: "profile", path: "/dashboard/profile/security", label: "nav.profileSecurity", iconKey: "shield" },
+          { id: "profile-activity", gate: "profile", path: "/dashboard/profile/activity", label: "nav.profileActivity", iconKey: "history" },
+        ],
+      },
+      { id: "company",  gate: "settings", path: "/dashboard/company",  label: "nav.company",  iconKey: "building" },
+      { id: "settings", path: "/dashboard/settings", label: "nav.settings", iconKey: "settings" },
+      { id: "billing",  gate: "profile",  path: "/dashboard/billing",  label: "nav.billing",  iconKey: "repeat" },
+    ],
+  },
+];
+
+// Espace de l'administrateur de la plateforme : mêmes entrées qu'avant, hors abonnement.
+const ADMIN_TOP: NavItem[] = [
+  { id: "adminOverview", path: "/admin",          label: "admin.overview",         iconKey: "dashboard" },
+  { id: "adminAccounts", path: "/admin/accounts", label: "admin.accounts",         iconKey: "adminClients" },
+  { id: "adminPayments", path: "/admin/payments", label: "admin.payments",         iconKey: "finance" },
+  { id: "adminPlans",    path: "/admin/plans",    label: "admin.plans",            iconKey: "orders" },
+  { id: "adminSectors",  path: "/admin/sectors",  label: "admin.sectors",          iconKey: "categories" },
+  { id: "adminSettings", path: "/admin/settings", label: "admin.platformSettings", iconKey: "adminModules" },
+  { id: "adminAudit",    path: "/admin/audit",    label: "admin.audit",            iconKey: "reports" },
+];
+const ADMIN_ACCOUNT: NavItem[] = [
+  { id: "profile",  path: "/dashboard/profile",  label: "common.profile",  iconKey: "profile" },
+  { id: "settings", path: "/dashboard/settings", label: "common.settings", iconKey: "settings" },
+];
+
+// Un transporteur qui ouvre le tableau de bord retrouve ici le même menu que dans son espace (/transporteur).
+const CARRIER_TOP: NavItem[] = [
+  { id: "carrier-dashboard", path: "/transporteur/dashboard", label: "nav.dashboard", iconKey: "dashboard" },
+  { id: "carrier-shipments", path: "/transporteur/shipments", label: "nav.shipments", iconKey: "shipments" },
+];
+const CARRIER_ACCOUNT: NavItem[] = [
+  { id: "carrier-profile",  path: "/transporteur/profile",       label: "nav.profile",      iconKey: "profile" },
+  { id: "carrier-stats",    path: "/transporteur/profile/stats", label: "nav.carrierStats", iconKey: "barChart" },
+  { id: "carrier-settings", path: "/transporteur/settings",      label: "nav.settings",     iconKey: "settings" },
+];
+
+/** Entrées sans sous-menu, dans l'ordre d'affichage (les parents sont remplacés par leurs enfants). */
+function leafItems(items: NavItem[]): NavItem[] {
+  return items.flatMap((i) => (i.children ? leafItems(i.children) : [i]));
 }
 
 const FONT_STACK = "var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const BRAND_FONT = "var(--font-orbitron), var(--font-poppins), 'Arial Black', sans-serif";
 
-// Sections ouvertes. Au chargement, Commercial, Approvisionnement et Stock & logistique sont ouvertes,
-// ainsi que la section de la page ouverte. Ce que l'utilisateur ouvre ou ferme est conservé pendant
-// la navigation, puis l'état initial revient au rechargement.
-const DEFAULT_OPEN_GROUPS: Record<string, boolean> = { commercial: true, procurement: true, inventory: true };
+// Sections et sous-menus ouverts (clé « sub:<id> » pour un sous-menu). Au chargement, Ventes & clients, Produits & stock
+// et Achats sont ouvertes, ainsi que la section et le sous-menu de la page ouverte. Ce que l'utilisateur ouvre ou ferme
+// est conservé pendant la navigation, puis l'état initial revient au rechargement.
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = { sales: true, products: true, purchasing: true };
 let sidebarOpenGroups: Record<string, boolean> = { ...DEFAULT_OPEN_GROUPS };
 
 let sidebarCachedUser: User | null = null;
@@ -373,6 +741,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { t, language } = useLanguage();
   const { theme, themeId } = useTheme();
+  const { features } = useCompanyProfile();
 
   const [user, setUser] = useState<User | null>(sidebarCachedUser);
   const [userModules, setUserModules] = useState<Record<string, boolean> | null>(sidebarCachedModules);
@@ -399,9 +768,10 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    if (mobileMoreOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => { document.body.style.overflow = ""; };
+    // Tiroir ouvert : la page ne défile pas derrière, et le bouton flottant de l'assistant s'efface (il masquait les sections).
+    if (mobileMoreOpen) { document.body.style.overflow = "hidden"; document.body.dataset.ixNavDrawer = "open"; }
+    else { document.body.style.overflow = ""; delete document.body.dataset.ixNavDrawer; }
+    return () => { document.body.style.overflow = ""; delete document.body.dataset.ixNavDrawer; };
   }, [mobileMoreOpen]);
 
   const normalizeModules = (data: any): Record<string, boolean> | null => {
@@ -475,83 +845,60 @@ export default function Sidebar() {
 
   const role = user?.role;
 
-  const allModules: NavItem[] = [
-    { id: "dashboard",  path: "/dashboard",            label: "common.dashboard",  iconKey: "dashboard" },
-    { id: "products",   path: "/dashboard/products",   label: "common.products",   iconKey: "products" },
-    { id: "suggestions", gate: "products", path: "/dashboard/products/suggestions", label: "nav.suggestions", iconKey: "objectives" },
-    { id: "categories", path: "/dashboard/categories", label: "common.categories", iconKey: "categories" },
-    { id: "stock",      path: "/dashboard/stock",      label: "common.stock",      iconKey: "stock" },
-    { id: "sales",      path: "/dashboard/sales",      label: "common.sales",      iconKey: "sales" },
-    { id: "purchases",  path: "/dashboard/purchases",  label: "common.purchases",  iconKey: "purchases" },
-    { id: "pos",        path: "/dashboard/pos",        label: "common.pos",        iconKey: "pos" },
-    { id: "pos-sessions", gate: "pos", path: "/dashboard/pos/sessions", label: "nav.posSessions", iconKey: "pos" },
-    { id: "orders",     path: "/dashboard/orders",     label: "common.orders",     iconKey: "orders" },
-    { id: "clients",    path: "/dashboard/clients",    label: "common.clients",    iconKey: "clients", also: ["/dashboard/crm"] },
-    { id: "suppliers",  path: "/dashboard/suppliers",  label: "common.suppliers",  iconKey: "suppliers" },
-    { id: "documents",  gate: "invoices", path: "/dashboard/documents", label: "nav.documents", iconKey: "invoices" },
-    { id: "hr",         path: "/dashboard/hr",         label: "common.hr",         iconKey: "hr" },
-    { id: "finance",    path: "/dashboard/finance",    label: "common.finance",    iconKey: "finance" },
-    { id: "accounting", gate: "finance", path: "/dashboard/accounting", label: "nav.accounting", iconKey: "finance" },
-    { id: "logistics",  path: "/dashboard/logistics",  label: "common.logistics",  iconKey: "logistics" },
-    { id: "appointments", path: "/dashboard/appointments", label: "common.appointments", iconKey: "appointments" },
-    { id: "projects",   path: "/dashboard/projects",   label: "common.projects",   iconKey: "projects" },
-    { id: "ai",         path: "/dashboard/ai",         label: "common.ai",         iconKey: "ai" },
-    { id: "reports",    path: "/dashboard/reports",    label: "common.reports",    iconKey: "reports" },
-    { id: "business-reports", gate: "reports", path: "/dashboard/reports/business", label: "nav.businessReports", iconKey: "reports" },
-    { id: "analytics",  path: "/dashboard/analytics",  label: "common.analytics",  iconKey: "analytics" },
-    { id: "objectives", path: "/dashboard/objectives", label: "common.objectives", iconKey: "objectives" },
-    { id: "profile",    path: "/dashboard/profile",    label: "common.profile",    iconKey: "profile" },
-    { id: "billing",    gate: "profile", path: "/dashboard/billing", label: "nav.billing", iconKey: "finance" },
-    { id: "settings",   path: "/dashboard/settings",   label: "common.settings",   iconKey: "settings", also: ["/dashboard/company"] },
-  ];
+  /**
+   * Entrées autorisées par l'abonnement. Un parent (sous-menu) n'est gardé que s'il lui reste au moins un enfant.
+   * Dans un pays où la paie n'existe pas encore, « Paie » devient « Congés » (la page ouvre alors les congés).
+   */
+  const keepAllowed = (items: NavItem[]): NavItem[] =>
+    items.flatMap((item): NavItem[] => {
+      if (item.children) {
+        const kids = keepAllowed(item.children);
+        return kids.length > 0 ? [{ ...item, children: kids }] : [];
+      }
+      if (!isModuleActive(item.gate ?? item.id)) return [];
+      return [item.id === "hr-payroll" && !features.payroll ? { ...item, label: "nav.leaves" } : item];
+    });
 
-  const clientMenuItems = allModules.filter(m => isModuleActive(m.gate ?? m.id));
+  const sections: { top: NavItem[]; groups: NavGroup[] } = isPlatformAdmin(role)
+    ? { top: ADMIN_TOP, groups: [{ id: "account", label: "nav.groups.account", items: ADMIN_ACCOUNT }] }
+    : role === "transporteur"
+    ? { top: CARRIER_TOP, groups: [{ id: "account", label: "nav.groups.account", items: CARRIER_ACCOUNT }] }
+    : {
+        top: keepAllowed(CLIENT_TOP),
+        groups: CLIENT_GROUPS.map((g) => ({ ...g, items: keepAllowed(g.items) })).filter((g) => g.items.length > 0),
+      };
 
-  const adminMenuItems: NavItem[] = [
-    { id: "adminOverview", path: "/admin",          label: "admin.overview",         iconKey: "dashboard" },
-    { id: "adminAccounts", path: "/admin/accounts", label: "admin.accounts",         iconKey: "adminClients" },
-    { id: "adminPayments", path: "/admin/payments", label: "admin.payments",         iconKey: "finance" },
-    { id: "adminPlans",    path: "/admin/plans",    label: "admin.plans",            iconKey: "orders" },
-    { id: "adminSectors",  path: "/admin/sectors",  label: "admin.sectors",          iconKey: "categories" },
-    { id: "adminSettings", path: "/admin/settings", label: "admin.platformSettings", iconKey: "adminModules" },
-    { id: "adminAudit",    path: "/admin/audit",    label: "admin.audit",            iconKey: "reports" },
-    { id: "profile",       path: "/dashboard/profile",  label: "common.profile",   iconKey: "profile" },
-    { id: "settings",      path: "/dashboard/settings", label: "common.settings",  iconKey: "settings" },
-  ];
-
-  const transporteurMenuItems: NavItem[] = [
-    { id: "shipments", path: "/transporteur/shipments", label: "logistics.shipments", iconKey: "shipments" },
-    { id: "profile",   path: "/dashboard/profile",      label: "common.profile",      iconKey: "profile" },
-    { id: "settings",  path: "/dashboard/settings",     label: "common.settings",     iconKey: "settings" },
-  ];
-
-  let roleMenuItems: NavItem[] = clientMenuItems;
-  if (isPlatformAdmin(role)) roleMenuItems = adminMenuItems;
-  if (role === "transporteur") roleMenuItems = transporteurMenuItems;
-
-  const sections = buildSections(roleMenuItems);
-  // Ordre d'affichage réel (sections comprises) : sert à la barre du bas mobile et au lien actif.
-  const menuItems: NavItem[] = [...sections.top, ...sections.groups.flatMap((g) => g.items)];
+  // Entrées qui mènent à une page, dans l'ordre d'affichage (les sous-menus sont remplacés par leurs entrées) :
+  // sert à la barre du bas mobile et au lien actif.
+  const menuItems: NavItem[] = [...leafItems(sections.top), ...sections.groups.flatMap((g) => leafItems(g.items))];
 
   const pathMatches = (path: string) =>
     pathname === path || (path !== "/dashboard" && path !== "/admin" && !!pathname && pathname.startsWith(path + "/"));
-  // Le lien le plus précis gagne : /dashboard/hr/payroll n'allume pas aussi « Ressources humaines ».
-  const isActivePath = (path: string, also?: string[]) =>
-    (pathMatches(path) && !menuItems.some((m) => m.path.length > path.length && pathMatches(m.path))) ||
-    !!also?.some((p) => pathMatches(p));
+  // Le lien le plus précis gagne : /dashboard/finance/income n'allume pas aussi « Vue d'ensemble ».
+  // Un parent de sous-menu est actif quand l'un de ses enfants l'est.
+  const isActiveItem = (item: NavItem): boolean => {
+    if (item.children) return item.children.some(isActiveItem);
+    if (item.exact?.some((p) => pathname === p)) return true;
+    if (item.also?.some((p) => pathMatches(p))) return true;
+    return pathMatches(item.path) && !menuItems.some((m) => m.path.length > item.path.length && pathMatches(m.path));
+  };
 
-  const activeGroupId = sections.groups.find((g) => g.items.some((m) => isActivePath(m.path, m.also)))?.id ?? null;
+  const activeGroupId = sections.groups.find((g) => g.items.some(isActiveItem))?.id ?? null;
+  const activeParentId = sections.groups.flatMap((g) => g.items).find((i) => i.children && isActiveItem(i))?.id ?? null;
 
-  // La section de la page ouverte s'ouvre d'elle-même (au chargement et à chaque changement de page).
+  // La section et le sous-menu de la page ouverte s'ouvrent d'eux-mêmes (au chargement et à chaque changement de page).
   useEffect(() => {
-    if (!activeGroupId) return;
+    if (!activeGroupId && !activeParentId) return;
     setOpenGroups((prev) => {
-      if (prev[activeGroupId]) return prev;
-      const next = { ...prev, [activeGroupId]: true };
+      const next = { ...prev };
+      let changed = false;
+      if (activeGroupId && !prev[activeGroupId]) { next[activeGroupId] = true; changed = true; }
+      if (activeParentId && !prev[`sub:${activeParentId}`]) { next[`sub:${activeParentId}`] = true; changed = true; }
+      if (!changed) return prev;
       sidebarOpenGroups = next;
       return next;
     });
-  }, [activeGroupId, pathname]);
+  }, [activeGroupId, activeParentId, pathname]);
 
   const toggleGroup = (groupId: string) => {
     setOpenGroups((prev) => {
@@ -917,39 +1264,60 @@ export default function Sidebar() {
   const handleMouseEnter = (itemId: string) => setHoveredItem(itemId);
   const handleMouseLeave = () => setHoveredItem(null);
 
-  // Mobile : les 4 premières entrées (dans l'ordre des sections) vont dans la barre du bas,
-  // le reste dans le tiroir « Plus », regroupé par section.
-  const MOBILE_PRIMARY_COUNT = 4;
-  const mobilePrimaryItems = menuItems.slice(0, MOBILE_PRIMARY_COUNT);
-  const mobileMoreItems = menuItems.slice(MOBILE_PRIMARY_COUNT);
+  // Mobile : quatre entrées d'accès rapide dans la barre du bas, le reste dans le tiroir « Plus » (sections repliables).
+  // Si le forfait n'inclut pas l'une des entrées préférées, la suivante dans l'ordre du menu prend sa place.
+  const MOBILE_PRIMARY_PREFERRED = ["dashboard", "sales", "orders", "products"];
+  const mobilePrimaryItems: NavItem[] = (() => {
+    const picked = MOBILE_PRIMARY_PREFERRED
+      .map((id) => menuItems.find((m) => m.id === id))
+      .filter((m): m is NavItem => !!m);
+    for (const m of menuItems) {
+      if (picked.length >= 4) break;
+      if (!picked.includes(m)) picked.push(m);
+    }
+    return picked.slice(0, 4);
+  })();
   const mobilePrimaryIds = new Set(mobilePrimaryItems.map((m) => m.id));
-  const mobileMoreTop = sections.top.filter((m) => !mobilePrimaryIds.has(m.id));
+  const withoutPrimary = (items: NavItem[]): NavItem[] =>
+    items.flatMap((i): NavItem[] => {
+      if (i.children) {
+        const kids = withoutPrimary(i.children);
+        return kids.length > 0 ? [{ ...i, children: kids }] : [];
+      }
+      return mobilePrimaryIds.has(i.id) ? [] : [i];
+    });
+  const mobileMoreTop = withoutPrimary(sections.top);
   const mobileMoreGroups = sections.groups
-    .map((g) => ({ ...g, items: g.items.filter((m) => !mobilePrimaryIds.has(m.id)) }))
+    .map((g) => ({ ...g, items: withoutPrimary(g.items) }))
     .filter((g) => g.items.length > 0);
+  const mobileHasMore = mobileMoreTop.length > 0 || mobileMoreGroups.length > 0;
 
-  const renderNavItem = (item: NavItem) => {
-    const isActive = isActivePath(item.path, item.also);
+  /** Entrée du menu (ordinateur). `nested` : entrée d'un sous-menu, légèrement plus compacte. */
+  const renderNavItem = (item: NavItem, nested = false) => {
+    const isActive = isActiveItem(item);
     const isHovered = hoveredItem === item.path;
     const label = getLabel(item.label);
     const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
+    const baseStyle: CSSProperties = nested
+      ? { ...styles.navItem, padding: "7px 10px", paddingInlineStart: "10px", marginBottom: "1px" }
+      : styles.navItem;
 
     const getNavItemStyle = (): CSSProperties => {
       if (isActive) {
         return {
-          ...styles.navItem,
+          ...baseStyle,
           background: `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)`,
           color: ct.primary,
         };
       } else if (isHovered) {
         return {
-          ...styles.navItem,
+          ...baseStyle,
           background: `${ct.primary}0f`,
           color: ct.primary,
           transform: hoverShift,
         };
       }
-      return { ...styles.navItem, background: "transparent", color: navText };
+      return { ...baseStyle, background: "transparent", color: navText };
     };
 
     return (
@@ -967,10 +1335,59 @@ export default function Sidebar() {
         style={getNavItemStyle()}
       >
         <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
-        <span style={styles.navLabel}>{label}</span>
+        <span style={nested ? { ...styles.navLabel, fontSize: "15px" } : styles.navLabel}>{label}</span>
       </Link>
     );
   };
+
+  /** Parent dépliable (Comptabilité, Rapports, Profil) : un bouton, puis ses entrées en retrait. */
+  const renderParent = (item: NavItem) => {
+    const subKey = `sub:${item.id}`;
+    const open = !!openGroups[subKey];
+    const containsActive = isActiveItem(item);
+    const isHovered = hoveredItem === subKey;
+    const label = getLabel(item.label);
+    const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
+    const bodyId = `ix-nav-sub-${item.id}`;
+    return (
+      <div key={item.id}>
+        <button
+          type="button"
+          className="ix-nav-link"
+          aria-expanded={open}
+          aria-controls={bodyId}
+          onClick={() => toggleGroup(subKey)}
+          onMouseEnter={() => handleMouseEnter(subKey)}
+          onMouseLeave={handleMouseLeave}
+          style={{
+            ...styles.navItem,
+            width: "100%",
+            border: "none",
+            textAlign: "start",
+            background: containsActive ? `${ct.primary}12` : isHovered ? `${ct.primary}0f` : "transparent",
+            color: containsActive || isHovered ? ct.primary : navText,
+          }}
+        >
+          <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
+          <span style={{ ...styles.navLabel, flex: 1, minWidth: 0 }}>{label}</span>
+          <span aria-hidden="true" style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>
+            {ICONS.chevron}
+          </span>
+        </button>
+        <div id={bodyId} role="group" aria-label={label} className="ix-nav-group-body" data-open={open ? "true" : "false"}>
+          <div className="ix-nav-group-clip">
+            <div className="ix-nav-group-items">
+              <div style={{ marginInlineStart: "22px", paddingInlineStart: "6px", borderInlineStart: `1px solid ${ct.primary}26` }}>
+                {item.children!.map((child) => renderNavItem(child, true))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEntry = (item: NavItem) => (item.children ? renderParent(item) : renderNavItem(item));
 
   const renderGroup = (group: NavGroup) => {
     const open = !!openGroups[group.id];
@@ -1014,7 +1431,7 @@ export default function Sidebar() {
         >
           <div className="ix-nav-group-clip">
             <div className="ix-nav-group-items">
-              {group.items.map((item) => renderNavItem(item))}
+              {group.items.map((item) => renderEntry(item))}
             </div>
           </div>
         </div>
@@ -1022,8 +1439,9 @@ export default function Sidebar() {
     );
   };
 
-  const renderMobileMoreItem = (item: NavItem) => {
-    const isActive = isActivePath(item.path, item.also);
+  /** Entrée du tiroir « Plus » (mobile). */
+  const renderMobileMoreItem = (item: NavItem, nested = false) => {
+    const isActive = isActiveItem(item);
     const label = getLabel(item.label);
     const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
     return (
@@ -1041,7 +1459,7 @@ export default function Sidebar() {
           display: "flex",
           alignItems: "center",
           gap: "12px",
-          padding: "12px 14px",
+          padding: nested ? "10px 12px" : "12px 14px",
           marginBottom: "4px",
           borderRadius: "12px",
           background: isActive ? `linear-gradient(135deg, ${ct.primary}1a 0%, ${ct.primary}0d 100%)` : "transparent",
@@ -1055,6 +1473,85 @@ export default function Sidebar() {
         <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
         <span style={{ fontSize: "15px", fontWeight: isActive ? 600 : 400, fontFamily: FONT_STACK }}>{label}</span>
       </Link>
+    );
+  };
+
+  const renderMobileParent = (item: NavItem) => {
+    const subKey = `sub:${item.id}`;
+    const open = !!openGroups[subKey];
+    const containsActive = isActiveItem(item);
+    const label = getLabel(item.label);
+    const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
+    return (
+      <div key={item.id}>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => toggleGroup(subKey)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            width: "100%",
+            padding: "12px 14px",
+            marginBottom: "4px",
+            borderRadius: "12px",
+            border: "none",
+            textAlign: "start",
+            background: containsActive ? `${ct.primary}12` : "transparent",
+            color: containsActive ? ct.primary : navText,
+            cursor: "pointer",
+            fontFamily: FONT_STACK,
+          }}
+        >
+          <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
+          <span style={{ flex: 1, fontSize: "15px", fontWeight: containsActive ? 600 : 400 }}>{label}</span>
+          <span aria-hidden="true" style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>
+            {ICONS.chevron}
+          </span>
+        </button>
+        {open && (
+          <div role="group" aria-label={label} style={{ marginInlineStart: "20px", paddingInlineStart: "6px", borderInlineStart: `1px solid ${ct.primary}26` }}>
+            {item.children!.map((child) => renderMobileMoreItem(child, true))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderMobileEntry = (item: NavItem) => (item.children ? renderMobileParent(item) : renderMobileMoreItem(item));
+
+  const renderMobileGroup = (group: NavGroup) => {
+    const label = getLabel(group.label);
+    const open = !!openGroups[group.id];
+    return (
+      <div key={group.id} role="group" aria-label={label}>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => toggleGroup(group.id)}
+          style={{
+            ...styles.mobileGroupTitle,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            textAlign: "start",
+          }}
+        >
+          <span style={{ flex: 1 }}>{label}</span>
+          {!open && group.id === activeGroupId && (
+            <span aria-hidden="true" style={{ ...styles.groupDot, background: ct.primary }} />
+          )}
+          <span aria-hidden="true" style={{ ...styles.groupChevron, transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>
+            {ICONS.chevron}
+          </span>
+        </button>
+        {open && group.items.map((item) => renderMobileEntry(item))}
+      </div>
     );
   };
 
@@ -1126,16 +1623,8 @@ export default function Sidebar() {
                     {ICONS.close}
                   </button>
                 </div>
-                {mobileMoreTop.map((item) => renderMobileMoreItem(item))}
-                {mobileMoreGroups.map((group) => {
-                  const label = getLabel(group.label);
-                  return (
-                    <div key={group.id} role="group" aria-label={label}>
-                      <div style={styles.mobileGroupTitle} aria-hidden="true">{label}</div>
-                      {group.items.map((item) => renderMobileMoreItem(item))}
-                    </div>
-                  );
-                })}
+                {mobileMoreTop.map((item) => renderMobileEntry(item))}
+                {mobileMoreGroups.map((group) => renderMobileGroup(group))}
                 <div style={styles.divider} />
                 <div
                   onClick={logout}
@@ -1161,7 +1650,7 @@ export default function Sidebar() {
 
           <div style={styles.mobileBottomNav}>
             {mobilePrimaryItems.map((item) => {
-              const isActive = isActivePath(item.path, item.also);
+              const isActive = isActiveItem(item);
               const label = getLabel(item.label);
               const icon = ICONS[item.iconKey] ?? ICONS["dashboard"];
               return (
@@ -1199,7 +1688,7 @@ export default function Sidebar() {
               );
             })}
 
-            {mobileMoreItems.length > 0 && (
+            {mobileHasMore && (
               <button
                 type="button"
                 aria-expanded={mobileMoreOpen}
@@ -1227,7 +1716,7 @@ export default function Sidebar() {
               </button>
             )}
 
-            {mobileMoreItems.length === 0 && (
+            {!mobileHasMore && (
               <button
                 onClick={logout}
                 style={{ ...(styles.mobileNavBtn as CSSProperties), color: "#f87171" }}
@@ -1301,7 +1790,7 @@ export default function Sidebar() {
           <div style={styles.headerDivider} aria-hidden="true" />
 
           <nav style={styles.nav} aria-label={getLabel("common.menu")}>
-            {sections.top.map((item) => renderNavItem(item))}
+            {sections.top.map((item) => renderEntry(item))}
             {sections.groups.map((group) => renderGroup(group))}
             <div style={styles.divider} />
             <div

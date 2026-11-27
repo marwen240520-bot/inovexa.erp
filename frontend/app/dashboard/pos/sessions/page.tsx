@@ -41,7 +41,7 @@ function ZReport({ session }: { session: any }) {
       )}
       {r.journalEntry && (
         <p style={{ fontSize: 13, marginTop: 12 }}>
-          Écriture comptable : <Link href="/dashboard/accounting" style={{ fontWeight: 700 }}>{r.journalEntry.number}</Link> (journal de caisse) — ventes HT et TVA par taux, encaissements par moyen de paiement, sortie de stock au coût.
+          Écriture comptable : <Link href="/dashboard/accounting/journal" style={{ fontWeight: 700 }}>{r.journalEntry.number}</Link> (journal de caisse) — ventes HT et TVA par taux, encaissements par moyen de paiement, sortie de stock au coût.
         </p>
       )}
       {r.note && <p style={{ fontSize: 12, color: "var(--theme-text-secondary)", marginTop: 12 }}>{r.note} Les prix de caisse sont des montants TTC encaissés.</p>}

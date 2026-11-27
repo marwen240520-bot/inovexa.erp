@@ -81,6 +81,7 @@ const FAB_STYLE = `
 .ixa-fab-twinkle { transform-box: fill-box; transform-origin: center; animation: ixa-fab-twinkle 2.2s ease-in-out infinite; }
 .ixa-fab-twinkle-2 { animation-delay: 1.1s; }
 @media (prefers-reduced-motion: reduce) { .ixa-fab-halo, .ixa-fab-twinkle { animation: none; } }
+body[data-ix-nav-drawer="open"] .ixa-fab { display: none !important; }
 `;
 
 const CloseIcon = ({ size = 22 }: { size?: number }) => (
@@ -213,7 +214,7 @@ export default function FloatingAssistant() {
             <div style={{ textAlign: "end", marginTop: 6 }}>
               <button
                 type="button"
-                onClick={() => { setOpen(false); router.push("/dashboard/ai?tab=chat"); }}
+                onClick={() => { setOpen(false); router.push("/dashboard/ai/chat"); }}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6, background: theme.surface, border: `1px solid ${theme.border}`,
                   borderRadius: 999, color: theme.textSecondary, fontSize: 11.5, cursor: "pointer", padding: "4px 10px",
@@ -229,6 +230,7 @@ export default function FloatingAssistant() {
       {!(open && isMobile) && (
         <button
           ref={buttonRef}
+          className="ixa-fab"
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? L.close : L.open}

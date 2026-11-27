@@ -71,7 +71,7 @@ export const MODULE_ROUTES: Record<ModuleName, string> = {
   invoices: "/dashboard/documents",
   employees: "/dashboard/hr",
   suppliers: "/dashboard/suppliers",
-  expenses: "/dashboard/finance",
+  expenses: "/dashboard/finance/expenses",
   projects: "/dashboard/finance",
   shipments: "/dashboard/logistics",
 };

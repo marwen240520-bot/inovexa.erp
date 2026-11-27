@@ -186,12 +186,14 @@ export default function TransporteurShipmentsPage() {
       'shipments.list': { fr: 'Liste', en: 'List', es: 'Lista' },
       'shipments.grid': { fr: 'Grille', en: 'Grid', es: 'Cuadrícula' },
       'shipments.total': { fr: 'Total', en: 'Total', es: 'Total' },
-      'shipments.pending': { fr: 'En attente', en: 'Pending', es: 'Pendientes' },
+      'shipments.pending': { fr: 'À récupérer', en: 'To pick up', es: 'Por recoger' },
+      'shipments.cancelled': { fr: 'Annulées', en: 'Cancelled', es: 'Canceladas' },
+      'shipments.filter_all': { fr: 'Toutes', en: 'All', es: 'Todas' },
       'shipments.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
       'shipments.delivered': { fr: 'Livrées', en: 'Delivered', es: 'Entregadas' },
       'shipments.search_placeholder': { fr: 'N° suivi, client, adresse...', en: 'Tracking #, client, address...', es: 'N° seguimiento, cliente, dirección...' },
       'shipments.all_statuses': { fr: 'Tous les statuts', en: 'All statuses', es: 'Todos los estados' },
-      'shipments.status_pending': { fr: 'En attente', en: 'Pending', es: 'Pendiente' },
+      'shipments.status_pending': { fr: 'À récupérer', en: 'To pick up', es: 'Por recoger' },
       'shipments.status_in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
       'shipments.status_delivered': { fr: 'Livrée', en: 'Delivered', es: 'Entregado' },
       'shipments.status_cancelled': { fr: 'Annulée', en: 'Cancelled', es: 'Cancelado' },
@@ -219,7 +221,7 @@ export default function TransporteurShipmentsPage() {
       'shipments.action': { fr: 'Action', en: 'Action', es: 'Acción' },
       'status.delivered': { fr: 'Livrée', en: 'Delivered', es: 'Entregado' },
       'status.in_transit': { fr: 'En transit', en: 'In transit', es: 'En tránsito' },
-      'status.pending': { fr: 'En attente', en: 'Pending', es: 'Pendiente' },
+      'status.pending': { fr: 'À récupérer', en: 'To pick up', es: 'Por recoger' },
       'status.cancelled': { fr: 'Annulée', en: 'Cancelled', es: 'Cancelado' },
       'shipments.no_results': { fr: 'Aucun résultat pour vos filtres', en: 'No results for your filters', es: 'No hay resultados para sus filtros' },
       'shipments.no_shipments': { fr: 'Aucune livraison', en: 'No shipments', es: 'No hay entregas' },
@@ -437,6 +439,45 @@ export default function TransporteurShipmentsPage() {
         </div>
       </div>
 
+      {/* Filtres par statut, en haut de la page : À récupérer · En transit · Livrées · Annulées */}
+      <div role="group" aria-label={getTranslation("shipments.status")} style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "18px" }}>
+        {[
+          { id: "all", label: getTranslation("shipments.filter_all"), count: stats.total, color: "#667eea" },
+          { id: "pending", label: getTranslation("shipments.pending"), count: stats.pending, color: "#f59e0b" },
+          { id: "in_transit", label: getTranslation("shipments.in_transit"), count: stats.inTransit, color: "#3b82f6" },
+          { id: "delivered", label: getTranslation("shipments.delivered"), count: stats.delivered, color: "#10b981" },
+          { id: "cancelled", label: getTranslation("shipments.cancelled"), count: stats.cancelled, color: "#ef4444" },
+        ].map((f) => {
+          const on = filterStatus === f.id;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => { setFilterStatus(f.id); setCurrentPage(1); }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                padding: isMobile ? "8px 12px" : "9px 16px",
+                borderRadius: "999px",
+                border: `1px solid ${on ? f.color : "var(--theme-border)"}`,
+                background: on ? f.color : "var(--theme-surface)",
+                color: on ? "white" : "var(--theme-text)",
+                fontSize: isMobile ? "12px" : "13px", fontWeight: on ? 600 : 500,
+                cursor: "pointer", transition: "all 0.2s",
+              }}
+            >
+              {f.label}
+              <span style={{
+                minWidth: "22px", padding: "1px 7px", borderRadius: "999px", textAlign: "center",
+                fontSize: "11px", fontWeight: 700,
+                background: on ? "rgba(255,255,255,0.25)" : `${f.color}22`,
+                color: on ? "white" : f.color,
+              }}>{f.count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Stats cards - Responsive grid */}
       <div className="stats-grid" style={{ 
         display: "grid", 
@@ -480,13 +521,6 @@ export default function TransporteurShipmentsPage() {
               </button>
             )}
           </div>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "11px", color: "var(--theme-text)", cursor: "pointer", minWidth: isMobile ? "auto" : "126px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
-            <option value="all">{getTranslation("shipments.all_statuses")}</option>
-            <option value="pending">{getTranslation("shipments.status_pending")}</option>
-            <option value="in_transit">{getTranslation("shipments.status_in_transit")}</option>
-            <option value="delivered">{getTranslation("shipments.status_delivered")}</option>
-            <option value="cancelled">{getTranslation("shipments.status_cancelled")}</option>
-          </select>
           <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)} style={{ padding: isMobile ? "10px 12px" : "11px 14px", background: "var(--theme-surface-hover)", border: "1px solid var(--theme-border)", borderRadius: "11px", color: "var(--theme-text)", cursor: "pointer", minWidth: isMobile ? "auto" : "126px", fontSize: isMobile ? "12px" : "13px", flex: isMobile ? "1" : "auto" }}>
             <option value="all">{getTranslation("shipments.all_periods")}</option>
             <option value="day">{getTranslation("shipments.today")}</option>

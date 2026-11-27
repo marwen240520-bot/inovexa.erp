@@ -33,6 +33,12 @@ const ROUTE_ENDPOINTS: Record<string, string[]> = {
   "/dashboard/profile": ["/users/profile", "/sales", "/orders", "/clients"],
 };
 
+// Onglets d'un écran qui a une adresse par onglet : ils lisent les mêmes données que la page d'entrée du module.
+const ROUTE_ALIASES: Array<[RegExp, string]> = [
+  [/^\/dashboard\/finance\/(income|expenses|cashflow|balance|budget|ratios|invoices)$/, "/dashboard/finance"],
+  [/^\/dashboard\/profile\/(security|activity)$/, "/dashboard/profile"],
+];
+
 function readAuth(): { token: string | null; userId: string | null } {
   try {
     const token = localStorage.getItem("token");
@@ -51,7 +57,8 @@ export function prefetchRouteData(path: string, opts: { includeModules?: boolean
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) return;
   const clean = path.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
-  const endpoints = ROUTE_ENDPOINTS[clean];
+  const alias = ROUTE_ALIASES.find(([re]) => re.test(clean));
+  const endpoints = ROUTE_ENDPOINTS[alias ? alias[1] : clean];
   const { token, userId } = readAuth();
   if (!token) return;
   const headers = { Authorization: `Bearer ${token}` };
