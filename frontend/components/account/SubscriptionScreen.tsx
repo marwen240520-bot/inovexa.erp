@@ -697,7 +697,7 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                     <IconClock />
                     <div>
                       <strong>{o.pay.resumeTitle}</strong>
-                      <p>{fill(o.pay.resumeText, { amount: resumable.chargedAmount != null && resumable.chargedCurrency ? formatMoney(resumable.chargedAmount, language, resumable.chargedCurrency) : formatMoney(resumable.amountTTC, language, resumable.currency), time: formatTime(resumable.expiresAt, language) })}</p>
+                      <p>{fill(o.pay.resumeText, { amount: formatMoney(resumable.amountTTC, language, resumable.currency), time: formatTime(resumable.expiresAt, language) })}</p>
                       <div className="sub-alert-actions"><a href={resumable.payUrl} className="sub-btn sub-btn-outline">{o.pay.resume}</a></div>
                     </div>
                   </div>
@@ -731,7 +731,8 @@ export default function SubscriptionScreen({ standalone = false }: { standalone?
                 )}
                 <button type="button" className="sub-btn sub-btn-primary sub-btn-wide" onClick={() => void payByCard()}
                   disabled={!plan || amountHT === null || !online.enabled || suspended || busy === "pay"} aria-busy={busy === "pay"}>
-                  {busy === "pay" ? o.pay.redirecting : plan && chargeAmount !== null ? fill(account.status === "ACTIVE" && account.planCode === plan.code ? o.pay.renewNow : o.pay.payNow, { amount: chargeMoney(chargeAmount) }) : fill(o.pay.payNow, { amount: "" }).replace(/\s{2,}/g, " ").trim()}
+                  {/* Montant dans la devise des formules (dollars) ; l'équivalent débité en dinars est indiqué juste au-dessus. */}
+                  {busy === "pay" ? o.pay.redirecting : plan && amountTTC !== null ? fill(account.status === "ACTIVE" && account.planCode === plan.code ? o.pay.renewNow : o.pay.payNow, { amount: money(amountTTC) }) : fill(o.pay.payNow, { amount: "" }).replace(/\s{2,}/g, " ").trim()}
                 </button>
                 <p className="sub-muted sub-small">{cardsText}</p>
               </aside>
