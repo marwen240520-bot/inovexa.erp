@@ -20,6 +20,7 @@
   --st-muted: #41466f;
   --st-accent: #4f3fd8;
   --st-btn: linear-gradient(100deg, #4f3fd8 0%, #7a48e6 100%);
+  /* Boutons d'action (.st-btn) : même violet que « Essayer gratuitement 3 jours » de l'accueil */
   --st-surface: rgba(255, 255, 255, 0.78);
   --st-soft: #e3e7ff;
   --st-border: rgba(79, 63, 216, 0.16);
@@ -59,8 +60,8 @@
    partagé avec la page d'accueil. */
 
 /* ── Boutons ── */
-.st-btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; line-height: 1.25; min-height: 48px; padding: 8px 24px; border-radius: 999px; border: 1px solid transparent; background: var(--st-btn); color: #fff !important; font: inherit; font-weight: 700; font-size: 15.5px; text-decoration: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 10px 26px rgba(90, 69, 224, 0.32); }
-.st-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(90, 69, 224, 0.4); }
+.st-btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; line-height: 1.25; min-height: 48px; padding: 8px 24px; border-radius: 999px; border: 1px solid transparent; background: #2E1065; color: #fff !important; font: inherit; font-weight: 700; font-size: 15.5px; text-decoration: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 12px 30px rgba(76, 29, 149, 0.34); }
+.st-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(76, 29, 149, 0.42); }
 .st-btn-ghost { background: rgba(255, 255, 255, 0.62); color: var(--st-text) !important; border-color: rgba(79, 63, 216, 0.3); box-shadow: none; }
 .st-btn-ghost:hover { background: #fff; box-shadow: none; }
 .st-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0 0 !important; }

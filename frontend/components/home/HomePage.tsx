@@ -601,7 +601,7 @@ const STYLES = `
   .hp-card-desc { margin-top: 6px !important; color: var(--hp-muted); font-size: 14.5px; line-height: 1.55; }
   /* Carte mise en avant : pleine largeur, contour aux couleurs de la vague */
   .hp-card.hp-card-ai { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 18px; border: 1.5px solid transparent; background: linear-gradient(120deg, #ffffff 0%, #f5f0ff 55%, #ecfeff 100%) padding-box, var(--hp-wave) border-box; }
-  .hp-ai-icon { background: linear-gradient(140deg, #6D28D9 0%, #A21CAF 100%); color: #fff; }
+  .hp-ai-icon { background: linear-gradient(100deg, #4f3fd8 0%, #7a48e6 100%); color: #fff; }
   .hp-ai-badge { display: inline-flex; vertical-align: middle; margin-inline-start: 6px; padding: 3px 10px; border-radius: 999px; background: rgba(91, 63, 224, 0.1); color: var(--hp-accent); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.4; white-space: nowrap; }
 
   /* Modules, par groupe */
